@@ -71,6 +71,7 @@
             this.skinPaletteDropDownItem,
             this.barOptionsItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
+            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(3, 3, 3, 10);
             this.mainRibbonControl.MaxItemId = 8;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
@@ -78,7 +79,6 @@
             this.mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.fileRibbonPage,
             this.homeRibbonPage});
-            this.mainRibbonControl.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
             this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowSearchItem = true;
@@ -99,7 +99,6 @@
             this.barNewItem.Id = 2;
             this.barNewItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barNewItem.ImageOptions.SvgImage")));
             this.barNewItem.ItemShortcut = new DevExpress.XtraBars.BarShortcut((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N));
-            this.barNewItem.MergeType = DevExpress.XtraBars.BarMenuMerge.Replace;
             this.barNewItem.Name = "barNewItem";
             this.barNewItem.ShowItemShortcut = DevExpress.Utils.DefaultBoolean.True;
             this.barNewItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barNewItem_ItemClick);
@@ -147,6 +146,7 @@
             this.barOptionsItem.Id = 7;
             this.barOptionsItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barOptionsItem.ImageOptions.SvgImage")));
             this.barOptionsItem.Name = "barOptionsItem";
+            this.barOptionsItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOptionsItem_ItemClick);
             // 
             // fileRibbonPage
             // 

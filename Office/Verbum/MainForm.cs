@@ -221,6 +221,20 @@ namespace Rizonesoft.Office.Verbum
             parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
         }
 
+        private void barOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            try
+            {
+                OptionsForm optionsDlg = new OptionsForm();
+                optionsDlg.Show(this);
+            }
+            catch (Exception ex)
+            {
+                 MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         #endregion Events
 
 
@@ -418,8 +432,8 @@ namespace Rizonesoft.Office.Verbum
             string sPalette;
             string sGeometry;
 
-            sSkin = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Skin", "Office 2019 Colorful");
-            sPalette = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Palette", "");
+            sSkin = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Skin", "WXI");
+            sPalette = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Palette", "Sharpness");
             sGeometry = Settings.GetSetting("Rizonesoft\\Verbum\\General", "Geometry", "");
 
             Globals.GeometryFromString(sGeometry, this);
@@ -434,6 +448,7 @@ namespace Rizonesoft.Office.Verbum
             Settings.SaveSetting("Rizonesoft\\Verbum\\General", "Geometry", Globals.GeometryToString(this));
             Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "AutoSpellCheck", Utilities.BooleanToString(Globals.autoSpellCheck));
         }
+
 
 
         #endregion Settings

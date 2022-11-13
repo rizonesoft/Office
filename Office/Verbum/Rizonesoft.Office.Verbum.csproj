@@ -9,7 +9,14 @@
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
     <Version>23.0.0</Version>
+    <PackageIcon>Verbum-128.png</PackageIcon>
+    <UseWPF>False</UseWPF>
+    <ApplicationIcon>Verbum.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Verbum.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.BonusSkins" Version="22.1.6" />
@@ -38,6 +45,13 @@
 
   <ItemGroup>
     <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Resources\Verbum\Verbum-128.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
