@@ -1,6 +1,8 @@
 ﻿using DevExpress.XtraBars.Ribbon;
 using DevExpress.XtraEditors;
+using DevExpress.XtraSpellChecker;
 using DevExpress.XtraSplashScreen;
+using NLog;
 using Rizonesoft.Office.Verbum.Classes;
 using System;
 using System.ComponentModel;
@@ -13,15 +15,82 @@ namespace Rizonesoft.Office.Verbum
 {
     public partial class MainForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
+        private static string formHeading = "Rizonesoft Verbum";
+        private static NLog.Logger nlogger = NLog.LogManager.GetCurrentClassLogger();
+        private CopyData copyData = null;
+
+        MruList mruList;
+        bool updatedZoom = false;
 
         internal int documentIndex = 0;
         internal bool IsFloating = false;
-        private static string formHeading = "Rizonesoft Verbum";
-        bool updatedZoom = false;
         internal BackgroundWorker updateWorker;
 
-        MruList mruList;
-        private CopyData copyData = null;
+        public MainForm(string fileName)
+        {
+            // LoadSettings();
+            CreateVerbumDirectories();
+            ConfigureLogging();
+
+            MainForm mainForm = this;
+            mainForm.OnShowMdiChildCaptionInParentTitle();
+
+            InitializeComponent();
+            mainForm.CreateNewDocument(fileName);
+
+            updateWorker = new BackgroundWorker();
+            updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
+            updateWorker.RunWorkerAsync();
+
+            mainRibbonControl.SelectedPage = homeRibbonPage;
+
+            Initialize();
+
+        }
+
+        private void ChangeMainFormState(bool State)
+        {
+            MainForm mainForm = this;
+            mainForm.homeRibbonPage.Visible = State;
+            mainForm.barCloseItem.Enabled = State;
+        }
+
+        private void ConfigureLogging()
+        {
+            var nlogConfig = new NLog.Config.LoggingConfiguration();
+            // Targets where to log to: File and Console.
+            var nlogFile = new NLog.Targets.FileTarget("logfile") { FileName = Globals.loggingFilePath };
+            var nlogConsole = new NLog.Targets.ConsoleTarget("logconsole");
+
+            // Rules for mapping loggers to targets.            
+            nlogConfig.AddRule(LogLevel.Info, LogLevel.Fatal, nlogConsole);
+            nlogConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, nlogFile);
+
+            // Apply config           
+            LogManager.Configuration = nlogConfig;
+        }
+
+        private void CreateVerbumDirectories()
+        {
+            if (!Directory.Exists(Globals.userAppDataPath))
+            {
+                Directory.CreateDirectory(Globals.userAppDataPath);
+            }
+
+        }
+
+        private void Initialize()
+        {
+            // Create a new instance of the class:
+            copyData = new CopyData();
+            // Assign the handle:
+            copyData.AssignHandle(Handle);
+            // Create the named channels to send and receive on.
+            copyData.Channels.Add("DocChannel");
+            // Hook up event notifications whenever a message is received:
+            copyData.DataReceived += new DataReceivedEventHandler(copyData_DataReceived);
+
+        }
 
         #region Properties
 
@@ -44,46 +113,6 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Properties
 
-        public MainForm(string fileName)
-        {
-
-            this.OnShowMdiChildCaptionInParentTitle();
-
-            LoadSettings();
-            CreateVerbumDirectories();
-
-            InitializeComponent();
-            this.CreateNewDocument(fileName);
-
-            updateWorker = new BackgroundWorker();
-            updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
-            updateWorker.RunWorkerAsync();
-
-            mainRibbonControl.SelectedPage = homeRibbonPage;
-
-            Initialize();
-
-        }
-
-        private void Initialize()
-        {
-            // Create a new instance of the class:
-            copyData = new CopyData();
-            // Assign the handle:
-            copyData.AssignHandle(this.Handle);
-            // Create the named channels to send and receive on.
-            copyData.Channels.Add("DocChannel");
-            // Hook up event notifications whenever a message is received:
-            copyData.DataReceived += new DataReceivedEventHandler(copyData_DataReceived);
-        }
-
-        private void CreateVerbumDirectories()
-        {
-            if (!Directory.Exists(Globals.userAppDataPath))
-            {
-                Directory.CreateDirectory(Globals.userAppDataPath);
-            }
-        }
 
         #region Updates
 
@@ -95,17 +124,17 @@ namespace Rizonesoft.Office.Verbum
         public static string OfficeUpdate(string updateXML)
         {
 
-            string downloadUrl = "";
+            string downloadUrl = string.Empty;
             Version newVersion = null;
             string updateXmlURL = "https://www.rizonesoft.com/update/office22.xml";
             XmlTextReader updateReader = null;
-            string sReturnVersion = "";
+            string sReturnVersion = string.Empty;
 
             try
             {
                 updateReader = new XmlTextReader(updateXmlURL);
                 updateReader.MoveToContent();
-                string elementName = "";
+                string elementName = string.Empty;
 
                 if ((updateReader.NodeType == XmlNodeType.Element) && (updateReader.Name == "office"))
                 {
@@ -148,10 +177,10 @@ namespace Rizonesoft.Office.Verbum
             {
 
                 sReturnVersion = newVersion.Major + "." + newVersion.Minor + "." + newVersion.Build;
-                MessageBox.Show(sReturnVersion);
+                // MessageBox.Show(sReturnVersion);
             }
 
-            return "";
+            return string.Empty;
 
         }
 
@@ -162,10 +191,12 @@ namespace Rizonesoft.Office.Verbum
 
         private void MainForm_Load(object sender, System.EventArgs e)
         {
+            LoadSettings();
+
             this.mainRibbonControl.ForceInitialize();
             mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\Verbum\\MRU");
             mruList.FileSelected += mruList_FileSelected;
-            LoadSpelling();
+            LoadDictionaries();
         }
 
         private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
@@ -230,8 +261,8 @@ namespace Rizonesoft.Office.Verbum
             }
             catch (Exception ex)
             {
-                 MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK,
+                   MessageBoxIcon.Error);
             }
         }
 
@@ -351,7 +382,7 @@ namespace Rizonesoft.Office.Verbum
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    //debugLog.Error(ioEx.Message.ToString());
+                    nlogger.Error(ioEx, "Whoops!");
                 }
             }
         }
@@ -364,16 +395,9 @@ namespace Rizonesoft.Office.Verbum
         #endregion MRU
 
 
-        private void ChangeMainFormState(bool State)
-        {
-            this.homeRibbonPage.Visible = State;
-            this.barCloseItem.Enabled = State;
-        }
-
-
         #region Spelling
 
-        private void LoadSpelling()
+        private void LoadDictionaries()
         {
             string sAutoSpellCheck;
             string sFileNameWithEx;
@@ -401,8 +425,9 @@ namespace Rizonesoft.Office.Verbum
             }
             catch (Exception ex)
             {
+                nlogger.Error(ex, "Woops!");
                 MessageBox.Show(ex.Message,
-                        "Bummer!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        "Woops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
         }
@@ -417,8 +442,30 @@ namespace Rizonesoft.Office.Verbum
                 spellCheckerHunspellDic.Culture = dicCulture;
                 spellCheckerHunspellDic.DictionaryPath = dictionaryPath;
                 spellCheckerHunspellDic.GrammarPath = grammarPath;
-                this.mainSharedDictionaryStorage.Dictionaries.Add(spellCheckerHunspellDic);
+                MainForm mainForm = this;
+                mainForm.mainSharedDictionaryStorage.Dictionaries.Add(spellCheckerHunspellDic);
+                SpellingHelper.availableDictionaries.Add(dicCulture.Name, spellCheckerHunspellDic);
+
+                AddCustomDictionary(dictionaryPath, dicCulture);
+
             }
+        }
+
+        private void AddCustomDictionary(
+           string dictionaryPath,
+           CultureInfo customCulture)
+        {
+
+            string userCustomDicDir = Globals.userAppDataPath + "\\Dictionaries";
+            if (!Directory.Exists(userCustomDicDir))
+            { Directory.CreateDirectory(userCustomDicDir); }
+
+            SpellCheckerCustomDictionary customDictionary = new SpellCheckerCustomDictionary();
+            customDictionary.AlphabetPath = userCustomDicDir + "\\custom_" + Path.GetFileNameWithoutExtension(dictionaryPath) + ".txt";
+            customDictionary.DictionaryPath = userCustomDicDir + "\\custom_" + Path.GetFileNameWithoutExtension(dictionaryPath) + ".dic";
+            customDictionary.Culture = customCulture;
+            MainForm mainForm = this;
+            mainForm.mainSharedDictionaryStorage.Dictionaries.Add(customDictionary);
         }
 
         #endregion Spelling
@@ -432,20 +479,22 @@ namespace Rizonesoft.Office.Verbum
             string sPalette;
             string sGeometry;
 
-            sSkin = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Skin", "WXI");
-            sPalette = Settings.GetSetting("Rizonesoft\\Office\\Skins", "Palette", "Sharpness");
-            sGeometry = Settings.GetSetting("Rizonesoft\\Verbum\\General", "Geometry", "");
+            sSkin = Settings.GetSetting("Rizonesoft\\Verbum\\Interface", "Skin", "WXI");
+            sPalette = Settings.GetSetting("Rizonesoft\\Verbum\\Interface", "Palette", "Sharpness");
+            sGeometry = Settings.GetSetting("Rizonesoft\\Verbum\\General", "Geometry", string.Empty);
 
-            Globals.GeometryFromString(sGeometry, this);
+            MainForm formIn = this;
+            Globals.GeometryFromString(sGeometry, formIn);
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
 
         }
 
         private void SaveSettings()
         {
-            Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-            Settings.SaveSetting("Rizonesoft\\Verbum\\General", "Geometry", Globals.GeometryToString(this));
+            Settings.SaveSetting("Rizonesoft\\Verbum\\Interface", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.SaveSetting("Rizonesoft\\Verbum\\Interface", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+            MainForm mainForm = this;
+            Settings.SaveSetting("Rizonesoft\\Verbum\\General", "Geometry", Globals.GeometryToString(mainForm));
             Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "AutoSpellCheck", Utilities.BooleanToString(Globals.autoSpellCheck));
         }
 
@@ -453,6 +502,6 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Settings
 
-      
+
     }
 }

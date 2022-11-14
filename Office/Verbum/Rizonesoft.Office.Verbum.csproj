@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows7.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Verbum</AssemblyName>
     <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
@@ -12,6 +12,15 @@
     <PackageIcon>Verbum-128.png</PackageIcon>
     <UseWPF>False</UseWPF>
     <ApplicationIcon>Verbum.ico</ApplicationIcon>
+    <IsPublishable>False</IsPublishable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +30,7 @@
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.BonusSkins" Version="22.1.6" />
     <PackageReference Include="DevExpress.Win.Design" Version="22.1.*-*" />
+    <PackageReference Include="NLog" Version="5.0.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +73,18 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Dictionaries\af_ZA.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_AU.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_AU.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_CA.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_CA.dic">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Dictionaries\en_GB.aff">

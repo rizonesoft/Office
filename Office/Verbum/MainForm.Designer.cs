@@ -44,7 +44,6 @@
             this.commonRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.ribbonPageGroup2 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
             this.mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(this.components);
@@ -71,7 +70,7 @@
             this.skinPaletteDropDownItem,
             this.barOptionsItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(3, 3, 3, 10);
+            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
             this.mainRibbonControl.MaxItemId = 8;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
@@ -131,6 +130,7 @@
             this.skinDropDownItem.ActAsDropDown = true;
             this.skinDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
             this.skinDropDownItem.Id = 5;
+            this.skinDropDownItem.MergeOrder = 90;
             this.skinDropDownItem.Name = "skinDropDownItem";
             // 
             // skinPaletteDropDownItem
@@ -138,6 +138,7 @@
             this.skinPaletteDropDownItem.ActAsDropDown = true;
             this.skinPaletteDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
             this.skinPaletteDropDownItem.Id = 6;
+            this.skinPaletteDropDownItem.MergeOrder = 91;
             this.skinPaletteDropDownItem.Name = "skinPaletteDropDownItem";
             // 
             // barOptionsItem
@@ -145,6 +146,7 @@
             this.barOptionsItem.Caption = "Options";
             this.barOptionsItem.Id = 7;
             this.barOptionsItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barOptionsItem.ImageOptions.SvgImage")));
+            this.barOptionsItem.MergeOrder = 93;
             this.barOptionsItem.Name = "barOptionsItem";
             this.barOptionsItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOptionsItem_ItemClick);
             // 
@@ -161,6 +163,7 @@
             this.commonRibbonGroup.ItemLinks.Add(this.barNewItem);
             this.commonRibbonGroup.ItemLinks.Add(this.barOpenItem);
             this.commonRibbonGroup.ItemLinks.Add(this.barCloseItem);
+            this.commonRibbonGroup.MergeOrder = 0;
             this.commonRibbonGroup.Name = "commonRibbonGroup";
             this.commonRibbonGroup.Text = "Common";
             // 
@@ -174,15 +177,8 @@
             // 
             // homeRibbonPage
             // 
-            this.homeRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.ribbonPageGroup2});
             this.homeRibbonPage.Name = "homeRibbonPage";
             this.homeRibbonPage.Text = "Home";
-            // 
-            // ribbonPageGroup2
-            // 
-            this.ribbonPageGroup2.Name = "ribbonPageGroup2";
-            this.ribbonPageGroup2.Text = "ribbonPageGroup2";
             // 
             // ribbonStatusBar
             // 
@@ -241,7 +237,6 @@
         private DevExpress.XtraBars.Ribbon.RibbonPage fileRibbonPage;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup commonRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPage homeRibbonPage;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup ribbonPageGroup2;
         private DevExpress.XtraBars.BarMdiChildrenListItem mainBarMdiChildrenListItem;
         private DevExpress.XtraBars.BarButtonItem barNewItem;
         private DevExpress.XtraBars.BarButtonItem barOpenItem;

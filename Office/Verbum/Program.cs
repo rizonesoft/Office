@@ -1,4 +1,5 @@
 ﻿using DevExpress.XtraEditors;
+using NLog;
 using System;
 using System.Threading;
 using System.Windows.Forms;
@@ -7,6 +8,7 @@ namespace Rizonesoft.Office.Verbum
 {
     internal static class Program
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         static Mutex applicationMutex = null;
 
         /// <summary>
@@ -16,11 +18,13 @@ namespace Rizonesoft.Office.Verbum
         static void Main(string[] args)
         {
 
+            
             Application.ThreadException += new System.Threading.ThreadExceptionEventHandler(Application_ThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
             try
             {
+
                 bool grantedOwnership;
                 try
                 {

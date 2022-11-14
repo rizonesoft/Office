@@ -22,6 +22,7 @@ namespace Rizonesoft.Office.Verbum.Classes
         public static string basePath = Path.GetDirectoryName(Application.ExecutablePath);
         public static string dictionariesPath = Path.Combine(basePath, "Dictionaries");
         public static string userAppDataPath = Path.Combine(GetUserAppDataPath(), "Rizonesoft\\Office\\Verbum\\");
+        public static string loggingFilePath = Path.Combine(userAppDataPath, "Logging\\Error.log");
         public static string userSpellingOptionsFile = Path.Combine(userAppDataPath, "SpellingOptions.xml");
         public static string saveToolbarToXmlFileName = Path.Combine(userAppDataPath, "ToolbarSettings.xml");
         public static string saveLayoutToXmlFileName = Path.Combine(userAppDataPath, "RibbonSettings.xml");
