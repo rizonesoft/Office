@@ -6,12 +6,19 @@ namespace Rizonesoft.Office.Verbum.Classes
 {
     public class RichEditExceptionHandler
     {
-
-        internal readonly RichEditControl control;
+        readonly RichEditControl control;
 
         public RichEditExceptionHandler(RichEditControl control)
         {
             this.control = control;
+        }
+
+        public void Install()
+        {
+            if (control != null)
+            {
+                control.UnhandledException += OnRichEditControlUnhandledException;
+            }
         }
 
         internal void OnRichEditControlUnhandledException(object sender, RichEditUnhandledExceptionEventArgs e)
@@ -38,13 +45,7 @@ namespace Rizonesoft.Office.Verbum.Classes
             }
         }
 
-        public void Install()
-        {
-            if (control != null)
-            {
-                control.UnhandledException += OnRichEditControlUnhandledException;
-            }
-        }
+       
 
     }
 }

@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 
+
 namespace Rizonesoft.Office.Verbum
 {
     internal static class Program
@@ -57,10 +58,22 @@ namespace Rizonesoft.Office.Verbum
                 else
                 {
 
-                    WindowsFormsSettings.DefaultRibbonStyle = DefaultRibbonControlStyle.Office2019;
-                    WindowsFormsSettings.ForceDirectXPaint();
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
+
+                    WindowsFormsSettings.DefaultRibbonStyle = DefaultRibbonControlStyle.Office2019;
+                    WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
+                    WindowsFormsSettings.ForceDirectXPaint();
+                    if (!SystemInformation.TerminalServerSession && Screen.AllScreens.Length > 1)
+                    {
+                        WindowsFormsSettings.SetPerMonitorDpiAware();
+                    }
+                    else
+                    {
+                        WindowsFormsSettings.SetDPIAware();
+                    }
+                        
+
                     DevExpress.Skins.SkinManager.EnableFormSkins();
                     DevExpress.UserSkins.BonusSkins.Register();
 
