@@ -2554,6 +2554,7 @@
             this.headerFooterToolsRibbonPageCategory1.Name = "headerFooterToolsRibbonPageCategory1";
             this.headerFooterToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.headerFooterToolsDesignRibbonPage1});
+            this.headerFooterToolsRibbonPageCategory1.Visible = false;
             // 
             // headerFooterToolsDesignRibbonPage1
             // 
@@ -2562,6 +2563,7 @@
             this.headerFooterToolsDesignOptionsRibbonPageGroup1,
             this.headerFooterToolsDesignCloseRibbonPageGroup1});
             this.headerFooterToolsDesignRibbonPage1.Name = "headerFooterToolsDesignRibbonPage1";
+            this.headerFooterToolsDesignRibbonPage1.Visible = false;
             // 
             // headerFooterToolsDesignNavigationRibbonPageGroup1
             // 
@@ -2588,13 +2590,15 @@
             // 
             // tableToolsRibbonPageCategory1
             // 
-            this.tableToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(252)))), ((int)(((byte)(233)))), ((int)(((byte)(20)))));
+            this.tableToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.DodgerBlue;
+            this.tableToolsRibbonPageCategory1.Appearance.BackColor2 = System.Drawing.Color.Black;
             this.tableToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
             this.tableToolsRibbonPageCategory1.Control = this.mainRichEditControl;
             this.tableToolsRibbonPageCategory1.Name = "tableToolsRibbonPageCategory1";
             this.tableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.tableDesignRibbonPage1,
             this.tableLayoutRibbonPage1});
+            this.tableToolsRibbonPageCategory1.Visible = false;
             // 
             // tableDesignRibbonPage1
             // 
@@ -2603,6 +2607,7 @@
             this.tableStylesRibbonPageGroup1,
             this.tableDrawBordersRibbonPageGroup1});
             this.tableDesignRibbonPage1.Name = "tableDesignRibbonPage1";
+            this.tableDesignRibbonPage1.Visible = false;
             // 
             // tableStyleOptionsRibbonPageGroup1
             // 
@@ -2640,6 +2645,7 @@
             this.tableCellSizeRibbonPageGroup1,
             this.tableAlignmentRibbonPageGroup1});
             this.tableLayoutRibbonPage1.Name = "tableLayoutRibbonPage1";
+            this.tableLayoutRibbonPage1.Visible = false;
             // 
             // tableTableRibbonPageGroup1
             // 
@@ -2698,6 +2704,7 @@
             this.floatingPictureToolsRibbonPageCategory1.Name = "floatingPictureToolsRibbonPageCategory1";
             this.floatingPictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.floatingPictureToolsFormatPage1});
+            this.floatingPictureToolsRibbonPageCategory1.Visible = false;
             // 
             // floatingPictureToolsFormatPage1
             // 
@@ -2705,6 +2712,7 @@
             this.floatingPictureToolsShapeStylesPageGroup1,
             this.floatingPictureToolsArrangePageGroup1});
             this.floatingPictureToolsFormatPage1.Name = "floatingPictureToolsFormatPage1";
+            this.floatingPictureToolsFormatPage1.Visible = false;
             // 
             // floatingPictureToolsShapeStylesPageGroup1
             // 
