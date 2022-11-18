@@ -58,6 +58,7 @@ namespace Rizonesoft.Office.Verbum
                 {
 
                     WindowsFormsSettings.DefaultRibbonStyle = DefaultRibbonControlStyle.Office2019;
+                    WindowsFormsSettings.ForceDirectXPaint();
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
                     DevExpress.Skins.SkinManager.EnableFormSkins();
