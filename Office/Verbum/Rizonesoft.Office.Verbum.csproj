@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows7.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Verbum</AssemblyName>
     <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
@@ -22,6 +22,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>True</Optimize>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="License.lic" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Verbum.ico" />
@@ -66,6 +70,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="License.lic" />
   </ItemGroup>
 
   <ItemGroup>

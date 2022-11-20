@@ -9,11 +9,13 @@ using DevExpress.XtraSpellChecker;
 using DevExpress.XtraSpellChecker.Forms;
 using DevExpress.XtraSpellChecker.Native;
 using Rizonesoft.Office.Verbum.Classes;
+using Rizonesoft.Office.Verbum.Forms;
 using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
+using static DevExpress.Xpo.Helpers.AssociatedCollectionCriteriaHelper;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -151,7 +153,7 @@ namespace Rizonesoft.Office.Verbum
             // mainRibbonControl.Toolbar.SaveLayoutToRegistry("");
         }
 
-        private void DocForm_FormClosing(object sender, FormClosingEventArgs e)
+        private void mainRichEditControl_DocumentClosing(object sender, CancelEventArgs e)
         {
             if (this.mainRichEditControl.Modified)
             {
@@ -166,6 +168,16 @@ namespace Rizonesoft.Office.Verbum
 
                 e.Cancel = result == DialogResult.Cancel;
             }
+        }
+
+        private void mainRichEditControl_InvalidFormatException(object sender, RichEditInvalidFormatExceptionEventArgs e)
+        {
+            // string currentFileName = mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
+            // nlogger.Error(string.Format("Cannot open the file '{0}' because the file format or file extension is not valid.", currentFileName));
+            // XtraMessageBox.Show(string.Format("Cannot open the file '{0}' because the file format or file extension is not valid.\n" +
+                // "Verify that file has not been corrupted and that the file extension matches the format of the file.", currentFileName),
+                // "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
         }
 
         private void Default_StyleChanged(object sender, EventArgs e)
@@ -187,19 +199,6 @@ namespace Rizonesoft.Office.Verbum
             {
                 string sFileName = e.NewValue.ToString();
             }
-        }
-
-        private void coreRichEditControl_SelectionChanged(object sender, EventArgs e)
-        {
-  
-            RangedLayoutElement element = this.mainRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(this.mainRichEditControl.Document.CaretPosition);
-            if (element != null)
-            {
-                currentPage = this.mainRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
-            }
-
-            OnPagesInfoChanged();
-
         }
 
         private void autoSpellingItem_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
@@ -242,43 +241,6 @@ namespace Rizonesoft.Office.Verbum
                     // barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
                 }
 
-            }
-        }
-
-        private void zoomBarEditItem_EditValueChanged(object sender, EventArgs e)
-        {
-            DocForm docForm = this;
-            if (docForm._isZoomChanging)
-            { return; }
-
-            int value = Convert.ToInt32(docForm.zoomBarEditItem.EditValue);
-            docForm._isZoomChanging = true;
-            try
-            {
-                docForm.mainRichEditControl.ActiveView.ZoomFactor = value / 100f;
-                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
-            }
-            finally
-            {
-                docForm._isZoomChanging = false;
-            }
-        }
-
-        private void mainRichEditControl_ZoomChanged(object sender, EventArgs e)
-        {
-            DocForm docForm = this;
-            if (docForm._isZoomChanging)
-                return;
-            int value = (int)Math.Round(docForm.mainRichEditControl.ActiveView.ZoomFactor * 100);
-            docForm._isZoomChanging = true;
-            try
-            {
-                docForm.zoomBarEditItem.EditValue = value;
-                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
-            }
-            finally
-            {
-                docForm._isZoomChanging = false;
             }
         }
 
@@ -415,10 +377,53 @@ namespace Rizonesoft.Office.Verbum
         #endregion Document Handling
 
 
+        #region Zoom
+
+        private void zoomBarEditItem_EditValueChanged(object sender, EventArgs e)
+        {
+            DocForm docForm = this;
+            if (docForm._isZoomChanging)
+            { return; }
+
+            int value = Convert.ToInt32(docForm.zoomBarEditItem.EditValue);
+            docForm._isZoomChanging = true;
+            try
+            {
+                docForm.mainRichEditControl.ActiveView.ZoomFactor = value / 100f;
+                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
+            }
+            finally
+            {
+                docForm._isZoomChanging = false;
+            }
+        }
+
+        private void mainRichEditControl_ZoomChanged(object sender, EventArgs e)
+        {
+            DocForm docForm = this;
+            if (docForm._isZoomChanging)
+                return;
+            int value = (int)Math.Round(docForm.mainRichEditControl.ActiveView.ZoomFactor * 100);
+            docForm._isZoomChanging = true;
+            try
+            {
+                docForm.zoomBarEditItem.EditValue = value;
+                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
+            }
+            finally
+            {
+                docForm._isZoomChanging = false;
+            }
+        }
+
+        #endregion Zoom
+
+
         #region Document Statistics
 
         internal int pageCount = 1;
         internal int currentPage = 1;
+
 
         internal bool IncludeTextBoxes
         {
@@ -452,6 +457,11 @@ namespace Rizonesoft.Office.Verbum
             docStatBtnItem.Caption = String.Format("{0} Words", visitor.WordCount);
         }
 
+        void mainRichEditControl_VisiblePagesChanged(object sender, EventArgs e)
+        {
+            currentPage = mainRichEditControl.ActiveView.GetVisiblePageLayoutInfos()[0].PageIndex + 1;
+        }
+
         internal void DocumentLayout_DocumentFormatted(object sender, EventArgs e)
         {
             // BeginInvoke(new Action(() =>
@@ -467,9 +477,15 @@ namespace Rizonesoft.Office.Verbum
             pagesBarItem.Caption = String.Format("Page {0} of {1}", currentPage, pageCount);
         }
 
-        private void coreRichEditControl_ContentChanged(object sender, EventArgs e)
+        private void docStatBtnItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
-            documentStatsTimer.Start();
+            using (DocumentStatisticsForm docStatsForm = new DocumentStatisticsForm(mainRichEditControl.Document, IncludeTextBoxes))
+            {
+                docStatsForm.LookAndFeel.ParentLookAndFeel = LookAndFeel;
+                docStatsForm.ShowDialog();
+                IncludeTextBoxes = docStatsForm.IncludeTextboxes;
+            }
+
         }
 
         private void documentStatsTimer_Tick(object sender, EventArgs e)
@@ -478,15 +494,27 @@ namespace Rizonesoft.Office.Verbum
             BeginInvoke(new Action(CalculateDocumentStatistics));
         }
 
+        private void mainRichEditControl_ContentChanged(object sender, EventArgs e)
+        {
+            documentStatsTimer.Start();
+        }
 
+        private void mainRichEditControl_SelectionChanged(object sender, EventArgs e)
+        {
 
+            RangedLayoutElement element = this.mainRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(this.mainRichEditControl.Document.CaretPosition);
+            if (element != null)
+            {
+                currentPage = this.mainRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
+            }
 
+            OnPagesInfoChanged();
 
-
+        }
 
         #endregion Document Statistics
 
-        
+
     }
 
 }

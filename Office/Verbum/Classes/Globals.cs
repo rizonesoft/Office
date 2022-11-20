@@ -1,9 +1,9 @@
 ﻿using DevExpress.XtraEditors;
 using System;
 using System.Drawing;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+
 
 namespace Rizonesoft.Office.Verbum.Classes
 {
@@ -19,13 +19,14 @@ namespace Rizonesoft.Office.Verbum.Classes
                                 <>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+
                                 |(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'"".,<>?«»“”‘’]))", RegexOptions.IgnoreCase);
 
-        public static string basePath = Path.GetDirectoryName(Application.ExecutablePath);
-        public static string dictionariesPath = Path.Combine(basePath, "Dictionaries");
-        public static string userAppDataPath = Path.Combine(GetUserAppDataPath(), "Rizonesoft\\Office\\Verbum\\");
-        public static string loggingFilePath = Path.Combine(userAppDataPath, "Logging\\Error.log");
-        public static string userSpellingOptionsFile = Path.Combine(userAppDataPath, "SpellingOptions.xml");
-        public static string saveToolbarToXmlFileName = Path.Combine(userAppDataPath, "ToolbarSettings.xml");
-        public static string saveLayoutToXmlFileName = Path.Combine(userAppDataPath, "RibbonSettings.xml");
+        public static string basePath = System.IO.Path.GetDirectoryName(Application.ExecutablePath);
+        public static string licensePath = System.IO.Path.Combine(basePath, "License.lic");
+        public static string dictionariesPath = System.IO.Path.Combine(basePath, "Dictionaries");
+        public static string userAppDataPath = System.IO.Path.Combine(GetUserAppDataPath(), "Rizonesoft\\Office\\Verbum\\");
+        public static string loggingFilePath = System.IO.Path.Combine(userAppDataPath, "Logging\\Error.log");
+        public static string userSpellingOptionsFile = System.IO.Path.Combine(userAppDataPath, "SpellingOptions.xml");
+        public static string saveToolbarToXmlFileName = System.IO.Path.Combine(userAppDataPath, "ToolbarSettings.xml");
+        public static string saveLayoutToXmlFileName = System.IO.Path.Combine(userAppDataPath, "RibbonSettings.xml");
 
         public static string GetUserAppDataPath()
         {

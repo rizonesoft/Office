@@ -409,6 +409,7 @@
             this.dockPanel1 = new DevExpress.XtraBars.Docking.DockPanel();
             this.dockPanel1_Container = new DevExpress.XtraBars.Docking.ControlContainer();
             this.richEditCommentControl1 = new DevExpress.XtraRichEdit.RichEditCommentControl();
+            this.licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemRichEditFontSizeEdit1)).BeginInit();
@@ -881,9 +882,13 @@
             this.mainRichEditControl.SpellChecker = this.mainSpellChecker;
             this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, optionsSpelling1);
             this.mainRichEditControl.TabIndex = 2;
+            this.mainRichEditControl.SelectionChanged += new System.EventHandler(this.mainRichEditControl_SelectionChanged);
             this.mainRichEditControl.DocumentLoaded += new System.EventHandler(this.mainRichEditControl_DocumentLoaded);
-            this.mainRichEditControl.ContentChanged += new System.EventHandler(this.coreRichEditControl_ContentChanged);
+            this.mainRichEditControl.DocumentClosing += new System.ComponentModel.CancelEventHandler(this.mainRichEditControl_DocumentClosing);
+            this.mainRichEditControl.ContentChanged += new System.EventHandler(this.mainRichEditControl_ContentChanged);
             this.mainRichEditControl.ZoomChanged += new System.EventHandler(this.mainRichEditControl_ZoomChanged);
+            this.mainRichEditControl.InvalidFormatException += new DevExpress.XtraRichEdit.RichEditInvalidFormatExceptionEventHandler(this.mainRichEditControl_InvalidFormatException);
+            this.mainRichEditControl.VisiblePagesChanged += new System.EventHandler(this.mainRichEditControl_VisiblePagesChanged);
             // 
             // mainSpellChecker
             // 
@@ -2457,6 +2462,7 @@
             this.docStatBtnItem.Caption = "0 Words";
             this.docStatBtnItem.Id = 278;
             this.docStatBtnItem.Name = "docStatBtnItem";
+            this.docStatBtnItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.docStatBtnItem_ItemClick);
             // 
             // barLangBtnItem
             // 
@@ -2736,7 +2742,8 @@
             this.fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
             this.commonRibbonPageGroup1,
             this.infoRibbonPageGroup1,
-            this.optionsRibbonGroup});
+            this.optionsRibbonGroup,
+            this.licenseRibbonGroup});
             this.fileRibbonPage1.Name = "fileRibbonPage1";
             // 
             // commonRibbonPageGroup1
@@ -3394,6 +3401,11 @@
             this.richEditCommentControl1.Size = new System.Drawing.Size(326, 458);
             this.richEditCommentControl1.TabIndex = 0;
             // 
+            // licenseRibbonGroup
+            // 
+            this.licenseRibbonGroup.Name = "licenseRibbonGroup";
+            this.licenseRibbonGroup.Text = "Registration";
+            // 
             // DocForm
             // 
             this.AllowFormGlass = DevExpress.Utils.DefaultBoolean.True;
@@ -3409,7 +3421,6 @@
             this.StatusBar = this.ribbonStatusBar;
             this.Text = "Document";
             this.Activated += new System.EventHandler(this.DocForm_Activated);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DocForm_FormClosing);
             this.Load += new System.EventHandler(this.DocForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).EndInit();
@@ -3790,5 +3801,6 @@
         private DevExpress.XtraBars.Docking.ControlContainer dockPanel1_Container;
         private DevExpress.XtraRichEdit.RichEditCommentControl richEditCommentControl1;
         private DevExpress.XtraBars.BarButtonItem zoomBarResetItem;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
     }
 }

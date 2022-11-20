@@ -53,7 +53,7 @@ namespace Rizonesoft.Office.Verbum
                     // Create the named channels to send and receive on.
                     copyData.Channels.Add("DocChannel");
                     copyData.Channels["DocChannel"].Send(fileName);
-                    return;
+                    // return;
                 }
                 else
                 {

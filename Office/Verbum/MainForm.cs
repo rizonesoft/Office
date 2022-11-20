@@ -4,12 +4,15 @@ using DevExpress.XtraSpellChecker;
 using DevExpress.XtraSplashScreen;
 using NLog;
 using Rizonesoft.Office.Verbum.Classes;
+using Rizonesoft.Office;
 using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using System.Xml;
+using DevExpress.Utils.About;
+using System.ServiceModel.Channels;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -22,12 +25,27 @@ namespace Rizonesoft.Office.Verbum
         MruList mruList;
         bool updatedZoom = false;
 
+        internal bool isLicensed = false;
         internal int documentIndex = 0;
         internal bool IsFloating = false;
         internal BackgroundWorker updateWorker;
 
         public MainForm(string fileName)
         {
+
+            string licenseRegistryPath = @"HKEY_CURRENT_USER\Software\Rizonesoft\Office";
+            string licenseRegistryValue = "License";
+
+            string licenseKey = Licensing.LicenseHelper.GetRegister(licenseRegistryPath, licenseRegistryValue);
+            if (licenseKey != null && Licensing.LicenseHelper.IsLicensed(licenseKey, "Rizonesoft.Office.Verbum.License.lic"))
+            {
+                isLicensed = true;
+            }
+            else
+            {
+                isLicensed = false;
+            }
+
             // LoadSettings();
             CreateVerbumDirectories();
             ConfigureLogging();
@@ -197,6 +215,22 @@ namespace Rizonesoft.Office.Verbum
             mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\Verbum\\MRU");
             mruList.FileSelected += mruList_FileSelected;
             LoadDictionaries();
+
+            if (isLicensed == true)
+            {
+                this.Text += " - Business";
+                // barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                // barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                licenseRibbonGroup.Visible = false;
+            }
+            else
+            {
+                this.Text += " - Home";
+                // barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+                // barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+                licenseRibbonGroup.Visible = true;
+            }
+
         }
 
         private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)

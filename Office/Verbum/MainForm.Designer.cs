@@ -40,9 +40,12 @@
             this.skinDropDownItem = new DevExpress.XtraBars.SkinDropDownButtonItem();
             this.skinPaletteDropDownItem = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
             this.barOptionsItem = new DevExpress.XtraBars.BarButtonItem();
+            this.barRegisterItem = new DevExpress.XtraBars.BarButtonItem();
+            this.barBuyNowItem = new DevExpress.XtraBars.BarButtonItem();
             this.fileRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.commonRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
@@ -68,10 +71,12 @@
             this.barCloseItem,
             this.skinDropDownItem,
             this.skinPaletteDropDownItem,
-            this.barOptionsItem});
+            this.barOptionsItem,
+            this.barRegisterItem,
+            this.barBuyNowItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
             this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
-            this.mainRibbonControl.MaxItemId = 8;
+            this.mainRibbonControl.MaxItemId = 11;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
             this.mainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
@@ -150,11 +155,26 @@
             this.barOptionsItem.Name = "barOptionsItem";
             this.barOptionsItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOptionsItem_ItemClick);
             // 
+            // barRegisterItem
+            // 
+            this.barRegisterItem.Caption = "Register!";
+            this.barRegisterItem.Id = 9;
+            this.barRegisterItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem2.ImageOptions.SvgImage")));
+            this.barRegisterItem.Name = "barRegisterItem";
+            // 
+            // barBuyNowItem
+            // 
+            this.barBuyNowItem.Caption = "Buy Now!";
+            this.barBuyNowItem.Id = 10;
+            this.barBuyNowItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem1.ImageOptions.SvgImage")));
+            this.barBuyNowItem.Name = "barBuyNowItem";
+            // 
             // fileRibbonPage
             // 
             this.fileRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
             this.commonRibbonGroup,
-            this.optionsRibbonGroup});
+            this.optionsRibbonGroup,
+            this.licenseRibbonGroup});
             this.fileRibbonPage.Name = "fileRibbonPage";
             this.fileRibbonPage.Text = "File";
             // 
@@ -174,6 +194,13 @@
             this.optionsRibbonGroup.ItemLinks.Add(this.barOptionsItem, true);
             this.optionsRibbonGroup.Name = "optionsRibbonGroup";
             this.optionsRibbonGroup.Text = "Options";
+            // 
+            // licenseRibbonGroup
+            // 
+            this.licenseRibbonGroup.ItemLinks.Add(this.barRegisterItem);
+            this.licenseRibbonGroup.ItemLinks.Add(this.barBuyNowItem);
+            this.licenseRibbonGroup.Name = "licenseRibbonGroup";
+            this.licenseRibbonGroup.Text = "Registration";
             // 
             // homeRibbonPage
             // 
@@ -249,6 +276,9 @@
         private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
         private DevExpress.XtraSpellChecker.SharedDictionaryStorage mainSharedDictionaryStorage;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar ribbonStatusBar;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
+        private DevExpress.XtraBars.BarButtonItem barRegisterItem;
+        private DevExpress.XtraBars.BarButtonItem barBuyNowItem;
     }
 }
 
