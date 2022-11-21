@@ -24,10 +24,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="License.lic" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Verbum.ico" />
   </ItemGroup>
 
@@ -70,10 +66,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="License.lic" />
   </ItemGroup>
 
   <ItemGroup>

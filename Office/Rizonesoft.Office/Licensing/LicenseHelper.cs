@@ -10,22 +10,20 @@ using System.Threading.Tasks;
 
 namespace Rizonesoft.Office.Licensing
 {
-    internal class LicenseHelper
+    public static class LicenseHelper
     {
 
-        public static string GetRegister(string fullRegistryPath, string registryValueName)
+        public static string? GetRegister(string fullRegistryPath, string registryValueName)
         {
-            return (string)Registry.GetValue(fullRegistryPath, registryValueName, "none");   
+            return (string?)Registry.GetValue(fullRegistryPath, registryValueName, "none");   
         }
-
-        public static bool Licensed { get; set; }
 
         public static bool IsLicensed(string key, string resourceName)
         {
             string[] licenseKeys;
             var assembly = Assembly.GetExecutingAssembly();           
 
-            using (Stream resourceStream = assembly.GetManifestResourceStream(resourceName))
+            using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))
             if (resourceStream != null)
             {
                 using (StreamReader resourceReader = new StreamReader(resourceStream))

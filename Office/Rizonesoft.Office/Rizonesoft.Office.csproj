@@ -13,6 +13,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="License.lic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="License.lic" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="22.1.6" />
   </ItemGroup>
 

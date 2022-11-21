@@ -13,6 +13,8 @@ using System.Windows.Forms;
 using System.Xml;
 using DevExpress.Utils.About;
 using System.ServiceModel.Channels;
+using Rizonesoft.Office.Licensing;
+using Rizonesoft.Office.Forms;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -33,18 +35,7 @@ namespace Rizonesoft.Office.Verbum
         public MainForm(string fileName)
         {
 
-            string licenseRegistryPath = @"HKEY_CURRENT_USER\Software\Rizonesoft\Office";
-            string licenseRegistryValue = "License";
-
-            string licenseKey = Licensing.LicenseHelper.GetRegister(licenseRegistryPath, licenseRegistryValue);
-            if (licenseKey != null && Licensing.LicenseHelper.IsLicensed(licenseKey, "Rizonesoft.Office.Verbum.License.lic"))
-            {
-                isLicensed = true;
-            }
-            else
-            {
-                isLicensed = false;
-            }
+            isLicensed = LicenseCheck.IsLicensed();
 
             // LoadSettings();
             CreateVerbumDirectories();
@@ -534,8 +525,22 @@ namespace Rizonesoft.Office.Verbum
 
 
 
+
         #endregion Settings
 
-
+        private void barRegisterItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            try
+            {
+                RegistrationForm registrationDlg = new();
+                registrationDlg.Show(this);
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK,
+                   MessageBoxIcon.Error);
+            }
+        }
     }
 }

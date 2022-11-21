@@ -159,14 +159,15 @@
             // 
             this.barRegisterItem.Caption = "Register!";
             this.barRegisterItem.Id = 9;
-            this.barRegisterItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem2.ImageOptions.SvgImage")));
+            this.barRegisterItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barRegisterItem.ImageOptions.SvgImage")));
             this.barRegisterItem.Name = "barRegisterItem";
+            this.barRegisterItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barRegisterItem_ItemClick);
             // 
             // barBuyNowItem
             // 
             this.barBuyNowItem.Caption = "Buy Now!";
             this.barBuyNowItem.Id = 10;
-            this.barBuyNowItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem1.ImageOptions.SvgImage")));
+            this.barBuyNowItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barBuyNowItem.ImageOptions.SvgImage")));
             this.barBuyNowItem.Name = "barBuyNowItem";
             // 
             // fileRibbonPage
