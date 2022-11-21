@@ -14,7 +14,6 @@ using System.Xml;
 using DevExpress.Utils.About;
 using System.ServiceModel.Channels;
 using Rizonesoft.Office.Licensing;
-using Rizonesoft.Office.Forms;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -528,13 +527,25 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Settings
 
+        private static RegistrationForm registrationDlg = null;
+
         private void barRegisterItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
             try
             {
-                RegistrationForm registrationDlg = new();
-                registrationDlg.Show(this);
-                
+
+                if (RegistrationForm.CheckInstance == null)
+                {
+                    RegistrationForm.CreateInstance.ShowDialog(); 
+                }
+                else
+                {
+                    // These two lines make sure the state is normal (not min or max) and give it focus.
+                    RegistrationForm.CreateInstance.WindowState = FormWindowState.Normal;
+                    RegistrationForm.CreateInstance.Focus();
+                }
+
+
             }
             catch (Exception ex)
             {
@@ -542,5 +553,6 @@ namespace Rizonesoft.Office.Verbum
                    MessageBoxIcon.Error);
             }
         }
+
     }
 }

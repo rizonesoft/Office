@@ -33,7 +33,8 @@ namespace Rizonesoft.Office.Licensing
 
                 using (MD5 md5Hash = MD5.Create())
                 {
-                    if (licenseKeys.Contains(GetMd5Hash(md5Hash, key)))
+
+                    if (licenseKeys.Contains(GetMd5Hash(md5Hash, key).ToUpper()))
                     {
                         return true;
                     }
