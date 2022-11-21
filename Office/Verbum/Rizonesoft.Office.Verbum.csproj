@@ -54,10 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\Resources\Verbum\Verbum-128.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

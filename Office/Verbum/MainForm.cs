@@ -2,7 +2,6 @@
 using DevExpress.XtraEditors;
 using DevExpress.XtraSpellChecker;
 using DevExpress.XtraSplashScreen;
-using NLog;
 using Rizonesoft.Office.Verbum.Classes;
 using Rizonesoft.Office;
 using System;
@@ -14,17 +13,18 @@ using System.Xml;
 using DevExpress.Utils.About;
 using System.ServiceModel.Channels;
 using Rizonesoft.Office.Licensing;
+using NLog;
 
 namespace Rizonesoft.Office.Verbum
 {
     public partial class MainForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
-        private static string formHeading = "Rizonesoft Verbum";
+
         private static NLog.Logger nlogger = NLog.LogManager.GetCurrentClassLogger();
         private CopyData copyData = null;
 
         MruList mruList;
-        bool updatedZoom = false;
+        // bool updatedZoom = false;
 
         internal bool isLicensed = false;
         internal int documentIndex = 0;
@@ -508,7 +508,7 @@ namespace Rizonesoft.Office.Verbum
             sGeometry = Settings.GetSetting("Rizonesoft\\Verbum\\General", "Geometry", string.Empty);
 
             MainForm formIn = this;
-            Globals.GeometryFromString(sGeometry, formIn);
+            Utilities.GeometryFromString(sGeometry, formIn);
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
 
         }
@@ -518,7 +518,7 @@ namespace Rizonesoft.Office.Verbum
             Settings.SaveSetting("Rizonesoft\\Verbum\\Interface", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
             Settings.SaveSetting("Rizonesoft\\Verbum\\Interface", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
             MainForm mainForm = this;
-            Settings.SaveSetting("Rizonesoft\\Verbum\\General", "Geometry", Globals.GeometryToString(mainForm));
+            Settings.SaveSetting("Rizonesoft\\Verbum\\General", "Geometry", Utilities.GeometryToString(mainForm));
             Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "AutoSpellCheck", Utilities.BooleanToString(Globals.autoSpellCheck));
         }
 
@@ -527,7 +527,7 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Settings
 
-        private static RegistrationForm registrationDlg = null;
+        // private static RegistrationForm registrationDlg = null;
 
         private void barRegisterItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
@@ -554,5 +554,9 @@ namespace Rizonesoft.Office.Verbum
             }
         }
 
+        private void exceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            int result = 15 / int.Parse("0");
+        }
     }
 }

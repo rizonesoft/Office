@@ -7,11 +7,11 @@ namespace Rizonesoft.Office
 {
     public class Settings
     {
-        public static string GetSetting(string RegKey, string ValueName, string Default)
-        {
+        public static string? GetSetting(string RegKey, string ValueName, string Default)
+        { 
 
-            RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software");
-            RegistryKey subKey = baseKey.OpenSubKey(RegKey);
+            RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software")!;
+            RegistryKey subKey = baseKey.OpenSubKey(RegKey)!;
 
             if (subKey == null)
             {
@@ -21,7 +21,7 @@ namespace Rizonesoft.Office
             {
                 try
                 {
-                    return (string)subKey.GetValue(ValueName, Default);
+                    return (string?)subKey.GetValue(ValueName, Default);
                 }
                 catch (Exception ex)
                 {
@@ -35,8 +35,8 @@ namespace Rizonesoft.Office
         {
             try
             {
-                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey subKey = baseKey.CreateSubKey(RegKey);
+                RegistryKey? baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
+                RegistryKey? subKey = baseKey.CreateSubKey(RegKey)!;
                 subKey.SetValue(ValueName, Value);
 
                 return true;
@@ -54,8 +54,8 @@ namespace Rizonesoft.Office
         {
             try
             {
-                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software", true);
-                RegistryKey subKey = baseKey.CreateSubKey(RegKey);
+                RegistryKey? baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
+                RegistryKey? subKey = baseKey.CreateSubKey(RegKey)!;
 
                 if (subKey == null)
                 {

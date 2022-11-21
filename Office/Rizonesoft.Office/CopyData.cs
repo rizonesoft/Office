@@ -311,10 +311,14 @@ namespace Rizonesoft.Office
         /// <param name="key">The channelName</param>
         /// <param name="data">The CopyDataChannel object which has
         /// just been removed</param>
-        protected override void OnRemoveComplete(Object key, System.Object data)
+        protected override void OnRemoveComplete(Object? key, System.Object? data)
         {
-            ((CopyDataChannel)data).Dispose();
-            base.OnRemove(key, data);
+            if (key != null && data != null)
+            {
+                ((CopyDataChannel)data).Dispose();
+                base.OnRemove(key, data);
+            }
+
         }
 
         /// <summary>

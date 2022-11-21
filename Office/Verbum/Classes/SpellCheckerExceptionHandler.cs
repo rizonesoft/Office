@@ -1,4 +1,5 @@
 ﻿using DevExpress.XtraSpellChecker;
+using Rizonesoft.Office.ExceptionHandlers;
 using System;
 
 namespace Rizonesoft.Office.Verbum.Classes

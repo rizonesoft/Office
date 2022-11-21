@@ -7,11 +7,11 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Sheets
+namespace Rizonesoft.Office.Sheets
 {
-    public partial class mainForm : DevExpress.XtraBars.Ribbon.RibbonForm
+    public partial class MainForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
-        public mainForm()
+        public MainForm(string fileName)
         {
             InitializeComponent();
         }

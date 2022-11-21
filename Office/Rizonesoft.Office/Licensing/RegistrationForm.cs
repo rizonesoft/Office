@@ -22,7 +22,7 @@ namespace Rizonesoft.Office.Licensing
 
         private static RegistrationForm? formInstance;
 
-        public static RegistrationForm CheckInstance
+        public static RegistrationForm? CheckInstance
         {
             get
             {

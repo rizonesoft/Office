@@ -162,7 +162,7 @@
         private DevExpress.XtraEditors.LabelControl labelControl1;
         private DevExpress.XtraEditors.SimpleButton ButtonActivate;
         private DevExpress.XtraEditors.DXErrorProvider.DXErrorProvider regErrorProvider;
-        private DevExpress.XtraEditors.DirectXFormContainerControl directxFormContainerControl2;
+        // private DevExpress.XtraEditors.DirectXFormContainerControl directxFormContainerControl2;
         private DevExpress.XtraEditors.SvgImageBox svgImageBox1;
     }
 }

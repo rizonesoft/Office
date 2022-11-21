@@ -1,5 +1,7 @@
 ﻿using DevExpress.XtraRichEdit;
 using System.Runtime.InteropServices;
+using Rizonesoft.Office.ExceptionHandlers;
+
 
 
 namespace Rizonesoft.Office.Verbum.Classes

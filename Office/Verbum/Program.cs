@@ -1,5 +1,6 @@
 ﻿using DevExpress.XtraEditors;
 using NLog;
+using Rizonesoft.Office.ExceptionHandlers;
 using System;
 using System.Threading;
 using System.Windows.Forms;

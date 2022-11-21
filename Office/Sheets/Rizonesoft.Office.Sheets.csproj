@@ -7,10 +7,20 @@
     <RootNamespace>Rizonesoft.Office.Sheets</RootNamespace>
     <AssemblyName>Sheets</AssemblyName>
     <BaseOutputPath>..\Bin</BaseOutputPath>
+    <ApplicationIcon>Sheets.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Sheets.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.BonusSkins" Version="22.1.6" />
     <PackageReference Include="DevExpress.Win.Design" Version="22.1.*-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
   </ItemGroup>
 
 </Project>
