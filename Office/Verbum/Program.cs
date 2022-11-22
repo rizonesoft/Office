@@ -1,6 +1,7 @@
 ﻿using DevExpress.XtraEditors;
 using NLog;
 using Rizonesoft.Office.ExceptionHandlers;
+using Rizonesoft.Office.Interprocess;
 using System;
 using System.Threading;
 using System.Windows.Forms;
@@ -73,7 +74,6 @@ namespace Rizonesoft.Office.Verbum
                     {
                         WindowsFormsSettings.SetDPIAware();
                     }
-                        
 
                     DevExpress.Skins.SkinManager.EnableFormSkins();
                     DevExpress.UserSkins.BonusSkins.Register();

@@ -5,7 +5,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace Rizonesoft.Office
+namespace Rizonesoft.Office.Interprocess
 {
     public delegate void DataReceivedEventHandler(object sender, DataReceivedEventArgs e);
 
@@ -47,7 +47,7 @@ namespace Rizonesoft.Office
         /// messages sent by other instances of this class.
         /// </summary>
         /// <param name="m">The Windows Message information.</param>
-        protected override void WndProc(ref System.Windows.Forms.Message m)
+        protected override void WndProc(ref Message m)
         {
             if (m.Msg == WM_COPYDATA)
             {
@@ -110,7 +110,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.channels;
+                return channels;
             }
         }
 
@@ -165,17 +165,17 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.channelName;
+                return channelName;
             }
         }
         /// <summary>
         /// Gets the data object which was sent.
         /// </summary>
-        public Object Data
+        public object Data
         {
             get
             {
-                return this.data;
+                return data;
             }
         }
         /// <summary>
@@ -186,7 +186,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.sent;
+                return sent;
             }
         }
         /// <summary>
@@ -197,7 +197,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.received;
+                return received;
             }
         }
         /// <summary>
@@ -211,7 +211,7 @@ namespace Rizonesoft.Office
             this.channelName = channelName;
             this.data = data;
             this.sent = sent;
-            this.received = DateTime.Now;
+            received = DateTime.Now;
         }
     }
 
@@ -229,9 +229,9 @@ namespace Rizonesoft.Office
         /// </summary>
         /// <returns>An enumerator for each of the CopyDataChannel objects
         /// within this collection.</returns>
-        public new System.Collections.IEnumerator GetEnumerator()
+        public new IEnumerator GetEnumerator()
         {
-            return this.Dictionary.Values.GetEnumerator();
+            return Dictionary.Values.GetEnumerator();
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace Rizonesoft.Office
             {
                 CopyDataChannel ret = null;
                 int i = 0;
-                foreach (CopyDataChannel cdc in this.Dictionary.Values)
+                foreach (CopyDataChannel cdc in Dictionary.Values)
                 {
                     i++;
                     if (i == index)
@@ -262,7 +262,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return (CopyDataChannel)this.Dictionary[channelName];
+                return (CopyDataChannel)Dictionary[channelName];
             }
         }
         /// <summary>
@@ -272,7 +272,7 @@ namespace Rizonesoft.Office
         public void Add(string channelName)
         {
             CopyDataChannel cdc = new CopyDataChannel(owner, channelName);
-            this.Dictionary.Add(channelName, cdc);
+            Dictionary.Add(channelName, cdc);
         }
         /// <summary>
         /// Removes an existing channel.
@@ -280,7 +280,7 @@ namespace Rizonesoft.Office
         /// <param name="channelName">The channel to remove</param>
         public void Remove(string channelName)
         {
-            this.Dictionary.Remove(channelName);
+            Dictionary.Remove(channelName);
         }
         /// <summary>
         /// Gets/sets whether this channel contains a CopyDataChannel
@@ -288,7 +288,7 @@ namespace Rizonesoft.Office
         /// </summary>
         public bool Contains(string channelName)
         {
-            return this.Dictionary.Contains(channelName);
+            return Dictionary.Contains(channelName);
         }
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace Rizonesoft.Office
         /// </summary>
         protected override void OnClear()
         {
-            foreach (CopyDataChannel cdc in this.Dictionary.Values)
+            foreach (CopyDataChannel cdc in Dictionary.Values)
             {
                 cdc.Dispose();
             }
@@ -311,7 +311,7 @@ namespace Rizonesoft.Office
         /// <param name="key">The channelName</param>
         /// <param name="data">The CopyDataChannel object which has
         /// just been removed</param>
-        protected override void OnRemoveComplete(Object? key, System.Object? data)
+        protected override void OnRemoveComplete(object? key, object? data)
         {
             if (key != null && data != null)
             {
@@ -330,7 +330,7 @@ namespace Rizonesoft.Office
         /// </summary>
         public void OnHandleChange()
         {
-            foreach (CopyDataChannel cdc in this.Dictionary.Values)
+            foreach (CopyDataChannel cdc in Dictionary.Values)
             {
                 cdc.OnHandleChange();
             }
@@ -401,7 +401,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.channelName;
+                return channelName;
             }
         }
 
@@ -462,16 +462,16 @@ namespace Rizonesoft.Office
                 // the channel:
                 foreach (EnumWindowsItem window in ew.Items)
                 {
-                    if (!window.Handle.Equals(this.owner.Handle))
+                    if (!window.Handle.Equals(owner.Handle))
                     {
-                        if (GetProp(window.Handle, this.channelName) != 0)
+                        if (GetProp(window.Handle, channelName) != 0)
                         {
                             COPYDATASTRUCT cds = new COPYDATASTRUCT();
                             cds.cbData = dataSize;
                             cds.dwData = IntPtr.Zero;
                             cds.lpData = ptrData;
                             int res = SendMessage(window.Handle, WM_COPYDATA, (int)owner.Handle, ref cds);
-                            recipients += (Marshal.GetLastWin32Error() == 0 ? 1 : 0);
+                            recipients += Marshal.GetLastWin32Error() == 0 ? 1 : 0;
                         }
                     }
                 }
@@ -487,13 +487,13 @@ namespace Rizonesoft.Office
         private void addChannel()
         {
             // Tag this window with property "channelName"
-            SetProp(owner.Handle, this.channelName, (int)owner.Handle);
+            SetProp(owner.Handle, channelName, (int)owner.Handle);
 
         }
         private void removeChannel()
         {
             // Remove the "channelName" property from this window
-            RemoveProp(owner.Handle, this.channelName);
+            RemoveProp(owner.Handle, channelName);
         }
 
         /// <summary>

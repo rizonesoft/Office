@@ -2,6 +2,7 @@
 using DevExpress.UserSkins;
 using DevExpress.XtraEditors;
 using Rizonesoft.Office.ExceptionHandlers;
+using Rizonesoft.Office.Interprocess;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -4,7 +4,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 
 
-namespace Rizonesoft.Office
+namespace Rizonesoft.Office.Interprocess
 {
     /// <summary>
     /// Window Style Flags
@@ -102,7 +102,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.items;
+                return items;
             }
         }
 
@@ -111,9 +111,9 @@ namespace Rizonesoft.Office
         /// </summary>
         public void GetWindows()
         {
-            this.items = new EnumWindowsCollection();
+            items = new EnumWindowsCollection();
             UnManagedMethods.EnumWindows(
-                new EnumWindowsProc(this.WindowEnum),
+                new EnumWindowsProc(WindowEnum),
                 0);
         }
         /// <summary>
@@ -123,10 +123,10 @@ namespace Rizonesoft.Office
         public void GetWindows(
             IntPtr hWndParent)
         {
-            this.items = new EnumWindowsCollection();
+            items = new EnumWindowsCollection();
             UnManagedMethods.EnumChildWindows(
                 hWndParent,
-                new EnumWindowsProc(this.WindowEnum),
+                new EnumWindowsProc(WindowEnum),
                 0);
         }
 
@@ -140,7 +140,7 @@ namespace Rizonesoft.Office
             IntPtr hWnd,
             int lParam)
         {
-            if (this.OnWindowEnum(hWnd))
+            if (OnWindowEnum(hWnd))
             {
                 return 1;
             }
@@ -188,7 +188,7 @@ namespace Rizonesoft.Office
         public void Add(IntPtr hWnd)
         {
             EnumWindowsItem item = new EnumWindowsItem(hWnd);
-            this.InnerList.Add(item);
+            InnerList.Add(item);
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return (EnumWindowsItem)this.InnerList[index];
+                return (EnumWindowsItem)InnerList[index];
             }
         }
 
@@ -287,8 +287,8 @@ namespace Rizonesoft.Office
             public const int SC_MAXIMIZE = 0xF030;
             public const int SC_MINIMIZE = 0xF020;
 
-            public const int GWL_STYLE = (-16);
-            public const int GWL_EXSTYLE = (-20);
+            public const int GWL_STYLE = -16;
+            public const int GWL_EXSTYLE = -20;
 
             /// <summary>
             /// Stop flashing. The system restores the window to its original state.
@@ -305,7 +305,7 @@ namespace Rizonesoft.Office
             /// <summary>
             /// Flash both the window caption and taskbar button.
             /// </summary>
-            public const int FLASHW_ALL = (FLASHW_CAPTION | FLASHW_TRAY);
+            public const int FLASHW_ALL = FLASHW_CAPTION | FLASHW_TRAY;
             /// <summary>
             /// Flash continuously, until the FLASHW_STOP flag is set.
             /// </summary>
@@ -327,9 +327,9 @@ namespace Rizonesoft.Office
         /// objects for the same Window will be equal.
         /// </summary>
         /// <returns>The Window Handle for this window</returns>
-        public override System.Int32 GetHashCode()
+        public override int GetHashCode()
         {
-            return (System.Int32)this.hWnd;
+            return (int)hWnd;
         }
 
         /// <summary>
@@ -339,7 +339,7 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return this.hWnd;
+                return hWnd;
             }
         }
 
@@ -351,7 +351,7 @@ namespace Rizonesoft.Office
             get
             {
                 StringBuilder title = new StringBuilder(260, 260);
-                UnManagedMethods.GetWindowText(this.hWnd, title, title.Capacity);
+                UnManagedMethods.GetWindowText(hWnd, title, title.Capacity);
                 return title.ToString();
             }
         }
@@ -364,7 +364,7 @@ namespace Rizonesoft.Office
             get
             {
                 StringBuilder className = new StringBuilder(260, 260);
-                UnManagedMethods.GetClassName(this.hWnd, className, className.Capacity);
+                UnManagedMethods.GetClassName(hWnd, className, className.Capacity);
                 return className.ToString();
             }
         }
@@ -376,12 +376,12 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return ((UnManagedMethods.IsIconic(this.hWnd) == 0) ? false : true);
+                return UnManagedMethods.IsIconic(hWnd) == 0 ? false : true;
             }
             set
             {
                 UnManagedMethods.SendMessage(
-                    this.hWnd,
+                    hWnd,
                     UnManagedMethods.WM_SYSCOMMAND,
                     (IntPtr)UnManagedMethods.SC_MINIMIZE,
                     IntPtr.Zero);
@@ -395,12 +395,12 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return ((UnManagedMethods.IsZoomed(this.hWnd) == 0) ? false : true);
+                return UnManagedMethods.IsZoomed(hWnd) == 0 ? false : true;
             }
             set
             {
                 UnManagedMethods.SendMessage(
-                    this.hWnd,
+                    hWnd,
                     UnManagedMethods.WM_SYSCOMMAND,
                     (IntPtr)UnManagedMethods.SC_MAXIMIZE,
                     IntPtr.Zero);
@@ -414,22 +414,22 @@ namespace Rizonesoft.Office
         {
             get
             {
-                return ((UnManagedMethods.IsWindowVisible(this.hWnd) == 0) ? false : true);
+                return UnManagedMethods.IsWindowVisible(hWnd) == 0 ? false : true;
             }
         }
 
         /// <summary>
         /// Gets the bounding rectangle of the window
         /// </summary>
-        public System.Drawing.Rectangle Rect
+        public Rectangle Rect
         {
             get
             {
                 RECT rc = new RECT();
                 UnManagedMethods.GetWindowRect(
-                    this.hWnd,
+                    hWnd,
                     ref rc);
-                System.Drawing.Rectangle rcRet = new System.Drawing.Rectangle(
+                Rectangle rcRet = new Rectangle(
                     rc.Left, rc.Top,
                     rc.Right - rc.Left, rc.Bottom - rc.Top);
                 return rcRet;
@@ -439,12 +439,12 @@ namespace Rizonesoft.Office
         /// <summary>
         /// Gets the location of the window relative to the screen.
         /// </summary>
-        public System.Drawing.Point Location
+        public Point Location
         {
             get
             {
-                System.Drawing.Rectangle rc = Rect;
-                System.Drawing.Point pt = new System.Drawing.Point(
+                Rectangle rc = Rect;
+                Point pt = new Point(
                     rc.Left,
                     rc.Top);
                 return pt;
@@ -454,12 +454,12 @@ namespace Rizonesoft.Office
         /// <summary>
         /// Gets the size of the window.
         /// </summary>
-        public System.Drawing.Size Size
+        public Size Size
         {
             get
             {
-                System.Drawing.Rectangle rc = Rect;
-                System.Drawing.Size sz = new System.Drawing.Size(
+                Rectangle rc = Rect;
+                Size sz = new Size(
                     rc.Right - rc.Left,
                     rc.Bottom - rc.Top);
                 return sz;
@@ -475,13 +475,13 @@ namespace Rizonesoft.Office
             if (Iconic)
             {
                 UnManagedMethods.SendMessage(
-                    this.hWnd,
+                    hWnd,
                     UnManagedMethods.WM_SYSCOMMAND,
                     (IntPtr)UnManagedMethods.SC_RESTORE,
                     IntPtr.Zero);
             }
-            UnManagedMethods.BringWindowToTop(this.hWnd);
-            UnManagedMethods.SetForegroundWindow(this.hWnd);
+            UnManagedMethods.BringWindowToTop(hWnd);
+            UnManagedMethods.SetForegroundWindow(hWnd);
         }
 
         public WindowStyleFlags WindowStyle
@@ -489,7 +489,7 @@ namespace Rizonesoft.Office
             get
             {
                 return (WindowStyleFlags)UnManagedMethods.GetWindowLong(
-                    this.hWnd, UnManagedMethods.GWL_STYLE);
+                    hWnd, UnManagedMethods.GWL_STYLE);
             }
         }
 
@@ -498,7 +498,7 @@ namespace Rizonesoft.Office
             get
             {
                 return (ExtendedWindowStyleFlags)UnManagedMethods.GetWindowLong(
-                    this.hWnd, UnManagedMethods.GWL_EXSTYLE);
+                    hWnd, UnManagedMethods.GWL_EXSTYLE);
             }
         }
 

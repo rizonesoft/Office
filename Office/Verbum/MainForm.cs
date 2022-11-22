@@ -3,7 +3,6 @@ using DevExpress.XtraEditors;
 using DevExpress.XtraSpellChecker;
 using DevExpress.XtraSplashScreen;
 using Rizonesoft.Office.Verbum.Classes;
-using Rizonesoft.Office;
 using System;
 using System.ComponentModel;
 using System.Globalization;
@@ -14,6 +13,7 @@ using DevExpress.Utils.About;
 using System.ServiceModel.Channels;
 using Rizonesoft.Office.Licensing;
 using NLog;
+using Rizonesoft.Office.Interprocess;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -34,7 +34,7 @@ namespace Rizonesoft.Office.Verbum
         public MainForm(string fileName)
         {
 
-            isLicensed = LicenseCheck.IsLicensed();
+            isLicensed = LicenseCheck.IsLicensed();     
 
             // LoadSettings();
             CreateVerbumDirectories();
