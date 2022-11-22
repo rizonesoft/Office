@@ -55,8 +55,8 @@ namespace Rizonesoft.Office.Sheets
                     // Create a new instance of the class:
                     CopyData copyData = new CopyData();
                     // Create the named channels to send and receive on.
-                    copyData.Channels.Add("DocChannel");
-                    copyData.Channels["DocChannel"].Send(fileName);
+                    copyData.Channels.Add("WorkbookChannel");
+                    copyData.Channels["WorkbookChannel"].Send(fileName);
                     // return;
                 }
                 else

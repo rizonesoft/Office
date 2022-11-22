@@ -23,4 +23,8 @@
     <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Classes\" />
+  </ItemGroup>
+
 </Project>

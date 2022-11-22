@@ -50,7 +50,7 @@ namespace Rizonesoft.Office.Verbum
             updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
             updateWorker.RunWorkerAsync();
 
-            mainRibbonControl.SelectedPage = homeRibbonPage;
+            MainRibbonControl.SelectedPage = homeRibbonPage;
 
             Initialize();
 
@@ -201,7 +201,7 @@ namespace Rizonesoft.Office.Verbum
         {
             LoadSettings();
 
-            this.mainRibbonControl.ForceInitialize();
+            this.MainRibbonControl.ForceInitialize();
             mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\Verbum\\MRU");
             mruList.FileSelected += mruList_FileSelected;
             LoadDictionaries();

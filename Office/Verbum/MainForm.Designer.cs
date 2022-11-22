@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             DevExpress.XtraSplashScreen.SplashScreenManager mainSplashScreenManager = new DevExpress.XtraSplashScreen.SplashScreenManager(this, typeof(global::Rizonesoft.Office.Verbum.SplashScreenForm), true, true);
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.mainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            this.MainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
             this.mainBarMdiChildrenListItem = new DevExpress.XtraBars.BarMdiChildrenListItem();
             this.barNewItem = new DevExpress.XtraBars.BarButtonItem();
             this.barOpenItem = new DevExpress.XtraBars.BarButtonItem();
@@ -49,10 +49,10 @@
             this.licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.debugRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
+            this.MainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
             this.mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(this.components);
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MainRibbonControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).BeginInit();
             this.SuspendLayout();
@@ -61,12 +61,12 @@
             // 
             mainSplashScreenManager.ClosingDelay = 300;
             // 
-            // mainRibbonControl
+            // MainRibbonControl
             // 
-            this.mainRibbonControl.ExpandCollapseItem.Id = 0;
-            this.mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
-            this.mainRibbonControl.ExpandCollapseItem,
-            this.mainRibbonControl.SearchEditItem,
+            this.MainRibbonControl.ExpandCollapseItem.Id = 0;
+            this.MainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
+            this.MainRibbonControl.ExpandCollapseItem,
+            this.MainRibbonControl.SearchEditItem,
             this.mainBarMdiChildrenListItem,
             this.barNewItem,
             this.barOpenItem,
@@ -77,21 +77,21 @@
             this.barRegisterItem,
             this.barBuyNowItem,
             this.exceptionButtonItem});
-            this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
-            this.mainRibbonControl.MaxItemId = 12;
-            this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
-            this.mainRibbonControl.Name = "mainRibbonControl";
-            this.mainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
-            this.mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.MainRibbonControl.Location = new System.Drawing.Point(0, 0);
+            this.MainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
+            this.MainRibbonControl.MaxItemId = 12;
+            this.MainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
+            this.MainRibbonControl.Name = "MainRibbonControl";
+            this.MainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
+            this.MainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.fileRibbonPage,
             this.homeRibbonPage});
-            this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(898, 158);
-            this.mainRibbonControl.StatusBar = this.ribbonStatusBar;
-            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.mainRibbonControl_Merge);
+            this.MainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
+            this.MainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
+            this.MainRibbonControl.ShowSearchItem = true;
+            this.MainRibbonControl.Size = new System.Drawing.Size(898, 158);
+            this.MainRibbonControl.StatusBar = this.MainRibbonStatusBar;
+            this.MainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.mainRibbonControl_Merge);
             // 
             // mainBarMdiChildrenListItem
             // 
@@ -123,7 +123,7 @@
             // mruPopupMenu
             // 
             this.mruPopupMenu.Name = "mruPopupMenu";
-            this.mruPopupMenu.Ribbon = this.mainRibbonControl;
+            this.mruPopupMenu.Ribbon = this.MainRibbonControl;
             // 
             // barCloseItem
             // 
@@ -226,13 +226,13 @@
             this.homeRibbonPage.Name = "homeRibbonPage";
             this.homeRibbonPage.Text = "Home";
             // 
-            // ribbonStatusBar
+            // MainRibbonStatusBar
             // 
-            this.ribbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
-            this.ribbonStatusBar.Location = new System.Drawing.Point(0, 625);
-            this.ribbonStatusBar.Name = "ribbonStatusBar";
-            this.ribbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.ribbonStatusBar.Size = new System.Drawing.Size(898, 24);
+            this.MainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
+            this.MainRibbonStatusBar.Location = new System.Drawing.Point(0, 625);
+            this.MainRibbonStatusBar.Name = "MainRibbonStatusBar";
+            this.MainRibbonStatusBar.Ribbon = this.MainRibbonControl;
+            this.MainRibbonStatusBar.Size = new System.Drawing.Size(898, 24);
             // 
             // mainTabbedMdiManager
             // 
@@ -260,16 +260,16 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(898, 649);
-            this.Controls.Add(this.ribbonStatusBar);
-            this.Controls.Add(this.mainRibbonControl);
+            this.Controls.Add(this.MainRibbonStatusBar);
+            this.Controls.Add(this.MainRibbonControl);
             this.IconOptions.ShowIcon = false;
             this.IsMdiContainer = true;
             this.Name = "MainForm";
-            this.Ribbon = this.mainRibbonControl;
-            this.StatusBar = this.ribbonStatusBar;
+            this.Ribbon = this.MainRibbonControl;
+            this.StatusBar = this.MainRibbonStatusBar;
             this.Text = "Rizonesoft Verbum";
             this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MainRibbonControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).EndInit();
             this.ResumeLayout(false);
@@ -279,7 +279,7 @@
 
         #endregion
 
-        private DevExpress.XtraBars.Ribbon.RibbonControl mainRibbonControl;
+        private DevExpress.XtraBars.Ribbon.RibbonControl MainRibbonControl;
         private DevExpress.XtraBars.Ribbon.RibbonPage fileRibbonPage;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup commonRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPage homeRibbonPage;
@@ -294,7 +294,7 @@
         private DevExpress.XtraBars.BarButtonItem barOptionsItem;
         private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
         private DevExpress.XtraSpellChecker.SharedDictionaryStorage mainSharedDictionaryStorage;
-        private DevExpress.XtraBars.Ribbon.RibbonStatusBar ribbonStatusBar;
+        private DevExpress.XtraBars.Ribbon.RibbonStatusBar MainRibbonStatusBar;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
         private DevExpress.XtraBars.BarButtonItem barRegisterItem;
         private DevExpress.XtraBars.BarButtonItem barBuyNowItem;

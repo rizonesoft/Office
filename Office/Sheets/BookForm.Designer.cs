@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Sheets
 {
-    partial class WorkbookForm
+    partial class BookForm
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
             DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup1 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
@@ -270,7 +269,6 @@
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem191 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem192 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem193 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
-            DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
             DevExpress.Utils.SuperToolTip superToolTip1 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipItem toolTipItem1 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip2 = new DevExpress.Utils.SuperToolTip();
@@ -287,16 +285,12 @@
             DevExpress.Utils.ToolTipItem toolTipItem7 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip8 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipItem toolTipItem8 = new DevExpress.Utils.ToolTipItem();
-            this.ribbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
-            this.ribbonPage1 = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.ribbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            this.spreadsheetControl1 = new DevExpress.XtraSpreadsheet.SpreadsheetControl();
-            this.spreadsheetBarController1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetBarController(this.components);
-            this.commonRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CommonRibbonPageGroup();
-            this.fileRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.FileRibbonPage();
-            this.spreadsheetCommandBarButtonItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarButtonItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BookForm));
+            this.repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
+            this.BookRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            this.NewBarButtonItem = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.OpenBarButtonItem = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem3 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem4 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem5 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -304,24 +298,27 @@
             this.spreadsheetCommandBarButtonItem7 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem8 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem9 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.infoRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.InfoRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem10 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem11 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.clipboardRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ClipboardRibbonPageGroup();
-            this.homeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.HomeRibbonPage();
             this.spreadsheetCommandBarButtonItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem14 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem15 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.fontRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FontRibbonPageGroup();
+            this.barButtonGroup1 = new DevExpress.XtraBars.BarButtonGroup();
             this.changeFontNameItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeFontNameItem();
+            this.repositoryItemFontEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemFontEdit();
             this.changeFontSizeItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeFontSizeItem();
+            this.repositoryItemSpreadsheetFontSizeEdit1 = new DevExpress.XtraSpreadsheet.Design.RepositoryItemSpreadsheetFontSizeEdit();
+            this.spreadsheetControl1 = new DevExpress.XtraSpreadsheet.SpreadsheetControl();
             this.spreadsheetCommandBarButtonItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.barButtonGroup2 = new DevExpress.XtraBars.BarButtonGroup();
             this.spreadsheetCommandBarCheckItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem3 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem4 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
+            this.barButtonGroup3 = new DevExpress.XtraBars.BarButtonGroup();
+            this.spreadsheetCommandBarSubItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem18 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem19 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem20 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -338,51 +335,44 @@
             this.changeBorderLineColorItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeBorderLineColorItem();
             this.changeBorderLineStyleItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeBorderLineStyleItem();
             this.commandBarGalleryDropDown1 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.spreadsheetCommandBarSubItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.barButtonGroup4 = new DevExpress.XtraBars.BarButtonGroup();
             this.changeCellFillColorItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeCellFillColorItem();
             this.changeFontColorItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeFontColorItem();
-            this.barButtonGroup1 = new DevExpress.XtraBars.BarButtonGroup();
-            this.repositoryItemFontEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemFontEdit();
-            this.repositoryItemSpreadsheetFontSizeEdit1 = new DevExpress.XtraSpreadsheet.Design.RepositoryItemSpreadsheetFontSizeEdit();
-            this.barButtonGroup2 = new DevExpress.XtraBars.BarButtonGroup();
-            this.barButtonGroup3 = new DevExpress.XtraBars.BarButtonGroup();
-            this.barButtonGroup4 = new DevExpress.XtraBars.BarButtonGroup();
-            this.alignmentRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.AlignmentRibbonPageGroup();
+            this.barButtonGroup5 = new DevExpress.XtraBars.BarButtonGroup();
             this.spreadsheetCommandBarCheckItem5 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem6 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem7 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
+            this.barButtonGroup6 = new DevExpress.XtraBars.BarButtonGroup();
             this.spreadsheetCommandBarCheckItem8 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem9 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem10 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
+            this.barButtonGroup7 = new DevExpress.XtraBars.BarButtonGroup();
             this.spreadsheetCommandBarButtonItem31 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem32 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarCheckItem11 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
+            this.spreadsheetCommandBarSubItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarCheckItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarButtonItem33 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem34 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem35 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.barButtonGroup5 = new DevExpress.XtraBars.BarButtonGroup();
-            this.barButtonGroup6 = new DevExpress.XtraBars.BarButtonGroup();
-            this.barButtonGroup7 = new DevExpress.XtraBars.BarButtonGroup();
-            this.numberRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.NumberRibbonPageGroup();
+            this.barButtonGroup8 = new DevExpress.XtraBars.BarButtonGroup();
             this.changeNumberFormatItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeNumberFormatItem();
+            this.repositoryItemPopupGalleryEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemPopupGalleryEdit();
+            this.barButtonGroup9 = new DevExpress.XtraBars.BarButtonGroup();
+            this.spreadsheetCommandBarSubItem3 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem36 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem37 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem38 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem39 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem40 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem41 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem3 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem42 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem43 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.barButtonGroup10 = new DevExpress.XtraBars.BarButtonGroup();
             this.spreadsheetCommandBarButtonItem44 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem45 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.barButtonGroup8 = new DevExpress.XtraBars.BarButtonGroup();
-            this.repositoryItemPopupGalleryEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemPopupGalleryEdit();
-            this.barButtonGroup9 = new DevExpress.XtraBars.BarButtonGroup();
-            this.barButtonGroup10 = new DevExpress.XtraBars.BarButtonGroup();
-            this.stylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.StylesRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem7 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem4 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem46 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem47 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem48 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -390,14 +380,13 @@
             this.spreadsheetCommandBarButtonItem50 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem51 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem52 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem4 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem5 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem53 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem54 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem55 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem56 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem57 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem58 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem5 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonGalleryDropDownItem1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown2 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem2 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
@@ -405,15 +394,14 @@
             this.spreadsheetCommandBarButtonGalleryDropDownItem3 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown4 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonItem59 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.spreadsheetCommandBarSubItem6 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem60 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem61 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem6 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem62 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem7 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.galleryFormatAsTableItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryFormatAsTableItem();
             this.commandBarGalleryDropDown5 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.galleryChangeStyleItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryChangeStyleItem();
-            this.cellsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CellsRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem8 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem63 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem64 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem65 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -422,58 +410,57 @@
             this.spreadsheetCommandBarButtonItem68 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem69 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem70 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem8 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem9 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem71 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem72 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem73 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem74 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem75 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem76 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem9 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem11 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem77 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem78 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem79 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem80 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem81 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.spreadsheetCommandBarSubItem10 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem82 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem83 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem84 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem85 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem86 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem87 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem10 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem88 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem89 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.changeSheetTabColorItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeSheetTabColorItem();
             this.spreadsheetCommandBarButtonItem90 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarCheckItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarButtonItem91 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem11 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.editingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.EditingRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem92 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem93 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem94 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem95 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem96 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem97 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem98 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem99 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem100 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem14 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem101 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem102 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem103 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem104 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem105 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem106 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem14 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem15 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem107 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem108 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarCheckItem14 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarButtonItem109 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem110 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem15 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem111 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem112 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem113 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -481,14 +468,9 @@
             this.spreadsheetCommandBarButtonItem115 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem116 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem117 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.tablesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TablesRibbonPageGroup();
-            this.insertRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.InsertRibbonPage();
             this.spreadsheetCommandBarButtonItem118 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem119 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.illustrationsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.IllustrationsRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem120 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.chartsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsRibbonPageGroup();
             this.spreadsheetCommandBarButtonGalleryDropDownItem4 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown6 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem5 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
@@ -507,41 +489,32 @@
             this.commandBarGalleryDropDown13 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown14 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.linksRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.LinksRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem121 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.symbolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.SymbolsRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem122 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pageSetupRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupRibbonPageGroup();
-            this.pageLayoutRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PageLayoutRibbonPage();
+            this.spreadsheetCommandBarSubItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarCheckItem15 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarButtonItem123 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem18 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarCheckItem18 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem19 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.spreadsheetCommandBarSubItem18 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.pageSetupPaperKindItem1 = new DevExpress.XtraSpreadsheet.UI.PageSetupPaperKindItem();
+            this.spreadsheetCommandBarSubItem19 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem124 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem125 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem126 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem19 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem127 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pageSetupShowRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupShowRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem20 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem21 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.pageSetupPrintRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupPrintRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem22 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem23 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.arrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ArrangeRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem20 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem128 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem129 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem20 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem21 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem130 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem131 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem21 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.functionLibraryRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FunctionLibraryRibbonPageGroup();
-            this.formulasRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.FormulasRibbonPage();
             this.spreadsheetCommandBarSubItem22 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.functionsFinancialItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsFinancialItem();
             this.functionsLogicalItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsLogicalItem();
@@ -549,218 +522,163 @@
             this.functionsDateAndTimeItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsDateAndTimeItem();
             this.functionsLookupAndReferenceItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsLookupAndReferenceItem();
             this.functionsMathAndTrigonometryItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsMathAndTrigonometryItem();
+            this.spreadsheetCommandBarSubItem23 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.functionsStatisticalItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsStatisticalItem();
             this.functionsEngineeringItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsEngineeringItem();
             this.functionsInformationItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsInformationItem();
             this.functionsCompatibilityItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsCompatibilityItem();
             this.functionsWebItem1 = new DevExpress.XtraSpreadsheet.UI.FunctionsWebItem();
-            this.spreadsheetCommandBarSubItem23 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.formulaDefinedNamesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaDefinedNamesRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem132 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem133 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.definedNameListItem1 = new DevExpress.XtraSpreadsheet.UI.DefinedNameListItem();
             this.spreadsheetCommandBarButtonItem134 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.formulaAuditingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaAuditingRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem24 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.formulaCalculationRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaCalculationRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem24 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarCheckItem25 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem26 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.spreadsheetCommandBarSubItem24 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem135 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem136 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.sortAndFilterRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.SortAndFilterRibbonPageGroup();
-            this.dataRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.DataRibbonPage();
-            this.dataToolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.DataToolsRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem25 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem137 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem138 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem139 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem25 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.outlineRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.OutlineRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem26 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem140 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem141 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem26 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem27 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem142 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem143 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem27 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem144 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem145 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem146 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.commentsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CommentsRibbonPageGroup();
-            this.reviewRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ReviewRibbonPage();
             this.spreadsheetCommandBarButtonItem147 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem148 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem149 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem150 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.changesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChangesRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem151 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem152 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem153 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem154 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.chartsDesignTypeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignTypeRibbonPageGroup();
-            this.chartsDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignRibbonPage();
-            this.chartToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.ChartToolsRibbonPageCategory();
             this.spreadsheetCommandBarButtonItem155 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.chartsDesignDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignDataRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem156 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem157 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.chartsDesignLayoutsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignLayoutsRibbonPageGroup();
             this.galleryChartLayoutItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryChartLayoutItem();
-            this.chartsDesignStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignStylesRibbonPageGroup();
             this.galleryChartStyleItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryChartStyleItem();
-            this.chartsDesignLocationRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignLocationRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem158 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.chartsLayoutAxesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutAxesRibbonPageGroup();
-            this.chartsLayoutRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutRibbonPage();
+            this.spreadsheetCommandBarSubItem28 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonGalleryDropDownItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown15 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem14 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown16 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.spreadsheetCommandBarSubItem28 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem29 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonGalleryDropDownItem15 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown17 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown18 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.spreadsheetCommandBarSubItem29 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.chartsLayoutLabelsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutLabelsRibbonPageGroup();
             this.spreadsheetCommandBarButtonGalleryDropDownItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown19 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
+            this.spreadsheetCommandBarSubItem30 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonGalleryDropDownItem18 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown20 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem19 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown21 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.spreadsheetCommandBarSubItem30 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonGalleryDropDownItem20 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown22 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem21 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown23 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.chartsLayoutAnalysisRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutAnalysisRibbonPageGroup();
             this.spreadsheetCommandBarButtonGalleryDropDownItem22 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown24 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem23 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown25 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
             this.spreadsheetCommandBarButtonGalleryDropDownItem24 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonGalleryDropDownItem();
             this.commandBarGalleryDropDown26 = new DevExpress.XtraBars.Commands.CommandBarGalleryDropDown(this.components);
-            this.chartsFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsFormatArrangeRibbonPageGroup();
-            this.chartsFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsFormatRibbonPage();
-            this.tablePropertiesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TablePropertiesRibbonPageGroup();
-            this.tableToolsDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.TableToolsDesignRibbonPage();
-            this.tableToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.TableToolsRibbonPageCategory();
             this.renameTableItemCaption1 = new DevExpress.XtraSpreadsheet.UI.RenameTableItemCaption();
             this.renameTableItem1 = new DevExpress.XtraSpreadsheet.UI.RenameTableItem();
             this.repositoryItemTextEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemTextEdit();
-            this.tableToolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableToolsRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem27 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.tableStyleOptionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableStyleOptionsRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem28 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem29 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem30 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem31 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem32 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem33 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.tableStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableStylesRibbonPageGroup();
             this.galleryTableStylesItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryTableStylesItem();
-            this.pictureFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PictureFormatArrangeRibbonPageGroup();
-            this.pictureFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PictureFormatRibbonPage();
-            this.pictureToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.PictureToolsRibbonPageCategory();
-            this.drawingFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.DrawingFormatArrangeRibbonPageGroup();
-            this.drawingFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.DrawingFormatRibbonPage();
-            this.drawingToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.DrawingToolsRibbonPageCategory();
-            this.pivotTableAnalyzePivotTableRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzePivotTableRibbonPageGroup();
-            this.pivotTableAnalyzeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeRibbonPage();
-            this.pivotTableToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.PivotTableToolsRibbonPageCategory();
             this.spreadsheetCommandBarButtonItem159 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeActiveFieldRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem160 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem161 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem162 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pivotTableAnalyzeGroupRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeGroupRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem163 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem164 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem165 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pivotTableAnalyzeDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeDataRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem31 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem166 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem167 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem31 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem168 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pivotTableAnalyzeActionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeActionsRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem32 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem169 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem170 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem32 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem33 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem171 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem172 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem173 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem33 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem174 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.pivotTableAnalyzeCalculationsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeCalculationsRibbonPageGroup();
+            this.spreadsheetCommandBarSubItem34 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem175 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem176 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem177 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem178 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem34 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.pivotTableAnalyzeShowRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeShowRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem34 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem35 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem36 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.pivotTableDesignLayoutRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignLayoutRibbonPageGroup();
-            this.pivotTableDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignRibbonPage();
+            this.spreadsheetCommandBarSubItem35 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem179 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem180 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem181 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem35 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem36 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem182 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem183 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem184 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem185 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem36 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem37 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem186 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem187 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem188 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem189 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem190 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem37 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem38 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem191 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem192 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem38 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignPivotTableStyleOptionsRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem37 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem38 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem39 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem40 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.pivotTableDesignPivotTableStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignPivotTableStylesRibbonPageGroup();
             this.galleryPivotStylesItem1 = new DevExpress.XtraSpreadsheet.UI.GalleryPivotStylesItem();
-            this.mailMergeDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeDataRibbonPageGroup();
-            this.mailMergeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.MailMergeRibbonPage();
             this.spreadsheetCommandBarButtonItem193 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.spreadsheetCommandBarSubItem39 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem194 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem195 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem39 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
+            this.spreadsheetCommandBarSubItem40 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem196 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem197 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem198 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem40 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.mailMergeModeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeModeRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem41 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem42 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem43 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
+            this.spreadsheetCommandBarSubItem41 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarCheckItem44 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarCheckItem45 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
-            this.spreadsheetCommandBarSubItem41 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
-            this.mailMergeExtendedRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeExtendedRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem199 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem200 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem201 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
+            this.spreadsheetCommandBarSubItem42 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem202 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem203 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.spreadsheetCommandBarSubItem42 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarSubItem();
             this.spreadsheetCommandBarButtonItem204 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.mailMergeGroupingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeGroupingRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem205 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem206 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem207 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.mailMergeFilteringRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeFilteringRibbonPageGroup();
             this.spreadsheetCommandBarButtonItem208 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.spreadsheetCommandBarButtonItem209 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
-            this.mailMergeBindingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeBindingRibbonPageGroup();
             this.spreadsheetCommandBarCheckItem46 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarCheckItem();
             this.spreadsheetCommandBarButtonItem210 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             this.progressBarItem1 = new DevExpress.XtraSpreadsheet.UI.ProgressBarItem();
@@ -772,15 +690,98 @@
             this.maxInfoStaticItem1 = new DevExpress.XtraSpreadsheet.UI.MaxInfoStaticItem();
             this.sumInfoStaticItem1 = new DevExpress.XtraSpreadsheet.UI.SumInfoStaticItem();
             this.zoomEditItem1 = new DevExpress.XtraSpreadsheet.UI.ZoomEditItem();
-            this.showZoomButtonItem1 = new DevExpress.XtraSpreadsheet.UI.ShowZoomButtonItem();
             this.repositoryItemZoomTrackBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar();
+            this.showZoomButtonItem1 = new DevExpress.XtraSpreadsheet.UI.ShowZoomButtonItem();
+            this.chartToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.ChartToolsRibbonPageCategory();
+            this.chartsDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignRibbonPage();
+            this.chartsDesignTypeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignTypeRibbonPageGroup();
+            this.chartsDesignDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignDataRibbonPageGroup();
+            this.chartsDesignLayoutsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignLayoutsRibbonPageGroup();
+            this.chartsDesignStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignStylesRibbonPageGroup();
+            this.chartsDesignLocationRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignLocationRibbonPageGroup();
+            this.chartsLayoutRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutRibbonPage();
+            this.chartsLayoutAxesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutAxesRibbonPageGroup();
+            this.chartsLayoutLabelsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutLabelsRibbonPageGroup();
+            this.chartsLayoutAnalysisRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsLayoutAnalysisRibbonPageGroup();
+            this.chartsFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsFormatRibbonPage();
+            this.chartsFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsFormatArrangeRibbonPageGroup();
+            this.tableToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.TableToolsRibbonPageCategory();
+            this.tableToolsDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.TableToolsDesignRibbonPage();
+            this.tablePropertiesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TablePropertiesRibbonPageGroup();
+            this.tableToolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableToolsRibbonPageGroup();
+            this.tableStyleOptionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableStyleOptionsRibbonPageGroup();
+            this.tableStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TableStylesRibbonPageGroup();
+            this.pictureToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.PictureToolsRibbonPageCategory();
+            this.pictureFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PictureFormatRibbonPage();
+            this.pictureFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PictureFormatArrangeRibbonPageGroup();
+            this.drawingToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.DrawingToolsRibbonPageCategory();
+            this.drawingFormatRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.DrawingFormatRibbonPage();
+            this.drawingFormatArrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.DrawingFormatArrangeRibbonPageGroup();
+            this.pivotTableToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.PivotTableToolsRibbonPageCategory();
+            this.pivotTableAnalyzeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeRibbonPage();
+            this.pivotTableAnalyzePivotTableRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzePivotTableRibbonPageGroup();
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeActiveFieldRibbonPageGroup();
+            this.pivotTableAnalyzeGroupRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeGroupRibbonPageGroup();
+            this.pivotTableAnalyzeDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeDataRibbonPageGroup();
+            this.pivotTableAnalyzeActionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeActionsRibbonPageGroup();
+            this.pivotTableAnalyzeCalculationsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeCalculationsRibbonPageGroup();
+            this.pivotTableAnalyzeShowRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableAnalyzeShowRibbonPageGroup();
+            this.pivotTableDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignRibbonPage();
+            this.pivotTableDesignLayoutRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignLayoutRibbonPageGroup();
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignPivotTableStyleOptionsRibbonPageGroup();
+            this.pivotTableDesignPivotTableStylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PivotTableDesignPivotTableStylesRibbonPageGroup();
+            this.fileRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.FileRibbonPage();
+            this.commonRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CommonRibbonPageGroup();
+            this.infoRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.InfoRibbonPageGroup();
+            this.OptionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.LicenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.homeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.HomeRibbonPage();
+            this.clipboardRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ClipboardRibbonPageGroup();
+            this.fontRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FontRibbonPageGroup();
+            this.alignmentRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.AlignmentRibbonPageGroup();
+            this.numberRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.NumberRibbonPageGroup();
+            this.stylesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.StylesRibbonPageGroup();
+            this.cellsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CellsRibbonPageGroup();
+            this.editingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.EditingRibbonPageGroup();
+            this.insertRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.InsertRibbonPage();
+            this.tablesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.TablesRibbonPageGroup();
+            this.illustrationsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.IllustrationsRibbonPageGroup();
+            this.chartsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsRibbonPageGroup();
+            this.linksRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.LinksRibbonPageGroup();
+            this.symbolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.SymbolsRibbonPageGroup();
+            this.pageLayoutRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.PageLayoutRibbonPage();
+            this.pageSetupRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupRibbonPageGroup();
+            this.pageSetupShowRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupShowRibbonPageGroup();
+            this.pageSetupPrintRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.PageSetupPrintRibbonPageGroup();
+            this.arrangeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ArrangeRibbonPageGroup();
+            this.formulasRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.FormulasRibbonPage();
+            this.functionLibraryRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FunctionLibraryRibbonPageGroup();
+            this.formulaDefinedNamesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaDefinedNamesRibbonPageGroup();
+            this.formulaAuditingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaAuditingRibbonPageGroup();
+            this.formulaCalculationRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FormulaCalculationRibbonPageGroup();
+            this.dataRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.DataRibbonPage();
+            this.sortAndFilterRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.SortAndFilterRibbonPageGroup();
+            this.dataToolsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.DataToolsRibbonPageGroup();
+            this.outlineRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.OutlineRibbonPageGroup();
+            this.reviewRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ReviewRibbonPage();
+            this.commentsRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CommentsRibbonPageGroup();
+            this.changesRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChangesRibbonPageGroup();
+            this.mailMergeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.MailMergeRibbonPage();
+            this.mailMergeDataRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeDataRibbonPageGroup();
+            this.mailMergeModeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeModeRibbonPageGroup();
+            this.mailMergeExtendedRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeExtendedRibbonPageGroup();
+            this.mailMergeGroupingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeGroupingRibbonPageGroup();
+            this.mailMergeFilteringRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeFilteringRibbonPageGroup();
+            this.mailMergeBindingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeBindingRibbonPageGroup();
+            this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
+            this.spreadsheetBarController1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetBarController(this.components);
             this.spreadsheetFormulaBar1 = new DevExpress.XtraSpreadsheet.SpreadsheetFormulaBar();
             this.splitterControl1 = new DevExpress.XtraEditors.SplitterControl();
-            ((System.ComponentModel.ISupportInitialize)(this.ribbon)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.spreadsheetBarController1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.BookRibbon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemSpreadsheetFontSizeEdit1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemPopupGalleryEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown3)).BeginInit();
@@ -808,18 +809,22 @@
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown25)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown26)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemTextEdit1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(repositoryItemProgressBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.spreadsheetBarController1)).BeginInit();
             this.SuspendLayout();
             // 
-            // ribbon
+            // repositoryItemProgressBar1
             // 
-            this.ribbon.ExpandCollapseItem.Id = 0;
-            this.ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
-            this.ribbon.ExpandCollapseItem,
-            this.ribbon.SearchEditItem,
-            this.spreadsheetCommandBarButtonItem1,
-            this.spreadsheetCommandBarButtonItem2,
+            this.repositoryItemProgressBar1.Name = "repositoryItemProgressBar1";
+            // 
+            // BookRibbon
+            // 
+            this.BookRibbon.ExpandCollapseItem.Id = 0;
+            this.BookRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
+            this.BookRibbon.ExpandCollapseItem,
+            this.BookRibbon.SearchEditItem,
+            this.NewBarButtonItem,
+            this.OpenBarButtonItem,
             this.spreadsheetCommandBarButtonItem3,
             this.spreadsheetCommandBarButtonItem4,
             this.spreadsheetCommandBarButtonItem5,
@@ -1189,17 +1194,17 @@
             this.sumInfoStaticItem1,
             this.zoomEditItem1,
             this.showZoomButtonItem1});
-            this.ribbon.Location = new System.Drawing.Point(0, 0);
-            this.ribbon.MaxItemId = 372;
-            this.ribbon.Name = "ribbon";
-            this.ribbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] {
+            this.BookRibbon.Location = new System.Drawing.Point(0, 0);
+            this.BookRibbon.MaxItemId = 372;
+            this.BookRibbon.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
+            this.BookRibbon.Name = "BookRibbon";
+            this.BookRibbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] {
             this.chartToolsRibbonPageCategory1,
             this.tableToolsRibbonPageCategory1,
             this.pictureToolsRibbonPageCategory1,
             this.drawingToolsRibbonPageCategory1,
             this.pivotTableToolsRibbonPageCategory1});
-            this.ribbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.ribbonPage1,
+            this.BookRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
             this.fileRibbonPage1,
             this.homeRibbonPage1,
             this.insertRibbonPage1,
@@ -1208,29 +1213,4369 @@
             this.dataRibbonPage1,
             this.reviewRibbonPage1,
             this.mailMergeRibbonPage1});
-            this.ribbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
+            this.BookRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
             this.repositoryItemFontEdit1,
             this.repositoryItemSpreadsheetFontSizeEdit1,
             this.repositoryItemPopupGalleryEdit1,
             this.repositoryItemTextEdit1,
             this.repositoryItemZoomTrackBar1});
-            this.ribbon.Size = new System.Drawing.Size(1326, 158);
-            this.ribbon.StatusBar = this.ribbonStatusBar;
+            this.BookRibbon.Size = new System.Drawing.Size(998, 158);
+            this.BookRibbon.StatusBar = this.ribbonStatusBar;
             // 
-            // ribbonPage1
+            // NewBarButtonItem
             // 
-            this.ribbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.ribbonPageGroup1});
-            this.ribbonPage1.Name = "ribbonPage1";
-            this.ribbonPage1.Text = "ribbonPage1";
+            this.NewBarButtonItem.CommandName = "FileNew";
+            this.NewBarButtonItem.Id = 1;
+            this.NewBarButtonItem.MergeType = DevExpress.XtraBars.BarMenuMerge.Remove;
+            this.NewBarButtonItem.Name = "NewBarButtonItem";
             // 
-            // ribbonPageGroup1
+            // OpenBarButtonItem
             // 
-            this.ribbonPageGroup1.Name = "ribbonPageGroup1";
-            this.ribbonPageGroup1.Text = "ribbonPageGroup1";
+            this.OpenBarButtonItem.CommandName = "FileOpen";
+            this.OpenBarButtonItem.Id = 2;
+            this.OpenBarButtonItem.MergeType = DevExpress.XtraBars.BarMenuMerge.Remove;
+            this.OpenBarButtonItem.Name = "OpenBarButtonItem";
+            // 
+            // spreadsheetCommandBarButtonItem3
+            // 
+            this.spreadsheetCommandBarButtonItem3.CommandName = "FileSave";
+            this.spreadsheetCommandBarButtonItem3.Id = 3;
+            this.spreadsheetCommandBarButtonItem3.Name = "spreadsheetCommandBarButtonItem3";
+            // 
+            // spreadsheetCommandBarButtonItem4
+            // 
+            this.spreadsheetCommandBarButtonItem4.CommandName = "FileSaveAs";
+            this.spreadsheetCommandBarButtonItem4.Id = 4;
+            this.spreadsheetCommandBarButtonItem4.Name = "spreadsheetCommandBarButtonItem4";
+            // 
+            // spreadsheetCommandBarButtonItem5
+            // 
+            this.spreadsheetCommandBarButtonItem5.CommandName = "FileQuickPrint";
+            this.spreadsheetCommandBarButtonItem5.Id = 5;
+            this.spreadsheetCommandBarButtonItem5.Name = "spreadsheetCommandBarButtonItem5";
+            // 
+            // spreadsheetCommandBarButtonItem6
+            // 
+            this.spreadsheetCommandBarButtonItem6.CommandName = "FilePrint";
+            this.spreadsheetCommandBarButtonItem6.Id = 6;
+            this.spreadsheetCommandBarButtonItem6.Name = "spreadsheetCommandBarButtonItem6";
+            // 
+            // spreadsheetCommandBarButtonItem7
+            // 
+            this.spreadsheetCommandBarButtonItem7.CommandName = "FilePrintPreview";
+            this.spreadsheetCommandBarButtonItem7.Id = 7;
+            this.spreadsheetCommandBarButtonItem7.Name = "spreadsheetCommandBarButtonItem7";
+            // 
+            // spreadsheetCommandBarButtonItem8
+            // 
+            this.spreadsheetCommandBarButtonItem8.CommandName = "FileUndo";
+            this.spreadsheetCommandBarButtonItem8.Id = 8;
+            this.spreadsheetCommandBarButtonItem8.Name = "spreadsheetCommandBarButtonItem8";
+            // 
+            // spreadsheetCommandBarButtonItem9
+            // 
+            this.spreadsheetCommandBarButtonItem9.CommandName = "FileRedo";
+            this.spreadsheetCommandBarButtonItem9.Id = 9;
+            this.spreadsheetCommandBarButtonItem9.Name = "spreadsheetCommandBarButtonItem9";
+            // 
+            // spreadsheetCommandBarButtonItem10
+            // 
+            this.spreadsheetCommandBarButtonItem10.CommandName = "FileEncrypt";
+            this.spreadsheetCommandBarButtonItem10.Id = 10;
+            this.spreadsheetCommandBarButtonItem10.Name = "spreadsheetCommandBarButtonItem10";
+            // 
+            // spreadsheetCommandBarButtonItem11
+            // 
+            this.spreadsheetCommandBarButtonItem11.CommandName = "FileShowDocumentProperties";
+            this.spreadsheetCommandBarButtonItem11.Id = 11;
+            this.spreadsheetCommandBarButtonItem11.Name = "spreadsheetCommandBarButtonItem11";
+            // 
+            // spreadsheetCommandBarButtonItem12
+            // 
+            this.spreadsheetCommandBarButtonItem12.CommandName = "PasteSelection";
+            this.spreadsheetCommandBarButtonItem12.Id = 22;
+            this.spreadsheetCommandBarButtonItem12.Name = "spreadsheetCommandBarButtonItem12";
+            this.spreadsheetCommandBarButtonItem12.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem13
+            // 
+            this.spreadsheetCommandBarButtonItem13.CommandName = "CutSelection";
+            this.spreadsheetCommandBarButtonItem13.Id = 23;
+            this.spreadsheetCommandBarButtonItem13.Name = "spreadsheetCommandBarButtonItem13";
+            this.spreadsheetCommandBarButtonItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem14
+            // 
+            this.spreadsheetCommandBarButtonItem14.CommandName = "CopySelection";
+            this.spreadsheetCommandBarButtonItem14.Id = 24;
+            this.spreadsheetCommandBarButtonItem14.Name = "spreadsheetCommandBarButtonItem14";
+            this.spreadsheetCommandBarButtonItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem15
+            // 
+            this.spreadsheetCommandBarButtonItem15.CommandName = "ShowPasteSpecialForm";
+            this.spreadsheetCommandBarButtonItem15.Id = 25;
+            this.spreadsheetCommandBarButtonItem15.Name = "spreadsheetCommandBarButtonItem15";
+            this.spreadsheetCommandBarButtonItem15.RibbonStyle = ((DevExpress.XtraBars.Ribbon.RibbonItemStyles)((DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText)));
+            // 
+            // barButtonGroup1
+            // 
+            this.barButtonGroup1.Id = 12;
+            this.barButtonGroup1.ItemLinks.Add(this.changeFontNameItem1);
+            this.barButtonGroup1.ItemLinks.Add(this.changeFontSizeItem1);
+            this.barButtonGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem16);
+            this.barButtonGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem17);
+            this.barButtonGroup1.Name = "barButtonGroup1";
+            this.barButtonGroup1.Tag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
+            // 
+            // changeFontNameItem1
+            // 
+            this.changeFontNameItem1.Edit = this.repositoryItemFontEdit1;
+            this.changeFontNameItem1.Id = 26;
+            this.changeFontNameItem1.Name = "changeFontNameItem1";
+            // 
+            // repositoryItemFontEdit1
+            // 
+            this.repositoryItemFontEdit1.AutoHeight = false;
+            this.repositoryItemFontEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            this.repositoryItemFontEdit1.Name = "repositoryItemFontEdit1";
+            // 
+            // changeFontSizeItem1
+            // 
+            this.changeFontSizeItem1.Edit = this.repositoryItemSpreadsheetFontSizeEdit1;
+            this.changeFontSizeItem1.Id = 27;
+            this.changeFontSizeItem1.Name = "changeFontSizeItem1";
+            // 
+            // repositoryItemSpreadsheetFontSizeEdit1
+            // 
+            this.repositoryItemSpreadsheetFontSizeEdit1.AutoHeight = false;
+            this.repositoryItemSpreadsheetFontSizeEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            this.repositoryItemSpreadsheetFontSizeEdit1.Control = this.spreadsheetControl1;
+            this.repositoryItemSpreadsheetFontSizeEdit1.Name = "repositoryItemSpreadsheetFontSizeEdit1";
+            // 
+            // spreadsheetControl1
+            // 
+            this.spreadsheetControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.spreadsheetControl1.Location = new System.Drawing.Point(0, 192);
+            this.spreadsheetControl1.MenuManager = this.BookRibbon;
+            this.spreadsheetControl1.Name = "spreadsheetControl1";
+            this.spreadsheetControl1.Size = new System.Drawing.Size(998, 533);
+            this.spreadsheetControl1.TabIndex = 2;
+            this.spreadsheetControl1.Text = "spreadsheetControl1";
+            // 
+            // spreadsheetCommandBarButtonItem16
+            // 
+            this.spreadsheetCommandBarButtonItem16.ButtonGroupTag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
+            this.spreadsheetCommandBarButtonItem16.CommandName = "FormatIncreaseFontSize";
+            this.spreadsheetCommandBarButtonItem16.Id = 28;
+            this.spreadsheetCommandBarButtonItem16.Name = "spreadsheetCommandBarButtonItem16";
+            this.spreadsheetCommandBarButtonItem16.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem17
+            // 
+            this.spreadsheetCommandBarButtonItem17.ButtonGroupTag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
+            this.spreadsheetCommandBarButtonItem17.CommandName = "FormatDecreaseFontSize";
+            this.spreadsheetCommandBarButtonItem17.Id = 29;
+            this.spreadsheetCommandBarButtonItem17.Name = "spreadsheetCommandBarButtonItem17";
+            this.spreadsheetCommandBarButtonItem17.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // barButtonGroup2
+            // 
+            this.barButtonGroup2.Id = 13;
+            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem2);
+            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem3);
+            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem4);
+            this.barButtonGroup2.Name = "barButtonGroup2";
+            this.barButtonGroup2.Tag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
+            // 
+            // spreadsheetCommandBarCheckItem1
+            // 
+            this.spreadsheetCommandBarCheckItem1.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
+            this.spreadsheetCommandBarCheckItem1.CommandName = "FormatFontBold";
+            this.spreadsheetCommandBarCheckItem1.Id = 30;
+            this.spreadsheetCommandBarCheckItem1.Name = "spreadsheetCommandBarCheckItem1";
+            this.spreadsheetCommandBarCheckItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem2
+            // 
+            this.spreadsheetCommandBarCheckItem2.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
+            this.spreadsheetCommandBarCheckItem2.CommandName = "FormatFontItalic";
+            this.spreadsheetCommandBarCheckItem2.Id = 31;
+            this.spreadsheetCommandBarCheckItem2.Name = "spreadsheetCommandBarCheckItem2";
+            this.spreadsheetCommandBarCheckItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem3
+            // 
+            this.spreadsheetCommandBarCheckItem3.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
+            this.spreadsheetCommandBarCheckItem3.CommandName = "FormatFontUnderline";
+            this.spreadsheetCommandBarCheckItem3.Id = 32;
+            this.spreadsheetCommandBarCheckItem3.Name = "spreadsheetCommandBarCheckItem3";
+            this.spreadsheetCommandBarCheckItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem4
+            // 
+            this.spreadsheetCommandBarCheckItem4.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
+            this.spreadsheetCommandBarCheckItem4.CommandName = "FormatFontStrikeout";
+            this.spreadsheetCommandBarCheckItem4.Id = 33;
+            this.spreadsheetCommandBarCheckItem4.Name = "spreadsheetCommandBarCheckItem4";
+            this.spreadsheetCommandBarCheckItem4.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // barButtonGroup3
+            // 
+            this.barButtonGroup3.Id = 14;
+            this.barButtonGroup3.ItemLinks.Add(this.spreadsheetCommandBarSubItem1);
+            this.barButtonGroup3.Name = "barButtonGroup3";
+            this.barButtonGroup3.Tag = "{DDB05A32-9207-4556-85CB-FE3403A197C7}";
+            // 
+            // spreadsheetCommandBarSubItem1
+            // 
+            this.spreadsheetCommandBarSubItem1.ButtonGroupTag = "{DDB05A32-9207-4556-85CB-FE3403A197C7}";
+            this.spreadsheetCommandBarSubItem1.CommandName = "FormatBordersCommandGroup";
+            this.spreadsheetCommandBarSubItem1.Id = 34;
+            this.spreadsheetCommandBarSubItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem18),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem19),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem20),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem21),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem22),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem23),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem24),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem25),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem26),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem27),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem28),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem29),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem30),
+            new DevExpress.XtraBars.LinkPersistInfo(this.changeBorderLineColorItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.changeBorderLineStyleItem1)});
+            this.spreadsheetCommandBarSubItem1.Name = "spreadsheetCommandBarSubItem1";
+            this.spreadsheetCommandBarSubItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem18
+            // 
+            this.spreadsheetCommandBarButtonItem18.CommandName = "FormatBottomBorder";
+            this.spreadsheetCommandBarButtonItem18.Id = 35;
+            this.spreadsheetCommandBarButtonItem18.Name = "spreadsheetCommandBarButtonItem18";
+            // 
+            // spreadsheetCommandBarButtonItem19
+            // 
+            this.spreadsheetCommandBarButtonItem19.CommandName = "FormatTopBorder";
+            this.spreadsheetCommandBarButtonItem19.Id = 36;
+            this.spreadsheetCommandBarButtonItem19.Name = "spreadsheetCommandBarButtonItem19";
+            // 
+            // spreadsheetCommandBarButtonItem20
+            // 
+            this.spreadsheetCommandBarButtonItem20.CommandName = "FormatLeftBorder";
+            this.spreadsheetCommandBarButtonItem20.Id = 37;
+            this.spreadsheetCommandBarButtonItem20.Name = "spreadsheetCommandBarButtonItem20";
+            // 
+            // spreadsheetCommandBarButtonItem21
+            // 
+            this.spreadsheetCommandBarButtonItem21.CommandName = "FormatRightBorder";
+            this.spreadsheetCommandBarButtonItem21.Id = 38;
+            this.spreadsheetCommandBarButtonItem21.Name = "spreadsheetCommandBarButtonItem21";
+            // 
+            // spreadsheetCommandBarButtonItem22
+            // 
+            this.spreadsheetCommandBarButtonItem22.CommandName = "FormatNoBorders";
+            this.spreadsheetCommandBarButtonItem22.Id = 39;
+            this.spreadsheetCommandBarButtonItem22.Name = "spreadsheetCommandBarButtonItem22";
+            // 
+            // spreadsheetCommandBarButtonItem23
+            // 
+            this.spreadsheetCommandBarButtonItem23.CommandName = "FormatAllBorders";
+            this.spreadsheetCommandBarButtonItem23.Id = 40;
+            this.spreadsheetCommandBarButtonItem23.Name = "spreadsheetCommandBarButtonItem23";
+            // 
+            // spreadsheetCommandBarButtonItem24
+            // 
+            this.spreadsheetCommandBarButtonItem24.CommandName = "FormatOutsideBorders";
+            this.spreadsheetCommandBarButtonItem24.Id = 41;
+            this.spreadsheetCommandBarButtonItem24.Name = "spreadsheetCommandBarButtonItem24";
+            // 
+            // spreadsheetCommandBarButtonItem25
+            // 
+            this.spreadsheetCommandBarButtonItem25.CommandName = "FormatThickBorder";
+            this.spreadsheetCommandBarButtonItem25.Id = 42;
+            this.spreadsheetCommandBarButtonItem25.Name = "spreadsheetCommandBarButtonItem25";
+            // 
+            // spreadsheetCommandBarButtonItem26
+            // 
+            this.spreadsheetCommandBarButtonItem26.CommandName = "FormatBottomDoubleBorder";
+            this.spreadsheetCommandBarButtonItem26.Id = 43;
+            this.spreadsheetCommandBarButtonItem26.Name = "spreadsheetCommandBarButtonItem26";
+            // 
+            // spreadsheetCommandBarButtonItem27
+            // 
+            this.spreadsheetCommandBarButtonItem27.CommandName = "FormatBottomThickBorder";
+            this.spreadsheetCommandBarButtonItem27.Id = 44;
+            this.spreadsheetCommandBarButtonItem27.Name = "spreadsheetCommandBarButtonItem27";
+            // 
+            // spreadsheetCommandBarButtonItem28
+            // 
+            this.spreadsheetCommandBarButtonItem28.CommandName = "FormatTopAndBottomBorder";
+            this.spreadsheetCommandBarButtonItem28.Id = 45;
+            this.spreadsheetCommandBarButtonItem28.Name = "spreadsheetCommandBarButtonItem28";
+            // 
+            // spreadsheetCommandBarButtonItem29
+            // 
+            this.spreadsheetCommandBarButtonItem29.CommandName = "FormatTopAndThickBottomBorder";
+            this.spreadsheetCommandBarButtonItem29.Id = 46;
+            this.spreadsheetCommandBarButtonItem29.Name = "spreadsheetCommandBarButtonItem29";
+            // 
+            // spreadsheetCommandBarButtonItem30
+            // 
+            this.spreadsheetCommandBarButtonItem30.CommandName = "FormatTopAndDoubleBottomBorder";
+            this.spreadsheetCommandBarButtonItem30.Id = 47;
+            this.spreadsheetCommandBarButtonItem30.Name = "spreadsheetCommandBarButtonItem30";
+            // 
+            // changeBorderLineColorItem1
+            // 
+            this.changeBorderLineColorItem1.ActAsDropDown = true;
+            this.changeBorderLineColorItem1.Id = 48;
+            this.changeBorderLineColorItem1.Name = "changeBorderLineColorItem1";
+            // 
+            // changeBorderLineStyleItem1
+            // 
+            this.changeBorderLineStyleItem1.DropDownControl = this.commandBarGalleryDropDown1;
+            this.changeBorderLineStyleItem1.Id = 49;
+            this.changeBorderLineStyleItem1.Name = "changeBorderLineStyleItem1";
+            // 
+            // commandBarGalleryDropDown1
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown1.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown1.Gallery.ColumnCount = 1;
+            this.commandBarGalleryDropDown1.Gallery.DrawImageBackground = false;
+            this.commandBarGalleryDropDown1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            this.commandBarGalleryDropDown1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.commandBarGalleryDropDown1.Gallery.ItemSize = new System.Drawing.Size(136, 26);
+            this.commandBarGalleryDropDown1.Gallery.RowCount = 14;
+            this.commandBarGalleryDropDown1.Gallery.ShowGroupCaption = false;
+            this.commandBarGalleryDropDown1.Gallery.ShowItemText = true;
+            this.commandBarGalleryDropDown1.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown1.Name = "commandBarGalleryDropDown1";
+            this.commandBarGalleryDropDown1.Ribbon = this.BookRibbon;
+            // 
+            // barButtonGroup4
+            // 
+            this.barButtonGroup4.Id = 15;
+            this.barButtonGroup4.ItemLinks.Add(this.changeCellFillColorItem1);
+            this.barButtonGroup4.ItemLinks.Add(this.changeFontColorItem1);
+            this.barButtonGroup4.Name = "barButtonGroup4";
+            this.barButtonGroup4.Tag = "{C2275623-04A3-41E8-8D6A-EB5C7F8541D1}";
+            // 
+            // changeCellFillColorItem1
+            // 
+            this.changeCellFillColorItem1.Id = 50;
+            this.changeCellFillColorItem1.Name = "changeCellFillColorItem1";
+            // 
+            // changeFontColorItem1
+            // 
+            this.changeFontColorItem1.Id = 51;
+            this.changeFontColorItem1.Name = "changeFontColorItem1";
+            // 
+            // barButtonGroup5
+            // 
+            this.barButtonGroup5.Id = 16;
+            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem5);
+            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem6);
+            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem7);
+            this.barButtonGroup5.Name = "barButtonGroup5";
+            this.barButtonGroup5.Tag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
+            // 
+            // spreadsheetCommandBarCheckItem5
+            // 
+            this.spreadsheetCommandBarCheckItem5.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
+            this.spreadsheetCommandBarCheckItem5.CommandName = "FormatAlignmentTop";
+            this.spreadsheetCommandBarCheckItem5.Id = 52;
+            this.spreadsheetCommandBarCheckItem5.Name = "spreadsheetCommandBarCheckItem5";
+            this.spreadsheetCommandBarCheckItem5.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem6
+            // 
+            this.spreadsheetCommandBarCheckItem6.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
+            this.spreadsheetCommandBarCheckItem6.CommandName = "FormatAlignmentMiddle";
+            this.spreadsheetCommandBarCheckItem6.Id = 53;
+            this.spreadsheetCommandBarCheckItem6.Name = "spreadsheetCommandBarCheckItem6";
+            this.spreadsheetCommandBarCheckItem6.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem7
+            // 
+            this.spreadsheetCommandBarCheckItem7.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
+            this.spreadsheetCommandBarCheckItem7.CommandName = "FormatAlignmentBottom";
+            this.spreadsheetCommandBarCheckItem7.Id = 54;
+            this.spreadsheetCommandBarCheckItem7.Name = "spreadsheetCommandBarCheckItem7";
+            this.spreadsheetCommandBarCheckItem7.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // barButtonGroup6
+            // 
+            this.barButtonGroup6.Id = 17;
+            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem8);
+            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem9);
+            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem10);
+            this.barButtonGroup6.Name = "barButtonGroup6";
+            this.barButtonGroup6.Tag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
+            // 
+            // spreadsheetCommandBarCheckItem8
+            // 
+            this.spreadsheetCommandBarCheckItem8.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
+            this.spreadsheetCommandBarCheckItem8.CommandName = "FormatAlignmentLeft";
+            this.spreadsheetCommandBarCheckItem8.Id = 55;
+            this.spreadsheetCommandBarCheckItem8.Name = "spreadsheetCommandBarCheckItem8";
+            this.spreadsheetCommandBarCheckItem8.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem9
+            // 
+            this.spreadsheetCommandBarCheckItem9.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
+            this.spreadsheetCommandBarCheckItem9.CommandName = "FormatAlignmentCenter";
+            this.spreadsheetCommandBarCheckItem9.Id = 56;
+            this.spreadsheetCommandBarCheckItem9.Name = "spreadsheetCommandBarCheckItem9";
+            this.spreadsheetCommandBarCheckItem9.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem10
+            // 
+            this.spreadsheetCommandBarCheckItem10.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
+            this.spreadsheetCommandBarCheckItem10.CommandName = "FormatAlignmentRight";
+            this.spreadsheetCommandBarCheckItem10.Id = 57;
+            this.spreadsheetCommandBarCheckItem10.Name = "spreadsheetCommandBarCheckItem10";
+            this.spreadsheetCommandBarCheckItem10.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // barButtonGroup7
+            // 
+            this.barButtonGroup7.Id = 18;
+            this.barButtonGroup7.ItemLinks.Add(this.spreadsheetCommandBarButtonItem31);
+            this.barButtonGroup7.ItemLinks.Add(this.spreadsheetCommandBarButtonItem32);
+            this.barButtonGroup7.Name = "barButtonGroup7";
+            this.barButtonGroup7.Tag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
+            // 
+            // spreadsheetCommandBarButtonItem31
+            // 
+            this.spreadsheetCommandBarButtonItem31.ButtonGroupTag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
+            this.spreadsheetCommandBarButtonItem31.CommandName = "FormatDecreaseIndent";
+            this.spreadsheetCommandBarButtonItem31.Id = 58;
+            this.spreadsheetCommandBarButtonItem31.Name = "spreadsheetCommandBarButtonItem31";
+            this.spreadsheetCommandBarButtonItem31.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem32
+            // 
+            this.spreadsheetCommandBarButtonItem32.ButtonGroupTag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
+            this.spreadsheetCommandBarButtonItem32.CommandName = "FormatIncreaseIndent";
+            this.spreadsheetCommandBarButtonItem32.Id = 59;
+            this.spreadsheetCommandBarButtonItem32.Name = "spreadsheetCommandBarButtonItem32";
+            this.spreadsheetCommandBarButtonItem32.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarCheckItem11
+            // 
+            this.spreadsheetCommandBarCheckItem11.CommandName = "FormatWrapText";
+            this.spreadsheetCommandBarCheckItem11.Id = 60;
+            this.spreadsheetCommandBarCheckItem11.Name = "spreadsheetCommandBarCheckItem11";
+            this.spreadsheetCommandBarCheckItem11.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarSubItem2
+            // 
+            this.spreadsheetCommandBarSubItem2.CommandName = "EditingMergeCellsCommandGroup";
+            this.spreadsheetCommandBarSubItem2.Id = 61;
+            this.spreadsheetCommandBarSubItem2.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem12),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem33),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem34),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem35)});
+            this.spreadsheetCommandBarSubItem2.Name = "spreadsheetCommandBarSubItem2";
+            this.spreadsheetCommandBarSubItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarCheckItem12
+            // 
+            this.spreadsheetCommandBarCheckItem12.CommandName = "EditingMergeAndCenterCells";
+            this.spreadsheetCommandBarCheckItem12.Id = 62;
+            this.spreadsheetCommandBarCheckItem12.Name = "spreadsheetCommandBarCheckItem12";
+            // 
+            // spreadsheetCommandBarButtonItem33
+            // 
+            this.spreadsheetCommandBarButtonItem33.CommandName = "EditingMergeCellsAcross";
+            this.spreadsheetCommandBarButtonItem33.Id = 63;
+            this.spreadsheetCommandBarButtonItem33.Name = "spreadsheetCommandBarButtonItem33";
+            // 
+            // spreadsheetCommandBarButtonItem34
+            // 
+            this.spreadsheetCommandBarButtonItem34.CommandName = "EditingMergeCells";
+            this.spreadsheetCommandBarButtonItem34.Id = 64;
+            this.spreadsheetCommandBarButtonItem34.Name = "spreadsheetCommandBarButtonItem34";
+            // 
+            // spreadsheetCommandBarButtonItem35
+            // 
+            this.spreadsheetCommandBarButtonItem35.CommandName = "EditingUnmergeCells";
+            this.spreadsheetCommandBarButtonItem35.Id = 65;
+            this.spreadsheetCommandBarButtonItem35.Name = "spreadsheetCommandBarButtonItem35";
+            // 
+            // barButtonGroup8
+            // 
+            this.barButtonGroup8.Id = 19;
+            this.barButtonGroup8.ItemLinks.Add(this.changeNumberFormatItem1);
+            this.barButtonGroup8.Name = "barButtonGroup8";
+            this.barButtonGroup8.Tag = "{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}";
+            // 
+            // changeNumberFormatItem1
+            // 
+            this.changeNumberFormatItem1.Edit = this.repositoryItemPopupGalleryEdit1;
+            this.changeNumberFormatItem1.Id = 66;
+            this.changeNumberFormatItem1.Name = "changeNumberFormatItem1";
+            // 
+            // repositoryItemPopupGalleryEdit1
+            // 
+            this.repositoryItemPopupGalleryEdit1.AutoHeight = false;
+            this.repositoryItemPopupGalleryEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            // 
+            // 
+            // 
+            this.repositoryItemPopupGalleryEdit1.Gallery.AllowFilter = false;
+            this.repositoryItemPopupGalleryEdit1.Gallery.AutoFitColumns = false;
+            this.repositoryItemPopupGalleryEdit1.Gallery.ColumnCount = 1;
+            this.repositoryItemPopupGalleryEdit1.Gallery.FixedImageSize = false;
+            spreadsheetCommandGalleryItem1.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem1.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem1.Checked = true;
+            spreadsheetCommandGalleryItem1.CommandName = "FormatNumberGeneral";
+            spreadsheetCommandGalleryItem1.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem2.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem2.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem2.CommandName = "FormatNumberDecimal";
+            spreadsheetCommandGalleryItem2.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem3.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem3.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem3.CommandName = "FormatNumberAccountingCurrency";
+            spreadsheetCommandGalleryItem3.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem4.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem4.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem4.CommandName = "FormatNumberAccountingRegular";
+            spreadsheetCommandGalleryItem4.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem5.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem5.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem5.CommandName = "FormatNumberShortDate";
+            spreadsheetCommandGalleryItem5.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem6.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem6.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem6.CommandName = "FormatNumberLongDate";
+            spreadsheetCommandGalleryItem6.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem7.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem7.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem7.CommandName = "FormatNumberTime";
+            spreadsheetCommandGalleryItem7.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem8.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem8.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem8.CommandName = "FormatNumberPercentage";
+            spreadsheetCommandGalleryItem8.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem9.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem9.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem9.CommandName = "FormatNumberFraction";
+            spreadsheetCommandGalleryItem9.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem10.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem10.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem10.CommandName = "FormatNumberScientific";
+            spreadsheetCommandGalleryItem10.IsEmptyHint = true;
+            spreadsheetCommandGalleryItem11.AlwaysUpdateDescription = true;
+            spreadsheetCommandGalleryItem11.CaptionAsValue = true;
+            spreadsheetCommandGalleryItem11.CommandName = "FormatNumberText";
+            spreadsheetCommandGalleryItem11.IsEmptyHint = true;
+            galleryItemGroup1.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem1,
+            spreadsheetCommandGalleryItem2,
+            spreadsheetCommandGalleryItem3,
+            spreadsheetCommandGalleryItem4,
+            spreadsheetCommandGalleryItem5,
+            spreadsheetCommandGalleryItem6,
+            spreadsheetCommandGalleryItem7,
+            spreadsheetCommandGalleryItem8,
+            spreadsheetCommandGalleryItem9,
+            spreadsheetCommandGalleryItem10,
+            spreadsheetCommandGalleryItem11});
+            this.repositoryItemPopupGalleryEdit1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            galleryItemGroup1});
+            this.repositoryItemPopupGalleryEdit1.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.repositoryItemPopupGalleryEdit1.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.repositoryItemPopupGalleryEdit1.Gallery.RowCount = 11;
+            this.repositoryItemPopupGalleryEdit1.Gallery.ShowGroupCaption = false;
+            this.repositoryItemPopupGalleryEdit1.Gallery.ShowItemText = true;
+            this.repositoryItemPopupGalleryEdit1.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Hide;
+            this.repositoryItemPopupGalleryEdit1.Gallery.StretchItems = true;
+            this.repositoryItemPopupGalleryEdit1.Name = "repositoryItemPopupGalleryEdit1";
+            this.repositoryItemPopupGalleryEdit1.ShowButtons = false;
+            this.repositoryItemPopupGalleryEdit1.ShowPopupCloseButton = false;
+            this.repositoryItemPopupGalleryEdit1.ShowSizeGrip = false;
+            // 
+            // barButtonGroup9
+            // 
+            this.barButtonGroup9.Id = 20;
+            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarSubItem3);
+            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarButtonItem42);
+            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarButtonItem43);
+            this.barButtonGroup9.Name = "barButtonGroup9";
+            this.barButtonGroup9.Tag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
+            // 
+            // spreadsheetCommandBarSubItem3
+            // 
+            this.spreadsheetCommandBarSubItem3.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
+            this.spreadsheetCommandBarSubItem3.CommandName = "FormatNumberAccountingCommandGroup";
+            this.spreadsheetCommandBarSubItem3.Id = 67;
+            this.spreadsheetCommandBarSubItem3.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem36),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem37),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem38),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem39),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem40),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem41)});
+            this.spreadsheetCommandBarSubItem3.Name = "spreadsheetCommandBarSubItem3";
+            this.spreadsheetCommandBarSubItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem36
+            // 
+            this.spreadsheetCommandBarButtonItem36.CommandName = "FormatNumberAccountingDefault";
+            this.spreadsheetCommandBarButtonItem36.Id = 68;
+            this.spreadsheetCommandBarButtonItem36.Name = "spreadsheetCommandBarButtonItem36";
+            // 
+            // spreadsheetCommandBarButtonItem37
+            // 
+            this.spreadsheetCommandBarButtonItem37.CommandName = "FormatNumberAccountingUS";
+            this.spreadsheetCommandBarButtonItem37.Id = 69;
+            this.spreadsheetCommandBarButtonItem37.Name = "spreadsheetCommandBarButtonItem37";
+            // 
+            // spreadsheetCommandBarButtonItem38
+            // 
+            this.spreadsheetCommandBarButtonItem38.CommandName = "FormatNumberAccountingUK";
+            this.spreadsheetCommandBarButtonItem38.Id = 70;
+            this.spreadsheetCommandBarButtonItem38.Name = "spreadsheetCommandBarButtonItem38";
+            // 
+            // spreadsheetCommandBarButtonItem39
+            // 
+            this.spreadsheetCommandBarButtonItem39.CommandName = "FormatNumberAccountingEuro";
+            this.spreadsheetCommandBarButtonItem39.Id = 71;
+            this.spreadsheetCommandBarButtonItem39.Name = "spreadsheetCommandBarButtonItem39";
+            // 
+            // spreadsheetCommandBarButtonItem40
+            // 
+            this.spreadsheetCommandBarButtonItem40.CommandName = "FormatNumberAccountingPRC";
+            this.spreadsheetCommandBarButtonItem40.Id = 72;
+            this.spreadsheetCommandBarButtonItem40.Name = "spreadsheetCommandBarButtonItem40";
+            // 
+            // spreadsheetCommandBarButtonItem41
+            // 
+            this.spreadsheetCommandBarButtonItem41.CommandName = "FormatNumberAccountingSwiss";
+            this.spreadsheetCommandBarButtonItem41.Id = 73;
+            this.spreadsheetCommandBarButtonItem41.Name = "spreadsheetCommandBarButtonItem41";
+            // 
+            // spreadsheetCommandBarButtonItem42
+            // 
+            this.spreadsheetCommandBarButtonItem42.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
+            this.spreadsheetCommandBarButtonItem42.CommandName = "FormatNumberPercent";
+            this.spreadsheetCommandBarButtonItem42.Id = 74;
+            this.spreadsheetCommandBarButtonItem42.Name = "spreadsheetCommandBarButtonItem42";
+            this.spreadsheetCommandBarButtonItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem43
+            // 
+            this.spreadsheetCommandBarButtonItem43.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
+            this.spreadsheetCommandBarButtonItem43.CommandName = "FormatNumberAccounting";
+            this.spreadsheetCommandBarButtonItem43.Id = 75;
+            this.spreadsheetCommandBarButtonItem43.Name = "spreadsheetCommandBarButtonItem43";
+            this.spreadsheetCommandBarButtonItem43.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // barButtonGroup10
+            // 
+            this.barButtonGroup10.Id = 21;
+            this.barButtonGroup10.ItemLinks.Add(this.spreadsheetCommandBarButtonItem44);
+            this.barButtonGroup10.ItemLinks.Add(this.spreadsheetCommandBarButtonItem45);
+            this.barButtonGroup10.Name = "barButtonGroup10";
+            this.barButtonGroup10.Tag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
+            // 
+            // spreadsheetCommandBarButtonItem44
+            // 
+            this.spreadsheetCommandBarButtonItem44.ButtonGroupTag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
+            this.spreadsheetCommandBarButtonItem44.CommandName = "FormatNumberIncreaseDecimal";
+            this.spreadsheetCommandBarButtonItem44.Id = 76;
+            this.spreadsheetCommandBarButtonItem44.Name = "spreadsheetCommandBarButtonItem44";
+            this.spreadsheetCommandBarButtonItem44.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarButtonItem45
+            // 
+            this.spreadsheetCommandBarButtonItem45.ButtonGroupTag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
+            this.spreadsheetCommandBarButtonItem45.CommandName = "FormatNumberDecreaseDecimal";
+            this.spreadsheetCommandBarButtonItem45.Id = 77;
+            this.spreadsheetCommandBarButtonItem45.Name = "spreadsheetCommandBarButtonItem45";
+            this.spreadsheetCommandBarButtonItem45.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // spreadsheetCommandBarSubItem7
+            // 
+            this.spreadsheetCommandBarSubItem7.CommandName = "ConditionalFormattingCommandGroup";
+            this.spreadsheetCommandBarSubItem7.Id = 78;
+            this.spreadsheetCommandBarSubItem7.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem4),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem5),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem2),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem3),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem59),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem6),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem62)});
+            this.spreadsheetCommandBarSubItem7.Name = "spreadsheetCommandBarSubItem7";
+            // 
+            // spreadsheetCommandBarSubItem4
+            // 
+            this.spreadsheetCommandBarSubItem4.CommandName = "ConditionalFormattingHighlightCellsRuleCommandGroup";
+            this.spreadsheetCommandBarSubItem4.Id = 86;
+            this.spreadsheetCommandBarSubItem4.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem46),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem47),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem48),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem49),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem50),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem51),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem52)});
+            this.spreadsheetCommandBarSubItem4.Name = "spreadsheetCommandBarSubItem4";
+            // 
+            // spreadsheetCommandBarButtonItem46
+            // 
+            this.spreadsheetCommandBarButtonItem46.CommandName = "ConditionalFormattingGreaterThanRuleCommand";
+            this.spreadsheetCommandBarButtonItem46.Id = 79;
+            this.spreadsheetCommandBarButtonItem46.Name = "spreadsheetCommandBarButtonItem46";
+            this.spreadsheetCommandBarButtonItem46.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem47
+            // 
+            this.spreadsheetCommandBarButtonItem47.CommandName = "ConditionalFormattingLessThanRuleCommand";
+            this.spreadsheetCommandBarButtonItem47.Id = 80;
+            this.spreadsheetCommandBarButtonItem47.Name = "spreadsheetCommandBarButtonItem47";
+            this.spreadsheetCommandBarButtonItem47.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem48
+            // 
+            this.spreadsheetCommandBarButtonItem48.CommandName = "ConditionalFormattingBetweenRuleCommand";
+            this.spreadsheetCommandBarButtonItem48.Id = 81;
+            this.spreadsheetCommandBarButtonItem48.Name = "spreadsheetCommandBarButtonItem48";
+            this.spreadsheetCommandBarButtonItem48.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem49
+            // 
+            this.spreadsheetCommandBarButtonItem49.CommandName = "ConditionalFormattingEqualToRuleCommand";
+            this.spreadsheetCommandBarButtonItem49.Id = 82;
+            this.spreadsheetCommandBarButtonItem49.Name = "spreadsheetCommandBarButtonItem49";
+            this.spreadsheetCommandBarButtonItem49.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem50
+            // 
+            this.spreadsheetCommandBarButtonItem50.CommandName = "ConditionalFormattingTextContainsRuleCommand";
+            this.spreadsheetCommandBarButtonItem50.Id = 83;
+            this.spreadsheetCommandBarButtonItem50.Name = "spreadsheetCommandBarButtonItem50";
+            this.spreadsheetCommandBarButtonItem50.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem51
+            // 
+            this.spreadsheetCommandBarButtonItem51.CommandName = "ConditionalFormattingDateOccurringRuleCommand";
+            this.spreadsheetCommandBarButtonItem51.Id = 84;
+            this.spreadsheetCommandBarButtonItem51.Name = "spreadsheetCommandBarButtonItem51";
+            this.spreadsheetCommandBarButtonItem51.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem52
+            // 
+            this.spreadsheetCommandBarButtonItem52.CommandName = "ConditionalFormattingDuplicateValuesRuleCommand";
+            this.spreadsheetCommandBarButtonItem52.Id = 85;
+            this.spreadsheetCommandBarButtonItem52.Name = "spreadsheetCommandBarButtonItem52";
+            this.spreadsheetCommandBarButtonItem52.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem5
+            // 
+            this.spreadsheetCommandBarSubItem5.CommandName = "ConditionalFormattingTopBottomRuleCommandGroup";
+            this.spreadsheetCommandBarSubItem5.Id = 93;
+            this.spreadsheetCommandBarSubItem5.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem53),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem54),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem55),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem56),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem57),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem58)});
+            this.spreadsheetCommandBarSubItem5.Name = "spreadsheetCommandBarSubItem5";
+            // 
+            // spreadsheetCommandBarButtonItem53
+            // 
+            this.spreadsheetCommandBarButtonItem53.CommandName = "ConditionalFormattingTop10RuleCommand";
+            this.spreadsheetCommandBarButtonItem53.Id = 87;
+            this.spreadsheetCommandBarButtonItem53.Name = "spreadsheetCommandBarButtonItem53";
+            this.spreadsheetCommandBarButtonItem53.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem54
+            // 
+            this.spreadsheetCommandBarButtonItem54.CommandName = "ConditionalFormattingTop10PercentRuleCommand";
+            this.spreadsheetCommandBarButtonItem54.Id = 88;
+            this.spreadsheetCommandBarButtonItem54.Name = "spreadsheetCommandBarButtonItem54";
+            this.spreadsheetCommandBarButtonItem54.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem55
+            // 
+            this.spreadsheetCommandBarButtonItem55.CommandName = "ConditionalFormattingBottom10RuleCommand";
+            this.spreadsheetCommandBarButtonItem55.Id = 89;
+            this.spreadsheetCommandBarButtonItem55.Name = "spreadsheetCommandBarButtonItem55";
+            this.spreadsheetCommandBarButtonItem55.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem56
+            // 
+            this.spreadsheetCommandBarButtonItem56.CommandName = "ConditionalFormattingBottom10PercentRuleCommand";
+            this.spreadsheetCommandBarButtonItem56.Id = 90;
+            this.spreadsheetCommandBarButtonItem56.Name = "spreadsheetCommandBarButtonItem56";
+            this.spreadsheetCommandBarButtonItem56.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem57
+            // 
+            this.spreadsheetCommandBarButtonItem57.CommandName = "ConditionalFormattingAboveAverageRuleCommand";
+            this.spreadsheetCommandBarButtonItem57.Id = 91;
+            this.spreadsheetCommandBarButtonItem57.Name = "spreadsheetCommandBarButtonItem57";
+            this.spreadsheetCommandBarButtonItem57.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem58
+            // 
+            this.spreadsheetCommandBarButtonItem58.CommandName = "ConditionalFormattingBelowAverageRuleCommand";
+            this.spreadsheetCommandBarButtonItem58.Id = 92;
+            this.spreadsheetCommandBarButtonItem58.Name = "spreadsheetCommandBarButtonItem58";
+            this.spreadsheetCommandBarButtonItem58.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem1
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem1.CommandName = "ConditionalFormattingDataBarsCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem1.DropDownControl = this.commandBarGalleryDropDown2;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem1.Id = 94;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem1.Name = "spreadsheetCommandBarButtonGalleryDropDownItem1";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // commandBarGalleryDropDown2
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown2.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup1.CommandName = "ConditionalFormattingDataBarsGradientFillCommandGroup";
+            spreadsheetCommandGalleryItem12.CommandName = "ConditionalFormattingDataBarGradientBlue";
+            spreadsheetCommandGalleryItem13.CommandName = "ConditionalFormattingDataBarGradientGreen";
+            spreadsheetCommandGalleryItem14.CommandName = "ConditionalFormattingDataBarGradientRed";
+            spreadsheetCommandGalleryItem15.CommandName = "ConditionalFormattingDataBarGradientOrange";
+            spreadsheetCommandGalleryItem16.CommandName = "ConditionalFormattingDataBarGradientLightBlue";
+            spreadsheetCommandGalleryItem17.CommandName = "ConditionalFormattingDataBarGradientPurple";
+            spreadsheetCommandGalleryItemGroup1.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem12,
+            spreadsheetCommandGalleryItem13,
+            spreadsheetCommandGalleryItem14,
+            spreadsheetCommandGalleryItem15,
+            spreadsheetCommandGalleryItem16,
+            spreadsheetCommandGalleryItem17});
+            spreadsheetCommandGalleryItemGroup2.CommandName = "ConditionalFormattingDataBarsSolidFillCommandGroup";
+            spreadsheetCommandGalleryItem18.CommandName = "ConditionalFormattingDataBarSolidBlue";
+            spreadsheetCommandGalleryItem19.CommandName = "ConditionalFormattingDataBarSolidGreen";
+            spreadsheetCommandGalleryItem20.CommandName = "ConditionalFormattingDataBarSolidRed";
+            spreadsheetCommandGalleryItem21.CommandName = "ConditionalFormattingDataBarSolidOrange";
+            spreadsheetCommandGalleryItem22.CommandName = "ConditionalFormattingDataBarSolidLightBlue";
+            spreadsheetCommandGalleryItem23.CommandName = "ConditionalFormattingDataBarSolidPurple";
+            spreadsheetCommandGalleryItemGroup2.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem18,
+            spreadsheetCommandGalleryItem19,
+            spreadsheetCommandGalleryItem20,
+            spreadsheetCommandGalleryItem21,
+            spreadsheetCommandGalleryItem22,
+            spreadsheetCommandGalleryItem23});
+            this.commandBarGalleryDropDown2.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup1,
+            spreadsheetCommandGalleryItemGroup2});
+            this.commandBarGalleryDropDown2.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown2.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown2.Name = "commandBarGalleryDropDown2";
+            this.commandBarGalleryDropDown2.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem2
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem2.CommandName = "ConditionalFormattingColorScalesCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem2.DropDownControl = this.commandBarGalleryDropDown3;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem2.Id = 95;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem2.Name = "spreadsheetCommandBarButtonGalleryDropDownItem2";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // commandBarGalleryDropDown3
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown3.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup3.CommandName = "ConditionalFormattingColorScalesCommandGroup";
+            spreadsheetCommandGalleryItem24.CommandName = "ConditionalFormattingColorScaleGreenYellowRed";
+            spreadsheetCommandGalleryItem25.CommandName = "ConditionalFormattingColorScaleRedYellowGreen";
+            spreadsheetCommandGalleryItem26.CommandName = "ConditionalFormattingColorScaleGreenWhiteRed";
+            spreadsheetCommandGalleryItem27.CommandName = "ConditionalFormattingColorScaleRedWhiteGreen";
+            spreadsheetCommandGalleryItem28.CommandName = "ConditionalFormattingColorScaleBlueWhiteRed";
+            spreadsheetCommandGalleryItem29.CommandName = "ConditionalFormattingColorScaleRedWhiteBlue";
+            spreadsheetCommandGalleryItem30.CommandName = "ConditionalFormattingColorScaleWhiteRed";
+            spreadsheetCommandGalleryItem31.CommandName = "ConditionalFormattingColorScaleRedWhite";
+            spreadsheetCommandGalleryItem32.CommandName = "ConditionalFormattingColorScaleGreenWhite";
+            spreadsheetCommandGalleryItem33.CommandName = "ConditionalFormattingColorScaleWhiteGreen";
+            spreadsheetCommandGalleryItem34.CommandName = "ConditionalFormattingColorScaleGreenYellow";
+            spreadsheetCommandGalleryItem35.CommandName = "ConditionalFormattingColorScaleYellowGreen";
+            spreadsheetCommandGalleryItemGroup3.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem24,
+            spreadsheetCommandGalleryItem25,
+            spreadsheetCommandGalleryItem26,
+            spreadsheetCommandGalleryItem27,
+            spreadsheetCommandGalleryItem28,
+            spreadsheetCommandGalleryItem29,
+            spreadsheetCommandGalleryItem30,
+            spreadsheetCommandGalleryItem31,
+            spreadsheetCommandGalleryItem32,
+            spreadsheetCommandGalleryItem33,
+            spreadsheetCommandGalleryItem34,
+            spreadsheetCommandGalleryItem35});
+            this.commandBarGalleryDropDown3.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup3});
+            this.commandBarGalleryDropDown3.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown3.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown3.Name = "commandBarGalleryDropDown3";
+            this.commandBarGalleryDropDown3.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem3
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem3.CommandName = "ConditionalFormattingIconSetsCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem3.DropDownControl = this.commandBarGalleryDropDown4;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem3.Id = 96;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem3.Name = "spreadsheetCommandBarButtonGalleryDropDownItem3";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // commandBarGalleryDropDown4
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown4.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup4.CommandName = "ConditionalFormattingIconSetsDirectionalCommandGroup";
+            spreadsheetCommandGalleryItem36.CommandName = "ConditionalFormattingIconSetArrows3Colored";
+            spreadsheetCommandGalleryItem37.CommandName = "ConditionalFormattingIconSetArrows3Grayed";
+            spreadsheetCommandGalleryItem38.CommandName = "ConditionalFormattingIconSetArrows4Colored";
+            spreadsheetCommandGalleryItem39.CommandName = "ConditionalFormattingIconSetArrows4Grayed";
+            spreadsheetCommandGalleryItem40.CommandName = "ConditionalFormattingIconSetArrows5Colored";
+            spreadsheetCommandGalleryItem41.CommandName = "ConditionalFormattingIconSetArrows5Grayed";
+            spreadsheetCommandGalleryItem42.CommandName = "ConditionalFormattingIconSetTriangles3";
+            spreadsheetCommandGalleryItemGroup4.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem36,
+            spreadsheetCommandGalleryItem37,
+            spreadsheetCommandGalleryItem38,
+            spreadsheetCommandGalleryItem39,
+            spreadsheetCommandGalleryItem40,
+            spreadsheetCommandGalleryItem41,
+            spreadsheetCommandGalleryItem42});
+            spreadsheetCommandGalleryItemGroup5.CommandName = "ConditionalFormattingIconSetsShapesCommandGroup";
+            spreadsheetCommandGalleryItem43.CommandName = "ConditionalFormattingIconSetTrafficLights3";
+            spreadsheetCommandGalleryItem44.CommandName = "ConditionalFormattingIconSetTrafficLights3Rimmed";
+            spreadsheetCommandGalleryItem45.CommandName = "ConditionalFormattingIconSetTrafficLights4";
+            spreadsheetCommandGalleryItem46.CommandName = "ConditionalFormattingIconSetSigns3";
+            spreadsheetCommandGalleryItem47.CommandName = "ConditionalFormattingIconSetRedToBlack";
+            spreadsheetCommandGalleryItemGroup5.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem43,
+            spreadsheetCommandGalleryItem44,
+            spreadsheetCommandGalleryItem45,
+            spreadsheetCommandGalleryItem46,
+            spreadsheetCommandGalleryItem47});
+            spreadsheetCommandGalleryItemGroup6.CommandName = "ConditionalFormattingIconSetsIndicatorsCommandGroup";
+            spreadsheetCommandGalleryItem48.CommandName = "ConditionalFormattingIconSetSymbols3Circled";
+            spreadsheetCommandGalleryItem49.CommandName = "ConditionalFormattingIconSetSymbols3";
+            spreadsheetCommandGalleryItem50.CommandName = "ConditionalFormattingIconSetFlags3";
+            spreadsheetCommandGalleryItemGroup6.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem48,
+            spreadsheetCommandGalleryItem49,
+            spreadsheetCommandGalleryItem50});
+            spreadsheetCommandGalleryItemGroup7.CommandName = "ConditionalFormattingIconSetsRatingsCommandGroup";
+            spreadsheetCommandGalleryItem51.CommandName = "ConditionalFormattingIconSetStars3";
+            spreadsheetCommandGalleryItem52.CommandName = "ConditionalFormattingIconSetRatings4";
+            spreadsheetCommandGalleryItem53.CommandName = "ConditionalFormattingIconSetRatings5";
+            spreadsheetCommandGalleryItem54.CommandName = "ConditionalFormattingIconSetQuarters5";
+            spreadsheetCommandGalleryItem55.CommandName = "ConditionalFormattingIconSetBoxes5";
+            spreadsheetCommandGalleryItemGroup7.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem51,
+            spreadsheetCommandGalleryItem52,
+            spreadsheetCommandGalleryItem53,
+            spreadsheetCommandGalleryItem54,
+            spreadsheetCommandGalleryItem55});
+            this.commandBarGalleryDropDown4.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup4,
+            spreadsheetCommandGalleryItemGroup5,
+            spreadsheetCommandGalleryItemGroup6,
+            spreadsheetCommandGalleryItemGroup7});
+            this.commandBarGalleryDropDown4.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown4.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown4.Name = "commandBarGalleryDropDown4";
+            this.commandBarGalleryDropDown4.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonItem59
+            // 
+            this.spreadsheetCommandBarButtonItem59.CommandName = "NewConditionalFormattingRule";
+            this.spreadsheetCommandBarButtonItem59.Id = 97;
+            this.spreadsheetCommandBarButtonItem59.Name = "spreadsheetCommandBarButtonItem59";
+            // 
+            // spreadsheetCommandBarSubItem6
+            // 
+            this.spreadsheetCommandBarSubItem6.CommandName = "ConditionalFormattingRemoveCommandGroup";
+            this.spreadsheetCommandBarSubItem6.Id = 100;
+            this.spreadsheetCommandBarSubItem6.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem60),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem61)});
+            this.spreadsheetCommandBarSubItem6.Name = "spreadsheetCommandBarSubItem6";
+            // 
+            // spreadsheetCommandBarButtonItem60
+            // 
+            this.spreadsheetCommandBarButtonItem60.CommandName = "ConditionalFormattingRemoveFromSheet";
+            this.spreadsheetCommandBarButtonItem60.Id = 98;
+            this.spreadsheetCommandBarButtonItem60.Name = "spreadsheetCommandBarButtonItem60";
+            // 
+            // spreadsheetCommandBarButtonItem61
+            // 
+            this.spreadsheetCommandBarButtonItem61.CommandName = "ConditionalFormattingRemove";
+            this.spreadsheetCommandBarButtonItem61.Id = 99;
+            this.spreadsheetCommandBarButtonItem61.Name = "spreadsheetCommandBarButtonItem61";
+            // 
+            // spreadsheetCommandBarButtonItem62
+            // 
+            this.spreadsheetCommandBarButtonItem62.CommandName = "ConditionalFormattingRulesManager";
+            this.spreadsheetCommandBarButtonItem62.Id = 101;
+            this.spreadsheetCommandBarButtonItem62.Name = "spreadsheetCommandBarButtonItem62";
+            // 
+            // galleryFormatAsTableItem1
+            // 
+            this.galleryFormatAsTableItem1.DropDownControl = this.commandBarGalleryDropDown5;
+            this.galleryFormatAsTableItem1.Id = 102;
+            this.galleryFormatAsTableItem1.Name = "galleryFormatAsTableItem1";
+            // 
+            // commandBarGalleryDropDown5
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown5.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown5.Gallery.ColumnCount = 7;
+            this.commandBarGalleryDropDown5.Gallery.DrawImageBackground = false;
+            this.commandBarGalleryDropDown5.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.commandBarGalleryDropDown5.Gallery.ItemSize = new System.Drawing.Size(73, 58);
+            this.commandBarGalleryDropDown5.Gallery.RowCount = 10;
+            this.commandBarGalleryDropDown5.Name = "commandBarGalleryDropDown5";
+            this.commandBarGalleryDropDown5.Ribbon = this.BookRibbon;
+            // 
+            // galleryChangeStyleItem1
+            // 
+            // 
+            // 
+            // 
+            this.galleryChangeStyleItem1.Gallery.DrawImageBackground = false;
+            this.galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            this.galleryChangeStyleItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.galleryChangeStyleItem1.Gallery.ItemSize = new System.Drawing.Size(106, 28);
+            this.galleryChangeStyleItem1.Gallery.RowCount = 9;
+            this.galleryChangeStyleItem1.Gallery.ShowItemText = true;
+            this.galleryChangeStyleItem1.Id = 103;
+            this.galleryChangeStyleItem1.Name = "galleryChangeStyleItem1";
+            // 
+            // spreadsheetCommandBarSubItem8
+            // 
+            this.spreadsheetCommandBarSubItem8.CommandName = "InsertCellsCommandGroup";
+            this.spreadsheetCommandBarSubItem8.Id = 104;
+            this.spreadsheetCommandBarSubItem8.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem63),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem64),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem65),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem66),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem67),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem68),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem69),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem70)});
+            this.spreadsheetCommandBarSubItem8.Name = "spreadsheetCommandBarSubItem8";
+            // 
+            // spreadsheetCommandBarButtonItem63
+            // 
+            this.spreadsheetCommandBarButtonItem63.CommandName = "InsertCells";
+            this.spreadsheetCommandBarButtonItem63.Id = 105;
+            this.spreadsheetCommandBarButtonItem63.Name = "spreadsheetCommandBarButtonItem63";
+            // 
+            // spreadsheetCommandBarButtonItem64
+            // 
+            this.spreadsheetCommandBarButtonItem64.CommandName = "InsertSheetRows";
+            this.spreadsheetCommandBarButtonItem64.Id = 106;
+            this.spreadsheetCommandBarButtonItem64.Name = "spreadsheetCommandBarButtonItem64";
+            // 
+            // spreadsheetCommandBarButtonItem65
+            // 
+            this.spreadsheetCommandBarButtonItem65.CommandName = "InsertSheetColumns";
+            this.spreadsheetCommandBarButtonItem65.Id = 107;
+            this.spreadsheetCommandBarButtonItem65.Name = "spreadsheetCommandBarButtonItem65";
+            // 
+            // spreadsheetCommandBarButtonItem66
+            // 
+            this.spreadsheetCommandBarButtonItem66.CommandName = "InsertTableRowsAbove";
+            this.spreadsheetCommandBarButtonItem66.Id = 108;
+            this.spreadsheetCommandBarButtonItem66.Name = "spreadsheetCommandBarButtonItem66";
+            // 
+            // spreadsheetCommandBarButtonItem67
+            // 
+            this.spreadsheetCommandBarButtonItem67.CommandName = "InsertTableRowBelow";
+            this.spreadsheetCommandBarButtonItem67.Id = 109;
+            this.spreadsheetCommandBarButtonItem67.Name = "spreadsheetCommandBarButtonItem67";
+            // 
+            // spreadsheetCommandBarButtonItem68
+            // 
+            this.spreadsheetCommandBarButtonItem68.CommandName = "InsertTableColumnsToTheLeft";
+            this.spreadsheetCommandBarButtonItem68.Id = 110;
+            this.spreadsheetCommandBarButtonItem68.Name = "spreadsheetCommandBarButtonItem68";
+            // 
+            // spreadsheetCommandBarButtonItem69
+            // 
+            this.spreadsheetCommandBarButtonItem69.CommandName = "InsertTableColumnToTheRight";
+            this.spreadsheetCommandBarButtonItem69.Id = 111;
+            this.spreadsheetCommandBarButtonItem69.Name = "spreadsheetCommandBarButtonItem69";
+            // 
+            // spreadsheetCommandBarButtonItem70
+            // 
+            this.spreadsheetCommandBarButtonItem70.CommandName = "InsertSheet";
+            this.spreadsheetCommandBarButtonItem70.Id = 112;
+            this.spreadsheetCommandBarButtonItem70.Name = "spreadsheetCommandBarButtonItem70";
+            // 
+            // spreadsheetCommandBarSubItem9
+            // 
+            this.spreadsheetCommandBarSubItem9.CommandName = "RemoveCellsCommandGroup";
+            this.spreadsheetCommandBarSubItem9.Id = 113;
+            this.spreadsheetCommandBarSubItem9.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem71),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem72),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem73),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem74),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem75),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem76)});
+            this.spreadsheetCommandBarSubItem9.Name = "spreadsheetCommandBarSubItem9";
+            // 
+            // spreadsheetCommandBarButtonItem71
+            // 
+            this.spreadsheetCommandBarButtonItem71.CommandName = "RemoveCells";
+            this.spreadsheetCommandBarButtonItem71.Id = 114;
+            this.spreadsheetCommandBarButtonItem71.Name = "spreadsheetCommandBarButtonItem71";
+            // 
+            // spreadsheetCommandBarButtonItem72
+            // 
+            this.spreadsheetCommandBarButtonItem72.CommandName = "RemoveSheetRows";
+            this.spreadsheetCommandBarButtonItem72.Id = 115;
+            this.spreadsheetCommandBarButtonItem72.Name = "spreadsheetCommandBarButtonItem72";
+            // 
+            // spreadsheetCommandBarButtonItem73
+            // 
+            this.spreadsheetCommandBarButtonItem73.CommandName = "RemoveSheetColumns";
+            this.spreadsheetCommandBarButtonItem73.Id = 116;
+            this.spreadsheetCommandBarButtonItem73.Name = "spreadsheetCommandBarButtonItem73";
+            // 
+            // spreadsheetCommandBarButtonItem74
+            // 
+            this.spreadsheetCommandBarButtonItem74.CommandName = "RemoveTableRows";
+            this.spreadsheetCommandBarButtonItem74.Id = 117;
+            this.spreadsheetCommandBarButtonItem74.Name = "spreadsheetCommandBarButtonItem74";
+            // 
+            // spreadsheetCommandBarButtonItem75
+            // 
+            this.spreadsheetCommandBarButtonItem75.CommandName = "RemoveTableColumns";
+            this.spreadsheetCommandBarButtonItem75.Id = 118;
+            this.spreadsheetCommandBarButtonItem75.Name = "spreadsheetCommandBarButtonItem75";
+            // 
+            // spreadsheetCommandBarButtonItem76
+            // 
+            this.spreadsheetCommandBarButtonItem76.CommandName = "RemoveSheet";
+            this.spreadsheetCommandBarButtonItem76.Id = 119;
+            this.spreadsheetCommandBarButtonItem76.Name = "spreadsheetCommandBarButtonItem76";
+            // 
+            // spreadsheetCommandBarSubItem11
+            // 
+            this.spreadsheetCommandBarSubItem11.CommandName = "FormatCommandGroup";
+            this.spreadsheetCommandBarSubItem11.Id = 120;
+            this.spreadsheetCommandBarSubItem11.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem77),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem78),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem79),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem80),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem81),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem10),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem88),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem89),
+            new DevExpress.XtraBars.LinkPersistInfo(this.changeSheetTabColorItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem90),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem13),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem91)});
+            this.spreadsheetCommandBarSubItem11.Name = "spreadsheetCommandBarSubItem11";
+            // 
+            // spreadsheetCommandBarButtonItem77
+            // 
+            this.spreadsheetCommandBarButtonItem77.CommandName = "FormatRowHeight";
+            this.spreadsheetCommandBarButtonItem77.Id = 121;
+            this.spreadsheetCommandBarButtonItem77.Name = "spreadsheetCommandBarButtonItem77";
+            // 
+            // spreadsheetCommandBarButtonItem78
+            // 
+            this.spreadsheetCommandBarButtonItem78.CommandName = "FormatAutoFitRowHeight";
+            this.spreadsheetCommandBarButtonItem78.Id = 122;
+            this.spreadsheetCommandBarButtonItem78.Name = "spreadsheetCommandBarButtonItem78";
+            // 
+            // spreadsheetCommandBarButtonItem79
+            // 
+            this.spreadsheetCommandBarButtonItem79.CommandName = "FormatColumnWidth";
+            this.spreadsheetCommandBarButtonItem79.Id = 123;
+            this.spreadsheetCommandBarButtonItem79.Name = "spreadsheetCommandBarButtonItem79";
+            // 
+            // spreadsheetCommandBarButtonItem80
+            // 
+            this.spreadsheetCommandBarButtonItem80.CommandName = "FormatAutoFitColumnWidth";
+            this.spreadsheetCommandBarButtonItem80.Id = 124;
+            this.spreadsheetCommandBarButtonItem80.Name = "spreadsheetCommandBarButtonItem80";
+            // 
+            // spreadsheetCommandBarButtonItem81
+            // 
+            this.spreadsheetCommandBarButtonItem81.CommandName = "FormatDefaultColumnWidth";
+            this.spreadsheetCommandBarButtonItem81.Id = 125;
+            this.spreadsheetCommandBarButtonItem81.Name = "spreadsheetCommandBarButtonItem81";
+            // 
+            // spreadsheetCommandBarSubItem10
+            // 
+            this.spreadsheetCommandBarSubItem10.CommandName = "HideAndUnhideCommandGroup";
+            this.spreadsheetCommandBarSubItem10.Id = 132;
+            this.spreadsheetCommandBarSubItem10.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem82),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem83),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem84),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem85),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem86),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem87)});
+            this.spreadsheetCommandBarSubItem10.Name = "spreadsheetCommandBarSubItem10";
+            // 
+            // spreadsheetCommandBarButtonItem82
+            // 
+            this.spreadsheetCommandBarButtonItem82.CommandName = "HideRows";
+            this.spreadsheetCommandBarButtonItem82.Id = 126;
+            this.spreadsheetCommandBarButtonItem82.Name = "spreadsheetCommandBarButtonItem82";
+            // 
+            // spreadsheetCommandBarButtonItem83
+            // 
+            this.spreadsheetCommandBarButtonItem83.CommandName = "HideColumns";
+            this.spreadsheetCommandBarButtonItem83.Id = 127;
+            this.spreadsheetCommandBarButtonItem83.Name = "spreadsheetCommandBarButtonItem83";
+            // 
+            // spreadsheetCommandBarButtonItem84
+            // 
+            this.spreadsheetCommandBarButtonItem84.CommandName = "HideSheet";
+            this.spreadsheetCommandBarButtonItem84.Id = 128;
+            this.spreadsheetCommandBarButtonItem84.Name = "spreadsheetCommandBarButtonItem84";
+            // 
+            // spreadsheetCommandBarButtonItem85
+            // 
+            this.spreadsheetCommandBarButtonItem85.CommandName = "UnhideRows";
+            this.spreadsheetCommandBarButtonItem85.Id = 129;
+            this.spreadsheetCommandBarButtonItem85.Name = "spreadsheetCommandBarButtonItem85";
+            // 
+            // spreadsheetCommandBarButtonItem86
+            // 
+            this.spreadsheetCommandBarButtonItem86.CommandName = "UnhideColumns";
+            this.spreadsheetCommandBarButtonItem86.Id = 130;
+            this.spreadsheetCommandBarButtonItem86.Name = "spreadsheetCommandBarButtonItem86";
+            // 
+            // spreadsheetCommandBarButtonItem87
+            // 
+            this.spreadsheetCommandBarButtonItem87.CommandName = "UnhideSheet";
+            this.spreadsheetCommandBarButtonItem87.Id = 131;
+            this.spreadsheetCommandBarButtonItem87.Name = "spreadsheetCommandBarButtonItem87";
+            // 
+            // spreadsheetCommandBarButtonItem88
+            // 
+            this.spreadsheetCommandBarButtonItem88.CommandName = "RenameSheet";
+            this.spreadsheetCommandBarButtonItem88.Id = 133;
+            this.spreadsheetCommandBarButtonItem88.Name = "spreadsheetCommandBarButtonItem88";
+            // 
+            // spreadsheetCommandBarButtonItem89
+            // 
+            this.spreadsheetCommandBarButtonItem89.CommandName = "MoveOrCopySheet";
+            this.spreadsheetCommandBarButtonItem89.Id = 134;
+            this.spreadsheetCommandBarButtonItem89.Name = "spreadsheetCommandBarButtonItem89";
+            // 
+            // changeSheetTabColorItem1
+            // 
+            this.changeSheetTabColorItem1.ActAsDropDown = true;
+            this.changeSheetTabColorItem1.Id = 135;
+            this.changeSheetTabColorItem1.Name = "changeSheetTabColorItem1";
+            // 
+            // spreadsheetCommandBarButtonItem90
+            // 
+            this.spreadsheetCommandBarButtonItem90.CommandName = "ReviewProtectSheet";
+            this.spreadsheetCommandBarButtonItem90.Id = 136;
+            this.spreadsheetCommandBarButtonItem90.Name = "spreadsheetCommandBarButtonItem90";
+            // 
+            // spreadsheetCommandBarCheckItem13
+            // 
+            this.spreadsheetCommandBarCheckItem13.CommandName = "FormatCellLocked";
+            this.spreadsheetCommandBarCheckItem13.Id = 137;
+            this.spreadsheetCommandBarCheckItem13.Name = "spreadsheetCommandBarCheckItem13";
+            // 
+            // spreadsheetCommandBarButtonItem91
+            // 
+            this.spreadsheetCommandBarButtonItem91.CommandName = "FormatCellsContextMenuItem";
+            this.spreadsheetCommandBarButtonItem91.Id = 138;
+            this.spreadsheetCommandBarButtonItem91.Name = "spreadsheetCommandBarButtonItem91";
+            // 
+            // spreadsheetCommandBarSubItem12
+            // 
+            this.spreadsheetCommandBarSubItem12.CommandName = "EditingAutoSumCommandGroup";
+            this.spreadsheetCommandBarSubItem12.Id = 139;
+            this.spreadsheetCommandBarSubItem12.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem92),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem93),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem94),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem95),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem96)});
+            this.spreadsheetCommandBarSubItem12.Name = "spreadsheetCommandBarSubItem12";
+            this.spreadsheetCommandBarSubItem12.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem92
+            // 
+            this.spreadsheetCommandBarButtonItem92.CommandName = "FunctionsInsertSum";
+            this.spreadsheetCommandBarButtonItem92.Id = 140;
+            this.spreadsheetCommandBarButtonItem92.Name = "spreadsheetCommandBarButtonItem92";
+            // 
+            // spreadsheetCommandBarButtonItem93
+            // 
+            this.spreadsheetCommandBarButtonItem93.CommandName = "FunctionsInsertAverage";
+            this.spreadsheetCommandBarButtonItem93.Id = 141;
+            this.spreadsheetCommandBarButtonItem93.Name = "spreadsheetCommandBarButtonItem93";
+            // 
+            // spreadsheetCommandBarButtonItem94
+            // 
+            this.spreadsheetCommandBarButtonItem94.CommandName = "FunctionsInsertCountNumbers";
+            this.spreadsheetCommandBarButtonItem94.Id = 142;
+            this.spreadsheetCommandBarButtonItem94.Name = "spreadsheetCommandBarButtonItem94";
+            // 
+            // spreadsheetCommandBarButtonItem95
+            // 
+            this.spreadsheetCommandBarButtonItem95.CommandName = "FunctionsInsertMax";
+            this.spreadsheetCommandBarButtonItem95.Id = 143;
+            this.spreadsheetCommandBarButtonItem95.Name = "spreadsheetCommandBarButtonItem95";
+            // 
+            // spreadsheetCommandBarButtonItem96
+            // 
+            this.spreadsheetCommandBarButtonItem96.CommandName = "FunctionsInsertMin";
+            this.spreadsheetCommandBarButtonItem96.Id = 144;
+            this.spreadsheetCommandBarButtonItem96.Name = "spreadsheetCommandBarButtonItem96";
+            // 
+            // spreadsheetCommandBarSubItem13
+            // 
+            this.spreadsheetCommandBarSubItem13.CommandName = "EditingFillCommandGroup";
+            this.spreadsheetCommandBarSubItem13.Id = 145;
+            this.spreadsheetCommandBarSubItem13.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem97),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem98),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem99),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem100)});
+            this.spreadsheetCommandBarSubItem13.Name = "spreadsheetCommandBarSubItem13";
+            this.spreadsheetCommandBarSubItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem97
+            // 
+            this.spreadsheetCommandBarButtonItem97.CommandName = "EditingFillDown";
+            this.spreadsheetCommandBarButtonItem97.Id = 146;
+            this.spreadsheetCommandBarButtonItem97.Name = "spreadsheetCommandBarButtonItem97";
+            // 
+            // spreadsheetCommandBarButtonItem98
+            // 
+            this.spreadsheetCommandBarButtonItem98.CommandName = "EditingFillRight";
+            this.spreadsheetCommandBarButtonItem98.Id = 147;
+            this.spreadsheetCommandBarButtonItem98.Name = "spreadsheetCommandBarButtonItem98";
+            // 
+            // spreadsheetCommandBarButtonItem99
+            // 
+            this.spreadsheetCommandBarButtonItem99.CommandName = "EditingFillUp";
+            this.spreadsheetCommandBarButtonItem99.Id = 148;
+            this.spreadsheetCommandBarButtonItem99.Name = "spreadsheetCommandBarButtonItem99";
+            // 
+            // spreadsheetCommandBarButtonItem100
+            // 
+            this.spreadsheetCommandBarButtonItem100.CommandName = "EditingFillLeft";
+            this.spreadsheetCommandBarButtonItem100.Id = 149;
+            this.spreadsheetCommandBarButtonItem100.Name = "spreadsheetCommandBarButtonItem100";
+            // 
+            // spreadsheetCommandBarSubItem14
+            // 
+            this.spreadsheetCommandBarSubItem14.CommandName = "FormatClearCommandGroup";
+            this.spreadsheetCommandBarSubItem14.Id = 150;
+            this.spreadsheetCommandBarSubItem14.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem101),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem102),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem103),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem104),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem105),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem106)});
+            this.spreadsheetCommandBarSubItem14.Name = "spreadsheetCommandBarSubItem14";
+            this.spreadsheetCommandBarSubItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem101
+            // 
+            this.spreadsheetCommandBarButtonItem101.CommandName = "FormatClearAll";
+            this.spreadsheetCommandBarButtonItem101.Id = 151;
+            this.spreadsheetCommandBarButtonItem101.Name = "spreadsheetCommandBarButtonItem101";
+            // 
+            // spreadsheetCommandBarButtonItem102
+            // 
+            this.spreadsheetCommandBarButtonItem102.CommandName = "FormatClearFormats";
+            this.spreadsheetCommandBarButtonItem102.Id = 152;
+            this.spreadsheetCommandBarButtonItem102.Name = "spreadsheetCommandBarButtonItem102";
+            // 
+            // spreadsheetCommandBarButtonItem103
+            // 
+            this.spreadsheetCommandBarButtonItem103.CommandName = "FormatClearContents";
+            this.spreadsheetCommandBarButtonItem103.Id = 153;
+            this.spreadsheetCommandBarButtonItem103.Name = "spreadsheetCommandBarButtonItem103";
+            // 
+            // spreadsheetCommandBarButtonItem104
+            // 
+            this.spreadsheetCommandBarButtonItem104.CommandName = "FormatClearComments";
+            this.spreadsheetCommandBarButtonItem104.Id = 154;
+            this.spreadsheetCommandBarButtonItem104.Name = "spreadsheetCommandBarButtonItem104";
+            // 
+            // spreadsheetCommandBarButtonItem105
+            // 
+            this.spreadsheetCommandBarButtonItem105.CommandName = "FormatClearHyperlinks";
+            this.spreadsheetCommandBarButtonItem105.Id = 155;
+            this.spreadsheetCommandBarButtonItem105.Name = "spreadsheetCommandBarButtonItem105";
+            // 
+            // spreadsheetCommandBarButtonItem106
+            // 
+            this.spreadsheetCommandBarButtonItem106.CommandName = "FormatRemoveHyperlinks";
+            this.spreadsheetCommandBarButtonItem106.Id = 156;
+            this.spreadsheetCommandBarButtonItem106.Name = "spreadsheetCommandBarButtonItem106";
+            // 
+            // spreadsheetCommandBarSubItem15
+            // 
+            this.spreadsheetCommandBarSubItem15.CommandName = "EditingSortAndFilterCommandGroup";
+            this.spreadsheetCommandBarSubItem15.Id = 157;
+            this.spreadsheetCommandBarSubItem15.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem107),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem108),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem14),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem109),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem110)});
+            this.spreadsheetCommandBarSubItem15.Name = "spreadsheetCommandBarSubItem15";
+            // 
+            // spreadsheetCommandBarButtonItem107
+            // 
+            this.spreadsheetCommandBarButtonItem107.CommandName = "DataSortAscending";
+            this.spreadsheetCommandBarButtonItem107.Id = 158;
+            this.spreadsheetCommandBarButtonItem107.Name = "spreadsheetCommandBarButtonItem107";
+            // 
+            // spreadsheetCommandBarButtonItem108
+            // 
+            this.spreadsheetCommandBarButtonItem108.CommandName = "DataSortDescending";
+            this.spreadsheetCommandBarButtonItem108.Id = 159;
+            this.spreadsheetCommandBarButtonItem108.Name = "spreadsheetCommandBarButtonItem108";
+            // 
+            // spreadsheetCommandBarCheckItem14
+            // 
+            this.spreadsheetCommandBarCheckItem14.CommandName = "DataFilterToggle";
+            this.spreadsheetCommandBarCheckItem14.Id = 160;
+            this.spreadsheetCommandBarCheckItem14.Name = "spreadsheetCommandBarCheckItem14";
+            // 
+            // spreadsheetCommandBarButtonItem109
+            // 
+            this.spreadsheetCommandBarButtonItem109.CommandName = "DataFilterClear";
+            this.spreadsheetCommandBarButtonItem109.Id = 161;
+            this.spreadsheetCommandBarButtonItem109.Name = "spreadsheetCommandBarButtonItem109";
+            // 
+            // spreadsheetCommandBarButtonItem110
+            // 
+            this.spreadsheetCommandBarButtonItem110.CommandName = "DataFilterReApply";
+            this.spreadsheetCommandBarButtonItem110.Id = 162;
+            this.spreadsheetCommandBarButtonItem110.Name = "spreadsheetCommandBarButtonItem110";
+            // 
+            // spreadsheetCommandBarSubItem16
+            // 
+            this.spreadsheetCommandBarSubItem16.CommandName = "EditingFindAndSelectCommandGroup";
+            this.spreadsheetCommandBarSubItem16.Id = 163;
+            this.spreadsheetCommandBarSubItem16.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem111),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem112),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem113),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem114),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem115),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem116),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem117)});
+            this.spreadsheetCommandBarSubItem16.Name = "spreadsheetCommandBarSubItem16";
+            // 
+            // spreadsheetCommandBarButtonItem111
+            // 
+            this.spreadsheetCommandBarButtonItem111.CommandName = "EditingFind";
+            this.spreadsheetCommandBarButtonItem111.Id = 164;
+            this.spreadsheetCommandBarButtonItem111.Name = "spreadsheetCommandBarButtonItem111";
+            // 
+            // spreadsheetCommandBarButtonItem112
+            // 
+            this.spreadsheetCommandBarButtonItem112.CommandName = "EditingReplace";
+            this.spreadsheetCommandBarButtonItem112.Id = 165;
+            this.spreadsheetCommandBarButtonItem112.Name = "spreadsheetCommandBarButtonItem112";
+            // 
+            // spreadsheetCommandBarButtonItem113
+            // 
+            this.spreadsheetCommandBarButtonItem113.CommandName = "EditingSelectFormulas";
+            this.spreadsheetCommandBarButtonItem113.Id = 166;
+            this.spreadsheetCommandBarButtonItem113.Name = "spreadsheetCommandBarButtonItem113";
+            // 
+            // spreadsheetCommandBarButtonItem114
+            // 
+            this.spreadsheetCommandBarButtonItem114.CommandName = "EditingSelectComments";
+            this.spreadsheetCommandBarButtonItem114.Id = 167;
+            this.spreadsheetCommandBarButtonItem114.Name = "spreadsheetCommandBarButtonItem114";
+            // 
+            // spreadsheetCommandBarButtonItem115
+            // 
+            this.spreadsheetCommandBarButtonItem115.CommandName = "EditingSelectConditionalFormatting";
+            this.spreadsheetCommandBarButtonItem115.Id = 168;
+            this.spreadsheetCommandBarButtonItem115.Name = "spreadsheetCommandBarButtonItem115";
+            // 
+            // spreadsheetCommandBarButtonItem116
+            // 
+            this.spreadsheetCommandBarButtonItem116.CommandName = "EditingSelectConstants";
+            this.spreadsheetCommandBarButtonItem116.Id = 169;
+            this.spreadsheetCommandBarButtonItem116.Name = "spreadsheetCommandBarButtonItem116";
+            // 
+            // spreadsheetCommandBarButtonItem117
+            // 
+            this.spreadsheetCommandBarButtonItem117.CommandName = "EditingSelectDataValidation";
+            this.spreadsheetCommandBarButtonItem117.Id = 170;
+            this.spreadsheetCommandBarButtonItem117.Name = "spreadsheetCommandBarButtonItem117";
+            // 
+            // spreadsheetCommandBarButtonItem118
+            // 
+            this.spreadsheetCommandBarButtonItem118.CommandName = "InsertPivotTable";
+            this.spreadsheetCommandBarButtonItem118.Id = 171;
+            this.spreadsheetCommandBarButtonItem118.Name = "spreadsheetCommandBarButtonItem118";
+            // 
+            // spreadsheetCommandBarButtonItem119
+            // 
+            this.spreadsheetCommandBarButtonItem119.CommandName = "InsertTable";
+            this.spreadsheetCommandBarButtonItem119.Id = 172;
+            this.spreadsheetCommandBarButtonItem119.Name = "spreadsheetCommandBarButtonItem119";
+            // 
+            // spreadsheetCommandBarButtonItem120
+            // 
+            this.spreadsheetCommandBarButtonItem120.CommandName = "InsertPicture";
+            this.spreadsheetCommandBarButtonItem120.Id = 173;
+            this.spreadsheetCommandBarButtonItem120.Name = "spreadsheetCommandBarButtonItem120";
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem4
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem4.CommandName = "InsertChartColumnCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem4.DropDownControl = this.commandBarGalleryDropDown6;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem4.Id = 174;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem4.Name = "spreadsheetCommandBarButtonGalleryDropDownItem4";
+            // 
+            // commandBarGalleryDropDown6
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown6.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup8.CommandName = "InsertChartColumn2DCommandGroup";
+            spreadsheetCommandGalleryItem56.CommandName = "InsertChartColumnClustered2D";
+            spreadsheetCommandGalleryItem57.CommandName = "InsertChartColumnStacked2D";
+            spreadsheetCommandGalleryItem58.CommandName = "InsertChartColumnPercentStacked2D";
+            spreadsheetCommandGalleryItemGroup8.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem56,
+            spreadsheetCommandGalleryItem57,
+            spreadsheetCommandGalleryItem58});
+            spreadsheetCommandGalleryItemGroup9.CommandName = "InsertChartColumn3DCommandGroup";
+            spreadsheetCommandGalleryItem59.CommandName = "InsertChartColumnClustered3D";
+            spreadsheetCommandGalleryItem60.CommandName = "InsertChartColumnStacked3D";
+            spreadsheetCommandGalleryItem61.CommandName = "InsertChartColumnPercentStacked3D";
+            spreadsheetCommandGalleryItem62.CommandName = "InsertChartColumn3D";
+            spreadsheetCommandGalleryItemGroup9.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem59,
+            spreadsheetCommandGalleryItem60,
+            spreadsheetCommandGalleryItem61,
+            spreadsheetCommandGalleryItem62});
+            spreadsheetCommandGalleryItemGroup10.CommandName = "InsertChartCylinderCommandGroup";
+            spreadsheetCommandGalleryItem63.CommandName = "InsertChartCylinderClustered";
+            spreadsheetCommandGalleryItem64.CommandName = "InsertChartCylinderStacked";
+            spreadsheetCommandGalleryItem65.CommandName = "InsertChartCylinderPercentStacked";
+            spreadsheetCommandGalleryItem66.CommandName = "InsertChartCylinder";
+            spreadsheetCommandGalleryItemGroup10.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem63,
+            spreadsheetCommandGalleryItem64,
+            spreadsheetCommandGalleryItem65,
+            spreadsheetCommandGalleryItem66});
+            spreadsheetCommandGalleryItemGroup11.CommandName = "InsertChartConeCommandGroup";
+            spreadsheetCommandGalleryItem67.CommandName = "InsertChartConeClustered";
+            spreadsheetCommandGalleryItem68.CommandName = "InsertChartConeStacked";
+            spreadsheetCommandGalleryItem69.CommandName = "InsertChartConePercentStacked";
+            spreadsheetCommandGalleryItem70.CommandName = "InsertChartCone";
+            spreadsheetCommandGalleryItemGroup11.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem67,
+            spreadsheetCommandGalleryItem68,
+            spreadsheetCommandGalleryItem69,
+            spreadsheetCommandGalleryItem70});
+            spreadsheetCommandGalleryItemGroup12.CommandName = "InsertChartPyramidCommandGroup";
+            spreadsheetCommandGalleryItem71.CommandName = "InsertChartPyramidClustered";
+            spreadsheetCommandGalleryItem72.CommandName = "InsertChartPyramidStacked";
+            spreadsheetCommandGalleryItem73.CommandName = "InsertChartPyramidPercentStacked";
+            spreadsheetCommandGalleryItem74.CommandName = "InsertChartPyramid";
+            spreadsheetCommandGalleryItemGroup12.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem71,
+            spreadsheetCommandGalleryItem72,
+            spreadsheetCommandGalleryItem73,
+            spreadsheetCommandGalleryItem74});
+            this.commandBarGalleryDropDown6.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup8,
+            spreadsheetCommandGalleryItemGroup9,
+            spreadsheetCommandGalleryItemGroup10,
+            spreadsheetCommandGalleryItemGroup11,
+            spreadsheetCommandGalleryItemGroup12});
+            this.commandBarGalleryDropDown6.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown6.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown6.Name = "commandBarGalleryDropDown6";
+            this.commandBarGalleryDropDown6.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem5
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem5.CommandName = "InsertChartLineCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem5.DropDownControl = this.commandBarGalleryDropDown7;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem5.Id = 175;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem5.Name = "spreadsheetCommandBarButtonGalleryDropDownItem5";
+            // 
+            // commandBarGalleryDropDown7
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown7.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup13.CommandName = "InsertChartLine2DCommandGroup";
+            spreadsheetCommandGalleryItem75.CommandName = "InsertChartLine";
+            spreadsheetCommandGalleryItem76.CommandName = "InsertChartStackedLine";
+            spreadsheetCommandGalleryItem77.CommandName = "InsertChartPercentStackedLine";
+            spreadsheetCommandGalleryItem78.CommandName = "InsertChartLineWithMarkers";
+            spreadsheetCommandGalleryItem79.CommandName = "InsertChartStackedLineWithMarkers";
+            spreadsheetCommandGalleryItem80.CommandName = "InsertChartPercentStackedLineWithMarkers";
+            spreadsheetCommandGalleryItemGroup13.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem75,
+            spreadsheetCommandGalleryItem76,
+            spreadsheetCommandGalleryItem77,
+            spreadsheetCommandGalleryItem78,
+            spreadsheetCommandGalleryItem79,
+            spreadsheetCommandGalleryItem80});
+            spreadsheetCommandGalleryItemGroup14.CommandName = "InsertChartLine3DCommandGroup";
+            spreadsheetCommandGalleryItem81.CommandName = "InsertChartLine3D";
+            spreadsheetCommandGalleryItemGroup14.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem81});
+            this.commandBarGalleryDropDown7.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup13,
+            spreadsheetCommandGalleryItemGroup14});
+            this.commandBarGalleryDropDown7.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown7.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown7.Name = "commandBarGalleryDropDown7";
+            this.commandBarGalleryDropDown7.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem6
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem6.CommandName = "InsertChartPieCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem6.DropDownControl = this.commandBarGalleryDropDown8;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem6.Id = 176;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem6.Name = "spreadsheetCommandBarButtonGalleryDropDownItem6";
+            // 
+            // commandBarGalleryDropDown8
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown8.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup15.CommandName = "InsertChartPie2DCommandGroup";
+            spreadsheetCommandGalleryItem82.CommandName = "InsertChartPie2D";
+            spreadsheetCommandGalleryItem83.CommandName = "InsertChartPieExploded2D";
+            spreadsheetCommandGalleryItemGroup15.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem82,
+            spreadsheetCommandGalleryItem83});
+            spreadsheetCommandGalleryItemGroup16.CommandName = "InsertChartPie3DCommandGroup";
+            spreadsheetCommandGalleryItem84.CommandName = "InsertChartPie3D";
+            spreadsheetCommandGalleryItem85.CommandName = "InsertChartPieExploded3D";
+            spreadsheetCommandGalleryItemGroup16.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem84,
+            spreadsheetCommandGalleryItem85});
+            spreadsheetCommandGalleryItemGroup17.CommandName = "InsertChartDoughnut2DCommandGroup";
+            spreadsheetCommandGalleryItem86.CommandName = "InsertChartDoughnut2D";
+            spreadsheetCommandGalleryItem87.CommandName = "InsertChartDoughnutExploded2D";
+            spreadsheetCommandGalleryItemGroup17.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem86,
+            spreadsheetCommandGalleryItem87});
+            this.commandBarGalleryDropDown8.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup15,
+            spreadsheetCommandGalleryItemGroup16,
+            spreadsheetCommandGalleryItemGroup17});
+            this.commandBarGalleryDropDown8.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown8.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown8.Name = "commandBarGalleryDropDown8";
+            this.commandBarGalleryDropDown8.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem7
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem7.CommandName = "InsertChartBarCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem7.DropDownControl = this.commandBarGalleryDropDown9;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem7.Id = 177;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem7.Name = "spreadsheetCommandBarButtonGalleryDropDownItem7";
+            // 
+            // commandBarGalleryDropDown9
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown9.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup18.CommandName = "InsertChartBar2DCommandGroup";
+            spreadsheetCommandGalleryItem88.CommandName = "InsertChartBarClustered2D";
+            spreadsheetCommandGalleryItem89.CommandName = "InsertChartBarStacked2D";
+            spreadsheetCommandGalleryItem90.CommandName = "InsertChartBarPercentStacked2D";
+            spreadsheetCommandGalleryItemGroup18.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem88,
+            spreadsheetCommandGalleryItem89,
+            spreadsheetCommandGalleryItem90});
+            spreadsheetCommandGalleryItemGroup19.CommandName = "InsertChartBar3DCommandGroup";
+            spreadsheetCommandGalleryItem91.CommandName = "InsertChartBarClustered3D";
+            spreadsheetCommandGalleryItem92.CommandName = "InsertChartBarStacked3D";
+            spreadsheetCommandGalleryItem93.CommandName = "InsertChartBarPercentStacked3D";
+            spreadsheetCommandGalleryItemGroup19.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem91,
+            spreadsheetCommandGalleryItem92,
+            spreadsheetCommandGalleryItem93});
+            spreadsheetCommandGalleryItemGroup20.CommandName = "InsertChartHorizontalCylinderCommandGroup";
+            spreadsheetCommandGalleryItem94.CommandName = "InsertChartHorizontalCylinderClustered";
+            spreadsheetCommandGalleryItem95.CommandName = "InsertChartHorizontalCylinderStacked";
+            spreadsheetCommandGalleryItem96.CommandName = "InsertChartHorizontalCylinderPercentStacked";
+            spreadsheetCommandGalleryItemGroup20.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem94,
+            spreadsheetCommandGalleryItem95,
+            spreadsheetCommandGalleryItem96});
+            spreadsheetCommandGalleryItemGroup21.CommandName = "InsertChartHorizontalConeCommandGroup";
+            spreadsheetCommandGalleryItem97.CommandName = "InsertChartHorizontalConeClustered";
+            spreadsheetCommandGalleryItem98.CommandName = "InsertChartHorizontalConeStacked";
+            spreadsheetCommandGalleryItem99.CommandName = "InsertChartHorizontalConePercentStacked";
+            spreadsheetCommandGalleryItemGroup21.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem97,
+            spreadsheetCommandGalleryItem98,
+            spreadsheetCommandGalleryItem99});
+            spreadsheetCommandGalleryItemGroup22.CommandName = "InsertChartHorizontalPyramidCommandGroup";
+            spreadsheetCommandGalleryItem100.CommandName = "InsertChartHorizontalPyramidClustered";
+            spreadsheetCommandGalleryItem101.CommandName = "InsertChartHorizontalPyramidStacked";
+            spreadsheetCommandGalleryItem102.CommandName = "InsertChartHorizontalPyramidPercentStacked";
+            spreadsheetCommandGalleryItemGroup22.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem100,
+            spreadsheetCommandGalleryItem101,
+            spreadsheetCommandGalleryItem102});
+            this.commandBarGalleryDropDown9.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup18,
+            spreadsheetCommandGalleryItemGroup19,
+            spreadsheetCommandGalleryItemGroup20,
+            spreadsheetCommandGalleryItemGroup21,
+            spreadsheetCommandGalleryItemGroup22});
+            this.commandBarGalleryDropDown9.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown9.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown9.Name = "commandBarGalleryDropDown9";
+            this.commandBarGalleryDropDown9.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem8
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem8.CommandName = "InsertChartAreaCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem8.DropDownControl = this.commandBarGalleryDropDown10;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem8.Id = 178;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem8.Name = "spreadsheetCommandBarButtonGalleryDropDownItem8";
+            // 
+            // commandBarGalleryDropDown10
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown10.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup23.CommandName = "InsertChartArea2DCommandGroup";
+            spreadsheetCommandGalleryItem103.CommandName = "InsertChartArea";
+            spreadsheetCommandGalleryItem104.CommandName = "InsertChartStackedArea";
+            spreadsheetCommandGalleryItem105.CommandName = "InsertChartPercentStackedArea";
+            spreadsheetCommandGalleryItemGroup23.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem103,
+            spreadsheetCommandGalleryItem104,
+            spreadsheetCommandGalleryItem105});
+            spreadsheetCommandGalleryItemGroup24.CommandName = "InsertChartArea3DCommandGroup";
+            spreadsheetCommandGalleryItem106.CommandName = "InsertChartArea3D";
+            spreadsheetCommandGalleryItem107.CommandName = "InsertChartStackedArea3D";
+            spreadsheetCommandGalleryItem108.CommandName = "InsertChartPercentStackedArea3D";
+            spreadsheetCommandGalleryItemGroup24.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem106,
+            spreadsheetCommandGalleryItem107,
+            spreadsheetCommandGalleryItem108});
+            this.commandBarGalleryDropDown10.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup23,
+            spreadsheetCommandGalleryItemGroup24});
+            this.commandBarGalleryDropDown10.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown10.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown10.Name = "commandBarGalleryDropDown10";
+            this.commandBarGalleryDropDown10.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem9
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem9.CommandName = "InsertChartScatterCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem9.DropDownControl = this.commandBarGalleryDropDown11;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem9.Id = 179;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem9.Name = "spreadsheetCommandBarButtonGalleryDropDownItem9";
+            // 
+            // commandBarGalleryDropDown11
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown11.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup25.CommandName = "InsertChartScatterCommandGroup";
+            spreadsheetCommandGalleryItem109.CommandName = "InsertChartScatterMarkers";
+            spreadsheetCommandGalleryItem110.CommandName = "InsertChartScatterSmoothLinesAndMarkers";
+            spreadsheetCommandGalleryItem111.CommandName = "InsertChartScatterSmoothLines";
+            spreadsheetCommandGalleryItem112.CommandName = "InsertChartScatterLinesAndMarkers";
+            spreadsheetCommandGalleryItem113.CommandName = "InsertChartScatterLines";
+            spreadsheetCommandGalleryItemGroup25.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem109,
+            spreadsheetCommandGalleryItem110,
+            spreadsheetCommandGalleryItem111,
+            spreadsheetCommandGalleryItem112,
+            spreadsheetCommandGalleryItem113});
+            spreadsheetCommandGalleryItemGroup26.CommandName = "InsertChartBubbleCommandGroup";
+            spreadsheetCommandGalleryItem114.CommandName = "InsertChartBubble";
+            spreadsheetCommandGalleryItem115.CommandName = "InsertChartBubble3D";
+            spreadsheetCommandGalleryItemGroup26.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem114,
+            spreadsheetCommandGalleryItem115});
+            this.commandBarGalleryDropDown11.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup25,
+            spreadsheetCommandGalleryItemGroup26});
+            this.commandBarGalleryDropDown11.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown11.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown11.Name = "commandBarGalleryDropDown11";
+            this.commandBarGalleryDropDown11.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem10
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem10.CommandName = "InsertChartStatisticCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem10.DropDownControl = this.commandBarGalleryDropDown12;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem10.Id = 180;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem10.Name = "spreadsheetCommandBarButtonGalleryDropDownItem10";
+            // 
+            // commandBarGalleryDropDown12
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown12.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup27.CommandName = "InsertChartHistogramCommandGroup";
+            spreadsheetCommandGalleryItem116.CommandName = "InsertChartHistogram";
+            spreadsheetCommandGalleryItem117.CommandName = "InsertChartPareto";
+            spreadsheetCommandGalleryItemGroup27.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem116,
+            spreadsheetCommandGalleryItem117});
+            spreadsheetCommandGalleryItemGroup28.CommandName = "InsertChartBoxAndWhiskerCommandGroup";
+            spreadsheetCommandGalleryItem118.CommandName = "InsertChartBoxAndWhisker";
+            spreadsheetCommandGalleryItemGroup28.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem118});
+            this.commandBarGalleryDropDown12.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup27,
+            spreadsheetCommandGalleryItemGroup28});
+            this.commandBarGalleryDropDown12.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown12.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown12.Name = "commandBarGalleryDropDown12";
+            this.commandBarGalleryDropDown12.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem11
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem11.CommandName = "InsertChartHierarchyCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem11.DropDownControl = this.commandBarGalleryDropDown13;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem11.Id = 181;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem11.Name = "spreadsheetCommandBarButtonGalleryDropDownItem11";
+            // 
+            // commandBarGalleryDropDown13
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown13.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup29.CommandName = "InsertChartTreemapCommandGroup";
+            spreadsheetCommandGalleryItem119.CommandName = "InsertChartTreemap";
+            spreadsheetCommandGalleryItemGroup29.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem119});
+            spreadsheetCommandGalleryItemGroup30.CommandName = "InsertChartSunburstCommandGroup";
+            spreadsheetCommandGalleryItem120.CommandName = "InsertChartSunburst";
+            spreadsheetCommandGalleryItemGroup30.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem120});
+            this.commandBarGalleryDropDown13.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup29,
+            spreadsheetCommandGalleryItemGroup30});
+            this.commandBarGalleryDropDown13.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown13.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown13.Name = "commandBarGalleryDropDown13";
+            this.commandBarGalleryDropDown13.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem12
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem12.CommandName = "InsertChartOtherCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem12.DropDownControl = this.commandBarGalleryDropDown14;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem12.Id = 182;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem12.Name = "spreadsheetCommandBarButtonGalleryDropDownItem12";
+            // 
+            // commandBarGalleryDropDown14
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown14.Gallery.AllowFilter = false;
+            spreadsheetCommandGalleryItemGroup31.CommandName = "InsertChartWaterfallCommandGroup";
+            spreadsheetCommandGalleryItem121.CommandName = "InsertChartWaterfall";
+            spreadsheetCommandGalleryItemGroup31.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem121});
+            spreadsheetCommandGalleryItemGroup32.CommandName = "InsertChartFunnelCommandGroup";
+            spreadsheetCommandGalleryItem122.CommandName = "InsertChartFunnel";
+            spreadsheetCommandGalleryItemGroup32.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem122});
+            spreadsheetCommandGalleryItemGroup33.CommandName = "InsertChartStockCommandGroup";
+            spreadsheetCommandGalleryItem123.CommandName = "InsertChartStockHighLowClose";
+            spreadsheetCommandGalleryItem124.CommandName = "InsertChartStockOpenHighLowClose";
+            spreadsheetCommandGalleryItem125.CommandName = "InsertChartStockVolumeHighLowClose";
+            spreadsheetCommandGalleryItem126.CommandName = "InsertChartStockVolumeOpenHighLowClose";
+            spreadsheetCommandGalleryItemGroup33.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem123,
+            spreadsheetCommandGalleryItem124,
+            spreadsheetCommandGalleryItem125,
+            spreadsheetCommandGalleryItem126});
+            spreadsheetCommandGalleryItemGroup34.CommandName = "InsertChartRadarCommandGroup";
+            spreadsheetCommandGalleryItem127.CommandName = "InsertChartRadar";
+            spreadsheetCommandGalleryItem128.CommandName = "InsertChartRadarWithMarkers";
+            spreadsheetCommandGalleryItem129.CommandName = "InsertChartRadarFilled";
+            spreadsheetCommandGalleryItemGroup34.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem127,
+            spreadsheetCommandGalleryItem128,
+            spreadsheetCommandGalleryItem129});
+            this.commandBarGalleryDropDown14.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup31,
+            spreadsheetCommandGalleryItemGroup32,
+            spreadsheetCommandGalleryItemGroup33,
+            spreadsheetCommandGalleryItemGroup34});
+            this.commandBarGalleryDropDown14.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown14.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown14.Name = "commandBarGalleryDropDown14";
+            this.commandBarGalleryDropDown14.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonItem121
+            // 
+            this.spreadsheetCommandBarButtonItem121.CommandName = "InsertHyperlink";
+            this.spreadsheetCommandBarButtonItem121.Id = 183;
+            this.spreadsheetCommandBarButtonItem121.Name = "spreadsheetCommandBarButtonItem121";
+            // 
+            // spreadsheetCommandBarButtonItem122
+            // 
+            this.spreadsheetCommandBarButtonItem122.CommandName = "InsertSymbol";
+            this.spreadsheetCommandBarButtonItem122.Id = 184;
+            this.spreadsheetCommandBarButtonItem122.Name = "spreadsheetCommandBarButtonItem122";
+            // 
+            // spreadsheetCommandBarSubItem17
+            // 
+            this.spreadsheetCommandBarSubItem17.CommandName = "PageSetupMarginsCommandGroup";
+            this.spreadsheetCommandBarSubItem17.Id = 185;
+            this.spreadsheetCommandBarSubItem17.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem15),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem16),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem17),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem123)});
+            this.spreadsheetCommandBarSubItem17.Name = "spreadsheetCommandBarSubItem17";
+            // 
+            // spreadsheetCommandBarCheckItem15
+            // 
+            this.spreadsheetCommandBarCheckItem15.CaptionDependOnUnits = true;
+            this.spreadsheetCommandBarCheckItem15.CommandName = "PageSetupMarginsNormal";
+            this.spreadsheetCommandBarCheckItem15.Id = 186;
+            this.spreadsheetCommandBarCheckItem15.Name = "spreadsheetCommandBarCheckItem15";
+            this.spreadsheetCommandBarCheckItem15.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarCheckItem16
+            // 
+            this.spreadsheetCommandBarCheckItem16.CaptionDependOnUnits = true;
+            this.spreadsheetCommandBarCheckItem16.CommandName = "PageSetupMarginsWide";
+            this.spreadsheetCommandBarCheckItem16.Id = 187;
+            this.spreadsheetCommandBarCheckItem16.Name = "spreadsheetCommandBarCheckItem16";
+            this.spreadsheetCommandBarCheckItem16.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarCheckItem17
+            // 
+            this.spreadsheetCommandBarCheckItem17.CaptionDependOnUnits = true;
+            this.spreadsheetCommandBarCheckItem17.CommandName = "PageSetupMarginsNarrow";
+            this.spreadsheetCommandBarCheckItem17.Id = 188;
+            this.spreadsheetCommandBarCheckItem17.Name = "spreadsheetCommandBarCheckItem17";
+            this.spreadsheetCommandBarCheckItem17.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem123
+            // 
+            this.spreadsheetCommandBarButtonItem123.CommandName = "PageSetupCustomMargins";
+            this.spreadsheetCommandBarButtonItem123.Id = 189;
+            this.spreadsheetCommandBarButtonItem123.Name = "spreadsheetCommandBarButtonItem123";
+            // 
+            // spreadsheetCommandBarSubItem18
+            // 
+            this.spreadsheetCommandBarSubItem18.CommandName = "PageSetupOrientationCommandGroup";
+            this.spreadsheetCommandBarSubItem18.Id = 190;
+            this.spreadsheetCommandBarSubItem18.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem18),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem19)});
+            this.spreadsheetCommandBarSubItem18.Name = "spreadsheetCommandBarSubItem18";
+            // 
+            // spreadsheetCommandBarCheckItem18
+            // 
+            this.spreadsheetCommandBarCheckItem18.CommandName = "PageSetupOrientationPortrait";
+            this.spreadsheetCommandBarCheckItem18.Id = 191;
+            this.spreadsheetCommandBarCheckItem18.Name = "spreadsheetCommandBarCheckItem18";
+            // 
+            // spreadsheetCommandBarCheckItem19
+            // 
+            this.spreadsheetCommandBarCheckItem19.CommandName = "PageSetupOrientationLandscape";
+            this.spreadsheetCommandBarCheckItem19.Id = 192;
+            this.spreadsheetCommandBarCheckItem19.Name = "spreadsheetCommandBarCheckItem19";
+            // 
+            // pageSetupPaperKindItem1
+            // 
+            this.pageSetupPaperKindItem1.Id = 193;
+            this.pageSetupPaperKindItem1.Name = "pageSetupPaperKindItem1";
+            // 
+            // spreadsheetCommandBarSubItem19
+            // 
+            this.spreadsheetCommandBarSubItem19.CommandName = "PageSetupPrintAreaCommandGroup";
+            this.spreadsheetCommandBarSubItem19.Id = 194;
+            this.spreadsheetCommandBarSubItem19.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem124),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem125),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem126)});
+            this.spreadsheetCommandBarSubItem19.Name = "spreadsheetCommandBarSubItem19";
+            // 
+            // spreadsheetCommandBarButtonItem124
+            // 
+            this.spreadsheetCommandBarButtonItem124.CommandName = "PageSetupSetPrintArea";
+            this.spreadsheetCommandBarButtonItem124.Id = 195;
+            this.spreadsheetCommandBarButtonItem124.Name = "spreadsheetCommandBarButtonItem124";
+            // 
+            // spreadsheetCommandBarButtonItem125
+            // 
+            this.spreadsheetCommandBarButtonItem125.CommandName = "PageSetupClearPrintArea";
+            this.spreadsheetCommandBarButtonItem125.Id = 196;
+            this.spreadsheetCommandBarButtonItem125.Name = "spreadsheetCommandBarButtonItem125";
+            // 
+            // spreadsheetCommandBarButtonItem126
+            // 
+            this.spreadsheetCommandBarButtonItem126.CommandName = "PageSetupAddPrintArea";
+            this.spreadsheetCommandBarButtonItem126.Id = 197;
+            this.spreadsheetCommandBarButtonItem126.Name = "spreadsheetCommandBarButtonItem126";
+            // 
+            // spreadsheetCommandBarButtonItem127
+            // 
+            this.spreadsheetCommandBarButtonItem127.CommandName = "PageSetupPrintTitles";
+            this.spreadsheetCommandBarButtonItem127.Id = 198;
+            this.spreadsheetCommandBarButtonItem127.Name = "spreadsheetCommandBarButtonItem127";
+            // 
+            // spreadsheetCommandBarCheckItem20
+            // 
+            this.spreadsheetCommandBarCheckItem20.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem20.CommandName = "ViewShowGridlines";
+            this.spreadsheetCommandBarCheckItem20.Id = 199;
+            this.spreadsheetCommandBarCheckItem20.Name = "spreadsheetCommandBarCheckItem20";
+            // 
+            // spreadsheetCommandBarCheckItem21
+            // 
+            this.spreadsheetCommandBarCheckItem21.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem21.CommandName = "ViewShowHeadings";
+            this.spreadsheetCommandBarCheckItem21.Id = 200;
+            this.spreadsheetCommandBarCheckItem21.Name = "spreadsheetCommandBarCheckItem21";
+            // 
+            // spreadsheetCommandBarCheckItem22
+            // 
+            this.spreadsheetCommandBarCheckItem22.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem22.CommandName = "PageSetupPrintGridlines";
+            this.spreadsheetCommandBarCheckItem22.Id = 201;
+            this.spreadsheetCommandBarCheckItem22.Name = "spreadsheetCommandBarCheckItem22";
+            // 
+            // spreadsheetCommandBarCheckItem23
+            // 
+            this.spreadsheetCommandBarCheckItem23.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem23.CommandName = "PageSetupPrintHeadings";
+            this.spreadsheetCommandBarCheckItem23.Id = 202;
+            this.spreadsheetCommandBarCheckItem23.Name = "spreadsheetCommandBarCheckItem23";
+            // 
+            // spreadsheetCommandBarSubItem20
+            // 
+            this.spreadsheetCommandBarSubItem20.CommandName = "ArrangeBringForwardCommandGroup";
+            this.spreadsheetCommandBarSubItem20.Id = 203;
+            this.spreadsheetCommandBarSubItem20.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem128),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem129)});
+            this.spreadsheetCommandBarSubItem20.Name = "spreadsheetCommandBarSubItem20";
+            // 
+            // spreadsheetCommandBarButtonItem128
+            // 
+            this.spreadsheetCommandBarButtonItem128.CommandName = "ArrangeBringForward";
+            this.spreadsheetCommandBarButtonItem128.Id = 204;
+            this.spreadsheetCommandBarButtonItem128.Name = "spreadsheetCommandBarButtonItem128";
+            // 
+            // spreadsheetCommandBarButtonItem129
+            // 
+            this.spreadsheetCommandBarButtonItem129.CommandName = "ArrangeBringToFront";
+            this.spreadsheetCommandBarButtonItem129.Id = 205;
+            this.spreadsheetCommandBarButtonItem129.Name = "spreadsheetCommandBarButtonItem129";
+            // 
+            // spreadsheetCommandBarSubItem21
+            // 
+            this.spreadsheetCommandBarSubItem21.CommandName = "ArrangeSendBackwardCommandGroup";
+            this.spreadsheetCommandBarSubItem21.Id = 206;
+            this.spreadsheetCommandBarSubItem21.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem130),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem131)});
+            this.spreadsheetCommandBarSubItem21.Name = "spreadsheetCommandBarSubItem21";
+            // 
+            // spreadsheetCommandBarButtonItem130
+            // 
+            this.spreadsheetCommandBarButtonItem130.CommandName = "ArrangeSendBackward";
+            this.spreadsheetCommandBarButtonItem130.Id = 207;
+            this.spreadsheetCommandBarButtonItem130.Name = "spreadsheetCommandBarButtonItem130";
+            // 
+            // spreadsheetCommandBarButtonItem131
+            // 
+            this.spreadsheetCommandBarButtonItem131.CommandName = "ArrangeSendToBack";
+            this.spreadsheetCommandBarButtonItem131.Id = 208;
+            this.spreadsheetCommandBarButtonItem131.Name = "spreadsheetCommandBarButtonItem131";
+            // 
+            // spreadsheetCommandBarSubItem22
+            // 
+            this.spreadsheetCommandBarSubItem22.CommandName = "FunctionsAutoSumCommandGroup";
+            this.spreadsheetCommandBarSubItem22.Id = 209;
+            this.spreadsheetCommandBarSubItem22.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem92),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem93),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem94),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem95),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem96)});
+            this.spreadsheetCommandBarSubItem22.Name = "spreadsheetCommandBarSubItem22";
+            // 
+            // functionsFinancialItem1
+            // 
+            this.functionsFinancialItem1.Id = 210;
+            this.functionsFinancialItem1.Name = "functionsFinancialItem1";
+            // 
+            // functionsLogicalItem1
+            // 
+            this.functionsLogicalItem1.Id = 211;
+            this.functionsLogicalItem1.Name = "functionsLogicalItem1";
+            // 
+            // functionsTextItem1
+            // 
+            this.functionsTextItem1.Id = 212;
+            this.functionsTextItem1.Name = "functionsTextItem1";
+            // 
+            // functionsDateAndTimeItem1
+            // 
+            this.functionsDateAndTimeItem1.Id = 213;
+            this.functionsDateAndTimeItem1.Name = "functionsDateAndTimeItem1";
+            // 
+            // functionsLookupAndReferenceItem1
+            // 
+            this.functionsLookupAndReferenceItem1.Id = 214;
+            this.functionsLookupAndReferenceItem1.Name = "functionsLookupAndReferenceItem1";
+            // 
+            // functionsMathAndTrigonometryItem1
+            // 
+            this.functionsMathAndTrigonometryItem1.Id = 215;
+            this.functionsMathAndTrigonometryItem1.Name = "functionsMathAndTrigonometryItem1";
+            // 
+            // spreadsheetCommandBarSubItem23
+            // 
+            this.spreadsheetCommandBarSubItem23.CommandName = "FunctionsMoreCommandGroup";
+            this.spreadsheetCommandBarSubItem23.Id = 216;
+            this.spreadsheetCommandBarSubItem23.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.functionsStatisticalItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.functionsEngineeringItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.functionsInformationItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.functionsCompatibilityItem1),
+            new DevExpress.XtraBars.LinkPersistInfo(this.functionsWebItem1)});
+            this.spreadsheetCommandBarSubItem23.Name = "spreadsheetCommandBarSubItem23";
+            // 
+            // functionsStatisticalItem1
+            // 
+            this.functionsStatisticalItem1.Id = 217;
+            this.functionsStatisticalItem1.Name = "functionsStatisticalItem1";
+            // 
+            // functionsEngineeringItem1
+            // 
+            this.functionsEngineeringItem1.Id = 218;
+            this.functionsEngineeringItem1.Name = "functionsEngineeringItem1";
+            // 
+            // functionsInformationItem1
+            // 
+            this.functionsInformationItem1.Id = 219;
+            this.functionsInformationItem1.Name = "functionsInformationItem1";
+            // 
+            // functionsCompatibilityItem1
+            // 
+            this.functionsCompatibilityItem1.Id = 220;
+            this.functionsCompatibilityItem1.Name = "functionsCompatibilityItem1";
+            // 
+            // functionsWebItem1
+            // 
+            this.functionsWebItem1.Id = 221;
+            this.functionsWebItem1.Name = "functionsWebItem1";
+            // 
+            // spreadsheetCommandBarButtonItem132
+            // 
+            this.spreadsheetCommandBarButtonItem132.CommandName = "FormulasShowNameManager";
+            this.spreadsheetCommandBarButtonItem132.Id = 222;
+            this.spreadsheetCommandBarButtonItem132.Name = "spreadsheetCommandBarButtonItem132";
+            // 
+            // spreadsheetCommandBarButtonItem133
+            // 
+            this.spreadsheetCommandBarButtonItem133.CommandName = "FormulasDefineNameCommand";
+            this.spreadsheetCommandBarButtonItem133.Id = 223;
+            this.spreadsheetCommandBarButtonItem133.Name = "spreadsheetCommandBarButtonItem133";
+            this.spreadsheetCommandBarButtonItem133.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // definedNameListItem1
+            // 
+            this.definedNameListItem1.Id = 224;
+            this.definedNameListItem1.Name = "definedNameListItem1";
+            this.definedNameListItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem134
+            // 
+            this.spreadsheetCommandBarButtonItem134.CommandName = "FormulasCreateDefinedNamesFromSelection";
+            this.spreadsheetCommandBarButtonItem134.Id = 225;
+            this.spreadsheetCommandBarButtonItem134.Name = "spreadsheetCommandBarButtonItem134";
+            this.spreadsheetCommandBarButtonItem134.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarCheckItem24
+            // 
+            this.spreadsheetCommandBarCheckItem24.CommandName = "ViewShowFormulas";
+            this.spreadsheetCommandBarCheckItem24.Id = 226;
+            this.spreadsheetCommandBarCheckItem24.Name = "spreadsheetCommandBarCheckItem24";
+            // 
+            // spreadsheetCommandBarSubItem24
+            // 
+            this.spreadsheetCommandBarSubItem24.CommandName = "FormulasCalculationOptionsCommandGroup";
+            this.spreadsheetCommandBarSubItem24.Id = 227;
+            this.spreadsheetCommandBarSubItem24.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem25),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem26)});
+            this.spreadsheetCommandBarSubItem24.Name = "spreadsheetCommandBarSubItem24";
+            // 
+            // spreadsheetCommandBarCheckItem25
+            // 
+            this.spreadsheetCommandBarCheckItem25.CommandName = "FormulasCalculationModeAutomatic";
+            this.spreadsheetCommandBarCheckItem25.Id = 228;
+            this.spreadsheetCommandBarCheckItem25.Name = "spreadsheetCommandBarCheckItem25";
+            // 
+            // spreadsheetCommandBarCheckItem26
+            // 
+            this.spreadsheetCommandBarCheckItem26.CommandName = "FormulasCalculationModeManual";
+            this.spreadsheetCommandBarCheckItem26.Id = 229;
+            this.spreadsheetCommandBarCheckItem26.Name = "spreadsheetCommandBarCheckItem26";
+            // 
+            // spreadsheetCommandBarButtonItem135
+            // 
+            this.spreadsheetCommandBarButtonItem135.CommandName = "FormulasCalculateNow";
+            this.spreadsheetCommandBarButtonItem135.Id = 230;
+            this.spreadsheetCommandBarButtonItem135.Name = "spreadsheetCommandBarButtonItem135";
+            this.spreadsheetCommandBarButtonItem135.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem136
+            // 
+            this.spreadsheetCommandBarButtonItem136.CommandName = "FormulasCalculateSheet";
+            this.spreadsheetCommandBarButtonItem136.Id = 231;
+            this.spreadsheetCommandBarButtonItem136.Name = "spreadsheetCommandBarButtonItem136";
+            this.spreadsheetCommandBarButtonItem136.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarSubItem25
+            // 
+            this.spreadsheetCommandBarSubItem25.CommandName = "DataToolsDataValidationCommandGroup";
+            this.spreadsheetCommandBarSubItem25.Id = 232;
+            this.spreadsheetCommandBarSubItem25.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem137),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem138),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem139)});
+            this.spreadsheetCommandBarSubItem25.Name = "spreadsheetCommandBarSubItem25";
+            // 
+            // spreadsheetCommandBarButtonItem137
+            // 
+            this.spreadsheetCommandBarButtonItem137.CommandName = "DataToolsDataValidation";
+            this.spreadsheetCommandBarButtonItem137.Id = 233;
+            this.spreadsheetCommandBarButtonItem137.Name = "spreadsheetCommandBarButtonItem137";
+            // 
+            // spreadsheetCommandBarButtonItem138
+            // 
+            this.spreadsheetCommandBarButtonItem138.CommandName = "DataToolsCircleInvalidData";
+            this.spreadsheetCommandBarButtonItem138.Id = 234;
+            this.spreadsheetCommandBarButtonItem138.Name = "spreadsheetCommandBarButtonItem138";
+            // 
+            // spreadsheetCommandBarButtonItem139
+            // 
+            this.spreadsheetCommandBarButtonItem139.CommandName = "DataToolsClearValidationCircles";
+            this.spreadsheetCommandBarButtonItem139.Id = 235;
+            this.spreadsheetCommandBarButtonItem139.Name = "spreadsheetCommandBarButtonItem139";
+            // 
+            // spreadsheetCommandBarSubItem26
+            // 
+            this.spreadsheetCommandBarSubItem26.CommandName = "OutlineGroupCommandGroup";
+            this.spreadsheetCommandBarSubItem26.Id = 236;
+            this.spreadsheetCommandBarSubItem26.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem140),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem141)});
+            this.spreadsheetCommandBarSubItem26.Name = "spreadsheetCommandBarSubItem26";
+            this.spreadsheetCommandBarSubItem26.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem140
+            // 
+            this.spreadsheetCommandBarButtonItem140.CommandName = "GroupOutline";
+            this.spreadsheetCommandBarButtonItem140.Id = 237;
+            this.spreadsheetCommandBarButtonItem140.Name = "spreadsheetCommandBarButtonItem140";
+            // 
+            // spreadsheetCommandBarButtonItem141
+            // 
+            this.spreadsheetCommandBarButtonItem141.CommandName = "AutoOutline";
+            this.spreadsheetCommandBarButtonItem141.Id = 238;
+            this.spreadsheetCommandBarButtonItem141.Name = "spreadsheetCommandBarButtonItem141";
+            // 
+            // spreadsheetCommandBarSubItem27
+            // 
+            this.spreadsheetCommandBarSubItem27.CommandName = "OutlineUngroupCommandGroup";
+            this.spreadsheetCommandBarSubItem27.Id = 239;
+            this.spreadsheetCommandBarSubItem27.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem142),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem143)});
+            this.spreadsheetCommandBarSubItem27.Name = "spreadsheetCommandBarSubItem27";
+            this.spreadsheetCommandBarSubItem27.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem142
+            // 
+            this.spreadsheetCommandBarButtonItem142.CommandName = "UngroupOutline";
+            this.spreadsheetCommandBarButtonItem142.Id = 240;
+            this.spreadsheetCommandBarButtonItem142.Name = "spreadsheetCommandBarButtonItem142";
+            // 
+            // spreadsheetCommandBarButtonItem143
+            // 
+            this.spreadsheetCommandBarButtonItem143.CommandName = "ClearOutline";
+            this.spreadsheetCommandBarButtonItem143.Id = 241;
+            this.spreadsheetCommandBarButtonItem143.Name = "spreadsheetCommandBarButtonItem143";
+            // 
+            // spreadsheetCommandBarButtonItem144
+            // 
+            this.spreadsheetCommandBarButtonItem144.CommandName = "Subtotal";
+            this.spreadsheetCommandBarButtonItem144.Id = 242;
+            this.spreadsheetCommandBarButtonItem144.Name = "spreadsheetCommandBarButtonItem144";
+            this.spreadsheetCommandBarButtonItem144.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem145
+            // 
+            this.spreadsheetCommandBarButtonItem145.CommandName = "ShowDetail";
+            this.spreadsheetCommandBarButtonItem145.Id = 243;
+            this.spreadsheetCommandBarButtonItem145.Name = "spreadsheetCommandBarButtonItem145";
+            this.spreadsheetCommandBarButtonItem145.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem146
+            // 
+            this.spreadsheetCommandBarButtonItem146.CommandName = "HideDetail";
+            this.spreadsheetCommandBarButtonItem146.Id = 244;
+            this.spreadsheetCommandBarButtonItem146.Name = "spreadsheetCommandBarButtonItem146";
+            this.spreadsheetCommandBarButtonItem146.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem147
+            // 
+            this.spreadsheetCommandBarButtonItem147.CommandName = "ReviewInsertComment";
+            this.spreadsheetCommandBarButtonItem147.Id = 245;
+            this.spreadsheetCommandBarButtonItem147.Name = "spreadsheetCommandBarButtonItem147";
+            // 
+            // spreadsheetCommandBarButtonItem148
+            // 
+            this.spreadsheetCommandBarButtonItem148.CommandName = "ReviewEditComment";
+            this.spreadsheetCommandBarButtonItem148.Id = 246;
+            this.spreadsheetCommandBarButtonItem148.Name = "spreadsheetCommandBarButtonItem148";
+            // 
+            // spreadsheetCommandBarButtonItem149
+            // 
+            this.spreadsheetCommandBarButtonItem149.CommandName = "ReviewDeleteComment";
+            this.spreadsheetCommandBarButtonItem149.Id = 247;
+            this.spreadsheetCommandBarButtonItem149.Name = "spreadsheetCommandBarButtonItem149";
+            // 
+            // spreadsheetCommandBarButtonItem150
+            // 
+            this.spreadsheetCommandBarButtonItem150.CommandName = "ReviewShowHideComment";
+            this.spreadsheetCommandBarButtonItem150.Id = 248;
+            this.spreadsheetCommandBarButtonItem150.Name = "spreadsheetCommandBarButtonItem150";
+            // 
+            // spreadsheetCommandBarButtonItem151
+            // 
+            this.spreadsheetCommandBarButtonItem151.CommandName = "ReviewUnprotectSheet";
+            this.spreadsheetCommandBarButtonItem151.Id = 249;
+            this.spreadsheetCommandBarButtonItem151.Name = "spreadsheetCommandBarButtonItem151";
+            // 
+            // spreadsheetCommandBarButtonItem152
+            // 
+            this.spreadsheetCommandBarButtonItem152.CommandName = "ReviewProtectWorkbook";
+            this.spreadsheetCommandBarButtonItem152.Id = 250;
+            this.spreadsheetCommandBarButtonItem152.Name = "spreadsheetCommandBarButtonItem152";
+            // 
+            // spreadsheetCommandBarButtonItem153
+            // 
+            this.spreadsheetCommandBarButtonItem153.CommandName = "ReviewUnprotectWorkbook";
+            this.spreadsheetCommandBarButtonItem153.Id = 251;
+            this.spreadsheetCommandBarButtonItem153.Name = "spreadsheetCommandBarButtonItem153";
+            // 
+            // spreadsheetCommandBarButtonItem154
+            // 
+            this.spreadsheetCommandBarButtonItem154.CommandName = "ReviewShowProtectedRangeManager";
+            this.spreadsheetCommandBarButtonItem154.Id = 252;
+            this.spreadsheetCommandBarButtonItem154.Name = "spreadsheetCommandBarButtonItem154";
+            // 
+            // spreadsheetCommandBarButtonItem155
+            // 
+            this.spreadsheetCommandBarButtonItem155.CommandName = "ChartChangeType";
+            this.spreadsheetCommandBarButtonItem155.Id = 253;
+            this.spreadsheetCommandBarButtonItem155.Name = "spreadsheetCommandBarButtonItem155";
+            // 
+            // spreadsheetCommandBarButtonItem156
+            // 
+            this.spreadsheetCommandBarButtonItem156.CommandName = "ChartSwitchRowColumn";
+            this.spreadsheetCommandBarButtonItem156.Id = 254;
+            this.spreadsheetCommandBarButtonItem156.Name = "spreadsheetCommandBarButtonItem156";
+            // 
+            // spreadsheetCommandBarButtonItem157
+            // 
+            this.spreadsheetCommandBarButtonItem157.CommandName = "ChartSelectData";
+            this.spreadsheetCommandBarButtonItem157.Id = 255;
+            this.spreadsheetCommandBarButtonItem157.Name = "spreadsheetCommandBarButtonItem157";
+            // 
+            // galleryChartLayoutItem1
+            // 
+            // 
+            // 
+            // 
+            this.galleryChartLayoutItem1.Gallery.ColumnCount = 6;
+            this.galleryChartLayoutItem1.Gallery.DrawImageBackground = false;
+            this.galleryChartLayoutItem1.Gallery.ImageSize = new System.Drawing.Size(48, 48);
+            this.galleryChartLayoutItem1.Gallery.RowCount = 2;
+            this.galleryChartLayoutItem1.Id = 256;
+            this.galleryChartLayoutItem1.Name = "galleryChartLayoutItem1";
+            // 
+            // galleryChartStyleItem1
+            // 
+            // 
+            // 
+            // 
+            this.galleryChartStyleItem1.Gallery.ColumnCount = 8;
+            this.galleryChartStyleItem1.Gallery.DrawImageBackground = false;
+            this.galleryChartStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            this.galleryChartStyleItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.galleryChartStyleItem1.Gallery.ItemSize = new System.Drawing.Size(93, 56);
+            this.galleryChartStyleItem1.Gallery.MinimumColumnCount = 4;
+            this.galleryChartStyleItem1.Gallery.RowCount = 6;
+            this.galleryChartStyleItem1.Id = 257;
+            this.galleryChartStyleItem1.Name = "galleryChartStyleItem1";
+            // 
+            // spreadsheetCommandBarButtonItem158
+            // 
+            this.spreadsheetCommandBarButtonItem158.CommandName = "MoveChart";
+            this.spreadsheetCommandBarButtonItem158.Id = 258;
+            this.spreadsheetCommandBarButtonItem158.Name = "spreadsheetCommandBarButtonItem158";
+            // 
+            // spreadsheetCommandBarSubItem28
+            // 
+            this.spreadsheetCommandBarSubItem28.CommandName = "ChartAxesCommandGroup";
+            this.spreadsheetCommandBarSubItem28.Id = 259;
+            this.spreadsheetCommandBarSubItem28.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem13),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem14)});
+            this.spreadsheetCommandBarSubItem28.Name = "spreadsheetCommandBarSubItem28";
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem13
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem13.CommandName = "ChartPrimaryHorizontalAxisCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem13.DropDownControl = this.commandBarGalleryDropDown15;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem13.Id = 260;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem13.Name = "spreadsheetCommandBarButtonGalleryDropDownItem13";
+            // 
+            // commandBarGalleryDropDown15
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown15.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown15.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup35.CommandName = "ChartPrimaryHorizontalAxisCommandGroup";
+            spreadsheetCommandGalleryItem130.CommandName = "ChartHidePrimaryHorizontalAxis";
+            spreadsheetCommandGalleryItem131.CommandName = "ChartPrimaryHorizontalAxisLeftToRight";
+            spreadsheetCommandGalleryItem132.CommandName = "ChartPrimaryHorizontalAxisHideLabels";
+            spreadsheetCommandGalleryItem133.CommandName = "ChartPrimaryHorizontalAxisRightToLeft";
+            spreadsheetCommandGalleryItem134.CommandName = "ChartPrimaryHorizontalAxisDefault";
+            spreadsheetCommandGalleryItem135.CommandName = "ChartPrimaryHorizontalAxisScaleThousands";
+            spreadsheetCommandGalleryItem136.CommandName = "ChartPrimaryHorizontalAxisScaleMillions";
+            spreadsheetCommandGalleryItem137.CommandName = "ChartPrimaryHorizontalAxisScaleBillions";
+            spreadsheetCommandGalleryItem138.CommandName = "ChartPrimaryHorizontalAxisScaleLogarithm";
+            spreadsheetCommandGalleryItemGroup35.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem130,
+            spreadsheetCommandGalleryItem131,
+            spreadsheetCommandGalleryItem132,
+            spreadsheetCommandGalleryItem133,
+            spreadsheetCommandGalleryItem134,
+            spreadsheetCommandGalleryItem135,
+            spreadsheetCommandGalleryItem136,
+            spreadsheetCommandGalleryItem137,
+            spreadsheetCommandGalleryItem138});
+            this.commandBarGalleryDropDown15.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup35});
+            this.commandBarGalleryDropDown15.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown15.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown15.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown15.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown15.Name = "commandBarGalleryDropDown15";
+            this.commandBarGalleryDropDown15.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem14
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem14.CommandName = "ChartPrimaryVerticalAxisCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem14.DropDownControl = this.commandBarGalleryDropDown16;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem14.Id = 261;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem14.Name = "spreadsheetCommandBarButtonGalleryDropDownItem14";
+            // 
+            // commandBarGalleryDropDown16
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown16.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown16.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup36.CommandName = "ChartPrimaryVerticalAxisCommandGroup";
+            spreadsheetCommandGalleryItem139.CommandName = "ChartHidePrimaryVerticalAxis";
+            spreadsheetCommandGalleryItem140.CommandName = "ChartPrimaryVerticalAxisLeftToRight";
+            spreadsheetCommandGalleryItem141.CommandName = "ChartPrimaryVerticalAxisHideLabels";
+            spreadsheetCommandGalleryItem142.CommandName = "ChartPrimaryVerticalAxisRightToLeft";
+            spreadsheetCommandGalleryItem143.CommandName = "ChartPrimaryVerticalAxisDefault";
+            spreadsheetCommandGalleryItem144.CommandName = "ChartPrimaryVerticalAxisScaleThousands";
+            spreadsheetCommandGalleryItem145.CommandName = "ChartPrimaryVerticalAxisScaleMillions";
+            spreadsheetCommandGalleryItem146.CommandName = "ChartPrimaryVerticalAxisScaleBillions";
+            spreadsheetCommandGalleryItem147.CommandName = "ChartPrimaryVerticalAxisScaleLogarithm";
+            spreadsheetCommandGalleryItemGroup36.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem139,
+            spreadsheetCommandGalleryItem140,
+            spreadsheetCommandGalleryItem141,
+            spreadsheetCommandGalleryItem142,
+            spreadsheetCommandGalleryItem143,
+            spreadsheetCommandGalleryItem144,
+            spreadsheetCommandGalleryItem145,
+            spreadsheetCommandGalleryItem146,
+            spreadsheetCommandGalleryItem147});
+            this.commandBarGalleryDropDown16.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup36});
+            this.commandBarGalleryDropDown16.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown16.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown16.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown16.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown16.Name = "commandBarGalleryDropDown16";
+            this.commandBarGalleryDropDown16.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarSubItem29
+            // 
+            this.spreadsheetCommandBarSubItem29.CommandName = "ChartGridlinesCommandGroup";
+            this.spreadsheetCommandBarSubItem29.Id = 262;
+            this.spreadsheetCommandBarSubItem29.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem15),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem16)});
+            this.spreadsheetCommandBarSubItem29.Name = "spreadsheetCommandBarSubItem29";
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem15
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem15.CommandName = "ChartPrimaryHorizontalGridlinesCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem15.DropDownControl = this.commandBarGalleryDropDown17;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem15.Id = 263;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem15.Name = "spreadsheetCommandBarButtonGalleryDropDownItem15";
+            // 
+            // commandBarGalleryDropDown17
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown17.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown17.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup37.CommandName = "ChartPrimaryHorizontalGridlinesCommandGroup";
+            spreadsheetCommandGalleryItem148.CommandName = "ChartPrimaryHorizontalGridlinesNone";
+            spreadsheetCommandGalleryItem149.CommandName = "ChartPrimaryHorizontalGridlinesMajor";
+            spreadsheetCommandGalleryItem150.CommandName = "ChartPrimaryHorizontalGridlinesMinor";
+            spreadsheetCommandGalleryItem151.CommandName = "ChartPrimaryHorizontalGridlinesMajorAndMinor";
+            spreadsheetCommandGalleryItemGroup37.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem148,
+            spreadsheetCommandGalleryItem149,
+            spreadsheetCommandGalleryItem150,
+            spreadsheetCommandGalleryItem151});
+            this.commandBarGalleryDropDown17.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup37});
+            this.commandBarGalleryDropDown17.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown17.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown17.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown17.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown17.Name = "commandBarGalleryDropDown17";
+            this.commandBarGalleryDropDown17.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem16
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem16.CommandName = "ChartPrimaryVerticalGridlinesCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem16.DropDownControl = this.commandBarGalleryDropDown18;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem16.Id = 264;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem16.Name = "spreadsheetCommandBarButtonGalleryDropDownItem16";
+            // 
+            // commandBarGalleryDropDown18
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown18.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown18.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup38.CommandName = "ChartPrimaryVerticalGridlinesCommandGroup";
+            spreadsheetCommandGalleryItem152.CommandName = "ChartPrimaryVerticalGridlinesNone";
+            spreadsheetCommandGalleryItem153.CommandName = "ChartPrimaryVerticalGridlinesMajor";
+            spreadsheetCommandGalleryItem154.CommandName = "ChartPrimaryVerticalGridlinesMinor";
+            spreadsheetCommandGalleryItem155.CommandName = "ChartPrimaryVerticalGridlinesMajorAndMinor";
+            spreadsheetCommandGalleryItemGroup38.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem152,
+            spreadsheetCommandGalleryItem153,
+            spreadsheetCommandGalleryItem154,
+            spreadsheetCommandGalleryItem155});
+            this.commandBarGalleryDropDown18.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup38});
+            this.commandBarGalleryDropDown18.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown18.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown18.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown18.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown18.Name = "commandBarGalleryDropDown18";
+            this.commandBarGalleryDropDown18.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem17
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem17.CommandName = "ChartTitleCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem17.DropDownControl = this.commandBarGalleryDropDown19;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem17.Id = 265;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem17.Name = "spreadsheetCommandBarButtonGalleryDropDownItem17";
+            // 
+            // commandBarGalleryDropDown19
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown19.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown19.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup39.CommandName = "ChartTitleCommandGroup";
+            spreadsheetCommandGalleryItem156.CommandName = "ChartTitleNone";
+            spreadsheetCommandGalleryItem157.CommandName = "ChartTitleCenteredOverlay";
+            spreadsheetCommandGalleryItem158.CommandName = "ChartTitleAbove";
+            spreadsheetCommandGalleryItemGroup39.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem156,
+            spreadsheetCommandGalleryItem157,
+            spreadsheetCommandGalleryItem158});
+            this.commandBarGalleryDropDown19.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup39});
+            this.commandBarGalleryDropDown19.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown19.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown19.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown19.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown19.Name = "commandBarGalleryDropDown19";
+            this.commandBarGalleryDropDown19.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarSubItem30
+            // 
+            this.spreadsheetCommandBarSubItem30.CommandName = "ChartAxisTitlesCommandGroup";
+            this.spreadsheetCommandBarSubItem30.Id = 266;
+            this.spreadsheetCommandBarSubItem30.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem18),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem19)});
+            this.spreadsheetCommandBarSubItem30.Name = "spreadsheetCommandBarSubItem30";
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem18
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem18.CommandName = "ChartPrimaryHorizontalAxisTitleCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem18.DropDownControl = this.commandBarGalleryDropDown20;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem18.Id = 267;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem18.Name = "spreadsheetCommandBarButtonGalleryDropDownItem18";
+            // 
+            // commandBarGalleryDropDown20
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown20.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown20.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup40.CommandName = "ChartPrimaryHorizontalAxisTitleCommandGroup";
+            spreadsheetCommandGalleryItem159.CommandName = "ChartPrimaryHorizontalAxisTitleNone";
+            spreadsheetCommandGalleryItem160.CommandName = "ChartPrimaryHorizontalAxisTitleBelow";
+            spreadsheetCommandGalleryItemGroup40.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem159,
+            spreadsheetCommandGalleryItem160});
+            this.commandBarGalleryDropDown20.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup40});
+            this.commandBarGalleryDropDown20.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown20.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown20.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown20.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown20.Name = "commandBarGalleryDropDown20";
+            this.commandBarGalleryDropDown20.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem19
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem19.CommandName = "ChartPrimaryVerticalAxisTitleCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem19.DropDownControl = this.commandBarGalleryDropDown21;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem19.Id = 268;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem19.Name = "spreadsheetCommandBarButtonGalleryDropDownItem19";
+            // 
+            // commandBarGalleryDropDown21
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown21.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown21.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup41.CommandName = "ChartPrimaryVerticalAxisTitleCommandGroup";
+            spreadsheetCommandGalleryItem161.CommandName = "ChartPrimaryVerticalAxisTitleNone";
+            spreadsheetCommandGalleryItem162.CommandName = "ChartPrimaryVerticalAxisTitleRotated";
+            spreadsheetCommandGalleryItem163.CommandName = "ChartPrimaryVerticalAxisTitleVertical";
+            spreadsheetCommandGalleryItem164.CommandName = "ChartPrimaryVerticalAxisTitleHorizontal";
+            spreadsheetCommandGalleryItemGroup41.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem161,
+            spreadsheetCommandGalleryItem162,
+            spreadsheetCommandGalleryItem163,
+            spreadsheetCommandGalleryItem164});
+            this.commandBarGalleryDropDown21.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup41});
+            this.commandBarGalleryDropDown21.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown21.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown21.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown21.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown21.Name = "commandBarGalleryDropDown21";
+            this.commandBarGalleryDropDown21.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem20
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem20.CommandName = "ChartLegendCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem20.DropDownControl = this.commandBarGalleryDropDown22;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem20.Id = 269;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem20.Name = "spreadsheetCommandBarButtonGalleryDropDownItem20";
+            // 
+            // commandBarGalleryDropDown22
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown22.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown22.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup42.CommandName = "ChartLegendCommandGroup";
+            spreadsheetCommandGalleryItem165.CommandName = "ChartLegendNone";
+            spreadsheetCommandGalleryItem166.CommandName = "ChartLegendAtRight";
+            spreadsheetCommandGalleryItem167.CommandName = "ChartLegendAtTop";
+            spreadsheetCommandGalleryItem168.CommandName = "ChartLegendAtLeft";
+            spreadsheetCommandGalleryItem169.CommandName = "ChartLegendAtBottom";
+            spreadsheetCommandGalleryItem170.CommandName = "ChartLegendOverlayAtRight";
+            spreadsheetCommandGalleryItem171.CommandName = "ChartLegendOverlayAtLeft";
+            spreadsheetCommandGalleryItemGroup42.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem165,
+            spreadsheetCommandGalleryItem166,
+            spreadsheetCommandGalleryItem167,
+            spreadsheetCommandGalleryItem168,
+            spreadsheetCommandGalleryItem169,
+            spreadsheetCommandGalleryItem170,
+            spreadsheetCommandGalleryItem171});
+            this.commandBarGalleryDropDown22.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup42});
+            this.commandBarGalleryDropDown22.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown22.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown22.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown22.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown22.Name = "commandBarGalleryDropDown22";
+            this.commandBarGalleryDropDown22.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem21
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem21.CommandName = "ChartDataLabelsCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem21.DropDownControl = this.commandBarGalleryDropDown23;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem21.Id = 270;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem21.Name = "spreadsheetCommandBarButtonGalleryDropDownItem21";
+            // 
+            // commandBarGalleryDropDown23
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown23.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown23.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup43.CommandName = "ChartDataLabelsCommandGroup";
+            spreadsheetCommandGalleryItem172.CommandName = "ChartDataLabelsNone";
+            spreadsheetCommandGalleryItem173.CommandName = "ChartDataLabelsDefault";
+            spreadsheetCommandGalleryItem174.CommandName = "ChartDataLabelsCenter";
+            spreadsheetCommandGalleryItem175.CommandName = "ChartDataLabelsInsideEnd";
+            spreadsheetCommandGalleryItem176.CommandName = "ChartDataLabelsInsideBase";
+            spreadsheetCommandGalleryItem177.CommandName = "ChartDataLabelsOutsideEnd";
+            spreadsheetCommandGalleryItem178.CommandName = "ChartDataLabelsBestFit";
+            spreadsheetCommandGalleryItem179.CommandName = "ChartDataLabelsLeft";
+            spreadsheetCommandGalleryItem180.CommandName = "ChartDataLabelsRight";
+            spreadsheetCommandGalleryItem181.CommandName = "ChartDataLabelsAbove";
+            spreadsheetCommandGalleryItem182.CommandName = "ChartDataLabelsBelow";
+            spreadsheetCommandGalleryItemGroup43.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem172,
+            spreadsheetCommandGalleryItem173,
+            spreadsheetCommandGalleryItem174,
+            spreadsheetCommandGalleryItem175,
+            spreadsheetCommandGalleryItem176,
+            spreadsheetCommandGalleryItem177,
+            spreadsheetCommandGalleryItem178,
+            spreadsheetCommandGalleryItem179,
+            spreadsheetCommandGalleryItem180,
+            spreadsheetCommandGalleryItem181,
+            spreadsheetCommandGalleryItem182});
+            this.commandBarGalleryDropDown23.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup43});
+            this.commandBarGalleryDropDown23.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown23.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown23.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown23.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown23.Name = "commandBarGalleryDropDown23";
+            this.commandBarGalleryDropDown23.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem22
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem22.CommandName = "ChartLinesCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem22.DropDownControl = this.commandBarGalleryDropDown24;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem22.Id = 271;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem22.Name = "spreadsheetCommandBarButtonGalleryDropDownItem22";
+            // 
+            // commandBarGalleryDropDown24
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown24.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown24.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup44.CommandName = "ChartLinesCommandGroup";
+            spreadsheetCommandGalleryItem183.CommandName = "ChartLinesNone";
+            spreadsheetCommandGalleryItem184.CommandName = "ChartShowDropLines";
+            spreadsheetCommandGalleryItem185.CommandName = "ChartShowHighLowLines";
+            spreadsheetCommandGalleryItem186.CommandName = "ChartShowDropLinesAndHighLowLines";
+            spreadsheetCommandGalleryItem187.CommandName = "ChartShowSeriesLines";
+            spreadsheetCommandGalleryItemGroup44.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem183,
+            spreadsheetCommandGalleryItem184,
+            spreadsheetCommandGalleryItem185,
+            spreadsheetCommandGalleryItem186,
+            spreadsheetCommandGalleryItem187});
+            this.commandBarGalleryDropDown24.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup44});
+            this.commandBarGalleryDropDown24.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown24.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown24.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown24.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown24.Name = "commandBarGalleryDropDown24";
+            this.commandBarGalleryDropDown24.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem23
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem23.CommandName = "ChartUpDownBarsCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem23.DropDownControl = this.commandBarGalleryDropDown25;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem23.Id = 272;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem23.Name = "spreadsheetCommandBarButtonGalleryDropDownItem23";
+            // 
+            // commandBarGalleryDropDown25
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown25.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown25.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup45.CommandName = "ChartUpDownBarsCommandGroup";
+            spreadsheetCommandGalleryItem188.CommandName = "ChartHideUpDownBars";
+            spreadsheetCommandGalleryItem189.CommandName = "ChartShowUpDownBars";
+            spreadsheetCommandGalleryItemGroup45.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem188,
+            spreadsheetCommandGalleryItem189});
+            this.commandBarGalleryDropDown25.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup45});
+            this.commandBarGalleryDropDown25.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown25.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown25.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown25.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown25.Name = "commandBarGalleryDropDown25";
+            this.commandBarGalleryDropDown25.Ribbon = this.BookRibbon;
+            // 
+            // spreadsheetCommandBarButtonGalleryDropDownItem24
+            // 
+            this.spreadsheetCommandBarButtonGalleryDropDownItem24.CommandName = "ChartErrorBarsCommandGroup";
+            this.spreadsheetCommandBarButtonGalleryDropDownItem24.DropDownControl = this.commandBarGalleryDropDown26;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem24.Id = 273;
+            this.spreadsheetCommandBarButtonGalleryDropDownItem24.Name = "spreadsheetCommandBarButtonGalleryDropDownItem24";
+            // 
+            // commandBarGalleryDropDown26
+            // 
+            // 
+            // 
+            // 
+            this.commandBarGalleryDropDown26.Gallery.AllowFilter = false;
+            this.commandBarGalleryDropDown26.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
+            spreadsheetCommandGalleryItemGroup46.CommandName = "ChartErrorBarsCommandGroup";
+            spreadsheetCommandGalleryItem190.CommandName = "ChartErrorBarsNone";
+            spreadsheetCommandGalleryItem191.CommandName = "ChartErrorBarsStandardError";
+            spreadsheetCommandGalleryItem192.CommandName = "ChartErrorBarsPercentage";
+            spreadsheetCommandGalleryItem193.CommandName = "ChartErrorBarsStandardDeviation";
+            spreadsheetCommandGalleryItemGroup46.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
+            spreadsheetCommandGalleryItem190,
+            spreadsheetCommandGalleryItem191,
+            spreadsheetCommandGalleryItem192,
+            spreadsheetCommandGalleryItem193});
+            this.commandBarGalleryDropDown26.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
+            spreadsheetCommandGalleryItemGroup46});
+            this.commandBarGalleryDropDown26.Gallery.ImageSize = new System.Drawing.Size(32, 32);
+            this.commandBarGalleryDropDown26.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
+            this.commandBarGalleryDropDown26.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
+            this.commandBarGalleryDropDown26.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Auto;
+            this.commandBarGalleryDropDown26.Name = "commandBarGalleryDropDown26";
+            this.commandBarGalleryDropDown26.Ribbon = this.BookRibbon;
+            // 
+            // renameTableItemCaption1
+            // 
+            this.renameTableItemCaption1.Id = 274;
+            this.renameTableItemCaption1.Name = "renameTableItemCaption1";
+            // 
+            // renameTableItem1
+            // 
+            this.renameTableItem1.Edit = this.repositoryItemTextEdit1;
+            this.renameTableItem1.Id = 275;
+            this.renameTableItem1.Name = "renameTableItem1";
+            // 
+            // repositoryItemTextEdit1
+            // 
+            this.repositoryItemTextEdit1.AutoHeight = false;
+            this.repositoryItemTextEdit1.Name = "repositoryItemTextEdit1";
+            // 
+            // spreadsheetCommandBarCheckItem27
+            // 
+            this.spreadsheetCommandBarCheckItem27.CommandName = "TableToolsConvertToRange";
+            this.spreadsheetCommandBarCheckItem27.Id = 276;
+            this.spreadsheetCommandBarCheckItem27.Name = "spreadsheetCommandBarCheckItem27";
+            this.spreadsheetCommandBarCheckItem27.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarCheckItem28
+            // 
+            this.spreadsheetCommandBarCheckItem28.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem28.CommandName = "TableToolsToggleHeaderRow";
+            this.spreadsheetCommandBarCheckItem28.Id = 277;
+            this.spreadsheetCommandBarCheckItem28.Name = "spreadsheetCommandBarCheckItem28";
+            // 
+            // spreadsheetCommandBarCheckItem29
+            // 
+            this.spreadsheetCommandBarCheckItem29.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem29.CommandName = "TableToolsToggleTotalRow";
+            this.spreadsheetCommandBarCheckItem29.Id = 278;
+            this.spreadsheetCommandBarCheckItem29.Name = "spreadsheetCommandBarCheckItem29";
+            // 
+            // spreadsheetCommandBarCheckItem30
+            // 
+            this.spreadsheetCommandBarCheckItem30.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem30.CommandName = "TableToolsToggleBandedColumns";
+            this.spreadsheetCommandBarCheckItem30.Id = 279;
+            this.spreadsheetCommandBarCheckItem30.Name = "spreadsheetCommandBarCheckItem30";
+            // 
+            // spreadsheetCommandBarCheckItem31
+            // 
+            this.spreadsheetCommandBarCheckItem31.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem31.CommandName = "TableToolsToggleFirstColumn";
+            this.spreadsheetCommandBarCheckItem31.Id = 280;
+            this.spreadsheetCommandBarCheckItem31.Name = "spreadsheetCommandBarCheckItem31";
+            // 
+            // spreadsheetCommandBarCheckItem32
+            // 
+            this.spreadsheetCommandBarCheckItem32.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem32.CommandName = "TableToolsToggleLastColumn";
+            this.spreadsheetCommandBarCheckItem32.Id = 281;
+            this.spreadsheetCommandBarCheckItem32.Name = "spreadsheetCommandBarCheckItem32";
+            // 
+            // spreadsheetCommandBarCheckItem33
+            // 
+            this.spreadsheetCommandBarCheckItem33.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem33.CommandName = "TableToolsToggleBandedRows";
+            this.spreadsheetCommandBarCheckItem33.Id = 282;
+            this.spreadsheetCommandBarCheckItem33.Name = "spreadsheetCommandBarCheckItem33";
+            // 
+            // galleryTableStylesItem1
+            // 
+            // 
+            // 
+            // 
+            this.galleryTableStylesItem1.Gallery.ColumnCount = 7;
+            this.galleryTableStylesItem1.Gallery.DrawImageBackground = false;
+            this.galleryTableStylesItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            this.galleryTableStylesItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.galleryTableStylesItem1.Gallery.ItemSize = new System.Drawing.Size(73, 58);
+            this.galleryTableStylesItem1.Gallery.RowCount = 10;
+            this.galleryTableStylesItem1.Id = 283;
+            this.galleryTableStylesItem1.Name = "galleryTableStylesItem1";
+            // 
+            // spreadsheetCommandBarButtonItem159
+            // 
+            this.spreadsheetCommandBarButtonItem159.CommandName = "OptionsPivotTable";
+            this.spreadsheetCommandBarButtonItem159.Id = 284;
+            this.spreadsheetCommandBarButtonItem159.Name = "spreadsheetCommandBarButtonItem159";
+            // 
+            // spreadsheetCommandBarButtonItem160
+            // 
+            this.spreadsheetCommandBarButtonItem160.CommandName = "SelectFieldTypePivotTable";
+            this.spreadsheetCommandBarButtonItem160.Id = 285;
+            this.spreadsheetCommandBarButtonItem160.Name = "spreadsheetCommandBarButtonItem160";
+            // 
+            // spreadsheetCommandBarButtonItem161
+            // 
+            this.spreadsheetCommandBarButtonItem161.CommandName = "PivotTableExpandField";
+            this.spreadsheetCommandBarButtonItem161.Id = 286;
+            this.spreadsheetCommandBarButtonItem161.Name = "spreadsheetCommandBarButtonItem161";
+            this.spreadsheetCommandBarButtonItem161.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem162
+            // 
+            this.spreadsheetCommandBarButtonItem162.CommandName = "PivotTableCollapseField";
+            this.spreadsheetCommandBarButtonItem162.Id = 287;
+            this.spreadsheetCommandBarButtonItem162.Name = "spreadsheetCommandBarButtonItem162";
+            this.spreadsheetCommandBarButtonItem162.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem163
+            // 
+            this.spreadsheetCommandBarButtonItem163.CommandName = "PivotTableGroupSelection";
+            this.spreadsheetCommandBarButtonItem163.Id = 288;
+            this.spreadsheetCommandBarButtonItem163.Name = "spreadsheetCommandBarButtonItem163";
+            this.spreadsheetCommandBarButtonItem163.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem164
+            // 
+            this.spreadsheetCommandBarButtonItem164.CommandName = "PivotTableUngroup";
+            this.spreadsheetCommandBarButtonItem164.Id = 289;
+            this.spreadsheetCommandBarButtonItem164.Name = "spreadsheetCommandBarButtonItem164";
+            this.spreadsheetCommandBarButtonItem164.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem165
+            // 
+            this.spreadsheetCommandBarButtonItem165.CommandName = "PivotTableGroupField";
+            this.spreadsheetCommandBarButtonItem165.Id = 290;
+            this.spreadsheetCommandBarButtonItem165.Name = "spreadsheetCommandBarButtonItem165";
+            this.spreadsheetCommandBarButtonItem165.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarSubItem31
+            // 
+            this.spreadsheetCommandBarSubItem31.CommandName = "PivotTableDataRefreshGroup";
+            this.spreadsheetCommandBarSubItem31.Id = 291;
+            this.spreadsheetCommandBarSubItem31.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem166),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem167)});
+            this.spreadsheetCommandBarSubItem31.Name = "spreadsheetCommandBarSubItem31";
+            // 
+            // spreadsheetCommandBarButtonItem166
+            // 
+            this.spreadsheetCommandBarButtonItem166.CommandName = "RefreshPivotTable";
+            this.spreadsheetCommandBarButtonItem166.Id = 292;
+            this.spreadsheetCommandBarButtonItem166.Name = "spreadsheetCommandBarButtonItem166";
+            // 
+            // spreadsheetCommandBarButtonItem167
+            // 
+            this.spreadsheetCommandBarButtonItem167.CommandName = "RefreshAllPivotTable";
+            this.spreadsheetCommandBarButtonItem167.Id = 293;
+            this.spreadsheetCommandBarButtonItem167.Name = "spreadsheetCommandBarButtonItem167";
+            // 
+            // spreadsheetCommandBarButtonItem168
+            // 
+            this.spreadsheetCommandBarButtonItem168.CommandName = "ChangeDataSourcePivotTable";
+            this.spreadsheetCommandBarButtonItem168.Id = 294;
+            this.spreadsheetCommandBarButtonItem168.Name = "spreadsheetCommandBarButtonItem168";
+            // 
+            // spreadsheetCommandBarSubItem32
+            // 
+            this.spreadsheetCommandBarSubItem32.CommandName = "PivotTableActionsClearGroup";
+            this.spreadsheetCommandBarSubItem32.Id = 295;
+            this.spreadsheetCommandBarSubItem32.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem169),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem170)});
+            this.spreadsheetCommandBarSubItem32.Name = "spreadsheetCommandBarSubItem32";
+            // 
+            // spreadsheetCommandBarButtonItem169
+            // 
+            this.spreadsheetCommandBarButtonItem169.CommandName = "ClearAllPivotTable";
+            this.spreadsheetCommandBarButtonItem169.Id = 296;
+            this.spreadsheetCommandBarButtonItem169.Name = "spreadsheetCommandBarButtonItem169";
+            // 
+            // spreadsheetCommandBarButtonItem170
+            // 
+            this.spreadsheetCommandBarButtonItem170.CommandName = "ClearFiltersPivotTable";
+            this.spreadsheetCommandBarButtonItem170.Id = 297;
+            this.spreadsheetCommandBarButtonItem170.Name = "spreadsheetCommandBarButtonItem170";
+            // 
+            // spreadsheetCommandBarSubItem33
+            // 
+            this.spreadsheetCommandBarSubItem33.CommandName = "PivotTableActionsSelectGroup";
+            this.spreadsheetCommandBarSubItem33.Id = 298;
+            this.spreadsheetCommandBarSubItem33.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem171),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem172),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem173)});
+            this.spreadsheetCommandBarSubItem33.Name = "spreadsheetCommandBarSubItem33";
+            // 
+            // spreadsheetCommandBarButtonItem171
+            // 
+            this.spreadsheetCommandBarButtonItem171.CommandName = "SelectValuesPivotTable";
+            this.spreadsheetCommandBarButtonItem171.Id = 299;
+            this.spreadsheetCommandBarButtonItem171.Name = "spreadsheetCommandBarButtonItem171";
+            // 
+            // spreadsheetCommandBarButtonItem172
+            // 
+            this.spreadsheetCommandBarButtonItem172.CommandName = "SelectLabelsPivotTable";
+            this.spreadsheetCommandBarButtonItem172.Id = 300;
+            this.spreadsheetCommandBarButtonItem172.Name = "spreadsheetCommandBarButtonItem172";
+            // 
+            // spreadsheetCommandBarButtonItem173
+            // 
+            this.spreadsheetCommandBarButtonItem173.CommandName = "SelectEntirePivotTable";
+            this.spreadsheetCommandBarButtonItem173.Id = 301;
+            this.spreadsheetCommandBarButtonItem173.Name = "spreadsheetCommandBarButtonItem173";
+            // 
+            // spreadsheetCommandBarButtonItem174
+            // 
+            this.spreadsheetCommandBarButtonItem174.CommandName = "MovePivotTable";
+            this.spreadsheetCommandBarButtonItem174.Id = 302;
+            this.spreadsheetCommandBarButtonItem174.Name = "spreadsheetCommandBarButtonItem174";
+            // 
+            // spreadsheetCommandBarSubItem34
+            // 
+            this.spreadsheetCommandBarSubItem34.CommandName = "PivotTableCalculationFieldsItemsSetsGroup";
+            this.spreadsheetCommandBarSubItem34.Id = 303;
+            this.spreadsheetCommandBarSubItem34.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem175),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem176),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem177),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem178)});
+            this.spreadsheetCommandBarSubItem34.Name = "spreadsheetCommandBarSubItem34";
+            // 
+            // spreadsheetCommandBarButtonItem175
+            // 
+            this.spreadsheetCommandBarButtonItem175.CommandName = "PivotTableCalculatedField";
+            this.spreadsheetCommandBarButtonItem175.Id = 304;
+            this.spreadsheetCommandBarButtonItem175.Name = "spreadsheetCommandBarButtonItem175";
+            // 
+            // spreadsheetCommandBarButtonItem176
+            // 
+            this.spreadsheetCommandBarButtonItem176.CommandName = "PivotTableCalculatedItem";
+            this.spreadsheetCommandBarButtonItem176.Id = 305;
+            this.spreadsheetCommandBarButtonItem176.Name = "spreadsheetCommandBarButtonItem176";
+            // 
+            // spreadsheetCommandBarButtonItem177
+            // 
+            this.spreadsheetCommandBarButtonItem177.CommandName = "PivotTableCalculatedItemSolveOrder";
+            this.spreadsheetCommandBarButtonItem177.Id = 306;
+            this.spreadsheetCommandBarButtonItem177.Name = "spreadsheetCommandBarButtonItem177";
+            // 
+            // spreadsheetCommandBarButtonItem178
+            // 
+            this.spreadsheetCommandBarButtonItem178.CommandName = "PivotTableListFormulas";
+            this.spreadsheetCommandBarButtonItem178.Id = 307;
+            this.spreadsheetCommandBarButtonItem178.Name = "spreadsheetCommandBarButtonItem178";
+            // 
+            // spreadsheetCommandBarCheckItem34
+            // 
+            this.spreadsheetCommandBarCheckItem34.CommandName = "FieldListPanelPivotTable";
+            this.spreadsheetCommandBarCheckItem34.Id = 308;
+            this.spreadsheetCommandBarCheckItem34.Name = "spreadsheetCommandBarCheckItem34";
+            // 
+            // spreadsheetCommandBarCheckItem35
+            // 
+            this.spreadsheetCommandBarCheckItem35.CommandName = "ShowPivotTableExpandCollapseButtons";
+            this.spreadsheetCommandBarCheckItem35.Id = 309;
+            this.spreadsheetCommandBarCheckItem35.Name = "spreadsheetCommandBarCheckItem35";
+            // 
+            // spreadsheetCommandBarCheckItem36
+            // 
+            this.spreadsheetCommandBarCheckItem36.CommandName = "ShowPivotTableFieldHeaders";
+            this.spreadsheetCommandBarCheckItem36.Id = 310;
+            this.spreadsheetCommandBarCheckItem36.Name = "spreadsheetCommandBarCheckItem36";
+            // 
+            // spreadsheetCommandBarSubItem35
+            // 
+            this.spreadsheetCommandBarSubItem35.CommandName = "PivotTableLayoutSubtotalsGroup";
+            this.spreadsheetCommandBarSubItem35.Id = 311;
+            this.spreadsheetCommandBarSubItem35.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem179),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem180),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem181)});
+            this.spreadsheetCommandBarSubItem35.Name = "spreadsheetCommandBarSubItem35";
+            // 
+            // spreadsheetCommandBarButtonItem179
+            // 
+            this.spreadsheetCommandBarButtonItem179.CommandName = "PivotTableDoNotShowSubtotals";
+            this.spreadsheetCommandBarButtonItem179.Id = 312;
+            this.spreadsheetCommandBarButtonItem179.Name = "spreadsheetCommandBarButtonItem179";
+            this.spreadsheetCommandBarButtonItem179.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem180
+            // 
+            this.spreadsheetCommandBarButtonItem180.CommandName = "PivotTableShowAllSubtotalsAtBottom";
+            this.spreadsheetCommandBarButtonItem180.Id = 313;
+            this.spreadsheetCommandBarButtonItem180.Name = "spreadsheetCommandBarButtonItem180";
+            this.spreadsheetCommandBarButtonItem180.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem181
+            // 
+            this.spreadsheetCommandBarButtonItem181.CommandName = "PivotTableShowAllSubtotalsAtTop";
+            this.spreadsheetCommandBarButtonItem181.Id = 314;
+            this.spreadsheetCommandBarButtonItem181.Name = "spreadsheetCommandBarButtonItem181";
+            this.spreadsheetCommandBarButtonItem181.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem36
+            // 
+            this.spreadsheetCommandBarSubItem36.CommandName = "PivotTableLayoutGrandTotalsGroup";
+            this.spreadsheetCommandBarSubItem36.Id = 315;
+            this.spreadsheetCommandBarSubItem36.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem182),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem183),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem184),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem185)});
+            this.spreadsheetCommandBarSubItem36.Name = "spreadsheetCommandBarSubItem36";
+            // 
+            // spreadsheetCommandBarButtonItem182
+            // 
+            this.spreadsheetCommandBarButtonItem182.CommandName = "PivotTableGrandTotalsOffRowsColumns";
+            this.spreadsheetCommandBarButtonItem182.Id = 316;
+            this.spreadsheetCommandBarButtonItem182.Name = "spreadsheetCommandBarButtonItem182";
+            this.spreadsheetCommandBarButtonItem182.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem183
+            // 
+            this.spreadsheetCommandBarButtonItem183.CommandName = "PivotTableGrandTotalsOnRowsColumns";
+            this.spreadsheetCommandBarButtonItem183.Id = 317;
+            this.spreadsheetCommandBarButtonItem183.Name = "spreadsheetCommandBarButtonItem183";
+            this.spreadsheetCommandBarButtonItem183.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem184
+            // 
+            this.spreadsheetCommandBarButtonItem184.CommandName = "PivotTableGrandTotalsOnRowsOnly";
+            this.spreadsheetCommandBarButtonItem184.Id = 318;
+            this.spreadsheetCommandBarButtonItem184.Name = "spreadsheetCommandBarButtonItem184";
+            this.spreadsheetCommandBarButtonItem184.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem185
+            // 
+            this.spreadsheetCommandBarButtonItem185.CommandName = "PivotTableGrandTotalsOnColumnsOnly";
+            this.spreadsheetCommandBarButtonItem185.Id = 319;
+            this.spreadsheetCommandBarButtonItem185.Name = "spreadsheetCommandBarButtonItem185";
+            this.spreadsheetCommandBarButtonItem185.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem37
+            // 
+            this.spreadsheetCommandBarSubItem37.CommandName = "PivotTableLayoutReportLayoutGroup";
+            this.spreadsheetCommandBarSubItem37.Id = 320;
+            this.spreadsheetCommandBarSubItem37.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem186),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem187),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem188),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem189),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem190)});
+            this.spreadsheetCommandBarSubItem37.Name = "spreadsheetCommandBarSubItem37";
+            // 
+            // spreadsheetCommandBarButtonItem186
+            // 
+            this.spreadsheetCommandBarButtonItem186.CommandName = "PivotTableShowCompactForm";
+            this.spreadsheetCommandBarButtonItem186.Id = 321;
+            this.spreadsheetCommandBarButtonItem186.Name = "spreadsheetCommandBarButtonItem186";
+            this.spreadsheetCommandBarButtonItem186.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem187
+            // 
+            this.spreadsheetCommandBarButtonItem187.CommandName = "PivotTableShowOutlineForm";
+            this.spreadsheetCommandBarButtonItem187.Id = 322;
+            this.spreadsheetCommandBarButtonItem187.Name = "spreadsheetCommandBarButtonItem187";
+            this.spreadsheetCommandBarButtonItem187.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem188
+            // 
+            this.spreadsheetCommandBarButtonItem188.CommandName = "PivotTableShowTabularForm";
+            this.spreadsheetCommandBarButtonItem188.Id = 323;
+            this.spreadsheetCommandBarButtonItem188.Name = "spreadsheetCommandBarButtonItem188";
+            this.spreadsheetCommandBarButtonItem188.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem189
+            // 
+            this.spreadsheetCommandBarButtonItem189.CommandName = "PivotTableRepeatAllItemLabels";
+            this.spreadsheetCommandBarButtonItem189.Id = 324;
+            this.spreadsheetCommandBarButtonItem189.Name = "spreadsheetCommandBarButtonItem189";
+            this.spreadsheetCommandBarButtonItem189.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem190
+            // 
+            this.spreadsheetCommandBarButtonItem190.CommandName = "PivotTableDoNotRepeatItemLabels";
+            this.spreadsheetCommandBarButtonItem190.Id = 325;
+            this.spreadsheetCommandBarButtonItem190.Name = "spreadsheetCommandBarButtonItem190";
+            this.spreadsheetCommandBarButtonItem190.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem38
+            // 
+            this.spreadsheetCommandBarSubItem38.CommandName = "PivotTableLayoutBlankRowsGroup";
+            this.spreadsheetCommandBarSubItem38.Id = 326;
+            this.spreadsheetCommandBarSubItem38.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem191),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem192)});
+            this.spreadsheetCommandBarSubItem38.Name = "spreadsheetCommandBarSubItem38";
+            // 
+            // spreadsheetCommandBarButtonItem191
+            // 
+            this.spreadsheetCommandBarButtonItem191.CommandName = "PivotTableInsertBlankLineEachItem";
+            this.spreadsheetCommandBarButtonItem191.Id = 327;
+            this.spreadsheetCommandBarButtonItem191.Name = "spreadsheetCommandBarButtonItem191";
+            this.spreadsheetCommandBarButtonItem191.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem192
+            // 
+            this.spreadsheetCommandBarButtonItem192.CommandName = "PivotTableRemoveBlankLineEachItem";
+            this.spreadsheetCommandBarButtonItem192.Id = 328;
+            this.spreadsheetCommandBarButtonItem192.Name = "spreadsheetCommandBarButtonItem192";
+            this.spreadsheetCommandBarButtonItem192.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarCheckItem37
+            // 
+            this.spreadsheetCommandBarCheckItem37.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem37.CommandName = "PivotTableToggleRowHeaders";
+            this.spreadsheetCommandBarCheckItem37.Id = 329;
+            this.spreadsheetCommandBarCheckItem37.Name = "spreadsheetCommandBarCheckItem37";
+            // 
+            // spreadsheetCommandBarCheckItem38
+            // 
+            this.spreadsheetCommandBarCheckItem38.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem38.CommandName = "PivotTableToggleColumnHeaders";
+            this.spreadsheetCommandBarCheckItem38.Id = 330;
+            this.spreadsheetCommandBarCheckItem38.Name = "spreadsheetCommandBarCheckItem38";
+            // 
+            // spreadsheetCommandBarCheckItem39
+            // 
+            this.spreadsheetCommandBarCheckItem39.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem39.CommandName = "PivotTableToggleBandedRows";
+            this.spreadsheetCommandBarCheckItem39.Id = 331;
+            this.spreadsheetCommandBarCheckItem39.Name = "spreadsheetCommandBarCheckItem39";
+            // 
+            // spreadsheetCommandBarCheckItem40
+            // 
+            this.spreadsheetCommandBarCheckItem40.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
+            this.spreadsheetCommandBarCheckItem40.CommandName = "PivotTableToggleBandedColumns";
+            this.spreadsheetCommandBarCheckItem40.Id = 332;
+            this.spreadsheetCommandBarCheckItem40.Name = "spreadsheetCommandBarCheckItem40";
+            // 
+            // galleryPivotStylesItem1
+            // 
+            // 
+            // 
+            // 
+            this.galleryPivotStylesItem1.Gallery.ColumnCount = 7;
+            this.galleryPivotStylesItem1.Gallery.DrawImageBackground = false;
+            this.galleryPivotStylesItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            this.galleryPivotStylesItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
+            this.galleryPivotStylesItem1.Gallery.ItemSize = new System.Drawing.Size(73, 61);
+            this.galleryPivotStylesItem1.Gallery.RowCount = 10;
+            this.galleryPivotStylesItem1.Id = 333;
+            this.galleryPivotStylesItem1.Name = "galleryPivotStylesItem1";
+            // 
+            // spreadsheetCommandBarButtonItem193
+            // 
+            this.spreadsheetCommandBarButtonItem193.CommandName = "MailMergeAddDataSource";
+            this.spreadsheetCommandBarButtonItem193.Id = 334;
+            this.spreadsheetCommandBarButtonItem193.Name = "spreadsheetCommandBarButtonItem193";
+            this.spreadsheetCommandBarButtonItem193.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem39
+            // 
+            this.spreadsheetCommandBarSubItem39.CommandName = "MailMergeManageRelationsCommandGroup";
+            this.spreadsheetCommandBarSubItem39.Id = 335;
+            this.spreadsheetCommandBarSubItem39.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem194),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem195)});
+            this.spreadsheetCommandBarSubItem39.Name = "spreadsheetCommandBarSubItem39";
+            this.spreadsheetCommandBarSubItem39.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem194
+            // 
+            this.spreadsheetCommandBarButtonItem194.CommandName = "MailMergeManageQueriesCommand";
+            this.spreadsheetCommandBarButtonItem194.Id = 336;
+            this.spreadsheetCommandBarButtonItem194.Name = "spreadsheetCommandBarButtonItem194";
+            // 
+            // spreadsheetCommandBarButtonItem195
+            // 
+            this.spreadsheetCommandBarButtonItem195.CommandName = "MailMergeManageRelationsCommand";
+            this.spreadsheetCommandBarButtonItem195.Id = 337;
+            this.spreadsheetCommandBarButtonItem195.Name = "spreadsheetCommandBarButtonItem195";
+            // 
+            // spreadsheetCommandBarSubItem40
+            // 
+            this.spreadsheetCommandBarSubItem40.CommandName = "MailMergeManageDataSourceCommandGroup";
+            this.spreadsheetCommandBarSubItem40.Id = 338;
+            this.spreadsheetCommandBarSubItem40.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem196),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem197),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem198)});
+            this.spreadsheetCommandBarSubItem40.Name = "spreadsheetCommandBarSubItem40";
+            this.spreadsheetCommandBarSubItem40.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem196
+            // 
+            this.spreadsheetCommandBarButtonItem196.CommandName = "MailMergeSelectDataSource";
+            this.spreadsheetCommandBarButtonItem196.Id = 339;
+            this.spreadsheetCommandBarButtonItem196.Name = "spreadsheetCommandBarButtonItem196";
+            // 
+            // spreadsheetCommandBarButtonItem197
+            // 
+            this.spreadsheetCommandBarButtonItem197.CommandName = "MailMergeSelectDataMember";
+            this.spreadsheetCommandBarButtonItem197.Id = 340;
+            this.spreadsheetCommandBarButtonItem197.Name = "spreadsheetCommandBarButtonItem197";
+            // 
+            // spreadsheetCommandBarButtonItem198
+            // 
+            this.spreadsheetCommandBarButtonItem198.CommandName = "MailMergeManageDataSourcesCommand";
+            this.spreadsheetCommandBarButtonItem198.Id = 341;
+            this.spreadsheetCommandBarButtonItem198.Name = "spreadsheetCommandBarButtonItem198";
+            // 
+            // spreadsheetCommandBarCheckItem41
+            // 
+            this.spreadsheetCommandBarCheckItem41.CommandName = "MailMergeDocumentsMode";
+            this.spreadsheetCommandBarCheckItem41.Id = 342;
+            this.spreadsheetCommandBarCheckItem41.Name = "spreadsheetCommandBarCheckItem41";
+            this.spreadsheetCommandBarCheckItem41.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarCheckItem42
+            // 
+            this.spreadsheetCommandBarCheckItem42.CommandName = "MailMergeOneDocumentMode";
+            this.spreadsheetCommandBarCheckItem42.Id = 343;
+            this.spreadsheetCommandBarCheckItem42.Name = "spreadsheetCommandBarCheckItem42";
+            this.spreadsheetCommandBarCheckItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarCheckItem43
+            // 
+            this.spreadsheetCommandBarCheckItem43.CommandName = "MailMergeOneSheetMode";
+            this.spreadsheetCommandBarCheckItem43.Id = 344;
+            this.spreadsheetCommandBarCheckItem43.Name = "spreadsheetCommandBarCheckItem43";
+            this.spreadsheetCommandBarCheckItem43.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarSubItem41
+            // 
+            this.spreadsheetCommandBarSubItem41.CommandName = "MailMergeOrientationCommandGroup";
+            this.spreadsheetCommandBarSubItem41.Id = 345;
+            this.spreadsheetCommandBarSubItem41.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem44),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem45)});
+            this.spreadsheetCommandBarSubItem41.Name = "spreadsheetCommandBarSubItem41";
+            this.spreadsheetCommandBarSubItem41.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarCheckItem44
+            // 
+            this.spreadsheetCommandBarCheckItem44.CommandName = "MailMergeHorizontalMode";
+            this.spreadsheetCommandBarCheckItem44.Id = 346;
+            this.spreadsheetCommandBarCheckItem44.Name = "spreadsheetCommandBarCheckItem44";
+            // 
+            // spreadsheetCommandBarCheckItem45
+            // 
+            this.spreadsheetCommandBarCheckItem45.CommandName = "MailMergeVerticalMode";
+            this.spreadsheetCommandBarCheckItem45.Id = 347;
+            this.spreadsheetCommandBarCheckItem45.Name = "spreadsheetCommandBarCheckItem45";
+            // 
+            // spreadsheetCommandBarButtonItem199
+            // 
+            this.spreadsheetCommandBarButtonItem199.CommandName = "MailMergeSetHeaderRange";
+            this.spreadsheetCommandBarButtonItem199.Id = 348;
+            this.spreadsheetCommandBarButtonItem199.Name = "spreadsheetCommandBarButtonItem199";
+            this.spreadsheetCommandBarButtonItem199.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem200
+            // 
+            this.spreadsheetCommandBarButtonItem200.CommandName = "MailMergeSetFooterRange";
+            this.spreadsheetCommandBarButtonItem200.Id = 349;
+            this.spreadsheetCommandBarButtonItem200.Name = "spreadsheetCommandBarButtonItem200";
+            this.spreadsheetCommandBarButtonItem200.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem201
+            // 
+            this.spreadsheetCommandBarButtonItem201.CommandName = "MailMergeSetDetailRange";
+            this.spreadsheetCommandBarButtonItem201.Id = 350;
+            this.spreadsheetCommandBarButtonItem201.Name = "spreadsheetCommandBarButtonItem201";
+            this.spreadsheetCommandBarButtonItem201.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarSubItem42
+            // 
+            this.spreadsheetCommandBarSubItem42.CommandName = "EditingMailMergeMasterDetailCommandGroup";
+            this.spreadsheetCommandBarSubItem42.Id = 351;
+            this.spreadsheetCommandBarSubItem42.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem202),
+            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem203)});
+            this.spreadsheetCommandBarSubItem42.Name = "spreadsheetCommandBarSubItem42";
+            this.spreadsheetCommandBarSubItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem202
+            // 
+            this.spreadsheetCommandBarButtonItem202.CommandName = "MailMergeSetDetailLevel";
+            this.spreadsheetCommandBarButtonItem202.Id = 352;
+            this.spreadsheetCommandBarButtonItem202.Name = "spreadsheetCommandBarButtonItem202";
+            // 
+            // spreadsheetCommandBarButtonItem203
+            // 
+            this.spreadsheetCommandBarButtonItem203.CommandName = "MailMergeSetDetailDataMember";
+            this.spreadsheetCommandBarButtonItem203.Id = 353;
+            this.spreadsheetCommandBarButtonItem203.Name = "spreadsheetCommandBarButtonItem203";
+            // 
+            // spreadsheetCommandBarButtonItem204
+            // 
+            this.spreadsheetCommandBarButtonItem204.CommandName = "MailMergeResetRange";
+            this.spreadsheetCommandBarButtonItem204.Id = 354;
+            this.spreadsheetCommandBarButtonItem204.Name = "spreadsheetCommandBarButtonItem204";
+            this.spreadsheetCommandBarButtonItem204.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem205
+            // 
+            this.spreadsheetCommandBarButtonItem205.CommandName = "MailMergeSetGroup";
+            this.spreadsheetCommandBarButtonItem205.Id = 355;
+            this.spreadsheetCommandBarButtonItem205.Name = "spreadsheetCommandBarButtonItem205";
+            this.spreadsheetCommandBarButtonItem205.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem206
+            // 
+            this.spreadsheetCommandBarButtonItem206.CommandName = "MailMergeSetGroupHeader";
+            this.spreadsheetCommandBarButtonItem206.Id = 356;
+            this.spreadsheetCommandBarButtonItem206.Name = "spreadsheetCommandBarButtonItem206";
+            this.spreadsheetCommandBarButtonItem206.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem207
+            // 
+            this.spreadsheetCommandBarButtonItem207.CommandName = "MailMergeSetGroupFooter";
+            this.spreadsheetCommandBarButtonItem207.Id = 357;
+            this.spreadsheetCommandBarButtonItem207.Name = "spreadsheetCommandBarButtonItem207";
+            this.spreadsheetCommandBarButtonItem207.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            // 
+            // spreadsheetCommandBarButtonItem208
+            // 
+            this.spreadsheetCommandBarButtonItem208.CommandName = "MailMergeSetFilter";
+            this.spreadsheetCommandBarButtonItem208.Id = 358;
+            this.spreadsheetCommandBarButtonItem208.Name = "spreadsheetCommandBarButtonItem208";
+            this.spreadsheetCommandBarButtonItem208.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem209
+            // 
+            this.spreadsheetCommandBarButtonItem209.CommandName = "MailMergeResetFilter";
+            this.spreadsheetCommandBarButtonItem209.Id = 359;
+            this.spreadsheetCommandBarButtonItem209.Name = "spreadsheetCommandBarButtonItem209";
+            this.spreadsheetCommandBarButtonItem209.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarCheckItem46
+            // 
+            this.spreadsheetCommandBarCheckItem46.CommandName = "MailMergeShowRanges";
+            this.spreadsheetCommandBarCheckItem46.Id = 360;
+            this.spreadsheetCommandBarCheckItem46.Name = "spreadsheetCommandBarCheckItem46";
+            this.spreadsheetCommandBarCheckItem46.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // spreadsheetCommandBarButtonItem210
+            // 
+            this.spreadsheetCommandBarButtonItem210.CommandName = "MailMergePreview";
+            this.spreadsheetCommandBarButtonItem210.Id = 361;
+            this.spreadsheetCommandBarButtonItem210.Name = "spreadsheetCommandBarButtonItem210";
+            this.spreadsheetCommandBarButtonItem210.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            // 
+            // progressBarItem1
+            // 
+            this.progressBarItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Left;
+            this.progressBarItem1.Control = this.spreadsheetControl1;
+            this.progressBarItem1.Edit = this.repositoryItemProgressBar1;
+            this.progressBarItem1.EditWidth = 150;
+            this.progressBarItem1.Id = 362;
+            this.progressBarItem1.Name = "progressBarItem1";
+            this.progressBarItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // endModeInfoStaticItem1
+            // 
+            this.endModeInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Left;
+            this.endModeInfoStaticItem1.Id = 363;
+            this.endModeInfoStaticItem1.Name = "endModeInfoStaticItem1";
+            // 
+            // averageInfoStaticItem1
+            // 
+            this.averageInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.averageInfoStaticItem1.Id = 364;
+            this.averageInfoStaticItem1.Name = "averageInfoStaticItem1";
+            toolTipItem1.Text = "Average of selected cells";
+            superToolTip1.Items.Add(toolTipItem1);
+            this.averageInfoStaticItem1.SuperTip = superToolTip1;
+            this.averageInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // countInfoStaticItem1
+            // 
+            this.countInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.countInfoStaticItem1.Id = 365;
+            this.countInfoStaticItem1.Name = "countInfoStaticItem1";
+            toolTipItem2.Text = "Number of selected cells that contain data";
+            superToolTip2.Items.Add(toolTipItem2);
+            this.countInfoStaticItem1.SuperTip = superToolTip2;
+            this.countInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // numericalCountInfoStaticItem1
+            // 
+            this.numericalCountInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.numericalCountInfoStaticItem1.Id = 366;
+            this.numericalCountInfoStaticItem1.Name = "numericalCountInfoStaticItem1";
+            toolTipItem3.Text = "Number of selected cells that contain numerical data";
+            superToolTip3.Items.Add(toolTipItem3);
+            this.numericalCountInfoStaticItem1.SuperTip = superToolTip3;
+            this.numericalCountInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // minInfoStaticItem1
+            // 
+            this.minInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.minInfoStaticItem1.Id = 367;
+            this.minInfoStaticItem1.Name = "minInfoStaticItem1";
+            toolTipItem4.Text = "Minimum value in selection";
+            superToolTip4.Items.Add(toolTipItem4);
+            this.minInfoStaticItem1.SuperTip = superToolTip4;
+            this.minInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // maxInfoStaticItem1
+            // 
+            this.maxInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.maxInfoStaticItem1.Id = 368;
+            this.maxInfoStaticItem1.Name = "maxInfoStaticItem1";
+            toolTipItem5.Text = "Maximum value in selection";
+            superToolTip5.Items.Add(toolTipItem5);
+            this.maxInfoStaticItem1.SuperTip = superToolTip5;
+            this.maxInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // sumInfoStaticItem1
+            // 
+            this.sumInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.sumInfoStaticItem1.Id = 369;
+            this.sumInfoStaticItem1.Name = "sumInfoStaticItem1";
+            toolTipItem6.Text = "Sum of selected cells";
+            superToolTip6.Items.Add(toolTipItem6);
+            this.sumInfoStaticItem1.SuperTip = superToolTip6;
+            this.sumInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+            // 
+            // zoomEditItem1
+            // 
+            this.zoomEditItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.zoomEditItem1.Edit = this.repositoryItemZoomTrackBar1;
+            this.zoomEditItem1.Id = 370;
+            this.zoomEditItem1.Name = "zoomEditItem1";
+            toolTipItem7.Text = "Zoom";
+            superToolTip7.Items.Add(toolTipItem7);
+            this.zoomEditItem1.SuperTip = superToolTip7;
+            // 
+            // repositoryItemZoomTrackBar1
+            // 
+            this.repositoryItemZoomTrackBar1.AllowUseMiddleValue = true;
+            this.repositoryItemZoomTrackBar1.LargeChange = 10;
+            this.repositoryItemZoomTrackBar1.Maximum = 400;
+            this.repositoryItemZoomTrackBar1.Middle = 100;
+            this.repositoryItemZoomTrackBar1.Minimum = 10;
+            this.repositoryItemZoomTrackBar1.Name = "repositoryItemZoomTrackBar1";
+            this.repositoryItemZoomTrackBar1.SmallChange = 10;
+            this.repositoryItemZoomTrackBar1.SnapToMiddle = 5;
+            // 
+            // showZoomButtonItem1
+            // 
+            this.showZoomButtonItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.showZoomButtonItem1.Id = 371;
+            this.showZoomButtonItem1.ItemAppearance.Disabled.Options.UseTextOptions = true;
+            this.showZoomButtonItem1.ItemAppearance.Hovered.Options.UseTextOptions = true;
+            this.showZoomButtonItem1.ItemAppearance.Normal.Options.UseTextOptions = true;
+            this.showZoomButtonItem1.ItemAppearance.Pressed.Options.UseTextOptions = true;
+            this.showZoomButtonItem1.Name = "showZoomButtonItem1";
+            this.showZoomButtonItem1.SmallWithTextWidth = 45;
+            toolTipItem8.Text = "Zoom level. Click to open the Zoom dialog box.";
+            superToolTip8.Items.Add(toolTipItem8);
+            this.showZoomButtonItem1.SuperTip = superToolTip8;
+            // 
+            // chartToolsRibbonPageCategory1
+            // 
+            this.chartToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
+            this.chartToolsRibbonPageCategory1.Name = "chartToolsRibbonPageCategory1";
+            this.chartToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.chartsDesignRibbonPage1,
+            this.chartsLayoutRibbonPage1,
+            this.chartsFormatRibbonPage1});
+            this.chartToolsRibbonPageCategory1.Visible = false;
+            // 
+            // chartsDesignRibbonPage1
+            // 
+            this.chartsDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.chartsDesignTypeRibbonPageGroup1,
+            this.chartsDesignDataRibbonPageGroup1,
+            this.chartsDesignLayoutsRibbonPageGroup1,
+            this.chartsDesignStylesRibbonPageGroup1,
+            this.chartsDesignLocationRibbonPageGroup1});
+            this.chartsDesignRibbonPage1.Name = "chartsDesignRibbonPage1";
+            this.chartsDesignRibbonPage1.Visible = false;
+            // 
+            // chartsDesignTypeRibbonPageGroup1
+            // 
+            this.chartsDesignTypeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsDesignTypeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem155);
+            this.chartsDesignTypeRibbonPageGroup1.Name = "chartsDesignTypeRibbonPageGroup1";
+            // 
+            // chartsDesignDataRibbonPageGroup1
+            // 
+            this.chartsDesignDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsDesignDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem156);
+            this.chartsDesignDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem157);
+            this.chartsDesignDataRibbonPageGroup1.Name = "chartsDesignDataRibbonPageGroup1";
+            // 
+            // chartsDesignLayoutsRibbonPageGroup1
+            // 
+            this.chartsDesignLayoutsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsDesignLayoutsRibbonPageGroup1.ItemLinks.Add(this.galleryChartLayoutItem1);
+            this.chartsDesignLayoutsRibbonPageGroup1.Name = "chartsDesignLayoutsRibbonPageGroup1";
+            // 
+            // chartsDesignStylesRibbonPageGroup1
+            // 
+            this.chartsDesignStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsDesignStylesRibbonPageGroup1.ItemLinks.Add(this.galleryChartStyleItem1);
+            this.chartsDesignStylesRibbonPageGroup1.Name = "chartsDesignStylesRibbonPageGroup1";
+            // 
+            // chartsDesignLocationRibbonPageGroup1
+            // 
+            this.chartsDesignLocationRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsDesignLocationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem158);
+            this.chartsDesignLocationRibbonPageGroup1.Name = "chartsDesignLocationRibbonPageGroup1";
+            // 
+            // chartsLayoutRibbonPage1
+            // 
+            this.chartsLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.chartsLayoutAxesRibbonPageGroup1,
+            this.chartsLayoutLabelsRibbonPageGroup1,
+            this.chartsLayoutAnalysisRibbonPageGroup1});
+            this.chartsLayoutRibbonPage1.Name = "chartsLayoutRibbonPage1";
+            this.chartsLayoutRibbonPage1.Visible = false;
+            // 
+            // chartsLayoutAxesRibbonPageGroup1
+            // 
+            this.chartsLayoutAxesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsLayoutAxesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem28);
+            this.chartsLayoutAxesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem29);
+            this.chartsLayoutAxesRibbonPageGroup1.Name = "chartsLayoutAxesRibbonPageGroup1";
+            // 
+            // chartsLayoutLabelsRibbonPageGroup1
+            // 
+            this.chartsLayoutLabelsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem17);
+            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem30);
+            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem20);
+            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem21);
+            this.chartsLayoutLabelsRibbonPageGroup1.Name = "chartsLayoutLabelsRibbonPageGroup1";
+            // 
+            // chartsLayoutAnalysisRibbonPageGroup1
+            // 
+            this.chartsLayoutAnalysisRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem22);
+            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem23);
+            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem24);
+            this.chartsLayoutAnalysisRibbonPageGroup1.Name = "chartsLayoutAnalysisRibbonPageGroup1";
+            // 
+            // chartsFormatRibbonPage1
+            // 
+            this.chartsFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.chartsFormatArrangeRibbonPageGroup1});
+            this.chartsFormatRibbonPage1.Name = "chartsFormatRibbonPage1";
+            this.chartsFormatRibbonPage1.Visible = false;
+            // 
+            // chartsFormatArrangeRibbonPageGroup1
+            // 
+            this.chartsFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
+            this.chartsFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
+            this.chartsFormatArrangeRibbonPageGroup1.Name = "chartsFormatArrangeRibbonPageGroup1";
+            // 
+            // tableToolsRibbonPageCategory1
+            // 
+            this.tableToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
+            this.tableToolsRibbonPageCategory1.Name = "tableToolsRibbonPageCategory1";
+            this.tableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.tableToolsDesignRibbonPage1});
+            this.tableToolsRibbonPageCategory1.Visible = false;
+            // 
+            // tableToolsDesignRibbonPage1
+            // 
+            this.tableToolsDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.tablePropertiesRibbonPageGroup1,
+            this.tableToolsRibbonPageGroup1,
+            this.tableStyleOptionsRibbonPageGroup1,
+            this.tableStylesRibbonPageGroup1});
+            this.tableToolsDesignRibbonPage1.Name = "tableToolsDesignRibbonPage1";
+            this.tableToolsDesignRibbonPage1.Visible = false;
+            // 
+            // tablePropertiesRibbonPageGroup1
+            // 
+            this.tablePropertiesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.tablePropertiesRibbonPageGroup1.ItemLinks.Add(this.renameTableItemCaption1);
+            this.tablePropertiesRibbonPageGroup1.ItemLinks.Add(this.renameTableItem1);
+            this.tablePropertiesRibbonPageGroup1.Name = "tablePropertiesRibbonPageGroup1";
+            // 
+            // tableToolsRibbonPageGroup1
+            // 
+            this.tableToolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.tableToolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem27);
+            this.tableToolsRibbonPageGroup1.Name = "tableToolsRibbonPageGroup1";
+            // 
+            // tableStyleOptionsRibbonPageGroup1
+            // 
+            this.tableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem28);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem29);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem30);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem31);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem32);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem33);
+            this.tableStyleOptionsRibbonPageGroup1.Name = "tableStyleOptionsRibbonPageGroup1";
+            // 
+            // tableStylesRibbonPageGroup1
+            // 
+            this.tableStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.tableStylesRibbonPageGroup1.ItemLinks.Add(this.galleryTableStylesItem1);
+            this.tableStylesRibbonPageGroup1.Name = "tableStylesRibbonPageGroup1";
+            // 
+            // pictureToolsRibbonPageCategory1
+            // 
+            this.pictureToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
+            this.pictureToolsRibbonPageCategory1.Name = "pictureToolsRibbonPageCategory1";
+            this.pictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.pictureFormatRibbonPage1});
+            this.pictureToolsRibbonPageCategory1.Visible = false;
+            // 
+            // pictureFormatRibbonPage1
+            // 
+            this.pictureFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.pictureFormatArrangeRibbonPageGroup1});
+            this.pictureFormatRibbonPage1.Name = "pictureFormatRibbonPage1";
+            this.pictureFormatRibbonPage1.Visible = false;
+            // 
+            // pictureFormatArrangeRibbonPageGroup1
+            // 
+            this.pictureFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pictureFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
+            this.pictureFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
+            this.pictureFormatArrangeRibbonPageGroup1.Name = "pictureFormatArrangeRibbonPageGroup1";
+            // 
+            // drawingToolsRibbonPageCategory1
+            // 
+            this.drawingToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
+            this.drawingToolsRibbonPageCategory1.Name = "drawingToolsRibbonPageCategory1";
+            this.drawingToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.drawingFormatRibbonPage1});
+            this.drawingToolsRibbonPageCategory1.Visible = false;
+            // 
+            // drawingFormatRibbonPage1
+            // 
+            this.drawingFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.drawingFormatArrangeRibbonPageGroup1});
+            this.drawingFormatRibbonPage1.Name = "drawingFormatRibbonPage1";
+            this.drawingFormatRibbonPage1.Visible = false;
+            // 
+            // drawingFormatArrangeRibbonPageGroup1
+            // 
+            this.drawingFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.drawingFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
+            this.drawingFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
+            this.drawingFormatArrangeRibbonPageGroup1.Name = "drawingFormatArrangeRibbonPageGroup1";
+            // 
+            // pivotTableToolsRibbonPageCategory1
+            // 
+            this.pivotTableToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
+            this.pivotTableToolsRibbonPageCategory1.Name = "pivotTableToolsRibbonPageCategory1";
+            this.pivotTableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
+            this.pivotTableAnalyzeRibbonPage1,
+            this.pivotTableDesignRibbonPage1});
+            this.pivotTableToolsRibbonPageCategory1.Visible = false;
+            // 
+            // pivotTableAnalyzeRibbonPage1
+            // 
+            this.pivotTableAnalyzeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.pivotTableAnalyzePivotTableRibbonPageGroup1,
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1,
+            this.pivotTableAnalyzeGroupRibbonPageGroup1,
+            this.pivotTableAnalyzeDataRibbonPageGroup1,
+            this.pivotTableAnalyzeActionsRibbonPageGroup1,
+            this.pivotTableAnalyzeCalculationsRibbonPageGroup1,
+            this.pivotTableAnalyzeShowRibbonPageGroup1});
+            this.pivotTableAnalyzeRibbonPage1.Name = "pivotTableAnalyzeRibbonPage1";
+            this.pivotTableAnalyzeRibbonPage1.Visible = false;
+            // 
+            // pivotTableAnalyzePivotTableRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzePivotTableRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzePivotTableRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem159);
+            this.pivotTableAnalyzePivotTableRibbonPageGroup1.Name = "pivotTableAnalyzePivotTableRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeActiveFieldRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem160);
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem161);
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem162);
+            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.Name = "pivotTableAnalyzeActiveFieldRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeGroupRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeGroupRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem163);
+            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem164);
+            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem165);
+            this.pivotTableAnalyzeGroupRibbonPageGroup1.Name = "pivotTableAnalyzeGroupRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeDataRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem31);
+            this.pivotTableAnalyzeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem168);
+            this.pivotTableAnalyzeDataRibbonPageGroup1.Name = "pivotTableAnalyzeDataRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeActionsRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeActionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem32);
+            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem33);
+            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem174);
+            this.pivotTableAnalyzeActionsRibbonPageGroup1.Name = "pivotTableAnalyzeActionsRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeCalculationsRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem34);
+            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.Name = "pivotTableAnalyzeCalculationsRibbonPageGroup1";
+            // 
+            // pivotTableAnalyzeShowRibbonPageGroup1
+            // 
+            this.pivotTableAnalyzeShowRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem34);
+            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem35);
+            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem36);
+            this.pivotTableAnalyzeShowRibbonPageGroup1.Name = "pivotTableAnalyzeShowRibbonPageGroup1";
+            // 
+            // pivotTableDesignRibbonPage1
+            // 
+            this.pivotTableDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.pivotTableDesignLayoutRibbonPageGroup1,
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1,
+            this.pivotTableDesignPivotTableStylesRibbonPageGroup1});
+            this.pivotTableDesignRibbonPage1.Name = "pivotTableDesignRibbonPage1";
+            this.pivotTableDesignRibbonPage1.Visible = false;
+            // 
+            // pivotTableDesignLayoutRibbonPageGroup1
+            // 
+            this.pivotTableDesignLayoutRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem35);
+            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem36);
+            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem37);
+            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem38);
+            this.pivotTableDesignLayoutRibbonPageGroup1.Name = "pivotTableDesignLayoutRibbonPageGroup1";
+            // 
+            // pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1
+            // 
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem37);
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem38);
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem39);
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem40);
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemsLayout = DevExpress.XtraBars.Ribbon.RibbonPageGroupItemsLayout.TwoRows;
+            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.Name = "pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1";
+            // 
+            // pivotTableDesignPivotTableStylesRibbonPageGroup1
+            // 
+            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.ItemLinks.Add(this.galleryPivotStylesItem1);
+            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.Name = "pivotTableDesignPivotTableStylesRibbonPageGroup1";
+            // 
+            // fileRibbonPage1
+            // 
+            this.fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.commonRibbonPageGroup1,
+            this.infoRibbonPageGroup1,
+            this.OptionsRibbonGroup,
+            this.LicenseRibbonGroup});
+            this.fileRibbonPage1.Name = "fileRibbonPage1";
+            // 
+            // commonRibbonPageGroup1
+            // 
+            this.commonRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.NewBarButtonItem);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.OpenBarButtonItem);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem3, true);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem4);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem5, true);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem6);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem7);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem8, true);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem9);
+            this.commonRibbonPageGroup1.MergeOrder = 1;
+            this.commonRibbonPageGroup1.Name = "commonRibbonPageGroup1";
+            // 
+            // infoRibbonPageGroup1
+            // 
+            this.infoRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.infoRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem10);
+            this.infoRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem11);
+            this.infoRibbonPageGroup1.MergeOrder = 0;
+            this.infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
+            // 
+            // OptionsRibbonGroup
+            // 
+            this.OptionsRibbonGroup.Name = "OptionsRibbonGroup";
+            this.OptionsRibbonGroup.Text = "Options";
+            // 
+            // LicenseRibbonGroup
+            // 
+            this.LicenseRibbonGroup.Name = "LicenseRibbonGroup";
+            this.LicenseRibbonGroup.Text = "Registration";
+            // 
+            // homeRibbonPage1
+            // 
+            this.homeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.clipboardRibbonPageGroup1,
+            this.fontRibbonPageGroup1,
+            this.alignmentRibbonPageGroup1,
+            this.numberRibbonPageGroup1,
+            this.stylesRibbonPageGroup1,
+            this.cellsRibbonPageGroup1,
+            this.editingRibbonPageGroup1});
+            this.homeRibbonPage1.Name = "homeRibbonPage1";
+            reduceOperation1.Behavior = DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable;
+            reduceOperation1.GroupName = "stylesRibbonPageGroup1";
+            reduceOperation1.ItemLinkIndex = 2;
+            reduceOperation1.ItemLinksCount = 0;
+            reduceOperation1.Operation = DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery;
+            this.homeRibbonPage1.ReduceOperations.Add(reduceOperation1);
+            // 
+            // clipboardRibbonPageGroup1
+            // 
+            this.clipboardRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem12);
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem13);
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem14);
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem15);
+            this.clipboardRibbonPageGroup1.Name = "clipboardRibbonPageGroup1";
+            // 
+            // fontRibbonPageGroup1
+            // 
+            this.fontRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup1);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup2);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup3);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup4);
+            this.fontRibbonPageGroup1.Name = "fontRibbonPageGroup1";
+            // 
+            // alignmentRibbonPageGroup1
+            // 
+            this.alignmentRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup5);
+            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup6);
+            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup7);
+            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem11);
+            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem2);
+            this.alignmentRibbonPageGroup1.Name = "alignmentRibbonPageGroup1";
+            // 
+            // numberRibbonPageGroup1
+            // 
+            this.numberRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup8);
+            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup9);
+            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup10);
+            this.numberRibbonPageGroup1.Name = "numberRibbonPageGroup1";
+            // 
+            // stylesRibbonPageGroup1
+            // 
+            this.stylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.stylesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem7);
+            this.stylesRibbonPageGroup1.ItemLinks.Add(this.galleryFormatAsTableItem1);
+            this.stylesRibbonPageGroup1.ItemLinks.Add(this.galleryChangeStyleItem1);
+            this.stylesRibbonPageGroup1.Name = "stylesRibbonPageGroup1";
+            // 
+            // cellsRibbonPageGroup1
+            // 
+            this.cellsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem8);
+            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem9);
+            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem11);
+            this.cellsRibbonPageGroup1.Name = "cellsRibbonPageGroup1";
+            // 
+            // editingRibbonPageGroup1
+            // 
+            this.editingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem12);
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem13);
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem14);
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem15);
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem16);
+            this.editingRibbonPageGroup1.Name = "editingRibbonPageGroup1";
+            // 
+            // insertRibbonPage1
+            // 
+            this.insertRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.tablesRibbonPageGroup1,
+            this.illustrationsRibbonPageGroup1,
+            this.chartsRibbonPageGroup1,
+            this.linksRibbonPageGroup1,
+            this.symbolsRibbonPageGroup1});
+            this.insertRibbonPage1.Name = "insertRibbonPage1";
+            // 
+            // tablesRibbonPageGroup1
+            // 
+            this.tablesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.tablesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem118);
+            this.tablesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem119);
+            this.tablesRibbonPageGroup1.Name = "tablesRibbonPageGroup1";
+            // 
+            // illustrationsRibbonPageGroup1
+            // 
+            this.illustrationsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.illustrationsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem120);
+            this.illustrationsRibbonPageGroup1.Name = "illustrationsRibbonPageGroup1";
+            // 
+            // chartsRibbonPageGroup1
+            // 
+            this.chartsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem4);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem5);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem6);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem7);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem8);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem9);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem10);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem11);
+            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem12);
+            this.chartsRibbonPageGroup1.Name = "chartsRibbonPageGroup1";
+            // 
+            // linksRibbonPageGroup1
+            // 
+            this.linksRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.linksRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem121);
+            this.linksRibbonPageGroup1.Name = "linksRibbonPageGroup1";
+            // 
+            // symbolsRibbonPageGroup1
+            // 
+            this.symbolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.symbolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem122);
+            this.symbolsRibbonPageGroup1.Name = "symbolsRibbonPageGroup1";
+            // 
+            // pageLayoutRibbonPage1
+            // 
+            this.pageLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.pageSetupRibbonPageGroup1,
+            this.pageSetupShowRibbonPageGroup1,
+            this.pageSetupPrintRibbonPageGroup1,
+            this.arrangeRibbonPageGroup1});
+            this.pageLayoutRibbonPage1.Name = "pageLayoutRibbonPage1";
+            // 
+            // pageSetupRibbonPageGroup1
+            // 
+            this.pageSetupRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem17);
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem18);
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.pageSetupPaperKindItem1);
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem19);
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem127);
+            this.pageSetupRibbonPageGroup1.Name = "pageSetupRibbonPageGroup1";
+            // 
+            // pageSetupShowRibbonPageGroup1
+            // 
+            this.pageSetupShowRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.pageSetupShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem20);
+            this.pageSetupShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem21);
+            this.pageSetupShowRibbonPageGroup1.Name = "pageSetupShowRibbonPageGroup1";
+            // 
+            // pageSetupPrintRibbonPageGroup1
+            // 
+            this.pageSetupPrintRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.pageSetupPrintRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem22);
+            this.pageSetupPrintRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem23);
+            this.pageSetupPrintRibbonPageGroup1.Name = "pageSetupPrintRibbonPageGroup1";
+            // 
+            // arrangeRibbonPageGroup1
+            // 
+            this.arrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.arrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
+            this.arrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
+            this.arrangeRibbonPageGroup1.Name = "arrangeRibbonPageGroup1";
+            // 
+            // formulasRibbonPage1
+            // 
+            this.formulasRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.functionLibraryRibbonPageGroup1,
+            this.formulaDefinedNamesRibbonPageGroup1,
+            this.formulaAuditingRibbonPageGroup1,
+            this.formulaCalculationRibbonPageGroup1});
+            this.formulasRibbonPage1.Name = "formulasRibbonPage1";
+            // 
+            // functionLibraryRibbonPageGroup1
+            // 
+            this.functionLibraryRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem22);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsFinancialItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsLogicalItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsTextItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsDateAndTimeItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsLookupAndReferenceItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsMathAndTrigonometryItem1);
+            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem23);
+            this.functionLibraryRibbonPageGroup1.Name = "functionLibraryRibbonPageGroup1";
+            // 
+            // formulaDefinedNamesRibbonPageGroup1
+            // 
+            this.formulaDefinedNamesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem132);
+            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem133);
+            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.definedNameListItem1);
+            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem134);
+            this.formulaDefinedNamesRibbonPageGroup1.Name = "formulaDefinedNamesRibbonPageGroup1";
+            // 
+            // formulaAuditingRibbonPageGroup1
+            // 
+            this.formulaAuditingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.formulaAuditingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem24);
+            this.formulaAuditingRibbonPageGroup1.Name = "formulaAuditingRibbonPageGroup1";
+            // 
+            // formulaCalculationRibbonPageGroup1
+            // 
+            this.formulaCalculationRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem24);
+            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem135);
+            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem136);
+            this.formulaCalculationRibbonPageGroup1.Name = "formulaCalculationRibbonPageGroup1";
+            // 
+            // dataRibbonPage1
+            // 
+            this.dataRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.sortAndFilterRibbonPageGroup1,
+            this.dataToolsRibbonPageGroup1,
+            this.outlineRibbonPageGroup1});
+            this.dataRibbonPage1.Name = "dataRibbonPage1";
+            // 
+            // sortAndFilterRibbonPageGroup1
+            // 
+            this.sortAndFilterRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem107);
+            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem108);
+            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem14);
+            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem109);
+            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem110);
+            this.sortAndFilterRibbonPageGroup1.Name = "sortAndFilterRibbonPageGroup1";
+            // 
+            // dataToolsRibbonPageGroup1
+            // 
+            this.dataToolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.dataToolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem25);
+            this.dataToolsRibbonPageGroup1.Name = "dataToolsRibbonPageGroup1";
+            // 
+            // outlineRibbonPageGroup1
+            // 
+            this.outlineRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
+            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem26);
+            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem27);
+            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem144);
+            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem145);
+            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem146);
+            this.outlineRibbonPageGroup1.Name = "outlineRibbonPageGroup1";
+            // 
+            // reviewRibbonPage1
+            // 
+            this.reviewRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.commentsRibbonPageGroup1,
+            this.changesRibbonPageGroup1});
+            this.reviewRibbonPage1.Name = "reviewRibbonPage1";
+            // 
+            // commentsRibbonPageGroup1
+            // 
+            this.commentsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem147);
+            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem148);
+            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem149);
+            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem150);
+            this.commentsRibbonPageGroup1.Name = "commentsRibbonPageGroup1";
+            // 
+            // changesRibbonPageGroup1
+            // 
+            this.changesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem90);
+            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem151);
+            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem152);
+            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem153);
+            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem154);
+            this.changesRibbonPageGroup1.Name = "changesRibbonPageGroup1";
+            // 
+            // mailMergeRibbonPage1
+            // 
+            this.mailMergeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.mailMergeDataRibbonPageGroup1,
+            this.mailMergeModeRibbonPageGroup1,
+            this.mailMergeExtendedRibbonPageGroup1,
+            this.mailMergeGroupingRibbonPageGroup1,
+            this.mailMergeFilteringRibbonPageGroup1,
+            this.mailMergeBindingRibbonPageGroup1});
+            this.mailMergeRibbonPage1.Name = "mailMergeRibbonPage1";
+            // 
+            // mailMergeDataRibbonPageGroup1
+            // 
+            this.mailMergeDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem193);
+            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem39);
+            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem40);
+            this.mailMergeDataRibbonPageGroup1.Name = "mailMergeDataRibbonPageGroup1";
+            // 
+            // mailMergeModeRibbonPageGroup1
+            // 
+            this.mailMergeModeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem41);
+            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem42);
+            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem43);
+            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem41);
+            this.mailMergeModeRibbonPageGroup1.Name = "mailMergeModeRibbonPageGroup1";
+            // 
+            // mailMergeExtendedRibbonPageGroup1
+            // 
+            this.mailMergeExtendedRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem199);
+            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem200);
+            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem201);
+            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem42);
+            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem204);
+            this.mailMergeExtendedRibbonPageGroup1.Name = "mailMergeExtendedRibbonPageGroup1";
+            // 
+            // mailMergeGroupingRibbonPageGroup1
+            // 
+            this.mailMergeGroupingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem205);
+            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem206);
+            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem207);
+            this.mailMergeGroupingRibbonPageGroup1.Name = "mailMergeGroupingRibbonPageGroup1";
+            // 
+            // mailMergeFilteringRibbonPageGroup1
+            // 
+            this.mailMergeFilteringRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeFilteringRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem208);
+            this.mailMergeFilteringRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem209);
+            this.mailMergeFilteringRibbonPageGroup1.Name = "mailMergeFilteringRibbonPageGroup1";
+            // 
+            // mailMergeBindingRibbonPageGroup1
+            // 
+            this.mailMergeBindingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            this.mailMergeBindingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem46);
+            this.mailMergeBindingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem210);
+            this.mailMergeBindingRibbonPageGroup1.Name = "mailMergeBindingRibbonPageGroup1";
             // 
             // ribbonStatusBar
             // 
+            this.ribbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             this.ribbonStatusBar.ItemLinks.Add(this.progressBarItem1);
             this.ribbonStatusBar.ItemLinks.Add(this.endModeInfoStaticItem1);
             this.ribbonStatusBar.ItemLinks.Add(this.averageInfoStaticItem1);
@@ -1241,25 +5586,15 @@
             this.ribbonStatusBar.ItemLinks.Add(this.sumInfoStaticItem1);
             this.ribbonStatusBar.ItemLinks.Add(this.zoomEditItem1);
             this.ribbonStatusBar.ItemLinks.Add(this.showZoomButtonItem1);
-            this.ribbonStatusBar.Location = new System.Drawing.Point(0, 905);
+            this.ribbonStatusBar.Location = new System.Drawing.Point(0, 725);
             this.ribbonStatusBar.Name = "ribbonStatusBar";
-            this.ribbonStatusBar.Ribbon = this.ribbon;
-            this.ribbonStatusBar.Size = new System.Drawing.Size(1326, 24);
-            // 
-            // spreadsheetControl1
-            // 
-            this.spreadsheetControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.spreadsheetControl1.Location = new System.Drawing.Point(0, 192);
-            this.spreadsheetControl1.MenuManager = this.ribbon;
-            this.spreadsheetControl1.Name = "spreadsheetControl1";
-            this.spreadsheetControl1.Size = new System.Drawing.Size(1326, 713);
-            this.spreadsheetControl1.TabIndex = 2;
-            this.spreadsheetControl1.Text = "spreadsheetControl1";
+            this.ribbonStatusBar.Ribbon = this.BookRibbon;
+            this.ribbonStatusBar.Size = new System.Drawing.Size(998, 24);
             // 
             // spreadsheetBarController1
             // 
-            this.spreadsheetBarController1.BarItems.Add(this.spreadsheetCommandBarButtonItem1);
-            this.spreadsheetBarController1.BarItems.Add(this.spreadsheetCommandBarButtonItem2);
+            this.spreadsheetBarController1.BarItems.Add(this.NewBarButtonItem);
+            this.spreadsheetBarController1.BarItems.Add(this.OpenBarButtonItem);
             this.spreadsheetBarController1.BarItems.Add(this.spreadsheetCommandBarButtonItem3);
             this.spreadsheetBarController1.BarItems.Add(this.spreadsheetCommandBarButtonItem4);
             this.spreadsheetBarController1.BarItems.Add(this.spreadsheetCommandBarButtonItem5);
@@ -1621,4386 +5956,14 @@
             this.spreadsheetBarController1.BarItems.Add(this.showZoomButtonItem1);
             this.spreadsheetBarController1.Control = this.spreadsheetControl1;
             // 
-            // commonRibbonPageGroup1
-            // 
-            this.commonRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem1);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem2);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem3);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem4);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem5);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem6);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem7);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem8);
-            this.commonRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem9);
-            this.commonRibbonPageGroup1.Name = "commonRibbonPageGroup1";
-            // 
-            // fileRibbonPage1
-            // 
-            this.fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.commonRibbonPageGroup1,
-            this.infoRibbonPageGroup1});
-            this.fileRibbonPage1.Name = "fileRibbonPage1";
-            // 
-            // spreadsheetCommandBarButtonItem1
-            // 
-            this.spreadsheetCommandBarButtonItem1.CommandName = "FileNew";
-            this.spreadsheetCommandBarButtonItem1.Id = 1;
-            this.spreadsheetCommandBarButtonItem1.Name = "spreadsheetCommandBarButtonItem1";
-            // 
-            // spreadsheetCommandBarButtonItem2
-            // 
-            this.spreadsheetCommandBarButtonItem2.CommandName = "FileOpen";
-            this.spreadsheetCommandBarButtonItem2.Id = 2;
-            this.spreadsheetCommandBarButtonItem2.Name = "spreadsheetCommandBarButtonItem2";
-            // 
-            // spreadsheetCommandBarButtonItem3
-            // 
-            this.spreadsheetCommandBarButtonItem3.CommandName = "FileSave";
-            this.spreadsheetCommandBarButtonItem3.Id = 3;
-            this.spreadsheetCommandBarButtonItem3.Name = "spreadsheetCommandBarButtonItem3";
-            // 
-            // spreadsheetCommandBarButtonItem4
-            // 
-            this.spreadsheetCommandBarButtonItem4.CommandName = "FileSaveAs";
-            this.spreadsheetCommandBarButtonItem4.Id = 4;
-            this.spreadsheetCommandBarButtonItem4.Name = "spreadsheetCommandBarButtonItem4";
-            // 
-            // spreadsheetCommandBarButtonItem5
-            // 
-            this.spreadsheetCommandBarButtonItem5.CommandName = "FileQuickPrint";
-            this.spreadsheetCommandBarButtonItem5.Id = 5;
-            this.spreadsheetCommandBarButtonItem5.Name = "spreadsheetCommandBarButtonItem5";
-            // 
-            // spreadsheetCommandBarButtonItem6
-            // 
-            this.spreadsheetCommandBarButtonItem6.CommandName = "FilePrint";
-            this.spreadsheetCommandBarButtonItem6.Id = 6;
-            this.spreadsheetCommandBarButtonItem6.Name = "spreadsheetCommandBarButtonItem6";
-            // 
-            // spreadsheetCommandBarButtonItem7
-            // 
-            this.spreadsheetCommandBarButtonItem7.CommandName = "FilePrintPreview";
-            this.spreadsheetCommandBarButtonItem7.Id = 7;
-            this.spreadsheetCommandBarButtonItem7.Name = "spreadsheetCommandBarButtonItem7";
-            // 
-            // spreadsheetCommandBarButtonItem8
-            // 
-            this.spreadsheetCommandBarButtonItem8.CommandName = "FileUndo";
-            this.spreadsheetCommandBarButtonItem8.Id = 8;
-            this.spreadsheetCommandBarButtonItem8.Name = "spreadsheetCommandBarButtonItem8";
-            // 
-            // spreadsheetCommandBarButtonItem9
-            // 
-            this.spreadsheetCommandBarButtonItem9.CommandName = "FileRedo";
-            this.spreadsheetCommandBarButtonItem9.Id = 9;
-            this.spreadsheetCommandBarButtonItem9.Name = "spreadsheetCommandBarButtonItem9";
-            // 
-            // infoRibbonPageGroup1
-            // 
-            this.infoRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.infoRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem10);
-            this.infoRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem11);
-            this.infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem10
-            // 
-            this.spreadsheetCommandBarButtonItem10.CommandName = "FileEncrypt";
-            this.spreadsheetCommandBarButtonItem10.Id = 10;
-            this.spreadsheetCommandBarButtonItem10.Name = "spreadsheetCommandBarButtonItem10";
-            // 
-            // spreadsheetCommandBarButtonItem11
-            // 
-            this.spreadsheetCommandBarButtonItem11.CommandName = "FileShowDocumentProperties";
-            this.spreadsheetCommandBarButtonItem11.Id = 11;
-            this.spreadsheetCommandBarButtonItem11.Name = "spreadsheetCommandBarButtonItem11";
-            // 
-            // clipboardRibbonPageGroup1
-            // 
-            this.clipboardRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem12);
-            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem13);
-            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem14);
-            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem15);
-            this.clipboardRibbonPageGroup1.Name = "clipboardRibbonPageGroup1";
-            // 
-            // homeRibbonPage1
-            // 
-            this.homeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.clipboardRibbonPageGroup1,
-            this.fontRibbonPageGroup1,
-            this.alignmentRibbonPageGroup1,
-            this.numberRibbonPageGroup1,
-            this.stylesRibbonPageGroup1,
-            this.cellsRibbonPageGroup1,
-            this.editingRibbonPageGroup1});
-            this.homeRibbonPage1.Name = "homeRibbonPage1";
-            reduceOperation1.Behavior = DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable;
-            reduceOperation1.GroupName = "stylesRibbonPageGroup1";
-            reduceOperation1.ItemLinkIndex = 2;
-            reduceOperation1.ItemLinksCount = 0;
-            reduceOperation1.Operation = DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery;
-            this.homeRibbonPage1.ReduceOperations.Add(reduceOperation1);
-            // 
-            // spreadsheetCommandBarButtonItem12
-            // 
-            this.spreadsheetCommandBarButtonItem12.CommandName = "PasteSelection";
-            this.spreadsheetCommandBarButtonItem12.Id = 22;
-            this.spreadsheetCommandBarButtonItem12.Name = "spreadsheetCommandBarButtonItem12";
-            this.spreadsheetCommandBarButtonItem12.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem13
-            // 
-            this.spreadsheetCommandBarButtonItem13.CommandName = "CutSelection";
-            this.spreadsheetCommandBarButtonItem13.Id = 23;
-            this.spreadsheetCommandBarButtonItem13.Name = "spreadsheetCommandBarButtonItem13";
-            this.spreadsheetCommandBarButtonItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem14
-            // 
-            this.spreadsheetCommandBarButtonItem14.CommandName = "CopySelection";
-            this.spreadsheetCommandBarButtonItem14.Id = 24;
-            this.spreadsheetCommandBarButtonItem14.Name = "spreadsheetCommandBarButtonItem14";
-            this.spreadsheetCommandBarButtonItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem15
-            // 
-            this.spreadsheetCommandBarButtonItem15.CommandName = "ShowPasteSpecialForm";
-            this.spreadsheetCommandBarButtonItem15.Id = 25;
-            this.spreadsheetCommandBarButtonItem15.Name = "spreadsheetCommandBarButtonItem15";
-            this.spreadsheetCommandBarButtonItem15.RibbonStyle = ((DevExpress.XtraBars.Ribbon.RibbonItemStyles)((DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText)));
-            // 
-            // fontRibbonPageGroup1
-            // 
-            this.fontRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup1);
-            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup2);
-            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup3);
-            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup4);
-            this.fontRibbonPageGroup1.Name = "fontRibbonPageGroup1";
-            // 
-            // changeFontNameItem1
-            // 
-            this.changeFontNameItem1.Edit = this.repositoryItemFontEdit1;
-            this.changeFontNameItem1.Id = 26;
-            this.changeFontNameItem1.Name = "changeFontNameItem1";
-            // 
-            // changeFontSizeItem1
-            // 
-            this.changeFontSizeItem1.Edit = this.repositoryItemSpreadsheetFontSizeEdit1;
-            this.changeFontSizeItem1.Id = 27;
-            this.changeFontSizeItem1.Name = "changeFontSizeItem1";
-            // 
-            // spreadsheetCommandBarButtonItem16
-            // 
-            this.spreadsheetCommandBarButtonItem16.ButtonGroupTag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
-            this.spreadsheetCommandBarButtonItem16.CommandName = "FormatIncreaseFontSize";
-            this.spreadsheetCommandBarButtonItem16.Id = 28;
-            this.spreadsheetCommandBarButtonItem16.Name = "spreadsheetCommandBarButtonItem16";
-            this.spreadsheetCommandBarButtonItem16.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem17
-            // 
-            this.spreadsheetCommandBarButtonItem17.ButtonGroupTag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
-            this.spreadsheetCommandBarButtonItem17.CommandName = "FormatDecreaseFontSize";
-            this.spreadsheetCommandBarButtonItem17.Id = 29;
-            this.spreadsheetCommandBarButtonItem17.Name = "spreadsheetCommandBarButtonItem17";
-            this.spreadsheetCommandBarButtonItem17.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem1
-            // 
-            this.spreadsheetCommandBarCheckItem1.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
-            this.spreadsheetCommandBarCheckItem1.CommandName = "FormatFontBold";
-            this.spreadsheetCommandBarCheckItem1.Id = 30;
-            this.spreadsheetCommandBarCheckItem1.Name = "spreadsheetCommandBarCheckItem1";
-            this.spreadsheetCommandBarCheckItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem2
-            // 
-            this.spreadsheetCommandBarCheckItem2.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
-            this.spreadsheetCommandBarCheckItem2.CommandName = "FormatFontItalic";
-            this.spreadsheetCommandBarCheckItem2.Id = 31;
-            this.spreadsheetCommandBarCheckItem2.Name = "spreadsheetCommandBarCheckItem2";
-            this.spreadsheetCommandBarCheckItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem3
-            // 
-            this.spreadsheetCommandBarCheckItem3.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
-            this.spreadsheetCommandBarCheckItem3.CommandName = "FormatFontUnderline";
-            this.spreadsheetCommandBarCheckItem3.Id = 32;
-            this.spreadsheetCommandBarCheckItem3.Name = "spreadsheetCommandBarCheckItem3";
-            this.spreadsheetCommandBarCheckItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem4
-            // 
-            this.spreadsheetCommandBarCheckItem4.ButtonGroupTag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
-            this.spreadsheetCommandBarCheckItem4.CommandName = "FormatFontStrikeout";
-            this.spreadsheetCommandBarCheckItem4.Id = 33;
-            this.spreadsheetCommandBarCheckItem4.Name = "spreadsheetCommandBarCheckItem4";
-            this.spreadsheetCommandBarCheckItem4.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem18
-            // 
-            this.spreadsheetCommandBarButtonItem18.CommandName = "FormatBottomBorder";
-            this.spreadsheetCommandBarButtonItem18.Id = 35;
-            this.spreadsheetCommandBarButtonItem18.Name = "spreadsheetCommandBarButtonItem18";
-            // 
-            // spreadsheetCommandBarButtonItem19
-            // 
-            this.spreadsheetCommandBarButtonItem19.CommandName = "FormatTopBorder";
-            this.spreadsheetCommandBarButtonItem19.Id = 36;
-            this.spreadsheetCommandBarButtonItem19.Name = "spreadsheetCommandBarButtonItem19";
-            // 
-            // spreadsheetCommandBarButtonItem20
-            // 
-            this.spreadsheetCommandBarButtonItem20.CommandName = "FormatLeftBorder";
-            this.spreadsheetCommandBarButtonItem20.Id = 37;
-            this.spreadsheetCommandBarButtonItem20.Name = "spreadsheetCommandBarButtonItem20";
-            // 
-            // spreadsheetCommandBarButtonItem21
-            // 
-            this.spreadsheetCommandBarButtonItem21.CommandName = "FormatRightBorder";
-            this.spreadsheetCommandBarButtonItem21.Id = 38;
-            this.spreadsheetCommandBarButtonItem21.Name = "spreadsheetCommandBarButtonItem21";
-            // 
-            // spreadsheetCommandBarButtonItem22
-            // 
-            this.spreadsheetCommandBarButtonItem22.CommandName = "FormatNoBorders";
-            this.spreadsheetCommandBarButtonItem22.Id = 39;
-            this.spreadsheetCommandBarButtonItem22.Name = "spreadsheetCommandBarButtonItem22";
-            // 
-            // spreadsheetCommandBarButtonItem23
-            // 
-            this.spreadsheetCommandBarButtonItem23.CommandName = "FormatAllBorders";
-            this.spreadsheetCommandBarButtonItem23.Id = 40;
-            this.spreadsheetCommandBarButtonItem23.Name = "spreadsheetCommandBarButtonItem23";
-            // 
-            // spreadsheetCommandBarButtonItem24
-            // 
-            this.spreadsheetCommandBarButtonItem24.CommandName = "FormatOutsideBorders";
-            this.spreadsheetCommandBarButtonItem24.Id = 41;
-            this.spreadsheetCommandBarButtonItem24.Name = "spreadsheetCommandBarButtonItem24";
-            // 
-            // spreadsheetCommandBarButtonItem25
-            // 
-            this.spreadsheetCommandBarButtonItem25.CommandName = "FormatThickBorder";
-            this.spreadsheetCommandBarButtonItem25.Id = 42;
-            this.spreadsheetCommandBarButtonItem25.Name = "spreadsheetCommandBarButtonItem25";
-            // 
-            // spreadsheetCommandBarButtonItem26
-            // 
-            this.spreadsheetCommandBarButtonItem26.CommandName = "FormatBottomDoubleBorder";
-            this.spreadsheetCommandBarButtonItem26.Id = 43;
-            this.spreadsheetCommandBarButtonItem26.Name = "spreadsheetCommandBarButtonItem26";
-            // 
-            // spreadsheetCommandBarButtonItem27
-            // 
-            this.spreadsheetCommandBarButtonItem27.CommandName = "FormatBottomThickBorder";
-            this.spreadsheetCommandBarButtonItem27.Id = 44;
-            this.spreadsheetCommandBarButtonItem27.Name = "spreadsheetCommandBarButtonItem27";
-            // 
-            // spreadsheetCommandBarButtonItem28
-            // 
-            this.spreadsheetCommandBarButtonItem28.CommandName = "FormatTopAndBottomBorder";
-            this.spreadsheetCommandBarButtonItem28.Id = 45;
-            this.spreadsheetCommandBarButtonItem28.Name = "spreadsheetCommandBarButtonItem28";
-            // 
-            // spreadsheetCommandBarButtonItem29
-            // 
-            this.spreadsheetCommandBarButtonItem29.CommandName = "FormatTopAndThickBottomBorder";
-            this.spreadsheetCommandBarButtonItem29.Id = 46;
-            this.spreadsheetCommandBarButtonItem29.Name = "spreadsheetCommandBarButtonItem29";
-            // 
-            // spreadsheetCommandBarButtonItem30
-            // 
-            this.spreadsheetCommandBarButtonItem30.CommandName = "FormatTopAndDoubleBottomBorder";
-            this.spreadsheetCommandBarButtonItem30.Id = 47;
-            this.spreadsheetCommandBarButtonItem30.Name = "spreadsheetCommandBarButtonItem30";
-            // 
-            // changeBorderLineColorItem1
-            // 
-            this.changeBorderLineColorItem1.ActAsDropDown = true;
-            this.changeBorderLineColorItem1.Id = 48;
-            this.changeBorderLineColorItem1.Name = "changeBorderLineColorItem1";
-            // 
-            // changeBorderLineStyleItem1
-            // 
-            this.changeBorderLineStyleItem1.DropDownControl = this.commandBarGalleryDropDown1;
-            this.changeBorderLineStyleItem1.Id = 49;
-            this.changeBorderLineStyleItem1.Name = "changeBorderLineStyleItem1";
-            // 
-            // commandBarGalleryDropDown1
-            // 
-            this.commandBarGalleryDropDown1.Name = "commandBarGalleryDropDown1";
-            this.commandBarGalleryDropDown1.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarSubItem1
-            // 
-            this.spreadsheetCommandBarSubItem1.ButtonGroupTag = "{DDB05A32-9207-4556-85CB-FE3403A197C7}";
-            this.spreadsheetCommandBarSubItem1.CommandName = "FormatBordersCommandGroup";
-            this.spreadsheetCommandBarSubItem1.Id = 34;
-            this.spreadsheetCommandBarSubItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem18),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem19),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem20),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem21),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem22),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem23),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem24),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem25),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem26),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem27),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem28),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem29),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem30),
-            new DevExpress.XtraBars.LinkPersistInfo(this.changeBorderLineColorItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.changeBorderLineStyleItem1)});
-            this.spreadsheetCommandBarSubItem1.Name = "spreadsheetCommandBarSubItem1";
-            this.spreadsheetCommandBarSubItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // changeCellFillColorItem1
-            // 
-            this.changeCellFillColorItem1.Id = 50;
-            this.changeCellFillColorItem1.Name = "changeCellFillColorItem1";
-            // 
-            // changeFontColorItem1
-            // 
-            this.changeFontColorItem1.Id = 51;
-            this.changeFontColorItem1.Name = "changeFontColorItem1";
-            // 
-            // barButtonGroup1
-            // 
-            this.barButtonGroup1.Id = 12;
-            this.barButtonGroup1.ItemLinks.Add(this.changeFontNameItem1);
-            this.barButtonGroup1.ItemLinks.Add(this.changeFontSizeItem1);
-            this.barButtonGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem16);
-            this.barButtonGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem17);
-            this.barButtonGroup1.Name = "barButtonGroup1";
-            this.barButtonGroup1.Tag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
-            // 
-            // repositoryItemFontEdit1
-            // 
-            this.repositoryItemFontEdit1.AutoHeight = false;
-            this.repositoryItemFontEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
-            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
-            this.repositoryItemFontEdit1.Name = "repositoryItemFontEdit1";
-            // 
-            // repositoryItemSpreadsheetFontSizeEdit1
-            // 
-            this.repositoryItemSpreadsheetFontSizeEdit1.AutoHeight = false;
-            this.repositoryItemSpreadsheetFontSizeEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
-            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
-            this.repositoryItemSpreadsheetFontSizeEdit1.Control = this.spreadsheetControl1;
-            this.repositoryItemSpreadsheetFontSizeEdit1.Name = "repositoryItemSpreadsheetFontSizeEdit1";
-            // 
-            // barButtonGroup2
-            // 
-            this.barButtonGroup2.Id = 13;
-            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem1);
-            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem2);
-            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem3);
-            this.barButtonGroup2.ItemLinks.Add(this.spreadsheetCommandBarCheckItem4);
-            this.barButtonGroup2.Name = "barButtonGroup2";
-            this.barButtonGroup2.Tag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
-            // 
-            // barButtonGroup3
-            // 
-            this.barButtonGroup3.Id = 14;
-            this.barButtonGroup3.ItemLinks.Add(this.spreadsheetCommandBarSubItem1);
-            this.barButtonGroup3.Name = "barButtonGroup3";
-            this.barButtonGroup3.Tag = "{DDB05A32-9207-4556-85CB-FE3403A197C7}";
-            // 
-            // barButtonGroup4
-            // 
-            this.barButtonGroup4.Id = 15;
-            this.barButtonGroup4.ItemLinks.Add(this.changeCellFillColorItem1);
-            this.barButtonGroup4.ItemLinks.Add(this.changeFontColorItem1);
-            this.barButtonGroup4.Name = "barButtonGroup4";
-            this.barButtonGroup4.Tag = "{C2275623-04A3-41E8-8D6A-EB5C7F8541D1}";
-            // 
-            // alignmentRibbonPageGroup1
-            // 
-            this.alignmentRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup5);
-            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup6);
-            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup7);
-            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem11);
-            this.alignmentRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem2);
-            this.alignmentRibbonPageGroup1.Name = "alignmentRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem5
-            // 
-            this.spreadsheetCommandBarCheckItem5.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
-            this.spreadsheetCommandBarCheckItem5.CommandName = "FormatAlignmentTop";
-            this.spreadsheetCommandBarCheckItem5.Id = 52;
-            this.spreadsheetCommandBarCheckItem5.Name = "spreadsheetCommandBarCheckItem5";
-            this.spreadsheetCommandBarCheckItem5.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem6
-            // 
-            this.spreadsheetCommandBarCheckItem6.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
-            this.spreadsheetCommandBarCheckItem6.CommandName = "FormatAlignmentMiddle";
-            this.spreadsheetCommandBarCheckItem6.Id = 53;
-            this.spreadsheetCommandBarCheckItem6.Name = "spreadsheetCommandBarCheckItem6";
-            this.spreadsheetCommandBarCheckItem6.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem7
-            // 
-            this.spreadsheetCommandBarCheckItem7.ButtonGroupTag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
-            this.spreadsheetCommandBarCheckItem7.CommandName = "FormatAlignmentBottom";
-            this.spreadsheetCommandBarCheckItem7.Id = 54;
-            this.spreadsheetCommandBarCheckItem7.Name = "spreadsheetCommandBarCheckItem7";
-            this.spreadsheetCommandBarCheckItem7.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem8
-            // 
-            this.spreadsheetCommandBarCheckItem8.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
-            this.spreadsheetCommandBarCheckItem8.CommandName = "FormatAlignmentLeft";
-            this.spreadsheetCommandBarCheckItem8.Id = 55;
-            this.spreadsheetCommandBarCheckItem8.Name = "spreadsheetCommandBarCheckItem8";
-            this.spreadsheetCommandBarCheckItem8.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem9
-            // 
-            this.spreadsheetCommandBarCheckItem9.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
-            this.spreadsheetCommandBarCheckItem9.CommandName = "FormatAlignmentCenter";
-            this.spreadsheetCommandBarCheckItem9.Id = 56;
-            this.spreadsheetCommandBarCheckItem9.Name = "spreadsheetCommandBarCheckItem9";
-            this.spreadsheetCommandBarCheckItem9.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem10
-            // 
-            this.spreadsheetCommandBarCheckItem10.ButtonGroupTag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
-            this.spreadsheetCommandBarCheckItem10.CommandName = "FormatAlignmentRight";
-            this.spreadsheetCommandBarCheckItem10.Id = 57;
-            this.spreadsheetCommandBarCheckItem10.Name = "spreadsheetCommandBarCheckItem10";
-            this.spreadsheetCommandBarCheckItem10.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem31
-            // 
-            this.spreadsheetCommandBarButtonItem31.ButtonGroupTag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
-            this.spreadsheetCommandBarButtonItem31.CommandName = "FormatDecreaseIndent";
-            this.spreadsheetCommandBarButtonItem31.Id = 58;
-            this.spreadsheetCommandBarButtonItem31.Name = "spreadsheetCommandBarButtonItem31";
-            this.spreadsheetCommandBarButtonItem31.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem32
-            // 
-            this.spreadsheetCommandBarButtonItem32.ButtonGroupTag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
-            this.spreadsheetCommandBarButtonItem32.CommandName = "FormatIncreaseIndent";
-            this.spreadsheetCommandBarButtonItem32.Id = 59;
-            this.spreadsheetCommandBarButtonItem32.Name = "spreadsheetCommandBarButtonItem32";
-            this.spreadsheetCommandBarButtonItem32.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarCheckItem11
-            // 
-            this.spreadsheetCommandBarCheckItem11.CommandName = "FormatWrapText";
-            this.spreadsheetCommandBarCheckItem11.Id = 60;
-            this.spreadsheetCommandBarCheckItem11.Name = "spreadsheetCommandBarCheckItem11";
-            this.spreadsheetCommandBarCheckItem11.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarCheckItem12
-            // 
-            this.spreadsheetCommandBarCheckItem12.CommandName = "EditingMergeAndCenterCells";
-            this.spreadsheetCommandBarCheckItem12.Id = 62;
-            this.spreadsheetCommandBarCheckItem12.Name = "spreadsheetCommandBarCheckItem12";
-            // 
-            // spreadsheetCommandBarButtonItem33
-            // 
-            this.spreadsheetCommandBarButtonItem33.CommandName = "EditingMergeCellsAcross";
-            this.spreadsheetCommandBarButtonItem33.Id = 63;
-            this.spreadsheetCommandBarButtonItem33.Name = "spreadsheetCommandBarButtonItem33";
-            // 
-            // spreadsheetCommandBarButtonItem34
-            // 
-            this.spreadsheetCommandBarButtonItem34.CommandName = "EditingMergeCells";
-            this.spreadsheetCommandBarButtonItem34.Id = 64;
-            this.spreadsheetCommandBarButtonItem34.Name = "spreadsheetCommandBarButtonItem34";
-            // 
-            // spreadsheetCommandBarButtonItem35
-            // 
-            this.spreadsheetCommandBarButtonItem35.CommandName = "EditingUnmergeCells";
-            this.spreadsheetCommandBarButtonItem35.Id = 65;
-            this.spreadsheetCommandBarButtonItem35.Name = "spreadsheetCommandBarButtonItem35";
-            // 
-            // spreadsheetCommandBarSubItem2
-            // 
-            this.spreadsheetCommandBarSubItem2.CommandName = "EditingMergeCellsCommandGroup";
-            this.spreadsheetCommandBarSubItem2.Id = 61;
-            this.spreadsheetCommandBarSubItem2.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem12),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem33),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem34),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem35)});
-            this.spreadsheetCommandBarSubItem2.Name = "spreadsheetCommandBarSubItem2";
-            this.spreadsheetCommandBarSubItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // barButtonGroup5
-            // 
-            this.barButtonGroup5.Id = 16;
-            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem5);
-            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem6);
-            this.barButtonGroup5.ItemLinks.Add(this.spreadsheetCommandBarCheckItem7);
-            this.barButtonGroup5.Name = "barButtonGroup5";
-            this.barButtonGroup5.Tag = "{03A0322B-12A2-4434-A487-8B5AAF64CCFC}";
-            // 
-            // barButtonGroup6
-            // 
-            this.barButtonGroup6.Id = 17;
-            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem8);
-            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem9);
-            this.barButtonGroup6.ItemLinks.Add(this.spreadsheetCommandBarCheckItem10);
-            this.barButtonGroup6.Name = "barButtonGroup6";
-            this.barButtonGroup6.Tag = "{ECC693B7-EF59-4007-A0DB-A9550214A0F2}";
-            // 
-            // barButtonGroup7
-            // 
-            this.barButtonGroup7.Id = 18;
-            this.barButtonGroup7.ItemLinks.Add(this.spreadsheetCommandBarButtonItem31);
-            this.barButtonGroup7.ItemLinks.Add(this.spreadsheetCommandBarButtonItem32);
-            this.barButtonGroup7.Name = "barButtonGroup7";
-            this.barButtonGroup7.Tag = "{A5E37DED-106E-44FC-8044-CE3824C08225}";
-            // 
-            // numberRibbonPageGroup1
-            // 
-            this.numberRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup8);
-            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup9);
-            this.numberRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup10);
-            this.numberRibbonPageGroup1.Name = "numberRibbonPageGroup1";
-            // 
-            // changeNumberFormatItem1
-            // 
-            this.changeNumberFormatItem1.Edit = this.repositoryItemPopupGalleryEdit1;
-            this.changeNumberFormatItem1.Id = 66;
-            this.changeNumberFormatItem1.Name = "changeNumberFormatItem1";
-            // 
-            // spreadsheetCommandBarButtonItem36
-            // 
-            this.spreadsheetCommandBarButtonItem36.CommandName = "FormatNumberAccountingDefault";
-            this.spreadsheetCommandBarButtonItem36.Id = 68;
-            this.spreadsheetCommandBarButtonItem36.Name = "spreadsheetCommandBarButtonItem36";
-            // 
-            // spreadsheetCommandBarButtonItem37
-            // 
-            this.spreadsheetCommandBarButtonItem37.CommandName = "FormatNumberAccountingUS";
-            this.spreadsheetCommandBarButtonItem37.Id = 69;
-            this.spreadsheetCommandBarButtonItem37.Name = "spreadsheetCommandBarButtonItem37";
-            // 
-            // spreadsheetCommandBarButtonItem38
-            // 
-            this.spreadsheetCommandBarButtonItem38.CommandName = "FormatNumberAccountingUK";
-            this.spreadsheetCommandBarButtonItem38.Id = 70;
-            this.spreadsheetCommandBarButtonItem38.Name = "spreadsheetCommandBarButtonItem38";
-            // 
-            // spreadsheetCommandBarButtonItem39
-            // 
-            this.spreadsheetCommandBarButtonItem39.CommandName = "FormatNumberAccountingEuro";
-            this.spreadsheetCommandBarButtonItem39.Id = 71;
-            this.spreadsheetCommandBarButtonItem39.Name = "spreadsheetCommandBarButtonItem39";
-            // 
-            // spreadsheetCommandBarButtonItem40
-            // 
-            this.spreadsheetCommandBarButtonItem40.CommandName = "FormatNumberAccountingPRC";
-            this.spreadsheetCommandBarButtonItem40.Id = 72;
-            this.spreadsheetCommandBarButtonItem40.Name = "spreadsheetCommandBarButtonItem40";
-            // 
-            // spreadsheetCommandBarButtonItem41
-            // 
-            this.spreadsheetCommandBarButtonItem41.CommandName = "FormatNumberAccountingSwiss";
-            this.spreadsheetCommandBarButtonItem41.Id = 73;
-            this.spreadsheetCommandBarButtonItem41.Name = "spreadsheetCommandBarButtonItem41";
-            // 
-            // spreadsheetCommandBarSubItem3
-            // 
-            this.spreadsheetCommandBarSubItem3.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
-            this.spreadsheetCommandBarSubItem3.CommandName = "FormatNumberAccountingCommandGroup";
-            this.spreadsheetCommandBarSubItem3.Id = 67;
-            this.spreadsheetCommandBarSubItem3.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem36),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem37),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem38),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem39),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem40),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem41)});
-            this.spreadsheetCommandBarSubItem3.Name = "spreadsheetCommandBarSubItem3";
-            this.spreadsheetCommandBarSubItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem42
-            // 
-            this.spreadsheetCommandBarButtonItem42.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
-            this.spreadsheetCommandBarButtonItem42.CommandName = "FormatNumberPercent";
-            this.spreadsheetCommandBarButtonItem42.Id = 74;
-            this.spreadsheetCommandBarButtonItem42.Name = "spreadsheetCommandBarButtonItem42";
-            this.spreadsheetCommandBarButtonItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem43
-            // 
-            this.spreadsheetCommandBarButtonItem43.ButtonGroupTag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
-            this.spreadsheetCommandBarButtonItem43.CommandName = "FormatNumberAccounting";
-            this.spreadsheetCommandBarButtonItem43.Id = 75;
-            this.spreadsheetCommandBarButtonItem43.Name = "spreadsheetCommandBarButtonItem43";
-            this.spreadsheetCommandBarButtonItem43.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem44
-            // 
-            this.spreadsheetCommandBarButtonItem44.ButtonGroupTag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
-            this.spreadsheetCommandBarButtonItem44.CommandName = "FormatNumberIncreaseDecimal";
-            this.spreadsheetCommandBarButtonItem44.Id = 76;
-            this.spreadsheetCommandBarButtonItem44.Name = "spreadsheetCommandBarButtonItem44";
-            this.spreadsheetCommandBarButtonItem44.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // spreadsheetCommandBarButtonItem45
-            // 
-            this.spreadsheetCommandBarButtonItem45.ButtonGroupTag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
-            this.spreadsheetCommandBarButtonItem45.CommandName = "FormatNumberDecreaseDecimal";
-            this.spreadsheetCommandBarButtonItem45.Id = 77;
-            this.spreadsheetCommandBarButtonItem45.Name = "spreadsheetCommandBarButtonItem45";
-            this.spreadsheetCommandBarButtonItem45.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // barButtonGroup8
-            // 
-            this.barButtonGroup8.Id = 19;
-            this.barButtonGroup8.ItemLinks.Add(this.changeNumberFormatItem1);
-            this.barButtonGroup8.Name = "barButtonGroup8";
-            this.barButtonGroup8.Tag = "{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}";
-            // 
-            // repositoryItemPopupGalleryEdit1
-            // 
-            this.repositoryItemPopupGalleryEdit1.AutoHeight = false;
-            this.repositoryItemPopupGalleryEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
-            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
-            // 
-            // 
-            // 
-            this.repositoryItemPopupGalleryEdit1.Gallery.AllowFilter = false;
-            this.repositoryItemPopupGalleryEdit1.Gallery.AutoFitColumns = false;
-            this.repositoryItemPopupGalleryEdit1.Gallery.ColumnCount = 1;
-            this.repositoryItemPopupGalleryEdit1.Gallery.FixedImageSize = false;
-            spreadsheetCommandGalleryItem1.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem1.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem1.Checked = true;
-            spreadsheetCommandGalleryItem1.CommandName = "FormatNumberGeneral";
-            spreadsheetCommandGalleryItem1.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem2.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem2.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem2.CommandName = "FormatNumberDecimal";
-            spreadsheetCommandGalleryItem2.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem3.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem3.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem3.CommandName = "FormatNumberAccountingCurrency";
-            spreadsheetCommandGalleryItem3.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem4.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem4.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem4.CommandName = "FormatNumberAccountingRegular";
-            spreadsheetCommandGalleryItem4.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem5.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem5.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem5.CommandName = "FormatNumberShortDate";
-            spreadsheetCommandGalleryItem5.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem6.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem6.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem6.CommandName = "FormatNumberLongDate";
-            spreadsheetCommandGalleryItem6.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem7.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem7.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem7.CommandName = "FormatNumberTime";
-            spreadsheetCommandGalleryItem7.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem8.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem8.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem8.CommandName = "FormatNumberPercentage";
-            spreadsheetCommandGalleryItem8.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem9.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem9.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem9.CommandName = "FormatNumberFraction";
-            spreadsheetCommandGalleryItem9.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem10.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem10.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem10.CommandName = "FormatNumberScientific";
-            spreadsheetCommandGalleryItem10.IsEmptyHint = true;
-            spreadsheetCommandGalleryItem11.AlwaysUpdateDescription = true;
-            spreadsheetCommandGalleryItem11.CaptionAsValue = true;
-            spreadsheetCommandGalleryItem11.CommandName = "FormatNumberText";
-            spreadsheetCommandGalleryItem11.IsEmptyHint = true;
-            galleryItemGroup1.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem1,
-            spreadsheetCommandGalleryItem2,
-            spreadsheetCommandGalleryItem3,
-            spreadsheetCommandGalleryItem4,
-            spreadsheetCommandGalleryItem5,
-            spreadsheetCommandGalleryItem6,
-            spreadsheetCommandGalleryItem7,
-            spreadsheetCommandGalleryItem8,
-            spreadsheetCommandGalleryItem9,
-            spreadsheetCommandGalleryItem10,
-            spreadsheetCommandGalleryItem11});
-            this.repositoryItemPopupGalleryEdit1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            galleryItemGroup1});
-            this.repositoryItemPopupGalleryEdit1.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.repositoryItemPopupGalleryEdit1.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.repositoryItemPopupGalleryEdit1.Gallery.RowCount = 11;
-            this.repositoryItemPopupGalleryEdit1.Gallery.ShowGroupCaption = false;
-            this.repositoryItemPopupGalleryEdit1.Gallery.ShowItemText = true;
-            this.repositoryItemPopupGalleryEdit1.Gallery.ShowScrollBar = DevExpress.XtraBars.Ribbon.Gallery.ShowScrollBar.Hide;
-            this.repositoryItemPopupGalleryEdit1.Gallery.StretchItems = true;
-            this.repositoryItemPopupGalleryEdit1.Name = "repositoryItemPopupGalleryEdit1";
-            this.repositoryItemPopupGalleryEdit1.ShowButtons = false;
-            this.repositoryItemPopupGalleryEdit1.ShowPopupCloseButton = false;
-            this.repositoryItemPopupGalleryEdit1.ShowSizeGrip = false;
-            // 
-            // barButtonGroup9
-            // 
-            this.barButtonGroup9.Id = 20;
-            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarSubItem3);
-            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarButtonItem42);
-            this.barButtonGroup9.ItemLinks.Add(this.spreadsheetCommandBarButtonItem43);
-            this.barButtonGroup9.Name = "barButtonGroup9";
-            this.barButtonGroup9.Tag = "{508C2CE6-E1C8-4DD1-BA50-6C210FDB31B0}";
-            // 
-            // barButtonGroup10
-            // 
-            this.barButtonGroup10.Id = 21;
-            this.barButtonGroup10.ItemLinks.Add(this.spreadsheetCommandBarButtonItem44);
-            this.barButtonGroup10.ItemLinks.Add(this.spreadsheetCommandBarButtonItem45);
-            this.barButtonGroup10.Name = "barButtonGroup10";
-            this.barButtonGroup10.Tag = "{BBAB348B-BDB2-487A-A883-EFB9982DC698}";
-            // 
-            // stylesRibbonPageGroup1
-            // 
-            this.stylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.stylesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem7);
-            this.stylesRibbonPageGroup1.ItemLinks.Add(this.galleryFormatAsTableItem1);
-            this.stylesRibbonPageGroup1.ItemLinks.Add(this.galleryChangeStyleItem1);
-            this.stylesRibbonPageGroup1.Name = "stylesRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem46
-            // 
-            this.spreadsheetCommandBarButtonItem46.CommandName = "ConditionalFormattingGreaterThanRuleCommand";
-            this.spreadsheetCommandBarButtonItem46.Id = 79;
-            this.spreadsheetCommandBarButtonItem46.Name = "spreadsheetCommandBarButtonItem46";
-            this.spreadsheetCommandBarButtonItem46.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem47
-            // 
-            this.spreadsheetCommandBarButtonItem47.CommandName = "ConditionalFormattingLessThanRuleCommand";
-            this.spreadsheetCommandBarButtonItem47.Id = 80;
-            this.spreadsheetCommandBarButtonItem47.Name = "spreadsheetCommandBarButtonItem47";
-            this.spreadsheetCommandBarButtonItem47.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem48
-            // 
-            this.spreadsheetCommandBarButtonItem48.CommandName = "ConditionalFormattingBetweenRuleCommand";
-            this.spreadsheetCommandBarButtonItem48.Id = 81;
-            this.spreadsheetCommandBarButtonItem48.Name = "spreadsheetCommandBarButtonItem48";
-            this.spreadsheetCommandBarButtonItem48.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem49
-            // 
-            this.spreadsheetCommandBarButtonItem49.CommandName = "ConditionalFormattingEqualToRuleCommand";
-            this.spreadsheetCommandBarButtonItem49.Id = 82;
-            this.spreadsheetCommandBarButtonItem49.Name = "spreadsheetCommandBarButtonItem49";
-            this.spreadsheetCommandBarButtonItem49.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem50
-            // 
-            this.spreadsheetCommandBarButtonItem50.CommandName = "ConditionalFormattingTextContainsRuleCommand";
-            this.spreadsheetCommandBarButtonItem50.Id = 83;
-            this.spreadsheetCommandBarButtonItem50.Name = "spreadsheetCommandBarButtonItem50";
-            this.spreadsheetCommandBarButtonItem50.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem51
-            // 
-            this.spreadsheetCommandBarButtonItem51.CommandName = "ConditionalFormattingDateOccurringRuleCommand";
-            this.spreadsheetCommandBarButtonItem51.Id = 84;
-            this.spreadsheetCommandBarButtonItem51.Name = "spreadsheetCommandBarButtonItem51";
-            this.spreadsheetCommandBarButtonItem51.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem52
-            // 
-            this.spreadsheetCommandBarButtonItem52.CommandName = "ConditionalFormattingDuplicateValuesRuleCommand";
-            this.spreadsheetCommandBarButtonItem52.Id = 85;
-            this.spreadsheetCommandBarButtonItem52.Name = "spreadsheetCommandBarButtonItem52";
-            this.spreadsheetCommandBarButtonItem52.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem4
-            // 
-            this.spreadsheetCommandBarSubItem4.CommandName = "ConditionalFormattingHighlightCellsRuleCommandGroup";
-            this.spreadsheetCommandBarSubItem4.Id = 86;
-            this.spreadsheetCommandBarSubItem4.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem46),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem47),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem48),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem49),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem50),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem51),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem52)});
-            this.spreadsheetCommandBarSubItem4.Name = "spreadsheetCommandBarSubItem4";
-            // 
-            // spreadsheetCommandBarButtonItem53
-            // 
-            this.spreadsheetCommandBarButtonItem53.CommandName = "ConditionalFormattingTop10RuleCommand";
-            this.spreadsheetCommandBarButtonItem53.Id = 87;
-            this.spreadsheetCommandBarButtonItem53.Name = "spreadsheetCommandBarButtonItem53";
-            this.spreadsheetCommandBarButtonItem53.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem54
-            // 
-            this.spreadsheetCommandBarButtonItem54.CommandName = "ConditionalFormattingTop10PercentRuleCommand";
-            this.spreadsheetCommandBarButtonItem54.Id = 88;
-            this.spreadsheetCommandBarButtonItem54.Name = "spreadsheetCommandBarButtonItem54";
-            this.spreadsheetCommandBarButtonItem54.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem55
-            // 
-            this.spreadsheetCommandBarButtonItem55.CommandName = "ConditionalFormattingBottom10RuleCommand";
-            this.spreadsheetCommandBarButtonItem55.Id = 89;
-            this.spreadsheetCommandBarButtonItem55.Name = "spreadsheetCommandBarButtonItem55";
-            this.spreadsheetCommandBarButtonItem55.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem56
-            // 
-            this.spreadsheetCommandBarButtonItem56.CommandName = "ConditionalFormattingBottom10PercentRuleCommand";
-            this.spreadsheetCommandBarButtonItem56.Id = 90;
-            this.spreadsheetCommandBarButtonItem56.Name = "spreadsheetCommandBarButtonItem56";
-            this.spreadsheetCommandBarButtonItem56.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem57
-            // 
-            this.spreadsheetCommandBarButtonItem57.CommandName = "ConditionalFormattingAboveAverageRuleCommand";
-            this.spreadsheetCommandBarButtonItem57.Id = 91;
-            this.spreadsheetCommandBarButtonItem57.Name = "spreadsheetCommandBarButtonItem57";
-            this.spreadsheetCommandBarButtonItem57.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem58
-            // 
-            this.spreadsheetCommandBarButtonItem58.CommandName = "ConditionalFormattingBelowAverageRuleCommand";
-            this.spreadsheetCommandBarButtonItem58.Id = 92;
-            this.spreadsheetCommandBarButtonItem58.Name = "spreadsheetCommandBarButtonItem58";
-            this.spreadsheetCommandBarButtonItem58.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem5
-            // 
-            this.spreadsheetCommandBarSubItem5.CommandName = "ConditionalFormattingTopBottomRuleCommandGroup";
-            this.spreadsheetCommandBarSubItem5.Id = 93;
-            this.spreadsheetCommandBarSubItem5.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem53),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem54),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem55),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem56),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem57),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem58)});
-            this.spreadsheetCommandBarSubItem5.Name = "spreadsheetCommandBarSubItem5";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem1
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem1.CommandName = "ConditionalFormattingDataBarsCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem1.DropDownControl = this.commandBarGalleryDropDown2;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem1.Id = 94;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem1.Name = "spreadsheetCommandBarButtonGalleryDropDownItem1";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // commandBarGalleryDropDown2
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown2.Gallery.ColumnCount = 3;
-            spreadsheetCommandGalleryItemGroup1.CommandName = "ConditionalFormattingDataBarsGradientFillCommandGroup";
-            spreadsheetCommandGalleryItem12.CommandName = "ConditionalFormattingDataBarGradientBlue";
-            spreadsheetCommandGalleryItem13.CommandName = "ConditionalFormattingDataBarGradientGreen";
-            spreadsheetCommandGalleryItem14.CommandName = "ConditionalFormattingDataBarGradientRed";
-            spreadsheetCommandGalleryItem15.CommandName = "ConditionalFormattingDataBarGradientOrange";
-            spreadsheetCommandGalleryItem16.CommandName = "ConditionalFormattingDataBarGradientLightBlue";
-            spreadsheetCommandGalleryItem17.CommandName = "ConditionalFormattingDataBarGradientPurple";
-            spreadsheetCommandGalleryItemGroup1.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem12,
-            spreadsheetCommandGalleryItem13,
-            spreadsheetCommandGalleryItem14,
-            spreadsheetCommandGalleryItem15,
-            spreadsheetCommandGalleryItem16,
-            spreadsheetCommandGalleryItem17});
-            spreadsheetCommandGalleryItemGroup2.CommandName = "ConditionalFormattingDataBarsSolidFillCommandGroup";
-            spreadsheetCommandGalleryItem18.CommandName = "ConditionalFormattingDataBarSolidBlue";
-            spreadsheetCommandGalleryItem19.CommandName = "ConditionalFormattingDataBarSolidGreen";
-            spreadsheetCommandGalleryItem20.CommandName = "ConditionalFormattingDataBarSolidRed";
-            spreadsheetCommandGalleryItem21.CommandName = "ConditionalFormattingDataBarSolidOrange";
-            spreadsheetCommandGalleryItem22.CommandName = "ConditionalFormattingDataBarSolidLightBlue";
-            spreadsheetCommandGalleryItem23.CommandName = "ConditionalFormattingDataBarSolidPurple";
-            spreadsheetCommandGalleryItemGroup2.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem18,
-            spreadsheetCommandGalleryItem19,
-            spreadsheetCommandGalleryItem20,
-            spreadsheetCommandGalleryItem21,
-            spreadsheetCommandGalleryItem22,
-            spreadsheetCommandGalleryItem23});
-            this.commandBarGalleryDropDown2.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup1,
-            spreadsheetCommandGalleryItemGroup2});
-            this.commandBarGalleryDropDown2.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown2.Name = "commandBarGalleryDropDown2";
-            this.commandBarGalleryDropDown2.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem2
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem2.CommandName = "ConditionalFormattingColorScalesCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem2.DropDownControl = this.commandBarGalleryDropDown3;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem2.Id = 95;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem2.Name = "spreadsheetCommandBarButtonGalleryDropDownItem2";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // commandBarGalleryDropDown3
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown3.Gallery.ColumnCount = 4;
-            spreadsheetCommandGalleryItemGroup3.CommandName = "ConditionalFormattingColorScalesCommandGroup";
-            spreadsheetCommandGalleryItem24.CommandName = "ConditionalFormattingColorScaleGreenYellowRed";
-            spreadsheetCommandGalleryItem25.CommandName = "ConditionalFormattingColorScaleRedYellowGreen";
-            spreadsheetCommandGalleryItem26.CommandName = "ConditionalFormattingColorScaleGreenWhiteRed";
-            spreadsheetCommandGalleryItem27.CommandName = "ConditionalFormattingColorScaleRedWhiteGreen";
-            spreadsheetCommandGalleryItem28.CommandName = "ConditionalFormattingColorScaleBlueWhiteRed";
-            spreadsheetCommandGalleryItem29.CommandName = "ConditionalFormattingColorScaleRedWhiteBlue";
-            spreadsheetCommandGalleryItem30.CommandName = "ConditionalFormattingColorScaleWhiteRed";
-            spreadsheetCommandGalleryItem31.CommandName = "ConditionalFormattingColorScaleRedWhite";
-            spreadsheetCommandGalleryItem32.CommandName = "ConditionalFormattingColorScaleGreenWhite";
-            spreadsheetCommandGalleryItem33.CommandName = "ConditionalFormattingColorScaleWhiteGreen";
-            spreadsheetCommandGalleryItem34.CommandName = "ConditionalFormattingColorScaleGreenYellow";
-            spreadsheetCommandGalleryItem35.CommandName = "ConditionalFormattingColorScaleYellowGreen";
-            spreadsheetCommandGalleryItemGroup3.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem24,
-            spreadsheetCommandGalleryItem25,
-            spreadsheetCommandGalleryItem26,
-            spreadsheetCommandGalleryItem27,
-            spreadsheetCommandGalleryItem28,
-            spreadsheetCommandGalleryItem29,
-            spreadsheetCommandGalleryItem30,
-            spreadsheetCommandGalleryItem31,
-            spreadsheetCommandGalleryItem32,
-            spreadsheetCommandGalleryItem33,
-            spreadsheetCommandGalleryItem34,
-            spreadsheetCommandGalleryItem35});
-            this.commandBarGalleryDropDown3.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup3});
-            this.commandBarGalleryDropDown3.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown3.Name = "commandBarGalleryDropDown3";
-            this.commandBarGalleryDropDown3.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem3
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem3.CommandName = "ConditionalFormattingIconSetsCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem3.DropDownControl = this.commandBarGalleryDropDown4;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem3.Id = 96;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem3.Name = "spreadsheetCommandBarButtonGalleryDropDownItem3";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // commandBarGalleryDropDown4
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown4.Gallery.ColumnCount = 4;
-            spreadsheetCommandGalleryItemGroup4.CommandName = "ConditionalFormattingIconSetsDirectionalCommandGroup";
-            spreadsheetCommandGalleryItem36.CommandName = "ConditionalFormattingIconSetArrows3Colored";
-            spreadsheetCommandGalleryItem37.CommandName = "ConditionalFormattingIconSetArrows3Grayed";
-            spreadsheetCommandGalleryItem38.CommandName = "ConditionalFormattingIconSetArrows4Colored";
-            spreadsheetCommandGalleryItem39.CommandName = "ConditionalFormattingIconSetArrows4Grayed";
-            spreadsheetCommandGalleryItem40.CommandName = "ConditionalFormattingIconSetArrows5Colored";
-            spreadsheetCommandGalleryItem41.CommandName = "ConditionalFormattingIconSetArrows5Grayed";
-            spreadsheetCommandGalleryItem42.CommandName = "ConditionalFormattingIconSetTriangles3";
-            spreadsheetCommandGalleryItemGroup4.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem36,
-            spreadsheetCommandGalleryItem37,
-            spreadsheetCommandGalleryItem38,
-            spreadsheetCommandGalleryItem39,
-            spreadsheetCommandGalleryItem40,
-            spreadsheetCommandGalleryItem41,
-            spreadsheetCommandGalleryItem42});
-            spreadsheetCommandGalleryItemGroup5.CommandName = "ConditionalFormattingIconSetsShapesCommandGroup";
-            spreadsheetCommandGalleryItem43.CommandName = "ConditionalFormattingIconSetTrafficLights3";
-            spreadsheetCommandGalleryItem44.CommandName = "ConditionalFormattingIconSetTrafficLights3Rimmed";
-            spreadsheetCommandGalleryItem45.CommandName = "ConditionalFormattingIconSetTrafficLights4";
-            spreadsheetCommandGalleryItem46.CommandName = "ConditionalFormattingIconSetSigns3";
-            spreadsheetCommandGalleryItem47.CommandName = "ConditionalFormattingIconSetRedToBlack";
-            spreadsheetCommandGalleryItemGroup5.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem43,
-            spreadsheetCommandGalleryItem44,
-            spreadsheetCommandGalleryItem45,
-            spreadsheetCommandGalleryItem46,
-            spreadsheetCommandGalleryItem47});
-            spreadsheetCommandGalleryItemGroup6.CommandName = "ConditionalFormattingIconSetsIndicatorsCommandGroup";
-            spreadsheetCommandGalleryItem48.CommandName = "ConditionalFormattingIconSetSymbols3Circled";
-            spreadsheetCommandGalleryItem49.CommandName = "ConditionalFormattingIconSetSymbols3";
-            spreadsheetCommandGalleryItem50.CommandName = "ConditionalFormattingIconSetFlags3";
-            spreadsheetCommandGalleryItemGroup6.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem48,
-            spreadsheetCommandGalleryItem49,
-            spreadsheetCommandGalleryItem50});
-            spreadsheetCommandGalleryItemGroup7.CommandName = "ConditionalFormattingIconSetsRatingsCommandGroup";
-            spreadsheetCommandGalleryItem51.CommandName = "ConditionalFormattingIconSetStars3";
-            spreadsheetCommandGalleryItem52.CommandName = "ConditionalFormattingIconSetRatings4";
-            spreadsheetCommandGalleryItem53.CommandName = "ConditionalFormattingIconSetRatings5";
-            spreadsheetCommandGalleryItem54.CommandName = "ConditionalFormattingIconSetQuarters5";
-            spreadsheetCommandGalleryItem55.CommandName = "ConditionalFormattingIconSetBoxes5";
-            spreadsheetCommandGalleryItemGroup7.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem51,
-            spreadsheetCommandGalleryItem52,
-            spreadsheetCommandGalleryItem53,
-            spreadsheetCommandGalleryItem54,
-            spreadsheetCommandGalleryItem55});
-            this.commandBarGalleryDropDown4.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup4,
-            spreadsheetCommandGalleryItemGroup5,
-            spreadsheetCommandGalleryItemGroup6,
-            spreadsheetCommandGalleryItemGroup7});
-            this.commandBarGalleryDropDown4.Gallery.RowCount = 7;
-            this.commandBarGalleryDropDown4.Name = "commandBarGalleryDropDown4";
-            this.commandBarGalleryDropDown4.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonItem59
-            // 
-            this.spreadsheetCommandBarButtonItem59.CommandName = "NewConditionalFormattingRule";
-            this.spreadsheetCommandBarButtonItem59.Id = 97;
-            this.spreadsheetCommandBarButtonItem59.Name = "spreadsheetCommandBarButtonItem59";
-            // 
-            // spreadsheetCommandBarButtonItem60
-            // 
-            this.spreadsheetCommandBarButtonItem60.CommandName = "ConditionalFormattingRemoveFromSheet";
-            this.spreadsheetCommandBarButtonItem60.Id = 98;
-            this.spreadsheetCommandBarButtonItem60.Name = "spreadsheetCommandBarButtonItem60";
-            // 
-            // spreadsheetCommandBarButtonItem61
-            // 
-            this.spreadsheetCommandBarButtonItem61.CommandName = "ConditionalFormattingRemove";
-            this.spreadsheetCommandBarButtonItem61.Id = 99;
-            this.spreadsheetCommandBarButtonItem61.Name = "spreadsheetCommandBarButtonItem61";
-            // 
-            // spreadsheetCommandBarSubItem6
-            // 
-            this.spreadsheetCommandBarSubItem6.CommandName = "ConditionalFormattingRemoveCommandGroup";
-            this.spreadsheetCommandBarSubItem6.Id = 100;
-            this.spreadsheetCommandBarSubItem6.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem60),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem61)});
-            this.spreadsheetCommandBarSubItem6.Name = "spreadsheetCommandBarSubItem6";
-            // 
-            // spreadsheetCommandBarButtonItem62
-            // 
-            this.spreadsheetCommandBarButtonItem62.CommandName = "ConditionalFormattingRulesManager";
-            this.spreadsheetCommandBarButtonItem62.Id = 101;
-            this.spreadsheetCommandBarButtonItem62.Name = "spreadsheetCommandBarButtonItem62";
-            // 
-            // spreadsheetCommandBarSubItem7
-            // 
-            this.spreadsheetCommandBarSubItem7.CommandName = "ConditionalFormattingCommandGroup";
-            this.spreadsheetCommandBarSubItem7.Id = 78;
-            this.spreadsheetCommandBarSubItem7.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem4),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem5),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem2),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem3),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem59),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem6),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem62)});
-            this.spreadsheetCommandBarSubItem7.Name = "spreadsheetCommandBarSubItem7";
-            // 
-            // galleryFormatAsTableItem1
-            // 
-            this.galleryFormatAsTableItem1.DropDownControl = this.commandBarGalleryDropDown5;
-            this.galleryFormatAsTableItem1.Id = 102;
-            this.galleryFormatAsTableItem1.Name = "galleryFormatAsTableItem1";
-            // 
-            // commandBarGalleryDropDown5
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown5.Gallery.AllowFilter = false;
-            this.commandBarGalleryDropDown5.Gallery.ColumnCount = 7;
-            this.commandBarGalleryDropDown5.Gallery.DrawImageBackground = false;
-            this.commandBarGalleryDropDown5.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            this.commandBarGalleryDropDown5.Gallery.ItemSize = new System.Drawing.Size(73, 58);
-            this.commandBarGalleryDropDown5.Gallery.RowCount = 10;
-            this.commandBarGalleryDropDown5.Name = "commandBarGalleryDropDown5";
-            this.commandBarGalleryDropDown5.Ribbon = this.ribbon;
-            // 
-            // galleryChangeStyleItem1
-            // 
-            // 
-            // 
-            // 
-            this.galleryChangeStyleItem1.Gallery.DrawImageBackground = false;
-            this.galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
-            this.galleryChangeStyleItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            this.galleryChangeStyleItem1.Gallery.ItemSize = new System.Drawing.Size(106, 28);
-            this.galleryChangeStyleItem1.Gallery.RowCount = 9;
-            this.galleryChangeStyleItem1.Gallery.ShowItemText = true;
-            this.galleryChangeStyleItem1.Id = 103;
-            this.galleryChangeStyleItem1.Name = "galleryChangeStyleItem1";
-            // 
-            // cellsRibbonPageGroup1
-            // 
-            this.cellsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem8);
-            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem9);
-            this.cellsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem11);
-            this.cellsRibbonPageGroup1.Name = "cellsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem63
-            // 
-            this.spreadsheetCommandBarButtonItem63.CommandName = "InsertCells";
-            this.spreadsheetCommandBarButtonItem63.Id = 105;
-            this.spreadsheetCommandBarButtonItem63.Name = "spreadsheetCommandBarButtonItem63";
-            // 
-            // spreadsheetCommandBarButtonItem64
-            // 
-            this.spreadsheetCommandBarButtonItem64.CommandName = "InsertSheetRows";
-            this.spreadsheetCommandBarButtonItem64.Id = 106;
-            this.spreadsheetCommandBarButtonItem64.Name = "spreadsheetCommandBarButtonItem64";
-            // 
-            // spreadsheetCommandBarButtonItem65
-            // 
-            this.spreadsheetCommandBarButtonItem65.CommandName = "InsertSheetColumns";
-            this.spreadsheetCommandBarButtonItem65.Id = 107;
-            this.spreadsheetCommandBarButtonItem65.Name = "spreadsheetCommandBarButtonItem65";
-            // 
-            // spreadsheetCommandBarButtonItem66
-            // 
-            this.spreadsheetCommandBarButtonItem66.CommandName = "InsertTableRowsAbove";
-            this.spreadsheetCommandBarButtonItem66.Id = 108;
-            this.spreadsheetCommandBarButtonItem66.Name = "spreadsheetCommandBarButtonItem66";
-            // 
-            // spreadsheetCommandBarButtonItem67
-            // 
-            this.spreadsheetCommandBarButtonItem67.CommandName = "InsertTableRowBelow";
-            this.spreadsheetCommandBarButtonItem67.Id = 109;
-            this.spreadsheetCommandBarButtonItem67.Name = "spreadsheetCommandBarButtonItem67";
-            // 
-            // spreadsheetCommandBarButtonItem68
-            // 
-            this.spreadsheetCommandBarButtonItem68.CommandName = "InsertTableColumnsToTheLeft";
-            this.spreadsheetCommandBarButtonItem68.Id = 110;
-            this.spreadsheetCommandBarButtonItem68.Name = "spreadsheetCommandBarButtonItem68";
-            // 
-            // spreadsheetCommandBarButtonItem69
-            // 
-            this.spreadsheetCommandBarButtonItem69.CommandName = "InsertTableColumnToTheRight";
-            this.spreadsheetCommandBarButtonItem69.Id = 111;
-            this.spreadsheetCommandBarButtonItem69.Name = "spreadsheetCommandBarButtonItem69";
-            // 
-            // spreadsheetCommandBarButtonItem70
-            // 
-            this.spreadsheetCommandBarButtonItem70.CommandName = "InsertSheet";
-            this.spreadsheetCommandBarButtonItem70.Id = 112;
-            this.spreadsheetCommandBarButtonItem70.Name = "spreadsheetCommandBarButtonItem70";
-            // 
-            // spreadsheetCommandBarSubItem8
-            // 
-            this.spreadsheetCommandBarSubItem8.CommandName = "InsertCellsCommandGroup";
-            this.spreadsheetCommandBarSubItem8.Id = 104;
-            this.spreadsheetCommandBarSubItem8.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem63),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem64),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem65),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem66),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem67),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem68),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem69),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem70)});
-            this.spreadsheetCommandBarSubItem8.Name = "spreadsheetCommandBarSubItem8";
-            // 
-            // spreadsheetCommandBarButtonItem71
-            // 
-            this.spreadsheetCommandBarButtonItem71.CommandName = "RemoveCells";
-            this.spreadsheetCommandBarButtonItem71.Id = 114;
-            this.spreadsheetCommandBarButtonItem71.Name = "spreadsheetCommandBarButtonItem71";
-            // 
-            // spreadsheetCommandBarButtonItem72
-            // 
-            this.spreadsheetCommandBarButtonItem72.CommandName = "RemoveSheetRows";
-            this.spreadsheetCommandBarButtonItem72.Id = 115;
-            this.spreadsheetCommandBarButtonItem72.Name = "spreadsheetCommandBarButtonItem72";
-            // 
-            // spreadsheetCommandBarButtonItem73
-            // 
-            this.spreadsheetCommandBarButtonItem73.CommandName = "RemoveSheetColumns";
-            this.spreadsheetCommandBarButtonItem73.Id = 116;
-            this.spreadsheetCommandBarButtonItem73.Name = "spreadsheetCommandBarButtonItem73";
-            // 
-            // spreadsheetCommandBarButtonItem74
-            // 
-            this.spreadsheetCommandBarButtonItem74.CommandName = "RemoveTableRows";
-            this.spreadsheetCommandBarButtonItem74.Id = 117;
-            this.spreadsheetCommandBarButtonItem74.Name = "spreadsheetCommandBarButtonItem74";
-            // 
-            // spreadsheetCommandBarButtonItem75
-            // 
-            this.spreadsheetCommandBarButtonItem75.CommandName = "RemoveTableColumns";
-            this.spreadsheetCommandBarButtonItem75.Id = 118;
-            this.spreadsheetCommandBarButtonItem75.Name = "spreadsheetCommandBarButtonItem75";
-            // 
-            // spreadsheetCommandBarButtonItem76
-            // 
-            this.spreadsheetCommandBarButtonItem76.CommandName = "RemoveSheet";
-            this.spreadsheetCommandBarButtonItem76.Id = 119;
-            this.spreadsheetCommandBarButtonItem76.Name = "spreadsheetCommandBarButtonItem76";
-            // 
-            // spreadsheetCommandBarSubItem9
-            // 
-            this.spreadsheetCommandBarSubItem9.CommandName = "RemoveCellsCommandGroup";
-            this.spreadsheetCommandBarSubItem9.Id = 113;
-            this.spreadsheetCommandBarSubItem9.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem71),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem72),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem73),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem74),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem75),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem76)});
-            this.spreadsheetCommandBarSubItem9.Name = "spreadsheetCommandBarSubItem9";
-            // 
-            // spreadsheetCommandBarButtonItem77
-            // 
-            this.spreadsheetCommandBarButtonItem77.CommandName = "FormatRowHeight";
-            this.spreadsheetCommandBarButtonItem77.Id = 121;
-            this.spreadsheetCommandBarButtonItem77.Name = "spreadsheetCommandBarButtonItem77";
-            // 
-            // spreadsheetCommandBarButtonItem78
-            // 
-            this.spreadsheetCommandBarButtonItem78.CommandName = "FormatAutoFitRowHeight";
-            this.spreadsheetCommandBarButtonItem78.Id = 122;
-            this.spreadsheetCommandBarButtonItem78.Name = "spreadsheetCommandBarButtonItem78";
-            // 
-            // spreadsheetCommandBarButtonItem79
-            // 
-            this.spreadsheetCommandBarButtonItem79.CommandName = "FormatColumnWidth";
-            this.spreadsheetCommandBarButtonItem79.Id = 123;
-            this.spreadsheetCommandBarButtonItem79.Name = "spreadsheetCommandBarButtonItem79";
-            // 
-            // spreadsheetCommandBarButtonItem80
-            // 
-            this.spreadsheetCommandBarButtonItem80.CommandName = "FormatAutoFitColumnWidth";
-            this.spreadsheetCommandBarButtonItem80.Id = 124;
-            this.spreadsheetCommandBarButtonItem80.Name = "spreadsheetCommandBarButtonItem80";
-            // 
-            // spreadsheetCommandBarButtonItem81
-            // 
-            this.spreadsheetCommandBarButtonItem81.CommandName = "FormatDefaultColumnWidth";
-            this.spreadsheetCommandBarButtonItem81.Id = 125;
-            this.spreadsheetCommandBarButtonItem81.Name = "spreadsheetCommandBarButtonItem81";
-            // 
-            // spreadsheetCommandBarButtonItem82
-            // 
-            this.spreadsheetCommandBarButtonItem82.CommandName = "HideRows";
-            this.spreadsheetCommandBarButtonItem82.Id = 126;
-            this.spreadsheetCommandBarButtonItem82.Name = "spreadsheetCommandBarButtonItem82";
-            // 
-            // spreadsheetCommandBarButtonItem83
-            // 
-            this.spreadsheetCommandBarButtonItem83.CommandName = "HideColumns";
-            this.spreadsheetCommandBarButtonItem83.Id = 127;
-            this.spreadsheetCommandBarButtonItem83.Name = "spreadsheetCommandBarButtonItem83";
-            // 
-            // spreadsheetCommandBarButtonItem84
-            // 
-            this.spreadsheetCommandBarButtonItem84.CommandName = "HideSheet";
-            this.spreadsheetCommandBarButtonItem84.Id = 128;
-            this.spreadsheetCommandBarButtonItem84.Name = "spreadsheetCommandBarButtonItem84";
-            // 
-            // spreadsheetCommandBarButtonItem85
-            // 
-            this.spreadsheetCommandBarButtonItem85.CommandName = "UnhideRows";
-            this.spreadsheetCommandBarButtonItem85.Id = 129;
-            this.spreadsheetCommandBarButtonItem85.Name = "spreadsheetCommandBarButtonItem85";
-            // 
-            // spreadsheetCommandBarButtonItem86
-            // 
-            this.spreadsheetCommandBarButtonItem86.CommandName = "UnhideColumns";
-            this.spreadsheetCommandBarButtonItem86.Id = 130;
-            this.spreadsheetCommandBarButtonItem86.Name = "spreadsheetCommandBarButtonItem86";
-            // 
-            // spreadsheetCommandBarButtonItem87
-            // 
-            this.spreadsheetCommandBarButtonItem87.CommandName = "UnhideSheet";
-            this.spreadsheetCommandBarButtonItem87.Id = 131;
-            this.spreadsheetCommandBarButtonItem87.Name = "spreadsheetCommandBarButtonItem87";
-            // 
-            // spreadsheetCommandBarSubItem10
-            // 
-            this.spreadsheetCommandBarSubItem10.CommandName = "HideAndUnhideCommandGroup";
-            this.spreadsheetCommandBarSubItem10.Id = 132;
-            this.spreadsheetCommandBarSubItem10.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem82),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem83),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem84),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem85),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem86),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem87)});
-            this.spreadsheetCommandBarSubItem10.Name = "spreadsheetCommandBarSubItem10";
-            // 
-            // spreadsheetCommandBarButtonItem88
-            // 
-            this.spreadsheetCommandBarButtonItem88.CommandName = "RenameSheet";
-            this.spreadsheetCommandBarButtonItem88.Id = 133;
-            this.spreadsheetCommandBarButtonItem88.Name = "spreadsheetCommandBarButtonItem88";
-            // 
-            // spreadsheetCommandBarButtonItem89
-            // 
-            this.spreadsheetCommandBarButtonItem89.CommandName = "MoveOrCopySheet";
-            this.spreadsheetCommandBarButtonItem89.Id = 134;
-            this.spreadsheetCommandBarButtonItem89.Name = "spreadsheetCommandBarButtonItem89";
-            // 
-            // changeSheetTabColorItem1
-            // 
-            this.changeSheetTabColorItem1.ActAsDropDown = true;
-            this.changeSheetTabColorItem1.Id = 135;
-            this.changeSheetTabColorItem1.Name = "changeSheetTabColorItem1";
-            // 
-            // spreadsheetCommandBarButtonItem90
-            // 
-            this.spreadsheetCommandBarButtonItem90.CommandName = "ReviewProtectSheet";
-            this.spreadsheetCommandBarButtonItem90.Id = 136;
-            this.spreadsheetCommandBarButtonItem90.Name = "spreadsheetCommandBarButtonItem90";
-            // 
-            // spreadsheetCommandBarCheckItem13
-            // 
-            this.spreadsheetCommandBarCheckItem13.CommandName = "FormatCellLocked";
-            this.spreadsheetCommandBarCheckItem13.Id = 137;
-            this.spreadsheetCommandBarCheckItem13.Name = "spreadsheetCommandBarCheckItem13";
-            // 
-            // spreadsheetCommandBarButtonItem91
-            // 
-            this.spreadsheetCommandBarButtonItem91.CommandName = "FormatCellsContextMenuItem";
-            this.spreadsheetCommandBarButtonItem91.Id = 138;
-            this.spreadsheetCommandBarButtonItem91.Name = "spreadsheetCommandBarButtonItem91";
-            // 
-            // spreadsheetCommandBarSubItem11
-            // 
-            this.spreadsheetCommandBarSubItem11.CommandName = "FormatCommandGroup";
-            this.spreadsheetCommandBarSubItem11.Id = 120;
-            this.spreadsheetCommandBarSubItem11.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem77),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem78),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem79),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem80),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem81),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarSubItem10),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem88),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem89),
-            new DevExpress.XtraBars.LinkPersistInfo(this.changeSheetTabColorItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem90),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem13),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem91)});
-            this.spreadsheetCommandBarSubItem11.Name = "spreadsheetCommandBarSubItem11";
-            // 
-            // editingRibbonPageGroup1
-            // 
-            this.editingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem12);
-            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem13);
-            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem14);
-            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem15);
-            this.editingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem16);
-            this.editingRibbonPageGroup1.Name = "editingRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem92
-            // 
-            this.spreadsheetCommandBarButtonItem92.CommandName = "FunctionsInsertSum";
-            this.spreadsheetCommandBarButtonItem92.Id = 140;
-            this.spreadsheetCommandBarButtonItem92.Name = "spreadsheetCommandBarButtonItem92";
-            // 
-            // spreadsheetCommandBarButtonItem93
-            // 
-            this.spreadsheetCommandBarButtonItem93.CommandName = "FunctionsInsertAverage";
-            this.spreadsheetCommandBarButtonItem93.Id = 141;
-            this.spreadsheetCommandBarButtonItem93.Name = "spreadsheetCommandBarButtonItem93";
-            // 
-            // spreadsheetCommandBarButtonItem94
-            // 
-            this.spreadsheetCommandBarButtonItem94.CommandName = "FunctionsInsertCountNumbers";
-            this.spreadsheetCommandBarButtonItem94.Id = 142;
-            this.spreadsheetCommandBarButtonItem94.Name = "spreadsheetCommandBarButtonItem94";
-            // 
-            // spreadsheetCommandBarButtonItem95
-            // 
-            this.spreadsheetCommandBarButtonItem95.CommandName = "FunctionsInsertMax";
-            this.spreadsheetCommandBarButtonItem95.Id = 143;
-            this.spreadsheetCommandBarButtonItem95.Name = "spreadsheetCommandBarButtonItem95";
-            // 
-            // spreadsheetCommandBarButtonItem96
-            // 
-            this.spreadsheetCommandBarButtonItem96.CommandName = "FunctionsInsertMin";
-            this.spreadsheetCommandBarButtonItem96.Id = 144;
-            this.spreadsheetCommandBarButtonItem96.Name = "spreadsheetCommandBarButtonItem96";
-            // 
-            // spreadsheetCommandBarSubItem12
-            // 
-            this.spreadsheetCommandBarSubItem12.CommandName = "EditingAutoSumCommandGroup";
-            this.spreadsheetCommandBarSubItem12.Id = 139;
-            this.spreadsheetCommandBarSubItem12.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem92),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem93),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem94),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem95),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem96)});
-            this.spreadsheetCommandBarSubItem12.Name = "spreadsheetCommandBarSubItem12";
-            this.spreadsheetCommandBarSubItem12.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem97
-            // 
-            this.spreadsheetCommandBarButtonItem97.CommandName = "EditingFillDown";
-            this.spreadsheetCommandBarButtonItem97.Id = 146;
-            this.spreadsheetCommandBarButtonItem97.Name = "spreadsheetCommandBarButtonItem97";
-            // 
-            // spreadsheetCommandBarButtonItem98
-            // 
-            this.spreadsheetCommandBarButtonItem98.CommandName = "EditingFillRight";
-            this.spreadsheetCommandBarButtonItem98.Id = 147;
-            this.spreadsheetCommandBarButtonItem98.Name = "spreadsheetCommandBarButtonItem98";
-            // 
-            // spreadsheetCommandBarButtonItem99
-            // 
-            this.spreadsheetCommandBarButtonItem99.CommandName = "EditingFillUp";
-            this.spreadsheetCommandBarButtonItem99.Id = 148;
-            this.spreadsheetCommandBarButtonItem99.Name = "spreadsheetCommandBarButtonItem99";
-            // 
-            // spreadsheetCommandBarButtonItem100
-            // 
-            this.spreadsheetCommandBarButtonItem100.CommandName = "EditingFillLeft";
-            this.spreadsheetCommandBarButtonItem100.Id = 149;
-            this.spreadsheetCommandBarButtonItem100.Name = "spreadsheetCommandBarButtonItem100";
-            // 
-            // spreadsheetCommandBarSubItem13
-            // 
-            this.spreadsheetCommandBarSubItem13.CommandName = "EditingFillCommandGroup";
-            this.spreadsheetCommandBarSubItem13.Id = 145;
-            this.spreadsheetCommandBarSubItem13.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem97),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem98),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem99),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem100)});
-            this.spreadsheetCommandBarSubItem13.Name = "spreadsheetCommandBarSubItem13";
-            this.spreadsheetCommandBarSubItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem101
-            // 
-            this.spreadsheetCommandBarButtonItem101.CommandName = "FormatClearAll";
-            this.spreadsheetCommandBarButtonItem101.Id = 151;
-            this.spreadsheetCommandBarButtonItem101.Name = "spreadsheetCommandBarButtonItem101";
-            // 
-            // spreadsheetCommandBarButtonItem102
-            // 
-            this.spreadsheetCommandBarButtonItem102.CommandName = "FormatClearFormats";
-            this.spreadsheetCommandBarButtonItem102.Id = 152;
-            this.spreadsheetCommandBarButtonItem102.Name = "spreadsheetCommandBarButtonItem102";
-            // 
-            // spreadsheetCommandBarButtonItem103
-            // 
-            this.spreadsheetCommandBarButtonItem103.CommandName = "FormatClearContents";
-            this.spreadsheetCommandBarButtonItem103.Id = 153;
-            this.spreadsheetCommandBarButtonItem103.Name = "spreadsheetCommandBarButtonItem103";
-            // 
-            // spreadsheetCommandBarButtonItem104
-            // 
-            this.spreadsheetCommandBarButtonItem104.CommandName = "FormatClearComments";
-            this.spreadsheetCommandBarButtonItem104.Id = 154;
-            this.spreadsheetCommandBarButtonItem104.Name = "spreadsheetCommandBarButtonItem104";
-            // 
-            // spreadsheetCommandBarButtonItem105
-            // 
-            this.spreadsheetCommandBarButtonItem105.CommandName = "FormatClearHyperlinks";
-            this.spreadsheetCommandBarButtonItem105.Id = 155;
-            this.spreadsheetCommandBarButtonItem105.Name = "spreadsheetCommandBarButtonItem105";
-            // 
-            // spreadsheetCommandBarButtonItem106
-            // 
-            this.spreadsheetCommandBarButtonItem106.CommandName = "FormatRemoveHyperlinks";
-            this.spreadsheetCommandBarButtonItem106.Id = 156;
-            this.spreadsheetCommandBarButtonItem106.Name = "spreadsheetCommandBarButtonItem106";
-            // 
-            // spreadsheetCommandBarSubItem14
-            // 
-            this.spreadsheetCommandBarSubItem14.CommandName = "FormatClearCommandGroup";
-            this.spreadsheetCommandBarSubItem14.Id = 150;
-            this.spreadsheetCommandBarSubItem14.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem101),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem102),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem103),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem104),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem105),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem106)});
-            this.spreadsheetCommandBarSubItem14.Name = "spreadsheetCommandBarSubItem14";
-            this.spreadsheetCommandBarSubItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem107
-            // 
-            this.spreadsheetCommandBarButtonItem107.CommandName = "DataSortAscending";
-            this.spreadsheetCommandBarButtonItem107.Id = 158;
-            this.spreadsheetCommandBarButtonItem107.Name = "spreadsheetCommandBarButtonItem107";
-            // 
-            // spreadsheetCommandBarButtonItem108
-            // 
-            this.spreadsheetCommandBarButtonItem108.CommandName = "DataSortDescending";
-            this.spreadsheetCommandBarButtonItem108.Id = 159;
-            this.spreadsheetCommandBarButtonItem108.Name = "spreadsheetCommandBarButtonItem108";
-            // 
-            // spreadsheetCommandBarCheckItem14
-            // 
-            this.spreadsheetCommandBarCheckItem14.CommandName = "DataFilterToggle";
-            this.spreadsheetCommandBarCheckItem14.Id = 160;
-            this.spreadsheetCommandBarCheckItem14.Name = "spreadsheetCommandBarCheckItem14";
-            // 
-            // spreadsheetCommandBarButtonItem109
-            // 
-            this.spreadsheetCommandBarButtonItem109.CommandName = "DataFilterClear";
-            this.spreadsheetCommandBarButtonItem109.Id = 161;
-            this.spreadsheetCommandBarButtonItem109.Name = "spreadsheetCommandBarButtonItem109";
-            // 
-            // spreadsheetCommandBarButtonItem110
-            // 
-            this.spreadsheetCommandBarButtonItem110.CommandName = "DataFilterReApply";
-            this.spreadsheetCommandBarButtonItem110.Id = 162;
-            this.spreadsheetCommandBarButtonItem110.Name = "spreadsheetCommandBarButtonItem110";
-            // 
-            // spreadsheetCommandBarSubItem15
-            // 
-            this.spreadsheetCommandBarSubItem15.CommandName = "EditingSortAndFilterCommandGroup";
-            this.spreadsheetCommandBarSubItem15.Id = 157;
-            this.spreadsheetCommandBarSubItem15.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem107),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem108),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem14),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem109),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem110)});
-            this.spreadsheetCommandBarSubItem15.Name = "spreadsheetCommandBarSubItem15";
-            // 
-            // spreadsheetCommandBarButtonItem111
-            // 
-            this.spreadsheetCommandBarButtonItem111.CommandName = "EditingFind";
-            this.spreadsheetCommandBarButtonItem111.Id = 164;
-            this.spreadsheetCommandBarButtonItem111.Name = "spreadsheetCommandBarButtonItem111";
-            // 
-            // spreadsheetCommandBarButtonItem112
-            // 
-            this.spreadsheetCommandBarButtonItem112.CommandName = "EditingReplace";
-            this.spreadsheetCommandBarButtonItem112.Id = 165;
-            this.spreadsheetCommandBarButtonItem112.Name = "spreadsheetCommandBarButtonItem112";
-            // 
-            // spreadsheetCommandBarButtonItem113
-            // 
-            this.spreadsheetCommandBarButtonItem113.CommandName = "EditingSelectFormulas";
-            this.spreadsheetCommandBarButtonItem113.Id = 166;
-            this.spreadsheetCommandBarButtonItem113.Name = "spreadsheetCommandBarButtonItem113";
-            // 
-            // spreadsheetCommandBarButtonItem114
-            // 
-            this.spreadsheetCommandBarButtonItem114.CommandName = "EditingSelectComments";
-            this.spreadsheetCommandBarButtonItem114.Id = 167;
-            this.spreadsheetCommandBarButtonItem114.Name = "spreadsheetCommandBarButtonItem114";
-            // 
-            // spreadsheetCommandBarButtonItem115
-            // 
-            this.spreadsheetCommandBarButtonItem115.CommandName = "EditingSelectConditionalFormatting";
-            this.spreadsheetCommandBarButtonItem115.Id = 168;
-            this.spreadsheetCommandBarButtonItem115.Name = "spreadsheetCommandBarButtonItem115";
-            // 
-            // spreadsheetCommandBarButtonItem116
-            // 
-            this.spreadsheetCommandBarButtonItem116.CommandName = "EditingSelectConstants";
-            this.spreadsheetCommandBarButtonItem116.Id = 169;
-            this.spreadsheetCommandBarButtonItem116.Name = "spreadsheetCommandBarButtonItem116";
-            // 
-            // spreadsheetCommandBarButtonItem117
-            // 
-            this.spreadsheetCommandBarButtonItem117.CommandName = "EditingSelectDataValidation";
-            this.spreadsheetCommandBarButtonItem117.Id = 170;
-            this.spreadsheetCommandBarButtonItem117.Name = "spreadsheetCommandBarButtonItem117";
-            // 
-            // spreadsheetCommandBarSubItem16
-            // 
-            this.spreadsheetCommandBarSubItem16.CommandName = "EditingFindAndSelectCommandGroup";
-            this.spreadsheetCommandBarSubItem16.Id = 163;
-            this.spreadsheetCommandBarSubItem16.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem111),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem112),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem113),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem114),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem115),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem116),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem117)});
-            this.spreadsheetCommandBarSubItem16.Name = "spreadsheetCommandBarSubItem16";
-            // 
-            // tablesRibbonPageGroup1
-            // 
-            this.tablesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.tablesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem118);
-            this.tablesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem119);
-            this.tablesRibbonPageGroup1.Name = "tablesRibbonPageGroup1";
-            // 
-            // insertRibbonPage1
-            // 
-            this.insertRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.tablesRibbonPageGroup1,
-            this.illustrationsRibbonPageGroup1,
-            this.chartsRibbonPageGroup1,
-            this.linksRibbonPageGroup1,
-            this.symbolsRibbonPageGroup1});
-            this.insertRibbonPage1.Name = "insertRibbonPage1";
-            // 
-            // spreadsheetCommandBarButtonItem118
-            // 
-            this.spreadsheetCommandBarButtonItem118.CommandName = "InsertPivotTable";
-            this.spreadsheetCommandBarButtonItem118.Id = 171;
-            this.spreadsheetCommandBarButtonItem118.Name = "spreadsheetCommandBarButtonItem118";
-            // 
-            // spreadsheetCommandBarButtonItem119
-            // 
-            this.spreadsheetCommandBarButtonItem119.CommandName = "InsertTable";
-            this.spreadsheetCommandBarButtonItem119.Id = 172;
-            this.spreadsheetCommandBarButtonItem119.Name = "spreadsheetCommandBarButtonItem119";
-            // 
-            // illustrationsRibbonPageGroup1
-            // 
-            this.illustrationsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.illustrationsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem120);
-            this.illustrationsRibbonPageGroup1.Name = "illustrationsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem120
-            // 
-            this.spreadsheetCommandBarButtonItem120.CommandName = "InsertPicture";
-            this.spreadsheetCommandBarButtonItem120.Id = 173;
-            this.spreadsheetCommandBarButtonItem120.Name = "spreadsheetCommandBarButtonItem120";
-            // 
-            // chartsRibbonPageGroup1
-            // 
-            this.chartsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem4);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem5);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem6);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem7);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem8);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem9);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem10);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem11);
-            this.chartsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem12);
-            this.chartsRibbonPageGroup1.Name = "chartsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem4
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem4.CommandName = "InsertChartColumnCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem4.DropDownControl = this.commandBarGalleryDropDown6;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem4.Id = 174;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem4.Name = "spreadsheetCommandBarButtonGalleryDropDownItem4";
-            // 
-            // commandBarGalleryDropDown6
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown6.Gallery.ColumnCount = 4;
-            spreadsheetCommandGalleryItemGroup8.CommandName = "InsertChartColumn2DCommandGroup";
-            spreadsheetCommandGalleryItem56.CommandName = "InsertChartColumnClustered2D";
-            spreadsheetCommandGalleryItem57.CommandName = "InsertChartColumnStacked2D";
-            spreadsheetCommandGalleryItem58.CommandName = "InsertChartColumnPercentStacked2D";
-            spreadsheetCommandGalleryItemGroup8.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem56,
-            spreadsheetCommandGalleryItem57,
-            spreadsheetCommandGalleryItem58});
-            spreadsheetCommandGalleryItemGroup9.CommandName = "InsertChartColumn3DCommandGroup";
-            spreadsheetCommandGalleryItem59.CommandName = "InsertChartColumnClustered3D";
-            spreadsheetCommandGalleryItem60.CommandName = "InsertChartColumnStacked3D";
-            spreadsheetCommandGalleryItem61.CommandName = "InsertChartColumnPercentStacked3D";
-            spreadsheetCommandGalleryItem62.CommandName = "InsertChartColumn3D";
-            spreadsheetCommandGalleryItemGroup9.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem59,
-            spreadsheetCommandGalleryItem60,
-            spreadsheetCommandGalleryItem61,
-            spreadsheetCommandGalleryItem62});
-            spreadsheetCommandGalleryItemGroup10.CommandName = "InsertChartCylinderCommandGroup";
-            spreadsheetCommandGalleryItem63.CommandName = "InsertChartCylinderClustered";
-            spreadsheetCommandGalleryItem64.CommandName = "InsertChartCylinderStacked";
-            spreadsheetCommandGalleryItem65.CommandName = "InsertChartCylinderPercentStacked";
-            spreadsheetCommandGalleryItem66.CommandName = "InsertChartCylinder";
-            spreadsheetCommandGalleryItemGroup10.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem63,
-            spreadsheetCommandGalleryItem64,
-            spreadsheetCommandGalleryItem65,
-            spreadsheetCommandGalleryItem66});
-            spreadsheetCommandGalleryItemGroup11.CommandName = "InsertChartConeCommandGroup";
-            spreadsheetCommandGalleryItem67.CommandName = "InsertChartConeClustered";
-            spreadsheetCommandGalleryItem68.CommandName = "InsertChartConeStacked";
-            spreadsheetCommandGalleryItem69.CommandName = "InsertChartConePercentStacked";
-            spreadsheetCommandGalleryItem70.CommandName = "InsertChartCone";
-            spreadsheetCommandGalleryItemGroup11.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem67,
-            spreadsheetCommandGalleryItem68,
-            spreadsheetCommandGalleryItem69,
-            spreadsheetCommandGalleryItem70});
-            spreadsheetCommandGalleryItemGroup12.CommandName = "InsertChartPyramidCommandGroup";
-            spreadsheetCommandGalleryItem71.CommandName = "InsertChartPyramidClustered";
-            spreadsheetCommandGalleryItem72.CommandName = "InsertChartPyramidStacked";
-            spreadsheetCommandGalleryItem73.CommandName = "InsertChartPyramidPercentStacked";
-            spreadsheetCommandGalleryItem74.CommandName = "InsertChartPyramid";
-            spreadsheetCommandGalleryItemGroup12.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem71,
-            spreadsheetCommandGalleryItem72,
-            spreadsheetCommandGalleryItem73,
-            spreadsheetCommandGalleryItem74});
-            this.commandBarGalleryDropDown6.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup8,
-            spreadsheetCommandGalleryItemGroup9,
-            spreadsheetCommandGalleryItemGroup10,
-            spreadsheetCommandGalleryItemGroup11,
-            spreadsheetCommandGalleryItemGroup12});
-            this.commandBarGalleryDropDown6.Gallery.RowCount = 5;
-            this.commandBarGalleryDropDown6.Name = "commandBarGalleryDropDown6";
-            this.commandBarGalleryDropDown6.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem5
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem5.CommandName = "InsertChartLineCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem5.DropDownControl = this.commandBarGalleryDropDown7;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem5.Id = 175;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem5.Name = "spreadsheetCommandBarButtonGalleryDropDownItem5";
-            // 
-            // commandBarGalleryDropDown7
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown7.Gallery.ColumnCount = 3;
-            spreadsheetCommandGalleryItemGroup13.CommandName = "InsertChartLine2DCommandGroup";
-            spreadsheetCommandGalleryItem75.CommandName = "InsertChartLine";
-            spreadsheetCommandGalleryItem76.CommandName = "InsertChartStackedLine";
-            spreadsheetCommandGalleryItem77.CommandName = "InsertChartPercentStackedLine";
-            spreadsheetCommandGalleryItem78.CommandName = "InsertChartLineWithMarkers";
-            spreadsheetCommandGalleryItem79.CommandName = "InsertChartStackedLineWithMarkers";
-            spreadsheetCommandGalleryItem80.CommandName = "InsertChartPercentStackedLineWithMarkers";
-            spreadsheetCommandGalleryItemGroup13.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem75,
-            spreadsheetCommandGalleryItem76,
-            spreadsheetCommandGalleryItem77,
-            spreadsheetCommandGalleryItem78,
-            spreadsheetCommandGalleryItem79,
-            spreadsheetCommandGalleryItem80});
-            spreadsheetCommandGalleryItemGroup14.CommandName = "InsertChartLine3DCommandGroup";
-            spreadsheetCommandGalleryItem81.CommandName = "InsertChartLine3D";
-            spreadsheetCommandGalleryItemGroup14.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem81});
-            this.commandBarGalleryDropDown7.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup13,
-            spreadsheetCommandGalleryItemGroup14});
-            this.commandBarGalleryDropDown7.Name = "commandBarGalleryDropDown7";
-            this.commandBarGalleryDropDown7.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem6
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem6.CommandName = "InsertChartPieCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem6.DropDownControl = this.commandBarGalleryDropDown8;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem6.Id = 176;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem6.Name = "spreadsheetCommandBarButtonGalleryDropDownItem6";
-            // 
-            // commandBarGalleryDropDown8
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown8.Gallery.ColumnCount = 2;
-            spreadsheetCommandGalleryItemGroup15.CommandName = "InsertChartPie2DCommandGroup";
-            spreadsheetCommandGalleryItem82.CommandName = "InsertChartPie2D";
-            spreadsheetCommandGalleryItem83.CommandName = "InsertChartPieExploded2D";
-            spreadsheetCommandGalleryItemGroup15.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem82,
-            spreadsheetCommandGalleryItem83});
-            spreadsheetCommandGalleryItemGroup16.CommandName = "InsertChartPie3DCommandGroup";
-            spreadsheetCommandGalleryItem84.CommandName = "InsertChartPie3D";
-            spreadsheetCommandGalleryItem85.CommandName = "InsertChartPieExploded3D";
-            spreadsheetCommandGalleryItemGroup16.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem84,
-            spreadsheetCommandGalleryItem85});
-            spreadsheetCommandGalleryItemGroup17.CommandName = "InsertChartDoughnut2DCommandGroup";
-            spreadsheetCommandGalleryItem86.CommandName = "InsertChartDoughnut2D";
-            spreadsheetCommandGalleryItem87.CommandName = "InsertChartDoughnutExploded2D";
-            spreadsheetCommandGalleryItemGroup17.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem86,
-            spreadsheetCommandGalleryItem87});
-            this.commandBarGalleryDropDown8.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup15,
-            spreadsheetCommandGalleryItemGroup16,
-            spreadsheetCommandGalleryItemGroup17});
-            this.commandBarGalleryDropDown8.Name = "commandBarGalleryDropDown8";
-            this.commandBarGalleryDropDown8.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem7
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem7.CommandName = "InsertChartBarCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem7.DropDownControl = this.commandBarGalleryDropDown9;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem7.Id = 177;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem7.Name = "spreadsheetCommandBarButtonGalleryDropDownItem7";
-            // 
-            // commandBarGalleryDropDown9
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown9.Gallery.ColumnCount = 3;
-            spreadsheetCommandGalleryItemGroup18.CommandName = "InsertChartBar2DCommandGroup";
-            spreadsheetCommandGalleryItem88.CommandName = "InsertChartBarClustered2D";
-            spreadsheetCommandGalleryItem89.CommandName = "InsertChartBarStacked2D";
-            spreadsheetCommandGalleryItem90.CommandName = "InsertChartBarPercentStacked2D";
-            spreadsheetCommandGalleryItemGroup18.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem88,
-            spreadsheetCommandGalleryItem89,
-            spreadsheetCommandGalleryItem90});
-            spreadsheetCommandGalleryItemGroup19.CommandName = "InsertChartBar3DCommandGroup";
-            spreadsheetCommandGalleryItem91.CommandName = "InsertChartBarClustered3D";
-            spreadsheetCommandGalleryItem92.CommandName = "InsertChartBarStacked3D";
-            spreadsheetCommandGalleryItem93.CommandName = "InsertChartBarPercentStacked3D";
-            spreadsheetCommandGalleryItemGroup19.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem91,
-            spreadsheetCommandGalleryItem92,
-            spreadsheetCommandGalleryItem93});
-            spreadsheetCommandGalleryItemGroup20.CommandName = "InsertChartHorizontalCylinderCommandGroup";
-            spreadsheetCommandGalleryItem94.CommandName = "InsertChartHorizontalCylinderClustered";
-            spreadsheetCommandGalleryItem95.CommandName = "InsertChartHorizontalCylinderStacked";
-            spreadsheetCommandGalleryItem96.CommandName = "InsertChartHorizontalCylinderPercentStacked";
-            spreadsheetCommandGalleryItemGroup20.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem94,
-            spreadsheetCommandGalleryItem95,
-            spreadsheetCommandGalleryItem96});
-            spreadsheetCommandGalleryItemGroup21.CommandName = "InsertChartHorizontalConeCommandGroup";
-            spreadsheetCommandGalleryItem97.CommandName = "InsertChartHorizontalConeClustered";
-            spreadsheetCommandGalleryItem98.CommandName = "InsertChartHorizontalConeStacked";
-            spreadsheetCommandGalleryItem99.CommandName = "InsertChartHorizontalConePercentStacked";
-            spreadsheetCommandGalleryItemGroup21.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem97,
-            spreadsheetCommandGalleryItem98,
-            spreadsheetCommandGalleryItem99});
-            spreadsheetCommandGalleryItemGroup22.CommandName = "InsertChartHorizontalPyramidCommandGroup";
-            spreadsheetCommandGalleryItem100.CommandName = "InsertChartHorizontalPyramidClustered";
-            spreadsheetCommandGalleryItem101.CommandName = "InsertChartHorizontalPyramidStacked";
-            spreadsheetCommandGalleryItem102.CommandName = "InsertChartHorizontalPyramidPercentStacked";
-            spreadsheetCommandGalleryItemGroup22.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem100,
-            spreadsheetCommandGalleryItem101,
-            spreadsheetCommandGalleryItem102});
-            this.commandBarGalleryDropDown9.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup18,
-            spreadsheetCommandGalleryItemGroup19,
-            spreadsheetCommandGalleryItemGroup20,
-            spreadsheetCommandGalleryItemGroup21,
-            spreadsheetCommandGalleryItemGroup22});
-            this.commandBarGalleryDropDown9.Gallery.RowCount = 5;
-            this.commandBarGalleryDropDown9.Name = "commandBarGalleryDropDown9";
-            this.commandBarGalleryDropDown9.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem8
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem8.CommandName = "InsertChartAreaCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem8.DropDownControl = this.commandBarGalleryDropDown10;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem8.Id = 178;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem8.Name = "spreadsheetCommandBarButtonGalleryDropDownItem8";
-            // 
-            // commandBarGalleryDropDown10
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown10.Gallery.ColumnCount = 3;
-            spreadsheetCommandGalleryItemGroup23.CommandName = "InsertChartArea2DCommandGroup";
-            spreadsheetCommandGalleryItem103.CommandName = "InsertChartArea";
-            spreadsheetCommandGalleryItem104.CommandName = "InsertChartStackedArea";
-            spreadsheetCommandGalleryItem105.CommandName = "InsertChartPercentStackedArea";
-            spreadsheetCommandGalleryItemGroup23.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem103,
-            spreadsheetCommandGalleryItem104,
-            spreadsheetCommandGalleryItem105});
-            spreadsheetCommandGalleryItemGroup24.CommandName = "InsertChartArea3DCommandGroup";
-            spreadsheetCommandGalleryItem106.CommandName = "InsertChartArea3D";
-            spreadsheetCommandGalleryItem107.CommandName = "InsertChartStackedArea3D";
-            spreadsheetCommandGalleryItem108.CommandName = "InsertChartPercentStackedArea3D";
-            spreadsheetCommandGalleryItemGroup24.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem106,
-            spreadsheetCommandGalleryItem107,
-            spreadsheetCommandGalleryItem108});
-            this.commandBarGalleryDropDown10.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup23,
-            spreadsheetCommandGalleryItemGroup24});
-            this.commandBarGalleryDropDown10.Gallery.RowCount = 2;
-            this.commandBarGalleryDropDown10.Name = "commandBarGalleryDropDown10";
-            this.commandBarGalleryDropDown10.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem9
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem9.CommandName = "InsertChartScatterCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem9.DropDownControl = this.commandBarGalleryDropDown11;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem9.Id = 179;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem9.Name = "spreadsheetCommandBarButtonGalleryDropDownItem9";
-            // 
-            // commandBarGalleryDropDown11
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown11.Gallery.ColumnCount = 2;
-            spreadsheetCommandGalleryItemGroup25.CommandName = "InsertChartScatterCommandGroup";
-            spreadsheetCommandGalleryItem109.CommandName = "InsertChartScatterMarkers";
-            spreadsheetCommandGalleryItem110.CommandName = "InsertChartScatterSmoothLinesAndMarkers";
-            spreadsheetCommandGalleryItem111.CommandName = "InsertChartScatterSmoothLines";
-            spreadsheetCommandGalleryItem112.CommandName = "InsertChartScatterLinesAndMarkers";
-            spreadsheetCommandGalleryItem113.CommandName = "InsertChartScatterLines";
-            spreadsheetCommandGalleryItemGroup25.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem109,
-            spreadsheetCommandGalleryItem110,
-            spreadsheetCommandGalleryItem111,
-            spreadsheetCommandGalleryItem112,
-            spreadsheetCommandGalleryItem113});
-            spreadsheetCommandGalleryItemGroup26.CommandName = "InsertChartBubbleCommandGroup";
-            spreadsheetCommandGalleryItem114.CommandName = "InsertChartBubble";
-            spreadsheetCommandGalleryItem115.CommandName = "InsertChartBubble3D";
-            spreadsheetCommandGalleryItemGroup26.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem114,
-            spreadsheetCommandGalleryItem115});
-            this.commandBarGalleryDropDown11.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup25,
-            spreadsheetCommandGalleryItemGroup26});
-            this.commandBarGalleryDropDown11.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown11.Name = "commandBarGalleryDropDown11";
-            this.commandBarGalleryDropDown11.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem10
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem10.CommandName = "InsertChartStatisticCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem10.DropDownControl = this.commandBarGalleryDropDown12;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem10.Id = 180;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem10.Name = "spreadsheetCommandBarButtonGalleryDropDownItem10";
-            // 
-            // commandBarGalleryDropDown12
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown12.Gallery.ColumnCount = 2;
-            spreadsheetCommandGalleryItemGroup27.CommandName = "InsertChartHistogramCommandGroup";
-            spreadsheetCommandGalleryItem116.CommandName = "InsertChartHistogram";
-            spreadsheetCommandGalleryItem117.CommandName = "InsertChartPareto";
-            spreadsheetCommandGalleryItemGroup27.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem116,
-            spreadsheetCommandGalleryItem117});
-            spreadsheetCommandGalleryItemGroup28.CommandName = "InsertChartBoxAndWhiskerCommandGroup";
-            spreadsheetCommandGalleryItem118.CommandName = "InsertChartBoxAndWhisker";
-            spreadsheetCommandGalleryItemGroup28.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem118});
-            this.commandBarGalleryDropDown12.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup27,
-            spreadsheetCommandGalleryItemGroup28});
-            this.commandBarGalleryDropDown12.Gallery.RowCount = 2;
-            this.commandBarGalleryDropDown12.Name = "commandBarGalleryDropDown12";
-            this.commandBarGalleryDropDown12.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem11
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem11.CommandName = "InsertChartHierarchyCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem11.DropDownControl = this.commandBarGalleryDropDown13;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem11.Id = 181;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem11.Name = "spreadsheetCommandBarButtonGalleryDropDownItem11";
-            // 
-            // commandBarGalleryDropDown13
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown13.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup29.CommandName = "InsertChartTreemapCommandGroup";
-            spreadsheetCommandGalleryItem119.CommandName = "InsertChartTreemap";
-            spreadsheetCommandGalleryItemGroup29.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem119});
-            spreadsheetCommandGalleryItemGroup30.CommandName = "InsertChartSunburstCommandGroup";
-            spreadsheetCommandGalleryItem120.CommandName = "InsertChartSunburst";
-            spreadsheetCommandGalleryItemGroup30.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem120});
-            this.commandBarGalleryDropDown13.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup29,
-            spreadsheetCommandGalleryItemGroup30});
-            this.commandBarGalleryDropDown13.Gallery.RowCount = 2;
-            this.commandBarGalleryDropDown13.Name = "commandBarGalleryDropDown13";
-            this.commandBarGalleryDropDown13.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem12
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem12.CommandName = "InsertChartOtherCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem12.DropDownControl = this.commandBarGalleryDropDown14;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem12.Id = 182;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem12.Name = "spreadsheetCommandBarButtonGalleryDropDownItem12";
-            // 
-            // commandBarGalleryDropDown14
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown14.Gallery.ColumnCount = 4;
-            spreadsheetCommandGalleryItemGroup31.CommandName = "InsertChartWaterfallCommandGroup";
-            spreadsheetCommandGalleryItem121.CommandName = "InsertChartWaterfall";
-            spreadsheetCommandGalleryItemGroup31.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem121});
-            spreadsheetCommandGalleryItemGroup32.CommandName = "InsertChartFunnelCommandGroup";
-            spreadsheetCommandGalleryItem122.CommandName = "InsertChartFunnel";
-            spreadsheetCommandGalleryItemGroup32.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem122});
-            spreadsheetCommandGalleryItemGroup33.CommandName = "InsertChartStockCommandGroup";
-            spreadsheetCommandGalleryItem123.CommandName = "InsertChartStockHighLowClose";
-            spreadsheetCommandGalleryItem124.CommandName = "InsertChartStockOpenHighLowClose";
-            spreadsheetCommandGalleryItem125.CommandName = "InsertChartStockVolumeHighLowClose";
-            spreadsheetCommandGalleryItem126.CommandName = "InsertChartStockVolumeOpenHighLowClose";
-            spreadsheetCommandGalleryItemGroup33.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem123,
-            spreadsheetCommandGalleryItem124,
-            spreadsheetCommandGalleryItem125,
-            spreadsheetCommandGalleryItem126});
-            spreadsheetCommandGalleryItemGroup34.CommandName = "InsertChartRadarCommandGroup";
-            spreadsheetCommandGalleryItem127.CommandName = "InsertChartRadar";
-            spreadsheetCommandGalleryItem128.CommandName = "InsertChartRadarWithMarkers";
-            spreadsheetCommandGalleryItem129.CommandName = "InsertChartRadarFilled";
-            spreadsheetCommandGalleryItemGroup34.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem127,
-            spreadsheetCommandGalleryItem128,
-            spreadsheetCommandGalleryItem129});
-            this.commandBarGalleryDropDown14.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup31,
-            spreadsheetCommandGalleryItemGroup32,
-            spreadsheetCommandGalleryItemGroup33,
-            spreadsheetCommandGalleryItemGroup34});
-            this.commandBarGalleryDropDown14.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown14.Name = "commandBarGalleryDropDown14";
-            this.commandBarGalleryDropDown14.Ribbon = this.ribbon;
-            // 
-            // linksRibbonPageGroup1
-            // 
-            this.linksRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.linksRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem121);
-            this.linksRibbonPageGroup1.Name = "linksRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem121
-            // 
-            this.spreadsheetCommandBarButtonItem121.CommandName = "InsertHyperlink";
-            this.spreadsheetCommandBarButtonItem121.Id = 183;
-            this.spreadsheetCommandBarButtonItem121.Name = "spreadsheetCommandBarButtonItem121";
-            // 
-            // symbolsRibbonPageGroup1
-            // 
-            this.symbolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.symbolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem122);
-            this.symbolsRibbonPageGroup1.Name = "symbolsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem122
-            // 
-            this.spreadsheetCommandBarButtonItem122.CommandName = "InsertSymbol";
-            this.spreadsheetCommandBarButtonItem122.Id = 184;
-            this.spreadsheetCommandBarButtonItem122.Name = "spreadsheetCommandBarButtonItem122";
-            // 
-            // pageSetupRibbonPageGroup1
-            // 
-            this.pageSetupRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem17);
-            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem18);
-            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.pageSetupPaperKindItem1);
-            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem19);
-            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem127);
-            this.pageSetupRibbonPageGroup1.Name = "pageSetupRibbonPageGroup1";
-            // 
-            // pageLayoutRibbonPage1
-            // 
-            this.pageLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.pageSetupRibbonPageGroup1,
-            this.pageSetupShowRibbonPageGroup1,
-            this.pageSetupPrintRibbonPageGroup1,
-            this.arrangeRibbonPageGroup1});
-            this.pageLayoutRibbonPage1.Name = "pageLayoutRibbonPage1";
-            // 
-            // spreadsheetCommandBarCheckItem15
-            // 
-            this.spreadsheetCommandBarCheckItem15.CaptionDependOnUnits = true;
-            this.spreadsheetCommandBarCheckItem15.CommandName = "PageSetupMarginsNormal";
-            this.spreadsheetCommandBarCheckItem15.Id = 186;
-            this.spreadsheetCommandBarCheckItem15.Name = "spreadsheetCommandBarCheckItem15";
-            this.spreadsheetCommandBarCheckItem15.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarCheckItem16
-            // 
-            this.spreadsheetCommandBarCheckItem16.CaptionDependOnUnits = true;
-            this.spreadsheetCommandBarCheckItem16.CommandName = "PageSetupMarginsWide";
-            this.spreadsheetCommandBarCheckItem16.Id = 187;
-            this.spreadsheetCommandBarCheckItem16.Name = "spreadsheetCommandBarCheckItem16";
-            this.spreadsheetCommandBarCheckItem16.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarCheckItem17
-            // 
-            this.spreadsheetCommandBarCheckItem17.CaptionDependOnUnits = true;
-            this.spreadsheetCommandBarCheckItem17.CommandName = "PageSetupMarginsNarrow";
-            this.spreadsheetCommandBarCheckItem17.Id = 188;
-            this.spreadsheetCommandBarCheckItem17.Name = "spreadsheetCommandBarCheckItem17";
-            this.spreadsheetCommandBarCheckItem17.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem123
-            // 
-            this.spreadsheetCommandBarButtonItem123.CommandName = "PageSetupCustomMargins";
-            this.spreadsheetCommandBarButtonItem123.Id = 189;
-            this.spreadsheetCommandBarButtonItem123.Name = "spreadsheetCommandBarButtonItem123";
-            // 
-            // spreadsheetCommandBarSubItem17
-            // 
-            this.spreadsheetCommandBarSubItem17.CommandName = "PageSetupMarginsCommandGroup";
-            this.spreadsheetCommandBarSubItem17.Id = 185;
-            this.spreadsheetCommandBarSubItem17.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem15),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem16),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem17),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem123)});
-            this.spreadsheetCommandBarSubItem17.Name = "spreadsheetCommandBarSubItem17";
-            // 
-            // spreadsheetCommandBarCheckItem18
-            // 
-            this.spreadsheetCommandBarCheckItem18.CommandName = "PageSetupOrientationPortrait";
-            this.spreadsheetCommandBarCheckItem18.Id = 191;
-            this.spreadsheetCommandBarCheckItem18.Name = "spreadsheetCommandBarCheckItem18";
-            // 
-            // spreadsheetCommandBarCheckItem19
-            // 
-            this.spreadsheetCommandBarCheckItem19.CommandName = "PageSetupOrientationLandscape";
-            this.spreadsheetCommandBarCheckItem19.Id = 192;
-            this.spreadsheetCommandBarCheckItem19.Name = "spreadsheetCommandBarCheckItem19";
-            // 
-            // spreadsheetCommandBarSubItem18
-            // 
-            this.spreadsheetCommandBarSubItem18.CommandName = "PageSetupOrientationCommandGroup";
-            this.spreadsheetCommandBarSubItem18.Id = 190;
-            this.spreadsheetCommandBarSubItem18.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem18),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem19)});
-            this.spreadsheetCommandBarSubItem18.Name = "spreadsheetCommandBarSubItem18";
-            // 
-            // pageSetupPaperKindItem1
-            // 
-            this.pageSetupPaperKindItem1.Id = 193;
-            this.pageSetupPaperKindItem1.Name = "pageSetupPaperKindItem1";
-            // 
-            // spreadsheetCommandBarButtonItem124
-            // 
-            this.spreadsheetCommandBarButtonItem124.CommandName = "PageSetupSetPrintArea";
-            this.spreadsheetCommandBarButtonItem124.Id = 195;
-            this.spreadsheetCommandBarButtonItem124.Name = "spreadsheetCommandBarButtonItem124";
-            // 
-            // spreadsheetCommandBarButtonItem125
-            // 
-            this.spreadsheetCommandBarButtonItem125.CommandName = "PageSetupClearPrintArea";
-            this.spreadsheetCommandBarButtonItem125.Id = 196;
-            this.spreadsheetCommandBarButtonItem125.Name = "spreadsheetCommandBarButtonItem125";
-            // 
-            // spreadsheetCommandBarButtonItem126
-            // 
-            this.spreadsheetCommandBarButtonItem126.CommandName = "PageSetupAddPrintArea";
-            this.spreadsheetCommandBarButtonItem126.Id = 197;
-            this.spreadsheetCommandBarButtonItem126.Name = "spreadsheetCommandBarButtonItem126";
-            // 
-            // spreadsheetCommandBarSubItem19
-            // 
-            this.spreadsheetCommandBarSubItem19.CommandName = "PageSetupPrintAreaCommandGroup";
-            this.spreadsheetCommandBarSubItem19.Id = 194;
-            this.spreadsheetCommandBarSubItem19.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem124),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem125),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem126)});
-            this.spreadsheetCommandBarSubItem19.Name = "spreadsheetCommandBarSubItem19";
-            // 
-            // spreadsheetCommandBarButtonItem127
-            // 
-            this.spreadsheetCommandBarButtonItem127.CommandName = "PageSetupPrintTitles";
-            this.spreadsheetCommandBarButtonItem127.Id = 198;
-            this.spreadsheetCommandBarButtonItem127.Name = "spreadsheetCommandBarButtonItem127";
-            // 
-            // pageSetupShowRibbonPageGroup1
-            // 
-            this.pageSetupShowRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pageSetupShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem20);
-            this.pageSetupShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem21);
-            this.pageSetupShowRibbonPageGroup1.Name = "pageSetupShowRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem20
-            // 
-            this.spreadsheetCommandBarCheckItem20.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem20.CommandName = "ViewShowGridlines";
-            this.spreadsheetCommandBarCheckItem20.Id = 199;
-            this.spreadsheetCommandBarCheckItem20.Name = "spreadsheetCommandBarCheckItem20";
-            // 
-            // spreadsheetCommandBarCheckItem21
-            // 
-            this.spreadsheetCommandBarCheckItem21.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem21.CommandName = "ViewShowHeadings";
-            this.spreadsheetCommandBarCheckItem21.Id = 200;
-            this.spreadsheetCommandBarCheckItem21.Name = "spreadsheetCommandBarCheckItem21";
-            // 
-            // pageSetupPrintRibbonPageGroup1
-            // 
-            this.pageSetupPrintRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.pageSetupPrintRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem22);
-            this.pageSetupPrintRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem23);
-            this.pageSetupPrintRibbonPageGroup1.Name = "pageSetupPrintRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem22
-            // 
-            this.spreadsheetCommandBarCheckItem22.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem22.CommandName = "PageSetupPrintGridlines";
-            this.spreadsheetCommandBarCheckItem22.Id = 201;
-            this.spreadsheetCommandBarCheckItem22.Name = "spreadsheetCommandBarCheckItem22";
-            // 
-            // spreadsheetCommandBarCheckItem23
-            // 
-            this.spreadsheetCommandBarCheckItem23.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem23.CommandName = "PageSetupPrintHeadings";
-            this.spreadsheetCommandBarCheckItem23.Id = 202;
-            this.spreadsheetCommandBarCheckItem23.Name = "spreadsheetCommandBarCheckItem23";
-            // 
-            // arrangeRibbonPageGroup1
-            // 
-            this.arrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.arrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
-            this.arrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
-            this.arrangeRibbonPageGroup1.Name = "arrangeRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem128
-            // 
-            this.spreadsheetCommandBarButtonItem128.CommandName = "ArrangeBringForward";
-            this.spreadsheetCommandBarButtonItem128.Id = 204;
-            this.spreadsheetCommandBarButtonItem128.Name = "spreadsheetCommandBarButtonItem128";
-            // 
-            // spreadsheetCommandBarButtonItem129
-            // 
-            this.spreadsheetCommandBarButtonItem129.CommandName = "ArrangeBringToFront";
-            this.spreadsheetCommandBarButtonItem129.Id = 205;
-            this.spreadsheetCommandBarButtonItem129.Name = "spreadsheetCommandBarButtonItem129";
-            // 
-            // spreadsheetCommandBarSubItem20
-            // 
-            this.spreadsheetCommandBarSubItem20.CommandName = "ArrangeBringForwardCommandGroup";
-            this.spreadsheetCommandBarSubItem20.Id = 203;
-            this.spreadsheetCommandBarSubItem20.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem128),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem129)});
-            this.spreadsheetCommandBarSubItem20.Name = "spreadsheetCommandBarSubItem20";
-            // 
-            // spreadsheetCommandBarButtonItem130
-            // 
-            this.spreadsheetCommandBarButtonItem130.CommandName = "ArrangeSendBackward";
-            this.spreadsheetCommandBarButtonItem130.Id = 207;
-            this.spreadsheetCommandBarButtonItem130.Name = "spreadsheetCommandBarButtonItem130";
-            // 
-            // spreadsheetCommandBarButtonItem131
-            // 
-            this.spreadsheetCommandBarButtonItem131.CommandName = "ArrangeSendToBack";
-            this.spreadsheetCommandBarButtonItem131.Id = 208;
-            this.spreadsheetCommandBarButtonItem131.Name = "spreadsheetCommandBarButtonItem131";
-            // 
-            // spreadsheetCommandBarSubItem21
-            // 
-            this.spreadsheetCommandBarSubItem21.CommandName = "ArrangeSendBackwardCommandGroup";
-            this.spreadsheetCommandBarSubItem21.Id = 206;
-            this.spreadsheetCommandBarSubItem21.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem130),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem131)});
-            this.spreadsheetCommandBarSubItem21.Name = "spreadsheetCommandBarSubItem21";
-            // 
-            // functionLibraryRibbonPageGroup1
-            // 
-            this.functionLibraryRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem22);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsFinancialItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsLogicalItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsTextItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsDateAndTimeItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsLookupAndReferenceItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.functionsMathAndTrigonometryItem1);
-            this.functionLibraryRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem23);
-            this.functionLibraryRibbonPageGroup1.Name = "functionLibraryRibbonPageGroup1";
-            // 
-            // formulasRibbonPage1
-            // 
-            this.formulasRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.functionLibraryRibbonPageGroup1,
-            this.formulaDefinedNamesRibbonPageGroup1,
-            this.formulaAuditingRibbonPageGroup1,
-            this.formulaCalculationRibbonPageGroup1});
-            this.formulasRibbonPage1.Name = "formulasRibbonPage1";
-            // 
-            // spreadsheetCommandBarSubItem22
-            // 
-            this.spreadsheetCommandBarSubItem22.CommandName = "FunctionsAutoSumCommandGroup";
-            this.spreadsheetCommandBarSubItem22.Id = 209;
-            this.spreadsheetCommandBarSubItem22.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem92),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem93),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem94),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem95),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem96)});
-            this.spreadsheetCommandBarSubItem22.Name = "spreadsheetCommandBarSubItem22";
-            // 
-            // functionsFinancialItem1
-            // 
-            this.functionsFinancialItem1.Id = 210;
-            this.functionsFinancialItem1.Name = "functionsFinancialItem1";
-            // 
-            // functionsLogicalItem1
-            // 
-            this.functionsLogicalItem1.Id = 211;
-            this.functionsLogicalItem1.Name = "functionsLogicalItem1";
-            // 
-            // functionsTextItem1
-            // 
-            this.functionsTextItem1.Id = 212;
-            this.functionsTextItem1.Name = "functionsTextItem1";
-            // 
-            // functionsDateAndTimeItem1
-            // 
-            this.functionsDateAndTimeItem1.Id = 213;
-            this.functionsDateAndTimeItem1.Name = "functionsDateAndTimeItem1";
-            // 
-            // functionsLookupAndReferenceItem1
-            // 
-            this.functionsLookupAndReferenceItem1.Id = 214;
-            this.functionsLookupAndReferenceItem1.Name = "functionsLookupAndReferenceItem1";
-            // 
-            // functionsMathAndTrigonometryItem1
-            // 
-            this.functionsMathAndTrigonometryItem1.Id = 215;
-            this.functionsMathAndTrigonometryItem1.Name = "functionsMathAndTrigonometryItem1";
-            // 
-            // functionsStatisticalItem1
-            // 
-            this.functionsStatisticalItem1.Id = 217;
-            this.functionsStatisticalItem1.Name = "functionsStatisticalItem1";
-            // 
-            // functionsEngineeringItem1
-            // 
-            this.functionsEngineeringItem1.Id = 218;
-            this.functionsEngineeringItem1.Name = "functionsEngineeringItem1";
-            // 
-            // functionsInformationItem1
-            // 
-            this.functionsInformationItem1.Id = 219;
-            this.functionsInformationItem1.Name = "functionsInformationItem1";
-            // 
-            // functionsCompatibilityItem1
-            // 
-            this.functionsCompatibilityItem1.Id = 220;
-            this.functionsCompatibilityItem1.Name = "functionsCompatibilityItem1";
-            // 
-            // functionsWebItem1
-            // 
-            this.functionsWebItem1.Id = 221;
-            this.functionsWebItem1.Name = "functionsWebItem1";
-            // 
-            // spreadsheetCommandBarSubItem23
-            // 
-            this.spreadsheetCommandBarSubItem23.CommandName = "FunctionsMoreCommandGroup";
-            this.spreadsheetCommandBarSubItem23.Id = 216;
-            this.spreadsheetCommandBarSubItem23.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.functionsStatisticalItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.functionsEngineeringItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.functionsInformationItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.functionsCompatibilityItem1),
-            new DevExpress.XtraBars.LinkPersistInfo(this.functionsWebItem1)});
-            this.spreadsheetCommandBarSubItem23.Name = "spreadsheetCommandBarSubItem23";
-            // 
-            // formulaDefinedNamesRibbonPageGroup1
-            // 
-            this.formulaDefinedNamesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem132);
-            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem133);
-            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.definedNameListItem1);
-            this.formulaDefinedNamesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem134);
-            this.formulaDefinedNamesRibbonPageGroup1.Name = "formulaDefinedNamesRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem132
-            // 
-            this.spreadsheetCommandBarButtonItem132.CommandName = "FormulasShowNameManager";
-            this.spreadsheetCommandBarButtonItem132.Id = 222;
-            this.spreadsheetCommandBarButtonItem132.Name = "spreadsheetCommandBarButtonItem132";
-            // 
-            // spreadsheetCommandBarButtonItem133
-            // 
-            this.spreadsheetCommandBarButtonItem133.CommandName = "FormulasDefineNameCommand";
-            this.spreadsheetCommandBarButtonItem133.Id = 223;
-            this.spreadsheetCommandBarButtonItem133.Name = "spreadsheetCommandBarButtonItem133";
-            this.spreadsheetCommandBarButtonItem133.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // definedNameListItem1
-            // 
-            this.definedNameListItem1.Id = 224;
-            this.definedNameListItem1.Name = "definedNameListItem1";
-            this.definedNameListItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem134
-            // 
-            this.spreadsheetCommandBarButtonItem134.CommandName = "FormulasCreateDefinedNamesFromSelection";
-            this.spreadsheetCommandBarButtonItem134.Id = 225;
-            this.spreadsheetCommandBarButtonItem134.Name = "spreadsheetCommandBarButtonItem134";
-            this.spreadsheetCommandBarButtonItem134.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // formulaAuditingRibbonPageGroup1
-            // 
-            this.formulaAuditingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.formulaAuditingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem24);
-            this.formulaAuditingRibbonPageGroup1.Name = "formulaAuditingRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem24
-            // 
-            this.spreadsheetCommandBarCheckItem24.CommandName = "ViewShowFormulas";
-            this.spreadsheetCommandBarCheckItem24.Id = 226;
-            this.spreadsheetCommandBarCheckItem24.Name = "spreadsheetCommandBarCheckItem24";
-            // 
-            // formulaCalculationRibbonPageGroup1
-            // 
-            this.formulaCalculationRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem24);
-            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem135);
-            this.formulaCalculationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem136);
-            this.formulaCalculationRibbonPageGroup1.Name = "formulaCalculationRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem25
-            // 
-            this.spreadsheetCommandBarCheckItem25.CommandName = "FormulasCalculationModeAutomatic";
-            this.spreadsheetCommandBarCheckItem25.Id = 228;
-            this.spreadsheetCommandBarCheckItem25.Name = "spreadsheetCommandBarCheckItem25";
-            // 
-            // spreadsheetCommandBarCheckItem26
-            // 
-            this.spreadsheetCommandBarCheckItem26.CommandName = "FormulasCalculationModeManual";
-            this.spreadsheetCommandBarCheckItem26.Id = 229;
-            this.spreadsheetCommandBarCheckItem26.Name = "spreadsheetCommandBarCheckItem26";
-            // 
-            // spreadsheetCommandBarSubItem24
-            // 
-            this.spreadsheetCommandBarSubItem24.CommandName = "FormulasCalculationOptionsCommandGroup";
-            this.spreadsheetCommandBarSubItem24.Id = 227;
-            this.spreadsheetCommandBarSubItem24.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem25),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem26)});
-            this.spreadsheetCommandBarSubItem24.Name = "spreadsheetCommandBarSubItem24";
-            // 
-            // spreadsheetCommandBarButtonItem135
-            // 
-            this.spreadsheetCommandBarButtonItem135.CommandName = "FormulasCalculateNow";
-            this.spreadsheetCommandBarButtonItem135.Id = 230;
-            this.spreadsheetCommandBarButtonItem135.Name = "spreadsheetCommandBarButtonItem135";
-            this.spreadsheetCommandBarButtonItem135.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem136
-            // 
-            this.spreadsheetCommandBarButtonItem136.CommandName = "FormulasCalculateSheet";
-            this.spreadsheetCommandBarButtonItem136.Id = 231;
-            this.spreadsheetCommandBarButtonItem136.Name = "spreadsheetCommandBarButtonItem136";
-            this.spreadsheetCommandBarButtonItem136.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // sortAndFilterRibbonPageGroup1
-            // 
-            this.sortAndFilterRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem107);
-            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem108);
-            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem14);
-            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem109);
-            this.sortAndFilterRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem110);
-            this.sortAndFilterRibbonPageGroup1.Name = "sortAndFilterRibbonPageGroup1";
-            // 
-            // dataRibbonPage1
-            // 
-            this.dataRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.sortAndFilterRibbonPageGroup1,
-            this.dataToolsRibbonPageGroup1,
-            this.outlineRibbonPageGroup1});
-            this.dataRibbonPage1.Name = "dataRibbonPage1";
-            // 
-            // dataToolsRibbonPageGroup1
-            // 
-            this.dataToolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.dataToolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem25);
-            this.dataToolsRibbonPageGroup1.Name = "dataToolsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem137
-            // 
-            this.spreadsheetCommandBarButtonItem137.CommandName = "DataToolsDataValidation";
-            this.spreadsheetCommandBarButtonItem137.Id = 233;
-            this.spreadsheetCommandBarButtonItem137.Name = "spreadsheetCommandBarButtonItem137";
-            // 
-            // spreadsheetCommandBarButtonItem138
-            // 
-            this.spreadsheetCommandBarButtonItem138.CommandName = "DataToolsCircleInvalidData";
-            this.spreadsheetCommandBarButtonItem138.Id = 234;
-            this.spreadsheetCommandBarButtonItem138.Name = "spreadsheetCommandBarButtonItem138";
-            // 
-            // spreadsheetCommandBarButtonItem139
-            // 
-            this.spreadsheetCommandBarButtonItem139.CommandName = "DataToolsClearValidationCircles";
-            this.spreadsheetCommandBarButtonItem139.Id = 235;
-            this.spreadsheetCommandBarButtonItem139.Name = "spreadsheetCommandBarButtonItem139";
-            // 
-            // spreadsheetCommandBarSubItem25
-            // 
-            this.spreadsheetCommandBarSubItem25.CommandName = "DataToolsDataValidationCommandGroup";
-            this.spreadsheetCommandBarSubItem25.Id = 232;
-            this.spreadsheetCommandBarSubItem25.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem137),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem138),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem139)});
-            this.spreadsheetCommandBarSubItem25.Name = "spreadsheetCommandBarSubItem25";
-            // 
-            // outlineRibbonPageGroup1
-            // 
-            this.outlineRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem26);
-            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem27);
-            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem144);
-            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem145);
-            this.outlineRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem146);
-            this.outlineRibbonPageGroup1.Name = "outlineRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem140
-            // 
-            this.spreadsheetCommandBarButtonItem140.CommandName = "GroupOutline";
-            this.spreadsheetCommandBarButtonItem140.Id = 237;
-            this.spreadsheetCommandBarButtonItem140.Name = "spreadsheetCommandBarButtonItem140";
-            // 
-            // spreadsheetCommandBarButtonItem141
-            // 
-            this.spreadsheetCommandBarButtonItem141.CommandName = "AutoOutline";
-            this.spreadsheetCommandBarButtonItem141.Id = 238;
-            this.spreadsheetCommandBarButtonItem141.Name = "spreadsheetCommandBarButtonItem141";
-            // 
-            // spreadsheetCommandBarSubItem26
-            // 
-            this.spreadsheetCommandBarSubItem26.CommandName = "OutlineGroupCommandGroup";
-            this.spreadsheetCommandBarSubItem26.Id = 236;
-            this.spreadsheetCommandBarSubItem26.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem140),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem141)});
-            this.spreadsheetCommandBarSubItem26.Name = "spreadsheetCommandBarSubItem26";
-            this.spreadsheetCommandBarSubItem26.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem142
-            // 
-            this.spreadsheetCommandBarButtonItem142.CommandName = "UngroupOutline";
-            this.spreadsheetCommandBarButtonItem142.Id = 240;
-            this.spreadsheetCommandBarButtonItem142.Name = "spreadsheetCommandBarButtonItem142";
-            // 
-            // spreadsheetCommandBarButtonItem143
-            // 
-            this.spreadsheetCommandBarButtonItem143.CommandName = "ClearOutline";
-            this.spreadsheetCommandBarButtonItem143.Id = 241;
-            this.spreadsheetCommandBarButtonItem143.Name = "spreadsheetCommandBarButtonItem143";
-            // 
-            // spreadsheetCommandBarSubItem27
-            // 
-            this.spreadsheetCommandBarSubItem27.CommandName = "OutlineUngroupCommandGroup";
-            this.spreadsheetCommandBarSubItem27.Id = 239;
-            this.spreadsheetCommandBarSubItem27.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem142),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem143)});
-            this.spreadsheetCommandBarSubItem27.Name = "spreadsheetCommandBarSubItem27";
-            this.spreadsheetCommandBarSubItem27.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem144
-            // 
-            this.spreadsheetCommandBarButtonItem144.CommandName = "Subtotal";
-            this.spreadsheetCommandBarButtonItem144.Id = 242;
-            this.spreadsheetCommandBarButtonItem144.Name = "spreadsheetCommandBarButtonItem144";
-            this.spreadsheetCommandBarButtonItem144.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem145
-            // 
-            this.spreadsheetCommandBarButtonItem145.CommandName = "ShowDetail";
-            this.spreadsheetCommandBarButtonItem145.Id = 243;
-            this.spreadsheetCommandBarButtonItem145.Name = "spreadsheetCommandBarButtonItem145";
-            this.spreadsheetCommandBarButtonItem145.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem146
-            // 
-            this.spreadsheetCommandBarButtonItem146.CommandName = "HideDetail";
-            this.spreadsheetCommandBarButtonItem146.Id = 244;
-            this.spreadsheetCommandBarButtonItem146.Name = "spreadsheetCommandBarButtonItem146";
-            this.spreadsheetCommandBarButtonItem146.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // commentsRibbonPageGroup1
-            // 
-            this.commentsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem147);
-            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem148);
-            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem149);
-            this.commentsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem150);
-            this.commentsRibbonPageGroup1.Name = "commentsRibbonPageGroup1";
-            // 
-            // reviewRibbonPage1
-            // 
-            this.reviewRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.commentsRibbonPageGroup1,
-            this.changesRibbonPageGroup1});
-            this.reviewRibbonPage1.Name = "reviewRibbonPage1";
-            // 
-            // spreadsheetCommandBarButtonItem147
-            // 
-            this.spreadsheetCommandBarButtonItem147.CommandName = "ReviewInsertComment";
-            this.spreadsheetCommandBarButtonItem147.Id = 245;
-            this.spreadsheetCommandBarButtonItem147.Name = "spreadsheetCommandBarButtonItem147";
-            // 
-            // spreadsheetCommandBarButtonItem148
-            // 
-            this.spreadsheetCommandBarButtonItem148.CommandName = "ReviewEditComment";
-            this.spreadsheetCommandBarButtonItem148.Id = 246;
-            this.spreadsheetCommandBarButtonItem148.Name = "spreadsheetCommandBarButtonItem148";
-            // 
-            // spreadsheetCommandBarButtonItem149
-            // 
-            this.spreadsheetCommandBarButtonItem149.CommandName = "ReviewDeleteComment";
-            this.spreadsheetCommandBarButtonItem149.Id = 247;
-            this.spreadsheetCommandBarButtonItem149.Name = "spreadsheetCommandBarButtonItem149";
-            // 
-            // spreadsheetCommandBarButtonItem150
-            // 
-            this.spreadsheetCommandBarButtonItem150.CommandName = "ReviewShowHideComment";
-            this.spreadsheetCommandBarButtonItem150.Id = 248;
-            this.spreadsheetCommandBarButtonItem150.Name = "spreadsheetCommandBarButtonItem150";
-            // 
-            // changesRibbonPageGroup1
-            // 
-            this.changesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem90);
-            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem151);
-            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem152);
-            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem153);
-            this.changesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem154);
-            this.changesRibbonPageGroup1.Name = "changesRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem151
-            // 
-            this.spreadsheetCommandBarButtonItem151.CommandName = "ReviewUnprotectSheet";
-            this.spreadsheetCommandBarButtonItem151.Id = 249;
-            this.spreadsheetCommandBarButtonItem151.Name = "spreadsheetCommandBarButtonItem151";
-            // 
-            // spreadsheetCommandBarButtonItem152
-            // 
-            this.spreadsheetCommandBarButtonItem152.CommandName = "ReviewProtectWorkbook";
-            this.spreadsheetCommandBarButtonItem152.Id = 250;
-            this.spreadsheetCommandBarButtonItem152.Name = "spreadsheetCommandBarButtonItem152";
-            // 
-            // spreadsheetCommandBarButtonItem153
-            // 
-            this.spreadsheetCommandBarButtonItem153.CommandName = "ReviewUnprotectWorkbook";
-            this.spreadsheetCommandBarButtonItem153.Id = 251;
-            this.spreadsheetCommandBarButtonItem153.Name = "spreadsheetCommandBarButtonItem153";
-            // 
-            // spreadsheetCommandBarButtonItem154
-            // 
-            this.spreadsheetCommandBarButtonItem154.CommandName = "ReviewShowProtectedRangeManager";
-            this.spreadsheetCommandBarButtonItem154.Id = 252;
-            this.spreadsheetCommandBarButtonItem154.Name = "spreadsheetCommandBarButtonItem154";
-            // 
-            // chartsDesignTypeRibbonPageGroup1
-            // 
-            this.chartsDesignTypeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsDesignTypeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem155);
-            this.chartsDesignTypeRibbonPageGroup1.Name = "chartsDesignTypeRibbonPageGroup1";
-            // 
-            // chartsDesignRibbonPage1
-            // 
-            this.chartsDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.chartsDesignTypeRibbonPageGroup1,
-            this.chartsDesignDataRibbonPageGroup1,
-            this.chartsDesignLayoutsRibbonPageGroup1,
-            this.chartsDesignStylesRibbonPageGroup1,
-            this.chartsDesignLocationRibbonPageGroup1});
-            this.chartsDesignRibbonPage1.Name = "chartsDesignRibbonPage1";
-            this.chartsDesignRibbonPage1.Visible = false;
-            // 
-            // chartToolsRibbonPageCategory1
-            // 
-            this.chartToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
-            this.chartToolsRibbonPageCategory1.Name = "chartToolsRibbonPageCategory1";
-            this.chartToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.chartsDesignRibbonPage1,
-            this.chartsLayoutRibbonPage1,
-            this.chartsFormatRibbonPage1});
-            this.chartToolsRibbonPageCategory1.Visible = false;
-            // 
-            // spreadsheetCommandBarButtonItem155
-            // 
-            this.spreadsheetCommandBarButtonItem155.CommandName = "ChartChangeType";
-            this.spreadsheetCommandBarButtonItem155.Id = 253;
-            this.spreadsheetCommandBarButtonItem155.Name = "spreadsheetCommandBarButtonItem155";
-            // 
-            // chartsDesignDataRibbonPageGroup1
-            // 
-            this.chartsDesignDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsDesignDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem156);
-            this.chartsDesignDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem157);
-            this.chartsDesignDataRibbonPageGroup1.Name = "chartsDesignDataRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem156
-            // 
-            this.spreadsheetCommandBarButtonItem156.CommandName = "ChartSwitchRowColumn";
-            this.spreadsheetCommandBarButtonItem156.Id = 254;
-            this.spreadsheetCommandBarButtonItem156.Name = "spreadsheetCommandBarButtonItem156";
-            // 
-            // spreadsheetCommandBarButtonItem157
-            // 
-            this.spreadsheetCommandBarButtonItem157.CommandName = "ChartSelectData";
-            this.spreadsheetCommandBarButtonItem157.Id = 255;
-            this.spreadsheetCommandBarButtonItem157.Name = "spreadsheetCommandBarButtonItem157";
-            // 
-            // chartsDesignLayoutsRibbonPageGroup1
-            // 
-            this.chartsDesignLayoutsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsDesignLayoutsRibbonPageGroup1.ItemLinks.Add(this.galleryChartLayoutItem1);
-            this.chartsDesignLayoutsRibbonPageGroup1.Name = "chartsDesignLayoutsRibbonPageGroup1";
-            // 
-            // galleryChartLayoutItem1
-            // 
-            // 
-            // 
-            // 
-            this.galleryChartLayoutItem1.Gallery.ColumnCount = 6;
-            this.galleryChartLayoutItem1.Gallery.DrawImageBackground = false;
-            this.galleryChartLayoutItem1.Gallery.ImageSize = new System.Drawing.Size(48, 48);
-            this.galleryChartLayoutItem1.Gallery.RowCount = 2;
-            this.galleryChartLayoutItem1.Id = 256;
-            this.galleryChartLayoutItem1.Name = "galleryChartLayoutItem1";
-            // 
-            // chartsDesignStylesRibbonPageGroup1
-            // 
-            this.chartsDesignStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsDesignStylesRibbonPageGroup1.ItemLinks.Add(this.galleryChartStyleItem1);
-            this.chartsDesignStylesRibbonPageGroup1.Name = "chartsDesignStylesRibbonPageGroup1";
-            // 
-            // galleryChartStyleItem1
-            // 
-            // 
-            // 
-            // 
-            this.galleryChartStyleItem1.Gallery.ColumnCount = 8;
-            this.galleryChartStyleItem1.Gallery.DrawImageBackground = false;
-            this.galleryChartStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
-            this.galleryChartStyleItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            this.galleryChartStyleItem1.Gallery.ItemSize = new System.Drawing.Size(93, 56);
-            this.galleryChartStyleItem1.Gallery.MinimumColumnCount = 4;
-            this.galleryChartStyleItem1.Gallery.RowCount = 6;
-            this.galleryChartStyleItem1.Id = 257;
-            this.galleryChartStyleItem1.Name = "galleryChartStyleItem1";
-            // 
-            // chartsDesignLocationRibbonPageGroup1
-            // 
-            this.chartsDesignLocationRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsDesignLocationRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem158);
-            this.chartsDesignLocationRibbonPageGroup1.Name = "chartsDesignLocationRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem158
-            // 
-            this.spreadsheetCommandBarButtonItem158.CommandName = "MoveChart";
-            this.spreadsheetCommandBarButtonItem158.Id = 258;
-            this.spreadsheetCommandBarButtonItem158.Name = "spreadsheetCommandBarButtonItem158";
-            // 
-            // chartsLayoutAxesRibbonPageGroup1
-            // 
-            this.chartsLayoutAxesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsLayoutAxesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem28);
-            this.chartsLayoutAxesRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem29);
-            this.chartsLayoutAxesRibbonPageGroup1.Name = "chartsLayoutAxesRibbonPageGroup1";
-            // 
-            // chartsLayoutRibbonPage1
-            // 
-            this.chartsLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.chartsLayoutAxesRibbonPageGroup1,
-            this.chartsLayoutLabelsRibbonPageGroup1,
-            this.chartsLayoutAnalysisRibbonPageGroup1});
-            this.chartsLayoutRibbonPage1.Name = "chartsLayoutRibbonPage1";
-            this.chartsLayoutRibbonPage1.Visible = false;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem13
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem13.CommandName = "ChartPrimaryHorizontalAxisCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem13.DropDownControl = this.commandBarGalleryDropDown15;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem13.Id = 260;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem13.Name = "spreadsheetCommandBarButtonGalleryDropDownItem13";
-            // 
-            // commandBarGalleryDropDown15
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown15.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown15.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup35.CommandName = "ChartPrimaryHorizontalAxisCommandGroup";
-            spreadsheetCommandGalleryItem130.CommandName = "ChartHidePrimaryHorizontalAxis";
-            spreadsheetCommandGalleryItem130.Enabled = false;
-            spreadsheetCommandGalleryItem131.CommandName = "ChartPrimaryHorizontalAxisLeftToRight";
-            spreadsheetCommandGalleryItem131.Enabled = false;
-            spreadsheetCommandGalleryItem132.CommandName = "ChartPrimaryHorizontalAxisHideLabels";
-            spreadsheetCommandGalleryItem132.Enabled = false;
-            spreadsheetCommandGalleryItem133.CommandName = "ChartPrimaryHorizontalAxisRightToLeft";
-            spreadsheetCommandGalleryItem133.Enabled = false;
-            spreadsheetCommandGalleryItem134.CommandName = "ChartPrimaryHorizontalAxisDefault";
-            spreadsheetCommandGalleryItem134.Enabled = false;
-            spreadsheetCommandGalleryItem135.CommandName = "ChartPrimaryHorizontalAxisScaleThousands";
-            spreadsheetCommandGalleryItem135.Enabled = false;
-            spreadsheetCommandGalleryItem136.CommandName = "ChartPrimaryHorizontalAxisScaleMillions";
-            spreadsheetCommandGalleryItem136.Enabled = false;
-            spreadsheetCommandGalleryItem137.CommandName = "ChartPrimaryHorizontalAxisScaleBillions";
-            spreadsheetCommandGalleryItem137.Enabled = false;
-            spreadsheetCommandGalleryItem138.CommandName = "ChartPrimaryHorizontalAxisScaleLogarithm";
-            spreadsheetCommandGalleryItem138.Enabled = false;
-            spreadsheetCommandGalleryItemGroup35.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem130,
-            spreadsheetCommandGalleryItem131,
-            spreadsheetCommandGalleryItem132,
-            spreadsheetCommandGalleryItem133,
-            spreadsheetCommandGalleryItem134,
-            spreadsheetCommandGalleryItem135,
-            spreadsheetCommandGalleryItem136,
-            spreadsheetCommandGalleryItem137,
-            spreadsheetCommandGalleryItem138});
-            this.commandBarGalleryDropDown15.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup35});
-            this.commandBarGalleryDropDown15.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown15.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown15.Gallery.RowCount = 9;
-            this.commandBarGalleryDropDown15.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown15.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown15.Name = "commandBarGalleryDropDown15";
-            this.commandBarGalleryDropDown15.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem14
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem14.CommandName = "ChartPrimaryVerticalAxisCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem14.DropDownControl = this.commandBarGalleryDropDown16;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem14.Id = 261;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem14.Name = "spreadsheetCommandBarButtonGalleryDropDownItem14";
-            // 
-            // commandBarGalleryDropDown16
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown16.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown16.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup36.CommandName = "ChartPrimaryVerticalAxisCommandGroup";
-            spreadsheetCommandGalleryItem139.CommandName = "ChartHidePrimaryVerticalAxis";
-            spreadsheetCommandGalleryItem139.Enabled = false;
-            spreadsheetCommandGalleryItem140.CommandName = "ChartPrimaryVerticalAxisLeftToRight";
-            spreadsheetCommandGalleryItem140.Enabled = false;
-            spreadsheetCommandGalleryItem141.CommandName = "ChartPrimaryVerticalAxisHideLabels";
-            spreadsheetCommandGalleryItem141.Enabled = false;
-            spreadsheetCommandGalleryItem142.CommandName = "ChartPrimaryVerticalAxisRightToLeft";
-            spreadsheetCommandGalleryItem142.Enabled = false;
-            spreadsheetCommandGalleryItem143.CommandName = "ChartPrimaryVerticalAxisDefault";
-            spreadsheetCommandGalleryItem143.Enabled = false;
-            spreadsheetCommandGalleryItem144.CommandName = "ChartPrimaryVerticalAxisScaleThousands";
-            spreadsheetCommandGalleryItem144.Enabled = false;
-            spreadsheetCommandGalleryItem145.CommandName = "ChartPrimaryVerticalAxisScaleMillions";
-            spreadsheetCommandGalleryItem145.Enabled = false;
-            spreadsheetCommandGalleryItem146.CommandName = "ChartPrimaryVerticalAxisScaleBillions";
-            spreadsheetCommandGalleryItem146.Enabled = false;
-            spreadsheetCommandGalleryItem147.CommandName = "ChartPrimaryVerticalAxisScaleLogarithm";
-            spreadsheetCommandGalleryItem147.Enabled = false;
-            spreadsheetCommandGalleryItemGroup36.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem139,
-            spreadsheetCommandGalleryItem140,
-            spreadsheetCommandGalleryItem141,
-            spreadsheetCommandGalleryItem142,
-            spreadsheetCommandGalleryItem143,
-            spreadsheetCommandGalleryItem144,
-            spreadsheetCommandGalleryItem145,
-            spreadsheetCommandGalleryItem146,
-            spreadsheetCommandGalleryItem147});
-            this.commandBarGalleryDropDown16.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup36});
-            this.commandBarGalleryDropDown16.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown16.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown16.Gallery.RowCount = 9;
-            this.commandBarGalleryDropDown16.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown16.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown16.Name = "commandBarGalleryDropDown16";
-            this.commandBarGalleryDropDown16.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarSubItem28
-            // 
-            this.spreadsheetCommandBarSubItem28.CommandName = "ChartAxesCommandGroup";
-            this.spreadsheetCommandBarSubItem28.Id = 259;
-            this.spreadsheetCommandBarSubItem28.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem13),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem14)});
-            this.spreadsheetCommandBarSubItem28.Name = "spreadsheetCommandBarSubItem28";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem15
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem15.CommandName = "ChartPrimaryHorizontalGridlinesCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem15.DropDownControl = this.commandBarGalleryDropDown17;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem15.Id = 263;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem15.Name = "spreadsheetCommandBarButtonGalleryDropDownItem15";
-            // 
-            // commandBarGalleryDropDown17
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown17.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown17.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup37.CommandName = "ChartPrimaryHorizontalGridlinesCommandGroup";
-            spreadsheetCommandGalleryItem148.CommandName = "ChartPrimaryHorizontalGridlinesNone";
-            spreadsheetCommandGalleryItem148.Enabled = false;
-            spreadsheetCommandGalleryItem149.CommandName = "ChartPrimaryHorizontalGridlinesMajor";
-            spreadsheetCommandGalleryItem149.Enabled = false;
-            spreadsheetCommandGalleryItem150.CommandName = "ChartPrimaryHorizontalGridlinesMinor";
-            spreadsheetCommandGalleryItem150.Enabled = false;
-            spreadsheetCommandGalleryItem151.CommandName = "ChartPrimaryHorizontalGridlinesMajorAndMinor";
-            spreadsheetCommandGalleryItem151.Enabled = false;
-            spreadsheetCommandGalleryItemGroup37.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem148,
-            spreadsheetCommandGalleryItem149,
-            spreadsheetCommandGalleryItem150,
-            spreadsheetCommandGalleryItem151});
-            this.commandBarGalleryDropDown17.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup37});
-            this.commandBarGalleryDropDown17.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown17.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown17.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown17.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown17.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown17.Name = "commandBarGalleryDropDown17";
-            this.commandBarGalleryDropDown17.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem16
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem16.CommandName = "ChartPrimaryVerticalGridlinesCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem16.DropDownControl = this.commandBarGalleryDropDown18;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem16.Id = 264;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem16.Name = "spreadsheetCommandBarButtonGalleryDropDownItem16";
-            // 
-            // commandBarGalleryDropDown18
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown18.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown18.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup38.CommandName = "ChartPrimaryVerticalGridlinesCommandGroup";
-            spreadsheetCommandGalleryItem152.CommandName = "ChartPrimaryVerticalGridlinesNone";
-            spreadsheetCommandGalleryItem152.Enabled = false;
-            spreadsheetCommandGalleryItem153.CommandName = "ChartPrimaryVerticalGridlinesMajor";
-            spreadsheetCommandGalleryItem153.Enabled = false;
-            spreadsheetCommandGalleryItem154.CommandName = "ChartPrimaryVerticalGridlinesMinor";
-            spreadsheetCommandGalleryItem154.Enabled = false;
-            spreadsheetCommandGalleryItem155.CommandName = "ChartPrimaryVerticalGridlinesMajorAndMinor";
-            spreadsheetCommandGalleryItem155.Enabled = false;
-            spreadsheetCommandGalleryItemGroup38.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem152,
-            spreadsheetCommandGalleryItem153,
-            spreadsheetCommandGalleryItem154,
-            spreadsheetCommandGalleryItem155});
-            this.commandBarGalleryDropDown18.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup38});
-            this.commandBarGalleryDropDown18.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown18.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown18.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown18.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown18.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown18.Name = "commandBarGalleryDropDown18";
-            this.commandBarGalleryDropDown18.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarSubItem29
-            // 
-            this.spreadsheetCommandBarSubItem29.CommandName = "ChartGridlinesCommandGroup";
-            this.spreadsheetCommandBarSubItem29.Id = 262;
-            this.spreadsheetCommandBarSubItem29.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem15),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem16)});
-            this.spreadsheetCommandBarSubItem29.Name = "spreadsheetCommandBarSubItem29";
-            // 
-            // chartsLayoutLabelsRibbonPageGroup1
-            // 
-            this.chartsLayoutLabelsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem17);
-            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem30);
-            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem20);
-            this.chartsLayoutLabelsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem21);
-            this.chartsLayoutLabelsRibbonPageGroup1.Name = "chartsLayoutLabelsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem17
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem17.CommandName = "ChartTitleCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem17.DropDownControl = this.commandBarGalleryDropDown19;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem17.Id = 265;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem17.Name = "spreadsheetCommandBarButtonGalleryDropDownItem17";
-            // 
-            // commandBarGalleryDropDown19
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown19.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown19.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup39.CommandName = "ChartTitleCommandGroup";
-            spreadsheetCommandGalleryItem156.CommandName = "ChartTitleNone";
-            spreadsheetCommandGalleryItem156.Enabled = false;
-            spreadsheetCommandGalleryItem157.CommandName = "ChartTitleCenteredOverlay";
-            spreadsheetCommandGalleryItem157.Enabled = false;
-            spreadsheetCommandGalleryItem158.CommandName = "ChartTitleAbove";
-            spreadsheetCommandGalleryItem158.Enabled = false;
-            spreadsheetCommandGalleryItemGroup39.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem156,
-            spreadsheetCommandGalleryItem157,
-            spreadsheetCommandGalleryItem158});
-            this.commandBarGalleryDropDown19.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup39});
-            this.commandBarGalleryDropDown19.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown19.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown19.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown19.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown19.Name = "commandBarGalleryDropDown19";
-            this.commandBarGalleryDropDown19.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem18
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem18.CommandName = "ChartPrimaryHorizontalAxisTitleCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem18.DropDownControl = this.commandBarGalleryDropDown20;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem18.Id = 267;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem18.Name = "spreadsheetCommandBarButtonGalleryDropDownItem18";
-            // 
-            // commandBarGalleryDropDown20
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown20.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown20.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup40.CommandName = "ChartPrimaryHorizontalAxisTitleCommandGroup";
-            spreadsheetCommandGalleryItem159.CommandName = "ChartPrimaryHorizontalAxisTitleNone";
-            spreadsheetCommandGalleryItem159.Enabled = false;
-            spreadsheetCommandGalleryItem160.CommandName = "ChartPrimaryHorizontalAxisTitleBelow";
-            spreadsheetCommandGalleryItem160.Enabled = false;
-            spreadsheetCommandGalleryItemGroup40.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem159,
-            spreadsheetCommandGalleryItem160});
-            this.commandBarGalleryDropDown20.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup40});
-            this.commandBarGalleryDropDown20.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown20.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown20.Gallery.RowCount = 2;
-            this.commandBarGalleryDropDown20.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown20.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown20.Name = "commandBarGalleryDropDown20";
-            this.commandBarGalleryDropDown20.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem19
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem19.CommandName = "ChartPrimaryVerticalAxisTitleCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem19.DropDownControl = this.commandBarGalleryDropDown21;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem19.Id = 268;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem19.Name = "spreadsheetCommandBarButtonGalleryDropDownItem19";
-            // 
-            // commandBarGalleryDropDown21
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown21.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown21.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup41.CommandName = "ChartPrimaryVerticalAxisTitleCommandGroup";
-            spreadsheetCommandGalleryItem161.CommandName = "ChartPrimaryVerticalAxisTitleNone";
-            spreadsheetCommandGalleryItem161.Enabled = false;
-            spreadsheetCommandGalleryItem162.CommandName = "ChartPrimaryVerticalAxisTitleRotated";
-            spreadsheetCommandGalleryItem162.Enabled = false;
-            spreadsheetCommandGalleryItem163.CommandName = "ChartPrimaryVerticalAxisTitleVertical";
-            spreadsheetCommandGalleryItem163.Enabled = false;
-            spreadsheetCommandGalleryItem164.CommandName = "ChartPrimaryVerticalAxisTitleHorizontal";
-            spreadsheetCommandGalleryItem164.Enabled = false;
-            spreadsheetCommandGalleryItemGroup41.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem161,
-            spreadsheetCommandGalleryItem162,
-            spreadsheetCommandGalleryItem163,
-            spreadsheetCommandGalleryItem164});
-            this.commandBarGalleryDropDown21.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup41});
-            this.commandBarGalleryDropDown21.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown21.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown21.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown21.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown21.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown21.Name = "commandBarGalleryDropDown21";
-            this.commandBarGalleryDropDown21.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarSubItem30
-            // 
-            this.spreadsheetCommandBarSubItem30.CommandName = "ChartAxisTitlesCommandGroup";
-            this.spreadsheetCommandBarSubItem30.Id = 266;
-            this.spreadsheetCommandBarSubItem30.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem18),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonGalleryDropDownItem19)});
-            this.spreadsheetCommandBarSubItem30.Name = "spreadsheetCommandBarSubItem30";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem20
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem20.CommandName = "ChartLegendCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem20.DropDownControl = this.commandBarGalleryDropDown22;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem20.Id = 269;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem20.Name = "spreadsheetCommandBarButtonGalleryDropDownItem20";
-            // 
-            // commandBarGalleryDropDown22
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown22.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown22.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup42.CommandName = "ChartLegendCommandGroup";
-            spreadsheetCommandGalleryItem165.CommandName = "ChartLegendNone";
-            spreadsheetCommandGalleryItem165.Enabled = false;
-            spreadsheetCommandGalleryItem166.CommandName = "ChartLegendAtRight";
-            spreadsheetCommandGalleryItem166.Enabled = false;
-            spreadsheetCommandGalleryItem167.CommandName = "ChartLegendAtTop";
-            spreadsheetCommandGalleryItem167.Enabled = false;
-            spreadsheetCommandGalleryItem168.CommandName = "ChartLegendAtLeft";
-            spreadsheetCommandGalleryItem168.Enabled = false;
-            spreadsheetCommandGalleryItem169.CommandName = "ChartLegendAtBottom";
-            spreadsheetCommandGalleryItem169.Enabled = false;
-            spreadsheetCommandGalleryItem170.CommandName = "ChartLegendOverlayAtRight";
-            spreadsheetCommandGalleryItem170.Enabled = false;
-            spreadsheetCommandGalleryItem171.CommandName = "ChartLegendOverlayAtLeft";
-            spreadsheetCommandGalleryItem171.Enabled = false;
-            spreadsheetCommandGalleryItemGroup42.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem165,
-            spreadsheetCommandGalleryItem166,
-            spreadsheetCommandGalleryItem167,
-            spreadsheetCommandGalleryItem168,
-            spreadsheetCommandGalleryItem169,
-            spreadsheetCommandGalleryItem170,
-            spreadsheetCommandGalleryItem171});
-            this.commandBarGalleryDropDown22.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup42});
-            this.commandBarGalleryDropDown22.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown22.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown22.Gallery.RowCount = 7;
-            this.commandBarGalleryDropDown22.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown22.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown22.Name = "commandBarGalleryDropDown22";
-            this.commandBarGalleryDropDown22.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem21
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem21.CommandName = "ChartDataLabelsCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem21.DropDownControl = this.commandBarGalleryDropDown23;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem21.Id = 270;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem21.Name = "spreadsheetCommandBarButtonGalleryDropDownItem21";
-            // 
-            // commandBarGalleryDropDown23
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown23.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown23.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup43.CommandName = "ChartDataLabelsCommandGroup";
-            spreadsheetCommandGalleryItem172.CommandName = "ChartDataLabelsNone";
-            spreadsheetCommandGalleryItem172.Enabled = false;
-            spreadsheetCommandGalleryItem173.CommandName = "ChartDataLabelsDefault";
-            spreadsheetCommandGalleryItem173.Enabled = false;
-            spreadsheetCommandGalleryItem174.CommandName = "ChartDataLabelsCenter";
-            spreadsheetCommandGalleryItem174.Enabled = false;
-            spreadsheetCommandGalleryItem175.CommandName = "ChartDataLabelsInsideEnd";
-            spreadsheetCommandGalleryItem175.Enabled = false;
-            spreadsheetCommandGalleryItem176.CommandName = "ChartDataLabelsInsideBase";
-            spreadsheetCommandGalleryItem176.Enabled = false;
-            spreadsheetCommandGalleryItem177.CommandName = "ChartDataLabelsOutsideEnd";
-            spreadsheetCommandGalleryItem177.Enabled = false;
-            spreadsheetCommandGalleryItem178.CommandName = "ChartDataLabelsBestFit";
-            spreadsheetCommandGalleryItem178.Enabled = false;
-            spreadsheetCommandGalleryItem179.CommandName = "ChartDataLabelsLeft";
-            spreadsheetCommandGalleryItem179.Enabled = false;
-            spreadsheetCommandGalleryItem180.CommandName = "ChartDataLabelsRight";
-            spreadsheetCommandGalleryItem180.Enabled = false;
-            spreadsheetCommandGalleryItem181.CommandName = "ChartDataLabelsAbove";
-            spreadsheetCommandGalleryItem181.Enabled = false;
-            spreadsheetCommandGalleryItem182.CommandName = "ChartDataLabelsBelow";
-            spreadsheetCommandGalleryItem182.Enabled = false;
-            spreadsheetCommandGalleryItemGroup43.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem172,
-            spreadsheetCommandGalleryItem173,
-            spreadsheetCommandGalleryItem174,
-            spreadsheetCommandGalleryItem175,
-            spreadsheetCommandGalleryItem176,
-            spreadsheetCommandGalleryItem177,
-            spreadsheetCommandGalleryItem178,
-            spreadsheetCommandGalleryItem179,
-            spreadsheetCommandGalleryItem180,
-            spreadsheetCommandGalleryItem181,
-            spreadsheetCommandGalleryItem182});
-            this.commandBarGalleryDropDown23.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup43});
-            this.commandBarGalleryDropDown23.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown23.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown23.Gallery.RowCount = 11;
-            this.commandBarGalleryDropDown23.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown23.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown23.Name = "commandBarGalleryDropDown23";
-            this.commandBarGalleryDropDown23.Ribbon = this.ribbon;
-            // 
-            // chartsLayoutAnalysisRibbonPageGroup1
-            // 
-            this.chartsLayoutAnalysisRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem22);
-            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem23);
-            this.chartsLayoutAnalysisRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonGalleryDropDownItem24);
-            this.chartsLayoutAnalysisRibbonPageGroup1.Name = "chartsLayoutAnalysisRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem22
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem22.CommandName = "ChartLinesCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem22.DropDownControl = this.commandBarGalleryDropDown24;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem22.Id = 271;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem22.Name = "spreadsheetCommandBarButtonGalleryDropDownItem22";
-            // 
-            // commandBarGalleryDropDown24
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown24.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown24.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup44.CommandName = "ChartLinesCommandGroup";
-            spreadsheetCommandGalleryItem183.CommandName = "ChartLinesNone";
-            spreadsheetCommandGalleryItem183.Enabled = false;
-            spreadsheetCommandGalleryItem184.CommandName = "ChartShowDropLines";
-            spreadsheetCommandGalleryItem184.Enabled = false;
-            spreadsheetCommandGalleryItem185.CommandName = "ChartShowHighLowLines";
-            spreadsheetCommandGalleryItem185.Enabled = false;
-            spreadsheetCommandGalleryItem186.CommandName = "ChartShowDropLinesAndHighLowLines";
-            spreadsheetCommandGalleryItem186.Enabled = false;
-            spreadsheetCommandGalleryItem187.CommandName = "ChartShowSeriesLines";
-            spreadsheetCommandGalleryItem187.Enabled = false;
-            spreadsheetCommandGalleryItemGroup44.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem183,
-            spreadsheetCommandGalleryItem184,
-            spreadsheetCommandGalleryItem185,
-            spreadsheetCommandGalleryItem186,
-            spreadsheetCommandGalleryItem187});
-            this.commandBarGalleryDropDown24.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup44});
-            this.commandBarGalleryDropDown24.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown24.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown24.Gallery.RowCount = 5;
-            this.commandBarGalleryDropDown24.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown24.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown24.Name = "commandBarGalleryDropDown24";
-            this.commandBarGalleryDropDown24.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem23
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem23.CommandName = "ChartUpDownBarsCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem23.DropDownControl = this.commandBarGalleryDropDown25;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem23.Id = 272;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem23.Name = "spreadsheetCommandBarButtonGalleryDropDownItem23";
-            // 
-            // commandBarGalleryDropDown25
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown25.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown25.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup45.CommandName = "ChartUpDownBarsCommandGroup";
-            spreadsheetCommandGalleryItem188.CommandName = "ChartHideUpDownBars";
-            spreadsheetCommandGalleryItem188.Enabled = false;
-            spreadsheetCommandGalleryItem189.CommandName = "ChartShowUpDownBars";
-            spreadsheetCommandGalleryItem189.Enabled = false;
-            spreadsheetCommandGalleryItemGroup45.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem188,
-            spreadsheetCommandGalleryItem189});
-            this.commandBarGalleryDropDown25.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup45});
-            this.commandBarGalleryDropDown25.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown25.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown25.Gallery.RowCount = 2;
-            this.commandBarGalleryDropDown25.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown25.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown25.Name = "commandBarGalleryDropDown25";
-            this.commandBarGalleryDropDown25.Ribbon = this.ribbon;
-            // 
-            // spreadsheetCommandBarButtonGalleryDropDownItem24
-            // 
-            this.spreadsheetCommandBarButtonGalleryDropDownItem24.CommandName = "ChartErrorBarsCommandGroup";
-            this.spreadsheetCommandBarButtonGalleryDropDownItem24.DropDownControl = this.commandBarGalleryDropDown26;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem24.Id = 273;
-            this.spreadsheetCommandBarButtonGalleryDropDownItem24.Name = "spreadsheetCommandBarButtonGalleryDropDownItem24";
-            // 
-            // commandBarGalleryDropDown26
-            // 
-            // 
-            // 
-            // 
-            this.commandBarGalleryDropDown26.Gallery.AutoSize = DevExpress.XtraBars.Ribbon.GallerySizeMode.Vertical;
-            this.commandBarGalleryDropDown26.Gallery.ColumnCount = 1;
-            spreadsheetCommandGalleryItemGroup46.CommandName = "ChartErrorBarsCommandGroup";
-            spreadsheetCommandGalleryItem190.CommandName = "ChartErrorBarsNone";
-            spreadsheetCommandGalleryItem190.Enabled = false;
-            spreadsheetCommandGalleryItem191.CommandName = "ChartErrorBarsStandardError";
-            spreadsheetCommandGalleryItem191.Enabled = false;
-            spreadsheetCommandGalleryItem192.CommandName = "ChartErrorBarsPercentage";
-            spreadsheetCommandGalleryItem192.Enabled = false;
-            spreadsheetCommandGalleryItem193.CommandName = "ChartErrorBarsStandardDeviation";
-            spreadsheetCommandGalleryItem193.Enabled = false;
-            spreadsheetCommandGalleryItemGroup46.Items.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItem[] {
-            spreadsheetCommandGalleryItem190,
-            spreadsheetCommandGalleryItem191,
-            spreadsheetCommandGalleryItem192,
-            spreadsheetCommandGalleryItem193});
-            this.commandBarGalleryDropDown26.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] {
-            spreadsheetCommandGalleryItemGroup46});
-            this.commandBarGalleryDropDown26.Gallery.ItemImageLayout = DevExpress.Utils.Drawing.ImageLayoutMode.MiddleLeft;
-            this.commandBarGalleryDropDown26.Gallery.ItemImageLocation = DevExpress.Utils.Locations.Left;
-            this.commandBarGalleryDropDown26.Gallery.RowCount = 4;
-            this.commandBarGalleryDropDown26.Gallery.ShowGroupCaption = false;
-            this.commandBarGalleryDropDown26.Gallery.ShowItemText = true;
-            this.commandBarGalleryDropDown26.Name = "commandBarGalleryDropDown26";
-            this.commandBarGalleryDropDown26.Ribbon = this.ribbon;
-            // 
-            // chartsFormatArrangeRibbonPageGroup1
-            // 
-            this.chartsFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.chartsFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
-            this.chartsFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
-            this.chartsFormatArrangeRibbonPageGroup1.Name = "chartsFormatArrangeRibbonPageGroup1";
-            // 
-            // chartsFormatRibbonPage1
-            // 
-            this.chartsFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.chartsFormatArrangeRibbonPageGroup1});
-            this.chartsFormatRibbonPage1.Name = "chartsFormatRibbonPage1";
-            this.chartsFormatRibbonPage1.Visible = false;
-            // 
-            // tablePropertiesRibbonPageGroup1
-            // 
-            this.tablePropertiesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.tablePropertiesRibbonPageGroup1.ItemLinks.Add(this.renameTableItemCaption1);
-            this.tablePropertiesRibbonPageGroup1.ItemLinks.Add(this.renameTableItem1);
-            this.tablePropertiesRibbonPageGroup1.Name = "tablePropertiesRibbonPageGroup1";
-            // 
-            // tableToolsDesignRibbonPage1
-            // 
-            this.tableToolsDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.tablePropertiesRibbonPageGroup1,
-            this.tableToolsRibbonPageGroup1,
-            this.tableStyleOptionsRibbonPageGroup1,
-            this.tableStylesRibbonPageGroup1});
-            this.tableToolsDesignRibbonPage1.Name = "tableToolsDesignRibbonPage1";
-            this.tableToolsDesignRibbonPage1.Visible = false;
-            // 
-            // tableToolsRibbonPageCategory1
-            // 
-            this.tableToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
-            this.tableToolsRibbonPageCategory1.Name = "tableToolsRibbonPageCategory1";
-            this.tableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.tableToolsDesignRibbonPage1});
-            this.tableToolsRibbonPageCategory1.Visible = false;
-            // 
-            // renameTableItemCaption1
-            // 
-            this.renameTableItemCaption1.Id = 274;
-            this.renameTableItemCaption1.Name = "renameTableItemCaption1";
-            // 
-            // renameTableItem1
-            // 
-            this.renameTableItem1.Edit = this.repositoryItemTextEdit1;
-            this.renameTableItem1.Id = 275;
-            this.renameTableItem1.Name = "renameTableItem1";
-            // 
-            // repositoryItemTextEdit1
-            // 
-            this.repositoryItemTextEdit1.AutoHeight = false;
-            this.repositoryItemTextEdit1.Name = "repositoryItemTextEdit1";
-            // 
-            // tableToolsRibbonPageGroup1
-            // 
-            this.tableToolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.tableToolsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem27);
-            this.tableToolsRibbonPageGroup1.Name = "tableToolsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem27
-            // 
-            this.spreadsheetCommandBarCheckItem27.CommandName = "TableToolsConvertToRange";
-            this.spreadsheetCommandBarCheckItem27.Id = 276;
-            this.spreadsheetCommandBarCheckItem27.Name = "spreadsheetCommandBarCheckItem27";
-            this.spreadsheetCommandBarCheckItem27.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // tableStyleOptionsRibbonPageGroup1
-            // 
-            this.tableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem28);
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem29);
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem30);
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem31);
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem32);
-            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem33);
-            this.tableStyleOptionsRibbonPageGroup1.Name = "tableStyleOptionsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem28
-            // 
-            this.spreadsheetCommandBarCheckItem28.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem28.CommandName = "TableToolsToggleHeaderRow";
-            this.spreadsheetCommandBarCheckItem28.Id = 277;
-            this.spreadsheetCommandBarCheckItem28.Name = "spreadsheetCommandBarCheckItem28";
-            // 
-            // spreadsheetCommandBarCheckItem29
-            // 
-            this.spreadsheetCommandBarCheckItem29.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem29.CommandName = "TableToolsToggleTotalRow";
-            this.spreadsheetCommandBarCheckItem29.Id = 278;
-            this.spreadsheetCommandBarCheckItem29.Name = "spreadsheetCommandBarCheckItem29";
-            // 
-            // spreadsheetCommandBarCheckItem30
-            // 
-            this.spreadsheetCommandBarCheckItem30.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem30.CommandName = "TableToolsToggleBandedColumns";
-            this.spreadsheetCommandBarCheckItem30.Id = 279;
-            this.spreadsheetCommandBarCheckItem30.Name = "spreadsheetCommandBarCheckItem30";
-            // 
-            // spreadsheetCommandBarCheckItem31
-            // 
-            this.spreadsheetCommandBarCheckItem31.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem31.CommandName = "TableToolsToggleFirstColumn";
-            this.spreadsheetCommandBarCheckItem31.Id = 280;
-            this.spreadsheetCommandBarCheckItem31.Name = "spreadsheetCommandBarCheckItem31";
-            // 
-            // spreadsheetCommandBarCheckItem32
-            // 
-            this.spreadsheetCommandBarCheckItem32.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem32.CommandName = "TableToolsToggleLastColumn";
-            this.spreadsheetCommandBarCheckItem32.Id = 281;
-            this.spreadsheetCommandBarCheckItem32.Name = "spreadsheetCommandBarCheckItem32";
-            // 
-            // spreadsheetCommandBarCheckItem33
-            // 
-            this.spreadsheetCommandBarCheckItem33.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem33.CommandName = "TableToolsToggleBandedRows";
-            this.spreadsheetCommandBarCheckItem33.Id = 282;
-            this.spreadsheetCommandBarCheckItem33.Name = "spreadsheetCommandBarCheckItem33";
-            // 
-            // tableStylesRibbonPageGroup1
-            // 
-            this.tableStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.tableStylesRibbonPageGroup1.ItemLinks.Add(this.galleryTableStylesItem1);
-            this.tableStylesRibbonPageGroup1.Name = "tableStylesRibbonPageGroup1";
-            // 
-            // galleryTableStylesItem1
-            // 
-            // 
-            // 
-            // 
-            this.galleryTableStylesItem1.Gallery.ColumnCount = 7;
-            this.galleryTableStylesItem1.Gallery.DrawImageBackground = false;
-            this.galleryTableStylesItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
-            this.galleryTableStylesItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            this.galleryTableStylesItem1.Gallery.ItemSize = new System.Drawing.Size(73, 58);
-            this.galleryTableStylesItem1.Gallery.RowCount = 10;
-            this.galleryTableStylesItem1.Id = 283;
-            this.galleryTableStylesItem1.Name = "galleryTableStylesItem1";
-            // 
-            // pictureFormatArrangeRibbonPageGroup1
-            // 
-            this.pictureFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pictureFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
-            this.pictureFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
-            this.pictureFormatArrangeRibbonPageGroup1.Name = "pictureFormatArrangeRibbonPageGroup1";
-            // 
-            // pictureFormatRibbonPage1
-            // 
-            this.pictureFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.pictureFormatArrangeRibbonPageGroup1});
-            this.pictureFormatRibbonPage1.Name = "pictureFormatRibbonPage1";
-            this.pictureFormatRibbonPage1.Visible = false;
-            // 
-            // pictureToolsRibbonPageCategory1
-            // 
-            this.pictureToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
-            this.pictureToolsRibbonPageCategory1.Name = "pictureToolsRibbonPageCategory1";
-            this.pictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.pictureFormatRibbonPage1});
-            this.pictureToolsRibbonPageCategory1.Visible = false;
-            // 
-            // drawingFormatArrangeRibbonPageGroup1
-            // 
-            this.drawingFormatArrangeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.drawingFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem20);
-            this.drawingFormatArrangeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem21);
-            this.drawingFormatArrangeRibbonPageGroup1.Name = "drawingFormatArrangeRibbonPageGroup1";
-            // 
-            // drawingFormatRibbonPage1
-            // 
-            this.drawingFormatRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.drawingFormatArrangeRibbonPageGroup1});
-            this.drawingFormatRibbonPage1.Name = "drawingFormatRibbonPage1";
-            this.drawingFormatRibbonPage1.Visible = false;
-            // 
-            // drawingToolsRibbonPageCategory1
-            // 
-            this.drawingToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
-            this.drawingToolsRibbonPageCategory1.Name = "drawingToolsRibbonPageCategory1";
-            this.drawingToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.drawingFormatRibbonPage1});
-            this.drawingToolsRibbonPageCategory1.Visible = false;
-            // 
-            // pivotTableAnalyzePivotTableRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzePivotTableRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzePivotTableRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem159);
-            this.pivotTableAnalyzePivotTableRibbonPageGroup1.Name = "pivotTableAnalyzePivotTableRibbonPageGroup1";
-            // 
-            // pivotTableAnalyzeRibbonPage1
-            // 
-            this.pivotTableAnalyzeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.pivotTableAnalyzePivotTableRibbonPageGroup1,
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1,
-            this.pivotTableAnalyzeGroupRibbonPageGroup1,
-            this.pivotTableAnalyzeDataRibbonPageGroup1,
-            this.pivotTableAnalyzeActionsRibbonPageGroup1,
-            this.pivotTableAnalyzeCalculationsRibbonPageGroup1,
-            this.pivotTableAnalyzeShowRibbonPageGroup1});
-            this.pivotTableAnalyzeRibbonPage1.Name = "pivotTableAnalyzeRibbonPage1";
-            this.pivotTableAnalyzeRibbonPage1.Visible = false;
-            // 
-            // pivotTableToolsRibbonPageCategory1
-            // 
-            this.pivotTableToolsRibbonPageCategory1.Control = this.spreadsheetControl1;
-            this.pivotTableToolsRibbonPageCategory1.Name = "pivotTableToolsRibbonPageCategory1";
-            this.pivotTableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.pivotTableAnalyzeRibbonPage1,
-            this.pivotTableDesignRibbonPage1});
-            this.pivotTableToolsRibbonPageCategory1.Visible = false;
-            // 
-            // spreadsheetCommandBarButtonItem159
-            // 
-            this.spreadsheetCommandBarButtonItem159.CommandName = "OptionsPivotTable";
-            this.spreadsheetCommandBarButtonItem159.Id = 284;
-            this.spreadsheetCommandBarButtonItem159.Name = "spreadsheetCommandBarButtonItem159";
-            // 
-            // pivotTableAnalyzeActiveFieldRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem160);
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem161);
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem162);
-            this.pivotTableAnalyzeActiveFieldRibbonPageGroup1.Name = "pivotTableAnalyzeActiveFieldRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem160
-            // 
-            this.spreadsheetCommandBarButtonItem160.CommandName = "SelectFieldTypePivotTable";
-            this.spreadsheetCommandBarButtonItem160.Id = 285;
-            this.spreadsheetCommandBarButtonItem160.Name = "spreadsheetCommandBarButtonItem160";
-            // 
-            // spreadsheetCommandBarButtonItem161
-            // 
-            this.spreadsheetCommandBarButtonItem161.CommandName = "PivotTableExpandField";
-            this.spreadsheetCommandBarButtonItem161.Id = 286;
-            this.spreadsheetCommandBarButtonItem161.Name = "spreadsheetCommandBarButtonItem161";
-            this.spreadsheetCommandBarButtonItem161.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem162
-            // 
-            this.spreadsheetCommandBarButtonItem162.CommandName = "PivotTableCollapseField";
-            this.spreadsheetCommandBarButtonItem162.Id = 287;
-            this.spreadsheetCommandBarButtonItem162.Name = "spreadsheetCommandBarButtonItem162";
-            this.spreadsheetCommandBarButtonItem162.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // pivotTableAnalyzeGroupRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeGroupRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem163);
-            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem164);
-            this.pivotTableAnalyzeGroupRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem165);
-            this.pivotTableAnalyzeGroupRibbonPageGroup1.Name = "pivotTableAnalyzeGroupRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem163
-            // 
-            this.spreadsheetCommandBarButtonItem163.CommandName = "PivotTableGroupSelection";
-            this.spreadsheetCommandBarButtonItem163.Id = 288;
-            this.spreadsheetCommandBarButtonItem163.Name = "spreadsheetCommandBarButtonItem163";
-            this.spreadsheetCommandBarButtonItem163.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem164
-            // 
-            this.spreadsheetCommandBarButtonItem164.CommandName = "PivotTableUngroup";
-            this.spreadsheetCommandBarButtonItem164.Id = 289;
-            this.spreadsheetCommandBarButtonItem164.Name = "spreadsheetCommandBarButtonItem164";
-            this.spreadsheetCommandBarButtonItem164.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem165
-            // 
-            this.spreadsheetCommandBarButtonItem165.CommandName = "PivotTableGroupField";
-            this.spreadsheetCommandBarButtonItem165.Id = 290;
-            this.spreadsheetCommandBarButtonItem165.Name = "spreadsheetCommandBarButtonItem165";
-            this.spreadsheetCommandBarButtonItem165.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // pivotTableAnalyzeDataRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem31);
-            this.pivotTableAnalyzeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem168);
-            this.pivotTableAnalyzeDataRibbonPageGroup1.Name = "pivotTableAnalyzeDataRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem166
-            // 
-            this.spreadsheetCommandBarButtonItem166.CommandName = "RefreshPivotTable";
-            this.spreadsheetCommandBarButtonItem166.Id = 292;
-            this.spreadsheetCommandBarButtonItem166.Name = "spreadsheetCommandBarButtonItem166";
-            // 
-            // spreadsheetCommandBarButtonItem167
-            // 
-            this.spreadsheetCommandBarButtonItem167.CommandName = "RefreshAllPivotTable";
-            this.spreadsheetCommandBarButtonItem167.Id = 293;
-            this.spreadsheetCommandBarButtonItem167.Name = "spreadsheetCommandBarButtonItem167";
-            // 
-            // spreadsheetCommandBarSubItem31
-            // 
-            this.spreadsheetCommandBarSubItem31.CommandName = "PivotTableDataRefreshGroup";
-            this.spreadsheetCommandBarSubItem31.Id = 291;
-            this.spreadsheetCommandBarSubItem31.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem166),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem167)});
-            this.spreadsheetCommandBarSubItem31.Name = "spreadsheetCommandBarSubItem31";
-            // 
-            // spreadsheetCommandBarButtonItem168
-            // 
-            this.spreadsheetCommandBarButtonItem168.CommandName = "ChangeDataSourcePivotTable";
-            this.spreadsheetCommandBarButtonItem168.Id = 294;
-            this.spreadsheetCommandBarButtonItem168.Name = "spreadsheetCommandBarButtonItem168";
-            // 
-            // pivotTableAnalyzeActionsRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeActionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem32);
-            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem33);
-            this.pivotTableAnalyzeActionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem174);
-            this.pivotTableAnalyzeActionsRibbonPageGroup1.Name = "pivotTableAnalyzeActionsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem169
-            // 
-            this.spreadsheetCommandBarButtonItem169.CommandName = "ClearAllPivotTable";
-            this.spreadsheetCommandBarButtonItem169.Id = 296;
-            this.spreadsheetCommandBarButtonItem169.Name = "spreadsheetCommandBarButtonItem169";
-            // 
-            // spreadsheetCommandBarButtonItem170
-            // 
-            this.spreadsheetCommandBarButtonItem170.CommandName = "ClearFiltersPivotTable";
-            this.spreadsheetCommandBarButtonItem170.Id = 297;
-            this.spreadsheetCommandBarButtonItem170.Name = "spreadsheetCommandBarButtonItem170";
-            // 
-            // spreadsheetCommandBarSubItem32
-            // 
-            this.spreadsheetCommandBarSubItem32.CommandName = "PivotTableActionsClearGroup";
-            this.spreadsheetCommandBarSubItem32.Id = 295;
-            this.spreadsheetCommandBarSubItem32.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem169),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem170)});
-            this.spreadsheetCommandBarSubItem32.Name = "spreadsheetCommandBarSubItem32";
-            // 
-            // spreadsheetCommandBarButtonItem171
-            // 
-            this.spreadsheetCommandBarButtonItem171.CommandName = "SelectValuesPivotTable";
-            this.spreadsheetCommandBarButtonItem171.Id = 299;
-            this.spreadsheetCommandBarButtonItem171.Name = "spreadsheetCommandBarButtonItem171";
-            // 
-            // spreadsheetCommandBarButtonItem172
-            // 
-            this.spreadsheetCommandBarButtonItem172.CommandName = "SelectLabelsPivotTable";
-            this.spreadsheetCommandBarButtonItem172.Id = 300;
-            this.spreadsheetCommandBarButtonItem172.Name = "spreadsheetCommandBarButtonItem172";
-            // 
-            // spreadsheetCommandBarButtonItem173
-            // 
-            this.spreadsheetCommandBarButtonItem173.CommandName = "SelectEntirePivotTable";
-            this.spreadsheetCommandBarButtonItem173.Id = 301;
-            this.spreadsheetCommandBarButtonItem173.Name = "spreadsheetCommandBarButtonItem173";
-            // 
-            // spreadsheetCommandBarSubItem33
-            // 
-            this.spreadsheetCommandBarSubItem33.CommandName = "PivotTableActionsSelectGroup";
-            this.spreadsheetCommandBarSubItem33.Id = 298;
-            this.spreadsheetCommandBarSubItem33.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem171),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem172),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem173)});
-            this.spreadsheetCommandBarSubItem33.Name = "spreadsheetCommandBarSubItem33";
-            // 
-            // spreadsheetCommandBarButtonItem174
-            // 
-            this.spreadsheetCommandBarButtonItem174.CommandName = "MovePivotTable";
-            this.spreadsheetCommandBarButtonItem174.Id = 302;
-            this.spreadsheetCommandBarButtonItem174.Name = "spreadsheetCommandBarButtonItem174";
-            // 
-            // pivotTableAnalyzeCalculationsRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem34);
-            this.pivotTableAnalyzeCalculationsRibbonPageGroup1.Name = "pivotTableAnalyzeCalculationsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem175
-            // 
-            this.spreadsheetCommandBarButtonItem175.CommandName = "PivotTableCalculatedField";
-            this.spreadsheetCommandBarButtonItem175.Id = 304;
-            this.spreadsheetCommandBarButtonItem175.Name = "spreadsheetCommandBarButtonItem175";
-            // 
-            // spreadsheetCommandBarButtonItem176
-            // 
-            this.spreadsheetCommandBarButtonItem176.CommandName = "PivotTableCalculatedItem";
-            this.spreadsheetCommandBarButtonItem176.Id = 305;
-            this.spreadsheetCommandBarButtonItem176.Name = "spreadsheetCommandBarButtonItem176";
-            // 
-            // spreadsheetCommandBarButtonItem177
-            // 
-            this.spreadsheetCommandBarButtonItem177.CommandName = "PivotTableCalculatedItemSolveOrder";
-            this.spreadsheetCommandBarButtonItem177.Id = 306;
-            this.spreadsheetCommandBarButtonItem177.Name = "spreadsheetCommandBarButtonItem177";
-            // 
-            // spreadsheetCommandBarButtonItem178
-            // 
-            this.spreadsheetCommandBarButtonItem178.CommandName = "PivotTableListFormulas";
-            this.spreadsheetCommandBarButtonItem178.Id = 307;
-            this.spreadsheetCommandBarButtonItem178.Name = "spreadsheetCommandBarButtonItem178";
-            // 
-            // spreadsheetCommandBarSubItem34
-            // 
-            this.spreadsheetCommandBarSubItem34.CommandName = "PivotTableCalculationFieldsItemsSetsGroup";
-            this.spreadsheetCommandBarSubItem34.Id = 303;
-            this.spreadsheetCommandBarSubItem34.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem175),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem176),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem177),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem178)});
-            this.spreadsheetCommandBarSubItem34.Name = "spreadsheetCommandBarSubItem34";
-            // 
-            // pivotTableAnalyzeShowRibbonPageGroup1
-            // 
-            this.pivotTableAnalyzeShowRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem34);
-            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem35);
-            this.pivotTableAnalyzeShowRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem36);
-            this.pivotTableAnalyzeShowRibbonPageGroup1.Name = "pivotTableAnalyzeShowRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem34
-            // 
-            this.spreadsheetCommandBarCheckItem34.CommandName = "FieldListPanelPivotTable";
-            this.spreadsheetCommandBarCheckItem34.Id = 308;
-            this.spreadsheetCommandBarCheckItem34.Name = "spreadsheetCommandBarCheckItem34";
-            // 
-            // spreadsheetCommandBarCheckItem35
-            // 
-            this.spreadsheetCommandBarCheckItem35.CommandName = "ShowPivotTableExpandCollapseButtons";
-            this.spreadsheetCommandBarCheckItem35.Id = 309;
-            this.spreadsheetCommandBarCheckItem35.Name = "spreadsheetCommandBarCheckItem35";
-            // 
-            // spreadsheetCommandBarCheckItem36
-            // 
-            this.spreadsheetCommandBarCheckItem36.CommandName = "ShowPivotTableFieldHeaders";
-            this.spreadsheetCommandBarCheckItem36.Id = 310;
-            this.spreadsheetCommandBarCheckItem36.Name = "spreadsheetCommandBarCheckItem36";
-            // 
-            // pivotTableDesignLayoutRibbonPageGroup1
-            // 
-            this.pivotTableDesignLayoutRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem35);
-            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem36);
-            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem37);
-            this.pivotTableDesignLayoutRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem38);
-            this.pivotTableDesignLayoutRibbonPageGroup1.Name = "pivotTableDesignLayoutRibbonPageGroup1";
-            // 
-            // pivotTableDesignRibbonPage1
-            // 
-            this.pivotTableDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.pivotTableDesignLayoutRibbonPageGroup1,
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1,
-            this.pivotTableDesignPivotTableStylesRibbonPageGroup1});
-            this.pivotTableDesignRibbonPage1.Name = "pivotTableDesignRibbonPage1";
-            this.pivotTableDesignRibbonPage1.Visible = false;
-            // 
-            // spreadsheetCommandBarButtonItem179
-            // 
-            this.spreadsheetCommandBarButtonItem179.CommandName = "PivotTableDoNotShowSubtotals";
-            this.spreadsheetCommandBarButtonItem179.Id = 312;
-            this.spreadsheetCommandBarButtonItem179.Name = "spreadsheetCommandBarButtonItem179";
-            this.spreadsheetCommandBarButtonItem179.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem180
-            // 
-            this.spreadsheetCommandBarButtonItem180.CommandName = "PivotTableShowAllSubtotalsAtBottom";
-            this.spreadsheetCommandBarButtonItem180.Id = 313;
-            this.spreadsheetCommandBarButtonItem180.Name = "spreadsheetCommandBarButtonItem180";
-            this.spreadsheetCommandBarButtonItem180.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem181
-            // 
-            this.spreadsheetCommandBarButtonItem181.CommandName = "PivotTableShowAllSubtotalsAtTop";
-            this.spreadsheetCommandBarButtonItem181.Id = 314;
-            this.spreadsheetCommandBarButtonItem181.Name = "spreadsheetCommandBarButtonItem181";
-            this.spreadsheetCommandBarButtonItem181.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem35
-            // 
-            this.spreadsheetCommandBarSubItem35.CommandName = "PivotTableLayoutSubtotalsGroup";
-            this.spreadsheetCommandBarSubItem35.Id = 311;
-            this.spreadsheetCommandBarSubItem35.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem179),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem180),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem181)});
-            this.spreadsheetCommandBarSubItem35.Name = "spreadsheetCommandBarSubItem35";
-            // 
-            // spreadsheetCommandBarButtonItem182
-            // 
-            this.spreadsheetCommandBarButtonItem182.CommandName = "PivotTableGrandTotalsOffRowsColumns";
-            this.spreadsheetCommandBarButtonItem182.Id = 316;
-            this.spreadsheetCommandBarButtonItem182.Name = "spreadsheetCommandBarButtonItem182";
-            this.spreadsheetCommandBarButtonItem182.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem183
-            // 
-            this.spreadsheetCommandBarButtonItem183.CommandName = "PivotTableGrandTotalsOnRowsColumns";
-            this.spreadsheetCommandBarButtonItem183.Id = 317;
-            this.spreadsheetCommandBarButtonItem183.Name = "spreadsheetCommandBarButtonItem183";
-            this.spreadsheetCommandBarButtonItem183.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem184
-            // 
-            this.spreadsheetCommandBarButtonItem184.CommandName = "PivotTableGrandTotalsOnRowsOnly";
-            this.spreadsheetCommandBarButtonItem184.Id = 318;
-            this.spreadsheetCommandBarButtonItem184.Name = "spreadsheetCommandBarButtonItem184";
-            this.spreadsheetCommandBarButtonItem184.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem185
-            // 
-            this.spreadsheetCommandBarButtonItem185.CommandName = "PivotTableGrandTotalsOnColumnsOnly";
-            this.spreadsheetCommandBarButtonItem185.Id = 319;
-            this.spreadsheetCommandBarButtonItem185.Name = "spreadsheetCommandBarButtonItem185";
-            this.spreadsheetCommandBarButtonItem185.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem36
-            // 
-            this.spreadsheetCommandBarSubItem36.CommandName = "PivotTableLayoutGrandTotalsGroup";
-            this.spreadsheetCommandBarSubItem36.Id = 315;
-            this.spreadsheetCommandBarSubItem36.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem182),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem183),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem184),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem185)});
-            this.spreadsheetCommandBarSubItem36.Name = "spreadsheetCommandBarSubItem36";
-            // 
-            // spreadsheetCommandBarButtonItem186
-            // 
-            this.spreadsheetCommandBarButtonItem186.CommandName = "PivotTableShowCompactForm";
-            this.spreadsheetCommandBarButtonItem186.Id = 321;
-            this.spreadsheetCommandBarButtonItem186.Name = "spreadsheetCommandBarButtonItem186";
-            this.spreadsheetCommandBarButtonItem186.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem187
-            // 
-            this.spreadsheetCommandBarButtonItem187.CommandName = "PivotTableShowOutlineForm";
-            this.spreadsheetCommandBarButtonItem187.Id = 322;
-            this.spreadsheetCommandBarButtonItem187.Name = "spreadsheetCommandBarButtonItem187";
-            this.spreadsheetCommandBarButtonItem187.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem188
-            // 
-            this.spreadsheetCommandBarButtonItem188.CommandName = "PivotTableShowTabularForm";
-            this.spreadsheetCommandBarButtonItem188.Id = 323;
-            this.spreadsheetCommandBarButtonItem188.Name = "spreadsheetCommandBarButtonItem188";
-            this.spreadsheetCommandBarButtonItem188.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem189
-            // 
-            this.spreadsheetCommandBarButtonItem189.CommandName = "PivotTableRepeatAllItemLabels";
-            this.spreadsheetCommandBarButtonItem189.Id = 324;
-            this.spreadsheetCommandBarButtonItem189.Name = "spreadsheetCommandBarButtonItem189";
-            this.spreadsheetCommandBarButtonItem189.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem190
-            // 
-            this.spreadsheetCommandBarButtonItem190.CommandName = "PivotTableDoNotRepeatItemLabels";
-            this.spreadsheetCommandBarButtonItem190.Id = 325;
-            this.spreadsheetCommandBarButtonItem190.Name = "spreadsheetCommandBarButtonItem190";
-            this.spreadsheetCommandBarButtonItem190.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem37
-            // 
-            this.spreadsheetCommandBarSubItem37.CommandName = "PivotTableLayoutReportLayoutGroup";
-            this.spreadsheetCommandBarSubItem37.Id = 320;
-            this.spreadsheetCommandBarSubItem37.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem186),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem187),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem188),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem189),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem190)});
-            this.spreadsheetCommandBarSubItem37.Name = "spreadsheetCommandBarSubItem37";
-            // 
-            // spreadsheetCommandBarButtonItem191
-            // 
-            this.spreadsheetCommandBarButtonItem191.CommandName = "PivotTableInsertBlankLineEachItem";
-            this.spreadsheetCommandBarButtonItem191.Id = 327;
-            this.spreadsheetCommandBarButtonItem191.Name = "spreadsheetCommandBarButtonItem191";
-            this.spreadsheetCommandBarButtonItem191.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem192
-            // 
-            this.spreadsheetCommandBarButtonItem192.CommandName = "PivotTableRemoveBlankLineEachItem";
-            this.spreadsheetCommandBarButtonItem192.Id = 328;
-            this.spreadsheetCommandBarButtonItem192.Name = "spreadsheetCommandBarButtonItem192";
-            this.spreadsheetCommandBarButtonItem192.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarSubItem38
-            // 
-            this.spreadsheetCommandBarSubItem38.CommandName = "PivotTableLayoutBlankRowsGroup";
-            this.spreadsheetCommandBarSubItem38.Id = 326;
-            this.spreadsheetCommandBarSubItem38.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem191),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem192)});
-            this.spreadsheetCommandBarSubItem38.Name = "spreadsheetCommandBarSubItem38";
-            // 
-            // pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1
-            // 
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem37);
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem38);
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem39);
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem40);
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.ItemsLayout = DevExpress.XtraBars.Ribbon.RibbonPageGroupItemsLayout.TwoRows;
-            this.pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1.Name = "pivotTableDesignPivotTableStyleOptionsRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem37
-            // 
-            this.spreadsheetCommandBarCheckItem37.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem37.CommandName = "PivotTableToggleRowHeaders";
-            this.spreadsheetCommandBarCheckItem37.Id = 329;
-            this.spreadsheetCommandBarCheckItem37.Name = "spreadsheetCommandBarCheckItem37";
-            // 
-            // spreadsheetCommandBarCheckItem38
-            // 
-            this.spreadsheetCommandBarCheckItem38.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem38.CommandName = "PivotTableToggleColumnHeaders";
-            this.spreadsheetCommandBarCheckItem38.Id = 330;
-            this.spreadsheetCommandBarCheckItem38.Name = "spreadsheetCommandBarCheckItem38";
-            // 
-            // spreadsheetCommandBarCheckItem39
-            // 
-            this.spreadsheetCommandBarCheckItem39.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem39.CommandName = "PivotTableToggleBandedRows";
-            this.spreadsheetCommandBarCheckItem39.Id = 331;
-            this.spreadsheetCommandBarCheckItem39.Name = "spreadsheetCommandBarCheckItem39";
-            // 
-            // spreadsheetCommandBarCheckItem40
-            // 
-            this.spreadsheetCommandBarCheckItem40.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            this.spreadsheetCommandBarCheckItem40.CommandName = "PivotTableToggleBandedColumns";
-            this.spreadsheetCommandBarCheckItem40.Id = 332;
-            this.spreadsheetCommandBarCheckItem40.Name = "spreadsheetCommandBarCheckItem40";
-            // 
-            // pivotTableDesignPivotTableStylesRibbonPageGroup1
-            // 
-            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.ItemLinks.Add(this.galleryPivotStylesItem1);
-            this.pivotTableDesignPivotTableStylesRibbonPageGroup1.Name = "pivotTableDesignPivotTableStylesRibbonPageGroup1";
-            // 
-            // galleryPivotStylesItem1
-            // 
-            // 
-            // 
-            // 
-            this.galleryPivotStylesItem1.Gallery.ColumnCount = 7;
-            this.galleryPivotStylesItem1.Gallery.DrawImageBackground = false;
-            this.galleryPivotStylesItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
-            this.galleryPivotStylesItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            this.galleryPivotStylesItem1.Gallery.ItemSize = new System.Drawing.Size(73, 61);
-            this.galleryPivotStylesItem1.Gallery.RowCount = 10;
-            this.galleryPivotStylesItem1.Id = 333;
-            this.galleryPivotStylesItem1.Name = "galleryPivotStylesItem1";
-            // 
-            // mailMergeDataRibbonPageGroup1
-            // 
-            this.mailMergeDataRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem193);
-            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem39);
-            this.mailMergeDataRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem40);
-            this.mailMergeDataRibbonPageGroup1.Name = "mailMergeDataRibbonPageGroup1";
-            // 
-            // mailMergeRibbonPage1
-            // 
-            this.mailMergeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.mailMergeDataRibbonPageGroup1,
-            this.mailMergeModeRibbonPageGroup1,
-            this.mailMergeExtendedRibbonPageGroup1,
-            this.mailMergeGroupingRibbonPageGroup1,
-            this.mailMergeFilteringRibbonPageGroup1,
-            this.mailMergeBindingRibbonPageGroup1});
-            this.mailMergeRibbonPage1.Name = "mailMergeRibbonPage1";
-            // 
-            // spreadsheetCommandBarButtonItem193
-            // 
-            this.spreadsheetCommandBarButtonItem193.CommandName = "MailMergeAddDataSource";
-            this.spreadsheetCommandBarButtonItem193.Id = 334;
-            this.spreadsheetCommandBarButtonItem193.Name = "spreadsheetCommandBarButtonItem193";
-            this.spreadsheetCommandBarButtonItem193.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem194
-            // 
-            this.spreadsheetCommandBarButtonItem194.CommandName = "MailMergeManageQueriesCommand";
-            this.spreadsheetCommandBarButtonItem194.Id = 336;
-            this.spreadsheetCommandBarButtonItem194.Name = "spreadsheetCommandBarButtonItem194";
-            // 
-            // spreadsheetCommandBarButtonItem195
-            // 
-            this.spreadsheetCommandBarButtonItem195.CommandName = "MailMergeManageRelationsCommand";
-            this.spreadsheetCommandBarButtonItem195.Id = 337;
-            this.spreadsheetCommandBarButtonItem195.Name = "spreadsheetCommandBarButtonItem195";
-            // 
-            // spreadsheetCommandBarSubItem39
-            // 
-            this.spreadsheetCommandBarSubItem39.CommandName = "MailMergeManageRelationsCommandGroup";
-            this.spreadsheetCommandBarSubItem39.Id = 335;
-            this.spreadsheetCommandBarSubItem39.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem194),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem195)});
-            this.spreadsheetCommandBarSubItem39.Name = "spreadsheetCommandBarSubItem39";
-            this.spreadsheetCommandBarSubItem39.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem196
-            // 
-            this.spreadsheetCommandBarButtonItem196.CommandName = "MailMergeSelectDataSource";
-            this.spreadsheetCommandBarButtonItem196.Id = 339;
-            this.spreadsheetCommandBarButtonItem196.Name = "spreadsheetCommandBarButtonItem196";
-            // 
-            // spreadsheetCommandBarButtonItem197
-            // 
-            this.spreadsheetCommandBarButtonItem197.CommandName = "MailMergeSelectDataMember";
-            this.spreadsheetCommandBarButtonItem197.Id = 340;
-            this.spreadsheetCommandBarButtonItem197.Name = "spreadsheetCommandBarButtonItem197";
-            // 
-            // spreadsheetCommandBarButtonItem198
-            // 
-            this.spreadsheetCommandBarButtonItem198.CommandName = "MailMergeManageDataSourcesCommand";
-            this.spreadsheetCommandBarButtonItem198.Id = 341;
-            this.spreadsheetCommandBarButtonItem198.Name = "spreadsheetCommandBarButtonItem198";
-            // 
-            // spreadsheetCommandBarSubItem40
-            // 
-            this.spreadsheetCommandBarSubItem40.CommandName = "MailMergeManageDataSourceCommandGroup";
-            this.spreadsheetCommandBarSubItem40.Id = 338;
-            this.spreadsheetCommandBarSubItem40.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem196),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem197),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem198)});
-            this.spreadsheetCommandBarSubItem40.Name = "spreadsheetCommandBarSubItem40";
-            this.spreadsheetCommandBarSubItem40.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // mailMergeModeRibbonPageGroup1
-            // 
-            this.mailMergeModeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem41);
-            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem42);
-            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem43);
-            this.mailMergeModeRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem41);
-            this.mailMergeModeRibbonPageGroup1.Name = "mailMergeModeRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem41
-            // 
-            this.spreadsheetCommandBarCheckItem41.CommandName = "MailMergeDocumentsMode";
-            this.spreadsheetCommandBarCheckItem41.Id = 342;
-            this.spreadsheetCommandBarCheckItem41.Name = "spreadsheetCommandBarCheckItem41";
-            this.spreadsheetCommandBarCheckItem41.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarCheckItem42
-            // 
-            this.spreadsheetCommandBarCheckItem42.CommandName = "MailMergeOneDocumentMode";
-            this.spreadsheetCommandBarCheckItem42.Id = 343;
-            this.spreadsheetCommandBarCheckItem42.Name = "spreadsheetCommandBarCheckItem42";
-            this.spreadsheetCommandBarCheckItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarCheckItem43
-            // 
-            this.spreadsheetCommandBarCheckItem43.CommandName = "MailMergeOneSheetMode";
-            this.spreadsheetCommandBarCheckItem43.Id = 344;
-            this.spreadsheetCommandBarCheckItem43.Name = "spreadsheetCommandBarCheckItem43";
-            this.spreadsheetCommandBarCheckItem43.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarCheckItem44
-            // 
-            this.spreadsheetCommandBarCheckItem44.CommandName = "MailMergeHorizontalMode";
-            this.spreadsheetCommandBarCheckItem44.Id = 346;
-            this.spreadsheetCommandBarCheckItem44.Name = "spreadsheetCommandBarCheckItem44";
-            // 
-            // spreadsheetCommandBarCheckItem45
-            // 
-            this.spreadsheetCommandBarCheckItem45.CommandName = "MailMergeVerticalMode";
-            this.spreadsheetCommandBarCheckItem45.Id = 347;
-            this.spreadsheetCommandBarCheckItem45.Name = "spreadsheetCommandBarCheckItem45";
-            // 
-            // spreadsheetCommandBarSubItem41
-            // 
-            this.spreadsheetCommandBarSubItem41.CommandName = "MailMergeOrientationCommandGroup";
-            this.spreadsheetCommandBarSubItem41.Id = 345;
-            this.spreadsheetCommandBarSubItem41.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem44),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarCheckItem45)});
-            this.spreadsheetCommandBarSubItem41.Name = "spreadsheetCommandBarSubItem41";
-            this.spreadsheetCommandBarSubItem41.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // mailMergeExtendedRibbonPageGroup1
-            // 
-            this.mailMergeExtendedRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem199);
-            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem200);
-            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem201);
-            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarSubItem42);
-            this.mailMergeExtendedRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem204);
-            this.mailMergeExtendedRibbonPageGroup1.Name = "mailMergeExtendedRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem199
-            // 
-            this.spreadsheetCommandBarButtonItem199.CommandName = "MailMergeSetHeaderRange";
-            this.spreadsheetCommandBarButtonItem199.Id = 348;
-            this.spreadsheetCommandBarButtonItem199.Name = "spreadsheetCommandBarButtonItem199";
-            this.spreadsheetCommandBarButtonItem199.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem200
-            // 
-            this.spreadsheetCommandBarButtonItem200.CommandName = "MailMergeSetFooterRange";
-            this.spreadsheetCommandBarButtonItem200.Id = 349;
-            this.spreadsheetCommandBarButtonItem200.Name = "spreadsheetCommandBarButtonItem200";
-            this.spreadsheetCommandBarButtonItem200.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem201
-            // 
-            this.spreadsheetCommandBarButtonItem201.CommandName = "MailMergeSetDetailRange";
-            this.spreadsheetCommandBarButtonItem201.Id = 350;
-            this.spreadsheetCommandBarButtonItem201.Name = "spreadsheetCommandBarButtonItem201";
-            this.spreadsheetCommandBarButtonItem201.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem202
-            // 
-            this.spreadsheetCommandBarButtonItem202.CommandName = "MailMergeSetDetailLevel";
-            this.spreadsheetCommandBarButtonItem202.Id = 352;
-            this.spreadsheetCommandBarButtonItem202.Name = "spreadsheetCommandBarButtonItem202";
-            // 
-            // spreadsheetCommandBarButtonItem203
-            // 
-            this.spreadsheetCommandBarButtonItem203.CommandName = "MailMergeSetDetailDataMember";
-            this.spreadsheetCommandBarButtonItem203.Id = 353;
-            this.spreadsheetCommandBarButtonItem203.Name = "spreadsheetCommandBarButtonItem203";
-            // 
-            // spreadsheetCommandBarSubItem42
-            // 
-            this.spreadsheetCommandBarSubItem42.CommandName = "EditingMailMergeMasterDetailCommandGroup";
-            this.spreadsheetCommandBarSubItem42.Id = 351;
-            this.spreadsheetCommandBarSubItem42.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem202),
-            new DevExpress.XtraBars.LinkPersistInfo(this.spreadsheetCommandBarButtonItem203)});
-            this.spreadsheetCommandBarSubItem42.Name = "spreadsheetCommandBarSubItem42";
-            this.spreadsheetCommandBarSubItem42.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem204
-            // 
-            this.spreadsheetCommandBarButtonItem204.CommandName = "MailMergeResetRange";
-            this.spreadsheetCommandBarButtonItem204.Id = 354;
-            this.spreadsheetCommandBarButtonItem204.Name = "spreadsheetCommandBarButtonItem204";
-            this.spreadsheetCommandBarButtonItem204.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // mailMergeGroupingRibbonPageGroup1
-            // 
-            this.mailMergeGroupingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem205);
-            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem206);
-            this.mailMergeGroupingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem207);
-            this.mailMergeGroupingRibbonPageGroup1.Name = "mailMergeGroupingRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem205
-            // 
-            this.spreadsheetCommandBarButtonItem205.CommandName = "MailMergeSetGroup";
-            this.spreadsheetCommandBarButtonItem205.Id = 355;
-            this.spreadsheetCommandBarButtonItem205.Name = "spreadsheetCommandBarButtonItem205";
-            this.spreadsheetCommandBarButtonItem205.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem206
-            // 
-            this.spreadsheetCommandBarButtonItem206.CommandName = "MailMergeSetGroupHeader";
-            this.spreadsheetCommandBarButtonItem206.Id = 356;
-            this.spreadsheetCommandBarButtonItem206.Name = "spreadsheetCommandBarButtonItem206";
-            this.spreadsheetCommandBarButtonItem206.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // spreadsheetCommandBarButtonItem207
-            // 
-            this.spreadsheetCommandBarButtonItem207.CommandName = "MailMergeSetGroupFooter";
-            this.spreadsheetCommandBarButtonItem207.Id = 357;
-            this.spreadsheetCommandBarButtonItem207.Name = "spreadsheetCommandBarButtonItem207";
-            this.spreadsheetCommandBarButtonItem207.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
-            // 
-            // mailMergeFilteringRibbonPageGroup1
-            // 
-            this.mailMergeFilteringRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeFilteringRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem208);
-            this.mailMergeFilteringRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem209);
-            this.mailMergeFilteringRibbonPageGroup1.Name = "mailMergeFilteringRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarButtonItem208
-            // 
-            this.spreadsheetCommandBarButtonItem208.CommandName = "MailMergeSetFilter";
-            this.spreadsheetCommandBarButtonItem208.Id = 358;
-            this.spreadsheetCommandBarButtonItem208.Name = "spreadsheetCommandBarButtonItem208";
-            this.spreadsheetCommandBarButtonItem208.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem209
-            // 
-            this.spreadsheetCommandBarButtonItem209.CommandName = "MailMergeResetFilter";
-            this.spreadsheetCommandBarButtonItem209.Id = 359;
-            this.spreadsheetCommandBarButtonItem209.Name = "spreadsheetCommandBarButtonItem209";
-            this.spreadsheetCommandBarButtonItem209.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // mailMergeBindingRibbonPageGroup1
-            // 
-            this.mailMergeBindingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            this.mailMergeBindingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarCheckItem46);
-            this.mailMergeBindingRibbonPageGroup1.ItemLinks.Add(this.spreadsheetCommandBarButtonItem210);
-            this.mailMergeBindingRibbonPageGroup1.Name = "mailMergeBindingRibbonPageGroup1";
-            // 
-            // spreadsheetCommandBarCheckItem46
-            // 
-            this.spreadsheetCommandBarCheckItem46.CommandName = "MailMergeShowRanges";
-            this.spreadsheetCommandBarCheckItem46.Id = 360;
-            this.spreadsheetCommandBarCheckItem46.Name = "spreadsheetCommandBarCheckItem46";
-            this.spreadsheetCommandBarCheckItem46.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // spreadsheetCommandBarButtonItem210
-            // 
-            this.spreadsheetCommandBarButtonItem210.CommandName = "MailMergePreview";
-            this.spreadsheetCommandBarButtonItem210.Id = 361;
-            this.spreadsheetCommandBarButtonItem210.Name = "spreadsheetCommandBarButtonItem210";
-            this.spreadsheetCommandBarButtonItem210.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
-            // 
-            // progressBarItem1
-            // 
-            this.progressBarItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Left;
-            this.progressBarItem1.Control = this.spreadsheetControl1;
-            this.progressBarItem1.Edit = repositoryItemProgressBar1;
-            this.progressBarItem1.EditWidth = 150;
-            this.progressBarItem1.Id = 362;
-            this.progressBarItem1.Name = "progressBarItem1";
-            this.progressBarItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // endModeInfoStaticItem1
-            // 
-            this.endModeInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Left;
-            this.endModeInfoStaticItem1.Id = 363;
-            this.endModeInfoStaticItem1.Name = "endModeInfoStaticItem1";
-            // 
-            // averageInfoStaticItem1
-            // 
-            this.averageInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.averageInfoStaticItem1.Id = 364;
-            this.averageInfoStaticItem1.Name = "averageInfoStaticItem1";
-            toolTipItem1.Text = "Average of selected cells";
-            superToolTip1.Items.Add(toolTipItem1);
-            this.averageInfoStaticItem1.SuperTip = superToolTip1;
-            this.averageInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // countInfoStaticItem1
-            // 
-            this.countInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.countInfoStaticItem1.Id = 365;
-            this.countInfoStaticItem1.Name = "countInfoStaticItem1";
-            toolTipItem2.Text = "Number of selected cells that contain data";
-            superToolTip2.Items.Add(toolTipItem2);
-            this.countInfoStaticItem1.SuperTip = superToolTip2;
-            this.countInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // numericalCountInfoStaticItem1
-            // 
-            this.numericalCountInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.numericalCountInfoStaticItem1.Id = 366;
-            this.numericalCountInfoStaticItem1.Name = "numericalCountInfoStaticItem1";
-            toolTipItem3.Text = "Number of selected cells that contain numerical data";
-            superToolTip3.Items.Add(toolTipItem3);
-            this.numericalCountInfoStaticItem1.SuperTip = superToolTip3;
-            this.numericalCountInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // minInfoStaticItem1
-            // 
-            this.minInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.minInfoStaticItem1.Id = 367;
-            this.minInfoStaticItem1.Name = "minInfoStaticItem1";
-            toolTipItem4.Text = "Minimum value in selection";
-            superToolTip4.Items.Add(toolTipItem4);
-            this.minInfoStaticItem1.SuperTip = superToolTip4;
-            this.minInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // maxInfoStaticItem1
-            // 
-            this.maxInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.maxInfoStaticItem1.Id = 368;
-            this.maxInfoStaticItem1.Name = "maxInfoStaticItem1";
-            toolTipItem5.Text = "Maximum value in selection";
-            superToolTip5.Items.Add(toolTipItem5);
-            this.maxInfoStaticItem1.SuperTip = superToolTip5;
-            this.maxInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // sumInfoStaticItem1
-            // 
-            this.sumInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.sumInfoStaticItem1.Id = 369;
-            this.sumInfoStaticItem1.Name = "sumInfoStaticItem1";
-            toolTipItem6.Text = "Sum of selected cells";
-            superToolTip6.Items.Add(toolTipItem6);
-            this.sumInfoStaticItem1.SuperTip = superToolTip6;
-            this.sumInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-            // 
-            // zoomEditItem1
-            // 
-            this.zoomEditItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.zoomEditItem1.Edit = this.repositoryItemZoomTrackBar1;
-            this.zoomEditItem1.Id = 370;
-            this.zoomEditItem1.Name = "zoomEditItem1";
-            toolTipItem7.Text = "Zoom";
-            superToolTip7.Items.Add(toolTipItem7);
-            this.zoomEditItem1.SuperTip = superToolTip7;
-            // 
-            // showZoomButtonItem1
-            // 
-            this.showZoomButtonItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.showZoomButtonItem1.Id = 371;
-            this.showZoomButtonItem1.ItemAppearance.Disabled.Options.UseTextOptions = true;
-            this.showZoomButtonItem1.ItemAppearance.Hovered.Options.UseTextOptions = true;
-            this.showZoomButtonItem1.ItemAppearance.Normal.Options.UseTextOptions = true;
-            this.showZoomButtonItem1.ItemAppearance.Pressed.Options.UseTextOptions = true;
-            this.showZoomButtonItem1.Name = "showZoomButtonItem1";
-            this.showZoomButtonItem1.SmallWithTextWidth = 45;
-            toolTipItem8.Text = "Zoom level. Click to open the Zoom dialog box.";
-            superToolTip8.Items.Add(toolTipItem8);
-            this.showZoomButtonItem1.SuperTip = superToolTip8;
-            // 
-            // repositoryItemZoomTrackBar1
-            // 
-            this.repositoryItemZoomTrackBar1.AllowUseMiddleValue = true;
-            this.repositoryItemZoomTrackBar1.LargeChange = 10;
-            this.repositoryItemZoomTrackBar1.Maximum = 400;
-            this.repositoryItemZoomTrackBar1.Middle = 100;
-            this.repositoryItemZoomTrackBar1.Minimum = 10;
-            this.repositoryItemZoomTrackBar1.Name = "repositoryItemZoomTrackBar1";
-            this.repositoryItemZoomTrackBar1.SmallChange = 10;
-            this.repositoryItemZoomTrackBar1.SnapToMiddle = 5;
-            // 
             // spreadsheetFormulaBar1
             // 
             this.spreadsheetFormulaBar1.Dock = System.Windows.Forms.DockStyle.Top;
             this.spreadsheetFormulaBar1.Location = new System.Drawing.Point(0, 158);
+            this.spreadsheetFormulaBar1.Margin = new System.Windows.Forms.Padding(4);
             this.spreadsheetFormulaBar1.MinimumSize = new System.Drawing.Size(0, 24);
             this.spreadsheetFormulaBar1.Name = "spreadsheetFormulaBar1";
-            this.spreadsheetFormulaBar1.Size = new System.Drawing.Size(1326, 24);
+            this.spreadsheetFormulaBar1.Size = new System.Drawing.Size(998, 24);
             this.spreadsheetFormulaBar1.SpreadsheetControl = this.spreadsheetControl1;
             this.spreadsheetFormulaBar1.TabIndex = 4;
             // 
@@ -6008,31 +5971,32 @@
             // 
             this.splitterControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.splitterControl1.Location = new System.Drawing.Point(0, 182);
-            this.splitterControl1.MinSize = 20;
+            this.splitterControl1.MinExtra = 30;
             this.splitterControl1.Name = "splitterControl1";
-            this.splitterControl1.Size = new System.Drawing.Size(1326, 10);
+            this.splitterControl1.Size = new System.Drawing.Size(998, 10);
             this.splitterControl1.TabIndex = 3;
             this.splitterControl1.TabStop = false;
             // 
-            // WorkbookForm
+            // BookForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1326, 929);
+            this.ClientSize = new System.Drawing.Size(998, 749);
             this.Controls.Add(this.spreadsheetControl1);
-            this.Controls.Add(this.ribbonStatusBar);
             this.Controls.Add(this.splitterControl1);
             this.Controls.Add(this.spreadsheetFormulaBar1);
-            this.Controls.Add(this.ribbon);
-            this.Name = "WorkbookForm";
-            this.Ribbon = this.ribbon;
+            this.Controls.Add(this.ribbonStatusBar);
+            this.Controls.Add(this.BookRibbon);
+            this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("BookForm.IconOptions.SvgImage")));
+            this.Name = "BookForm";
+            this.Ribbon = this.BookRibbon;
             this.StatusBar = this.ribbonStatusBar;
-            this.Text = "WorkbookForm";
-            ((System.ComponentModel.ISupportInitialize)(this.ribbon)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.spreadsheetBarController1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown1)).EndInit();
+            this.Text = "Workbook";
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.BookRibbon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemSpreadsheetFontSizeEdit1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemPopupGalleryEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown3)).EndInit();
@@ -6060,8 +6024,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown25)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.commandBarGalleryDropDown26)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemTextEdit1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(repositoryItemProgressBar1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.spreadsheetBarController1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -6069,12 +6033,10 @@
 
         #endregion
 
-        private DevExpress.XtraBars.Ribbon.RibbonControl ribbon;
-        private DevExpress.XtraBars.Ribbon.RibbonPage ribbonPage1;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup ribbonPageGroup1;
+        private DevExpress.XtraBars.Ribbon.RibbonControl BookRibbon;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar ribbonStatusBar;
-        private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem1;
-        private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem2;
+        private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem NewBarButtonItem;
+        private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem OpenBarButtonItem;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem3;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem4;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem5;
@@ -6558,5 +6520,8 @@
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetBarController spreadsheetBarController1;
         private DevExpress.XtraSpreadsheet.SpreadsheetFormulaBar spreadsheetFormulaBar1;
         private DevExpress.XtraEditors.SplitterControl splitterControl1;
+        private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar1;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup OptionsRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup LicenseRibbonGroup;
     }
 }
