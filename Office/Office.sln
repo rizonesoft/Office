@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OSVersionExtension", "OSVer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office", "Rizonesoft.Office\Rizonesoft.Office.csproj", "{A5FC4296-C458-4E03-A8F9-C799723ED419}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office.Sheets", "Sheets\Rizonesoft.Office.Sheets.csproj", "{622DA277-2A07-4D96-AD73-6530801A3B17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office.Evaluate", "Evaluate\Rizonesoft.Office.Evaluate.csproj", "{45BAF256-3546-4F09-BA97-E65CBE57C071}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{A5FC4296-C458-4E03-A8F9-C799723ED419}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5FC4296-C458-4E03-A8F9-C799723ED419}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5FC4296-C458-4E03-A8F9-C799723ED419}.Release|Any CPU.Build.0 = Release|Any CPU
-		{622DA277-2A07-4D96-AD73-6530801A3B17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{622DA277-2A07-4D96-AD73-6530801A3B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{622DA277-2A07-4D96-AD73-6530801A3B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{622DA277-2A07-4D96-AD73-6530801A3B17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

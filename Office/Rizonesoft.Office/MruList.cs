@@ -47,7 +47,7 @@ namespace Rizonesoft.Office
 
             for (int i = 0; i < iFiles; i++)
             {
-                string fileName = Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
+                string fileName = Configure.Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
 
                 if (string.IsNullOrWhiteSpace(fileName))
                 {
@@ -61,13 +61,13 @@ namespace Rizonesoft.Office
         {
             for (int i = 0; i < iFiles; i++)
             {
-                Settings.DeleteSetting(SaveMRUPath, "FilePath" + i.ToString());
+                Configure.Settings.DeleteSetting(SaveMRUPath, "FilePath" + i.ToString());
             }
 
             int index = 0;
             foreach (FileInfo fileInfo in fileInfos)
             {
-                Settings.SaveSetting(SaveMRUPath, "FilePath" + index.ToString(), fileInfo.FullName);
+                Configure.Settings.SaveSetting(SaveMRUPath, "FilePath" + index.ToString(), fileInfo.FullName);
                 index++;
             }
         }

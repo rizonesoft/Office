@@ -1,0 +1,6 @@
+Theme            : Office 2019 Colorful
+Palette          : Pine
+Color #1 (Dark)  : #23645C
+Color #2 (Light) : #077568
+Color #3 (Grey)  : #F0F0F0
+Color #4 (White) : #F8F8F8

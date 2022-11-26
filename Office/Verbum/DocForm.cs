@@ -58,6 +58,19 @@ namespace Rizonesoft.Office.Verbum
 
         }
 
+        private void CommentsCheckButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            if (commentsCheckButton.Down)
+            {
+                mainRichEditControl.ShowReviewingPaneForm();
+            }
+            else
+            {
+                mainRichEditControl.ShowReviewingPaneForm();
+            }
+            Globals.ReviewPanelVisible = commentsCheckButton.Down;
+        }
+
         public string DocumentFormTitle
         {
             get
@@ -175,15 +188,15 @@ namespace Rizonesoft.Office.Verbum
             // string currentFileName = mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
             // nlogger.Error(string.Format("Cannot open the file '{0}' because the file format or file extension is not valid.", currentFileName));
             // XtraMessageBox.Show(string.Format("Cannot open the file '{0}' because the file format or file extension is not valid.\n" +
-                // "Verify that file has not been corrupted and that the file extension matches the format of the file.", currentFileName),
-                // "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // "Verify that file has not been corrupted and that the file extension matches the format of the file.", currentFileName),
+            // "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
         }
 
         private void Default_StyleChanged(object sender, EventArgs e)
         {
-            Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+            Configure.Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Configure.Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
         private void mainRichEditControl_DocumentLoaded(object sender, EventArgs e)
@@ -237,7 +250,7 @@ namespace Rizonesoft.Office.Verbum
                     this.mainSpellChecker.OptionsSpelling.CombineOptions(this.mainSpellChecker.GetSpellCheckerOptions(this.mainRichEditControl));
                     this.mainSpellChecker.SaveToRegistry("Software\\Rizonesoft\\Verbum");
                     Globals.spellingLanguage = this.mainSpellChecker.Culture.ToString();
-                    Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", Globals.spellingLanguage);
+                    Configure.Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", Globals.spellingLanguage);
                     // barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
                 }
 
@@ -257,9 +270,9 @@ namespace Rizonesoft.Office.Verbum
         private void loadSpellingOptions()
         {
 
-            Globals.spellingLanguage = Settings.GetSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", this.mainSpellChecker.Culture.ToString());
+            Globals.spellingLanguage = Configure.Settings.GetSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", this.mainSpellChecker.Culture.ToString());
             this.mainSpellChecker.RestoreFromRegistry("Software\\Rizonesoft\\Verbum");
-            
+
             this.mainSpellChecker.Culture = new CultureInfo(Globals.spellingLanguage);
             barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
             this.autoSpellingItem.Checked = Globals.autoSpellCheck;
@@ -328,17 +341,17 @@ namespace Rizonesoft.Office.Verbum
 
         //private void processFileName(string fileName, int docIndex)
         //{
-            //DocForm docForm = this;
-            //if (!String.IsNullOrEmpty(fileName))
-            //{
-                //FileInfo fileInf = new FileInfo(fileName);
-                //docForm.mainRichEditControl.LoadDocument(fileName);
-                //docForm.Text = fileInf.Name + " - " + docForm.Text;
-            //}
-            //else
-            //{
-                //docForm.Text = @"Document " + docIndex.ToString() + " - Rizonesoft Verbum";
-            //}
+        //DocForm docForm = this;
+        //if (!String.IsNullOrEmpty(fileName))
+        //{
+        //FileInfo fileInf = new FileInfo(fileName);
+        //docForm.mainRichEditControl.LoadDocument(fileName);
+        //docForm.Text = fileInf.Name + " - " + docForm.Text;
+        //}
+        //else
+        //{
+        //docForm.Text = @"Document " + docIndex.ToString() + " - Rizonesoft Verbum";
+        //}
         //}
 
         public void OpenFile(string docName, int docIndex)
@@ -512,8 +525,8 @@ namespace Rizonesoft.Office.Verbum
 
         }
 
-        #endregion Document Statistics
 
+        #endregion Document Statistics
 
     }
 

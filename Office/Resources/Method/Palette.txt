@@ -1,0 +1,6 @@
+Theme            : Office 2019 Colorful
+Palette          : Amber
+Color #1 (Dark)  : #A92B1A
+Color #2 (Light) : #B7472A
+Color #3 (Grey)  : #F0F0F0
+Color #4 (White) : #F8F8F8

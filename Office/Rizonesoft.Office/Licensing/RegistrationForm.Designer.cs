@@ -31,17 +31,17 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RegistrationForm));
             this.directXFormContainerControl1 = new DevExpress.XtraEditors.DirectXFormContainerControl();
+            this.svgImageBox1 = new DevExpress.XtraEditors.SvgImageBox();
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             this.textLicenseCode = new DevExpress.XtraEditors.TextEdit();
             this.ButtonActivate = new DevExpress.XtraEditors.SimpleButton();
             this.simpleButton2 = new DevExpress.XtraEditors.SimpleButton();
             this.ButtonCancel = new DevExpress.XtraEditors.SimpleButton();
             this.regErrorProvider = new DevExpress.XtraEditors.DXErrorProvider.DXErrorProvider(this.components);
-            this.svgImageBox1 = new DevExpress.XtraEditors.SvgImageBox();
             this.directXFormContainerControl1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.svgImageBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.textLicenseCode.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.regErrorProvider)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.svgImageBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // directXFormContainerControl1
@@ -56,6 +56,16 @@
             this.directXFormContainerControl1.Name = "directXFormContainerControl1";
             this.directXFormContainerControl1.Size = new System.Drawing.Size(548, 268);
             this.directXFormContainerControl1.TabIndex = 0;
+            // 
+            // svgImageBox1
+            // 
+            this.svgImageBox1.Location = new System.Drawing.Point(10, 10);
+            this.svgImageBox1.Name = "svgImageBox1";
+            this.svgImageBox1.Size = new System.Drawing.Size(64, 64);
+            this.svgImageBox1.SizeMode = DevExpress.XtraEditors.SvgImageSizeMode.Zoom;
+            this.svgImageBox1.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("svgImageBox1.SvgImage")));
+            this.svgImageBox1.TabIndex = 9;
+            this.svgImageBox1.Text = "svgImageBox1";
             // 
             // labelControl1
             // 
@@ -123,16 +133,6 @@
             // 
             this.regErrorProvider.ContainerControl = this;
             // 
-            // svgImageBox1
-            // 
-            this.svgImageBox1.Location = new System.Drawing.Point(10, 10);
-            this.svgImageBox1.Name = "svgImageBox1";
-            this.svgImageBox1.Size = new System.Drawing.Size(64, 64);
-            this.svgImageBox1.SizeMode = DevExpress.XtraEditors.SvgImageSizeMode.Stretch;
-            this.svgImageBox1.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("svgImageBox1.SvgImage")));
-            this.svgImageBox1.TabIndex = 9;
-            this.svgImageBox1.Text = "svgImageBox1";
-            // 
             // RegistrationForm
             // 
             this.AcceptButton = this.ButtonActivate;
@@ -146,9 +146,9 @@
             this.Name = "RegistrationForm";
             this.Text = "Registration";
             this.directXFormContainerControl1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.svgImageBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.textLicenseCode.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.regErrorProvider)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.svgImageBox1)).EndInit();
             this.ResumeLayout(false);
 
         }

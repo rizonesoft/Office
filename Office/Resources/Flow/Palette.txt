@@ -1,0 +1,6 @@
+Theme            : Office 2019 Colorful
+Palette          : Yale
+Color #1 (Dark)  : #124078
+Color #2 (Light) : #2B579A
+Color #3 (Grey)  : #F0F0F0
+Color #4 (White) : #F8F8F8

@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            DevExpress.XtraSplashScreen.SplashScreenManager mainSplashScreenManager = new DevExpress.XtraSplashScreen.SplashScreenManager(this, typeof(global::Rizonesoft.Office.Verbum.SplashScreenForm), true, true);
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.MainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
             this.mainBarMdiChildrenListItem = new DevExpress.XtraBars.BarMdiChildrenListItem();
@@ -50,19 +49,16 @@
             this.debugRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.MainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
+            this.MainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
             this.mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.MainRibbonControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MainTabbedMdiManager)).BeginInit();
             this.SuspendLayout();
-            // 
-            // mainSplashScreenManager
-            // 
-            mainSplashScreenManager.ClosingDelay = 300;
             // 
             // MainRibbonControl
             // 
+            this.MainRibbonControl.AllowCustomization = true;
             this.MainRibbonControl.ExpandCollapseItem.Id = 0;
             this.MainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
             this.MainRibbonControl.ExpandCollapseItem,
@@ -99,6 +95,7 @@
             this.mainBarMdiChildrenListItem.Id = 1;
             this.mainBarMdiChildrenListItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("mainBarMdiChildrenListItem.ImageOptions.SvgImage")));
             this.mainBarMdiChildrenListItem.Name = "mainBarMdiChildrenListItem";
+            this.mainBarMdiChildrenListItem.ShowMenuCaption = true;
             // 
             // barNewItem
             // 
@@ -164,7 +161,7 @@
             this.barRegisterItem.Id = 9;
             this.barRegisterItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barRegisterItem.ImageOptions.SvgImage")));
             this.barRegisterItem.Name = "barRegisterItem";
-            this.barRegisterItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barRegisterItem_ItemClick);
+            this.barRegisterItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.BarRegisterItem_ItemClick);
             // 
             // barBuyNowItem
             // 
@@ -234,25 +231,27 @@
             this.MainRibbonStatusBar.Ribbon = this.MainRibbonControl;
             this.MainRibbonStatusBar.Size = new System.Drawing.Size(898, 24);
             // 
-            // mainTabbedMdiManager
+            // MainTabbedMdiManager
             // 
-            this.mainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InAllTabPageHeaders;
-            this.mainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
-            this.mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
-            this.mainTabbedMdiManager.HeaderButtons = ((DevExpress.XtraTab.TabButtons)((((DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next) 
+            this.MainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.MainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
+            this.MainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InAllTabPageHeaders;
+            this.MainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
+            this.MainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
+            this.MainTabbedMdiManager.HeaderButtons = ((DevExpress.XtraTab.TabButtons)((((DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next) 
             | DevExpress.XtraTab.TabButtons.Close) 
             | DevExpress.XtraTab.TabButtons.Default)));
-            this.mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
-            this.mainTabbedMdiManager.MdiParent = this;
-            this.mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InAllTabPageHeaders;
-            this.mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.PageAdded += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageAdded);
-            this.mainTabbedMdiManager.PageRemoved += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageRemoved);
+            this.MainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
+            this.MainTabbedMdiManager.MdiParent = this;
+            this.MainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InAllTabPageHeaders;
+            this.MainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
+            this.MainTabbedMdiManager.PageAdded += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageAdded);
+            this.MainTabbedMdiManager.PageRemoved += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageRemoved);
             // 
             // MainForm
             // 
@@ -271,7 +270,7 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.MainRibbonControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.MainTabbedMdiManager)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -292,7 +291,7 @@
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup optionsRibbonGroup;
         private DevExpress.XtraBars.SkinPaletteDropDownButtonItem skinPaletteDropDownItem;
         private DevExpress.XtraBars.BarButtonItem barOptionsItem;
-        private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
+        private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager MainTabbedMdiManager;
         private DevExpress.XtraSpellChecker.SharedDictionaryStorage mainSharedDictionaryStorage;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar MainRibbonStatusBar;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
