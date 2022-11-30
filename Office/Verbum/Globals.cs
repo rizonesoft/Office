@@ -1,24 +1,23 @@
-﻿using System;
-using System.Windows.Forms;
-
-
-namespace Rizonesoft.Office.Verbum
+﻿namespace Rizonesoft.Office.Verbum
 {
+    using System;
+    using System.IO;
+    using System.Windows.Forms;
+
     internal class Globals
     {
+        public const string ProductName = "Verbum";
 
-        public static bool autoSpellCheck = true;
-        public static string spellingLanguage = "en_US";
-
-        public static string basePath = System.IO.Path.GetDirectoryName(Application.ExecutablePath);
-        public static string dictionariesPath = System.IO.Path.Combine(basePath, "Dictionaries");
-        public static string userAppDataPath = System.IO.Path
-            .Combine(Utilities.GetUserAppDataPath(), "Rizonesoft\\Office\\Verbum\\");
-        public static string loggingFilePath = System.IO.Path.Combine(userAppDataPath, "Logging\\Error.log");
-        public static string userSpellingOptionsFile = System.IO.Path.Combine(userAppDataPath, "SpellingOptions.xml");
-        public static string saveToolbarToXmlFileName = System.IO.Path.Combine(userAppDataPath, "ToolbarSettings.xml");
-        public static string saveLayoutToXmlFileName = System.IO.Path.Combine(userAppDataPath, "RibbonSettings.xml");
+        public static readonly Version ProductVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        public static readonly string ProductVersionString = $"20{ProductVersion.Major}";
+        public static readonly string ProductBasePath = Path.GetDirectoryName(Application.ExecutablePath);
+        public static readonly string UserAppDirectory = Path.Combine(Utilities.GetUserAppDataPath(), $"Rizonesoft\\Office\\{Globals.ProductName}\\");
+        public static readonly string LoggingFilePath = Path.Combine(UserAppDirectory, "Logging\\Error.log");
+        public static readonly string DictionariesPath = Path.Combine(ProductBasePath, "Dictionaries");
 
         public static bool ReviewPanelVisible { get; set; }
+        public static bool AutoSpellCheck { get; set; }
+        public static string SpellingLanguage { get; set; } = "en_US";
+
     }
 }

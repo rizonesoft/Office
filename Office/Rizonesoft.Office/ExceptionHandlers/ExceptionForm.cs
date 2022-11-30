@@ -1,5 +1,6 @@
 ﻿using NLog;
-
+using Rizonesoft.Office.EnvironmentEx;
+using Rizonesoft.Office.ExceptionHandlers;
 
 namespace Rizonesoft.Office.ExceptionHandlers
 {
@@ -11,7 +12,7 @@ namespace Rizonesoft.Office.ExceptionHandlers
         {
             InitializeComponent();
             bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
-                EnvironmentInfo.EnvironmentToString(),
+                ExceptionHandler.EnvironmentToString(),
                 "Exception:");
         }
 
@@ -31,8 +32,8 @@ namespace Rizonesoft.Office.ExceptionHandlers
 
             InitializeComponent();
             bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
-                EnvironmentInfo.EnvironmentToString(),
-                EnvironmentInfo.ExceptionToString(ex));
+                ExceptionHandler.EnvironmentToString(),
+                ExceptionHandler.ExceptionToString(ex));
             nlogger.Error(ex, "Whoops!");
         }
 

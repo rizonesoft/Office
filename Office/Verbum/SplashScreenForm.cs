@@ -1,17 +1,16 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
     using DevExpress.XtraSplashScreen;
+    using Rizonesoft.Office.Configure;
     using System;
 
     public partial class SplashScreenForm : SplashScreen
     {
         public SplashScreenForm()
         {
-            Version applicationVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-
             InitializeComponent();
-            labelNameVersion.Text = "Rizonesoft Verbum 20" + applicationVersion.Major.ToString();
-            labelCopyright.Text = "Copyright © 1998-" + DateTime.Now.Year.ToString();
+            labelNameVersion.Text = $"{Globals.ProductName} {OfficeGlobals.ProductVersionYear}";
+            labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 
         #region Overrides
@@ -19,11 +18,13 @@
         {
             base.ProcessCommand(cmd, arg);
             SplashScreenCommand command = (SplashScreenCommand)cmd;
-            if(command == SplashScreenCommand.SetStatusLabel)
+            if (command != SplashScreenCommand.SetStatusLabel)
             {
-                string labelText = (string)arg;
-                StatusLabel.Text = labelText;
+                return;
             }
+
+            string labelText = (string)arg;
+            StatusLabel.Text = labelText;
         }
         #endregion
 

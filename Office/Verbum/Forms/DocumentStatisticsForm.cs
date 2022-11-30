@@ -1,41 +1,56 @@
-﻿using DevExpress.XtraRichEdit.API.Native;
-using Rizonesoft.Office.Verbum.Classes;
-using System;
-using System.Linq;
-
-
-namespace Rizonesoft.Office.Verbum.Forms
+﻿namespace Rizonesoft.Office.Verbum.Forms
 {
+    using DevExpress.XtraRichEdit.API.Native;
+    using Rizonesoft.Office.Verbum.Classes;
+    using System;
+
     public partial class DocumentStatisticsForm : DevExpress.XtraEditors.XtraForm
     {
-        readonly SubDocument document;
+        readonly SubDocument subDocument;
 
         public DocumentStatisticsForm(SubDocument document, bool includeTextboxes)
         {
             InitializeComponent();
-            this.document = document;
-            this.chkIncludeTextboxes.Checked = includeTextboxes;
+            subDocument = document;
+            chkIncludeTextboxes.Checked = includeTextboxes;
             CalculateStatistics();
         }
 
         void CalculateStatistics()
         {
-            DocumentIterator iterator = new DocumentIterator(this.document, true);
-            StaticsticsVisitor visitor = new StaticsticsVisitor(IncludeTextboxes);
+            DocumentIterator iterator = new(subDocument, true);
+            StaticsticsVisitor visitor = new(IncludeTextboxes);
 
             while(iterator.MoveNext())
             {
                 iterator.Current.Accept(visitor);
             }
 
-            this.lblNoSpacesCharactersCount.Text = String.Format("{0,5}", visitor.NoSpacesCharacterCount);
-            this.lblWithSpacesCharactersCount.Text = String.Format("{0,5}", visitor.WithSpacesCharacterCount);
-            this.lblWordsCount.Text = String.Format("{0,5}", visitor.WordCount);
-            this.lblParagraphsCount.Text = String.Format("{0,5}", visitor.ParagraphCount);
+            lblNoSpacesCharactersCount.Text = $"{visitor.NoSpacesCharacterCount,5}";
+            lblWithSpacesCharactersCount.Text = $"{visitor.WithSpacesCharacterCount,5}";
+            lblWordsCount.Text = $"{visitor.WordCount,5}";
+            lblParagraphsCount.Text = $"{visitor.ParagraphCount,5}";
         }
 
-        void OnCloseClick(object sender, EventArgs e) { this.Close(); }
+        public bool IncludeTextboxes { get => chkIncludeTextboxes.Checked; set
+            {
+                if (chkIncludeTextboxes.Checked == value)
+                {
+                    return;
+                }
 
-        public bool IncludeTextboxes { get { return chkIncludeTextboxes.Checked; } }
+                chkIncludeTextboxes.Checked = value;
+            }
+        }
+
+        private void BtnClose_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        private void ChkIncludeTextboxes_CheckStateChanged(object sender, EventArgs e)
+        {
+            CalculateStatistics();
+        }
     }
 }

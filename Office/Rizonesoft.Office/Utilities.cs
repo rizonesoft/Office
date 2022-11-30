@@ -1,11 +1,17 @@
-﻿using DevExpress.XtraEditors;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Reflection;
 
 namespace Rizonesoft.Office
 {
+    using System;
+    using DevExpress.XtraEditors;
+    using System.Diagnostics;
+    using System.Text.RegularExpressions;
+
     public static class Utilities
     {
+
+
+
 
         public static string userAppDataPath = System.IO.Path.Combine(GetUserAppDataPath(), "Rizonesoft\\Office\\");
         public static string loggingFilePath = System.IO.Path.Combine(userAppDataPath, "Logging\\Error.log");

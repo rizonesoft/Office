@@ -54,13 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Resources\Verbum\Verbum-128.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
   </ItemGroup>
 

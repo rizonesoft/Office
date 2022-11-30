@@ -86,14 +86,15 @@ namespace Rizonesoft.Office.Verbum.Forms
             this.chkIncludeTextboxes.Location = new System.Drawing.Point(24, 111);
             this.chkIncludeTextboxes.Name = "chkIncludeTextboxes";
             this.chkIncludeTextboxes.Properties.Caption = "Include textboxes";
-            this.chkIncludeTextboxes.Size = new System.Drawing.Size(111, 18);
+            this.chkIncludeTextboxes.Size = new System.Drawing.Size(111, 20);
             this.chkIncludeTextboxes.TabIndex = 24;
+            this.chkIncludeTextboxes.CheckStateChanged += new System.EventHandler(this.ChkIncludeTextboxes_CheckStateChanged);
             // 
             // lblParagraphs
             // 
             this.lblParagraphs.Location = new System.Drawing.Point(24, 92);
             this.lblParagraphs.Name = "lblParagraphs";
-            this.lblParagraphs.Size = new System.Drawing.Size(58, 13);
+            this.lblParagraphs.Size = new System.Drawing.Size(55, 13);
             this.lblParagraphs.TabIndex = 23;
             this.lblParagraphs.Text = "Paragraphs";
             // 
@@ -101,7 +102,7 @@ namespace Rizonesoft.Office.Verbum.Forms
             // 
             this.lblWithSpacesCharacters.Location = new System.Drawing.Point(24, 72);
             this.lblWithSpacesCharacters.Name = "lblWithSpacesCharacters";
-            this.lblWithSpacesCharacters.Size = new System.Drawing.Size(123, 13);
+            this.lblWithSpacesCharacters.Size = new System.Drawing.Size(120, 13);
             this.lblWithSpacesCharacters.TabIndex = 22;
             this.lblWithSpacesCharacters.Text = "Characters (with spaces)";
             // 
@@ -109,7 +110,7 @@ namespace Rizonesoft.Office.Verbum.Forms
             // 
             this.lblNoSpacesCharacters.Location = new System.Drawing.Point(24, 52);
             this.lblNoSpacesCharacters.Name = "lblNoSpacesCharacters";
-            this.lblNoSpacesCharacters.Size = new System.Drawing.Size(114, 13);
+            this.lblNoSpacesCharacters.Size = new System.Drawing.Size(112, 13);
             this.lblNoSpacesCharacters.TabIndex = 21;
             this.lblNoSpacesCharacters.Text = "Characters (no spaces)";
             // 
@@ -117,7 +118,7 @@ namespace Rizonesoft.Office.Verbum.Forms
             // 
             this.lblWords.Location = new System.Drawing.Point(24, 32);
             this.lblWords.Name = "lblWords";
-            this.lblWords.Size = new System.Drawing.Size(34, 13);
+            this.lblWords.Size = new System.Drawing.Size(31, 13);
             this.lblWords.TabIndex = 20;
             this.lblWords.Text = "Words";
             // 
@@ -128,6 +129,7 @@ namespace Rizonesoft.Office.Verbum.Forms
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.TabIndex = 19;
             this.btnClose.Text = "Close";
+            this.btnClose.Click += new System.EventHandler(this.BtnClose_Click);
             // 
             // DocumentStatisticsForm
             // 

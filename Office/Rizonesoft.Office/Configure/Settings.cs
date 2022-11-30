@@ -7,15 +7,17 @@ namespace Rizonesoft.Office.Configure
 {
     public class Settings
     {
+        const string STR_RegSoftware = "Software";
+
         public static string? GetSetting(string RegKey, string ValueName, string Default)
         {
 
-            RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software")!;
+            RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(STR_RegSoftware)!;
             RegistryKey subKey = baseKey.OpenSubKey(RegKey)!;
 
             if (subKey == null)
             {
-                return null;
+                return Default;
             }
             else
             {
@@ -26,7 +28,7 @@ namespace Rizonesoft.Office.Configure
                 catch (Exception ex)
                 {
                     ShowErrorMessage(ex, "Reading registry " + ValueName);
-                    return null;
+                    return "";
                 }
             }
         }
@@ -35,8 +37,8 @@ namespace Rizonesoft.Office.Configure
         {
             try
             {
-                RegistryKey? baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
-                RegistryKey? subKey = baseKey.CreateSubKey(RegKey)!;
+                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(STR_RegSoftware, true)!;
+                RegistryKey subKey = baseKey.CreateSubKey(RegKey);
                 subKey.SetValue(ValueName, Value);
 
                 return true;
@@ -54,8 +56,8 @@ namespace Rizonesoft.Office.Configure
         {
             try
             {
-                RegistryKey? baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
-                RegistryKey? subKey = baseKey.CreateSubKey(RegKey)!;
+                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
+                RegistryKey subKey = baseKey.CreateSubKey(RegKey)!;
 
                 if (subKey == null)
                 {

@@ -1,7 +1,7 @@
 ﻿using DevExpress.LookAndFeel;
 using DevExpress.Utils.Controls;
+using DevExpress.XtraBars;
 using DevExpress.XtraEditors;
-using DevExpress.XtraReports.Design;
 using DevExpress.XtraRichEdit;
 using DevExpress.XtraRichEdit.API.Layout;
 using DevExpress.XtraRichEdit.API.Native;
@@ -11,11 +11,11 @@ using DevExpress.XtraSpellChecker.Native;
 using Rizonesoft.Office.Verbum.Classes;
 using Rizonesoft.Office.Verbum.Forms;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
-using static DevExpress.Xpo.Helpers.AssociatedCollectionCriteriaHelper;
 
 namespace Rizonesoft.Office.Verbum
 {
@@ -32,15 +32,7 @@ namespace Rizonesoft.Office.Verbum
             InitializeComponent();
             this.mainRichEditControl.DocumentLayout.DocumentFormatted += DocumentLayout_DocumentFormatted;
 
-            if (Directory.Exists(Globals.userAppDataPath))
-            {
-                //mainRibbonControl.AutoSaveLayoutToXml = true;
-                //mainRibbonControl.AutoSaveLayoutToXmlPath = Configuration.saveLayoutToXmlFileName;
-            }
-            else
-            {
-                //mainRibbonControl.AutoSaveLayoutToXml = false;
-            }
+
 
             UserLookAndFeel.Default.StyleChanged += Default_StyleChanged;
             new RichEditExceptionHandler(mainRichEditControl).Install();
@@ -58,18 +50,7 @@ namespace Rizonesoft.Office.Verbum
 
         }
 
-        private void CommentsCheckButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            if (commentsCheckButton.Down)
-            {
-                mainRichEditControl.ShowReviewingPaneForm();
-            }
-            else
-            {
-                mainRichEditControl.ShowReviewingPaneForm();
-            }
-            Globals.ReviewPanelVisible = commentsCheckButton.Down;
-        }
+
 
         public string DocumentFormTitle
         {
@@ -95,40 +76,17 @@ namespace Rizonesoft.Office.Verbum
             }
         }
 
+        #region Review
+
+
+
+        #endregion
+
         #region Events
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
-            try
-            {
-                if ((File.Exists(Globals.saveToolbarToXmlFileName)))
-                {
-                    // coreRibbonControl.Toolbar.RestoreLayoutFromXml(Configuration.saveToolbarToXmlFileName);
-                }
-                else
-                {
-                    nlogger.Warn("Unfortunately, we could not load the Quick Access toolbar layout.");
-                }
-            }
-            catch (Exception ex)
-            {
-                nlogger.Error(ex, "Woops!");
-            }
-
-            try
-            {
-                if ((File.Exists(Globals.saveLayoutToXmlFileName)))
-                {
-                    // coreRibbonControl.RestoreLayoutFromXml(Configuration.saveLayoutToXmlFileName);
-                }
-            }
-            catch (Exception ex)
-            {
-                nlogger.Error(ex, "Woops!");
-            }
-
             float zoomFactor = this.mainRichEditControl.ActiveView.ZoomFactor;
 
         }
@@ -166,21 +124,9 @@ namespace Rizonesoft.Office.Verbum
             // mainRibbonControl.Toolbar.SaveLayoutToRegistry("");
         }
 
-        private void mainRichEditControl_DocumentClosing(object sender, CancelEventArgs e)
+        private void MainRichEditControl_DocumentClosing(object sender, CancelEventArgs e)
         {
-            if (this.mainRichEditControl.Modified)
-            {
-                string currentFileName = this.mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
-                string message = !string.IsNullOrEmpty(currentFileName) ?
-                    string.Format("Do you want to save the changes you made for '{0}'?", currentFileName) : "Do you want to save the changes?";
-                DialogResult result = XtraMessageBox.Show(message, "Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
-                if (result == DialogResult.Yes)
-                {
-                    this.mainRichEditControl.SaveDocument();
-                }
-
-                e.Cancel = result == DialogResult.Cancel;
-            }
+            
         }
 
         private void mainRichEditControl_InvalidFormatException(object sender, RichEditInvalidFormatExceptionEventArgs e)
@@ -201,6 +147,9 @@ namespace Rizonesoft.Office.Verbum
 
         private void mainRichEditControl_DocumentLoaded(object sender, EventArgs e)
         {
+            //string currentFileName = this.mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
+            //Text = currentFileName;
+
             //CharacterProperties cp = coreRichEditControl.Document.BeginUpdateCharacters(coreRichEditControl.Document.Range);
             //cp.Language = new DevExpress.XtraRichEdit.Model.LangInfo(coreSpellChecker.Culture, coreSpellChecker.Culture, coreSpellChecker.Culture);
             //coreRichEditControl.Document.EndUpdateCharacters(cp);
@@ -211,12 +160,16 @@ namespace Rizonesoft.Office.Verbum
             if (e.Name == "CurrentFileName")
             {
                 string sFileName = e.NewValue.ToString();
+                SetDocumentCaption(sFileName);
+                //if (mainRichEditControl.Modified)
+                    //Text = Text[0..^2];
+                // Text = mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
             }
         }
 
         private void autoSpellingItem_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
-            Globals.autoSpellCheck = this.autoSpellingItem.Checked;
+            Globals.AutoSpellCheck = this.autoSpellingItem.Checked;
             autoSpellingSwitch();
         }
 
@@ -249,8 +202,8 @@ namespace Rizonesoft.Office.Verbum
                     this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, spellOptions);
                     this.mainSpellChecker.OptionsSpelling.CombineOptions(this.mainSpellChecker.GetSpellCheckerOptions(this.mainRichEditControl));
                     this.mainSpellChecker.SaveToRegistry("Software\\Rizonesoft\\Verbum");
-                    Globals.spellingLanguage = this.mainSpellChecker.Culture.ToString();
-                    Configure.Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", Globals.spellingLanguage);
+                    Globals.SpellingLanguage = this.mainSpellChecker.Culture.ToString();
+                    Configure.Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", Globals.SpellingLanguage);
                     // barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
                 }
 
@@ -270,12 +223,12 @@ namespace Rizonesoft.Office.Verbum
         private void loadSpellingOptions()
         {
 
-            Globals.spellingLanguage = Configure.Settings.GetSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", this.mainSpellChecker.Culture.ToString());
+            Globals.SpellingLanguage = Configure.Settings.GetSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", this.mainSpellChecker.Culture.ToString());
             this.mainSpellChecker.RestoreFromRegistry("Software\\Rizonesoft\\Verbum");
 
-            this.mainSpellChecker.Culture = new CultureInfo(Globals.spellingLanguage);
+            this.mainSpellChecker.Culture = new CultureInfo(Globals.SpellingLanguage);
             barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
-            this.autoSpellingItem.Checked = Globals.autoSpellCheck;
+            this.autoSpellingItem.Checked = Globals.AutoSpellCheck;
             LoadHyphenationDictionaries(mainRichEditControl.Document);
         }
 
@@ -283,7 +236,7 @@ namespace Rizonesoft.Office.Verbum
         {
             try
             {
-                string[] dicFiles = Directory.GetFiles(Globals.dictionariesPath);
+                string[] dicFiles = Directory.GetFiles(Globals.DictionariesPath);
 
                 foreach (string sFile in dicFiles)
                 {
@@ -324,12 +277,12 @@ namespace Rizonesoft.Office.Verbum
         {
             if (this.autoSpellingItem.Checked)
             {
-                Globals.autoSpellCheck = true;
+                Globals.AutoSpellCheck = true;
                 this.mainSpellChecker.SpellCheckMode = SpellCheckMode.AsYouType;
             }
             else
             {
-                Globals.autoSpellCheck = false;
+                Globals.AutoSpellCheck = false;
                 this.mainSpellChecker.SpellCheckMode = SpellCheckMode.OnDemand;
             }
         }
@@ -432,15 +385,18 @@ namespace Rizonesoft.Office.Verbum
         #endregion Zoom
 
 
+
+        #region Document Processing
+        #endregion Document Processing
+
         #region Document Statistics
 
         internal int pageCount = 1;
         internal int currentPage = 1;
 
-
         internal bool IncludeTextBoxes
         {
-            get { return _includeTextBoxes; }
+            get => _includeTextBoxes;
             set
             {
                 if (_includeTextBoxes == value)
@@ -458,76 +414,125 @@ namespace Rizonesoft.Office.Verbum
             CalculateDocumentStatistics();
         }
 
+        internal void OnPagesInfoChanged()
+        {
+            pagesBarItem.Caption = $"Page {currentPage} of {pageCount}";
+        }
+
         internal void CalculateDocumentStatistics()
         {
-            DocumentIterator iterator = new DocumentIterator(mainRichEditControl.Document, true);
-            StaticsticsVisitor visitor = new StaticsticsVisitor(IncludeTextBoxes);
+            DocumentIterator iterator = new(mainRichEditControl.Document, true);
+            StaticsticsVisitor visitor = new(IncludeTextBoxes);
             while (iterator.MoveNext())
             {
                 iterator.Current.Accept(visitor);
             }
 
-            docStatBtnItem.Caption = String.Format("{0} Words", visitor.WordCount);
+            docStatBtnItem.Caption = $"{visitor.WordCount} Words";
         }
 
-        void mainRichEditControl_VisiblePagesChanged(object sender, EventArgs e)
+        private void MainRichEditControl_SelectionChanged(object sender, EventArgs e)
         {
-            currentPage = mainRichEditControl.ActiveView.GetVisiblePageLayoutInfos()[0].PageIndex + 1;
-        }
 
-        internal void DocumentLayout_DocumentFormatted(object sender, EventArgs e)
-        {
-            // BeginInvoke(new Action(() =>
-            // {
-            pageCount = mainRichEditControl.DocumentLayout.GetPageCount();
-            // }));
-
-            OnPagesInfoChanged();
-        }
-
-        internal void OnPagesInfoChanged()
-        {
-            pagesBarItem.Caption = String.Format("Page {0} of {1}", currentPage, pageCount);
-        }
-
-        private void docStatBtnItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            using (DocumentStatisticsForm docStatsForm = new DocumentStatisticsForm(mainRichEditControl.Document, IncludeTextBoxes))
+            if (mainRichEditControl.DocumentLayout.IsDocumentFormattingCompleted)
             {
-                docStatsForm.LookAndFeel.ParentLookAndFeel = LookAndFeel;
-                docStatsForm.ShowDialog();
-                IncludeTextBoxes = docStatsForm.IncludeTextboxes;
+                RangedLayoutElement element = mainRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(mainRichEditControl.Document.CaretPosition);
+                if (element != null)
+                {
+                    currentPage = mainRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
+                    OnPagesInfoChanged();
+                }
+
+                CustomLayoutVisitor visitor = new(mainRichEditControl.Document);
+
+                for (int i = 0; i < mainRichEditControl.DocumentLayout.GetPageCount(); i++)
+                {
+                    visitor.Reset();
+                    LayoutPage page = mainRichEditControl.DocumentLayout.GetPage(i);
+                    visitor.Visit(page);
+
+                    if (!visitor.IsFound)
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (visitor.IsFound)
+                {
+                    barCurrLineItem.Caption = $"line {visitor.RowIndex}";
+                    barCurrColumnItem.Caption = $"Column {visitor.ColIndex}";
+                }
             }
 
         }
 
-        private void documentStatsTimer_Tick(object sender, EventArgs e)
+        private void MainRichEditControl_VisiblePagesChanged(object sender, EventArgs e)
+        {
+            currentPage = mainRichEditControl.ActiveView.GetVisiblePageLayoutInfos()[0].PageIndex + 1;
+        }
+
+        private void MainRichEditControl_ContentChanged(object sender, EventArgs e)
+        {
+            documentStatsTimer.Start();
+        }
+
+        private void DocumentLayout_DocumentFormatted(object sender, EventArgs e)
+        {
+            pageCount = mainRichEditControl.DocumentLayout.GetPageCount();
+            OnPagesInfoChanged();
+        }
+
+        private void DocumentStatsTimer_Tick(object sender, EventArgs e)
         {
             documentStatsTimer.Stop();
             BeginInvoke(new Action(CalculateDocumentStatistics));
         }
 
-        private void mainRichEditControl_ContentChanged(object sender, EventArgs e)
+        private void DocStatBtnItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
-            documentStatsTimer.Start();
+            using DocumentStatisticsForm docStatsForm = new(mainRichEditControl.Document, IncludeTextBoxes);
+            docStatsForm.LookAndFeel.ParentLookAndFeel = LookAndFeel;
+            docStatsForm.ShowDialog();
+            IncludeTextBoxes = docStatsForm.IncludeTextboxes;
         }
-
-        private void mainRichEditControl_SelectionChanged(object sender, EventArgs e)
-        {
-
-            RangedLayoutElement element = this.mainRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(this.mainRichEditControl.Document.CaretPosition);
-            if (element != null)
-            {
-                currentPage = this.mainRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
-            }
-
-            OnPagesInfoChanged();
-
-        }
-
 
         #endregion Document Statistics
 
+
+
+
+
+
+        private void mainRichEditControl_ModifiedChanged(object sender, EventArgs e)
+        {
+           // if (mainRichEditControl.Modified)
+           // {
+               // Text += " *";
+           // }
+
+        }
+
+        private void mainRichEditControl_AfterExport(object sender, EventArgs e)
+        {
+
+        }
+
+        private void DocForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.mainRichEditControl.Modified)
+            {
+                string message = $"Do you want to save the changes you made for '{Text}'?";
+                DialogResult result = XtraMessageBox.Show(message, "Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
+                {
+                    mainRichEditControl.SaveDocument();
+                }
+
+                e.Cancel = result == DialogResult.Cancel;
+            }
+        }
     }
 
 }

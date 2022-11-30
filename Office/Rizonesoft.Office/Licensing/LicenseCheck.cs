@@ -13,7 +13,7 @@ namespace Rizonesoft.Office.Licensing
             string licenseRegistryPath = @"HKEY_CURRENT_USER\Software\Rizonesoft\Office";
             string licenseRegistryValue = "License";
 
-            string licenseKey = Licensing.LicenseHelper.GetRegister(licenseRegistryPath, licenseRegistryValue);
+            string? licenseKey = Licensing.LicenseHelper.GetRegister(licenseRegistryPath, licenseRegistryValue);
             if (licenseKey != null && Licensing.LicenseHelper.IsLicensed(licenseKey, "Rizonesoft.Office.License.lic"))
             {
                 return true;

@@ -1,15 +1,18 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace Rizonesoft.Office.Licensing
 {
+
+    using Microsoft.Win32;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Threading.Tasks;
+
     public static class LicenseHelper
     {
 
