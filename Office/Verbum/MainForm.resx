@@ -295,7 +295,7 @@
 </value>
   </data>
   <metadata name="officePopupMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>561, 27</value>
+    <value>560, 20</value>
   </metadata>
   <data name="barButtonItem2.ImageOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.1" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -313,10 +313,72 @@
         ICA8L2c+DQo8L3N2Zz4L
 </value>
   </data>
-  <metadata name="MainTabbedMdiManager.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>159, 23</value>
+  <data name="devBarBtnItem.ImageOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.1" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        AAEAAAD/////AQAAAAAAAAAMAgAAAFlEZXZFeHByZXNzLkRhdGEudjIyLjEsIFZlcnNpb249MjIuMS42
+        LjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49Yjg4ZDE3NTRkNzAwZTQ5YQUBAAAAHURl
+        dkV4cHJlc3MuVXRpbHMuU3ZnLlN2Z0ltYWdlAQAAAAREYXRhBwICAAAACQMAAAAPAwAAAJYEAAAC77u/
+        PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4NCjxzdmcgeD0iMHB4IiB5PSIwcHgi
+        IHZpZXdCb3g9IjAgMCAzMiAzMiIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
+        MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWw6c3Bh
+        Y2U9InByZXNlcnZlIiBpZD0iTGF5ZXJfMSIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAg
+        MzIgMzIiPg0KICA8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgoJLlllbGxvd3tmaWxsOiNGRkIxMTU7fQoJ
+        LlJlZHtmaWxsOiNEMTFDMUM7fQoJLkJsYWNre2ZpbGw6IzcyNzI3Mjt9CgkuQmx1ZXtmaWxsOiMxMTc3
+        RDc7fQoJLldoaXRle2ZpbGw6I0ZGRkZGRjt9CgkuR3JlZW57ZmlsbDojMDM5QzIzO30KCS5zdDB7b3Bh
+        Y2l0eTowLjc1O30KCS5zdDF7b3BhY2l0eTowLjU7fQoJLnN0MntvcGFjaXR5OjAuMjU7fQoJLnN0M3tm
+        aWxsOiNGRkIxMTU7fQo8L3N0eWxlPg0KICA8ZyBpZD0iUGFyYW1ldGVycyI+DQogICAgPHBhdGggZD0i
+        TTE0LDI2SDZWNGgxOHYxMmMwLjcsMC4yLDEuNCwwLjUsMiwwLjhWM2MwLTAuNi0wLjQtMS0xLTFINUM0
+        LjQsMiw0LDIuNCw0LDN2MjRjMCwwLjYsMC40LDEsMSwxaDkuOCAgIEMxNC41LDI3LjQsMTQuMiwyNi43
+        LDE0LDI2eiIgY2xhc3M9IkJsYWNrIiAvPg0KICAgIDxwYXRoIGQ9Ik0zMCwyNXYtMmwtMi4yLTAuNGMt
+        MC4yLTAuNi0wLjQtMS4zLTAuOC0xLjhsMS4zLTEuOGwtMS40LTEuNGwtMS44LDEuM2MtMC41LTAuMy0x
+        LjItMC42LTEuOC0wLjdMMjMsMTZoLTIgICBsLTAuNCwyLjJjLTAuNiwwLjItMS4zLDAuNC0xLjgsMC43
+        TDE3LDE3LjZMMTUuNiwxOWwxLjMsMS44Yy0wLjMsMC41LTAuNiwxLjItMC44LDEuOEwxNCwyM3YybDIu
+        MiwwLjRjMC4yLDAuNiwwLjQsMS4zLDAuOCwxLjggICBMMTUuNywyOWwxLjQsMS40bDEuOC0xLjNjMC41
+        LDAuMywxLjIsMC42LDEuOCwwLjdMMjEsMzJoMmwwLjQtMi4yYzAuNi0wLjIsMS4zLTAuNCwxLjgtMC43
+        bDEuOCwxLjNsMS40LTEuNGwtMS4zLTEuOCAgIGMwLjMtMC41LDAuNi0xLjIsMC44LTEuOEwzMCwyNXog
+        TTIyLDI2Yy0xLjEsMC0yLTAuOS0yLTJzMC45LTIsMi0yczIsMC45LDIsMlMyMy4xLDI2LDIyLDI2eiIg
+        Y2xhc3M9IkJsdWUiIC8+DQogIDwvZz4NCjwvc3ZnPgs=
+</value>
+  </data>
+  <metadata name="mainTabbedMdiManager.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>156, 20</value>
   </metadata>
+  <data name="MainForm.IconOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.1" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        AAEAAAD/////AQAAAAAAAAAMAgAAAFlEZXZFeHByZXNzLkRhdGEudjIyLjEsIFZlcnNpb249MjIuMS42
+        LjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49Yjg4ZDE3NTRkNzAwZTQ5YQUBAAAAHURl
+        dkV4cHJlc3MuVXRpbHMuU3ZnLlN2Z0ltYWdlAQAAAAREYXRhBwICAAAACQMAAAAPAwAAAGkGAAAC77u/
+        PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4NCjxzdmcgdmlld0JveD0iLTIuMDA1
+        IC0yLjAwMjUgMzIgMzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxp
+        bms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPg0KICA8ZGVmcyB0YWc9InN0YXRpY0VsZW1l
+        bnRfaWQxNzYyNDMxIj4NCiAgICA8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgogICAgLmZpbDAge2ZpbGw6
+        IzM3MzQzNX0KICAgIC5maWwxIHtmaWxsOndoaXRlO2ZpbGwtcnVsZTpub256ZXJvfQogICA8L3N0eWxl
+        Pg0KICA8L2RlZnM+DQogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0wLjAwMTQsIC0wLjAwMDkpIiBz
+        dHlsZT0ic2hhcGUtcmVuZGVyaW5nOmdlb21ldHJpY1ByZWNpc2lvbjt0ZXh0LXJlbmRlcmluZzpnZW9t
+        ZXRyaWNQcmVjaXNpb247aW1hZ2UtcmVuZGVyaW5nOm9wdGltaXplUXVhbGl0eTtmaWxsLXJ1bGU6ZXZl
+        bm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZCIgZmlsbC1ydWxlPSJldmVuT2RkIj4NCiAgICA8ZyB0cmFuc2Zv
+        cm09Im1hdHJpeCgwLjA0OTQsIDAsIDAsIDAuMDQ5NCwgMCwgMCkiPg0KICAgICAgPGcgdHJhbnNmb3Jt
+        PSJtYXRyaXgoMC4wMzc4LCAwLCAwLCAwLjAzNzgsIDAsIDAuMDAwNykiPg0KICAgICAgICA8ZyBpZD0i
+        TGF5ZXJfeDAwMjBfMSI+DQogICAgICAgICAgPHBhdGggZD0iTTMzNDIuMDMsIDBMMTE2MzkuNTcsIDBD
+        MTM0NzcuNzEsIDAgMTQ5ODEuNjMsIDE1MDMuOTIgMTQ5ODEuNjMsIDMzNDIuMDZMMTQ5ODEuNjMsIDEx
+        NjQxLjYzQzE0OTgxLjYzLCAxMzQ3OS43NyAxMzQ3Ny43MSwgMTQ5ODMuNjkgMTE2MzkuNTcsIDE0OTgz
+        LjY5TDMzNDIuMDMsIDE0OTgzLjY5QzE1MDMuOTEsIDE0OTgzLjY5IDAsIDEzNDc5Ljc4IDAsIDExNjQx
+        LjY2TDAsIDMzNDIuMDNDMCwgMTUwMy45MSAxNTAzLjkxLCAwIDMzNDIuMDMsIDB6IiBmaWxsPSIjNzI3
+        MjcyIiBjbGFzcz0iQmxhY2siIGZpbGwtcnVsZT0iZXZlbk9kZCIgLz4NCiAgICAgICAgPC9nPg0KICAg
+        ICAgPC9nPg0KICAgIDwvZz4NCiAgPC9nPg0KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMC4wMDE0
+        LCAtMC4wMDA5KSIgc3R5bGU9InNoYXBlLXJlbmRlcmluZzpnZW9tZXRyaWNQcmVjaXNpb247dGV4dC1y
+        ZW5kZXJpbmc6Z2VvbWV0cmljUHJlY2lzaW9uO2ltYWdlLXJlbmRlcmluZzpvcHRpbWl6ZVF1YWxpdHk7
+        ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQiIGZpbGwtcnVsZT0iZXZlbk9kZCI+DQog
+        ICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC4wNDk0LCAwLCAwLCAwLjA0OTQsIDAsIDApIj4NCiAgICAg
+        IDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMDM3OCwgMCwgMCwgMC4wMzc4LCAwLCAwLjAwMDcpIj4NCiAg
+        ICAgICAgPGcgaWQ9IkxheWVyX3gwMDIwXzEiPg0KICAgICAgICAgIDxwb2x5Z29uIHBvaW50cz0iNzQ5
+        MS44NiwxMTM2Mi45IDEyNTcyLjgyLDQ4MjEuMDUgMTA5MDkuNjMsMzYyMC44IDc0OTEuODYsODE2NS4y
+        NyA0MDc0LjA4LDM2MjAuOCAyNDEwLjg4LDQ4MjEuMDUgIiBmaWxsPSIjRkZGRkZGIiBjbGFzcz0iV2hp
+        dGUiIGZpbGwtcnVsZT0iZXZlbk9kZCIgLz4NCiAgICAgICAgPC9nPg0KICAgICAgPC9nPg0KICAgIDwv
+        Zz4NCiAgPC9nPg0KPC9zdmc+Cw==
+</value>
+  </data>
   <metadata name="mainSharedDictionaryStorage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>347, 27</value>
+    <value>346, 20</value>
   </metadata>
 </root>

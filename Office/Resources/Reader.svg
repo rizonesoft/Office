@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.005 -2.0025 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs tag="staticElement_id13977142">
+    <style type="text/css">
+    .fil0 {fill:#373435}
+    .fil1 {fill:white;fill-rule:nonzero}
+   </style>
+  </defs>
+  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
+        <g id="Layer_x0020_1">
+          <path d="M3342.03, 0L11639.57, 0C13477.71, 0 14981.63, 1503.92 14981.63, 3342.06L14981.63, 11641.63C14981.63, 13479.77 13477.71, 14983.69 11639.57, 14983.69L3342.03, 14983.69C1503.91, 14983.69 0, 13479.78 0, 11641.66L0, 3342.03C0, 1503.91 1503.91, 0 3342.03, 0z" fill="#727272" class="Black" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
+        <g id="Layer_x0020_1">
+          <path d="M9950.07, 11225.47L11604.14, 9979.41L10078.01, 8421.82C11211.18, 7927.06 11750.35, 7148.27 11750.35, 6277.85C11750.35, 4967.65 10571.48, 3758.23 6797.32, 3758.23C5517.94, 3758.23 4265.96, 3822.36 3233.33, 3895.66L3233.33, 10858.97L5426.55, 10858.97L5426.55, 8907.41C5901.75, 8934.89 6431.78, 8953.22 6970.95, 8953.22C7272.51, 8953.22 7564.94, 8944.06 7839.1, 8925.73L9950.07, 11225.46zM6833.87, 7166.6C6303.85, 7166.6 5828.64, 7148.27 5426.55, 7129.95L5426.55, 5673.15C5828.64, 5654.83 6303.85, 5636.5 6833.87, 5636.5C8853.46, 5636.5 9465.75, 6002.99 9465.75, 6396.97C9465.75, 6790.94 8853.47, 7166.6 6833.87, 7166.6z" fill="#FFFFFF" class="White" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,42 +1,37 @@
-﻿using DevExpress.XtraSplashScreen;
-using System;
-
-namespace Rizonesoft.Office.Evaluate
+﻿namespace Rizonesoft.Office.Evaluate
 {
+    using DevExpress.XtraSplashScreen;
+    using Rizonesoft.Office.Evaluate.Utilities;
+    using Rizonesoft.Office.ROUtilities;
+    using System;
+
     public partial class SplashScreenForm : SplashScreen
     {
         public SplashScreenForm()
         {
-
             InitializeComponent();
-            labelCopyright.Text = "Copyright © 1998-" + DateTime.Now.Year.ToString();
-            labelProductName.Text = Globals.ProductName + " 20" + Globals.ProductVersion.Major.ToString();
-
+            labelNameVersion.Text = $"{StcEvaluate.ProductName} {ROGlobals.ProductVersionYear}";
+            labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 
         #region Overrides
-
         public override void ProcessCommand(Enum cmd, object arg)
         {
             base.ProcessCommand(cmd, arg);
             SplashScreenCommand command = (SplashScreenCommand)cmd;
-            if (command == SplashScreenCommand.SetStatusLabel)
+            if (command != SplashScreenCommand.SetStatusLabel)
             {
-                string labelText = (string)arg;
-                StatusLabel.Text = labelText;
+                return;
             }
 
+            string labelText = (string)arg;
+            StatusLabel.Text = labelText;
         }
-
         #endregion
 
         public enum SplashScreenCommand
         {
-            SetStatusLabel,
-            Command2,
-            Command3
+            SetStatusLabel
         }
-
-
     }
 }

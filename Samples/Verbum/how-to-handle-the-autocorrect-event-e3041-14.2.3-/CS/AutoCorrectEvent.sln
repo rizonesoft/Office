@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoCorrectEvent", "AutocorrectEvent\AutoCorrectEvent.csproj", "{3AB17651-BE0C-45FD-9E70-91D24D096A26}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		DebugTest|Any CPU = DebugTest|Any CPU
+		Release|Any CPU = Release|Any CPU
+		SMALLDEBUGTEST|Any CPU = SMALLDEBUGTEST|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.DebugTest|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.DebugTest|Any CPU.Build.0 = Debug|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.SMALLDEBUGTEST|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB17651-BE0C-45FD-9E70-91D24D096A26}.SMALLDEBUGTEST|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

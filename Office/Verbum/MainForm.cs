@@ -1,55 +1,51 @@
-﻿
-
-namespace Rizonesoft.Office.Verbum
+﻿namespace Rizonesoft.Office.Verbum
 {
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
-    using DevExpress.XtraGauges.Core.Resources;
     using DevExpress.XtraSpellChecker;
     using DevExpress.XtraSplashScreen;
-    using NLog;
-    using Rizonesoft.Office.Configure;
+    using Rizonesoft.Office;
+    using Rizonesoft.Office.Debugging;
     using Rizonesoft.Office.Interprocess;
     using Rizonesoft.Office.Licensing;
+    using Rizonesoft.Office.ROUtilities;
     using Rizonesoft.Office.Verbum.Classes;
+    using Rizonesoft.Office.Verbum.Utilities;
     using System;
     using System.ComponentModel;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Windows.Forms;
     using System.Xml;
 
-    public partial class MainForm : DevExpress.XtraBars.Ribbon.RibbonForm
+    public partial class MainForm : RibbonForm
     {
-        private static readonly Logger nlogger = LogManager.GetCurrentClassLogger();
-        private CopyData copyData = null;
-
-        MruList mruList;
-        internal int documentIndex = 0;
-        internal bool IsFloating = false;
-        internal static readonly string sBaseRegConfigPath = $"Rizonesoft\\Office";
-        internal static readonly string sCurrRegConfigPath = $"{sBaseRegConfigPath}\\{OfficeGlobals.ProductVersionMajor}\\{Globals.ProductName}";
-       
-        // bool updatedZoom = false;
-        internal bool isLicensed = false;
+        private CopyData copyData;
+        private static MruList mruList;
+        internal int documentIndex;
+        internal bool IsFloating;
+        internal bool isLicensed;
         internal BackgroundWorker updateWorker;
 
-        #region Overrides
-        protected override void OnLoad(EventArgs e)
+        #region Properties
+        DocForm CurrentDocument
         {
-            base.OnLoad(e);
-            SaveRestoreRibbon(false);
-            SplashScreenManager.CloseForm(false);
-        }
+            get
+            {
+                if (ActiveMdiChild == null)
+                {
+                    return null;
+                }
+                if (mainTabbedMdiManager.ActiveFloatForm != null)
+                {
+                    return mainTabbedMdiManager.ActiveFloatForm as DocForm;
+                }
 
-        protected override void OnClosed(EventArgs e)
-        {
-            base.OnClosed(e);
-            SaveRestoreRibbon(true);
-            SaveSettings();
-            SaveSkins();
+                return ActiveMdiChild as DocForm;
+            }
         }
-        #endregion Overrides
+        #endregion Properties
 
         public MainForm(string fileName)
         {
@@ -57,13 +53,10 @@ namespace Rizonesoft.Office.Verbum
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
             isLicensed = LicenseCheck.IsLicensed();
-
-            CreateVerbumDirectories();
-            ConfigureLogging();
+            CreateProgramDirectories();
             OnShowMdiChildCaptionInParentTitle();
-
             InitializeComponent();
-            Text = $"{Globals.ProductName} {OfficeGlobals.ProductVersionYear}";
+            base.Text = $"{StcVerbum.ProductName} {ROGlobals.ProductVersionYear}";
 
             if (string.IsNullOrEmpty(fileName))
             {
@@ -75,7 +68,9 @@ namespace Rizonesoft.Office.Verbum
                 SplashScreenManager.Default
                     .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
             }
-            CreateNewDocument(fileName);
+
+            debugRibbonPage.Visible = Debugging.IsDebugging;
+            
 
             updateWorker = new BackgroundWorker();
             updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
@@ -84,11 +79,168 @@ namespace Rizonesoft.Office.Verbum
             mainRibbonControl.SelectedPage = homeRibbonPage;
 
             Initialize();
-            SplashScreenManager.Default
-                .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Completed - Loading Verbum");
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
+
+            CreateNewDocument(fileName);
+
         }
 
-        // private static RegistrationForm registrationDlg = null;
+        #region Overrides
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            SaveRestoreRibbon(false);
+            SplashScreenManager.CloseForm(false);
+
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            SaveRestoreRibbon(true);
+            SaveSettings();
+            SaveSkins();
+        }
+
+        #endregion Overrides
+
+        #region Initialize
+
+        private void Initialize()
+        {
+            copyData = new CopyData();
+            copyData.AssignHandle(Handle);
+            copyData.Channels.Add("DocChannel");
+            copyData.DataReceived += new DataReceivedEventHandler(CopyData_DataReceived);
+        }
+
+        private void CopyData_DataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.ChannelName.Equals("DocChannel"))
+            {
+                string fileName = (string)e.Data;
+                CreateNewDocument(fileName);
+                AddFileToMRUList(fileName);
+            }
+        }
+
+        public static void AddFileToMRUList(string fileName)
+        {
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                try
+                {
+                    mruList.AddFile(fileName);
+                }
+                catch (IOException ioEx)
+                {
+                    mruList.RemoveFile(fileName);
+                    ROLogging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                }
+            }
+        }
+
+        private void MruList_FileSelected(string fileName) 
+        { 
+            OpenFile(fileName); 
+        }
+
+        #endregion Initialize
+
+        #region Document Processing
+
+        public void CreateNewDocument(string fileName)
+        {
+
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                foreach (DocForm openForm in MdiChildren.Cast<DocForm>())
+                {
+                    if (string.Compare(openForm.FileName, fileName, true) == 0)
+                    {
+                        openForm.Activate();
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                documentIndex++;
+            }
+
+            DocForm newDoc = new DocForm();
+            newDoc.OpenFile(fileName, documentIndex);
+            newDoc.MdiParent = this;
+            newDoc.Show();
+        }
+
+        #endregion Document Processing
+
+        #region Settings
+        private void LoadSettings()
+        {
+            ROFunctions.GeometryFromString(ROSettings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+
+        }
+
+        private void SaveSettings()
+        {
+            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", ROFunctions.GeometryToString(this));
+            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", ROFunctions.BooleanToString(StcVerbum.AutoSpellCheck));
+
+        }
+
+        private static void SetSkins()
+        {
+            string sSkin = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
+            string sPalette = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", string.Empty);
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
+
+        }
+
+        private static void SaveSkins()
+        {
+            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+        }
+
+        private bool SaveRestoreRibbon(bool SaveRibbon)
+        {
+            if (mainRibbonControl != null)
+            {
+                switch (SaveRibbon)
+                {
+                    case true:
+                        mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
+                        return true;
+                    case false:
+                        mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcVerbum.StaticRegInterfacePath);
+                        return true;
+                }
+            }
+
+            return false;
+
+        }
+
+
+        #endregion Settings
+
+        #region Configurations
+
+        private static void CreateProgramDirectories()
+        {
+            if (!Directory.Exists(StcVerbum.UserAppDirectory))
+            {
+                Directory.CreateDirectory(StcVerbum.UserAppDirectory);
+            }
+        }
+
+        #endregion Configurations
+
+
+
 
         private void BarRegisterItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
@@ -118,64 +270,18 @@ namespace Rizonesoft.Office.Verbum
             mainForm.barCloseItem.Enabled = State;
         }
 
-        private void ConfigureLogging()
-        {
-            var nlogConfig = new NLog.Config.LoggingConfiguration();
-            // Targets where to log to: File and Console.
-            var nlogFile = new NLog.Targets.FileTarget("logfile") { FileName = Globals.LoggingFilePath };
-            var nlogConsole = new NLog.Targets.ConsoleTarget("logconsole");
 
-            // Rules for mapping loggers to targets.            
-            nlogConfig.AddRule(LogLevel.Info, LogLevel.Fatal, nlogConsole);
-            nlogConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, nlogFile);
 
-            // Apply config           
-            LogManager.Configuration = nlogConfig;
-        }
-
-        private void CreateVerbumDirectories()
-        {
-            if (!Directory.Exists(Globals.UserAppDirectory))
-            {
-                Directory.CreateDirectory(Globals.UserAppDirectory);
-            }
-        }
+        
 
         private void exceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
             int result = 15 / int.Parse("0");
         }
 
-        private void Initialize()
-        {
-            // Create a new instance of the class:
-            copyData = new CopyData();
-            // Assign the handle:
-            copyData.AssignHandle(Handle);
-            // Create the named channels to send and receive on.
-            copyData.Channels.Add("DocChannel");
-            // Hook up event notifications whenever a message is received:
-            copyData.DataReceived += new DataReceivedEventHandler(copyData_DataReceived);
-        }
+       
 
-        #region Properties
-        DocForm CurrentDocument
-        {
-            get
-            {
-                if (this.ActiveMdiChild == null)
-                {
-                    return null;
-                }
-                if (MainTabbedMdiManager.ActiveFloatForm != null)
-                {
-                    return MainTabbedMdiManager.ActiveFloatForm as DocForm;
-                }
-
-                return this.ActiveMdiChild as DocForm;
-            }
-        }
-        #endregion Properties
+        
 
 
         #region Updates
@@ -250,19 +356,23 @@ namespace Rizonesoft.Office.Verbum
 
             this.mainRibbonControl.ForceInitialize();
             mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\Verbum\\MRU");
-            mruList.FileSelected += mruList_FileSelected;
+            mruList.FileSelected += MruList_FileSelected;
             LoadDictionaries();
 
             if (isLicensed == true)
             {
-                Text += $" - {OfficeGlobals.LicenseBusinessString}";
+                Text += $" - {ROGlobals.LicenseBusinessString}";
                 barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
                 barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
                 return;
             }
-            Text += $" - {OfficeGlobals.LicenseHomeString}";
+            Text += $" - {ROGlobals.LicenseHomeString}";
             barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
             barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+
+
+
+
         }
 
         private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
@@ -282,16 +392,7 @@ namespace Rizonesoft.Office.Verbum
             }
         }
 
-        private void copyData_DataReceived(object sender, DataReceivedEventArgs e)
-        {
-            // Display the data in the logging list box:
-            if (e.ChannelName.Equals("DocChannel"))
-            {
-                string fileName = (string)e.Data;
-                CreateNewDocument(fileName);
-                AddFileToMRUList(fileName);
-            }
-        }
+        
 
         private void barNewItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         { this.CreateNewDocument(null); }
@@ -324,30 +425,7 @@ namespace Rizonesoft.Office.Verbum
 
 
         #region Document Handling
-        public void CreateNewDocument(string fileName)
-        {
-            // Detect whether file is already open
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                foreach (DocForm openForm in this.MdiChildren)
-                {
-                    if (string.Compare(openForm.FileName, fileName, true) == 0)
-                    {
-                        openForm.Activate();
-                        return;
-                    }
-                }
-            }
-            else
-            {
-                documentIndex++;
-            }
-
-            DocForm newDoc = new DocForm();
-            newDoc.OpenFile(fileName, documentIndex);
-            newDoc.MdiParent = this;
-            newDoc.Show();
-        }
+        
 
         private void OpenFileFolder(string sIniDir)
         {
@@ -395,26 +473,6 @@ namespace Rizonesoft.Office.Verbum
         internal void OpenFile() { OpenFileFolder(string.Empty); }
         #endregion Document Handling
 
-        #region MRU
-        public void AddFileToMRUList(string fileName)
-        {
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                try
-                {
-                    mruList.AddFile(fileName);
-                }
-                catch (IOException ioEx)
-                {
-                    mruList.RemoveFile(fileName);
-                    nlogger.Error(ioEx, "Whoops!");
-                }
-            }
-        }
-
-        private void mruList_FileSelected(string fileName) { OpenFile(fileName); }
-        #endregion MRU
-
 
 
 
@@ -424,12 +482,12 @@ namespace Rizonesoft.Office.Verbum
             string sAutoSpellCheck;
             string sFileNameWithEx;
 
-            sAutoSpellCheck = Configure.Settings
-                .GetSetting($"Rizonesoft\\Office\\{Globals.ProductName}\\Spelling", "AutoSpellCheck", "True");
-            Globals.AutoSpellCheck = Utilities.StringToBoolean(sAutoSpellCheck);
+            sAutoSpellCheck = ROSettings.Settings
+                .GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True");
+            StcVerbum.AutoSpellCheck = ROFunctions.StringToBoolean(sAutoSpellCheck);
             try
             {
-                string[] dicFiles = Directory.GetFiles(Globals.DictionariesPath);
+                string[] dicFiles = Directory.GetFiles(StcVerbum.DictionariesPath);
                 foreach (string sFile in dicFiles)
                 {
                     if (sFile.EndsWith(".dic"))
@@ -442,15 +500,15 @@ namespace Rizonesoft.Office.Verbum
                             sFileNameWithEx = sFileNoExtension + ".aff";
                             AddHunspellDictionary(
                                 sFile,
-                                Path.Combine(Globals.DictionariesPath, sFileNameWithEx),
-                                new CultureInfo(String.Format("{0}-{1}", sFileParts[0], sFileParts[1])));
+                                Path.Combine(StcVerbum.DictionariesPath, sFileNameWithEx),
+                                new CultureInfo(string.Format("{0}-{1}", sFileParts[0], sFileParts[1])));
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                nlogger.Error(ex, "Woops!");
+                ROLogging.ROLogger.Error(ex, "Woops!");
                 MessageBox.Show(ex.Message, "Woops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -476,7 +534,7 @@ namespace Rizonesoft.Office.Verbum
 
         private void AddCustomDictionary(string dictionaryPath, CultureInfo customCulture)
         {
-            string userCustomDicDir = Globals.UserAppDirectory + "\\Dictionaries";
+            string userCustomDicDir = StcVerbum.UserAppDirectory + "\\Dictionaries";
             if (!Directory.Exists(userCustomDicDir))
             {
                 Directory.CreateDirectory(userCustomDicDir);
@@ -505,57 +563,12 @@ namespace Rizonesoft.Office.Verbum
         {
         }
 
-        #region Settings
-        private void LoadSettings()
+
+
+        private void DevBarBtnItem_ItemDoubleClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
-            Utilities.GeometryFromString(Settings.GetSetting($"{sCurrRegConfigPath}\\General", "Geometry", ""), this);
-
+            Debugging.IsDebugging = !Debugging.IsDebugging;
+            debugRibbonPage.Visible = Debugging.IsDebugging;
         }
-
-        private void SaveSettings()
-        {
-            Settings.SaveSetting($"{sCurrRegConfigPath}\\General", "Geometry", Utilities.GeometryToString(this));
-            Settings.SaveSetting($"{sCurrRegConfigPath}\\Spelling", "AutoSpellCheck", Utilities.BooleanToString(Globals.AutoSpellCheck));
-            
-        }
-
-        private void SetSkins()
-        {
-            string sSkin = Settings.GetSetting($"{sCurrRegConfigPath}\\Interface", "Skin", "Office 2019 Colorful");
-            string sPalette = Settings.GetSetting($"{sCurrRegConfigPath}\\Interface", "Palette", string.Empty);
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
-
-        }
-
-        private void SaveSkins()
-        {
-            // Settings.SaveSetting($"{sCurrRegConfigPath}\\Interface", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            // Settings.SaveSetting($"{sCurrRegConfigPath}\\Interface", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-        }
-
-        private bool SaveRestoreRibbon(bool SaveRibbon)
-        {
-            if (mainRibbonControl != null)
-            {
-                string sRibbonRegistryPath = $"{OfficeGlobals.CurrentUserReg}\\{sCurrRegConfigPath}\\Interface";
-
-                switch (SaveRibbon)
-                {
-                    case true:
-                        mainRibbonControl.Toolbar.SaveLayoutToRegistry(sRibbonRegistryPath);
-                        return true;
-                    case false:
-                        mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(sRibbonRegistryPath);
-                        return true;
-                }
-            }
-
-            return false;
-
-        }
-
-        #endregion Settings
-
-
     }
 }

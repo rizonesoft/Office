@@ -34,12 +34,11 @@ namespace Rizonesoft.Office
                 mruBtnItems[i] = new BarButtonItem();
                 mruBtnItems[i].ImageOptions.ImageUri.Uri = "richedit/columnsone";
                 mruBtnItems[i].Visibility = BarItemVisibility.Never;
-                mruMenu.ItemLinks.Add(mruBtnItems[i]);
+                mruMenu.ItemLinks.Add(mruBtnItems[i]); 
             }
 
             LoadFiles();
             ShowFiles();
-
         }
 
         private void LoadFiles()
@@ -47,7 +46,7 @@ namespace Rizonesoft.Office
 
             for (int i = 0; i < iFiles; i++)
             {
-                string fileName = Configure.Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
+                string fileName = ROSettings.Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
 
                 if (string.IsNullOrWhiteSpace(fileName))
                 {
@@ -61,13 +60,13 @@ namespace Rizonesoft.Office
         {
             for (int i = 0; i < iFiles; i++)
             {
-                Configure.Settings.DeleteSetting(SaveMRUPath, "FilePath" + i.ToString());
+                ROSettings.Settings.DeleteSetting(SaveMRUPath, "FilePath" + i.ToString());
             }
 
             int index = 0;
             foreach (FileInfo fileInfo in fileInfos)
             {
-                Configure.Settings.SaveSetting(SaveMRUPath, "FilePath" + index.ToString(), fileInfo.FullName);
+                ROSettings.Settings.SaveSetting(SaveMRUPath, "FilePath" + index.ToString(), fileInfo.FullName);
                 index++;
             }
         }

@@ -17,14 +17,11 @@ namespace Rizonesoft.Office.Evaluate
     public partial class BookForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
 
-        private static NLog.Logger nlogger = NLog.LogManager.GetCurrentClassLogger();
         internal string fileName;
 
         public BookForm()
         {
             InitializeComponent();
-
-            UserLookAndFeel.Default.StyleChanged += Default_StyleChanged;
         }
 
 
@@ -70,15 +67,6 @@ namespace Rizonesoft.Office.Evaluate
         #endregion Workbook Processing
 
 
-        #region Events
-
-        private void Default_StyleChanged(object sender, EventArgs e)
-        {
-            Configure.Settings.SaveSetting("Rizonesoft\\" + Globals.ProductName + "\\Skins", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Configure.Settings.SaveSetting("Rizonesoft\\" + Globals.ProductName + "\\Skins", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-        }
-
-        #endregion Events
 
 
     }

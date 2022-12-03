@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office", "Rizone
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office.Evaluate", "Evaluate\Rizonesoft.Office.Evaluate.csproj", "{45BAF256-3546-4F09-BA97-E65CBE57C071}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rizonesoft.Office.Reader", "Reader\Rizonesoft.Office.Reader.csproj", "{FE89B5C9-96EC-4DDA-A5E7-DB732D0E6989}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rizonesoft.Office.Flow", "Flow\Rizonesoft.Office.Flow.csproj", "{40927FB2-58E1-44A0-83EA-8725D42F7B8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45BAF256-3546-4F09-BA97-E65CBE57C071}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE89B5C9-96EC-4DDA-A5E7-DB732D0E6989}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE89B5C9-96EC-4DDA-A5E7-DB732D0E6989}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE89B5C9-96EC-4DDA-A5E7-DB732D0E6989}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE89B5C9-96EC-4DDA-A5E7-DB732D0E6989}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40927FB2-58E1-44A0-83EA-8725D42F7B8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40927FB2-58E1-44A0-83EA-8725D42F7B8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40927FB2-58E1-44A0-83EA-8725D42F7B8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40927FB2-58E1-44A0-83EA-8725D42F7B8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

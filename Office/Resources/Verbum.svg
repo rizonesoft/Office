@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.005 -2.0025 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs tag="staticElement_id1762431">
+    <style type="text/css">
+    .fil0 {fill:#373435}
+    .fil1 {fill:white;fill-rule:nonzero}
+   </style>
+  </defs>
+  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
+        <g id="Layer_x0020_1">
+          <path d="M3342.03, 0L11639.57, 0C13477.71, 0 14981.63, 1503.92 14981.63, 3342.06L14981.63, 11641.63C14981.63, 13479.77 13477.71, 14983.69 11639.57, 14983.69L3342.03, 14983.69C1503.91, 14983.69 0, 13479.78 0, 11641.66L0, 3342.03C0, 1503.91 1503.91, 0 3342.03, 0z" fill="#727272" class="Black" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
+        <g id="Layer_x0020_1">
+          <polygon points="7491.86,11362.9 12572.82,4821.05 10909.63,3620.8 7491.86,8165.27 4074.08,3620.8 2410.88,4821.05 " fill="#FFFFFF" class="White" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

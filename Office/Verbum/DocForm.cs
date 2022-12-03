@@ -1,42 +1,63 @@
-﻿using DevExpress.LookAndFeel;
-using DevExpress.Utils.Controls;
-using DevExpress.XtraBars;
-using DevExpress.XtraEditors;
-using DevExpress.XtraRichEdit;
-using DevExpress.XtraRichEdit.API.Layout;
-using DevExpress.XtraRichEdit.API.Native;
-using DevExpress.XtraSpellChecker;
-using DevExpress.XtraSpellChecker.Forms;
-using DevExpress.XtraSpellChecker.Native;
-using Rizonesoft.Office.Verbum.Classes;
-using Rizonesoft.Office.Verbum.Forms;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Globalization;
-using System.IO;
-using System.Windows.Forms;
+﻿
 
 namespace Rizonesoft.Office.Verbum
 {
+    using DevExpress.LookAndFeel;
+    using DevExpress.Services;
+    using DevExpress.Utils.Controls;
+    using DevExpress.XtraBars;
+    using DevExpress.XtraBars.Docking;
+    using DevExpress.XtraEditors;
+    using DevExpress.XtraRichEdit;
+    using DevExpress.XtraRichEdit.API.Layout;
+    using DevExpress.XtraRichEdit.API.Native;
+    using DevExpress.XtraRichEdit.Services;
+    using DevExpress.XtraSpellChecker;
+    using DevExpress.XtraSpellChecker.Forms;
+    using DevExpress.XtraSpellChecker.Native;
+    using Rizonesoft.Office.Debugging;
+    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Verbum.Classes;
+    using Rizonesoft.Office.Verbum.Forms;
+    using Rizonesoft.Office.Verbum.Utilities;
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Globalization;
+    using System.IO;
+    using System.Windows.Forms;
+
     public partial class DocForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
-        private static NLog.Logger nlogger = NLog.LogManager.GetCurrentClassLogger();
-        private static int wordCount = 0;
         internal bool _includeTextBoxes = false;
-        internal bool _isZoomChanging = false;
-        internal string fileName;
+        internal bool isZoomChanging;
+
+        #region Properties
+
+        public string FileName { get; internal set; }
+
+        #endregion Properties
 
         public DocForm()
         {
             InitializeComponent();
-            this.mainRichEditControl.DocumentLayout.DocumentFormatted += DocumentLayout_DocumentFormatted;
+            mainRichEditControl.DocumentLayout.DocumentFormatted += DocumentLayout_DocumentFormatted;
+            mainRichEditControl.Options.DocumentSaveOptions.Changed += DocumentSaveOptions_Changed;
 
-
-
-            UserLookAndFeel.Default.StyleChanged += Default_StyleChanged;
             new RichEditExceptionHandler(mainRichEditControl).Install();
             new SpellCheckerExceptionHandler(mainSpellChecker).Install();
+
+            CustomCommandListenerService customComExecListenerService = new();
+            CustomCommandListenerService service = customComExecListenerService;
+            service.RichEditControl = mainRichEditControl;
+            service.CommandExecutedEvent += Service_CommandExecutedEvent;
+            mainRichEditControl.RemoveService(typeof(ICommandExecutionListenerService));
+            mainRichEditControl.AddService(typeof(ICommandExecutionListenerService), service);
+            debugComPanel.Visibility = DockVisibility.Hidden;
+
+            var commandFactory = new CustomCommandFactoryService(mainRichEditControl, mainRichEditControl.GetService<IRichEditCommandFactoryService>());
+            mainRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
+
 
             //
             // coreSpellChecker.Culture = CultureInfo.;
@@ -60,13 +81,7 @@ namespace Rizonesoft.Office.Verbum
             }
         }
 
-        public string FileName
-        {
-            get
-            {
-                return this.fileName;
-            }
-        }
+
 
         public RichEditControl RichEditControlCore
         {
@@ -102,8 +117,8 @@ namespace Rizonesoft.Office.Verbum
             // this.mainRichEditControl.DocumentLayout.DocumentFormatted += DocumentLayout_DocumentFormatted;
             this.mainRichEditControl.Options.DocumentSaveOptions.Changed += DocumentSaveOptions_OnChanged;
 
-            loadSpellingOptions();
-            // autoSpellingSwitch();
+            LoadSpellingOptions();
+
 
             this.mainRichEditControl.Modified = false;
             this.mainRichEditControl.Focus();
@@ -126,7 +141,7 @@ namespace Rizonesoft.Office.Verbum
 
         private void MainRichEditControl_DocumentClosing(object sender, CancelEventArgs e)
         {
-            
+
         }
 
         private void mainRichEditControl_InvalidFormatException(object sender, RichEditInvalidFormatExceptionEventArgs e)
@@ -139,11 +154,6 @@ namespace Rizonesoft.Office.Verbum
 
         }
 
-        private void Default_StyleChanged(object sender, EventArgs e)
-        {
-            Configure.Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Configure.Settings.SaveSetting("Rizonesoft\\Office\\Skins", "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-        }
 
         private void mainRichEditControl_DocumentLoaded(object sender, EventArgs e)
         {
@@ -162,16 +172,12 @@ namespace Rizonesoft.Office.Verbum
                 string sFileName = e.NewValue.ToString();
                 SetDocumentCaption(sFileName);
                 //if (mainRichEditControl.Modified)
-                    //Text = Text[0..^2];
+                //Text = Text[0..^2];
                 // Text = mainRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
             }
         }
 
-        private void autoSpellingItem_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            Globals.AutoSpellCheck = this.autoSpellingItem.Checked;
-            autoSpellingSwitch();
-        }
+
 
         private void spellOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
@@ -199,119 +205,54 @@ namespace Rizonesoft.Office.Verbum
 
                     }
 
-                    this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, spellOptions);
-                    this.mainSpellChecker.OptionsSpelling.CombineOptions(this.mainSpellChecker.GetSpellCheckerOptions(this.mainRichEditControl));
-                    this.mainSpellChecker.SaveToRegistry("Software\\Rizonesoft\\Verbum");
-                    Globals.SpellingLanguage = this.mainSpellChecker.Culture.ToString();
-                    Configure.Settings.SaveSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", Globals.SpellingLanguage);
+                    mainSpellChecker.SetSpellCheckerOptions(mainRichEditControl, spellOptions);
+                    mainSpellChecker.OptionsSpelling.CombineOptions(mainSpellChecker.GetSpellCheckerOptions(this.mainRichEditControl));
+                    mainSpellChecker.SaveToRegistry(StcVerbum.StaticRegSpellingPath);
+                    StcVerbum.SpellingLanguage = mainSpellChecker.Culture.ToString();
+                    ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", StcVerbum.SpellingLanguage);
                     // barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
                 }
 
             }
         }
 
-        private void zoomResetItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            mainRichEditControl.ActiveView.ZoomFactor = 1;
-        }
+
 
         #endregion Events
 
 
-        #region Spelling
 
-        private void loadSpellingOptions()
+        
+
+        #region DocForm Events (Overrides)
+
+        private void DocForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-
-            Globals.SpellingLanguage = Configure.Settings.GetSetting("Rizonesoft\\Verbum\\Spelling", "SpellingLanguage", this.mainSpellChecker.Culture.ToString());
-            this.mainSpellChecker.RestoreFromRegistry("Software\\Rizonesoft\\Verbum");
-
-            this.mainSpellChecker.Culture = new CultureInfo(Globals.SpellingLanguage);
-            barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
-            this.autoSpellingItem.Checked = Globals.AutoSpellCheck;
-            LoadHyphenationDictionaries(mainRichEditControl.Document);
-        }
-
-        private void LoadHyphenationDictionaries(Document document)
-        {
-            try
+            if (this.mainRichEditControl.Modified)
             {
-                string[] dicFiles = Directory.GetFiles(Globals.DictionariesPath);
-
-                foreach (string sFile in dicFiles)
+                DialogResult result = XtraMessageBox.Show($"Do you want to save changes to:{Environment.NewLine}\"{FileName}\"?",
+                                          "Warning",
+                                          MessageBoxButtons.YesNoCancel,
+                                          MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
                 {
-                    if (sFile.EndsWith(".dic"))
-                    {
-                        string sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
-                        string[] sFileParts = sFileNoExtension.Split('_');
-
-                        if (sFileParts[0].Equals("hyph"))
-                        {
-                            AddHyphenationDictionary(sFile,
-                            new CultureInfo(String.Format("{0}-{1}", sFileParts[1], sFileParts[2])));
-                        }
-
-                    }
+                    mainRichEditControl.SaveDocument();
                 }
 
-                document.Hyphenation = true;
-                document.HyphenateCaps = true;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message,
-                    "Bummer!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                e.Cancel = result == DialogResult.Cancel;
             }
         }
 
-        private void AddHyphenationDictionary(string hyphPath, CultureInfo hyphCulture)
-        {
-            OpenOfficeHyphenationDictionary hyphenationDictionary = new OpenOfficeHyphenationDictionary(hyphPath, hyphCulture);
-            this.mainRichEditControl.HyphenationDictionaries.Add(hyphenationDictionary);
+        #endregion DocForm Events (Overrides)
 
-        }
-
-        private void autoSpellingSwitch()
-        {
-            if (this.autoSpellingItem.Checked)
-            {
-                Globals.AutoSpellCheck = true;
-                this.mainSpellChecker.SpellCheckMode = SpellCheckMode.AsYouType;
-            }
-            else
-            {
-                Globals.AutoSpellCheck = false;
-                this.mainSpellChecker.SpellCheckMode = SpellCheckMode.OnDemand;
-            }
-        }
-
-        #endregion Spelling
-
-
-        #region Document Handling
-
-        //private void processFileName(string fileName, int docIndex)
-        //{
-        //DocForm docForm = this;
-        //if (!String.IsNullOrEmpty(fileName))
-        //{
-        //FileInfo fileInf = new FileInfo(fileName);
-        //docForm.mainRichEditControl.LoadDocument(fileName);
-        //docForm.Text = fileInf.Name + " - " + docForm.Text;
-        //}
-        //else
-        //{
-        //docForm.Text = @"Document " + docIndex.ToString() + " - Rizonesoft Verbum";
-        //}
-        //}
+        #region Document Processing
 
         public void OpenFile(string docName, int docIndex)
         {
+
             if (!string.IsNullOrEmpty(docName))
             {
-                this.fileName = docName;
+                FileName = docName;
                 switch (Path.GetExtension(docName))
                 {
                     case "eml":
@@ -323,71 +264,106 @@ namespace Rizonesoft.Office.Verbum
                 }
 
                 SetDocumentCaption(docName);
+                return;
             }
-            else
-            {
-                this.Text = @"Document " + docIndex.ToString() + string.Empty;
-            }
+            Text = FileName = $@"Document {docIndex}";
         }
 
         private void SetDocumentCaption(string fileName)
         {
+            if (string.IsNullOrEmpty(fileName)) return;
+
             string fileCaption = Path.GetFileName(fileName);
             if (fileCaption.Length > 28)
             {
-                fileCaption = fileCaption.Remove(29) + "...";
+                fileCaption = $"{fileCaption.Remove(29)}...";
             }
-            this.Text = fileCaption;
+            Text = fileCaption;
         }
 
-        #endregion Document Handling
-
-
-        #region Zoom
-
-        private void zoomBarEditItem_EditValueChanged(object sender, EventArgs e)
+        void DocumentSaveOptions_Changed(object sender, BaseOptionChangedEventArgs e)
         {
-            DocForm docForm = this;
-            if (docForm._isZoomChanging)
-            { return; }
 
-            int value = Convert.ToInt32(docForm.zoomBarEditItem.EditValue);
-            docForm._isZoomChanging = true;
-            try
-            {
-                docForm.mainRichEditControl.ActiveView.ZoomFactor = value / 100f;
-                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
-            }
-            finally
-            {
-                docForm._isZoomChanging = false;
-            }
         }
 
-        private void mainRichEditControl_ZoomChanged(object sender, EventArgs e)
-        {
-            DocForm docForm = this;
-            if (docForm._isZoomChanging)
-                return;
-            int value = (int)Math.Round(docForm.mainRichEditControl.ActiveView.ZoomFactor * 100);
-            docForm._isZoomChanging = true;
-            try
-            {
-                docForm.zoomBarEditItem.EditValue = value;
-                docForm.zoomBarEditItem.Caption = String.Format("{0}%", value);
-            }
-            finally
-            {
-                docForm._isZoomChanging = false;
-            }
-        }
-
-        #endregion Zoom
-
-
-
-        #region Document Processing
         #endregion Document Processing
+
+        #region Spelling (Dictionaries)
+
+        private void AutoSpellingItem_CheckedChanged(object sender, ItemClickEventArgs e)
+        {
+            StcVerbum.AutoSpellCheck = autoSpellingItem.Checked;
+            AutoSpellingSwitch();
+        }
+
+        private void AutoSpellingSwitch()
+        {
+            if (autoSpellingItem.Checked)
+            {
+                StcVerbum.AutoSpellCheck = true;
+                mainSpellChecker.SpellCheckMode = SpellCheckMode.AsYouType;
+                return;
+            }
+
+            StcVerbum.AutoSpellCheck = false;
+            mainSpellChecker.SpellCheckMode = SpellCheckMode.OnDemand;
+        }
+
+        private void LoadSpellingOptions()
+        {
+            StcVerbum.SpellingLanguage = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", mainSpellChecker.Culture.ToString());
+            StcVerbum.AutoSpellCheck = ROFunctions.StringToBoolean(ROSettings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True"));
+            mainSpellChecker.RestoreFromRegistry(StcVerbum.StaticRegSpellingPath);
+
+            mainSpellChecker.Culture = new CultureInfo(StcVerbum.SpellingLanguage);
+            barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
+            autoSpellingItem.Checked = StcVerbum.AutoSpellCheck;
+            LoadHyphenationDictionaries(mainRichEditControl.Document);
+        }
+
+        private void LoadHyphenationDictionaries(Document document)
+        {
+            try
+            {
+                string[] dicFiles = Directory.GetFiles(StcVerbum.DictionariesPath);
+
+                foreach (string sFile in dicFiles)
+                {
+                    if (!sFile.EndsWith(".dic"))
+                    {
+                        continue;
+                    }
+
+                    string sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
+                    string[] sFileParts = sFileNoExtension.Split('_');
+
+                    if (!sFileParts[0].Equals("hyph"))
+                    {
+                        continue;
+                    }
+
+                    AddHyphenationDictionary(sFile, new CultureInfo($"{sFileParts[1]}-{sFileParts[2]}"));
+                }
+
+                document.Hyphenation = true;
+                document.HyphenateCaps = true;
+
+            }
+            catch (Exception ex)
+            {
+                ROLogging.ROLogger.Error(ex, "Whoops!");
+                MessageBox.Show(ex.Message, "Whoops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void AddHyphenationDictionary(string hyphPath, CultureInfo hyphCulture)
+        {
+            OpenOfficeHyphenationDictionary hyphenationDictionary = new(hyphPath, hyphCulture);
+            mainRichEditControl.HyphenationDictionaries.Add(hyphenationDictionary);
+
+        }
+
+        #endregion Spelling (Dictionaries)
 
         #region Document Statistics
 
@@ -500,39 +476,88 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Document Statistics
 
+        #region Zoom
 
-
-
-
-
-        private void mainRichEditControl_ModifiedChanged(object sender, EventArgs e)
+        private void ZoomResetItem_ItemClick(object sender, ItemClickEventArgs e)
         {
-           // if (mainRichEditControl.Modified)
-           // {
-               // Text += " *";
-           // }
-
+            mainRichEditControl.ActiveView.ZoomFactor = 1;
         }
 
-        private void mainRichEditControl_AfterExport(object sender, EventArgs e)
+        private void MainRichEditControl_ZoomChanged(object sender, EventArgs e)
         {
+            if (isZoomChanging) return;
+            int zoomValue = (int)Math.Round(mainRichEditControl.ActiveView.ZoomFactor * 100);
+            isZoomChanging = true;
 
-        }
-
-        private void DocForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (this.mainRichEditControl.Modified)
+            try
             {
-                string message = $"Do you want to save the changes you made for '{Text}'?";
-                DialogResult result = XtraMessageBox.Show(message, "Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
-                if (result == DialogResult.Yes)
-                {
-                    mainRichEditControl.SaveDocument();
-                }
-
-                e.Cancel = result == DialogResult.Cancel;
+                zoomBarEditItem.EditValue = zoomValue;
+                zoomBarEditItem.Caption = $"{zoomValue}%";
+            }
+            finally
+            {
+                isZoomChanging = false;
             }
         }
+
+        private void ZoomBarEditItem_EditValueChanged(object sender, EventArgs e)
+        {
+            if (isZoomChanging) return;
+
+            int zoomValue = Convert.ToInt32(zoomBarEditItem.EditValue);
+            isZoomChanging = true;
+
+            try
+            {
+                mainRichEditControl.ActiveView.ZoomFactor = zoomValue / 100f;
+                zoomBarEditItem.Caption = $"{zoomValue}%";
+            }
+            finally
+            {
+                isZoomChanging = false;
+            }
+        }
+
+        #endregion Zoom
+
+        #region Developer Tools (Debugging)
+
+        private void Service_CommandExecutedEvent(object sender, CommandEventArgs e)
+        {
+            if (!Debugging.IsDebugging) return;
+            if ((sender == null) || (e == null)) return;
+
+            if (!IsShowCommand(e.CommandName.ToString(), new List<string>
+            {
+                "DevExpress.XtraRichEdit.Commands.InsertTextCommand",
+                "DevExpress.XtraRichEdit.Commands.Internal.ExtendSelectionByCharactersCommand"
+            }))
+            {
+                debugComMemoEdit.AppendText($"{e.CommandName}{Environment.NewLine}Description: {e.CommandDescription}{Environment.NewLine}");
+            }
+
+        }
+
+        private static bool IsShowCommand(string command, List<string> richEditCommands)
+        {
+
+            if (richEditCommands.Contains(command))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ComBarBtnItem_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            debugComPanel.Visibility = comBarBtnItem.Down ? DockVisibility.Visible : DockVisibility.Hidden;
+            Debugging.IsDebugging = comBarBtnItem.Down;
+
+        }
+
+        #endregion Developer Tools (Debugging)
+
     }
 
 }

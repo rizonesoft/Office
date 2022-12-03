@@ -29,6 +29,7 @@
         {
             this.components = new System.ComponentModel.Container();
             DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling1 = new DevExpress.XtraSpellChecker.OptionsSpelling();
+            DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling2 = new DevExpress.XtraSpellChecker.OptionsSpelling();
             DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup1 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
             DevExpress.Utils.SuperToolTip superToolTip1 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipTitleItem toolTipTitleItem1 = new DevExpress.Utils.ToolTipTitleItem();
@@ -72,6 +73,7 @@
             this.repositoryItemRichEditFontSizeEdit1 = new DevExpress.XtraRichEdit.Design.RepositoryItemRichEditFontSizeEdit();
             this.mainRichEditControl = new DevExpress.XtraRichEdit.RichEditControl();
             this.mainSpellChecker = new DevExpress.XtraSpellChecker.SpellChecker(this.components);
+            this.debugComMemoEdit = new DevExpress.XtraEditors.MemoEdit();
             this.fontSizeIncreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeIncreaseItem();
             this.fontSizeDecreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeDecreaseItem();
             this.toggleFontBoldItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontBoldItem();
@@ -252,7 +254,7 @@
             this.toggleLastColumnItem1 = new DevExpress.XtraRichEdit.UI.ToggleLastColumnItem();
             this.toggleBandedColumnsItem1 = new DevExpress.XtraRichEdit.UI.ToggleBandedColumnsItem();
             this.changeTableBorderLineStyleItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderLineStyleItem();
-            this.repositoryItemBorderLineStyle1 = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle();
+            this.workProgressBar = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle();
             this.changeTableBorderLineWeightItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderLineWeightItem();
             this.repositoryItemBorderLineWeight1 = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineWeight();
             this.changeTableBorderColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderColorItem();
@@ -336,9 +338,6 @@
             this.barLangBtnItem = new DevExpress.XtraBars.BarButtonItem();
             this.zoomBarEditItem = new DevExpress.XtraBars.BarEditItem();
             this.repositoryItemZoomTrackBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar();
-            this.barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
-            this.barButtonItem2 = new DevExpress.XtraBars.BarButtonItem();
-            this.barButtonItem3 = new DevExpress.XtraBars.BarButtonItem();
             this.autoSpellingItem = new DevExpress.XtraBars.BarCheckItem();
             this.spellOptionsItem = new DevExpress.XtraBars.BarButtonItem();
             this.zoomResetItem = new DevExpress.XtraBars.BarButtonItem();
@@ -363,6 +362,7 @@
             this.galleryChangeTableStyleItem2 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
             this.barCurrLineItem = new DevExpress.XtraBars.BarStaticItem();
             this.barCurrColumnItem = new DevExpress.XtraBars.BarStaticItem();
+            this.comBarBtnItem = new DevExpress.XtraBars.BarButtonItem();
             this.headerFooterToolsRibbonPageCategory1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsRibbonPageCategory();
             this.headerFooterToolsDesignRibbonPage1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignRibbonPage();
             this.headerFooterToolsDesignNavigationRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignNavigationRibbonPageGroup();
@@ -422,6 +422,11 @@
             this.documentViewsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentViewsRibbonPageGroup();
             this.showRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ShowRibbonPageGroup();
             this.zoomRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ZoomRibbonPageGroup();
+            this.debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            this.debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
+            this.repositoryItemProgressBar2 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
+            this.repositoryItemProgressBar3 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
             this.ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             this.richEditBarController1 = new DevExpress.XtraRichEdit.UI.RichEditBarController(this.components);
             this.documentStatsTimer = new System.Windows.Forms.Timer(this.components);
@@ -429,20 +434,38 @@
             this.dockPanel1 = new DevExpress.XtraBars.Docking.DockPanel();
             this.dockPanel1_Container = new DevExpress.XtraBars.Docking.ControlContainer();
             this.richEditCommentControl1 = new DevExpress.XtraRichEdit.RichEditCommentControl();
+            this.debugComPanel = new DevExpress.XtraBars.Docking.DockPanel();
+            this.dockPanel2_Container = new DevExpress.XtraBars.Docking.ControlContainer();
             this.galleryChangeTableStyleItem1 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
+            this.rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            this.bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
+            this.panelControl1 = new DevExpress.XtraEditors.PanelControl();
+            this.leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            this.topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
             ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemRichEditFontSizeEdit1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.debugComMemoEdit.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.displayForReviewModeComboBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineStyle1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.workProgressBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineWeight1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFloatingObjectOutlineWeight1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exportPopupMenu)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.richEditBarController1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dockManager1)).BeginInit();
             this.dockPanel1.SuspendLayout();
             this.dockPanel1_Container.SuspendLayout();
+            this.debugComPanel.SuspendLayout();
+            this.dockPanel2_Container.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panelControl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).BeginInit();
             this.SuspendLayout();
             // 
             // mainRibbonControl
@@ -730,9 +753,6 @@
             this.docStatBtnItem,
             this.barLangBtnItem,
             this.zoomBarEditItem,
-            this.barButtonItem1,
-            this.barButtonItem2,
-            this.barButtonItem3,
             this.autoSpellingItem,
             this.spellOptionsItem,
             this.zoomResetItem,
@@ -755,9 +775,10 @@
             this.barButtonGroup14,
             this.galleryChangeTableStyleItem2,
             this.barCurrLineItem,
-            this.barCurrColumnItem});
+            this.barCurrColumnItem,
+            this.comBarBtnItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.MaxItemId = 308;
+            this.mainRibbonControl.MaxItemId = 313;
             this.mainRibbonControl.Name = "mainRibbonControl";
             this.mainRibbonControl.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] {
             this.headerFooterToolsRibbonPageCategory1,
@@ -771,7 +792,8 @@
             this.referencesRibbonPage1,
             this.mailingsRibbonPage1,
             this.reviewRibbonPage1,
-            this.viewRibbonPage1});
+            this.viewRibbonPage1,
+            this.debugRibbonPage});
             this.mainRibbonControl.QuickToolbarItemLinks.Add(this.fileSaveItem1, "S");
             this.mainRibbonControl.QuickToolbarItemLinks.Add(this.undoItem1);
             this.mainRibbonControl.QuickToolbarItemLinks.Add(this.redoItem1);
@@ -779,10 +801,13 @@
             this.repositoryItemFontEdit1,
             this.repositoryItemRichEditFontSizeEdit1,
             this.displayForReviewModeComboBox1,
-            this.repositoryItemBorderLineStyle1,
+            this.workProgressBar,
             this.repositoryItemBorderLineWeight1,
             this.repositoryItemFloatingObjectOutlineWeight1,
-            this.repositoryItemZoomTrackBar1});
+            this.repositoryItemZoomTrackBar1,
+            this.repositoryItemProgressBar1,
+            this.repositoryItemProgressBar2,
+            this.repositoryItemProgressBar3});
             this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             this.mainRibbonControl.Size = new System.Drawing.Size(1215, 158);
@@ -802,6 +827,7 @@
             // 
             // switchToPrintLayoutViewItem1
             // 
+            this.switchToPrintLayoutViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             this.switchToPrintLayoutViewItem1.Id = 180;
             this.switchToPrintLayoutViewItem1.Name = "switchToPrintLayoutViewItem1";
             // 
@@ -914,11 +940,11 @@
             // mainRichEditControl
             // 
             this.mainRichEditControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainRichEditControl.Location = new System.Drawing.Point(0, 158);
+            this.mainRichEditControl.Location = new System.Drawing.Point(3, 161);
             this.mainRichEditControl.MenuManager = this.mainRibbonControl;
             this.mainRichEditControl.Name = "mainRichEditControl";
             this.mainRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
-            this.mainRichEditControl.Size = new System.Drawing.Size(1215, 487);
+            this.mainRichEditControl.Size = new System.Drawing.Size(1206, 281);
             this.mainRichEditControl.SpellChecker = this.mainSpellChecker;
             this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, optionsSpelling1);
             this.mainRichEditControl.TabIndex = 2;
@@ -926,9 +952,7 @@
             this.mainRichEditControl.DocumentLoaded += new System.EventHandler(this.mainRichEditControl_DocumentLoaded);
             this.mainRichEditControl.DocumentClosing += new System.ComponentModel.CancelEventHandler(this.MainRichEditControl_DocumentClosing);
             this.mainRichEditControl.ContentChanged += new System.EventHandler(this.MainRichEditControl_ContentChanged);
-            this.mainRichEditControl.ModifiedChanged += new System.EventHandler(this.mainRichEditControl_ModifiedChanged);
-            this.mainRichEditControl.ZoomChanged += new System.EventHandler(this.mainRichEditControl_ZoomChanged);
-            this.mainRichEditControl.AfterExport += new System.EventHandler(this.mainRichEditControl_AfterExport);
+            this.mainRichEditControl.ZoomChanged += new System.EventHandler(this.MainRichEditControl_ZoomChanged);
             this.mainRichEditControl.InvalidFormatException += new DevExpress.XtraRichEdit.RichEditInvalidFormatExceptionEventHandler(this.mainRichEditControl_InvalidFormatException);
             this.mainRichEditControl.VisiblePagesChanged += new System.EventHandler(this.MainRichEditControl_VisiblePagesChanged);
             // 
@@ -936,6 +960,17 @@
             // 
             this.mainSpellChecker.Culture = new System.Globalization.CultureInfo("en-US");
             this.mainSpellChecker.ParentContainer = null;
+            // 
+            // debugComMemoEdit
+            // 
+            this.debugComMemoEdit.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.debugComMemoEdit.Location = new System.Drawing.Point(0, 0);
+            this.debugComMemoEdit.MenuManager = this.mainRibbonControl;
+            this.debugComMemoEdit.Name = "debugComMemoEdit";
+            this.mainSpellChecker.SetShowSpellCheckMenu(this.debugComMemoEdit, true);
+            this.debugComMemoEdit.Size = new System.Drawing.Size(1209, 170);
+            this.mainSpellChecker.SetSpellCheckerOptions(this.debugComMemoEdit, optionsSpelling2);
+            this.debugComMemoEdit.TabIndex = 0;
             // 
             // fontSizeIncreaseItem1
             // 
@@ -1885,11 +1920,13 @@
             // 
             // switchToSimpleViewItem1
             // 
+            this.switchToSimpleViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             this.switchToSimpleViewItem1.Id = 178;
             this.switchToSimpleViewItem1.Name = "switchToSimpleViewItem1";
             // 
             // switchToDraftViewItem1
             // 
+            this.switchToDraftViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             this.switchToDraftViewItem1.Id = 179;
             this.switchToDraftViewItem1.Name = "switchToDraftViewItem1";
             // 
@@ -1991,18 +2028,18 @@
             // 
             // changeTableBorderLineStyleItem1
             // 
-            this.changeTableBorderLineStyleItem1.Edit = this.repositoryItemBorderLineStyle1;
+            this.changeTableBorderLineStyleItem1.Edit = this.workProgressBar;
             this.changeTableBorderLineStyleItem1.EditWidth = 130;
             this.changeTableBorderLineStyleItem1.Id = 200;
             this.changeTableBorderLineStyleItem1.Name = "changeTableBorderLineStyleItem1";
             // 
-            // repositoryItemBorderLineStyle1
+            // workProgressBar
             // 
-            this.repositoryItemBorderLineStyle1.AutoHeight = false;
-            this.repositoryItemBorderLineStyle1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            this.workProgressBar.AutoHeight = false;
+            this.workProgressBar.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
-            this.repositoryItemBorderLineStyle1.Control = this.mainRichEditControl;
-            this.repositoryItemBorderLineStyle1.Name = "repositoryItemBorderLineStyle1";
+            this.workProgressBar.Control = this.mainRichEditControl;
+            this.workProgressBar.Name = "workProgressBar";
             // 
             // changeTableBorderLineWeightItem1
             // 
@@ -2486,7 +2523,7 @@
             this.zoomBarEditItem.EditWidth = 150;
             this.zoomBarEditItem.Id = 280;
             this.zoomBarEditItem.Name = "zoomBarEditItem";
-            this.zoomBarEditItem.EditValueChanged += new System.EventHandler(this.zoomBarEditItem_EditValueChanged);
+            this.zoomBarEditItem.EditValueChanged += new System.EventHandler(this.ZoomBarEditItem_EditValueChanged);
             // 
             // repositoryItemZoomTrackBar1
             // 
@@ -2497,40 +2534,13 @@
             this.repositoryItemZoomTrackBar1.Minimum = 10;
             this.repositoryItemZoomTrackBar1.Name = "repositoryItemZoomTrackBar1";
             // 
-            // barButtonItem1
-            // 
-            this.barButtonItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.barButtonItem1.Caption = "barButtonItem1";
-            this.barButtonItem1.Id = 281;
-            this.barButtonItem1.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem1.ImageOptions.SvgImage")));
-            this.barButtonItem1.Name = "barButtonItem1";
-            this.barButtonItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // barButtonItem2
-            // 
-            this.barButtonItem2.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.barButtonItem2.Caption = "barButtonItem2";
-            this.barButtonItem2.Id = 282;
-            this.barButtonItem2.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem2.ImageOptions.SvgImage")));
-            this.barButtonItem2.Name = "barButtonItem2";
-            this.barButtonItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
-            // barButtonItem3
-            // 
-            this.barButtonItem3.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            this.barButtonItem3.Caption = "barButtonItem3";
-            this.barButtonItem3.Id = 283;
-            this.barButtonItem3.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem3.ImageOptions.SvgImage")));
-            this.barButtonItem3.Name = "barButtonItem3";
-            this.barButtonItem3.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            // 
             // autoSpellingItem
             // 
             this.autoSpellingItem.Caption = "Auto Spelling";
             this.autoSpellingItem.Id = 284;
             this.autoSpellingItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("autoSpellingItem.ImageOptions.SvgImage")));
             this.autoSpellingItem.Name = "autoSpellingItem";
-            this.autoSpellingItem.CheckedChanged += new DevExpress.XtraBars.ItemClickEventHandler(this.autoSpellingItem_CheckedChanged);
+            this.autoSpellingItem.CheckedChanged += new DevExpress.XtraBars.ItemClickEventHandler(this.AutoSpellingItem_CheckedChanged);
             // 
             // spellOptionsItem
             // 
@@ -2546,7 +2556,7 @@
             this.zoomResetItem.Id = 286;
             this.zoomResetItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomResetItem.ImageOptions.SvgImage")));
             this.zoomResetItem.Name = "zoomResetItem";
-            this.zoomResetItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.zoomResetItem_ItemClick);
+            this.zoomResetItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.ZoomResetItem_ItemClick);
             // 
             // zoomBarResetItem
             // 
@@ -2556,7 +2566,7 @@
             this.zoomBarResetItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomBarResetItem.ImageOptions.SvgImage")));
             this.zoomBarResetItem.Name = "zoomBarResetItem";
             this.zoomBarResetItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            this.zoomBarResetItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.zoomResetItem_ItemClick);
+            this.zoomBarResetItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.ZoomResetItem_ItemClick);
             // 
             // exportBarButton
             // 
@@ -2754,10 +2764,17 @@
             this.barCurrColumnItem.Id = 307;
             this.barCurrColumnItem.Name = "barCurrColumnItem";
             // 
+            // comBarBtnItem
+            // 
+            this.comBarBtnItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
+            this.comBarBtnItem.Caption = "Show Document Commands";
+            this.comBarBtnItem.Id = 308;
+            this.comBarBtnItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("comBarBtnItem.ImageOptions.SvgImage")));
+            this.comBarBtnItem.Name = "comBarBtnItem";
+            this.comBarBtnItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.ComBarBtnItem_ItemClick);
+            // 
             // headerFooterToolsRibbonPageCategory1
             // 
-            this.headerFooterToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.Transparent;
-            this.headerFooterToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
             this.headerFooterToolsRibbonPageCategory1.Control = this.mainRichEditControl;
             this.headerFooterToolsRibbonPageCategory1.Name = "headerFooterToolsRibbonPageCategory1";
             this.headerFooterToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
@@ -2798,8 +2815,6 @@
             // 
             // tableToolsRibbonPageCategory1
             // 
-            this.tableToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.Transparent;
-            this.tableToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
             this.tableToolsRibbonPageCategory1.Control = this.mainRichEditControl;
             this.tableToolsRibbonPageCategory1.Name = "tableToolsRibbonPageCategory1";
             this.tableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
@@ -2905,8 +2920,6 @@
             // 
             // floatingPictureToolsRibbonPageCategory1
             // 
-            this.floatingPictureToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.Transparent;
-            this.floatingPictureToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
             this.floatingPictureToolsRibbonPageCategory1.Control = this.mainRichEditControl;
             this.floatingPictureToolsRibbonPageCategory1.Name = "floatingPictureToolsRibbonPageCategory1";
             this.floatingPictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
@@ -3252,7 +3265,6 @@
             this.documentViewsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
             this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToSimpleViewItem1, "L");
             this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToDraftViewItem1, "E");
-            this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToPrintLayoutViewItem1, "P");
             this.documentViewsRibbonPageGroup1.Name = "documentViewsRibbonPageGroup1";
             // 
             // showRibbonPageGroup1
@@ -3270,16 +3282,39 @@
             this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomResetItem, true);
             this.zoomRibbonPageGroup1.Name = "zoomRibbonPageGroup1";
             // 
+            // debugRibbonPage
+            // 
+            this.debugRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.debugPageGroup});
+            this.debugRibbonPage.Name = "debugRibbonPage";
+            this.debugRibbonPage.Text = "Developer";
+            // 
+            // debugPageGroup
+            // 
+            this.debugPageGroup.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("debugPageGroup.ImageOptions.SvgImage")));
+            this.debugPageGroup.ItemLinks.Add(this.comBarBtnItem);
+            this.debugPageGroup.Name = "debugPageGroup";
+            this.debugPageGroup.Text = "Debugging";
+            // 
+            // repositoryItemProgressBar1
+            // 
+            this.repositoryItemProgressBar1.Name = "repositoryItemProgressBar1";
+            // 
+            // repositoryItemProgressBar2
+            // 
+            this.repositoryItemProgressBar2.Name = "repositoryItemProgressBar2";
+            // 
+            // repositoryItemProgressBar3
+            // 
+            this.repositoryItemProgressBar3.Name = "repositoryItemProgressBar3";
+            // 
             // ribbonStatusBar
             // 
-            this.ribbonStatusBar.ItemLinks.Add(this.pagesBarItem);
+            this.ribbonStatusBar.ItemLinks.Add(this.pagesBarItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.docStatBtnItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.barCurrLineItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.barCurrColumnItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.barLangBtnItem, true);
-            this.ribbonStatusBar.ItemLinks.Add(this.barButtonItem3);
-            this.ribbonStatusBar.ItemLinks.Add(this.barButtonItem2, true);
-            this.ribbonStatusBar.ItemLinks.Add(this.barButtonItem1, true);
             this.ribbonStatusBar.ItemLinks.Add(this.zoomBarResetItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.zoomBarEditItem);
             this.ribbonStatusBar.Location = new System.Drawing.Point(0, 645);
@@ -3569,6 +3604,8 @@
             this.dockManager1.Form = this;
             this.dockManager1.HiddenPanels.AddRange(new DevExpress.XtraBars.Docking.DockPanel[] {
             this.dockPanel1});
+            this.dockManager1.RootPanels.AddRange(new DevExpress.XtraBars.Docking.DockPanel[] {
+            this.debugComPanel});
             this.dockManager1.TopZIndexControls.AddRange(new string[] {
             "DevExpress.XtraBars.BarDockControl",
             "DevExpress.XtraBars.StandaloneBarDockControl",
@@ -3617,6 +3654,25 @@
             this.richEditCommentControl1.Size = new System.Drawing.Size(326, 458);
             this.richEditCommentControl1.TabIndex = 0;
             // 
+            // debugComPanel
+            // 
+            this.debugComPanel.Controls.Add(this.dockPanel2_Container);
+            this.debugComPanel.Dock = DevExpress.XtraBars.Docking.DockingStyle.Bottom;
+            this.debugComPanel.ID = new System.Guid("f911a258-796f-476a-8923-2664aaf06b5f");
+            this.debugComPanel.Location = new System.Drawing.Point(0, 445);
+            this.debugComPanel.Name = "debugComPanel";
+            this.debugComPanel.OriginalSize = new System.Drawing.Size(200, 200);
+            this.debugComPanel.Size = new System.Drawing.Size(1215, 200);
+            this.debugComPanel.Text = "Commands";
+            // 
+            // dockPanel2_Container
+            // 
+            this.dockPanel2_Container.Controls.Add(this.debugComMemoEdit);
+            this.dockPanel2_Container.Location = new System.Drawing.Point(3, 27);
+            this.dockPanel2_Container.Name = "dockPanel2_Container";
+            this.dockPanel2_Container.Size = new System.Drawing.Size(1209, 170);
+            this.dockPanel2_Container.TabIndex = 0;
+            // 
             // galleryChangeTableStyleItem1
             // 
             this.galleryChangeTableStyleItem1.Caption = "Quick Styles";
@@ -3635,6 +3691,51 @@
             this.galleryChangeTableStyleItem1.NewItemLink = null;
             this.galleryChangeTableStyleItem1.PopupGallery = null;
             // 
+            // rightSpacerPanel
+            // 
+            this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
+            this.rightSpacerPanel.Location = new System.Drawing.Point(1212, 158);
+            this.rightSpacerPanel.Name = "rightSpacerPanel";
+            this.rightSpacerPanel.Size = new System.Drawing.Size(3, 287);
+            this.rightSpacerPanel.TabIndex = 13;
+            // 
+            // bottomSpacerPannel
+            // 
+            this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.bottomSpacerPannel.Location = new System.Drawing.Point(3, 442);
+            this.bottomSpacerPannel.Name = "bottomSpacerPannel";
+            this.bottomSpacerPannel.Size = new System.Drawing.Size(1206, 3);
+            this.bottomSpacerPannel.TabIndex = 20;
+            // 
+            // panelControl1
+            // 
+            this.panelControl1.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.panelControl1.Dock = System.Windows.Forms.DockStyle.Right;
+            this.panelControl1.Location = new System.Drawing.Point(1209, 161);
+            this.panelControl1.Name = "panelControl1";
+            this.panelControl1.Size = new System.Drawing.Size(3, 284);
+            this.panelControl1.TabIndex = 19;
+            // 
+            // leftSpacerPanel
+            // 
+            this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
+            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 161);
+            this.leftSpacerPanel.Name = "leftSpacerPanel";
+            this.leftSpacerPanel.Size = new System.Drawing.Size(3, 284);
+            this.leftSpacerPanel.TabIndex = 18;
+            // 
+            // topSpacerPanel
+            // 
+            this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.topSpacerPanel.Location = new System.Drawing.Point(0, 158);
+            this.topSpacerPanel.Name = "topSpacerPanel";
+            this.topSpacerPanel.Size = new System.Drawing.Size(1212, 3);
+            this.topSpacerPanel.TabIndex = 17;
+            // 
             // DocForm
             // 
             this.AllowFormGlass = DevExpress.Utils.DefaultBoolean.True;
@@ -3642,6 +3743,12 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1215, 669);
             this.Controls.Add(this.mainRichEditControl);
+            this.Controls.Add(this.bottomSpacerPannel);
+            this.Controls.Add(this.panelControl1);
+            this.Controls.Add(this.leftSpacerPanel);
+            this.Controls.Add(this.topSpacerPanel);
+            this.Controls.Add(this.rightSpacerPanel);
+            this.Controls.Add(this.debugComPanel);
             this.Controls.Add(this.ribbonStatusBar);
             this.Controls.Add(this.mainRibbonControl);
             this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("DocForm.IconOptions.SvgImage")));
@@ -3655,16 +3762,27 @@
             ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemRichEditFontSizeEdit1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.debugComMemoEdit.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.displayForReviewModeComboBox1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineStyle1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.workProgressBar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineWeight1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFloatingObjectOutlineWeight1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.exportPopupMenu)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.richEditBarController1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dockManager1)).EndInit();
             this.dockPanel1.ResumeLayout(false);
             this.dockPanel1_Container.ResumeLayout(false);
+            this.debugComPanel.ResumeLayout(false);
+            this.dockPanel2_Container.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panelControl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3874,7 +3992,7 @@
         private DevExpress.XtraRichEdit.UI.ToggleLastColumnItem toggleLastColumnItem1;
         private DevExpress.XtraRichEdit.UI.ToggleBandedColumnsItem toggleBandedColumnsItem1;
         private DevExpress.XtraRichEdit.UI.ChangeTableBorderLineStyleItem changeTableBorderLineStyleItem1;
-        private DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle repositoryItemBorderLineStyle1;
+        private DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle workProgressBar;
         private DevExpress.XtraRichEdit.UI.ChangeTableBorderLineWeightItem changeTableBorderLineWeightItem1;
         private DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineWeight repositoryItemBorderLineWeight1;
         private DevExpress.XtraRichEdit.UI.ChangeTableBorderColorItem changeTableBorderColorItem1;
@@ -3999,9 +4117,6 @@
         private DevExpress.XtraBars.BarButtonItem barLangBtnItem;
         private DevExpress.XtraBars.BarEditItem zoomBarEditItem;
         private DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar repositoryItemZoomTrackBar1;
-        private DevExpress.XtraBars.BarButtonItem barButtonItem1;
-        private DevExpress.XtraBars.BarButtonItem barButtonItem2;
-        private DevExpress.XtraBars.BarButtonItem barButtonItem3;
         private System.Windows.Forms.Timer documentStatsTimer;
         private DevExpress.XtraSpellChecker.SpellChecker mainSpellChecker;
         private DevExpress.XtraBars.BarCheckItem autoSpellingItem;
@@ -4052,5 +4167,19 @@
         private DevExpress.XtraRichEdit.UI.TableAlignmentRibbonPageGroup tableAlignmentRibbonPageGroup1;
         private DevExpress.XtraBars.BarStaticItem barCurrLineItem;
         private DevExpress.XtraBars.BarStaticItem barCurrColumnItem;
+        private DevExpress.XtraBars.Docking.DockPanel debugComPanel;
+        private DevExpress.XtraBars.Docking.ControlContainer dockPanel2_Container;
+        private DevExpress.XtraEditors.MemoEdit debugComMemoEdit;
+        private DevExpress.XtraBars.Ribbon.RibbonPage debugRibbonPage;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup debugPageGroup;
+        private DevExpress.XtraBars.BarButtonItem comBarBtnItem;
+        private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar1;
+        private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar2;
+        private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar3;
+        private DevExpress.XtraEditors.PanelControl bottomSpacerPannel;
+        private DevExpress.XtraEditors.PanelControl panelControl1;
+        private DevExpress.XtraEditors.PanelControl leftSpacerPanel;
+        private DevExpress.XtraEditors.PanelControl topSpacerPanel;
+        private DevExpress.XtraEditors.PanelControl rightSpacerPanel;
     }
 }
