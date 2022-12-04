@@ -45,6 +45,7 @@
                 return ActiveMdiChild as DocForm;
             }
         }
+
         #endregion Properties
 
         public MainForm(string fileName)
@@ -80,7 +81,6 @@
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
-
             CreateNewDocument(fileName);
 
         }
@@ -191,7 +191,7 @@
 
         }
 
-        private static void SetSkins()
+        public static void SetSkins()
         {
             string sSkin = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
             string sPalette = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", string.Empty);

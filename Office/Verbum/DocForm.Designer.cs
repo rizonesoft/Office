@@ -437,10 +437,6 @@
             this.debugComPanel = new DevExpress.XtraBars.Docking.DockPanel();
             this.dockPanel2_Container = new DevExpress.XtraBars.Docking.ControlContainer();
             this.galleryChangeTableStyleItem1 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
-            this.rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
-            this.panelControl1 = new DevExpress.XtraEditors.PanelControl();
-            this.leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
             this.topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
             ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).BeginInit();
@@ -461,10 +457,6 @@
             this.dockPanel1_Container.SuspendLayout();
             this.debugComPanel.SuspendLayout();
             this.dockPanel2_Container.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.panelControl1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).BeginInit();
             this.SuspendLayout();
             // 
@@ -939,12 +931,13 @@
             // 
             // mainRichEditControl
             // 
+            this.mainRichEditControl.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.mainRichEditControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainRichEditControl.Location = new System.Drawing.Point(3, 161);
+            this.mainRichEditControl.Location = new System.Drawing.Point(0, 163);
             this.mainRichEditControl.MenuManager = this.mainRibbonControl;
             this.mainRichEditControl.Name = "mainRichEditControl";
             this.mainRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
-            this.mainRichEditControl.Size = new System.Drawing.Size(1206, 281);
+            this.mainRichEditControl.Size = new System.Drawing.Size(1215, 282);
             this.mainRichEditControl.SpellChecker = this.mainSpellChecker;
             this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, optionsSpelling1);
             this.mainRichEditControl.TabIndex = 2;
@@ -3691,50 +3684,14 @@
             this.galleryChangeTableStyleItem1.NewItemLink = null;
             this.galleryChangeTableStyleItem1.PopupGallery = null;
             // 
-            // rightSpacerPanel
-            // 
-            this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(1212, 158);
-            this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(3, 287);
-            this.rightSpacerPanel.TabIndex = 13;
-            // 
-            // bottomSpacerPannel
-            // 
-            this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(3, 442);
-            this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(1206, 3);
-            this.bottomSpacerPannel.TabIndex = 20;
-            // 
-            // panelControl1
-            // 
-            this.panelControl1.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.panelControl1.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panelControl1.Location = new System.Drawing.Point(1209, 161);
-            this.panelControl1.Name = "panelControl1";
-            this.panelControl1.Size = new System.Drawing.Size(3, 284);
-            this.panelControl1.TabIndex = 19;
-            // 
-            // leftSpacerPanel
-            // 
-            this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 161);
-            this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(3, 284);
-            this.leftSpacerPanel.TabIndex = 18;
-            // 
             // topSpacerPanel
             // 
             this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.topSpacerPanel.Location = new System.Drawing.Point(0, 158);
             this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(1212, 3);
-            this.topSpacerPanel.TabIndex = 17;
+            this.topSpacerPanel.Size = new System.Drawing.Size(1215, 5);
+            this.topSpacerPanel.TabIndex = 6;
             // 
             // DocForm
             // 
@@ -3743,11 +3700,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1215, 669);
             this.Controls.Add(this.mainRichEditControl);
-            this.Controls.Add(this.bottomSpacerPannel);
-            this.Controls.Add(this.panelControl1);
-            this.Controls.Add(this.leftSpacerPanel);
             this.Controls.Add(this.topSpacerPanel);
-            this.Controls.Add(this.rightSpacerPanel);
             this.Controls.Add(this.debugComPanel);
             this.Controls.Add(this.ribbonStatusBar);
             this.Controls.Add(this.mainRibbonControl);
@@ -3778,10 +3731,6 @@
             this.dockPanel1_Container.ResumeLayout(false);
             this.debugComPanel.ResumeLayout(false);
             this.dockPanel2_Container.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.panelControl1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -4176,10 +4125,6 @@
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar1;
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar2;
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar3;
-        private DevExpress.XtraEditors.PanelControl bottomSpacerPannel;
-        private DevExpress.XtraEditors.PanelControl panelControl1;
-        private DevExpress.XtraEditors.PanelControl leftSpacerPanel;
         private DevExpress.XtraEditors.PanelControl topSpacerPanel;
-        private DevExpress.XtraEditors.PanelControl rightSpacerPanel;
     }
 }

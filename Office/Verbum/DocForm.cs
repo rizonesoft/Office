@@ -26,6 +26,7 @@ namespace Rizonesoft.Office.Verbum
     using System.Globalization;
     using System.IO;
     using System.Windows.Forms;
+    using static System.Windows.Forms.Design.AxImporter;
 
     public partial class DocForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
@@ -57,7 +58,8 @@ namespace Rizonesoft.Office.Verbum
 
             var commandFactory = new CustomCommandFactoryService(mainRichEditControl, mainRichEditControl.GetService<IRichEditCommandFactoryService>());
             mainRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
-
+            MainForm.SetSkins();
+            
 
             //
             // coreSpellChecker.Culture = CultureInfo.;

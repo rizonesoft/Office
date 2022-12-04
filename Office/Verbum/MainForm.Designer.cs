@@ -128,11 +128,16 @@
             this.repositoryItemMarqueeProgressBar1});
             this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
+            this.mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
+            this.mainRibbonControl.ShowItemCaptionsInPageHeader = true;
+            this.mainRibbonControl.ShowItemCaptionsInQAT = true;
+            this.mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             this.mainRibbonControl.ShowSearchItem = true;
             this.mainRibbonControl.Size = new System.Drawing.Size(1005, 158);
             this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
+            this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.mainRibbonControl_Merge);
             this.mainRibbonControl.Click += new System.EventHandler(this.MainRibbonControl_Click);
             // 
@@ -385,6 +390,7 @@
             this.mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.WhenNeeded;
             this.mainTabbedMdiManager.MdiParent = this;
             this.mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
+            this.mainTabbedMdiManager.SetNextMdiChildMode = DevExpress.XtraTabbedMdi.SetNextMdiChildMode.TabControl;
             this.mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
             this.mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
             this.mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
@@ -407,25 +413,25 @@
             this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
             this.leftSpacerPanel.Location = new System.Drawing.Point(0, 163);
             this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(3, 462);
+            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 462);
             this.leftSpacerPanel.TabIndex = 6;
             // 
             // rightSpacerPanel
             // 
             this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(1002, 163);
+            this.rightSpacerPanel.Location = new System.Drawing.Point(1000, 163);
             this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(3, 462);
+            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 462);
             this.rightSpacerPanel.TabIndex = 9;
             // 
             // bottomSpacerPannel
             // 
             this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(3, 622);
+            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 620);
             this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(999, 3);
+            this.bottomSpacerPannel.Size = new System.Drawing.Size(995, 5);
             this.bottomSpacerPannel.TabIndex = 10;
             // 
             // MainForm
@@ -440,6 +446,7 @@
             this.Controls.Add(this.topSpacerPanel);
             this.Controls.Add(this.mainRibbonStatusBar);
             this.Controls.Add(this.mainRibbonControl);
+            this.IconOptions.ShowIcon = false;
             this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("MainForm.IconOptions.SvgImage")));
             this.IsMdiContainer = true;
             this.Name = "MainForm";
