@@ -28,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.BonusSkins" Version="22.1.6" />
     <PackageReference Include="DevExpress.Win.Design" Version="22.1.*-*" />
   </ItemGroup>
 

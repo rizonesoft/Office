@@ -129,8 +129,6 @@
             this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
-            this.mainRibbonControl.ShowItemCaptionsInPageHeader = true;
-            this.mainRibbonControl.ShowItemCaptionsInQAT = true;
             this.mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
