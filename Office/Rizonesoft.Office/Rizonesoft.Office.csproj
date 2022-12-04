@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="22.1.6" />
-    <PackageReference Include="NLog" Version="5.0.5" />
+    <PackageReference Include="NLog" Version="5.1.0" />
   </ItemGroup>
 
 </Project>
