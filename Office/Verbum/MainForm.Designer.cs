@@ -136,7 +136,7 @@
             this.mainRibbonControl.Size = new System.Drawing.Size(1005, 158);
             this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
             this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.mainRibbonControl_Merge);
+            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
             this.mainRibbonControl.Click += new System.EventHandler(this.MainRibbonControl_Click);
             // 
             // mainBarMdiChildrenListItem

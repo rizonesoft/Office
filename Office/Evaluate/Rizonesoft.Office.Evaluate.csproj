@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows10.0.22621.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Rizonesoft.Office.Evaluate</RootNamespace>
     <AssemblyName>Evaluate</AssemblyName>
@@ -32,9 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="SplashScreenForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Update="SplashScreenForm.cs" />
   </ItemGroup>
 
 </Project>

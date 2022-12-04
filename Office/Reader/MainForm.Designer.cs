@@ -63,6 +63,7 @@
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowSearchItem = true;
             this.mainRibbonControl.Size = new System.Drawing.Size(993, 158);
+            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
             // 
             // viewerRibbonPage
             // 

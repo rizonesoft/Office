@@ -130,6 +130,17 @@
 
         #endregion Workbook Processing
 
+        #region Merging
+
+        private void MainRibbonControl_Merge(object sender, DevExpress.XtraBars.Ribbon.RibbonMergeEventArgs e)
+        {
+            RibbonControl parentRibbon = sender as RibbonControl;
+            RibbonControl childRibbon = e.MergedChild;
+            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+        }
+
+        #endregion Merging
+
         #region Settings
 
         private void LoadSettings()
@@ -192,12 +203,7 @@
         #endregion Configurations
 
 
-        private void MainRibbonControl_Merge(object sender, DevExpress.XtraBars.Ribbon.RibbonMergeEventArgs e)
-        {
-            RibbonControl parentRibbon = sender as RibbonControl;
-            RibbonControl childRibbon = e.MergedChild;
-            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
-        }
+       
 
         private void OpenBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {

@@ -58,7 +58,7 @@
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
             base.Text = $"{StcVerbum.ProductName} {ROGlobals.ProductVersionYear}";
-
+            CreateNewDocument(fileName);
             if (string.IsNullOrEmpty(fileName))
             {
                 SplashScreenManager.Default
@@ -81,7 +81,6 @@
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
-            CreateNewDocument(fileName);
 
         }
 
@@ -176,6 +175,17 @@
         }
 
         #endregion Document Processing
+
+        #region Merging
+
+        private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
+        {
+            RibbonControl parentRibbon = sender as RibbonControl;
+            RibbonControl childRibbon = e.MergedChild;
+            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+        }
+
+        #endregion Merging
 
         #region Settings
         private void LoadSettings()
@@ -401,13 +411,6 @@
 
         private void barCloseItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         { CurrentDocument.Close(); }
-
-        private void mainRibbonControl_Merge(object sender, DevExpress.XtraBars.Ribbon.RibbonMergeEventArgs e)
-        {
-            RibbonControl parentRibbon = sender as RibbonControl;
-            RibbonControl childRibbon = e.MergedChild;
-            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
-        }
 
         private void barOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {

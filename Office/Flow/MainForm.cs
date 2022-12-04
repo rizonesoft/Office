@@ -152,7 +152,7 @@
 
         #region Merging
 
-        private void mainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
+        private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
