@@ -58,7 +58,7 @@
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
             base.Text = $"{StcVerbum.ProductName} {ROGlobals.ProductVersionYear}";
-            CreateNewDocument(fileName);
+            
             if (string.IsNullOrEmpty(fileName))
             {
                 SplashScreenManager.Default
@@ -69,6 +69,7 @@
                 SplashScreenManager.Default
                     .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
             }
+            CreateNewDocument(fileName);
 
             debugRibbonPage.Visible = Debugging.IsDebugging;
             
@@ -82,6 +83,27 @@
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
 
+        }
+
+        private void MainForm_Load(object sender, System.EventArgs e)
+        {
+            LoadSettings();
+
+            mainRibbonControl.ForceInitialize();
+            mruList = new MruList("MRU", mruPopupMenu, 10, StcVerbum.CurrentRegMRUPath);
+            mruList.FileSelected += MruList_FileSelected;
+            LoadDictionaries();
+
+            if (isLicensed == true)
+            {
+                Text += $" - {ROGlobals.LicenseBusinessString}";
+                barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                return;
+            }
+            Text += $" - {ROGlobals.LicenseHomeString}";
+            barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+            barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
         }
 
         #region Overrides
@@ -173,6 +195,10 @@
             newDoc.MdiParent = this;
             newDoc.Show();
         }
+
+        public void OpenFile(string fileName) => CreateNewDocument(fileName);
+
+        internal void OpenFile() { OpenFileFolder(string.Empty); }
 
         #endregion Document Processing
 
@@ -360,30 +386,7 @@
         #endregion Updates
 
         #region Events
-        private void MainForm_Load(object sender, System.EventArgs e)
-        {
-            LoadSettings();
-
-            this.mainRibbonControl.ForceInitialize();
-            mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\Verbum\\MRU");
-            mruList.FileSelected += MruList_FileSelected;
-            LoadDictionaries();
-
-            if (isLicensed == true)
-            {
-                Text += $" - {ROGlobals.LicenseBusinessString}";
-                barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                return;
-            }
-            Text += $" - {ROGlobals.LicenseHomeString}";
-            barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
-            barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
-
-
-
-
-        }
+        
 
         private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
         {
@@ -471,9 +474,9 @@
             // debugLog.Info("Open Document Result - " + dlgResult.ToString());
         }
 
-        public void OpenFile(string fileName) { CreateNewDocument(fileName); }
+        
 
-        internal void OpenFile() { OpenFileFolder(string.Empty); }
+        
         #endregion Document Handling
 
 

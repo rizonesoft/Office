@@ -1,27 +1,27 @@
-﻿<?xml version='1.0' encoding='UTF-8'?>
-<svg viewBox="-2.005 -2.0025 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <defs tag="staticElement_id13977142">
-    <style type="text/css">
-    .fil0 {fill:#373435}
-    .fil1 {fill:white;fill-rule:nonzero}
-   </style>
-  </defs>
-  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
-    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
-      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
-        <g id="Layer_x0020_1">
-          <path d="M3342.03, 0L11639.57, 0C13477.71, 0 14981.63, 1503.92 14981.63, 3342.06L14981.63, 11641.63C14981.63, 13479.77 13477.71, 14983.69 11639.57, 14983.69L3342.03, 14983.69C1503.91, 14983.69 0, 13479.78 0, 11641.66L0, 3342.03C0, 1503.91 1503.91, 0 3342.03, 0z" fill="#727272" class="Black" fill-rule="evenodd" />
-        </g>
-      </g>
-    </g>
-  </g>
-  <g transform="translate(-0.0014, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
-    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
-      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0007)">
-        <g id="Layer_x0020_1">
-          <path d="M9950.07, 11225.47L11604.14, 9979.41L10078.01, 8421.82C11211.18, 7927.06 11750.35, 7148.27 11750.35, 6277.85C11750.35, 4967.65 10571.48, 3758.23 6797.32, 3758.23C5517.94, 3758.23 4265.96, 3822.36 3233.33, 3895.66L3233.33, 10858.97L5426.55, 10858.97L5426.55, 8907.41C5901.75, 8934.89 6431.78, 8953.22 6970.95, 8953.22C7272.51, 8953.22 7564.94, 8944.06 7839.1, 8925.73L9950.07, 11225.46zM6833.87, 7166.6C6303.85, 7166.6 5828.64, 7148.27 5426.55, 7129.95L5426.55, 5673.15C5828.64, 5654.83 6303.85, 5636.5 6833.87, 5636.5C8853.46, 5636.5 9465.75, 6002.99 9465.75, 6396.97C9465.75, 6790.94 8853.47, 7166.6 6833.87, 7166.6z" fill="#FFFFFF" class="White" fill-rule="evenodd" />
-        </g>
-      </g>
-    </g>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="512px" height="512px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 511.44 511.56"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil0 {fill:#912C2F}
+    .fil1 {fill:#A4373A}
+    .fil2 {fill:url(#id0);fill-rule:nonzero}
+   ]]>
+  </style>
+  <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="110.38" y1="255.8" x2="401.13" y2="255.8">
+   <stop offset="0" style="stop-opacity:1; stop-color:#FBCFD0"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#FEFEFE"/>
+  </linearGradient>
+ </defs>
+ <g id="Layer_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <path class="fil0" d="M68.2 0.05l237.53 0 0 511.51 -237.53 0c-37.51,0 -68.2,-30.69 -68.2,-68.2l0 -375.11c0,-37.51 30.69,-68.2 68.2,-68.2z"/>
+  <path class="fil1" d="M255.76 0l187.48 0c37.51,0 68.2,30.69 68.2,68.2l0 375.11c0,37.51 -30.69,68.2 -68.2,68.2l-187.48 0 0 -511.51z"/>
+  <path class="fil2" d="M339.68 383.26l56.46 -42.54 -52.1 -53.17c38.69,-16.89 57.09,-43.48 57.09,-73.19 0,-44.73 -40.24,-86.02 -169.08,-86.02 -43.68,0 -86.42,2.19 -121.67,4.7l0 237.71 74.87 0 0 -66.62c16.22,0.94 34.32,1.56 52.72,1.56 10.3,0 20.28,-0.31 29.64,-0.94l72.07 78.51zm-106.39 -138.56c-18.09,0 -34.31,-0.63 -48.04,-1.25l0 -49.73c13.73,-0.63 29.95,-1.26 48.04,-1.26 68.95,0 89.85,12.52 89.85,25.97 0,13.45 -20.9,26.27 -89.85,26.27z"/>
+ </g>
 </svg>

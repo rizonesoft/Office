@@ -10,6 +10,9 @@
     <Version>23.0.0.0</Version>
     <Company>Rizonesoft</Company>
     <Product>Rizonesoft Office</Product>
+	<PublishReadyToRun>true</PublishReadyToRun>
+	<PublishSingleFile>true</PublishSingleFile>
+	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>

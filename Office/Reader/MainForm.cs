@@ -11,6 +11,7 @@
     using System.ComponentModel;
     using System.IO;
     using System.Linq;
+    using System.Windows.Forms;
 
     public partial class MainForm : RibbonForm
     {
@@ -52,11 +53,14 @@
             CreateProgramDirectories();
             InitializeComponent();
             base.Text = $"{StcReader.ProductName} {ROGlobals.ProductVersionYear}";
-
             Initialize();
+            CreateNewViewer(StcReader.WelcomePDFPath);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcReader.ProductName}");
-            CreateNewViewer(fileName);
+        }
 
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            
         }
 
         #region Overrides
@@ -141,11 +145,60 @@
             {
                 viewerIndex++;
             }
-
+             
             ViewerForm newViewer = new();
             newViewer.OpenFile(fileName, viewerIndex);
             newViewer.MdiParent = this;
             newViewer.Show();
+        }
+
+        public void OpenFile(string fileName)
+        {
+            CreateNewViewer(fileName);
+        }
+
+        internal void OpenFile()
+        {
+            OpenFileFolder(string.Empty);
+        }
+
+        private void OpenFileFolder(string sIniDir)
+        {
+            OpenFileDialog openFileDlg = new OpenFileDialog();
+
+            if (sIniDir != string.Empty)
+            {
+                openFileDlg.InitialDirectory = sIniDir;
+            }
+
+            openFileDlg.Filter = "All Files (*.*)|*.*|" +
+                "All Supported Files (*.docx; *.docm; *.dotx; *.dotm; *.doc; *.dot; *.odt; *.rtf; *.htm; *.html; *.mht; *.eml; *.epub; *.xml; *.txt)|*.docx;*.docm;*.dotx;*.dotm;*.doc;*.dot;*.odt;*.rtf;*.htm;*.html;*.mht;*.eml;*.epub;*.xml;*.txt|" +
+                "Word 2007 Document (*.docx)|*.docx|" +
+                "Word Macro-Enabled Document (*.docm)|*.docm|" +
+                "Word Template (*.dotx)|*.dotx|" +
+                "Word Macro-Enabled Template (*.dotm)|*.dotm|" +
+                "Microsoft Word Document (*.doc)|*.doc|" +
+                "Word 97-2003 Template (*.dot)|*.dot|" +
+                "OpenDocument Text Document (*.odt)|*.odt|" +
+                "Rich Text Format (*.rtf)|*.rtf|" +
+                "HyperText Markup Language Format (*.htm; *.html)|*.htm;*.html|" +
+                "Web Archive, single file (*.mht)|*.mht|" +
+                "Email Message (*.eml)|*.eml|" +
+                "Electronic Publication (*.epub)|*.epub|" +
+                "Word XML Document (*.xml)|*.xml|" +
+                "Text Files (*.txt)|*.txt";
+            openFileDlg.FilterIndex = 3;
+            openFileDlg.Title = "Select a Document";
+
+            DialogResult dlgResult = openFileDlg.ShowDialog();
+
+            // Show the dialog and get result.
+            if (dlgResult == DialogResult.OK)
+            {
+                string fileName = openFileDlg.FileName;
+                OpenFile(fileName);
+                // AddFileToMRUList(fileName);
+            }
         }
 
         #endregion Viewer Processing
@@ -156,7 +209,10 @@
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
-            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            if ((parentRibbon.StatusBar != null) && (childRibbon.StatusBar != null))
+            {
+                parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            }
         }
 
         #endregion Merging
@@ -219,6 +275,7 @@
                 Directory.CreateDirectory(StcReader.UserAppDirectory);
             }
         }
+
 
 
 

@@ -12,6 +12,8 @@
         public static readonly Version ProductVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         public static readonly string ProductVersionString = $"20{ProductVersion.Major}";
         public static readonly string ProductBasePath = Path.GetDirectoryName(Application.ExecutablePath);
+        public static readonly string DocumentsBasePath = Path.Combine(ProductBasePath, "Documents");
+        public static readonly string WelcomePDFPath = Path.Combine(DocumentsBasePath, "Welcome.pdf");
         public static readonly string UserAppDirectory = Path.Combine(ROFunctions.GetUserAppDataPath(), $"Rizonesoft\\Office\\{ProductName}\\");
         public static readonly string CurrentRegConfigPath = $"Rizonesoft\\{ROGlobals.ProductName}\\{ProductName}";
         public static readonly string CurrentRegGeneralPath = $"{CurrentRegConfigPath}\\General";

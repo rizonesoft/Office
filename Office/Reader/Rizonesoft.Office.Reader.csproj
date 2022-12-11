@@ -9,6 +9,9 @@
     <RootNamespace>Rizonesoft.Office.Reader</RootNamespace>
     <ApplicationIcon>Reader.ico</ApplicationIcon>
     <BaseOutputPath>..\Bin</BaseOutputPath>
+	<PublishReadyToRun>true</PublishReadyToRun>
+	<PublishSingleFile>true</PublishSingleFile>
+	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

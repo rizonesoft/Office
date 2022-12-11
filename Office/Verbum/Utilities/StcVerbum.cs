@@ -18,6 +18,7 @@
         public static readonly string CurrentRegGeneralPath = $"{CurrentRegConfigPath}\\General";
         public static readonly string CurrentRegInterfacePath = $"{CurrentRegConfigPath}\\Interface";
         public static readonly string CurrentRegSpellingPath = $"{CurrentRegConfigPath}\\Spelling";
+        public static readonly string CurrentRegMRUPath = $"{CurrentRegConfigPath}\\MRU";
         public static readonly string StaticRegInterfacePath = $"{ROGlobals.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
         public static readonly string StaticRegSpellingPath = $"{ROGlobals.CurrentUserReg}\\{CurrentRegConfigPath}\\Spelling";
 

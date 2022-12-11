@@ -86,6 +86,7 @@
             // 
             this.mainRibbonControl.AllowCustomization = true;
             this.mainRibbonControl.AutoSaveLayoutToXmlPath = "";
+            this.mainRibbonControl.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(45, 44, 45, 44);
             this.mainRibbonControl.ExpandCollapseItem.Id = 0;
             this.mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
             this.mainRibbonControl.ExpandCollapseItem,
@@ -104,10 +105,11 @@
             this.barButtonItem2,
             this.devBarBtnItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
+            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(15, 15, 15, 15);
             this.mainRibbonControl.MaxItemId = 25;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
+            this.mainRibbonControl.OptionsMenuMinWidth = 495;
             this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
             this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
             this.mainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
@@ -133,7 +135,7 @@
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(1005, 158);
+            this.mainRibbonControl.Size = new System.Drawing.Size(1508, 231);
             this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
             this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
@@ -153,6 +155,7 @@
             this.barNewItem.Id = 2;
             this.barNewItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barNewItem.ImageOptions.SvgImage")));
             this.barNewItem.ItemShortcut = new DevExpress.XtraBars.BarShortcut((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N));
+            this.barNewItem.MergeOrder = 1;
             this.barNewItem.Name = "barNewItem";
             this.barNewItem.ShowItemShortcut = DevExpress.Utils.DefaultBoolean.True;
             this.barNewItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barNewItem_ItemClick);
@@ -164,6 +167,7 @@
             this.barOpenItem.DropDownControl = this.mruPopupMenu;
             this.barOpenItem.Id = 3;
             this.barOpenItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barOpenItem.ImageOptions.SvgImage")));
+            this.barOpenItem.MergeOrder = 2;
             this.barOpenItem.Name = "barOpenItem";
             this.barOpenItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOpenItem_ItemClick);
             // 
@@ -368,10 +372,11 @@
             // 
             this.mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonStatusBar.ItemLinks.Add(this.devBarBtnItem);
-            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 625);
+            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 913);
+            this.mainRibbonStatusBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.mainRibbonStatusBar.Name = "mainRibbonStatusBar";
             this.mainRibbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.mainRibbonStatusBar.Size = new System.Drawing.Size(1005, 24);
+            this.mainRibbonStatusBar.Size = new System.Drawing.Size(1508, 36);
             // 
             // mainTabbedMdiManager
             // 
@@ -400,44 +405,48 @@
             // 
             this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 158);
+            this.topSpacerPanel.Location = new System.Drawing.Point(0, 231);
+            this.topSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(1005, 5);
+            this.topSpacerPanel.Size = new System.Drawing.Size(1508, 7);
             this.topSpacerPanel.TabIndex = 3;
             // 
             // leftSpacerPanel
             // 
             this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 163);
+            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 238);
+            this.leftSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 462);
+            this.leftSpacerPanel.Size = new System.Drawing.Size(8, 675);
             this.leftSpacerPanel.TabIndex = 6;
             // 
             // rightSpacerPanel
             // 
             this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(1000, 163);
+            this.rightSpacerPanel.Location = new System.Drawing.Point(1500, 238);
+            this.rightSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 462);
+            this.rightSpacerPanel.Size = new System.Drawing.Size(8, 675);
             this.rightSpacerPanel.TabIndex = 9;
             // 
             // bottomSpacerPannel
             // 
             this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 620);
+            this.bottomSpacerPannel.Location = new System.Drawing.Point(8, 906);
+            this.bottomSpacerPannel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(995, 5);
+            this.bottomSpacerPannel.Size = new System.Drawing.Size(1492, 7);
             this.bottomSpacerPannel.TabIndex = 10;
             // 
             // MainForm
             // 
             this.AllowMdiBar = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1005, 649);
+            this.ClientSize = new System.Drawing.Size(1508, 949);
             this.Controls.Add(this.bottomSpacerPannel);
             this.Controls.Add(this.rightSpacerPanel);
             this.Controls.Add(this.leftSpacerPanel);
@@ -447,6 +456,7 @@
             this.IconOptions.ShowIcon = false;
             this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("MainForm.IconOptions.SvgImage")));
             this.IsMdiContainer = true;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainForm";
             this.Ribbon = this.mainRibbonControl;
             this.StatusBar = this.mainRibbonStatusBar;
