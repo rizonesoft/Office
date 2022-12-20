@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Reader.Utilities
 {
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
     using System.IO;
     using System.Windows.Forms;
@@ -14,11 +14,11 @@
         public static readonly string ProductBasePath = Path.GetDirectoryName(Application.ExecutablePath);
         public static readonly string DocumentsBasePath = Path.Combine(ProductBasePath, "Documents");
         public static readonly string WelcomePDFPath = Path.Combine(DocumentsBasePath, "Welcome.pdf");
-        public static readonly string UserAppDirectory = Path.Combine(ROFunctions.GetUserAppDataPath(), $"Rizonesoft\\Office\\{ProductName}\\");
-        public static readonly string CurrentRegConfigPath = $"Rizonesoft\\{ROGlobals.ProductName}\\{ProductName}";
+        public static readonly string UserAppDirectory = Path.Combine(GlobalFunctions.GetUserAppDataPath(), $"Rizonesoft\\Office\\{ProductName}\\");
+        public static readonly string CurrentRegConfigPath = $"Rizonesoft\\{GlobalProperties.ProductName}\\{ProductName}";
         public static readonly string CurrentRegGeneralPath = $"{CurrentRegConfigPath}\\General";
         public static readonly string CurrentRegInterfacePath = $"{CurrentRegConfigPath}\\Interface";
-        public static readonly string StaticRegInterfacePath = $"{ROGlobals.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
+        public static readonly string StaticRegInterfacePath = $"{GlobalProperties.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
 
     }
 }

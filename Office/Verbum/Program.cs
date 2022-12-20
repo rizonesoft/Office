@@ -3,7 +3,7 @@
     using DevExpress.XtraEditors;
     using Rizonesoft.Office.ExceptionHandlers;
     using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using Rizonesoft.Office.Verbum.Utilities;
     using System;
     using System.Drawing;
@@ -20,10 +20,11 @@
         {
             Application.ThreadException += (sender, e) => new ExceptionForm(e.Exception).ShowDialog();
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => new ExceptionForm(e.ExceptionObject as Exception).ShowDialog();
-            ROLogging.ConfigureLogging();
+            Logging.ConfigureLogging();
 
             try
             {
+                
                 bool grantedOwnership;
                 try
                 {
@@ -75,8 +76,8 @@
             }
             catch (Exception ex)
             {
-                ROErrorMessage.Show("Woops!", $"{StcVerbum.ProductName} was unable to start.");
-                ROLogging.ROLogger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
+                ErrorMessage.Show("Woops!", $"{StcVerbum.ProductName} was unable to start.");
+                Logging.ROLogger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
             }
         }
 

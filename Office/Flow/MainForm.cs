@@ -5,8 +5,7 @@
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office.Flow.Utilities;
     using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.Licensing;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
     using System.ComponentModel;
     using System.IO;
@@ -47,11 +46,10 @@
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
-            isLicensed = LicenseCheck.IsLicensed();
             OnShowMdiChildCaptionInParentTitle();
             CreateProgramDirectories();
             InitializeComponent();
-            base.Text = $"{StcFlow.ProductName} {ROGlobals.ProductVersionYear}";
+            base.Text = $"{StcFlow.ProductName} {GlobalProperties.ProductVersionMajor}";
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcFlow.ProductName}");
@@ -109,7 +107,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    ROLogging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -165,28 +163,28 @@
 
         private void LoadSettings()
         {
-            ROFunctions.GeometryFromString(ROSettings.Settings.GetSetting(StcFlow.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcFlow.CurrentRegGeneralPath, "Geometry", string.Empty), this);
 
         }
 
         private void SaveSettings()
         {
-            ROSettings.Settings.SaveSetting(StcFlow.CurrentRegGeneralPath, "Geometry", ROFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcFlow.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
 
         }
 
         private static void SetSkins()
         {
-            string sSkin = ROSettings.Settings.GetSetting(StcFlow.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
-            string sPalette = ROSettings.Settings.GetSetting(StcFlow.CurrentRegInterfacePath, "Palette", "Amber");
+            string sSkin = Settings.Settings.GetSetting(StcFlow.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
+            string sPalette = Settings.Settings.GetSetting(StcFlow.CurrentRegInterfacePath, "Palette", "Amber");
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
 
         }
 
         private static void SaveSkins()
         {
-            ROSettings.Settings.SaveSetting(StcFlow.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            ROSettings.Settings.SaveSetting(StcFlow.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+            Settings.Settings.SaveSetting(StcFlow.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.Settings.SaveSetting(StcFlow.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
         private bool SaveRestoreRibbon(bool SaveRibbon)

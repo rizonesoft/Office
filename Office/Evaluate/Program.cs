@@ -4,7 +4,7 @@
     using Rizonesoft.Office.Evaluate.Utilities;
     using Rizonesoft.Office.ExceptionHandlers;
     using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
     using System.Drawing;
     using System.Threading;
@@ -22,7 +22,7 @@
 
             Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-            ROLogging.ConfigureLogging();
+            Logging.ConfigureLogging();
 
             try
             {
@@ -80,7 +80,7 @@
             catch (Exception ex)
             {
                 ROErrorMessage.Show("Woops!", $"{StcEvaluate.ProductName} was unable to start.");
-                ROLogging.ROLogger.Fatal($"{StcEvaluate.ProductName} was unable to start.", ex);
+                Logging.ROLogger.Fatal($"{StcEvaluate.ProductName} was unable to start.", ex);
             }
 
         }

@@ -2,6 +2,7 @@
 
 namespace Rizonesoft.Office.Verbum
 {
+    using DevExpress.Data.ExpressionEditor;
     using DevExpress.LookAndFeel;
     using DevExpress.Services;
     using DevExpress.Utils.Controls;
@@ -16,7 +17,7 @@ namespace Rizonesoft.Office.Verbum
     using DevExpress.XtraSpellChecker.Forms;
     using DevExpress.XtraSpellChecker.Native;
     using Rizonesoft.Office.Debugging;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using Rizonesoft.Office.Verbum.Classes;
     using Rizonesoft.Office.Verbum.Forms;
     using Rizonesoft.Office.Verbum.Utilities;
@@ -41,20 +42,13 @@ namespace Rizonesoft.Office.Verbum
 
         public DocForm()
         {
+            
             InitializeComponent();
             mainRichEditControl.DocumentLayout.DocumentFormatted += DocumentLayout_DocumentFormatted;
             mainRichEditControl.Options.DocumentSaveOptions.Changed += DocumentSaveOptions_Changed;
 
             new RichEditExceptionHandler(mainRichEditControl).Install();
             new SpellCheckerExceptionHandler(mainSpellChecker).Install();
-
-            CustomCommandListenerService customComExecListenerService = new();
-            CustomCommandListenerService service = customComExecListenerService;
-            service.RichEditControl = mainRichEditControl;
-            service.CommandExecutedEvent += Service_CommandExecutedEvent;
-            mainRichEditControl.RemoveService(typeof(ICommandExecutionListenerService));
-            mainRichEditControl.AddService(typeof(ICommandExecutionListenerService), service);
-            debugComPanel.Visibility = DockVisibility.Hidden;
 
             var commandFactory = new CustomCommandFactoryService(mainRichEditControl, mainRichEditControl.GetService<IRichEditCommandFactoryService>());
             mainRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
@@ -121,9 +115,9 @@ namespace Rizonesoft.Office.Verbum
 
             LoadSpellingOptions();
 
-
             this.mainRichEditControl.Modified = false;
             this.mainRichEditControl.Focus();
+ 
         }
 
         private void DocForm_Activated(object sender, EventArgs e)
@@ -132,6 +126,7 @@ namespace Rizonesoft.Office.Verbum
             {
                 Owner = null;
             }
+
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -209,10 +204,10 @@ namespace Rizonesoft.Office.Verbum
 
                     mainSpellChecker.SetSpellCheckerOptions(mainRichEditControl, spellOptions);
                     mainSpellChecker.OptionsSpelling.CombineOptions(mainSpellChecker.GetSpellCheckerOptions(this.mainRichEditControl));
-                    mainSpellChecker.SaveToRegistry(StcVerbum.StaticRegSpellingPath);
+                    mainSpellChecker.SaveToXML(StcVerbum.CurrentSpellingXmlFile);
                     StcVerbum.SpellingLanguage = mainSpellChecker.Culture.ToString();
-                    ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", StcVerbum.SpellingLanguage);
-                    // barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
+                    Settings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", StcVerbum.SpellingLanguage);
+                    barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
                 }
 
             }
@@ -313,12 +308,14 @@ namespace Rizonesoft.Office.Verbum
 
         private void LoadSpellingOptions()
         {
-            StcVerbum.SpellingLanguage = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", mainSpellChecker.Culture.ToString());
-            StcVerbum.AutoSpellCheck = ROFunctions.StringToBoolean(ROSettings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True"));
-            mainSpellChecker.RestoreFromRegistry(StcVerbum.StaticRegSpellingPath);
+            StcVerbum.SpellingLanguage = Settings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "SpellingLanguage", mainSpellChecker.Culture.ToString());
+            StcVerbum.AutoSpellCheck = GlobalFunctions.StringToBoolean(Settings.Settings.GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True"));
+            
+            if (File.Exists(StcVerbum.CurrentSpellingXmlFile))
+            { mainSpellChecker.RestoreFromXML(StcVerbum.CurrentSpellingXmlFile); }
 
             mainSpellChecker.Culture = new CultureInfo(StcVerbum.SpellingLanguage);
-            barLangBtnItem.Caption = this.mainSpellChecker.Culture.EnglishName;
+            barLangBtnItem.Caption = mainSpellChecker.Culture.EnglishName;
             autoSpellingItem.Checked = StcVerbum.AutoSpellCheck;
             LoadHyphenationDictionaries(mainRichEditControl.Document);
         }
@@ -338,13 +335,19 @@ namespace Rizonesoft.Office.Verbum
 
                     string sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
                     string[] sFileParts = sFileNoExtension.Split('_');
+                    string sCultureString;
 
                     if (!sFileParts[0].Equals("hyph"))
-                    {
-                        continue;
-                    }
+                    { continue; }
 
-                    AddHyphenationDictionary(sFile, new CultureInfo($"{sFileParts[1]}-{sFileParts[2]}"));
+                    if (sFileParts.GetUpperBound(0) == 2)
+                    { sCultureString = $"{sFileParts[1]}-{sFileParts[2]}"; }
+                    else if (sFileParts.GetUpperBound(0) == 1)
+                    { sCultureString = sFileParts[1]; }
+                    else
+                    { return; }
+
+                    AddHyphenationDictionary(sFile, new CultureInfo(sCultureString));
                 }
 
                 document.Hyphenation = true;
@@ -353,7 +356,7 @@ namespace Rizonesoft.Office.Verbum
             }
             catch (Exception ex)
             {
-                ROLogging.ROLogger.Error(ex, "Whoops!");
+                Logging.ROLogger.Error(ex, "Whoops!");
                 MessageBox.Show(ex.Message, "Whoops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -524,22 +527,6 @@ namespace Rizonesoft.Office.Verbum
 
         #region Developer Tools (Debugging)
 
-        private void Service_CommandExecutedEvent(object sender, CommandEventArgs e)
-        {
-            if (!Debugging.IsDebugging) return;
-            if ((sender == null) || (e == null)) return;
-
-            if (!IsShowCommand(e.CommandName.ToString(), new List<string>
-            {
-                "DevExpress.XtraRichEdit.Commands.InsertTextCommand",
-                "DevExpress.XtraRichEdit.Commands.Internal.ExtendSelectionByCharactersCommand"
-            }))
-            {
-                debugComMemoEdit.AppendText($"{e.CommandName}{Environment.NewLine}Description: {e.CommandDescription}{Environment.NewLine}");
-            }
-
-        }
-
         private static bool IsShowCommand(string command, List<string> richEditCommands)
         {
 
@@ -549,13 +536,6 @@ namespace Rizonesoft.Office.Verbum
             }
 
             return false;
-        }
-
-        private void ComBarBtnItem_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            debugComPanel.Visibility = comBarBtnItem.Down ? DockVisibility.Visible : DockVisibility.Hidden;
-            Debugging.IsDebugging = comBarBtnItem.Down;
-
         }
 
         #endregion Developer Tools (Debugging)

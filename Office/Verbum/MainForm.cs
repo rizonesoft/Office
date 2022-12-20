@@ -1,5 +1,6 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
+    using DevExpress.Utils.DPI;
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
     using DevExpress.XtraSpellChecker;
@@ -7,8 +8,7 @@
     using Rizonesoft.Office;
     using Rizonesoft.Office.Debugging;
     using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.Licensing;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using Rizonesoft.Office.Verbum.Classes;
     using Rizonesoft.Office.Verbum.Utilities;
     using System;
@@ -18,6 +18,7 @@
     using System.Linq;
     using System.Windows.Forms;
     using System.Xml;
+    using XmlNodeType = System.Xml.XmlNodeType;
 
     public partial class MainForm : RibbonForm
     {
@@ -50,15 +51,17 @@
 
         public MainForm(string fileName)
         {
+
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
-            isLicensed = LicenseCheck.IsLicensed();
             CreateProgramDirectories();
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
-            base.Text = $"{StcVerbum.ProductName} {ROGlobals.ProductVersionYear}";
-            
+
+            GlobalProperties.IsBetaVersion = true;
+            base.Text = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor}{GlobalProperties.BetaVersionString}";
+
             if (string.IsNullOrEmpty(fileName))
             {
                 SplashScreenManager.Default
@@ -72,8 +75,6 @@
             CreateNewDocument(fileName);
 
             debugRibbonPage.Visible = Debugging.IsDebugging;
-            
-
             updateWorker = new BackgroundWorker();
             updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
             updateWorker.RunWorkerAsync();
@@ -81,6 +82,11 @@
             mainRibbonControl.SelectedPage = homeRibbonPage;
 
             Initialize();
+            SplashScreenManager.Default
+                    .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Dictionaries");
+            LoadDictionaries();
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Restoring Ribbon Layout");
+            RestoreRibbon();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
 
         }
@@ -92,18 +98,14 @@
             mainRibbonControl.ForceInitialize();
             mruList = new MruList("MRU", mruPopupMenu, 10, StcVerbum.CurrentRegMRUPath);
             mruList.FileSelected += MruList_FileSelected;
-            LoadDictionaries();
 
-            if (isLicensed == true)
-            {
-                Text += $" - {ROGlobals.LicenseBusinessString}";
-                barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                return;
-            }
-            Text += $" - {ROGlobals.LicenseHomeString}";
-            barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
-            barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+        }
+
+        private void ChangeMainFormState(bool State)
+        {
+            MainForm mainForm = this;
+            mainForm.homeRibbonPage.Visible = State;
+            mainForm.barCloseItem.Enabled = State;
         }
 
         #region Overrides
@@ -111,15 +113,13 @@
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            SaveRestoreRibbon(false);
             SplashScreenManager.CloseForm(false);
-
         }
 
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            SaveRestoreRibbon(true);
+            SaveRibbon();
             SaveSettings();
             SaveSkins();
         }
@@ -157,14 +157,14 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    ROLogging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
 
-        private void MruList_FileSelected(string fileName) 
-        { 
-            OpenFile(fileName); 
+        private void MruList_FileSelected(string fileName)
+        {
+            OpenFile(fileName);
         }
 
         #endregion Initialize
@@ -194,11 +194,14 @@
             newDoc.OpenFile(fileName, documentIndex);
             newDoc.MdiParent = this;
             newDoc.Show();
+
         }
 
         public void OpenFile(string fileName) => CreateNewDocument(fileName);
 
         internal void OpenFile() { OpenFileFolder(string.Empty); }
+
+
 
         #endregion Document Processing
 
@@ -208,60 +211,13 @@
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
-            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            if ((parentRibbon.StatusBar != null) && (childRibbon.StatusBar != null))
+            {
+                parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            }
         }
 
         #endregion Merging
-
-        #region Settings
-        private void LoadSettings()
-        {
-            ROFunctions.GeometryFromString(ROSettings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
-
-        }
-
-        private void SaveSettings()
-        {
-            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", ROFunctions.GeometryToString(this));
-            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", ROFunctions.BooleanToString(StcVerbum.AutoSpellCheck));
-
-        }
-
-        public static void SetSkins()
-        {
-            string sSkin = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
-            string sPalette = ROSettings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", string.Empty);
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
-
-        }
-
-        private static void SaveSkins()
-        {
-            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            ROSettings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-        }
-
-        private bool SaveRestoreRibbon(bool SaveRibbon)
-        {
-            if (mainRibbonControl != null)
-            {
-                switch (SaveRibbon)
-                {
-                    case true:
-                        mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
-                        return true;
-                    case false:
-                        mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcVerbum.StaticRegInterfacePath);
-                        return true;
-                }
-            }
-
-            return false;
-
-        }
-
-
-        #endregion Settings
 
         #region Configurations
 
@@ -273,52 +229,51 @@
             }
         }
 
+        private void LoadSettings()
+        {
+            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+
+        }
+
+        private void SaveSettings()
+        {
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", GlobalFunctions.BooleanToString(StcVerbum.AutoSpellCheck));
+
+        }
+
+        public static void SetSkins()
+        {
+            string sSkin = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "WXI");
+            string sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", string.Empty);
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
+
+        }
+
+        private static void SaveSkins()
+        {
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+        }
+
+        private void SaveRibbon()
+        {
+            if (mainRibbonControl != null)
+            {
+                mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
+            }
+
+        }
+
+        private void RestoreRibbon()
+        {
+            if (mainRibbonControl != null)
+            {
+                mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcVerbum.StaticRegInterfacePath);
+            }
+        }
+
         #endregion Configurations
-
-
-
-
-        private void BarRegisterItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            try
-            {
-                if (RegistrationForm.CheckInstance == null)
-                {
-                    RegistrationForm.CreateInstance.ShowDialog();
-                }
-                else
-                {
-                    // These two lines make sure the state is normal (not min or max) and give it focus.
-                    RegistrationForm.CreateInstance.WindowState = FormWindowState.Normal;
-                    RegistrationForm.CreateInstance.Focus();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void ChangeMainFormState(bool State)
-        {
-            MainForm mainForm = this;
-            mainForm.homeRibbonPage.Visible = State;
-            mainForm.barCloseItem.Enabled = State;
-        }
-
-
-
-        
-
-        private void exceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            int result = 15 / int.Parse("0");
-        }
-
-       
-
-        
-
 
         #region Updates
         internal void updateWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -385,15 +340,37 @@
         }
         #endregion Updates
 
+        #region Debugging
+
+        private void exceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            int result = 15 / int.Parse("0");
+        }
+
+        #endregion Debugging
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         #region Events
-        
+
 
         private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
         {
             if (this.MdiChildren.Length <= 1)
             {
                 ChangeMainFormState(true);
-                // coreRibbonControl.SelectedPage = homeRibbonPage;
             }
         }
 
@@ -405,7 +382,7 @@
             }
         }
 
-        
+
 
         private void barNewItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         { this.CreateNewDocument(null); }
@@ -431,7 +408,7 @@
 
 
         #region Document Handling
-        
+
 
         private void OpenFileFolder(string sIniDir)
         {
@@ -474,9 +451,9 @@
             // debugLog.Info("Open Document Result - " + dlgResult.ToString());
         }
 
-        
 
-        
+
+
         #endregion Document Handling
 
 
@@ -486,35 +463,44 @@
         private void LoadDictionaries()
         {
             string sAutoSpellCheck;
-            string sFileNameWithEx;
 
-            sAutoSpellCheck = ROSettings.Settings
+            sAutoSpellCheck = Settings.Settings
                 .GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True");
-            StcVerbum.AutoSpellCheck = ROFunctions.StringToBoolean(sAutoSpellCheck);
+            StcVerbum.AutoSpellCheck = GlobalFunctions.StringToBoolean(sAutoSpellCheck);
             try
             {
-                string[] dicFiles = Directory.GetFiles(StcVerbum.DictionariesPath);
+                string sFileNoExtension = string.Empty;
+                string sDicFilePath = string.Empty;
+                string sAffFilePath = string.Empty;
+                string sCultureString = string.Empty;
+
+                string[] dicFiles = Directory.GetFiles(StcVerbum.DictionariesPath, "*", SearchOption.AllDirectories);
                 foreach (string sFile in dicFiles)
                 {
-                    if (sFile.EndsWith(".dic"))
-                    {
-                        string sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
-                        string[] sFileParts = sFileNoExtension.Split('_');
+                    sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
 
-                        if (!sFileParts[0].Equals("hyph"))
+                    if ((!Path.HasExtension(sFile)) 
+                        || (!sFile.EndsWith(".dic", StringComparison.OrdinalIgnoreCase))
+                        || (sFileNoExtension.StartsWith("hyph", StringComparison.OrdinalIgnoreCase)))
+                    { continue; }
+                    else
+                    {
+                        sDicFilePath = sFile;
+                        sAffFilePath = Path.ChangeExtension(sFile, ".aff");
+
+                        if (Path.Exists(sAffFilePath))
                         {
-                            sFileNameWithEx = sFileNoExtension + ".aff";
-                            AddHunspellDictionary(
-                                sFile,
-                                Path.Combine(StcVerbum.DictionariesPath, sFileNameWithEx),
-                                new CultureInfo(string.Format("{0}-{1}", sFileParts[0], sFileParts[1])));
+                            sCultureString = sFileNoExtension.Replace('_', '-');
+                            AddHunspellDictionary(sDicFilePath, sAffFilePath, new CultureInfo(sCultureString));
                         }
+                        else
+                        { continue; }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ROLogging.ROLogger.Error(ex, "Woops!");
+                Logging.ROLogger.Error(ex, "Woops!");
                 MessageBox.Show(ex.Message, "Woops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }

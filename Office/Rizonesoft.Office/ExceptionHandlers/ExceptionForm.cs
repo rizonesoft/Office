@@ -1,7 +1,7 @@
 ﻿using NLog;
 using Rizonesoft.Office.EnvironmentEx;
 using Rizonesoft.Office.ExceptionHandlers;
-using Rizonesoft.Office.ROUtilities;
+using Rizonesoft.Office.Utilities;
 
 namespace Rizonesoft.Office.ExceptionHandlers
 {
@@ -23,7 +23,7 @@ namespace Rizonesoft.Office.ExceptionHandlers
             bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
                 ExceptionHandler.EnvironmentToString(),
                 ExceptionHandler.ExceptionToString(ex));
-            ROLogging.ROLogger.Error(ex, "Whoops!");
+            Logging.ROLogger.Error(ex, "Whoops!");
         }
 
         private void copyButton_Click(object sender, EventArgs e)

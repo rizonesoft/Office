@@ -4,9 +4,8 @@
     using DevExpress.XtraEditors;
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.Licensing;
     using Rizonesoft.Office.Reader.Utilities;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
     using System.ComponentModel;
     using System.IO;
@@ -48,11 +47,10 @@
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
-            isLicensed = LicenseCheck.IsLicensed();
             OnShowMdiChildCaptionInParentTitle();
             CreateProgramDirectories();
             InitializeComponent();
-            base.Text = $"{StcReader.ProductName} {ROGlobals.ProductVersionYear}";
+            base.Text = $"{StcReader.ProductName} {GlobalProperties.ProductVersionMajor}";
             Initialize();
             CreateNewViewer(StcReader.WelcomePDFPath);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcReader.ProductName}");
@@ -113,7 +111,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    ROLogging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -221,28 +219,28 @@
 
         private void LoadSettings()
         {
-            ROFunctions.GeometryFromString(ROSettings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty), this);
 
         }
 
         private void SaveSettings()
         {
-            ROSettings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", ROFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
 
         }
 
         private static void SetSkins()
         {
-            string sSkin = ROSettings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
-            string sPalette = ROSettings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Palette", "Fire Brick");
+            string sSkin = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
+            string sPalette = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Palette", "Fire Brick");
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
 
         }
 
         private static void SaveSkins()
         {
-            ROSettings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            ROSettings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
         private bool SaveRestoreRibbon(bool SaveRibbon)

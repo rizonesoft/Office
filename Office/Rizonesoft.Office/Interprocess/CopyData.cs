@@ -49,6 +49,7 @@ namespace Rizonesoft.Office.Interprocess
         /// <param name="m">The Windows Message information.</param>
         protected override void WndProc(ref Message m)
         {
+#pragma warning disable SYSLIB0011
             if (m.Msg == WM_COPYDATA)
             {
                 COPYDATASTRUCT cds = new COPYDATASTRUCT();
@@ -78,6 +79,7 @@ namespace Rizonesoft.Office.Interprocess
                 base.OnHandleChange();
             }
             base.WndProc(ref m);
+#pragma warning restore SYSLIB0011
         }
 
         /// <summary>
@@ -433,7 +435,9 @@ namespace Rizonesoft.Office.Interprocess
             // be passed isn't serializable.
             BinaryFormatter b = new BinaryFormatter();
             MemoryStream stream = new MemoryStream();
+#pragma warning disable SYSLIB0011
             b.Serialize(stream, cdo);
+#pragma warning restore SYSLIB0011
             stream.Flush();
 
             // Now move the data into a pointer so we can send

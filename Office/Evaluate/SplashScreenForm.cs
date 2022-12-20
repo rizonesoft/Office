@@ -2,7 +2,7 @@
 {
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office.Evaluate.Utilities;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
 
     public partial class SplashScreenForm : SplashScreen
@@ -10,7 +10,7 @@
         public SplashScreenForm()
         {
             InitializeComponent();
-            labelNameVersion.Text = $"{StcEvaluate.ProductName} {ROGlobals.ProductVersionYear}";
+            labelNameVersion.Text = $"{StcEvaluate.ProductName} {Office.Utilities.GlobalProperties.ProductVersionMajor}";
             labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 

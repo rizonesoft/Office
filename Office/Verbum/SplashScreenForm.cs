@@ -1,7 +1,7 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
     using DevExpress.XtraSplashScreen;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using Rizonesoft.Office.Verbum.Utilities;
     using System;
 
@@ -10,7 +10,7 @@
         public SplashScreenForm()
         {
             InitializeComponent();
-            labelNameVersion.Text = $"{StcVerbum.ProductName} {ROGlobals.ProductVersionYear}";
+            labelNameVersion.Text = $"{StcVerbum.ProductName} {Office.Utilities.GlobalProperties.ProductVersionMajor}";
             labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 

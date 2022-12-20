@@ -39,8 +39,6 @@
             this.skinDropDownItem = new DevExpress.XtraBars.SkinDropDownButtonItem();
             this.skinPaletteDropDownItem = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
             this.barOptionsItem = new DevExpress.XtraBars.BarButtonItem();
-            this.barRegisterItem = new DevExpress.XtraBars.BarButtonItem();
-            this.barBuyNowItem = new DevExpress.XtraBars.BarButtonItem();
             this.exceptionButtonItem = new DevExpress.XtraBars.BarButtonItem();
             this.evaluatePopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
             this.barButtonItem2 = new DevExpress.XtraBars.BarButtonItem();
@@ -51,7 +49,6 @@
             this.exportRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.infoRibbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.insertRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.pageLayoutRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
@@ -86,7 +83,6 @@
             // 
             this.mainRibbonControl.AllowCustomization = true;
             this.mainRibbonControl.AutoSaveLayoutToXmlPath = "";
-            this.mainRibbonControl.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(45, 44, 45, 44);
             this.mainRibbonControl.ExpandCollapseItem.Id = 0;
             this.mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
             this.mainRibbonControl.ExpandCollapseItem,
@@ -98,18 +94,15 @@
             this.skinDropDownItem,
             this.skinPaletteDropDownItem,
             this.barOptionsItem,
-            this.barRegisterItem,
-            this.barBuyNowItem,
             this.exceptionButtonItem,
             this.evaluatePopupMenuItem,
             this.barButtonItem2,
             this.devBarBtnItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(15, 15, 15, 15);
+            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
             this.mainRibbonControl.MaxItemId = 25;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
-            this.mainRibbonControl.OptionsMenuMinWidth = 495;
             this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
             this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
             this.mainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
@@ -135,7 +128,7 @@
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(1508, 231);
+            this.mainRibbonControl.Size = new System.Drawing.Size(935, 170);
             this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
             this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
@@ -209,21 +202,6 @@
             this.barOptionsItem.Name = "barOptionsItem";
             this.barOptionsItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOptionsItem_ItemClick);
             // 
-            // barRegisterItem
-            // 
-            this.barRegisterItem.Caption = "Register!";
-            this.barRegisterItem.Id = 9;
-            this.barRegisterItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barRegisterItem.ImageOptions.SvgImage")));
-            this.barRegisterItem.Name = "barRegisterItem";
-            this.barRegisterItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.BarRegisterItem_ItemClick);
-            // 
-            // barBuyNowItem
-            // 
-            this.barBuyNowItem.Caption = "Buy Now!";
-            this.barBuyNowItem.Id = 10;
-            this.barBuyNowItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barBuyNowItem.ImageOptions.SvgImage")));
-            this.barBuyNowItem.Name = "barBuyNowItem";
-            // 
             // exceptionButtonItem
             // 
             this.exceptionButtonItem.Caption = "Throw Unhandled Exception";
@@ -271,8 +249,7 @@
             this.commonRibbonGroup,
             this.exportRibbonGroup,
             this.infoRibbonPageGroup1,
-            this.optionsRibbonGroup,
-            this.licenseRibbonGroup});
+            this.optionsRibbonGroup});
             this.fileRibbonPage.MergeOrder = 1;
             this.fileRibbonPage.Name = "fileRibbonPage";
             this.fileRibbonPage.Text = "File";
@@ -303,13 +280,6 @@
             this.optionsRibbonGroup.ItemLinks.Add(this.barOptionsItem, true);
             this.optionsRibbonGroup.Name = "optionsRibbonGroup";
             this.optionsRibbonGroup.Text = "Options";
-            // 
-            // licenseRibbonGroup
-            // 
-            this.licenseRibbonGroup.ItemLinks.Add(this.barRegisterItem);
-            this.licenseRibbonGroup.ItemLinks.Add(this.barBuyNowItem);
-            this.licenseRibbonGroup.Name = "licenseRibbonGroup";
-            this.licenseRibbonGroup.Text = "Registration";
             // 
             // homeRibbonPage
             // 
@@ -372,11 +342,10 @@
             // 
             this.mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonStatusBar.ItemLinks.Add(this.devBarBtnItem);
-            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 913);
-            this.mainRibbonStatusBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 649);
             this.mainRibbonStatusBar.Name = "mainRibbonStatusBar";
             this.mainRibbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.mainRibbonStatusBar.Size = new System.Drawing.Size(1508, 36);
+            this.mainRibbonStatusBar.Size = new System.Drawing.Size(935, 31);
             // 
             // mainTabbedMdiManager
             // 
@@ -405,58 +374,55 @@
             // 
             this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 231);
-            this.topSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.topSpacerPanel.Location = new System.Drawing.Point(0, 170);
             this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(1508, 7);
+            this.topSpacerPanel.Size = new System.Drawing.Size(935, 5);
             this.topSpacerPanel.TabIndex = 3;
             // 
             // leftSpacerPanel
             // 
             this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 238);
-            this.leftSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 175);
             this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(8, 675);
+            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 474);
             this.leftSpacerPanel.TabIndex = 6;
             // 
             // rightSpacerPanel
             // 
             this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(1500, 238);
-            this.rightSpacerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.rightSpacerPanel.Location = new System.Drawing.Point(930, 175);
             this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(8, 675);
+            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 474);
             this.rightSpacerPanel.TabIndex = 9;
             // 
             // bottomSpacerPannel
             // 
             this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(8, 906);
-            this.bottomSpacerPannel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 644);
             this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(1492, 7);
+            this.bottomSpacerPannel.Size = new System.Drawing.Size(925, 5);
             this.bottomSpacerPannel.TabIndex = 10;
             // 
             // MainForm
             // 
             this.AllowMdiBar = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
+            this.Appearance.Options.UseFont = true;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1508, 949);
+            this.ClientSize = new System.Drawing.Size(935, 680);
             this.Controls.Add(this.bottomSpacerPannel);
             this.Controls.Add(this.rightSpacerPanel);
             this.Controls.Add(this.leftSpacerPanel);
             this.Controls.Add(this.topSpacerPanel);
             this.Controls.Add(this.mainRibbonStatusBar);
             this.Controls.Add(this.mainRibbonControl);
+            this.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.IconOptions.ShowIcon = false;
             this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("MainForm.IconOptions.SvgImage")));
             this.IsMdiContainer = true;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainForm";
             this.Ribbon = this.mainRibbonControl;
             this.StatusBar = this.mainRibbonStatusBar;
@@ -495,15 +461,12 @@
         private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
         private DevExpress.XtraSpellChecker.SharedDictionaryStorage mainSharedDictionaryStorage;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar mainRibbonStatusBar;
-        private DevExpress.XtraBars.BarButtonItem barRegisterItem;
-        private DevExpress.XtraBars.BarButtonItem barBuyNowItem;
         private DevExpress.XtraBars.BarButtonItem exceptionButtonItem;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup exportRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup infoRibbonPageGroup1;
         private DevExpress.XtraBars.BarButtonItem evaluatePopupMenuItem;
         private DevExpress.XtraBars.BarButtonItem barButtonItem2;
         private DevExpress.XtraBars.PopupMenu officePopupMenu;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPage debugRibbonPage;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup debugPageGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPage insertRibbonPage;

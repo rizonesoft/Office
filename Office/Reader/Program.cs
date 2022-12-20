@@ -4,7 +4,7 @@
     using Rizonesoft.Office.ExceptionHandlers;
     using Rizonesoft.Office.Interprocess;
     using Rizonesoft.Office.Reader.Utilities;
-    using Rizonesoft.Office.ROUtilities;
+    using Rizonesoft.Office.Utilities;
     using System;
     using System.Drawing;
     using System.Threading;
@@ -20,7 +20,7 @@
         {
             Application.ThreadException += (sender, e) => new ExceptionForm(e.Exception).ShowDialog();
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => new ExceptionForm(e.ExceptionObject as Exception).ShowDialog();
-            ROLogging.ConfigureLogging();
+            Logging.ConfigureLogging();
 
             try
             {
@@ -78,7 +78,7 @@
             catch (Exception ex)
             {
                 ROErrorMessage.Show("Woops!", $"{StcReader.ProductName} was unable to start.");
-                ROLogging.ROLogger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
+                Logging.ROLogger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
             }
 
         }

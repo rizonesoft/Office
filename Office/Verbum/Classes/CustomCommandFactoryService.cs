@@ -1,6 +1,4 @@
-﻿
-
-namespace Rizonesoft.Office.Verbum.Classes
+﻿namespace Rizonesoft.Office.Verbum.Classes
 {
     using DevExpress.XtraRichEdit.Commands;
     using DevExpress.XtraRichEdit;
@@ -14,7 +12,7 @@ namespace Rizonesoft.Office.Verbum.Classes
     {
         readonly IRichEditCommandFactoryService service;
         readonly RichEditControl control;
-        
+
 
         public CustomCommandFactoryService(RichEditControl control, IRichEditCommandFactoryService service)
         {
@@ -73,6 +71,5 @@ namespace Rizonesoft.Office.Verbum.Classes
 
 
     }
-
 
 }
