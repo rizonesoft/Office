@@ -1,8 +1,10 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
+    using DevExpress.LookAndFeel;
     using DevExpress.Utils.DPI;
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
+    using DevExpress.XtraEditors.ColorWheel;
     using DevExpress.XtraSpellChecker;
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office;
@@ -13,6 +15,7 @@
     using Rizonesoft.Office.Verbum.Utilities;
     using System;
     using System.ComponentModel;
+    using System.Drawing;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -245,9 +248,9 @@
         public static void SetSkins()
         {
             string sSkin = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "WXI");
-            string sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", string.Empty);
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
+            string sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", "Clearness");
 
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
         }
 
         private static void SaveSkins()
@@ -562,5 +565,6 @@
             Debugging.IsDebugging = !Debugging.IsDebugging;
             debugRibbonPage.Visible = Debugging.IsDebugging;
         }
+
     }
 }

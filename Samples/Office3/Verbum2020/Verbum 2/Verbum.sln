@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Verbum", "Verbum\Verbum.csproj", "{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}"
+EndProject
+Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "Verbum-Install", "Verbum-Install\Verbum-Install.isproj", "{3EEB088E-30B6-40DE-B78F-D973FC72A59B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E} = {FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		CD_ROM|x86 = CD_ROM|x86
+		Debug|x86 = Debug|x86
+		DVD-5|x86 = DVD-5|x86
+		Release|x86 = Release|x86
+		SingleImage|x86 = SingleImage|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.CD_ROM|x86.ActiveCfg = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.CD_ROM|x86.Build.0 = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.Debug|x86.ActiveCfg = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.Debug|x86.Build.0 = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.DVD-5|x86.ActiveCfg = Debug|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.DVD-5|x86.Build.0 = Debug|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.Release|x86.ActiveCfg = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.Release|x86.Build.0 = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.SingleImage|x86.ActiveCfg = Release|x86
+		{FB0A10F1-B484-4A3A-8174-9820CB6B5B7E}.SingleImage|x86.Build.0 = Release|x86
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.CD_ROM|x86.ActiveCfg = CD_ROM
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.CD_ROM|x86.Build.0 = CD_ROM
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.Debug|x86.ActiveCfg = DVD-5
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.Debug|x86.Build.0 = DVD-5
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.DVD-5|x86.ActiveCfg = DVD-5
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.DVD-5|x86.Build.0 = DVD-5
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.Release|x86.ActiveCfg = SingleImage
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.Release|x86.Build.0 = SingleImage
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.SingleImage|x86.ActiveCfg = SingleImage
+		{3EEB088E-30B6-40DE-B78F-D973FC72A59B}.SingleImage|x86.Build.0 = SingleImage
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

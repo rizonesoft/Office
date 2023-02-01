@@ -1,0 +1,30 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>How to implement the basic idea of the Microsoft Word "Format Painter" feature for RichEditControl - Developer Express Example</title>
+<style>
+html, body, form 
+{
+	font-family: Tahoma, Arial, Verdana;
+    font-size: small;
+    color: #303440;
+}
+h1 {
+	font-size: 125%;
+	font-weight: normal;
+	color: Black;
+	letter-spacing: 101%;
+}
+</style>
+</head>
+<body>
+<h1>Developer Express Example<br />How to implement the basic idea of the Microsoft Word "Format Painter" feature for RichEditControl</h1>
+<p>This example demonstrates how to copy the characters and paragraphs properties and apply formatting to the selected text. Try the Format Painter button on the ribbon Home tab.
+
+To obtain the selected text range, the RichEditDocument.Document.Selection property is used. The characters and paragraphs properties are obtained in the BarCheckItem.CheckedChanged event handler. Then, they are stored in the CharacterPropertiesObject and ParagraphPropertiesObject object containers.
+
+In order to change the current RichEditControl cursor, a MouseCursorCalculator descendant is implemented. Check the custom MouseCursorCalculator class Calculate method for clarification.</p>
+<p>You can find sample updates and versions for different programming languages here:<br /><a href="http://www.devexpress.com/example=E5223">http://www.devexpress.com/example=E5223</a>.</p>
+</body>
+</html>

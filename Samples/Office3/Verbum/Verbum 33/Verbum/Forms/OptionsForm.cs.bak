@@ -1,0 +1,37 @@
+using System;
+using Verbum.Properties;
+using DevExpress.XtraEditors;
+using DevExpress.LookAndFeel;
+using DevExpress.XtraBars.Helpers;
+
+namespace Rizone.Verbum.Forms
+{
+    public partial class OptionsForm : DevExpress.XtraEditors.XtraForm
+    {
+        public OptionsForm()
+        {
+            InitializeComponent();
+            ControlSetup();
+            SkinHelper.InitSkinGallery(this.gallerySkins);
+            this.checkCompFormat.Checked = (bool)Settings.Default["CompactFormat"];
+        }
+        void ControlSetup()
+        {
+            this.checkCompFormat.ToolTipTitle = "Compact format";
+            this.checkCompFormat.ToolTip = "You can reduce the file size by preventing \n" + "dual picture saving although it affects file portability.";
+        }
+        private void btnOK_Click(object sender, EventArgs e)
+        {
+            Settings.Default["CompactFormat"] = this.checkCompFormat.Checked;
+            Settings.Default.Save();
+            this.Close();
+        }
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+        private void simpleButton1_Click(object sender, EventArgs e)
+        {
+        }
+    }
+}

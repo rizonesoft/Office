@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<verbum-dictionary>
+  <language>English (United Kingdom)</language>
+  <culture>en-GB</culture>
+  <dictionary-path>en_GB.dic</dictionary-path>
+  <grammer-path>en_GB.aff</grammer-path>
+</verbum-dictionary>

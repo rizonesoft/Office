@@ -217,9 +217,38 @@ namespace Rizonesoft.Office.Verbum
 
         #endregion Events
 
+        #region Views
+
+        private void SimpleViewStatusItem_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (SimpleViewStatusItem.Down)
+            {
+                mainRichEditControl.ActiveViewType = RichEditViewType.Simple;
+                DraftViewStatusItem.Down = PrintLayoutStatusItem.Down = false;
+            }
+        }
+
+        private void DraftViewStatusItem_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (DraftViewStatusItem.Down)
+            {
+                mainRichEditControl.ActiveViewType = RichEditViewType.Draft;
+                SimpleViewStatusItem.Down = PrintLayoutStatusItem.Down = false;
+            }
+        }
+
+        private void PrintLayoutStatusItem_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (PrintLayoutStatusItem.Down)
+            {
+                mainRichEditControl.ActiveViewType = RichEditViewType.PrintLayout;
+                DraftViewStatusItem.Down = SimpleViewStatusItem.Down = false;
+            }
+        }
+
+        #endregion Views
 
 
-        
 
         #region DocForm Events (Overrides)
 
@@ -539,6 +568,8 @@ namespace Rizonesoft.Office.Verbum
         }
 
         #endregion Developer Tools (Debugging)
+
+       
 
     }
 

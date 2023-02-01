@@ -1,0 +1,49 @@
+﻿using System.Windows.Forms;
+using System.Runtime.InteropServices;
+
+using DevExpress.XtraEditors;
+using DevExpress.XtraRichEdit;
+using DevExpress.XtraRichEdit.API.Word;
+
+
+namespace Rizone.Verbum
+{
+    public class RichEditDemoExceptionsHandler
+    {
+        readonly RichEditControl control;
+        public RichEditDemoExceptionsHandler(RichEditControl control)
+        {
+            this.control = control;
+        }
+        public void Install()
+        {
+            if (control != null)
+                control.UnhandledException += OnRichEditControlUnhandledException;
+        }
+
+        void OnRichEditControlUnhandledException(object sender, RichEditUnhandledExceptionEventArgs e)
+        {
+            try
+            {
+                if (e.Exception != null)
+                    throw e.Exception;
+            }
+            catch (RichEditUnsupportedFormatException ex)
+            {
+                new ExceptionForm(ex).ShowDialog();
+                e.Handled = true;
+            }
+            catch (ExternalException ex)
+            {
+                new ExceptionForm(ex).ShowDialog();
+                e.Handled = true;
+            }
+            catch (System.IO.IOException ex)
+            {
+                new ExceptionForm(ex).ShowDialog();
+                e.Handled = true;
+            }
+        }
+
+    }
+}

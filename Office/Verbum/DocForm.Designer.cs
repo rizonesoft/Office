@@ -360,6 +360,9 @@
             this.galleryChangeTableStyleItem2 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
             this.barCurrLineItem = new DevExpress.XtraBars.BarStaticItem();
             this.barCurrColumnItem = new DevExpress.XtraBars.BarStaticItem();
+            this.SimpleViewStatusItem = new DevExpress.XtraBars.BarButtonItem();
+            this.DraftViewStatusItem = new DevExpress.XtraBars.BarButtonItem();
+            this.PrintLayoutStatusItem = new DevExpress.XtraBars.BarButtonItem();
             this.headerFooterToolsRibbonPageCategory1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsRibbonPageCategory();
             this.headerFooterToolsDesignRibbonPage1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignRibbonPage();
             this.headerFooterToolsDesignNavigationRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignNavigationRibbonPageGroup();
@@ -419,6 +422,7 @@
             this.documentViewsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentViewsRibbonPageGroup();
             this.showRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ShowRibbonPageGroup();
             this.zoomRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ZoomRibbonPageGroup();
+            this.themeRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
@@ -761,10 +765,13 @@
             this.barButtonGroup14,
             this.galleryChangeTableStyleItem2,
             this.barCurrLineItem,
-            this.barCurrColumnItem});
+            this.barCurrColumnItem,
+            this.SimpleViewStatusItem,
+            this.DraftViewStatusItem,
+            this.PrintLayoutStatusItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
             this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(4);
-            this.mainRibbonControl.MaxItemId = 313;
+            this.mainRibbonControl.MaxItemId = 316;
             this.mainRibbonControl.Name = "mainRibbonControl";
             this.mainRibbonControl.OptionsMenuMinWidth = 495;
             this.mainRibbonControl.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] {
@@ -797,7 +804,7 @@
             this.repositoryItemProgressBar3});
             this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
-            this.mainRibbonControl.Size = new System.Drawing.Size(1205, 170);
+            this.mainRibbonControl.Size = new System.Drawing.Size(1205, 201);
             this.mainRibbonControl.StatusBar = this.ribbonStatusBar;
             // 
             // fileSaveAsItem1
@@ -928,12 +935,12 @@
             // 
             this.mainRichEditControl.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.mainRichEditControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainRichEditControl.Location = new System.Drawing.Point(0, 177);
+            this.mainRichEditControl.Location = new System.Drawing.Point(0, 208);
             this.mainRichEditControl.Margin = new System.Windows.Forms.Padding(4);
             this.mainRichEditControl.MenuManager = this.mainRibbonControl;
             this.mainRichEditControl.Name = "mainRichEditControl";
             this.mainRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
-            this.mainRichEditControl.Size = new System.Drawing.Size(1205, 560);
+            this.mainRichEditControl.Size = new System.Drawing.Size(1205, 523);
             this.mainRichEditControl.SpellChecker = this.mainSpellChecker;
             this.mainSpellChecker.SetSpellCheckerOptions(this.mainRichEditControl, optionsSpelling1);
             this.mainRichEditControl.TabIndex = 2;
@@ -2744,6 +2751,39 @@
             this.barCurrColumnItem.Id = 307;
             this.barCurrColumnItem.Name = "barCurrColumnItem";
             // 
+            // SimpleViewStatusItem
+            // 
+            this.SimpleViewStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.SimpleViewStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
+            this.SimpleViewStatusItem.Caption = "Simple View";
+            this.SimpleViewStatusItem.Id = 313;
+            this.SimpleViewStatusItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("SimpleViewStatusItem.ImageOptions.SvgImage")));
+            this.SimpleViewStatusItem.Name = "SimpleViewStatusItem";
+            this.SimpleViewStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            this.SimpleViewStatusItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.SimpleViewStatusItem_ItemClick);
+            // 
+            // DraftViewStatusItem
+            // 
+            this.DraftViewStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.DraftViewStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
+            this.DraftViewStatusItem.Caption = "Draft View";
+            this.DraftViewStatusItem.Id = 314;
+            this.DraftViewStatusItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("DraftViewStatusItem.ImageOptions.SvgImage")));
+            this.DraftViewStatusItem.Name = "DraftViewStatusItem";
+            this.DraftViewStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            this.DraftViewStatusItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.DraftViewStatusItem_ItemClick);
+            // 
+            // PrintLayoutStatusItem
+            // 
+            this.PrintLayoutStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            this.PrintLayoutStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
+            this.PrintLayoutStatusItem.Caption = "Print Layout";
+            this.PrintLayoutStatusItem.Id = 315;
+            this.PrintLayoutStatusItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("PrintLayoutStatusItem.ImageOptions.SvgImage")));
+            this.PrintLayoutStatusItem.Name = "PrintLayoutStatusItem";
+            this.PrintLayoutStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            this.PrintLayoutStatusItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.PrintLayoutStatusItem_ItemClick);
+            // 
             // headerFooterToolsRibbonPageCategory1
             // 
             this.headerFooterToolsRibbonPageCategory1.Control = this.mainRichEditControl;
@@ -3228,7 +3268,8 @@
             this.viewRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
             this.documentViewsRibbonPageGroup1,
             this.showRibbonPageGroup1,
-            this.zoomRibbonPageGroup1});
+            this.zoomRibbonPageGroup1,
+            this.themeRibbonGroup});
             this.viewRibbonPage1.Name = "viewRibbonPage1";
             // 
             // documentViewsRibbonPageGroup1
@@ -3236,6 +3277,7 @@
             this.documentViewsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
             this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToSimpleViewItem1, "L");
             this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToDraftViewItem1, "E");
+            this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToPrintLayoutViewItem1, "P");
             this.documentViewsRibbonPageGroup1.Name = "documentViewsRibbonPageGroup1";
             // 
             // showRibbonPageGroup1
@@ -3252,6 +3294,11 @@
             this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomInItem1);
             this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomResetItem, true);
             this.zoomRibbonPageGroup1.Name = "zoomRibbonPageGroup1";
+            // 
+            // themeRibbonGroup
+            // 
+            this.themeRibbonGroup.Name = "themeRibbonGroup";
+            this.themeRibbonGroup.Text = "Theme";
             // 
             // debugRibbonPage
             // 
@@ -3285,13 +3332,16 @@
             this.ribbonStatusBar.ItemLinks.Add(this.barCurrLineItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.barCurrColumnItem, true);
             this.ribbonStatusBar.ItemLinks.Add(this.barLangBtnItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.SimpleViewStatusItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.DraftViewStatusItem);
+            this.ribbonStatusBar.ItemLinks.Add(this.PrintLayoutStatusItem, false, "", "", true);
             this.ribbonStatusBar.ItemLinks.Add(this.zoomBarResetItem, true);
-            this.ribbonStatusBar.ItemLinks.Add(this.zoomBarEditItem);
-            this.ribbonStatusBar.Location = new System.Drawing.Point(0, 737);
+            this.ribbonStatusBar.ItemLinks.Add(this.zoomBarEditItem, false, "", "", true);
+            this.ribbonStatusBar.Location = new System.Drawing.Point(0, 731);
             this.ribbonStatusBar.Margin = new System.Windows.Forms.Padding(4);
             this.ribbonStatusBar.Name = "ribbonStatusBar";
             this.ribbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.ribbonStatusBar.Size = new System.Drawing.Size(1205, 31);
+            this.ribbonStatusBar.Size = new System.Drawing.Size(1205, 37);
             // 
             // richEditBarController1
             // 
@@ -3653,7 +3703,7 @@
             // 
             this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 170);
+            this.topSpacerPanel.Location = new System.Drawing.Point(0, 201);
             this.topSpacerPanel.Margin = new System.Windows.Forms.Padding(4);
             this.topSpacerPanel.Name = "topSpacerPanel";
             this.topSpacerPanel.Size = new System.Drawing.Size(1205, 7);
@@ -4088,5 +4138,9 @@
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar2;
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar3;
         private DevExpress.XtraEditors.PanelControl topSpacerPanel;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup themeRibbonGroup;
+        private DevExpress.XtraBars.BarButtonItem SimpleViewStatusItem;
+        private DevExpress.XtraBars.BarButtonItem DraftViewStatusItem;
+        private DevExpress.XtraBars.BarButtonItem PrintLayoutStatusItem;
     }
 }

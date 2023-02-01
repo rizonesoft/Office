@@ -56,6 +56,10 @@
             this.mailMergeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.reviewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.viewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            this.docViewsRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.showRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.zoomRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            this.themeRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             this.debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             this.workProgressBar = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
@@ -100,7 +104,7 @@
             this.devBarBtnItem});
             this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
             this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
-            this.mainRibbonControl.MaxItemId = 25;
+            this.mainRibbonControl.MaxItemId = 26;
             this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             this.mainRibbonControl.Name = "mainRibbonControl";
             this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
@@ -128,7 +132,7 @@
             this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(935, 170);
+            this.mainRibbonControl.Size = new System.Drawing.Size(998, 201);
             this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
             this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
@@ -275,8 +279,6 @@
             // 
             // optionsRibbonGroup
             // 
-            this.optionsRibbonGroup.ItemLinks.Add(this.skinDropDownItem);
-            this.optionsRibbonGroup.ItemLinks.Add(this.skinPaletteDropDownItem);
             this.optionsRibbonGroup.ItemLinks.Add(this.barOptionsItem, true);
             this.optionsRibbonGroup.Name = "optionsRibbonGroup";
             this.optionsRibbonGroup.Text = "Options";
@@ -314,8 +316,35 @@
             // 
             // viewRibbonPage
             // 
+            this.viewRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
+            this.docViewsRibbonPage,
+            this.showRibbonGroup,
+            this.zoomRibbonGroup,
+            this.themeRibbonGroup});
             this.viewRibbonPage.Name = "viewRibbonPage";
             this.viewRibbonPage.Text = "View";
+            // 
+            // docViewsRibbonPage
+            // 
+            this.docViewsRibbonPage.Name = "docViewsRibbonPage";
+            this.docViewsRibbonPage.Text = "Document Views";
+            // 
+            // showRibbonGroup
+            // 
+            this.showRibbonGroup.Name = "showRibbonGroup";
+            this.showRibbonGroup.Text = "Show";
+            // 
+            // zoomRibbonGroup
+            // 
+            this.zoomRibbonGroup.Name = "zoomRibbonGroup";
+            this.zoomRibbonGroup.Text = "Zoom";
+            // 
+            // themeRibbonGroup
+            // 
+            this.themeRibbonGroup.ItemLinks.Add(this.skinDropDownItem);
+            this.themeRibbonGroup.ItemLinks.Add(this.skinPaletteDropDownItem);
+            this.themeRibbonGroup.Name = "themeRibbonGroup";
+            this.themeRibbonGroup.Text = "Theme";
             // 
             // debugRibbonPage
             // 
@@ -342,10 +371,10 @@
             // 
             this.mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             this.mainRibbonStatusBar.ItemLinks.Add(this.devBarBtnItem);
-            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 649);
+            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
             this.mainRibbonStatusBar.Name = "mainRibbonStatusBar";
             this.mainRibbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.mainRibbonStatusBar.Size = new System.Drawing.Size(935, 31);
+            this.mainRibbonStatusBar.Size = new System.Drawing.Size(998, 37);
             // 
             // mainTabbedMdiManager
             // 
@@ -374,36 +403,36 @@
             // 
             this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 170);
+            this.topSpacerPanel.Location = new System.Drawing.Point(0, 201);
             this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(935, 5);
+            this.topSpacerPanel.Size = new System.Drawing.Size(998, 5);
             this.topSpacerPanel.TabIndex = 3;
             // 
             // leftSpacerPanel
             // 
             this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 175);
+            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 206);
             this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 474);
+            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 406);
             this.leftSpacerPanel.TabIndex = 6;
             // 
             // rightSpacerPanel
             // 
             this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(930, 175);
+            this.rightSpacerPanel.Location = new System.Drawing.Point(993, 206);
             this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 474);
+            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 406);
             this.rightSpacerPanel.TabIndex = 9;
             // 
             // bottomSpacerPannel
             // 
             this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 644);
+            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 607);
             this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(925, 5);
+            this.bottomSpacerPannel.Size = new System.Drawing.Size(988, 5);
             this.bottomSpacerPannel.TabIndex = 10;
             // 
             // MainForm
@@ -412,7 +441,7 @@
             this.Appearance.Options.UseFont = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(935, 680);
+            this.ClientSize = new System.Drawing.Size(998, 649);
             this.Controls.Add(this.bottomSpacerPannel);
             this.Controls.Add(this.rightSpacerPanel);
             this.Controls.Add(this.leftSpacerPanel);
@@ -483,6 +512,10 @@
         private DevExpress.XtraEditors.PanelControl leftSpacerPanel;
         private DevExpress.XtraEditors.PanelControl bottomSpacerPannel;
         private DevExpress.XtraEditors.PanelControl rightSpacerPanel;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup themeRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup zoomRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup showRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup docViewsRibbonPage;
     }
 }
 

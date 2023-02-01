@@ -1,0 +1,15 @@
+Action    : Email and Scheduling.
+Books     : Accounting
+Capture   : Scanning
+Duplicate : Copying (Scanner / Printer)
+Evaluate  : Spreadsheets
+Filer     : File Explorer
+Flow      : Diagrams
+Imagine   : Report Designer
+Method    : Project Management
+Picture   : Image Viewer
+Reader    : PDF Reader / Editor
+Sessions  : Bookings
+Verbum    : Document Processor
+Voice     : Text to Speech
+World     : World Maps

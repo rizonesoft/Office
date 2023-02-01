@@ -59,7 +59,13 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\Resources\Programs\Verbum\Extensions\docx.ico">
+    <Image Include="..\..\Resources\Programs\Verbum\Extensions\docx.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\..\Resources\Programs\Verbum\Extensions\doc.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\..\Resources\Office.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

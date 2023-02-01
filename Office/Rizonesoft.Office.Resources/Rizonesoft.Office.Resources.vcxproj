@@ -212,7 +212,9 @@
     <ResourceCompile Include="Rizonesoft.Office.Resources.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\Resources\Programs\Verbum\Extensions\docx.ico" />
+    <Image Include="..\..\Resources\Office.ico" />
+    <Image Include="..\..\Resources\Programs\Verbum\Extensions\doc.ico" />
+    <Image Include="..\..\Resources\Programs\Verbum\Extensions\docx.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
