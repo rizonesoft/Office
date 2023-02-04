@@ -1,0 +1,41 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.005 -2.0025 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs tag="staticElement_id24207921">
+    <style type="text/css">
+    .fil0 {fill:#0E5C2F}
+    .fil1 {fill:#217346}
+    .fil2 {fill:url(#id0);fill-rule:nonzero}
+   </style>
+    <linearGradient x1="3735.94px" y1="7493.21px" x2="11247.74px" y2="7493.21px" gradientunits="userspaceonuse" spreadmethod="pad" id="id0">
+      <stop offset="0%" style="stop-opacity:1;stop-color:#C8EFD4" />
+      <stop offset="100%" style="stop-opacity:1;stop-color:#FEFEFE" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(-0.0001, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0016)">
+        <g id="Layer_x0020_1">
+          <path d="M1997.83, 1.36L8955.84, 1.36L8955.84, 14985.06L1997.83, 14985.06C899.03, 14985.06 0, 14086.04 0, 12987.23L0, 1999.19C0, 900.39 899.02, 1.36 1997.83, 1.36z" fill="#0E5C2F" class="fil0" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0001, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0016)">
+        <g id="Layer_x0020_1">
+          <path d="M7491.85, 0L12983.81, 0C14082.61, 0 14981.64, 899.02 14981.64, 1997.83L14981.64, 12985.87C14981.64, 14084.67 14082.62, 14983.7 12983.81, 14983.7L7491.85, 14983.7L7491.85, 0z" fill="#217346" class="fil1" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0001, -0.0009)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.0494, 0, 0, 0.0494, 0, 0)">
+      <g transform="matrix(0.0378, 0, 0, 0.0378, 0, 0.0016)">
+        <g id="Layer_x0020_1">
+          <polygon points="11238.59,9096.61 5929.17,9096.61 5929.17,8317.82 10169.39,8317.82 10169.39,6668.61 5929.17,6668.61 5929.17,5889.82 11247.74,5889.82 11247.74,4057.36 3735.94,4057.36 3735.94,10929.06 11238.59,10929.06 " fill="url(#id0)" class="fil2" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

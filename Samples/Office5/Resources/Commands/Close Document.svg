@@ -1,0 +1,25 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-2, -6)" style="enable-background:new 0 0 32 32">
+    <g id="FolderOpen">
+      <g class="st0">
+        <path d="M2.2, 25.2L7.7, 15.2C8, 14.5 8.7, 14 9.5, 14L24, 14L24, 11C24, 10.4 23.6, 10 23, 10L12, 10L12, 7C12, 6.4 11.6, 6 11, 6L3, 6C2.4, 6 2, 6.5 2, 7L2, 25C2, 25.2 2, 25.3 2.1, 25.4C2.1, 25.4 2.2, 25.3 2.2, 25.2z" fill="#FFB115" class="Yellow" />
+      </g>
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -6)" style="enable-background:new 0 0 32 32">
+    <g id="FolderOpen">
+      <path d="M29.3, 16L9.6, 16L4, 26L23.8, 26C24.3, 26 24.9, 25.8 25.1, 25.4L30, 16.5C30.1, 16.2 29.8, 16 29.3, 16z" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(14, 12)" style="enable-background:new 0 0 16 16">
+    <g id="DeleteCircled_1_">
+      <circle cx="8" cy="8" r="8" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(14, 12)" style="enable-background:new 0 0 16 16">
+    <g id="DeleteCircled_1_">
+      <polygon points="12.2,5.2 10.8,3.8 8,6.6 5.2,3.8 3.8,5.2 6.6,8 3.8,10.8 5.2,12.2 8,9.4 10.8,12.2 12.2,10.8 9.4,8     " fill="#FFFFFF" class="White" />
+    </g>
+  </g>
+</svg>
