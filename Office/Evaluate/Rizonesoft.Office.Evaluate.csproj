@@ -9,14 +9,14 @@
     <AssemblyName>Evaluate</AssemblyName>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <ApplicationIcon>Evaluate.ico</ApplicationIcon>
-    <Version>2023.3.31</Version>
+    <Version>2023.3.33</Version>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<PublishSingleFile>true</PublishSingleFile>
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.10.31</AssemblyVersion>
-	<FileVersion>2023.3.10.31</FileVersion>
+	<AssemblyVersion>2023.3.10.33</AssemblyVersion>
+	<FileVersion>2023.3.10.33</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

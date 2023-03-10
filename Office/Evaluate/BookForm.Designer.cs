@@ -1767,10 +1767,12 @@
             // 
             // 
             // 
+            galleryChangeStyleItem1.Gallery.ColumnCount = 4;
             galleryChangeStyleItem1.Gallery.DrawImageBackground = false;
-            galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
+            galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 30);
             galleryChangeStyleItem1.Gallery.ItemAutoSizeMode = DevExpress.XtraBars.Ribbon.Gallery.GalleryItemAutoSizeMode.None;
-            galleryChangeStyleItem1.Gallery.ItemSize = new System.Drawing.Size(106, 28);
+            galleryChangeStyleItem1.Gallery.ItemSize = new System.Drawing.Size(80, 20);
+            galleryChangeStyleItem1.Gallery.MaxItemWidth = 100;
             galleryChangeStyleItem1.Gallery.RowCount = 9;
             galleryChangeStyleItem1.Gallery.ShowItemText = true;
             galleryChangeStyleItem1.Id = 103;
