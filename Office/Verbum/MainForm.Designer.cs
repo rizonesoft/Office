@@ -28,449 +28,522 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.mainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
-            this.mainBarMdiChildrenListItem = new DevExpress.XtraBars.BarMdiChildrenListItem();
-            this.barNewItem = new DevExpress.XtraBars.BarButtonItem();
-            this.barOpenItem = new DevExpress.XtraBars.BarButtonItem();
-            this.mruPopupMenu = new DevExpress.XtraBars.PopupMenu(this.components);
-            this.barCloseItem = new DevExpress.XtraBars.BarButtonItem();
-            this.skinDropDownItem = new DevExpress.XtraBars.SkinDropDownButtonItem();
-            this.skinPaletteDropDownItem = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
-            this.barOptionsItem = new DevExpress.XtraBars.BarButtonItem();
-            this.exceptionButtonItem = new DevExpress.XtraBars.BarButtonItem();
-            this.evaluatePopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            this.barButtonItem2 = new DevExpress.XtraBars.BarButtonItem();
-            this.officePopupMenu = new DevExpress.XtraBars.PopupMenu(this.components);
-            this.devBarBtnItem = new DevExpress.XtraBars.BarButtonItem();
-            this.fileRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.commonRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.exportRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.infoRibbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.insertRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.pageLayoutRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.referencesRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.mailMergeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.reviewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.viewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.docViewsRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.showRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.zoomRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.themeRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            this.workProgressBar = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
-            this.repositoryItemMarqueeProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemMarqueeProgressBar();
-            this.mainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
-            this.mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(this.components);
-            this.topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.officePopupMenu)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.workProgressBar)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemMarqueeProgressBar1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).BeginInit();
-            this.SuspendLayout();
+            mainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            darkModeButton = new DevExpress.XtraBars.BarButtonItem();
+            mainBarMdiChildrenListItem = new DevExpress.XtraBars.BarMdiChildrenListItem();
+            barNewItem = new DevExpress.XtraBars.BarButtonItem();
+            barOpenItem = new DevExpress.XtraBars.BarButtonItem();
+            mruPopupMenu = new DevExpress.XtraBars.PopupMenu(components);
+            barCloseItem = new DevExpress.XtraBars.BarButtonItem();
+            skinDropDownItem = new DevExpress.XtraBars.SkinDropDownButtonItem();
+            skinPaletteDropDownItem = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
+            barOptionsItem = new DevExpress.XtraBars.BarButtonItem();
+            exceptionButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            evaluatePopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
+            barButtonItem2 = new DevExpress.XtraBars.BarButtonItem();
+            officePopupMenu = new DevExpress.XtraBars.PopupMenu(components);
+            devBarBtnItem = new DevExpress.XtraBars.BarButtonItem();
+            LicenseButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            GetLicenseButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            DonateButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            TimeStatusButton = new DevExpress.XtraBars.BarButtonItem();
+            barToggleSwitchItem3 = new DevExpress.XtraBars.BarToggleSwitchItem();
+            tableToolsRibbonCategory = new DevExpress.XtraBars.Ribbon.RibbonPageCategory();
+            ribbonPage1 = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            fileRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            commonRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            exportRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            infoRibbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            registrationRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            DonateRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            homeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            insertRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            pageLayoutRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            referencesRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            mailMergeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            reviewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            viewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            docViewsRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            showRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            zoomRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            themeRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            workProgressBar = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
+            repositoryItemMarqueeProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemMarqueeProgressBar();
+            mainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
+            mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
+            mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(components);
+            topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
+            updateAlert = new DevExpress.XtraBars.Alerter.AlertControl(components);
+            ribbonSVGImageCollection = new DevExpress.Utils.SvgImageCollection(components);
+            LicenseTimer = new System.Windows.Forms.Timer(components);
+            ((System.ComponentModel.ISupportInitialize)mainRibbonControl).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mruPopupMenu).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)officePopupMenu).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)workProgressBar).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemMarqueeProgressBar1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)topSpacerPanel).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)leftSpacerPanel).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)rightSpacerPanel).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)bottomSpacerPannel).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).BeginInit();
+            SuspendLayout();
             // 
             // mainRibbonControl
             // 
-            this.mainRibbonControl.AllowCustomization = true;
-            this.mainRibbonControl.AutoSaveLayoutToXmlPath = "";
-            this.mainRibbonControl.ExpandCollapseItem.Id = 0;
-            this.mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
-            this.mainRibbonControl.ExpandCollapseItem,
-            this.mainRibbonControl.SearchEditItem,
-            this.mainBarMdiChildrenListItem,
-            this.barNewItem,
-            this.barOpenItem,
-            this.barCloseItem,
-            this.skinDropDownItem,
-            this.skinPaletteDropDownItem,
-            this.barOptionsItem,
-            this.exceptionButtonItem,
-            this.evaluatePopupMenuItem,
-            this.barButtonItem2,
-            this.devBarBtnItem});
-            this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
-            this.mainRibbonControl.MaxItemId = 26;
-            this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
-            this.mainRibbonControl.Name = "mainRibbonControl";
-            this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
-            this.mainRibbonControl.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
-            this.mainRibbonControl.PageHeaderItemLinks.Add(this.mainBarMdiChildrenListItem);
-            this.mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.fileRibbonPage,
-            this.homeRibbonPage,
-            this.insertRibbonPage,
-            this.pageLayoutRibbonPage,
-            this.referencesRibbonPage,
-            this.mailMergeRibbonPage,
-            this.reviewRibbonPage,
-            this.viewRibbonPage,
-            this.debugRibbonPage});
-            this.mainRibbonControl.QuickToolbarItemLinks.Add(this.barNewItem);
-            this.mainRibbonControl.QuickToolbarItemLinks.Add(this.barOpenItem);
-            this.mainRibbonControl.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
-            this.workProgressBar,
-            this.repositoryItemMarqueeProgressBar1});
-            this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
-            this.mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
-            this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(998, 201);
-            this.mainRibbonControl.StatusBar = this.mainRibbonStatusBar;
-            this.mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
-            this.mainRibbonControl.Click += new System.EventHandler(this.MainRibbonControl_Click);
+            mainRibbonControl.AllowCustomization = true;
+            mainRibbonControl.AutoSaveLayoutToXmlPath = "";
+            mainRibbonControl.CaptionBarItemLinks.Add(darkModeButton);
+            mainRibbonControl.ExpandCollapseItem.Id = 0;
+            mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { darkModeButton, mainRibbonControl.ExpandCollapseItem, mainRibbonControl.SearchEditItem, mainBarMdiChildrenListItem, barNewItem, barOpenItem, barCloseItem, skinDropDownItem, skinPaletteDropDownItem, barOptionsItem, exceptionButtonItem, evaluatePopupMenuItem, barButtonItem2, devBarBtnItem, LicenseButtonItem, GetLicenseButtonItem, DonateButtonItem, TimeStatusButton, barToggleSwitchItem3 });
+            mainRibbonControl.Location = new System.Drawing.Point(0, 0);
+            mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
+            mainRibbonControl.MaxItemId = 39;
+            mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
+            mainRibbonControl.Name = "mainRibbonControl";
+            mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
+            mainRibbonControl.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
+            mainRibbonControl.OptionsTouch.TouchMouseModeSelectorImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("mainRibbonControl.OptionsTouch.TouchMouseModeSelectorImageOptions.SvgImage");
+            mainRibbonControl.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { tableToolsRibbonCategory });
+            mainRibbonControl.PageHeaderItemLinks.Add(mainBarMdiChildrenListItem, true);
+            mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage, homeRibbonPage, insertRibbonPage, pageLayoutRibbonPage, referencesRibbonPage, mailMergeRibbonPage, reviewRibbonPage, viewRibbonPage, debugRibbonPage });
+            mainRibbonControl.QuickToolbarItemLinks.Add(barNewItem);
+            mainRibbonControl.QuickToolbarItemLinks.Add(barOpenItem);
+            mainRibbonControl.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { workProgressBar, repositoryItemMarqueeProgressBar1 });
+            mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
+            mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
+            mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
+            mainRibbonControl.ShowSearchItem = true;
+            mainRibbonControl.Size = new System.Drawing.Size(998, 201);
+            mainRibbonControl.StatusBar = mainRibbonStatusBar;
+            mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.Merge += MainRibbonControl_Merge;
+            mainRibbonControl.Click += MainRibbonControl_Click;
+            // 
+            // darkModeButton
+            // 
+            darkModeButton.Caption = "barButtonItem3";
+            darkModeButton.Id = 38;
+            darkModeButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("darkModeButton.ImageOptions.SvgImage");
+            darkModeButton.Name = "darkModeButton";
+            darkModeButton.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
             // 
             // mainBarMdiChildrenListItem
             // 
-            this.mainBarMdiChildrenListItem.Caption = "Documents";
-            this.mainBarMdiChildrenListItem.Id = 1;
-            this.mainBarMdiChildrenListItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("mainBarMdiChildrenListItem.ImageOptions.SvgImage")));
-            this.mainBarMdiChildrenListItem.Name = "mainBarMdiChildrenListItem";
-            this.mainBarMdiChildrenListItem.ShowMenuCaption = true;
+            mainBarMdiChildrenListItem.Caption = "Documents";
+            mainBarMdiChildrenListItem.Id = 1;
+            mainBarMdiChildrenListItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("mainBarMdiChildrenListItem.ImageOptions.SvgImage");
+            mainBarMdiChildrenListItem.Name = "mainBarMdiChildrenListItem";
+            mainBarMdiChildrenListItem.ShowMenuCaption = true;
             // 
             // barNewItem
             // 
-            this.barNewItem.Caption = "New";
-            this.barNewItem.Id = 2;
-            this.barNewItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barNewItem.ImageOptions.SvgImage")));
-            this.barNewItem.ItemShortcut = new DevExpress.XtraBars.BarShortcut((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N));
-            this.barNewItem.MergeOrder = 1;
-            this.barNewItem.Name = "barNewItem";
-            this.barNewItem.ShowItemShortcut = DevExpress.Utils.DefaultBoolean.True;
-            this.barNewItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barNewItem_ItemClick);
+            barNewItem.Caption = "New";
+            barNewItem.Id = 2;
+            barNewItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barNewItem.ImageOptions.SvgImage");
+            barNewItem.ItemShortcut = new DevExpress.XtraBars.BarShortcut(System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N);
+            barNewItem.MergeOrder = 1;
+            barNewItem.Name = "barNewItem";
+            barNewItem.ShowItemShortcut = DevExpress.Utils.DefaultBoolean.True;
+            barNewItem.ItemClick += barNewItem_ItemClick;
             // 
             // barOpenItem
             // 
-            this.barOpenItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            this.barOpenItem.Caption = "Open";
-            this.barOpenItem.DropDownControl = this.mruPopupMenu;
-            this.barOpenItem.Id = 3;
-            this.barOpenItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barOpenItem.ImageOptions.SvgImage")));
-            this.barOpenItem.MergeOrder = 2;
-            this.barOpenItem.Name = "barOpenItem";
-            this.barOpenItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOpenItem_ItemClick);
+            barOpenItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            barOpenItem.Caption = "Open";
+            barOpenItem.DropDownControl = mruPopupMenu;
+            barOpenItem.Id = 3;
+            barOpenItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barOpenItem.ImageOptions.SvgImage");
+            barOpenItem.MergeOrder = 2;
+            barOpenItem.Name = "barOpenItem";
+            barOpenItem.ItemClick += barOpenItem_ItemClick;
             // 
             // mruPopupMenu
             // 
-            this.mruPopupMenu.Name = "mruPopupMenu";
-            this.mruPopupMenu.Ribbon = this.mainRibbonControl;
+            mruPopupMenu.Name = "mruPopupMenu";
+            mruPopupMenu.Ribbon = mainRibbonControl;
             // 
             // barCloseItem
             // 
-            this.barCloseItem.Caption = "Close";
-            this.barCloseItem.Id = 4;
-            this.barCloseItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barCloseItem.ImageOptions.SvgImage")));
-            this.barCloseItem.Name = "barCloseItem";
-            this.barCloseItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barCloseItem_ItemClick);
+            barCloseItem.Caption = "Close";
+            barCloseItem.Id = 4;
+            barCloseItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barCloseItem.ImageOptions.SvgImage");
+            barCloseItem.MergeOrder = 3;
+            barCloseItem.Name = "barCloseItem";
+            barCloseItem.ItemClick += barCloseItem_ItemClick;
             // 
             // skinDropDownItem
             // 
-            this.skinDropDownItem.ActAsDropDown = true;
-            this.skinDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            this.skinDropDownItem.Id = 5;
-            this.skinDropDownItem.MergeOrder = 90;
-            this.skinDropDownItem.Name = "skinDropDownItem";
+            skinDropDownItem.ActAsDropDown = true;
+            skinDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            skinDropDownItem.Id = 5;
+            skinDropDownItem.MergeOrder = 90;
+            skinDropDownItem.Name = "skinDropDownItem";
             // 
             // skinPaletteDropDownItem
             // 
-            this.skinPaletteDropDownItem.ActAsDropDown = true;
-            this.skinPaletteDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            this.skinPaletteDropDownItem.Id = 6;
-            this.skinPaletteDropDownItem.MergeOrder = 91;
-            this.skinPaletteDropDownItem.Name = "skinPaletteDropDownItem";
+            skinPaletteDropDownItem.ActAsDropDown = true;
+            skinPaletteDropDownItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            skinPaletteDropDownItem.Id = 6;
+            skinPaletteDropDownItem.MergeOrder = 91;
+            skinPaletteDropDownItem.Name = "skinPaletteDropDownItem";
             // 
             // barOptionsItem
             // 
-            this.barOptionsItem.Caption = "Options";
-            this.barOptionsItem.Id = 7;
-            this.barOptionsItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barOptionsItem.ImageOptions.SvgImage")));
-            this.barOptionsItem.MergeOrder = 93;
-            this.barOptionsItem.Name = "barOptionsItem";
-            this.barOptionsItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.barOptionsItem_ItemClick);
+            barOptionsItem.Caption = "Options";
+            barOptionsItem.Id = 7;
+            barOptionsItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barOptionsItem.ImageOptions.SvgImage");
+            barOptionsItem.MergeOrder = 93;
+            barOptionsItem.Name = "barOptionsItem";
+            barOptionsItem.ItemClick += barOptionsItem_ItemClick;
             // 
             // exceptionButtonItem
             // 
-            this.exceptionButtonItem.Caption = "Throw Unhandled Exception";
-            this.exceptionButtonItem.Id = 11;
-            this.exceptionButtonItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exceptionButtonItem.ImageOptions.SvgImage")));
-            this.exceptionButtonItem.Name = "exceptionButtonItem";
-            this.exceptionButtonItem.ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(this.exceptionButtonItem_ItemClick);
+            exceptionButtonItem.Caption = "Throw Unhandled Exception";
+            exceptionButtonItem.Id = 11;
+            exceptionButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exceptionButtonItem.ImageOptions.SvgImage");
+            exceptionButtonItem.Name = "exceptionButtonItem";
+            exceptionButtonItem.ItemClick += ExceptionButtonItem_ItemClick;
             // 
             // evaluatePopupMenuItem
             // 
-            this.evaluatePopupMenuItem.Caption = "Evaluate";
-            this.evaluatePopupMenuItem.Description = "Spreadsheets";
-            this.evaluatePopupMenuItem.Id = 12;
-            this.evaluatePopupMenuItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("evaluatePopupMenuItem.ImageOptions.SvgImage")));
-            this.evaluatePopupMenuItem.Name = "evaluatePopupMenuItem";
+            evaluatePopupMenuItem.Caption = "Evaluate";
+            evaluatePopupMenuItem.Description = "Spreadsheets";
+            evaluatePopupMenuItem.Id = 12;
+            evaluatePopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("evaluatePopupMenuItem.ImageOptions.SvgImage");
+            evaluatePopupMenuItem.Name = "evaluatePopupMenuItem";
             // 
             // barButtonItem2
             // 
-            this.barButtonItem2.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            this.barButtonItem2.Caption = "barButtonItem2";
-            this.barButtonItem2.DropDownControl = this.officePopupMenu;
-            this.barButtonItem2.Id = 13;
-            this.barButtonItem2.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonItem2.ImageOptions.SvgImage")));
-            this.barButtonItem2.Name = "barButtonItem2";
+            barButtonItem2.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            barButtonItem2.Caption = "barButtonItem2";
+            barButtonItem2.DropDownControl = officePopupMenu;
+            barButtonItem2.Id = 13;
+            barButtonItem2.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonItem2.ImageOptions.SvgImage");
+            barButtonItem2.Name = "barButtonItem2";
             // 
             // officePopupMenu
             // 
-            this.officePopupMenu.MenuDrawMode = DevExpress.XtraBars.MenuDrawMode.LargeImagesTextDescription;
-            this.officePopupMenu.Name = "officePopupMenu";
-            this.officePopupMenu.Ribbon = this.mainRibbonControl;
+            officePopupMenu.MenuDrawMode = DevExpress.XtraBars.MenuDrawMode.LargeImagesTextDescription;
+            officePopupMenu.Name = "officePopupMenu";
+            officePopupMenu.Ribbon = mainRibbonControl;
             // 
             // devBarBtnItem
             // 
-            this.devBarBtnItem.Caption = "Enable Developer Tools";
-            this.devBarBtnItem.Hint = "Enable Developer Tools";
-            this.devBarBtnItem.Id = 22;
-            this.devBarBtnItem.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("devBarBtnItem.ImageOptions.SvgImage")));
-            this.devBarBtnItem.Name = "devBarBtnItem";
-            this.devBarBtnItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            this.devBarBtnItem.ItemDoubleClick += new DevExpress.XtraBars.ItemClickEventHandler(this.DevBarBtnItem_ItemDoubleClick);
+            devBarBtnItem.Caption = "Enable Developer Tools";
+            devBarBtnItem.Hint = "Enable Developer Tools";
+            devBarBtnItem.Id = 22;
+            devBarBtnItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("devBarBtnItem.ImageOptions.SvgImage");
+            devBarBtnItem.Name = "devBarBtnItem";
+            devBarBtnItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            devBarBtnItem.ItemDoubleClick += DevBarBtnItem_ItemDoubleClick;
+            // 
+            // LicenseButtonItem
+            // 
+            LicenseButtonItem.Caption = "License";
+            LicenseButtonItem.Id = 26;
+            LicenseButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("LicenseButtonItem.ImageOptions.SvgImage");
+            LicenseButtonItem.Name = "LicenseButtonItem";
+            LicenseButtonItem.ItemClick += LicenseButtonItem_ItemClick;
+            // 
+            // GetLicenseButtonItem
+            // 
+            GetLicenseButtonItem.Caption = "Get License";
+            GetLicenseButtonItem.Id = 28;
+            GetLicenseButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("GetLicenseButtonItem.ImageOptions.SvgImage");
+            GetLicenseButtonItem.Name = "GetLicenseButtonItem";
+            // 
+            // DonateButtonItem
+            // 
+            DonateButtonItem.Caption = "Donate";
+            DonateButtonItem.Id = 30;
+            DonateButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DonateButton.ImageOptions.SvgImage");
+            DonateButtonItem.Name = "DonateButtonItem";
+            // 
+            // TimeStatusButton
+            // 
+            TimeStatusButton.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            TimeStatusButton.Caption = "00:00";
+            TimeStatusButton.Id = 31;
+            TimeStatusButton.MergeOrder = 8;
+            TimeStatusButton.Name = "TimeStatusButton";
+            TimeStatusButton.ItemClick += TimeStatusButton_ItemClick;
+            // 
+            // barToggleSwitchItem3
+            // 
+            barToggleSwitchItem3.Caption = "barToggleSwitchItem3";
+            barToggleSwitchItem3.Id = 35;
+            barToggleSwitchItem3.Name = "barToggleSwitchItem3";
+            // 
+            // tableToolsRibbonCategory
+            // 
+            tableToolsRibbonCategory.Name = "tableToolsRibbonCategory";
+            tableToolsRibbonCategory.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { ribbonPage1 });
+            tableToolsRibbonCategory.Text = "Table Tools";
+            tableToolsRibbonCategory.Visible = false;
+            // 
+            // ribbonPage1
+            // 
+            ribbonPage1.Name = "ribbonPage1";
+            ribbonPage1.Text = "Table Design";
+            ribbonPage1.Visible = false;
             // 
             // fileRibbonPage
             // 
-            this.fileRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.commonRibbonGroup,
-            this.exportRibbonGroup,
-            this.infoRibbonPageGroup1,
-            this.optionsRibbonGroup});
-            this.fileRibbonPage.MergeOrder = 1;
-            this.fileRibbonPage.Name = "fileRibbonPage";
-            this.fileRibbonPage.Text = "File";
+            fileRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { commonRibbonGroup, exportRibbonGroup, infoRibbonPageGroup1, optionsRibbonGroup, registrationRibbonGroup, DonateRibbonGroup });
+            fileRibbonPage.MergeOrder = 1;
+            fileRibbonPage.Name = "fileRibbonPage";
+            fileRibbonPage.Text = "File";
             // 
             // commonRibbonGroup
             // 
-            this.commonRibbonGroup.ItemLinks.Add(this.barNewItem);
-            this.commonRibbonGroup.ItemLinks.Add(this.barOpenItem);
-            this.commonRibbonGroup.ItemLinks.Add(this.barCloseItem);
-            this.commonRibbonGroup.MergeOrder = 0;
-            this.commonRibbonGroup.Name = "commonRibbonGroup";
-            this.commonRibbonGroup.Text = "Common";
+            commonRibbonGroup.ItemLinks.Add(barNewItem);
+            commonRibbonGroup.ItemLinks.Add(barOpenItem);
+            commonRibbonGroup.ItemLinks.Add(barCloseItem);
+            commonRibbonGroup.MergeOrder = 0;
+            commonRibbonGroup.Name = "commonRibbonGroup";
+            commonRibbonGroup.Text = "Common";
             // 
             // exportRibbonGroup
             // 
-            this.exportRibbonGroup.Name = "exportRibbonGroup";
-            this.exportRibbonGroup.Text = "Export to";
+            exportRibbonGroup.Name = "exportRibbonGroup";
+            exportRibbonGroup.Text = "Export to";
             // 
             // infoRibbonPageGroup1
             // 
-            this.infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
-            this.infoRibbonPageGroup1.Text = "Info";
+            infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
+            infoRibbonPageGroup1.Text = "Info";
             // 
             // optionsRibbonGroup
             // 
-            this.optionsRibbonGroup.ItemLinks.Add(this.barOptionsItem, true);
-            this.optionsRibbonGroup.Name = "optionsRibbonGroup";
-            this.optionsRibbonGroup.Text = "Options";
+            optionsRibbonGroup.ItemLinks.Add(barOptionsItem, true);
+            optionsRibbonGroup.Name = "optionsRibbonGroup";
+            optionsRibbonGroup.Text = "Options";
+            // 
+            // registrationRibbonGroup
+            // 
+            registrationRibbonGroup.ItemLinks.Add(LicenseButtonItem);
+            registrationRibbonGroup.ItemLinks.Add(GetLicenseButtonItem);
+            registrationRibbonGroup.Name = "registrationRibbonGroup";
+            registrationRibbonGroup.Text = "Registration";
+            // 
+            // DonateRibbonGroup
+            // 
+            DonateRibbonGroup.ItemLinks.Add(DonateButtonItem);
+            DonateRibbonGroup.Name = "DonateRibbonGroup";
+            DonateRibbonGroup.Text = "Contribute";
             // 
             // homeRibbonPage
             // 
-            this.homeRibbonPage.MergeOrder = 1;
-            this.homeRibbonPage.Name = "homeRibbonPage";
-            this.homeRibbonPage.Text = "Home";
+            homeRibbonPage.MergeOrder = 1;
+            homeRibbonPage.Name = "homeRibbonPage";
+            homeRibbonPage.Text = "Home";
             // 
             // insertRibbonPage
             // 
-            this.insertRibbonPage.Name = "insertRibbonPage";
-            this.insertRibbonPage.Text = "Insert";
+            insertRibbonPage.Name = "insertRibbonPage";
+            insertRibbonPage.Text = "Insert";
             // 
             // pageLayoutRibbonPage
             // 
-            this.pageLayoutRibbonPage.Name = "pageLayoutRibbonPage";
-            this.pageLayoutRibbonPage.Text = "Page Layout";
+            pageLayoutRibbonPage.Name = "pageLayoutRibbonPage";
+            pageLayoutRibbonPage.Text = "Page Layout";
             // 
             // referencesRibbonPage
             // 
-            this.referencesRibbonPage.Name = "referencesRibbonPage";
-            this.referencesRibbonPage.Text = "References";
+            referencesRibbonPage.Name = "referencesRibbonPage";
+            referencesRibbonPage.Text = "References";
             // 
             // mailMergeRibbonPage
             // 
-            this.mailMergeRibbonPage.Name = "mailMergeRibbonPage";
-            this.mailMergeRibbonPage.Text = "Mail Merge";
+            mailMergeRibbonPage.Name = "mailMergeRibbonPage";
+            mailMergeRibbonPage.Text = "Mail Merge";
             // 
             // reviewRibbonPage
             // 
-            this.reviewRibbonPage.Name = "reviewRibbonPage";
-            this.reviewRibbonPage.Text = "Review";
+            reviewRibbonPage.Name = "reviewRibbonPage";
+            reviewRibbonPage.Text = "Review";
             // 
             // viewRibbonPage
             // 
-            this.viewRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.docViewsRibbonPage,
-            this.showRibbonGroup,
-            this.zoomRibbonGroup,
-            this.themeRibbonGroup});
-            this.viewRibbonPage.Name = "viewRibbonPage";
-            this.viewRibbonPage.Text = "View";
+            viewRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { docViewsRibbonPage, showRibbonGroup, zoomRibbonGroup, themeRibbonGroup });
+            viewRibbonPage.Name = "viewRibbonPage";
+            viewRibbonPage.Text = "View";
             // 
             // docViewsRibbonPage
             // 
-            this.docViewsRibbonPage.Name = "docViewsRibbonPage";
-            this.docViewsRibbonPage.Text = "Document Views";
+            docViewsRibbonPage.Name = "docViewsRibbonPage";
+            docViewsRibbonPage.Text = "Document Views";
             // 
             // showRibbonGroup
             // 
-            this.showRibbonGroup.Name = "showRibbonGroup";
-            this.showRibbonGroup.Text = "Show";
+            showRibbonGroup.Name = "showRibbonGroup";
+            showRibbonGroup.Text = "Show";
             // 
             // zoomRibbonGroup
             // 
-            this.zoomRibbonGroup.Name = "zoomRibbonGroup";
-            this.zoomRibbonGroup.Text = "Zoom";
+            zoomRibbonGroup.Name = "zoomRibbonGroup";
+            zoomRibbonGroup.Text = "Zoom";
             // 
             // themeRibbonGroup
             // 
-            this.themeRibbonGroup.ItemLinks.Add(this.skinDropDownItem);
-            this.themeRibbonGroup.ItemLinks.Add(this.skinPaletteDropDownItem);
-            this.themeRibbonGroup.Name = "themeRibbonGroup";
-            this.themeRibbonGroup.Text = "Theme";
+            themeRibbonGroup.ItemLinks.Add(skinDropDownItem);
+            themeRibbonGroup.ItemLinks.Add(skinPaletteDropDownItem);
+            themeRibbonGroup.Name = "themeRibbonGroup";
+            themeRibbonGroup.Text = "Theme";
             // 
             // debugRibbonPage
             // 
-            this.debugRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.debugPageGroup});
-            this.debugRibbonPage.Name = "debugRibbonPage";
-            this.debugRibbonPage.Text = "Developer";
+            debugRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { debugPageGroup });
+            debugRibbonPage.Name = "debugRibbonPage";
+            debugRibbonPage.Text = "Developer";
             // 
             // debugPageGroup
             // 
-            this.debugPageGroup.ItemLinks.Add(this.exceptionButtonItem);
-            this.debugPageGroup.Name = "debugPageGroup";
-            this.debugPageGroup.Text = "Debugging";
+            debugPageGroup.ItemLinks.Add(exceptionButtonItem);
+            debugPageGroup.Name = "debugPageGroup";
+            debugPageGroup.Text = "Debugging";
             // 
             // workProgressBar
             // 
-            this.workProgressBar.Name = "workProgressBar";
+            workProgressBar.Name = "workProgressBar";
             // 
             // repositoryItemMarqueeProgressBar1
             // 
-            this.repositoryItemMarqueeProgressBar1.Name = "repositoryItemMarqueeProgressBar1";
+            repositoryItemMarqueeProgressBar1.Name = "repositoryItemMarqueeProgressBar1";
             // 
             // mainRibbonStatusBar
             // 
-            this.mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonStatusBar.ItemLinks.Add(this.devBarBtnItem);
-            this.mainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
-            this.mainRibbonStatusBar.Name = "mainRibbonStatusBar";
-            this.mainRibbonStatusBar.Ribbon = this.mainRibbonControl;
-            this.mainRibbonStatusBar.Size = new System.Drawing.Size(998, 37);
+            mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonStatusBar.ItemLinks.Add(devBarBtnItem);
+            mainRibbonStatusBar.ItemLinks.Add(TimeStatusButton, true);
+            mainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
+            mainRibbonStatusBar.Name = "mainRibbonStatusBar";
+            mainRibbonStatusBar.Ribbon = mainRibbonControl;
+            mainRibbonStatusBar.Size = new System.Drawing.Size(998, 37);
             // 
             // mainTabbedMdiManager
             // 
-            this.mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.mainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
-            this.mainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
-            this.mainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
-            this.mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
-            this.mainTabbedMdiManager.HeaderButtons = ((DevExpress.XtraTab.TabButtons)((((DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next) 
-            | DevExpress.XtraTab.TabButtons.Close) 
-            | DevExpress.XtraTab.TabButtons.Default)));
-            this.mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.WhenNeeded;
-            this.mainTabbedMdiManager.MdiParent = this;
-            this.mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
-            this.mainTabbedMdiManager.SetNextMdiChildMode = DevExpress.XtraTabbedMdi.SetNextMdiChildMode.TabControl;
-            this.mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.PageAdded += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageAdded);
-            this.mainTabbedMdiManager.PageRemoved += new DevExpress.XtraTabbedMdi.MdiTabPageEventHandler(this.mainTabbedMdiManager_PageRemoved);
+            mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            mainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
+            mainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
+            mainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
+            mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
+            mainTabbedMdiManager.HeaderButtons = DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next | DevExpress.XtraTab.TabButtons.Close | DevExpress.XtraTab.TabButtons.Default;
+            mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.WhenNeeded;
+            mainTabbedMdiManager.MdiParent = this;
+            mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
+            mainTabbedMdiManager.SetNextMdiChildMode = DevExpress.XtraTabbedMdi.SetNextMdiChildMode.TabControl;
+            mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.SelectedPageChanged += mainTabbedMdiManager_SelectedPageChanged;
+            mainTabbedMdiManager.PageAdded += MainTabbedMdiManager_PageAdded;
+            mainTabbedMdiManager.PageRemoved += MainTabbedMdiManager_PageRemoved;
             // 
             // topSpacerPanel
             // 
-            this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 201);
-            this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(998, 5);
-            this.topSpacerPanel.TabIndex = 3;
+            topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            topSpacerPanel.Location = new System.Drawing.Point(0, 201);
+            topSpacerPanel.Name = "topSpacerPanel";
+            topSpacerPanel.Size = new System.Drawing.Size(998, 5);
+            topSpacerPanel.TabIndex = 3;
             // 
             // leftSpacerPanel
             // 
-            this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 206);
-            this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 406);
-            this.leftSpacerPanel.TabIndex = 6;
+            leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
+            leftSpacerPanel.Location = new System.Drawing.Point(0, 206);
+            leftSpacerPanel.Name = "leftSpacerPanel";
+            leftSpacerPanel.Size = new System.Drawing.Size(5, 406);
+            leftSpacerPanel.TabIndex = 6;
             // 
             // rightSpacerPanel
             // 
-            this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(993, 206);
-            this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 406);
-            this.rightSpacerPanel.TabIndex = 9;
+            rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
+            rightSpacerPanel.Location = new System.Drawing.Point(993, 206);
+            rightSpacerPanel.Name = "rightSpacerPanel";
+            rightSpacerPanel.Size = new System.Drawing.Size(5, 406);
+            rightSpacerPanel.TabIndex = 9;
             // 
             // bottomSpacerPannel
             // 
-            this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 607);
-            this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(988, 5);
-            this.bottomSpacerPannel.TabIndex = 10;
+            bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
+            bottomSpacerPannel.Location = new System.Drawing.Point(5, 607);
+            bottomSpacerPannel.Name = "bottomSpacerPannel";
+            bottomSpacerPannel.Size = new System.Drawing.Size(988, 5);
+            bottomSpacerPannel.TabIndex = 10;
+            // 
+            // updateAlert
+            // 
+            updateAlert.FormShowingEffect = DevExpress.XtraBars.Alerter.AlertFormShowingEffect.FadeIn;
+            updateAlert.HtmlTemplate.Styles = resources.GetString("updateAlert.HtmlTemplate.Styles");
+            updateAlert.HtmlTemplate.Template = resources.GetString("updateAlert.HtmlTemplate.Template");
+            // 
+            // ribbonSVGImageCollection
+            // 
+            ribbonSVGImageCollection.Add("security_key", "image://svgimages/icon builder/security_key.svg");
+            ribbonSVGImageCollection.Add("security_security", "image://svgimages/icon builder/security_security.svg");
+            // 
+            // LicenseTimer
+            // 
+            LicenseTimer.Enabled = true;
+            LicenseTimer.Interval = 1000;
+            LicenseTimer.Tick += LicenseTimer_Tick;
             // 
             // MainForm
             // 
-            this.AllowMdiBar = true;
-            this.Appearance.Options.UseFont = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(998, 649);
-            this.Controls.Add(this.bottomSpacerPannel);
-            this.Controls.Add(this.rightSpacerPanel);
-            this.Controls.Add(this.leftSpacerPanel);
-            this.Controls.Add(this.topSpacerPanel);
-            this.Controls.Add(this.mainRibbonStatusBar);
-            this.Controls.Add(this.mainRibbonControl);
-            this.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.IconOptions.ShowIcon = false;
-            this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("MainForm.IconOptions.SvgImage")));
-            this.IsMdiContainer = true;
-            this.Name = "MainForm";
-            this.Ribbon = this.mainRibbonControl;
-            this.StatusBar = this.mainRibbonStatusBar;
-            this.Text = "Verbum";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mruPopupMenu)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.officePopupMenu)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.workProgressBar)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.repositoryItemMarqueeProgressBar1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AllowMdiBar = true;
+            Appearance.Options.UseFont = true;
+            AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(998, 649);
+            Controls.Add(bottomSpacerPannel);
+            Controls.Add(rightSpacerPanel);
+            Controls.Add(leftSpacerPanel);
+            Controls.Add(topSpacerPanel);
+            Controls.Add(mainRibbonStatusBar);
+            Controls.Add(mainRibbonControl);
+            Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            IconOptions.ShowIcon = false;
+            IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("MainForm.IconOptions.SvgImage");
+            IsMdiContainer = true;
+            Name = "MainForm";
+            Ribbon = mainRibbonControl;
+            StatusBar = mainRibbonStatusBar;
+            Text = "Verbum";
+            FormClosing += MainForm_FormClosing;
+            Load += MainForm_Load;
+            ((System.ComponentModel.ISupportInitialize)mainRibbonControl).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mruPopupMenu).EndInit();
+            ((System.ComponentModel.ISupportInitialize)officePopupMenu).EndInit();
+            ((System.ComponentModel.ISupportInitialize)workProgressBar).EndInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemMarqueeProgressBar1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).EndInit();
+            ((System.ComponentModel.ISupportInitialize)topSpacerPanel).EndInit();
+            ((System.ComponentModel.ISupportInitialize)leftSpacerPanel).EndInit();
+            ((System.ComponentModel.ISupportInitialize)rightSpacerPanel).EndInit();
+            ((System.ComponentModel.ISupportInitialize)bottomSpacerPannel).EndInit();
+            ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -516,6 +589,19 @@
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup zoomRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup showRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup docViewsRibbonPage;
+        private DevExpress.XtraBars.Alerter.AlertControl updateAlert;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup registrationRibbonGroup;
+        private DevExpress.XtraBars.BarButtonItem LicenseButtonItem;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup DonateRibbonGroup;
+        private DevExpress.XtraBars.BarButtonItem GetLicenseButtonItem;
+        private DevExpress.XtraBars.BarButtonItem DonateButtonItem;
+        private DevExpress.Utils.SvgImageCollection ribbonSVGImageCollection;
+        private System.Windows.Forms.Timer LicenseTimer;
+        private DevExpress.XtraBars.BarButtonItem TimeStatusButton;
+        private DevExpress.XtraBars.BarToggleSwitchItem barToggleSwitchItem3;
+        private DevExpress.XtraBars.BarButtonItem darkModeButton;
+        private DevExpress.XtraBars.Ribbon.RibbonPageCategory tableToolsRibbonCategory;
+        private DevExpress.XtraBars.Ribbon.RibbonPage ribbonPage1;
     }
 }
 

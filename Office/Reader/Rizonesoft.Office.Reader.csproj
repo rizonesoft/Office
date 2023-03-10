@@ -15,9 +15,9 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2022.12.28.13</AssemblyVersion>
-	<FileVersion>2022.12.28.13</FileVersion>
-	<Version>2022.12.11</Version>
+	<AssemblyVersion>2023.3.5.14</AssemblyVersion>
+	<FileVersion>2023.3.5.14</FileVersion>
+	<Version>2022.12.12</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

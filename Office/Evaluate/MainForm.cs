@@ -1,16 +1,19 @@
-﻿namespace Rizonesoft.Office.Evaluate
+﻿
+namespace Rizonesoft.Office.Evaluate
 {
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
     using DevExpress.XtraSplashScreen;
+    using Rizonesoft.Office.Evaluate.Utilities;
+    using Rizonesoft.Office.Interprocess;
+    using Rizonesoft.Office.LicensingEx;
+    using Rizonesoft.Office.MessagesEx;
+    using Rizonesoft.Office.Utilities;
     using System;
+    using System.Collections.Generic;
     using System.ComponentModel;
     using System.IO;
     using System.Windows.Forms;
-    using Rizonesoft.Office.Settings;
-    using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.Utilities;
-    using Rizonesoft.Office.Evaluate.Utilities;
 
     public partial class MainForm : RibbonForm
     {
@@ -18,46 +21,84 @@
         MruList mruList;
         internal int bookIndex;
         internal bool IsFloating;
-        internal bool isLicensed;
-        internal BackgroundWorker updateWorker;
+        internal bool IsLicensed;
+        internal bool IsUpdateDismiss;
+        internal BackgroundWorker UpdateWorker;
+        // OptionsForm optionsDlg = null;
 
+        BookForm CurrentDocument
+        {
+            get
+            {
+                if (ActiveMdiChild == null)
+                {
+                    return null;
+                }
+                if (MainTabbedMdiManager.ActiveFloatForm != null)
+                {
+                    return MainTabbedMdiManager.ActiveFloatForm as BookForm;
+                }
+
+                return ActiveMdiChild as BookForm;
+            }
+        }
 
         public MainForm(string fileName)
         {
+            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{GlobalProperties.ProductName}\\General", "UpdateMessage", "False");
+            IsUpdateDismiss = GlobalFunctions.StringToBoolean(sUpdateDismissed);
+
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
-            OnShowMdiChildCaptionInParentTitle();
             CreateProgramDirectories();
+            OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
-            base.Text = $"{StcEvaluate.ProductName} {GlobalProperties.ProductVersionMajor}";
+            IsLicensed = LicenseCheck.IsLicensed();
+            GlobalProperties.IsBetaVersion = true;
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Creating Document");
+            }
+            else
+            {
+                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
+            }
+            CreateNewWorkbook(fileName);
+            MainRibbonControl.SelectedPage = HomeRibbonPage;
+
+            UpdateWorker = new BackgroundWorker();
+            UpdateWorker.DoWork += new DoWorkEventHandler(UpdateWorker_DoWork);
+            UpdateWorker.RunWorkerAsync();
 
             Initialize();
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Restoring Ribbon Layout");
+            RestoreRibbon();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcEvaluate.ProductName}");
-            CreateNewWorkbook(fileName);
+
+            if (IsUpdateDismiss)
+            {
+                UpdateWorker.RunWorkerAsync();
+            }
 
         }
 
-        #region Overrides
-
-        protected override void OnLoad(EventArgs e)
+        public static void SetSkins()
         {
-            base.OnLoad(e);
-            SaveRestoreRibbon(false);
-            SplashScreenManager.CloseForm(false);
+            string sSkin = Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Skin", "WXI");
+            string sPalette = Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Palette", "Calmness");
+
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
         }
 
-        protected override void OnClosed(EventArgs e)
+        private static void CreateProgramDirectories()
         {
-            base.OnClosed(e);
-            SaveRestoreRibbon(true);
-            SaveSettings();
-            SaveSkins();
+            if (!Directory.Exists(StcEvaluate.UserAppDirectory))
+            {
+                Directory.CreateDirectory(StcEvaluate.UserAppDirectory);
+            }
         }
-
-        #endregion Overrides
-
-        #region Initialize
 
         private void Initialize()
         {
@@ -76,31 +117,6 @@
                 AddFileToMRUList(fileName);
             }
         }
-
-        public void AddFileToMRUList(string fileName)
-        {
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                try
-                {
-                    mruList.AddFile(fileName);
-                }
-                catch (IOException ioEx)
-                {
-                    mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
-                }
-            }
-        }
-
-        private void MruList_FileSelected(string fileName)
-        {
-            OpenFile(fileName);
-        }
-
-        #endregion Initialize
-
-        #region Workbook Processing
 
         public void CreateNewWorkbook(string fileName)
         {
@@ -126,24 +142,170 @@
             newBook.Show();
         }
 
-        #endregion Workbook Processing
+        public void OpenFile(string fileName)
+        {
+            if (IsValidFileType(fileName))
+            {
+                CreateNewWorkbook(fileName);
+            }
+            else
+            {
+                string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
+                Logging.ROLogger.Error(Logging.CleanMessageForLogging(sMessage));
+                XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            CreateNewWorkbook(fileName);
+        }
 
-        #region Merging
+        static bool IsValidFileType(string fileName)
+        {
+            bool results = false;
+            string fileExt = Path.GetExtension(fileName);
+
+            List<string> fileTypes = new()
+            {
+                "xlsx", "xlsm", "xlsm", "xls", "xltx", "xltm", "xlt", "txt", "csv", "xml"
+            };
+            //etc
+
+            for (int i = 0; i < fileTypes.Count; i++)
+            {
+                if (string.Compare(fileExt, fileTypes[i], true) == 0)
+                {
+                    results = true;
+                    break;
+                    //or just return true;
+                }
+            }
+
+            return results;
+        }
+
+        public void AddFileToMRUList(string fileName)
+        {
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                try
+                {
+                    mruList.AddFile(fileName);
+                }
+                catch (IOException ioEx)
+                {
+                    mruList.RemoveFile(fileName);
+                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                }
+            }
+        }
+
+        private void MruList_FileSelected(string fileName)
+        {
+            OpenFile(fileName);
+        }
+
+        private void RestoreRibbon()
+        {
+            MainRibbonControl?.Toolbar.RestoreLayoutFromRegistry(StcEvaluate.StaticRegInterfacePath);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadSettings();
+
+            this.MainRibbonControl.ForceInitialize();
+            mruList = new MruList("MRU", mruPopupMenu, 10, StcEvaluate.CurrentRegMRUPath);
+            mruList.FileSelected += MruList_FileSelected;
+            CheckLicense();
+        }
+
+        private void LoadSettings()
+        {
+            GlobalFunctions.GeometryFromString(Office.Settings.Settings.GetSetting(StcEvaluate.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+        }
+
+        private void CheckLicense()
+        {
+            string FormCaptionBase;
+
+            if (GlobalProperties.IsBetaVersion)
+            {
+                FormCaptionBase = $"{StcEvaluate.ProductName} {GlobalProperties.ProductVersionMajor} ({GlobalProperties.BetaVersionString})";
+            }
+            else
+            {
+                FormCaptionBase = $"{StcEvaluate.ProductName} {GlobalProperties.ProductVersionMajor}";
+            }
+
+            if (LicenseCheck.IsLicensed())
+            {
+                Text = $"{FormCaptionBase} - Business";
+                GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[1];
+                DonateRibbonGroup.Visible = false;
+            }
+            else
+            {
+                Text = $"{FormCaptionBase} - Home";
+                GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+                LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[0];
+                DonateRibbonGroup.Visible = true;
+            }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            SplashScreenManager.CloseForm(false);
+        }
+
+        internal void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            OfficeUpdate.CheckForUpdates();
+        }
 
         private void MainRibbonControl_Merge(object sender, DevExpress.XtraBars.Ribbon.RibbonMergeEventArgs e)
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
-            parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            if ((parentRibbon.StatusBar != null) && (childRibbon.StatusBar != null))
+            {
+                parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            }
         }
 
-        #endregion Merging
-
-        #region Settings
-
-        private void LoadSettings()
+        private void MainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
         {
-            GlobalFunctions.GeometryFromString(Office.Settings.Settings.GetSetting(StcEvaluate.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            if (MdiChildren.Length <= 1)
+            {
+                ChangeMainFormState(true);
+            }
+        }
+
+        private void MainTabbedMdiManager_PageRemoved(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
+        {
+            if (MdiChildren.Length == 0)
+            {
+                ChangeMainFormState(false);
+            }
+        }
+
+        private void ChangeMainFormState(bool State)
+        {
+            MainForm mainForm = this;
+            mainForm.HomeRibbonPage.Visible = State;
+            mainForm.CloseBarButtonItem.Enabled = State;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            SaveRibbon();
+            SaveSettings();
+            SaveSkins();
+        }
+
+        private void SaveRibbon()
+        {
+            MainRibbonControl?.Toolbar.SaveLayoutToRegistry(StcEvaluate.StaticRegInterfacePath);
 
         }
 
@@ -153,64 +315,34 @@
 
         }
 
-        private static void SetSkins()
-        {
-            string sSkin = Office.Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
-            string sPalette = Office.Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Palette", string.Empty);
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
-
-        }
-
         private static void SaveSkins()
         {
             Office.Settings.Settings.SaveSetting(StcEvaluate.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
             Office.Settings.Settings.SaveSetting(StcEvaluate.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
-        private bool SaveRestoreRibbon(bool SaveRibbon)
-        {
-            if (mainRibbonControl != null)
-            {
-                switch (SaveRibbon)
-                {
-                    case true:
-                        mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcEvaluate.StaticRegInterfacePath);
-                        return true;
-                    case false:
-                        mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcEvaluate.StaticRegInterfacePath);
-                        return true;
-                }
-            }
-
-            return false;
-
-        }
-
-        #endregion Settings
-
-        #region Configurations
-
-        private static void CreateProgramDirectories()
-        {
-            if (!Directory.Exists(StcEvaluate.UserAppDirectory))
-            {
-                Directory.CreateDirectory(StcEvaluate.UserAppDirectory);
-            }
-        }
-
-        #endregion Configurations
 
 
-       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private void OpenBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
             OpenFile();
         }
-
-        #region Workbook Processing
-
-        
 
         private void OpenFileFolder(string sIniDir)
         {
@@ -249,60 +381,17 @@
             // debugLog.Info("Open Document Result - " + dlgResult.ToString());
         }
 
-        public void OpenFile(string fileName)
-        {
-            CreateNewWorkbook(fileName);
-        }
-
         internal void OpenFile()
         {
             OpenFileFolder(string.Empty);
         }
 
 
-        #endregion Workbook Processing
-
-
-        #region Events
-
         private void NewBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
             CreateNewWorkbook(null);
         }
 
-        
-
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            LoadSettings();
-
-            this.mainRibbonControl.ForceInitialize();
-            mruList = new MruList("MRU", mruPopupMenu, 10, "Rizonesoft\\" + StcEvaluate.ProductName + "\\MRU");
-            mruList.FileSelected += MruList_FileSelected;
-            // LoadDictionaries();
-
-            if (isLicensed == true)
-            {
-                this.Text += " - Business";
-                // barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                // barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
-                LicenseRibbonGroup.Visible = false;
-            }
-            else
-            {
-                this.Text += " - Home";
-                // barRegisterItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
-                // barBuyNowItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
-                LicenseRibbonGroup.Visible = true;
-            }
-
-            SplashScreenManager.CloseForm(false);
-
-        }
-
-        
-
-        #endregion Events
 
     }
 }

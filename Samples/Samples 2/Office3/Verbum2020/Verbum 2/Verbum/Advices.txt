@@ -1,5 +1,0 @@
-﻿Verbum displays a "Tip of the day" every time you start the program. If you don't want this, just disable the "Show tips on startup" option in this dialog.
-You can let Verbum display a "Tip of the day" any time you want by clicking on "Tip of the Day..." in the "Help" menu.
-You can set the language for spell checking to either American English or British English, including other languages in the Tools/Spelling Options... dialog.
-You can call up the context-sensitive menus by pressing the right mouse button.
-If you want more space for your document window, you can switch off all toolbars, rulers and the status bar.

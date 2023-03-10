@@ -17,5 +17,7 @@
         public static readonly string CurrentRegGeneralPath = $"{CurrentRegConfigPath}\\General";
         public static readonly string CurrentRegInterfacePath = $"{CurrentRegConfigPath}\\Interface";
         public static readonly string StaticRegInterfacePath = $"{GlobalProperties.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
+        public static readonly string CurrentRegMRUPath = $"{CurrentRegConfigPath}\\MRU";
+
     }
 }

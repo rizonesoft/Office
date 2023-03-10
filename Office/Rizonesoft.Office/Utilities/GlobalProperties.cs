@@ -12,6 +12,7 @@
         public static readonly Version ProductVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!;
         public static readonly string ProductVersionMajor = ProductVersion.Major.ToString();
         public static readonly string UserAppDirectory = Path.Combine(GlobalFunctions.GetUserAppDataPath(), "Rizonesoft\\" + ProductName + "\\");
+        public static readonly string LicenseRegPath = $"{CurrentUserReg}\\Rizonesoft\\{ProductName}\\General";
 
         static bool isBetaVersion = false;
         static string spellingLanguage = "en_US";
@@ -22,7 +23,7 @@
         public static string SpellingLanguage { get => spellingLanguage; set => spellingLanguage = value; }
         public static string BetaVersionString
         {
-            get => IsBetaVersion ? $" - Beta {CurrentBetaVersion}" : string.Empty;
+            get => IsBetaVersion ? $"Beta {CurrentBetaVersion}" : string.Empty;
             set => throw new NotImplementedException();
         }
     }

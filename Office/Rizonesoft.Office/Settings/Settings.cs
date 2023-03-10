@@ -7,13 +7,12 @@ namespace Rizonesoft.Office.Settings
 {
     public class Settings
     {
-        const string RegSoftwareString = "Software";
+        static RegistryKey BaseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
 
         public static string? GetSetting(string RegKey, string ValueName, string Default)
         {
 
-            RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(RegSoftwareString)!;
-            RegistryKey subKey = baseKey.OpenSubKey(RegKey)!;
+            RegistryKey subKey = BaseKey.OpenSubKey(RegKey)!;
 
             if (subKey == null)
             {
@@ -33,12 +32,13 @@ namespace Rizonesoft.Office.Settings
             }
         }
 
+        
+
         public static bool SaveSetting(string RegKey, string ValueName, string Value)
         {
             try
             {
-                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(RegSoftwareString, true)!;
-                RegistryKey subKey = baseKey.CreateSubKey(RegKey);
+                RegistryKey subKey = BaseKey.CreateSubKey(RegKey);
                 subKey.SetValue(ValueName, Value);
 
                 return true;
@@ -56,8 +56,7 @@ namespace Rizonesoft.Office.Settings
         {
             try
             {
-                RegistryKey baseKey = Registry.CurrentUser.OpenSubKey("Software", true)!;
-                RegistryKey subKey = baseKey.CreateSubKey(RegKey)!;
+                RegistryKey subKey = BaseKey.CreateSubKey(RegKey)!;
 
                 if (subKey == null)
                 {

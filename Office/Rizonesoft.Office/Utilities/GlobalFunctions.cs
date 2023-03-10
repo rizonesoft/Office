@@ -5,6 +5,7 @@
     using System;
     using System.Diagnostics;
     using System.Text.RegularExpressions;
+    using Rizonesoft.Office.Utilities;
 
     public static class GlobalFunctions
     {
@@ -139,5 +140,6 @@
                 return false;
             }
         }
+
     }
 }

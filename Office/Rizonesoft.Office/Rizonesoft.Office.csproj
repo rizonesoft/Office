@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Rizonesoft.Office</RootNamespace>
-    <Version>2023.1.53</Version>
+    <Version>2023.3.209</Version>
     <Company>Rizonesoft</Company>
     <Product>Rizonesoft Office</Product>
 	<PublishReadyToRun>true</PublishReadyToRun>
@@ -16,8 +16,8 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.2.10.36</AssemblyVersion>
-	<FileVersion>2023.2.10.36</FileVersion>
+	<AssemblyVersion>2023.3.10.192</AssemblyVersion>
+	<FileVersion>2023.3.10.192</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -45,6 +45,14 @@
     <InheritWinAppVersionFrom>None</InheritWinAppVersionFrom>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="lDatabase.lic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="lDatabase.lic" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="22.2.4" />

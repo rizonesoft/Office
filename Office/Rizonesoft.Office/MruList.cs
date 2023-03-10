@@ -46,7 +46,9 @@ namespace Rizonesoft.Office
 
             for (int i = 0; i < iFiles; i++)
             {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                 string fileName = Settings.Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 
                 if (string.IsNullOrWhiteSpace(fileName))
                 {
@@ -106,23 +108,36 @@ namespace Rizonesoft.Office
                 mruBtnItems[i].Caption = string.Format("&{0} {1}", i + 1, fileInfos[i].Name);
                 mruBtnItems[i].Visibility = BarItemVisibility.Always;
                 mruBtnItems[i].Tag = fileInfos[i];
-                mruBtnItems[i].ItemClick -= mruFile_ItemClick;
-                mruBtnItems[i].ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(mruFile_ItemClick);
+                mruBtnItems[i].ItemClick -= MruFile_ItemClick;
+                mruBtnItems[i].ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(MruFile_ItemClick);
             }
             for (int i = fileInfos.Count; i < iFiles; i++)
             {
                 mruBtnItems[i].Visibility = BarItemVisibility.Never;
-                mruBtnItems[i].ItemClick -= mruFile_ItemClick;
+                mruBtnItems[i].ItemClick -= MruFile_ItemClick;
             }
         }
 
-        private void mruFile_ItemClick(object sender, ItemClickEventArgs e)
+        private void MruFile_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (FileSelected != null)
             {
-                BarButtonItem mruBtnItem = e.Item as BarButtonItem;
-                FileInfo fileInfo = mruBtnItem.Tag as FileInfo;
-                FileSelected(fileInfo.FullName);
+                if (e.Item != null)
+                {
+                    if (e.Item is BarButtonItem mruBtnItem)
+                    {
+                        if (mruBtnItem.Tag is FileInfo fileInfo)
+                        {
+                            FileSelected(fileInfo.FullName);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NullReferenceException("DevExpress.XtraBars.ItemClickEventArgs (e) is null.");
+                }
+                
+                
             }
         }
 

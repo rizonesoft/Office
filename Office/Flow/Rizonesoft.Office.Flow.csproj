@@ -9,15 +9,15 @@
     <AssemblyName>Flow</AssemblyName>
     <ApplicationIcon>Flow.ico</ApplicationIcon>
     <BaseOutputPath>..\Bin</BaseOutputPath>
-    <Version>2022.12.30</Version>
+    <Version>2022.12.31</Version>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<PublishSingleFile>true</PublishSingleFile>
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2022.12.28.13</AssemblyVersion>
-	<FileVersion>2022.12.28.13</FileVersion>
+	<AssemblyVersion>2023.3.5.14</AssemblyVersion>
+	<FileVersion>2023.3.5.14</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

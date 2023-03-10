@@ -1,6 +1,7 @@
 ﻿namespace Rizonesoft.Office.Utilities
 {
     using NLog;
+    using System.Text.RegularExpressions;
 
     public static class Logging
     {
@@ -25,5 +26,15 @@
 
             LogManager.Configuration = nlogConfig;
         }
+
+        public static string CleanMessageForLogging(string sMessage)
+        {
+            string sReturn = Regex.Replace(sMessage, 
+                                 @"\t|\n|\r", 
+                                 " ");
+            return sReturn;
+        }
+
+
     }
 }

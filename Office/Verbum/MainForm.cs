@@ -1,27 +1,26 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
-    using DevExpress.LookAndFeel;
-    using DevExpress.Utils.DPI;
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
-    using DevExpress.XtraEditors.ColorWheel;
     using DevExpress.XtraSpellChecker;
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office;
     using Rizonesoft.Office.Debugging;
     using Rizonesoft.Office.Interprocess;
+    using Rizonesoft.Office.LicensingEx;
+    using Rizonesoft.Office.MessagesEx;
+    using Rizonesoft.Office.TimeEx;
     using Rizonesoft.Office.Utilities;
     using Rizonesoft.Office.Verbum.Classes;
     using Rizonesoft.Office.Verbum.Utilities;
     using System;
+    using System.Collections.Generic;
     using System.ComponentModel;
-    using System.Drawing;
     using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Windows.Forms;
-    using System.Xml;
-    using XmlNodeType = System.Xml.XmlNodeType;
+    using static DevExpress.XtraBars.Docking.AutoHideControl;
 
     public partial class MainForm : RibbonForm
     {
@@ -29,10 +28,13 @@
         private static MruList mruList;
         internal int documentIndex;
         internal bool IsFloating;
-        internal bool isLicensed;
-        internal BackgroundWorker updateWorker;
+        internal bool IsLicensed;
+        internal bool IsUpdateDismiss;
+        internal BackgroundWorker UpdateWorker;
+        OptionsForm optionsDlg = null;
 
-        #region Properties
+
+
         DocForm CurrentDocument
         {
             get
@@ -50,10 +52,11 @@
             }
         }
 
-        #endregion Properties
-
         public MainForm(string fileName)
         {
+
+            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{GlobalProperties.ProductName}\\General", "UpdateMessage", "True");
+            IsUpdateDismiss = GlobalFunctions.StringToBoolean(sUpdateDismissed);
 
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
@@ -61,75 +64,54 @@
             CreateProgramDirectories();
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
-
+            IsLicensed = LicenseCheck.IsLicensed();
             GlobalProperties.IsBetaVersion = true;
-            base.Text = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor}{GlobalProperties.BetaVersionString}";
 
             if (string.IsNullOrEmpty(fileName))
             {
-                SplashScreenManager.Default
-                    .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Creating Document");
+                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Creating Document");
             }
             else
             {
-                SplashScreenManager.Default
-                    .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
+                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
             }
             CreateNewDocument(fileName);
 
             debugRibbonPage.Visible = Debugging.IsDebugging;
-            updateWorker = new BackgroundWorker();
-            updateWorker.DoWork += new DoWorkEventHandler(updateWorker_DoWork);
-            updateWorker.RunWorkerAsync();
-
             mainRibbonControl.SelectedPage = homeRibbonPage;
 
             Initialize();
-            SplashScreenManager.Default
-                    .SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Dictionaries");
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Dictionaries");
             LoadDictionaries();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Restoring Ribbon Layout");
             RestoreRibbon();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcVerbum.ProductName}");
 
+            UpdateWorker = new BackgroundWorker();
+            UpdateWorker.DoWork += new DoWorkEventHandler(UpdateWorker_DoWork);
+
+            if (IsUpdateDismiss)
+            {
+                UpdateWorker.RunWorkerAsync();
+            }
+
         }
 
-        private void MainForm_Load(object sender, System.EventArgs e)
+        public static void SetSkins()
         {
-            LoadSettings();
+            string sSkin = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "WXI");
+            string sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", "Clearness");
 
-            mainRibbonControl.ForceInitialize();
-            mruList = new MruList("MRU", mruPopupMenu, 10, StcVerbum.CurrentRegMRUPath);
-            mruList.FileSelected += MruList_FileSelected;
-
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
         }
 
-        private void ChangeMainFormState(bool State)
+        private static void CreateProgramDirectories()
         {
-            MainForm mainForm = this;
-            mainForm.homeRibbonPage.Visible = State;
-            mainForm.barCloseItem.Enabled = State;
+            if (!Directory.Exists(StcVerbum.UserAppDirectory))
+            {
+                Directory.CreateDirectory(StcVerbum.UserAppDirectory);
+            }
         }
-
-        #region Overrides
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            SplashScreenManager.CloseForm(false);
-        }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            base.OnClosed(e);
-            SaveRibbon();
-            SaveSettings();
-            SaveSkins();
-        }
-
-        #endregion Overrides
-
-        #region Initialize
 
         private void Initialize()
         {
@@ -148,31 +130,6 @@
                 AddFileToMRUList(fileName);
             }
         }
-
-        public static void AddFileToMRUList(string fileName)
-        {
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                try
-                {
-                    mruList.AddFile(fileName);
-                }
-                catch (IOException ioEx)
-                {
-                    mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
-                }
-            }
-        }
-
-        private void MruList_FileSelected(string fileName)
-        {
-            OpenFile(fileName);
-        }
-
-        #endregion Initialize
-
-        #region Document Processing
 
         public void CreateNewDocument(string fileName)
         {
@@ -200,15 +157,129 @@
 
         }
 
-        public void OpenFile(string fileName) => CreateNewDocument(fileName);
+        internal void OpenFile()
+        {
+            OpenFileFolder(string.Empty);
+        }
 
-        internal void OpenFile() { OpenFileFolder(string.Empty); }
+        public void OpenFile(string fileName)
+        {
+            if (IsValidFileType(fileName))
+            {
+                CreateNewDocument(fileName);
+            }
+            else
+            {
+                string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
+                Logging.ROLogger.Error(Logging.CleanMessageForLogging(sMessage));
+                XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
+        static bool IsValidFileType(string fileName)
+        {
+            bool results = false;
+            string fileExt = Path.GetExtension(fileName);
 
+            List<string> fileTypes = new()
+            {
+                "docx", "docm", ".docx", "dotx", "dotm", "doc", ".dot", "odt", "rtf", "htm", ".html", "mht", "eml", "epub", "xml", "txt"
+            };
+            //etc
 
-        #endregion Document Processing
+            for (int i = 0; i < fileTypes.Count; i++)
+            {
+                if (string.Compare(fileExt, fileTypes[i], true) == 0)
+                {
+                    results = true;
+                    break;
+                    //or just return true;
+                }
+            }
 
-        #region Merging
+            return results;
+        }
+
+        public static void AddFileToMRUList(string fileName)
+        {
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                try
+                {
+                    mruList.AddFile(fileName);
+                }
+                catch (IOException ioEx)
+                {
+                    mruList.RemoveFile(fileName);
+                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                }
+            }
+        }
+
+        private void RestoreRibbon()
+        {
+            mainRibbonControl?.Toolbar.RestoreLayoutFromRegistry(StcVerbum.StaticRegInterfacePath);
+        }
+
+        private void MainForm_Load(object sender, System.EventArgs e)
+        {
+            LoadSettings();
+
+            mainRibbonControl.ForceInitialize();
+            mruList = new MruList("MRU", mruPopupMenu, 10, StcVerbum.CurrentRegMRUPath);
+            mruList.FileSelected += MruList_FileSelected;
+            CheckLicense();
+        }
+
+        private void MruList_FileSelected(string fileName)
+        {
+            OpenFile(fileName);
+        }
+
+        private void LoadSettings()
+        {
+            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+        }
+
+        private void CheckLicense()
+        {
+            string FormCaptionBase;
+
+            if (GlobalProperties.IsBetaVersion)
+            {
+                FormCaptionBase = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor} ({GlobalProperties.BetaVersionString})";
+            }
+            else
+            {
+                FormCaptionBase = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor}";
+            }
+
+            if (LicenseCheck.IsLicensed())
+            {
+                Text = $"{FormCaptionBase} - Business";
+                GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
+                LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[1];
+                DonateRibbonGroup.Visible = false;
+            }
+            else
+            {
+                Text = $"{FormCaptionBase} - Home";
+                GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
+                LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[0];
+                DonateRibbonGroup.Visible = true;
+            }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            SplashScreenManager.CloseForm(false);
+        }
+
+        internal void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            OfficeUpdate.CheckForUpdates();
+        }
 
         private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
         {
@@ -220,21 +291,45 @@
             }
         }
 
-        #endregion Merging
-
-        #region Configurations
-
-        private static void CreateProgramDirectories()
+        private void MainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
         {
-            if (!Directory.Exists(StcVerbum.UserAppDirectory))
+            if (MdiChildren.Length <= 1)
             {
-                Directory.CreateDirectory(StcVerbum.UserAppDirectory);
+                ChangeMainFormState(true);
             }
         }
 
-        private void LoadSettings()
+        private void MainTabbedMdiManager_PageRemoved(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
         {
-            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            if (MdiChildren.Length == 0)
+            {
+                ChangeMainFormState(false);
+            }
+        }
+
+        private void ChangeMainFormState(bool State)
+        {
+            MainForm mainForm = this;
+            mainForm.homeRibbonPage.Visible = State;
+            mainForm.barCloseItem.Enabled = State;
+        }
+
+        private void ExceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            _ = 15 / int.Parse("0");
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            SaveRibbon();
+            SaveSettings();
+            SaveSkins();
+        }
+
+        private void SaveRibbon()
+        {
+            mainRibbonControl?.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
 
         }
 
@@ -245,112 +340,12 @@
 
         }
 
-        public static void SetSkins()
-        {
-            string sSkin = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "WXI");
-            string sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", "Clearness");
-
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
-        }
-
         private static void SaveSkins()
         {
             Settings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
             Settings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
-        private void SaveRibbon()
-        {
-            if (mainRibbonControl != null)
-            {
-                mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
-            }
-
-        }
-
-        private void RestoreRibbon()
-        {
-            if (mainRibbonControl != null)
-            {
-                mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcVerbum.StaticRegInterfacePath);
-            }
-        }
-
-        #endregion Configurations
-
-        #region Updates
-        internal void updateWorker_DoWork(object sender, DoWorkEventArgs e)
-        { OfficeUpdate("https://www.rizonesoft.com/update/office22.xml"); }
-
-        public static string OfficeUpdate(string updateXML)
-        {
-            string downloadUrl = string.Empty;
-            Version newVersion = null;
-            string updateXmlURL = "https://www.rizonesoft.com/update/office22.xml";
-            XmlTextReader updateReader = null;
-            string sReturnVersion = string.Empty;
-
-            try
-            {
-                updateReader = new XmlTextReader(updateXmlURL);
-                updateReader.MoveToContent();
-                string elementName = string.Empty;
-
-                if ((updateReader.NodeType == XmlNodeType.Element) && (updateReader.Name == "office"))
-                {
-                    while (updateReader.Read())
-                    {
-                        if (updateReader.NodeType == XmlNodeType.Element)
-                        {
-                            elementName = updateReader.Name;
-                        }
-                        else
-                        {
-                            if ((updateReader.NodeType == XmlNodeType.Text) && (updateReader.HasValue))
-                            {
-                                switch (elementName)
-                                {
-                                    case "version":
-                                        newVersion = new Version(updateReader.Value);
-                                        break;
-
-                                    case "url":
-                                        downloadUrl = updateReader.Value;
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            finally
-            {
-                updateReader.Close();
-            }
-
-            Version applicationVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            if (applicationVersion.CompareTo(newVersion) < 0)
-            {
-                sReturnVersion = newVersion.Major + "." + newVersion.Minor + "." + newVersion.Build;
-                // MessageBox.Show(sReturnVersion);
-            }
-
-            return string.Empty;
-        }
-        #endregion Updates
-
-        #region Debugging
-
-        private void exceptionButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            int result = 15 / int.Parse("0");
-        }
-
-        #endregion Debugging
 
 
 
@@ -366,26 +361,28 @@
 
 
 
-        #region Events
 
 
-        private void mainTabbedMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
-        {
-            if (this.MdiChildren.Length <= 1)
-            {
-                ChangeMainFormState(true);
-            }
-        }
-
-        private void mainTabbedMdiManager_PageRemoved(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
-        {
-            if (this.MdiChildren.Length == 0)
-            {
-                ChangeMainFormState(false);
-            }
-        }
 
 
+
+
+
+
+
+
+
+
+
+
+
+       
+
+        
+
+       
+
+        
 
         private void barNewItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         { this.CreateNewDocument(null); }
@@ -393,35 +390,51 @@
         private void barOpenItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e) { OpenFile(); }
 
         private void barCloseItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        { CurrentDocument.Close(); }
+        {
+            CurrentDocument.Close();
+        }
 
         private void barOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+
             try
             {
-                OptionsForm optionsDlg = new OptionsForm();
-                optionsDlg.Show(this);
+                if (optionsDlg != null)
+                {
+                    optionsDlg.BringToFront();
+                }
+                else
+                {
+                    optionsDlg = new OptionsForm();
+                    optionsDlg.Show(this);
+                }
+
+                if (optionsDlg.IsDisposed)
+                {
+                    optionsDlg = new OptionsForm();
+                    optionsDlg.Show(this);
+                }
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        #endregion Events
-
-
-        #region Document Handling
-
 
         private void OpenFileFolder(string sIniDir)
         {
-            OpenFileDialog openFileDlg = new OpenFileDialog();
 
-            if (sIniDir != string.Empty)
+            OpenFileDialog openFileDlg = new();
+
+            if (sIniDir != String.Empty)
             {
                 openFileDlg.InitialDirectory = sIniDir;
             }
 
+            // openFileDlg.KeepPosition = true;
+            // openFileDlg.ShowDragDropConfirmation = true;
+            // openFileDlg.AutoUpdateFilterDescription = false;
             openFileDlg.Filter = "All Files (*.*)|*.*|" +
                 "All Supported Files (*.docx; *.docm; *.dotx; *.dotm; *.doc; *.dot; *.odt; *.rtf; *.htm; *.html; *.mht; *.eml; *.epub; *.xml; *.txt)|*.docx;*.docm;*.dotx;*.dotm;*.doc;*.dot;*.odt;*.rtf;*.htm;*.html;*.mht;*.eml;*.epub;*.xml;*.txt|" +
                 "Word 2007 Document (*.docx)|*.docx|" +
@@ -450,19 +463,8 @@
                 OpenFile(fileName);
                 AddFileToMRUList(fileName);
             }
-
-            // debugLog.Info("Open Document Result - " + dlgResult.ToString());
         }
 
-
-
-
-        #endregion Document Handling
-
-
-
-
-        #region Spelling
         private void LoadDictionaries()
         {
             string sAutoSpellCheck;
@@ -482,7 +484,7 @@
                 {
                     sFileNoExtension = Path.GetFileNameWithoutExtension(sFile);
 
-                    if ((!Path.HasExtension(sFile)) 
+                    if ((!Path.HasExtension(sFile))
                         || (!sFile.EndsWith(".dic", StringComparison.OrdinalIgnoreCase))
                         || (sFileNoExtension.StartsWith("hyph", StringComparison.OrdinalIgnoreCase)))
                     { continue; }
@@ -548,17 +550,16 @@
             MainForm mainForm = this;
             mainForm.mainSharedDictionaryStorage.Dictionaries.Add(customDictionary);
         }
-        #endregion Spelling
 
         private void MainRibbonControl_Click(object sender, EventArgs e)
         {
+
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // ActiveMdiChild?.Close();
         }
-
-
 
         private void DevBarBtnItem_ItemDoubleClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
@@ -566,5 +567,65 @@
             debugRibbonPage.Visible = Debugging.IsDebugging;
         }
 
+        private void LicenseButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            try
+            {
+                if (RegistrationForm.CheckInstance == null)
+                {
+                    if (RegistrationForm.CreateInstance.ShowDialog() == DialogResult.OK)
+                    {
+                        CheckLicense();
+                    }
+                }
+                else
+                {
+                    // These two lines make sure the state is normal (not min or max) and give it focus.
+                    RegistrationForm.CreateInstance.WindowState = FormWindowState.Normal;
+                    RegistrationForm.CreateInstance.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LicenseTimer_Tick(object sender, EventArgs e)
+        {
+            if (LicenseCheck.IsLicensed() != IsLicensed)
+            {
+                CheckLicense();
+                IsLicensed = LicenseCheck.IsLicensed();
+            }
+
+            TimeStatusButton.Caption = DateTime.Now.ToString("HH:mm");
+        }
+
+        private void TimeStatusButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            try
+            {
+                if (TimeForm.CheckInstance == null)
+                {
+                    TimeForm.CreateInstance.Show();
+                }
+                else
+                {
+                    // These two lines make sure the state is normal (not min or max) and give it focus.
+                    TimeForm.CreateInstance.WindowState = FormWindowState.Normal;
+                    TimeForm.CreateInstance.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void mainTabbedMdiManager_SelectedPageChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

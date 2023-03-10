@@ -1,9 +1,0 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Rizonesoft.Properties" GeneratedClassName="Settings">
-  <Profiles />
-  <Settings>
-    <Setting Name="SpellingLanguage" Type="System.String" Scope="User">
-      <Value Profile="(Default)">af-ZA</Value>
-    </Setting>
-  </Settings>
-</SettingsFile>

@@ -7,6 +7,7 @@
     using System;
     using DevExpress.XtraBars;
     using DevExpress.XtraEditors;
+    using System.Windows.Forms;
 
     public class CustomCommandFactoryService : IRichEditCommandFactoryService
     {
@@ -51,7 +52,6 @@
         }
     }
 
-
     public class CustomSaveDocumentAsCommand : SaveDocumentAsCommand
     {
 
@@ -59,7 +59,7 @@
 
         protected override void ExecuteCore()
         {
-            (this.Control as RichEditControl).Modified = true;
+
             base.ExecuteCore();
             if (!(this.Control as RichEditControl).Modified)
             {
@@ -67,8 +67,8 @@
                 // MessageBox.Show("Document is saved successfully");
                 MainForm.AddFileToMRUList(Options.DocumentSaveOptions.CurrentFileName);
             }
-        }
 
+        }
 
     }
 

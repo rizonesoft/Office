@@ -1,6 +1,0 @@
-Theme            : Office 2019 Colorful
-Palette          : Default
-Color #1 (Dark)  : #005A9E
-Color #2 (Light) : #106EBE
-Color #3 (Grey)  : #F0F0F0
-Color #4 (White) : #F8F8F8

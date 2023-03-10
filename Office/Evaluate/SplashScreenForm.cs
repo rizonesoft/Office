@@ -2,7 +2,6 @@
 {
     using DevExpress.XtraSplashScreen;
     using Rizonesoft.Office.Evaluate.Utilities;
-    using Rizonesoft.Office.Utilities;
     using System;
 
     public partial class SplashScreenForm : SplashScreen

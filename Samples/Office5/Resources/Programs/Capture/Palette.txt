@@ -1,6 +1,0 @@
-Theme            : Office 2019 Colorful
-Palette          : Fire Brick
-Color #1 (Dark)  : #912C2F
-Color #2 (Light) : #A4373A
-Color #3 (Grey)  : #F0F0F0
-Color #4 (White) : #F8F8F8
