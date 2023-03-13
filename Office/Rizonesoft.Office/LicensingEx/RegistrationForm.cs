@@ -48,7 +48,7 @@ namespace Rizonesoft.Office.LicensingEx
             {
                 if (LicenseHelper.IsLicensed(cleanKey, "Rizonesoft.Office.lDatabase.lic"))
                 {
-                    LicenseHelper.SetRegister(GlobalProperties.LicenseRegPath, "License", cleanKey);
+                    LicenseHelper.SetRegister(RizonesoftEx.LicenseRegPath, "License", cleanKey);
                     CheckActivationStatus();
                 }
                 else
@@ -83,7 +83,7 @@ namespace Rizonesoft.Office.LicensingEx
 
         private void RemoveActivationLink_Click(object sender, EventArgs e)
         {
-            LicenseHelper.SetRegister(GlobalProperties.LicenseRegPath, "License", string.Empty);
+            LicenseHelper.SetRegister(RizonesoftEx.LicenseRegPath, "License", string.Empty);
             CheckActivationStatus();
 
         }

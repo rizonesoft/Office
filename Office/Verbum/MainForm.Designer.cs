@@ -156,7 +156,7 @@
             barNewItem.MergeOrder = 1;
             barNewItem.Name = "barNewItem";
             barNewItem.ShowItemShortcut = DevExpress.Utils.DefaultBoolean.True;
-            barNewItem.ItemClick += barNewItem_ItemClick;
+            barNewItem.ItemClick += BarNewItem_ItemClick;
             // 
             // barOpenItem
             // 
@@ -181,7 +181,7 @@
             barCloseItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barCloseItem.ImageOptions.SvgImage");
             barCloseItem.MergeOrder = 3;
             barCloseItem.Name = "barCloseItem";
-            barCloseItem.ItemClick += barCloseItem_ItemClick;
+            barCloseItem.ItemClick += BarCloseItem_ItemClick;
             // 
             // skinDropDownItem
             // 

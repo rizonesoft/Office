@@ -77,7 +77,7 @@
             catch (Exception ex)
             {
                 ROErrorMessage.Show("Woops!", $"{StcFlow.ProductName} was unable to start.");
-                Logging.ROLogger.Fatal($"{StcFlow.ProductName} was unable to start.", ex);
+                Logging.logger.Fatal($"{StcFlow.ProductName} was unable to start.", ex);
             }
 
         }

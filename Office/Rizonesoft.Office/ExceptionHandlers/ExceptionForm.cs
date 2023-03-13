@@ -23,7 +23,7 @@ namespace Rizonesoft.Office.ExceptionHandlers
             bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
                 ExceptionHandler.EnvironmentToString(),
                 ExceptionHandler.ExceptionToString(ex));
-            Logging.ROLogger.Error(ex, "Whoops!");
+            Logging.logger.Error(ex, "Whoops!");
         }
 
         private void copyButton_Click(object sender, EventArgs e)

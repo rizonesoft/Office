@@ -6,7 +6,7 @@ namespace Rizonesoft.Office.LicensingEx
     {
         public static bool IsLicensed()
         {
-            string? licenseKey = LicensingEx.LicenseHelper.GetRegister(GlobalProperties.LicenseRegPath, "License");
+            string? licenseKey = LicensingEx.LicenseHelper.GetRegister(RizonesoftEx.LicenseRegPath, "License");
             if (licenseKey != null && LicensingEx.LicenseHelper.IsLicensed(licenseKey, "Rizonesoft.Office.lDatabase.lic"))
             {
                 return true;

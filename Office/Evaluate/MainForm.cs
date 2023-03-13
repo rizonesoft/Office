@@ -8,6 +8,7 @@ namespace Rizonesoft.Office.Evaluate
     using Rizonesoft.Office.Interprocess;
     using Rizonesoft.Office.LicensingEx;
     using Rizonesoft.Office.MessagesEx;
+    using Rizonesoft.Office.TimeEx;
     using Rizonesoft.Office.Utilities;
     using System;
     using System.Collections.Generic;
@@ -21,7 +22,6 @@ namespace Rizonesoft.Office.Evaluate
         MruList mruList;
         internal int bookIndex;
         internal bool IsFloating;
-        internal bool IsLicensed;
         internal bool IsUpdateDismiss;
         internal BackgroundWorker UpdateWorker;
         // OptionsForm optionsDlg = null;
@@ -45,8 +45,9 @@ namespace Rizonesoft.Office.Evaluate
 
         public MainForm(string fileName)
         {
-            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{GlobalProperties.ProductName}\\General", "UpdateMessage", "False");
-            IsUpdateDismiss = GlobalFunctions.StringToBoolean(sUpdateDismissed);
+            // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
+            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "False");
+            IsUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed);
 
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
@@ -54,8 +55,9 @@ namespace Rizonesoft.Office.Evaluate
             CreateProgramDirectories();
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
-            IsLicensed = LicenseCheck.IsLicensed();
-            GlobalProperties.IsBetaVersion = true;
+            RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
+            RizonesoftEx.IsBetaVersion = true;
+
 
             if (string.IsNullOrEmpty(fileName))
             {
@@ -65,8 +67,14 @@ namespace Rizonesoft.Office.Evaluate
             {
                 SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
             }
+
             CreateNewWorkbook(fileName);
-            MainRibbonControl.SelectedPage = HomeRibbonPage;
+
+            if (MainRibbonControl != null)
+            {
+                MainRibbonControl.AutoHideEmptyItems = true;
+                MainRibbonControl.SelectedPage = HomeRibbonPage;
+            }
 
             UpdateWorker = new BackgroundWorker();
             UpdateWorker.DoWork += new DoWorkEventHandler(UpdateWorker_DoWork);
@@ -75,7 +83,7 @@ namespace Rizonesoft.Office.Evaluate
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Restoring Ribbon Layout");
             RestoreRibbon();
-            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcEvaluate.ProductName}");
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {EvaluateEx.ProductName}");
 
             if (IsUpdateDismiss)
             {
@@ -86,17 +94,17 @@ namespace Rizonesoft.Office.Evaluate
 
         public static void SetSkins()
         {
-            string sSkin = Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Skin", "WXI");
-            string sPalette = Settings.Settings.GetSetting(StcEvaluate.CurrentRegInterfacePath, "Palette", "Calmness");
+            string sSkin = Settings.Settings.GetSetting(EvaluateEx.CurrentRegInterfacePath, "Skin", "WXI");
+            string sPalette = Settings.Settings.GetSetting(EvaluateEx.CurrentRegInterfacePath, "Palette", "Calmness");
 
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
         }
 
         private static void CreateProgramDirectories()
         {
-            if (!Directory.Exists(StcEvaluate.UserAppDirectory))
+            if (!Directory.Exists(EvaluateEx.UserAppDirectory))
             {
-                Directory.CreateDirectory(StcEvaluate.UserAppDirectory);
+                Directory.CreateDirectory(EvaluateEx.UserAppDirectory);
             }
         }
 
@@ -142,6 +150,21 @@ namespace Rizonesoft.Office.Evaluate
             newBook.Show();
         }
 
+        private void NewBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            CreateNewWorkbook(null);
+        }
+
+        private void OpenBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            OpenFile();
+        }
+
+        internal void OpenFile()
+        {
+            OpenFileFolder(string.Empty);
+        }
+
         public void OpenFile(string fileName)
         {
             if (IsValidFileType(fileName))
@@ -151,10 +174,9 @@ namespace Rizonesoft.Office.Evaluate
             else
             {
                 string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
-                Logging.ROLogger.Error(Logging.CleanMessageForLogging(sMessage));
+                Logging.logger.Error(Logging.CleanMessageForLogging(sMessage));
                 XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            CreateNewWorkbook(fileName);
         }
 
         static bool IsValidFileType(string fileName)
@@ -164,21 +186,51 @@ namespace Rizonesoft.Office.Evaluate
 
             List<string> fileTypes = new()
             {
-                "xlsx", "xlsm", "xlsm", "xls", "xltx", "xltm", "xlt", "txt", "csv", "xml"
+                ".xlsx", ".xlsm", ".xlsm", ".xls", ".xltx", ".xltm", ".xlt", ".txt", ".csv", ".xml"
             };
-            //etc
 
-            for (int i = 0; i < fileTypes.Count; i++)
+            if (fileTypes.Contains(fileExt))
             {
-                if (string.Compare(fileExt, fileTypes[i], true) == 0)
-                {
-                    results = true;
-                    break;
-                    //or just return true;
-                }
+                results = true;
+            }
+            return results;
+        }
+
+        private void OpenFileFolder(string sIniDir)
+        {
+            OpenFileDialog openFileDlg = new();
+
+            if (sIniDir != string.Empty)
+            {
+                openFileDlg.InitialDirectory = sIniDir;
             }
 
-            return results;
+            openFileDlg.Filter = "All Files (*.*)|*.*|" +
+                "All Supported Files (*.xlsx; *.xlsm; *.xlsm; *.xls; *.xltx; *.xltm; *.xlt; *.txt; *.csv; *.xml)|*.xlsx;*.xlsm;*.xlsm;*.xls;*.xltx;*.xltm;*.xlt;*.txt;*.csv;*.xml|" +
+                "Excel Workbook (*.xlsx)|*.xlsx|" +
+                "Excel Macro-Enabled Workbook (*.xlsm)|*.xlsm|" +
+                "Excel Binary Workbook (*.xlsm)|*.xlsb|" +
+                "Excel 97-2003 Workbook (*.xls)|*.xls|" +
+                "Excel Template (*.xltx)|*.xltx|" +
+                "Excel Macro-Enabled Template (*.xltm)|*.xltm|" +
+                "Excel 97-2003 Template (*.xlt)|*.xlt|" +
+                "Text (Tab delimited) (*.txt)|*.txt|" +
+                "CSV (Comma delimited) (*.csv)|*.csv|" +
+                "XML Spreadsheet (*.xml)|*.xml";
+            openFileDlg.FilterIndex = 3;
+            openFileDlg.Title = "Select a Document";
+
+            DialogResult dlgResult = openFileDlg.ShowDialog();
+            Logging.logger.Info($"Open Document Result - {dlgResult}");
+
+            // Show the dialog and get result.
+            if (dlgResult == DialogResult.OK)
+            {
+                string fileName = openFileDlg.FileName;
+                OpenFile(fileName);
+                AddFileToMRUList(fileName);
+            }
+
         }
 
         public void AddFileToMRUList(string fileName)
@@ -192,7 +244,7 @@ namespace Rizonesoft.Office.Evaluate
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -202,9 +254,14 @@ namespace Rizonesoft.Office.Evaluate
             OpenFile(fileName);
         }
 
+        private void CloseBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            CurrentDocument.Close();
+        }
+
         private void RestoreRibbon()
         {
-            MainRibbonControl?.Toolbar.RestoreLayoutFromRegistry(StcEvaluate.StaticRegInterfacePath);
+            MainRibbonControl?.Toolbar.RestoreLayoutFromRegistry(EvaluateEx.StaticRegInterfacePath);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -212,43 +269,44 @@ namespace Rizonesoft.Office.Evaluate
             LoadSettings();
 
             this.MainRibbonControl.ForceInitialize();
-            mruList = new MruList("MRU", mruPopupMenu, 10, StcEvaluate.CurrentRegMRUPath);
+            mruList = new MruList("MRU", mruPopupMenu, 10, EvaluateEx.CurrentRegMRUPath);
             mruList.FileSelected += MruList_FileSelected;
             CheckLicense();
         }
 
         private void LoadSettings()
         {
-            GlobalFunctions.GeometryFromString(Office.Settings.Settings.GetSetting(StcEvaluate.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            RizonesoftEx.GeometryFromString(Office.Settings.Settings.GetSetting(EvaluateEx.CurrentRegGeneralPath, "Geometry", string.Empty), this);
         }
 
         private void CheckLicense()
         {
             string FormCaptionBase;
+            RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
 
-            if (GlobalProperties.IsBetaVersion)
+            if (RizonesoftEx.IsBetaVersion)
             {
-                FormCaptionBase = $"{StcEvaluate.ProductName} {GlobalProperties.ProductVersionMajor} ({GlobalProperties.BetaVersionString})";
+                FormCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor} ({RizonesoftEx.BetaVersionString})";
             }
             else
             {
-                FormCaptionBase = $"{StcEvaluate.ProductName} {GlobalProperties.ProductVersionMajor}";
+                FormCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor}";
             }
 
-            if (LicenseCheck.IsLicensed())
+            if (RizonesoftEx.IsLicensed)
             {
                 Text = $"{FormCaptionBase} - Business";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[1];
-                DonateRibbonGroup.Visible = false;
             }
             else
             {
                 Text = $"{FormCaptionBase} - Home";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[0];
-                DonateRibbonGroup.Visible = true;
             }
+
+            DonateRibbonGroup.Visible = !RizonesoftEx.IsLicensed;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -305,93 +363,86 @@ namespace Rizonesoft.Office.Evaluate
 
         private void SaveRibbon()
         {
-            MainRibbonControl?.Toolbar.SaveLayoutToRegistry(StcEvaluate.StaticRegInterfacePath);
+            MainRibbonControl?.Toolbar.SaveLayoutToRegistry(EvaluateEx.StaticRegInterfacePath);
 
         }
 
         private void SaveSettings()
         {
-            Office.Settings.Settings.SaveSetting(StcEvaluate.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(EvaluateEx.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
 
         }
 
         private static void SaveSkins()
         {
-            Office.Settings.Settings.SaveSetting(StcEvaluate.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Office.Settings.Settings.SaveSetting(StcEvaluate.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+            Settings.Settings.SaveSetting(EvaluateEx.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.Settings.SaveSetting(EvaluateEx.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private void OpenBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        private void LicenseButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
-            OpenFile();
-        }
-
-        private void OpenFileFolder(string sIniDir)
-        {
-            OpenFileDialog openFileDlg = new();
-
-            if (sIniDir != string.Empty)
+            try
             {
-                openFileDlg.InitialDirectory = sIniDir;
+                if (RegistrationForm.CheckInstance == null)
+                {
+                    if (RegistrationForm.CreateInstance.ShowDialog() == DialogResult.OK)
+                    {
+                        CheckLicense();
+                    }
+                }
+                else
+                {
+                    // These two lines make sure the state is normal (not min or max) and give it focus.
+                    RegistrationForm.CreateInstance.WindowState = FormWindowState.Normal;
+                    RegistrationForm.CreateInstance.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LicenseTimer_Tick(object sender, EventArgs e)
+        {
+            if (LicenseCheck.IsLicensed() != RizonesoftEx.IsLicensed)
+            {
+                CheckLicense();
+                RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
             }
 
-            openFileDlg.Filter = "All Files (*.*)|*.*|" +
-                "All Supported Files (*.xlsx; *.xlsm; *.xlsm; *.xls; *.xltx; *.xltm; *.xlt; *.txt; *.csv; *.xml)|*.xlsx;*.xlsm;*.xlsm;*.xls;*.xltx;*.xltm;*.xlt;*.txt;*.csv;*.xml|" +
-                "Excel Workbook (*.xlsx)|*.xlsx|" +
-                "Excel Macro-Enabled Workbook (*.xlsm)|*.xlsm|" +
-                "Excel Binary Workbook (*.xlsm)|*.xlsb|" +
-                "Excel 97-2003 Workbook (*.xls)|*.xls|" +
-                "Excel Template (*.xltx)|*.xltx|" +
-                "Excel Macro-Enabled Template (*.xltm)|*.xltm|" +
-                "Excel 97-2003 Template (*.xlt)|*.xlt|" +
-                "Text (Tab delimited) (*.txt)|*.txt|" +
-                "CSV (Comma delimited) (*.csv)|*.csv|" +
-                "XML Spreadsheet (*.xml)|*.xml";
-            openFileDlg.FilterIndex = 3;
-            openFileDlg.Title = "Select a Document";
+            TimeStatusButton.Caption = DateTime.Now.ToString("HH:mm tt");
+        }
 
-            DialogResult dlgResult = openFileDlg.ShowDialog();
-
-            // Show the dialog and get result.
-            if (dlgResult == DialogResult.OK)
+        private void TimeStatusButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            try
             {
-                string fileName = openFileDlg.FileName;
-                OpenFile(fileName);
-                AddFileToMRUList(fileName);
+                if (TimeForm.CheckInstance == null)
+                {
+                    TimeForm.CreateInstance.Show();
+                }
+                else
+                {
+                    // These two lines make sure the state is normal (not min or max) and give it focus.
+                    TimeForm.CreateInstance.WindowState = FormWindowState.Normal;
+                    TimeForm.CreateInstance.Focus();
+                }
             }
-
-            // debugLog.Info("Open Document Result - " + dlgResult.ToString());
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        internal void OpenFile()
+        private void MainRibbonStatusBar_Click(object sender, EventArgs e)
         {
-            OpenFileFolder(string.Empty);
+
         }
 
-
-        private void NewBarButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        private void MainForm_DragDrop(object sender, DragEventArgs e)
         {
-            CreateNewWorkbook(null);
+            MessageBox.Show("");
         }
-
-
     }
 }

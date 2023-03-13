@@ -40,6 +40,8 @@
             LicenseButtonItem = new DevExpress.XtraBars.BarButtonItem();
             GetLicenseButtonItem = new DevExpress.XtraBars.BarButtonItem();
             DonateButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            OptionsBarButtonItem = new DevExpress.XtraBars.BarButtonItem();
+            TimeStatusButton = new DevExpress.XtraBars.BarButtonItem();
             fileRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
             commonRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             ribbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
@@ -47,12 +49,21 @@
             LicenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             DonateRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             HomeRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            ViewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            InterfacePageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            repositoryItemCalcEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
+            repositoryItemCalcEdit2 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
+            repositoryItemCalcEdit3 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
             MainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             MainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
             topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
             ribbonSVGImageCollection = new DevExpress.Utils.SvgImageCollection(components);
+            LicenseTimer = new System.Windows.Forms.Timer(components);
             ((System.ComponentModel.ISupportInitialize)MainRibbonControl).BeginInit();
             ((System.ComponentModel.ISupportInitialize)mruPopupMenu).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MainTabbedMdiManager).BeginInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).BeginInit();
@@ -62,14 +73,15 @@
             // 
             MainRibbonControl.ExpandCollapseItem.Id = 0;
             MainRibbonControl.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            MainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { MainRibbonControl.ExpandCollapseItem, MainRibbonControl.SearchEditItem, NewBarButtonItem, OpenBarButtonItem, CloseBarButtonItem, SkinDropDownButtonItem, PaletteDropDownButtonItem, LicenseButtonItem, GetLicenseButtonItem, DonateButtonItem });
+            MainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { MainRibbonControl.ExpandCollapseItem, MainRibbonControl.SearchEditItem, NewBarButtonItem, OpenBarButtonItem, CloseBarButtonItem, SkinDropDownButtonItem, PaletteDropDownButtonItem, LicenseButtonItem, GetLicenseButtonItem, DonateButtonItem, OptionsBarButtonItem, TimeStatusButton });
             MainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            MainRibbonControl.MaxItemId = 10;
+            MainRibbonControl.MaxItemId = 16;
             MainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             MainRibbonControl.Name = "MainRibbonControl";
-            MainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage, HomeRibbonPage });
+            MainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage, HomeRibbonPage, ViewRibbonPage });
+            MainRibbonControl.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemCalcEdit1, repositoryItemCalcEdit2, repositoryItemCalcEdit3 });
             MainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            MainRibbonControl.Size = new System.Drawing.Size(898, 201);
+            MainRibbonControl.Size = new System.Drawing.Size(898, 203);
             MainRibbonControl.StatusBar = MainRibbonStatusBar;
             MainRibbonControl.Merge += MainRibbonControl_Merge;
             // 
@@ -103,6 +115,7 @@
             CloseBarButtonItem.Id = 3;
             CloseBarButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("CloseBarButtonItem.ImageOptions.SvgImage");
             CloseBarButtonItem.Name = "CloseBarButtonItem";
+            CloseBarButtonItem.ItemClick += CloseBarButtonItem_ItemClick;
             // 
             // SkinDropDownButtonItem
             // 
@@ -124,6 +137,7 @@
             LicenseButtonItem.Id = 7;
             LicenseButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("LicenseButtonItem.ImageOptions.SvgImage");
             LicenseButtonItem.Name = "LicenseButtonItem";
+            LicenseButtonItem.ItemClick += LicenseButtonItem_ItemClick;
             // 
             // GetLicenseButtonItem
             // 
@@ -138,6 +152,22 @@
             DonateButtonItem.Id = 9;
             DonateButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DonateButtonItem.ImageOptions.SvgImage");
             DonateButtonItem.Name = "DonateButtonItem";
+            // 
+            // OptionsBarButtonItem
+            // 
+            OptionsBarButtonItem.Caption = "Options";
+            OptionsBarButtonItem.Id = 10;
+            OptionsBarButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("OptionsBarButtonItem.ImageOptions.SvgImage");
+            OptionsBarButtonItem.Name = "OptionsBarButtonItem";
+            // 
+            // TimeStatusButton
+            // 
+            TimeStatusButton.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            TimeStatusButton.Caption = "00:00 AM";
+            TimeStatusButton.Id = 11;
+            TimeStatusButton.MergeOrder = 10;
+            TimeStatusButton.Name = "TimeStatusButton";
+            TimeStatusButton.ItemClick += TimeStatusButton_ItemClick;
             // 
             // fileRibbonPage
             // 
@@ -162,8 +192,7 @@
             // 
             // OptionsRibbonGroup
             // 
-            OptionsRibbonGroup.ItemLinks.Add(SkinDropDownButtonItem);
-            OptionsRibbonGroup.ItemLinks.Add(PaletteDropDownButtonItem);
+            OptionsRibbonGroup.ItemLinks.Add(OptionsBarButtonItem);
             OptionsRibbonGroup.Name = "OptionsRibbonGroup";
             OptionsRibbonGroup.Text = "Options";
             // 
@@ -185,20 +214,57 @@
             HomeRibbonPage.Name = "HomeRibbonPage";
             HomeRibbonPage.Text = "Home";
             // 
+            // ViewRibbonPage
+            // 
+            ViewRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { InterfacePageGroup });
+            ViewRibbonPage.Name = "ViewRibbonPage";
+            ViewRibbonPage.Text = "View";
+            // 
+            // InterfacePageGroup
+            // 
+            InterfacePageGroup.ItemLinks.Add(SkinDropDownButtonItem);
+            InterfacePageGroup.ItemLinks.Add(PaletteDropDownButtonItem);
+            InterfacePageGroup.Name = "InterfacePageGroup";
+            InterfacePageGroup.Text = "Theme";
+            // 
+            // repositoryItemCalcEdit1
+            // 
+            repositoryItemCalcEdit1.AutoHeight = false;
+            repositoryItemCalcEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
+            repositoryItemCalcEdit1.Name = "repositoryItemCalcEdit1";
+            // 
+            // repositoryItemCalcEdit2
+            // 
+            repositoryItemCalcEdit2.AutoHeight = false;
+            repositoryItemCalcEdit2.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
+            repositoryItemCalcEdit2.Name = "repositoryItemCalcEdit2";
+            // 
+            // repositoryItemCalcEdit3
+            // 
+            repositoryItemCalcEdit3.AutoHeight = false;
+            repositoryItemCalcEdit3.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
+            repositoryItemCalcEdit3.Name = "repositoryItemCalcEdit3";
+            // 
             // MainRibbonStatusBar
             // 
             MainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
+            MainRibbonStatusBar.ItemLinks.Add(TimeStatusButton, true);
             MainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
             MainRibbonStatusBar.Name = "MainRibbonStatusBar";
             MainRibbonStatusBar.Ribbon = MainRibbonControl;
             MainRibbonStatusBar.Size = new System.Drawing.Size(898, 37);
+            MainRibbonStatusBar.Click += MainRibbonStatusBar_Click;
             // 
             // MainTabbedMdiManager
             // 
+            MainTabbedMdiManager.AllowDragDrop = DevExpress.Utils.DefaultBoolean.True;
             MainTabbedMdiManager.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             MainTabbedMdiManager.Appearance.Options.UseFont = true;
             MainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeader;
             MainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
+            MainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
+            MainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
+            MainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.FullWindow;
             MainTabbedMdiManager.HeaderButtons = DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next | DevExpress.XtraTab.TabButtons.Close | DevExpress.XtraTab.TabButtons.Default;
             MainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
             MainTabbedMdiManager.MdiParent = this;
@@ -214,7 +280,7 @@
             // 
             topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            topSpacerPanel.Location = new System.Drawing.Point(0, 201);
+            topSpacerPanel.Location = new System.Drawing.Point(0, 203);
             topSpacerPanel.Name = "topSpacerPanel";
             topSpacerPanel.Size = new System.Drawing.Size(898, 5);
             topSpacerPanel.TabIndex = 11;
@@ -224,14 +290,22 @@
             ribbonSVGImageCollection.Add("security_key", "image://svgimages/icon builder/security_key.svg");
             ribbonSVGImageCollection.Add("security_security", "image://svgimages/icon builder/security_security.svg");
             // 
+            // LicenseTimer
+            // 
+            LicenseTimer.Enabled = true;
+            LicenseTimer.Interval = 1000;
+            LicenseTimer.Tick += LicenseTimer_Tick;
+            // 
             // MainForm
             // 
+            Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(898, 649);
             Controls.Add(topSpacerPanel);
             Controls.Add(MainRibbonStatusBar);
             Controls.Add(MainRibbonControl);
+            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             IsMdiContainer = true;
             Name = "MainForm";
@@ -239,8 +313,12 @@
             StatusBar = MainRibbonStatusBar;
             Text = "Rizonesoft ";
             Load += MainForm_Load;
+            DragDrop += MainForm_DragDrop;
             ((System.ComponentModel.ISupportInitialize)MainRibbonControl).EndInit();
             ((System.ComponentModel.ISupportInitialize)mruPopupMenu).EndInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit3).EndInit();
             ((System.ComponentModel.ISupportInitialize)MainTabbedMdiManager).EndInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).EndInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).EndInit();
@@ -271,6 +349,14 @@
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup DonateRibbonGroup;
         private DevExpress.Utils.SvgImageCollection ribbonSVGImageCollection;
         private DevExpress.XtraBars.Ribbon.RibbonPage HomeRibbonPage;
+        private DevExpress.XtraBars.Ribbon.RibbonPage ViewRibbonPage;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup InterfacePageGroup;
+        private DevExpress.XtraBars.BarButtonItem OptionsBarButtonItem;
+        private System.Windows.Forms.Timer LicenseTimer;
+        private DevExpress.XtraBars.BarButtonItem TimeStatusButton;
+        private DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit repositoryItemCalcEdit1;
+        private DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit repositoryItemCalcEdit2;
+        private DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit repositoryItemCalcEdit3;
     }
 }
 

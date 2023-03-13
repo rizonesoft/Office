@@ -5,13 +5,13 @@
 
     public static class Logging
     {
-        public static readonly Logger ROLogger = LogManager.GetCurrentClassLogger();
+        public static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         public static void ConfigureLogging()
         {
             DateTime dateNow = DateTime.Now;
             string padMonth = dateNow.Month.ToString().PadLeft(2, '0');
-            string loggingFilePath = $"{GlobalProperties.UserAppDirectory}\\Logging\\{dateNow.Year}-{padMonth}.log";
+            string loggingFilePath = $"{RizonesoftEx.UserAppDirectory}\\Logging\\{dateNow.Year}-{padMonth}.log";
 
             var nlogConfig = new NLog.Config.LoggingConfiguration();
             var nlogFile = new NLog.Targets.FileTarget("logfile")

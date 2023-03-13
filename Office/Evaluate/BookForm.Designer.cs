@@ -285,8 +285,8 @@
             DevExpress.Utils.ToolTipItem toolTipItem7 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip8 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipItem toolTipItem8 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BookForm));
+            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
             repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
             BookRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
             NewBarButtonItem = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
@@ -309,7 +309,7 @@
             repositoryItemFontEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemFontEdit();
             changeFontSizeItem1 = new DevExpress.XtraSpreadsheet.UI.ChangeFontSizeItem();
             repositoryItemSpreadsheetFontSizeEdit1 = new DevExpress.XtraSpreadsheet.Design.RepositoryItemSpreadsheetFontSizeEdit();
-            mainSpreadsheetControl = new DevExpress.XtraSpreadsheet.SpreadsheetControl();
+            ChildSpreadsheetControl = new DevExpress.XtraSpreadsheet.SpreadsheetControl();
             spreadsheetCommandBarButtonItem16 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             spreadsheetCommandBarButtonItem17 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem();
             barButtonGroup2 = new DevExpress.XtraBars.BarButtonGroup();
@@ -692,6 +692,9 @@
             zoomEditItem1 = new DevExpress.XtraSpreadsheet.UI.ZoomEditItem();
             repositoryItemZoomTrackBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar();
             showZoomButtonItem1 = new DevExpress.XtraSpreadsheet.UI.ShowZoomButtonItem();
+            CalcEditStatusItem = new DevExpress.XtraBars.BarEditItem();
+            repositoryItemCalcEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
+            InsertNumStatusButton = new DevExpress.XtraBars.BarButtonItem();
             chartToolsRibbonPageCategory1 = new DevExpress.XtraSpreadsheet.UI.ChartToolsRibbonPageCategory();
             chartsDesignRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignRibbonPage();
             chartsDesignTypeRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ChartsDesignTypeRibbonPageGroup();
@@ -733,8 +736,8 @@
             fileRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.FileRibbonPage();
             commonRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.CommonRibbonPageGroup();
             infoRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.InfoRibbonPageGroup();
-            OptionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            LicenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             homeRibbonPage1 = new DevExpress.XtraSpreadsheet.UI.HomeRibbonPage();
             clipboardRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.ClipboardRibbonPageGroup();
             fontRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.FontRibbonPageGroup();
@@ -773,6 +776,8 @@
             mailMergeGroupingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeGroupingRibbonPageGroup();
             mailMergeFilteringRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeFilteringRibbonPageGroup();
             mailMergeBindingRibbonPageGroup1 = new DevExpress.XtraSpreadsheet.UI.MailMergeBindingRibbonPageGroup();
+            ViewRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            ribbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
             spreadsheetBarController1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetBarController(components);
             panelControl1 = new DevExpress.XtraEditors.PanelControl();
@@ -811,6 +816,7 @@
             ((System.ComponentModel.ISupportInitialize)commandBarGalleryDropDown26).BeginInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemTextEdit1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemZoomTrackBar1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)spreadsheetBarController1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)panelControl1).BeginInit();
             panelControl1.SuspendLayout();
@@ -823,16 +829,18 @@
             // BookRibbon
             // 
             BookRibbon.ExpandCollapseItem.Id = 0;
-            BookRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { BookRibbon.ExpandCollapseItem, BookRibbon.SearchEditItem, NewBarButtonItem, OpenBarButtonItem, spreadsheetCommandBarButtonItem3, spreadsheetCommandBarButtonItem4, spreadsheetCommandBarButtonItem5, spreadsheetCommandBarButtonItem6, spreadsheetCommandBarButtonItem7, spreadsheetCommandBarButtonItem8, spreadsheetCommandBarButtonItem9, spreadsheetCommandBarButtonItem10, spreadsheetCommandBarButtonItem11, spreadsheetCommandBarButtonItem12, spreadsheetCommandBarButtonItem13, spreadsheetCommandBarButtonItem14, spreadsheetCommandBarButtonItem15, barButtonGroup1, changeFontNameItem1, changeFontSizeItem1, spreadsheetCommandBarButtonItem16, spreadsheetCommandBarButtonItem17, barButtonGroup2, spreadsheetCommandBarCheckItem1, spreadsheetCommandBarCheckItem2, spreadsheetCommandBarCheckItem3, spreadsheetCommandBarCheckItem4, barButtonGroup3, spreadsheetCommandBarSubItem1, spreadsheetCommandBarButtonItem18, spreadsheetCommandBarButtonItem19, spreadsheetCommandBarButtonItem20, spreadsheetCommandBarButtonItem21, spreadsheetCommandBarButtonItem22, spreadsheetCommandBarButtonItem23, spreadsheetCommandBarButtonItem24, spreadsheetCommandBarButtonItem25, spreadsheetCommandBarButtonItem26, spreadsheetCommandBarButtonItem27, spreadsheetCommandBarButtonItem28, spreadsheetCommandBarButtonItem29, spreadsheetCommandBarButtonItem30, changeBorderLineColorItem1, changeBorderLineStyleItem1, barButtonGroup4, changeCellFillColorItem1, changeFontColorItem1, barButtonGroup5, spreadsheetCommandBarCheckItem5, spreadsheetCommandBarCheckItem6, spreadsheetCommandBarCheckItem7, barButtonGroup6, spreadsheetCommandBarCheckItem8, spreadsheetCommandBarCheckItem9, spreadsheetCommandBarCheckItem10, barButtonGroup7, spreadsheetCommandBarButtonItem31, spreadsheetCommandBarButtonItem32, spreadsheetCommandBarCheckItem11, spreadsheetCommandBarSubItem2, spreadsheetCommandBarCheckItem12, spreadsheetCommandBarButtonItem33, spreadsheetCommandBarButtonItem34, spreadsheetCommandBarButtonItem35, barButtonGroup8, changeNumberFormatItem1, barButtonGroup9, spreadsheetCommandBarSubItem3, spreadsheetCommandBarButtonItem36, spreadsheetCommandBarButtonItem37, spreadsheetCommandBarButtonItem38, spreadsheetCommandBarButtonItem39, spreadsheetCommandBarButtonItem40, spreadsheetCommandBarButtonItem41, spreadsheetCommandBarButtonItem42, spreadsheetCommandBarButtonItem43, barButtonGroup10, spreadsheetCommandBarButtonItem44, spreadsheetCommandBarButtonItem45, spreadsheetCommandBarSubItem7, spreadsheetCommandBarButtonItem46, spreadsheetCommandBarButtonItem47, spreadsheetCommandBarButtonItem48, spreadsheetCommandBarButtonItem49, spreadsheetCommandBarButtonItem50, spreadsheetCommandBarButtonItem51, spreadsheetCommandBarButtonItem52, spreadsheetCommandBarSubItem4, spreadsheetCommandBarButtonItem53, spreadsheetCommandBarButtonItem54, spreadsheetCommandBarButtonItem55, spreadsheetCommandBarButtonItem56, spreadsheetCommandBarButtonItem57, spreadsheetCommandBarButtonItem58, spreadsheetCommandBarSubItem5, spreadsheetCommandBarButtonGalleryDropDownItem1, spreadsheetCommandBarButtonGalleryDropDownItem2, spreadsheetCommandBarButtonGalleryDropDownItem3, spreadsheetCommandBarButtonItem59, spreadsheetCommandBarButtonItem60, spreadsheetCommandBarButtonItem61, spreadsheetCommandBarSubItem6, spreadsheetCommandBarButtonItem62, galleryFormatAsTableItem1, galleryChangeStyleItem1, spreadsheetCommandBarSubItem8, spreadsheetCommandBarButtonItem63, spreadsheetCommandBarButtonItem64, spreadsheetCommandBarButtonItem65, spreadsheetCommandBarButtonItem66, spreadsheetCommandBarButtonItem67, spreadsheetCommandBarButtonItem68, spreadsheetCommandBarButtonItem69, spreadsheetCommandBarButtonItem70, spreadsheetCommandBarSubItem9, spreadsheetCommandBarButtonItem71, spreadsheetCommandBarButtonItem72, spreadsheetCommandBarButtonItem73, spreadsheetCommandBarButtonItem74, spreadsheetCommandBarButtonItem75, spreadsheetCommandBarButtonItem76, spreadsheetCommandBarSubItem11, spreadsheetCommandBarButtonItem77, spreadsheetCommandBarButtonItem78, spreadsheetCommandBarButtonItem79, spreadsheetCommandBarButtonItem80, spreadsheetCommandBarButtonItem81, spreadsheetCommandBarButtonItem82, spreadsheetCommandBarButtonItem83, spreadsheetCommandBarButtonItem84, spreadsheetCommandBarButtonItem85, spreadsheetCommandBarButtonItem86, spreadsheetCommandBarButtonItem87, spreadsheetCommandBarSubItem10, spreadsheetCommandBarButtonItem88, spreadsheetCommandBarButtonItem89, changeSheetTabColorItem1, spreadsheetCommandBarButtonItem90, spreadsheetCommandBarCheckItem13, spreadsheetCommandBarButtonItem91, spreadsheetCommandBarSubItem12, spreadsheetCommandBarButtonItem92, spreadsheetCommandBarButtonItem93, spreadsheetCommandBarButtonItem94, spreadsheetCommandBarButtonItem95, spreadsheetCommandBarButtonItem96, spreadsheetCommandBarSubItem13, spreadsheetCommandBarButtonItem97, spreadsheetCommandBarButtonItem98, spreadsheetCommandBarButtonItem99, spreadsheetCommandBarButtonItem100, spreadsheetCommandBarSubItem14, spreadsheetCommandBarButtonItem101, spreadsheetCommandBarButtonItem102, spreadsheetCommandBarButtonItem103, spreadsheetCommandBarButtonItem104, spreadsheetCommandBarButtonItem105, spreadsheetCommandBarButtonItem106, spreadsheetCommandBarSubItem15, spreadsheetCommandBarButtonItem107, spreadsheetCommandBarButtonItem108, spreadsheetCommandBarCheckItem14, spreadsheetCommandBarButtonItem109, spreadsheetCommandBarButtonItem110, spreadsheetCommandBarSubItem16, spreadsheetCommandBarButtonItem111, spreadsheetCommandBarButtonItem112, spreadsheetCommandBarButtonItem113, spreadsheetCommandBarButtonItem114, spreadsheetCommandBarButtonItem115, spreadsheetCommandBarButtonItem116, spreadsheetCommandBarButtonItem117, spreadsheetCommandBarButtonItem118, spreadsheetCommandBarButtonItem119, spreadsheetCommandBarButtonItem120, spreadsheetCommandBarButtonGalleryDropDownItem4, spreadsheetCommandBarButtonGalleryDropDownItem5, spreadsheetCommandBarButtonGalleryDropDownItem6, spreadsheetCommandBarButtonGalleryDropDownItem7, spreadsheetCommandBarButtonGalleryDropDownItem8, spreadsheetCommandBarButtonGalleryDropDownItem9, spreadsheetCommandBarButtonGalleryDropDownItem10, spreadsheetCommandBarButtonGalleryDropDownItem11, spreadsheetCommandBarButtonGalleryDropDownItem12, spreadsheetCommandBarButtonItem121, spreadsheetCommandBarButtonItem122, spreadsheetCommandBarSubItem17, spreadsheetCommandBarCheckItem15, spreadsheetCommandBarCheckItem16, spreadsheetCommandBarCheckItem17, spreadsheetCommandBarButtonItem123, spreadsheetCommandBarSubItem18, spreadsheetCommandBarCheckItem18, spreadsheetCommandBarCheckItem19, pageSetupPaperKindItem1, spreadsheetCommandBarSubItem19, spreadsheetCommandBarButtonItem124, spreadsheetCommandBarButtonItem125, spreadsheetCommandBarButtonItem126, spreadsheetCommandBarButtonItem127, spreadsheetCommandBarCheckItem20, spreadsheetCommandBarCheckItem21, spreadsheetCommandBarCheckItem22, spreadsheetCommandBarCheckItem23, spreadsheetCommandBarSubItem20, spreadsheetCommandBarButtonItem128, spreadsheetCommandBarButtonItem129, spreadsheetCommandBarSubItem21, spreadsheetCommandBarButtonItem130, spreadsheetCommandBarButtonItem131, spreadsheetCommandBarSubItem22, functionsFinancialItem1, functionsLogicalItem1, functionsTextItem1, functionsDateAndTimeItem1, functionsLookupAndReferenceItem1, functionsMathAndTrigonometryItem1, spreadsheetCommandBarSubItem23, functionsStatisticalItem1, functionsEngineeringItem1, functionsInformationItem1, functionsCompatibilityItem1, functionsWebItem1, spreadsheetCommandBarButtonItem132, spreadsheetCommandBarButtonItem133, definedNameListItem1, spreadsheetCommandBarButtonItem134, spreadsheetCommandBarCheckItem24, spreadsheetCommandBarSubItem24, spreadsheetCommandBarCheckItem25, spreadsheetCommandBarCheckItem26, spreadsheetCommandBarButtonItem135, spreadsheetCommandBarButtonItem136, spreadsheetCommandBarSubItem25, spreadsheetCommandBarButtonItem137, spreadsheetCommandBarButtonItem138, spreadsheetCommandBarButtonItem139, spreadsheetCommandBarSubItem26, spreadsheetCommandBarButtonItem140, spreadsheetCommandBarButtonItem141, spreadsheetCommandBarSubItem27, spreadsheetCommandBarButtonItem142, spreadsheetCommandBarButtonItem143, spreadsheetCommandBarButtonItem144, spreadsheetCommandBarButtonItem145, spreadsheetCommandBarButtonItem146, spreadsheetCommandBarButtonItem147, spreadsheetCommandBarButtonItem148, spreadsheetCommandBarButtonItem149, spreadsheetCommandBarButtonItem150, spreadsheetCommandBarButtonItem151, spreadsheetCommandBarButtonItem152, spreadsheetCommandBarButtonItem153, spreadsheetCommandBarButtonItem154, spreadsheetCommandBarButtonItem155, spreadsheetCommandBarButtonItem156, spreadsheetCommandBarButtonItem157, galleryChartLayoutItem1, galleryChartStyleItem1, spreadsheetCommandBarButtonItem158, spreadsheetCommandBarSubItem28, spreadsheetCommandBarButtonGalleryDropDownItem13, spreadsheetCommandBarButtonGalleryDropDownItem14, spreadsheetCommandBarSubItem29, spreadsheetCommandBarButtonGalleryDropDownItem15, spreadsheetCommandBarButtonGalleryDropDownItem16, spreadsheetCommandBarButtonGalleryDropDownItem17, spreadsheetCommandBarSubItem30, spreadsheetCommandBarButtonGalleryDropDownItem18, spreadsheetCommandBarButtonGalleryDropDownItem19, spreadsheetCommandBarButtonGalleryDropDownItem20, spreadsheetCommandBarButtonGalleryDropDownItem21, spreadsheetCommandBarButtonGalleryDropDownItem22, spreadsheetCommandBarButtonGalleryDropDownItem23, spreadsheetCommandBarButtonGalleryDropDownItem24, renameTableItemCaption1, renameTableItem1, spreadsheetCommandBarCheckItem27, spreadsheetCommandBarCheckItem28, spreadsheetCommandBarCheckItem29, spreadsheetCommandBarCheckItem30, spreadsheetCommandBarCheckItem31, spreadsheetCommandBarCheckItem32, spreadsheetCommandBarCheckItem33, galleryTableStylesItem1, spreadsheetCommandBarButtonItem159, spreadsheetCommandBarButtonItem160, spreadsheetCommandBarButtonItem161, spreadsheetCommandBarButtonItem162, spreadsheetCommandBarButtonItem163, spreadsheetCommandBarButtonItem164, spreadsheetCommandBarButtonItem165, spreadsheetCommandBarSubItem31, spreadsheetCommandBarButtonItem166, spreadsheetCommandBarButtonItem167, spreadsheetCommandBarButtonItem168, spreadsheetCommandBarSubItem32, spreadsheetCommandBarButtonItem169, spreadsheetCommandBarButtonItem170, spreadsheetCommandBarSubItem33, spreadsheetCommandBarButtonItem171, spreadsheetCommandBarButtonItem172, spreadsheetCommandBarButtonItem173, spreadsheetCommandBarButtonItem174, spreadsheetCommandBarSubItem34, spreadsheetCommandBarButtonItem175, spreadsheetCommandBarButtonItem176, spreadsheetCommandBarButtonItem177, spreadsheetCommandBarButtonItem178, spreadsheetCommandBarCheckItem34, spreadsheetCommandBarCheckItem35, spreadsheetCommandBarCheckItem36, spreadsheetCommandBarSubItem35, spreadsheetCommandBarButtonItem179, spreadsheetCommandBarButtonItem180, spreadsheetCommandBarButtonItem181, spreadsheetCommandBarSubItem36, spreadsheetCommandBarButtonItem182, spreadsheetCommandBarButtonItem183, spreadsheetCommandBarButtonItem184, spreadsheetCommandBarButtonItem185, spreadsheetCommandBarSubItem37, spreadsheetCommandBarButtonItem186, spreadsheetCommandBarButtonItem187, spreadsheetCommandBarButtonItem188, spreadsheetCommandBarButtonItem189, spreadsheetCommandBarButtonItem190, spreadsheetCommandBarSubItem38, spreadsheetCommandBarButtonItem191, spreadsheetCommandBarButtonItem192, spreadsheetCommandBarCheckItem37, spreadsheetCommandBarCheckItem38, spreadsheetCommandBarCheckItem39, spreadsheetCommandBarCheckItem40, galleryPivotStylesItem1, spreadsheetCommandBarButtonItem193, spreadsheetCommandBarSubItem39, spreadsheetCommandBarButtonItem194, spreadsheetCommandBarButtonItem195, spreadsheetCommandBarSubItem40, spreadsheetCommandBarButtonItem196, spreadsheetCommandBarButtonItem197, spreadsheetCommandBarButtonItem198, spreadsheetCommandBarCheckItem41, spreadsheetCommandBarCheckItem42, spreadsheetCommandBarCheckItem43, spreadsheetCommandBarSubItem41, spreadsheetCommandBarCheckItem44, spreadsheetCommandBarCheckItem45, spreadsheetCommandBarButtonItem199, spreadsheetCommandBarButtonItem200, spreadsheetCommandBarButtonItem201, spreadsheetCommandBarSubItem42, spreadsheetCommandBarButtonItem202, spreadsheetCommandBarButtonItem203, spreadsheetCommandBarButtonItem204, spreadsheetCommandBarButtonItem205, spreadsheetCommandBarButtonItem206, spreadsheetCommandBarButtonItem207, spreadsheetCommandBarButtonItem208, spreadsheetCommandBarButtonItem209, spreadsheetCommandBarCheckItem46, spreadsheetCommandBarButtonItem210, progressBarItem1, endModeInfoStaticItem1, averageInfoStaticItem1, countInfoStaticItem1, numericalCountInfoStaticItem1, minInfoStaticItem1, maxInfoStaticItem1, sumInfoStaticItem1, zoomEditItem1, showZoomButtonItem1 });
+            BookRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { BookRibbon.ExpandCollapseItem, BookRibbon.SearchEditItem, NewBarButtonItem, OpenBarButtonItem, spreadsheetCommandBarButtonItem3, spreadsheetCommandBarButtonItem4, spreadsheetCommandBarButtonItem5, spreadsheetCommandBarButtonItem6, spreadsheetCommandBarButtonItem7, spreadsheetCommandBarButtonItem8, spreadsheetCommandBarButtonItem9, spreadsheetCommandBarButtonItem10, spreadsheetCommandBarButtonItem11, spreadsheetCommandBarButtonItem12, spreadsheetCommandBarButtonItem13, spreadsheetCommandBarButtonItem14, spreadsheetCommandBarButtonItem15, barButtonGroup1, changeFontNameItem1, changeFontSizeItem1, spreadsheetCommandBarButtonItem16, spreadsheetCommandBarButtonItem17, barButtonGroup2, spreadsheetCommandBarCheckItem1, spreadsheetCommandBarCheckItem2, spreadsheetCommandBarCheckItem3, spreadsheetCommandBarCheckItem4, barButtonGroup3, spreadsheetCommandBarSubItem1, spreadsheetCommandBarButtonItem18, spreadsheetCommandBarButtonItem19, spreadsheetCommandBarButtonItem20, spreadsheetCommandBarButtonItem21, spreadsheetCommandBarButtonItem22, spreadsheetCommandBarButtonItem23, spreadsheetCommandBarButtonItem24, spreadsheetCommandBarButtonItem25, spreadsheetCommandBarButtonItem26, spreadsheetCommandBarButtonItem27, spreadsheetCommandBarButtonItem28, spreadsheetCommandBarButtonItem29, spreadsheetCommandBarButtonItem30, changeBorderLineColorItem1, changeBorderLineStyleItem1, barButtonGroup4, changeCellFillColorItem1, changeFontColorItem1, barButtonGroup5, spreadsheetCommandBarCheckItem5, spreadsheetCommandBarCheckItem6, spreadsheetCommandBarCheckItem7, barButtonGroup6, spreadsheetCommandBarCheckItem8, spreadsheetCommandBarCheckItem9, spreadsheetCommandBarCheckItem10, barButtonGroup7, spreadsheetCommandBarButtonItem31, spreadsheetCommandBarButtonItem32, spreadsheetCommandBarCheckItem11, spreadsheetCommandBarSubItem2, spreadsheetCommandBarCheckItem12, spreadsheetCommandBarButtonItem33, spreadsheetCommandBarButtonItem34, spreadsheetCommandBarButtonItem35, barButtonGroup8, changeNumberFormatItem1, barButtonGroup9, spreadsheetCommandBarSubItem3, spreadsheetCommandBarButtonItem36, spreadsheetCommandBarButtonItem37, spreadsheetCommandBarButtonItem38, spreadsheetCommandBarButtonItem39, spreadsheetCommandBarButtonItem40, spreadsheetCommandBarButtonItem41, spreadsheetCommandBarButtonItem42, spreadsheetCommandBarButtonItem43, barButtonGroup10, spreadsheetCommandBarButtonItem44, spreadsheetCommandBarButtonItem45, spreadsheetCommandBarSubItem7, spreadsheetCommandBarButtonItem46, spreadsheetCommandBarButtonItem47, spreadsheetCommandBarButtonItem48, spreadsheetCommandBarButtonItem49, spreadsheetCommandBarButtonItem50, spreadsheetCommandBarButtonItem51, spreadsheetCommandBarButtonItem52, spreadsheetCommandBarSubItem4, spreadsheetCommandBarButtonItem53, spreadsheetCommandBarButtonItem54, spreadsheetCommandBarButtonItem55, spreadsheetCommandBarButtonItem56, spreadsheetCommandBarButtonItem57, spreadsheetCommandBarButtonItem58, spreadsheetCommandBarSubItem5, spreadsheetCommandBarButtonGalleryDropDownItem1, spreadsheetCommandBarButtonGalleryDropDownItem2, spreadsheetCommandBarButtonGalleryDropDownItem3, spreadsheetCommandBarButtonItem59, spreadsheetCommandBarButtonItem60, spreadsheetCommandBarButtonItem61, spreadsheetCommandBarSubItem6, spreadsheetCommandBarButtonItem62, galleryFormatAsTableItem1, galleryChangeStyleItem1, spreadsheetCommandBarSubItem8, spreadsheetCommandBarButtonItem63, spreadsheetCommandBarButtonItem64, spreadsheetCommandBarButtonItem65, spreadsheetCommandBarButtonItem66, spreadsheetCommandBarButtonItem67, spreadsheetCommandBarButtonItem68, spreadsheetCommandBarButtonItem69, spreadsheetCommandBarButtonItem70, spreadsheetCommandBarSubItem9, spreadsheetCommandBarButtonItem71, spreadsheetCommandBarButtonItem72, spreadsheetCommandBarButtonItem73, spreadsheetCommandBarButtonItem74, spreadsheetCommandBarButtonItem75, spreadsheetCommandBarButtonItem76, spreadsheetCommandBarSubItem11, spreadsheetCommandBarButtonItem77, spreadsheetCommandBarButtonItem78, spreadsheetCommandBarButtonItem79, spreadsheetCommandBarButtonItem80, spreadsheetCommandBarButtonItem81, spreadsheetCommandBarButtonItem82, spreadsheetCommandBarButtonItem83, spreadsheetCommandBarButtonItem84, spreadsheetCommandBarButtonItem85, spreadsheetCommandBarButtonItem86, spreadsheetCommandBarButtonItem87, spreadsheetCommandBarSubItem10, spreadsheetCommandBarButtonItem88, spreadsheetCommandBarButtonItem89, changeSheetTabColorItem1, spreadsheetCommandBarButtonItem90, spreadsheetCommandBarCheckItem13, spreadsheetCommandBarButtonItem91, spreadsheetCommandBarSubItem12, spreadsheetCommandBarButtonItem92, spreadsheetCommandBarButtonItem93, spreadsheetCommandBarButtonItem94, spreadsheetCommandBarButtonItem95, spreadsheetCommandBarButtonItem96, spreadsheetCommandBarSubItem13, spreadsheetCommandBarButtonItem97, spreadsheetCommandBarButtonItem98, spreadsheetCommandBarButtonItem99, spreadsheetCommandBarButtonItem100, spreadsheetCommandBarSubItem14, spreadsheetCommandBarButtonItem101, spreadsheetCommandBarButtonItem102, spreadsheetCommandBarButtonItem103, spreadsheetCommandBarButtonItem104, spreadsheetCommandBarButtonItem105, spreadsheetCommandBarButtonItem106, spreadsheetCommandBarSubItem15, spreadsheetCommandBarButtonItem107, spreadsheetCommandBarButtonItem108, spreadsheetCommandBarCheckItem14, spreadsheetCommandBarButtonItem109, spreadsheetCommandBarButtonItem110, spreadsheetCommandBarSubItem16, spreadsheetCommandBarButtonItem111, spreadsheetCommandBarButtonItem112, spreadsheetCommandBarButtonItem113, spreadsheetCommandBarButtonItem114, spreadsheetCommandBarButtonItem115, spreadsheetCommandBarButtonItem116, spreadsheetCommandBarButtonItem117, spreadsheetCommandBarButtonItem118, spreadsheetCommandBarButtonItem119, spreadsheetCommandBarButtonItem120, spreadsheetCommandBarButtonGalleryDropDownItem4, spreadsheetCommandBarButtonGalleryDropDownItem5, spreadsheetCommandBarButtonGalleryDropDownItem6, spreadsheetCommandBarButtonGalleryDropDownItem7, spreadsheetCommandBarButtonGalleryDropDownItem8, spreadsheetCommandBarButtonGalleryDropDownItem9, spreadsheetCommandBarButtonGalleryDropDownItem10, spreadsheetCommandBarButtonGalleryDropDownItem11, spreadsheetCommandBarButtonGalleryDropDownItem12, spreadsheetCommandBarButtonItem121, spreadsheetCommandBarButtonItem122, spreadsheetCommandBarSubItem17, spreadsheetCommandBarCheckItem15, spreadsheetCommandBarCheckItem16, spreadsheetCommandBarCheckItem17, spreadsheetCommandBarButtonItem123, spreadsheetCommandBarSubItem18, spreadsheetCommandBarCheckItem18, spreadsheetCommandBarCheckItem19, pageSetupPaperKindItem1, spreadsheetCommandBarSubItem19, spreadsheetCommandBarButtonItem124, spreadsheetCommandBarButtonItem125, spreadsheetCommandBarButtonItem126, spreadsheetCommandBarButtonItem127, spreadsheetCommandBarCheckItem20, spreadsheetCommandBarCheckItem21, spreadsheetCommandBarCheckItem22, spreadsheetCommandBarCheckItem23, spreadsheetCommandBarSubItem20, spreadsheetCommandBarButtonItem128, spreadsheetCommandBarButtonItem129, spreadsheetCommandBarSubItem21, spreadsheetCommandBarButtonItem130, spreadsheetCommandBarButtonItem131, spreadsheetCommandBarSubItem22, functionsFinancialItem1, functionsLogicalItem1, functionsTextItem1, functionsDateAndTimeItem1, functionsLookupAndReferenceItem1, functionsMathAndTrigonometryItem1, spreadsheetCommandBarSubItem23, functionsStatisticalItem1, functionsEngineeringItem1, functionsInformationItem1, functionsCompatibilityItem1, functionsWebItem1, spreadsheetCommandBarButtonItem132, spreadsheetCommandBarButtonItem133, definedNameListItem1, spreadsheetCommandBarButtonItem134, spreadsheetCommandBarCheckItem24, spreadsheetCommandBarSubItem24, spreadsheetCommandBarCheckItem25, spreadsheetCommandBarCheckItem26, spreadsheetCommandBarButtonItem135, spreadsheetCommandBarButtonItem136, spreadsheetCommandBarSubItem25, spreadsheetCommandBarButtonItem137, spreadsheetCommandBarButtonItem138, spreadsheetCommandBarButtonItem139, spreadsheetCommandBarSubItem26, spreadsheetCommandBarButtonItem140, spreadsheetCommandBarButtonItem141, spreadsheetCommandBarSubItem27, spreadsheetCommandBarButtonItem142, spreadsheetCommandBarButtonItem143, spreadsheetCommandBarButtonItem144, spreadsheetCommandBarButtonItem145, spreadsheetCommandBarButtonItem146, spreadsheetCommandBarButtonItem147, spreadsheetCommandBarButtonItem148, spreadsheetCommandBarButtonItem149, spreadsheetCommandBarButtonItem150, spreadsheetCommandBarButtonItem151, spreadsheetCommandBarButtonItem152, spreadsheetCommandBarButtonItem153, spreadsheetCommandBarButtonItem154, spreadsheetCommandBarButtonItem155, spreadsheetCommandBarButtonItem156, spreadsheetCommandBarButtonItem157, galleryChartLayoutItem1, galleryChartStyleItem1, spreadsheetCommandBarButtonItem158, spreadsheetCommandBarSubItem28, spreadsheetCommandBarButtonGalleryDropDownItem13, spreadsheetCommandBarButtonGalleryDropDownItem14, spreadsheetCommandBarSubItem29, spreadsheetCommandBarButtonGalleryDropDownItem15, spreadsheetCommandBarButtonGalleryDropDownItem16, spreadsheetCommandBarButtonGalleryDropDownItem17, spreadsheetCommandBarSubItem30, spreadsheetCommandBarButtonGalleryDropDownItem18, spreadsheetCommandBarButtonGalleryDropDownItem19, spreadsheetCommandBarButtonGalleryDropDownItem20, spreadsheetCommandBarButtonGalleryDropDownItem21, spreadsheetCommandBarButtonGalleryDropDownItem22, spreadsheetCommandBarButtonGalleryDropDownItem23, spreadsheetCommandBarButtonGalleryDropDownItem24, renameTableItemCaption1, renameTableItem1, spreadsheetCommandBarCheckItem27, spreadsheetCommandBarCheckItem28, spreadsheetCommandBarCheckItem29, spreadsheetCommandBarCheckItem30, spreadsheetCommandBarCheckItem31, spreadsheetCommandBarCheckItem32, spreadsheetCommandBarCheckItem33, galleryTableStylesItem1, spreadsheetCommandBarButtonItem159, spreadsheetCommandBarButtonItem160, spreadsheetCommandBarButtonItem161, spreadsheetCommandBarButtonItem162, spreadsheetCommandBarButtonItem163, spreadsheetCommandBarButtonItem164, spreadsheetCommandBarButtonItem165, spreadsheetCommandBarSubItem31, spreadsheetCommandBarButtonItem166, spreadsheetCommandBarButtonItem167, spreadsheetCommandBarButtonItem168, spreadsheetCommandBarSubItem32, spreadsheetCommandBarButtonItem169, spreadsheetCommandBarButtonItem170, spreadsheetCommandBarSubItem33, spreadsheetCommandBarButtonItem171, spreadsheetCommandBarButtonItem172, spreadsheetCommandBarButtonItem173, spreadsheetCommandBarButtonItem174, spreadsheetCommandBarSubItem34, spreadsheetCommandBarButtonItem175, spreadsheetCommandBarButtonItem176, spreadsheetCommandBarButtonItem177, spreadsheetCommandBarButtonItem178, spreadsheetCommandBarCheckItem34, spreadsheetCommandBarCheckItem35, spreadsheetCommandBarCheckItem36, spreadsheetCommandBarSubItem35, spreadsheetCommandBarButtonItem179, spreadsheetCommandBarButtonItem180, spreadsheetCommandBarButtonItem181, spreadsheetCommandBarSubItem36, spreadsheetCommandBarButtonItem182, spreadsheetCommandBarButtonItem183, spreadsheetCommandBarButtonItem184, spreadsheetCommandBarButtonItem185, spreadsheetCommandBarSubItem37, spreadsheetCommandBarButtonItem186, spreadsheetCommandBarButtonItem187, spreadsheetCommandBarButtonItem188, spreadsheetCommandBarButtonItem189, spreadsheetCommandBarButtonItem190, spreadsheetCommandBarSubItem38, spreadsheetCommandBarButtonItem191, spreadsheetCommandBarButtonItem192, spreadsheetCommandBarCheckItem37, spreadsheetCommandBarCheckItem38, spreadsheetCommandBarCheckItem39, spreadsheetCommandBarCheckItem40, galleryPivotStylesItem1, spreadsheetCommandBarButtonItem193, spreadsheetCommandBarSubItem39, spreadsheetCommandBarButtonItem194, spreadsheetCommandBarButtonItem195, spreadsheetCommandBarSubItem40, spreadsheetCommandBarButtonItem196, spreadsheetCommandBarButtonItem197, spreadsheetCommandBarButtonItem198, spreadsheetCommandBarCheckItem41, spreadsheetCommandBarCheckItem42, spreadsheetCommandBarCheckItem43, spreadsheetCommandBarSubItem41, spreadsheetCommandBarCheckItem44, spreadsheetCommandBarCheckItem45, spreadsheetCommandBarButtonItem199, spreadsheetCommandBarButtonItem200, spreadsheetCommandBarButtonItem201, spreadsheetCommandBarSubItem42, spreadsheetCommandBarButtonItem202, spreadsheetCommandBarButtonItem203, spreadsheetCommandBarButtonItem204, spreadsheetCommandBarButtonItem205, spreadsheetCommandBarButtonItem206, spreadsheetCommandBarButtonItem207, spreadsheetCommandBarButtonItem208, spreadsheetCommandBarButtonItem209, spreadsheetCommandBarCheckItem46, spreadsheetCommandBarButtonItem210, progressBarItem1, endModeInfoStaticItem1, averageInfoStaticItem1, countInfoStaticItem1, numericalCountInfoStaticItem1, minInfoStaticItem1, maxInfoStaticItem1, sumInfoStaticItem1, zoomEditItem1, showZoomButtonItem1, CalcEditStatusItem, InsertNumStatusButton });
             BookRibbon.Location = new System.Drawing.Point(0, 0);
-            BookRibbon.MaxItemId = 372;
+            BookRibbon.MaxItemId = 374;
             BookRibbon.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             BookRibbon.Name = "BookRibbon";
             BookRibbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { chartToolsRibbonPageCategory1, tableToolsRibbonPageCategory1, pictureToolsRibbonPageCategory1, drawingToolsRibbonPageCategory1, pivotTableToolsRibbonPageCategory1 });
-            BookRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage1, homeRibbonPage1, insertRibbonPage1, pageLayoutRibbonPage1, formulasRibbonPage1, dataRibbonPage1, reviewRibbonPage1, mailMergeRibbonPage1 });
-            BookRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemFontEdit1, repositoryItemSpreadsheetFontSizeEdit1, repositoryItemPopupGalleryEdit1, repositoryItemTextEdit1, repositoryItemZoomTrackBar1 });
-            BookRibbon.Size = new System.Drawing.Size(998, 201);
+            BookRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage1, homeRibbonPage1, insertRibbonPage1, pageLayoutRibbonPage1, formulasRibbonPage1, dataRibbonPage1, reviewRibbonPage1, mailMergeRibbonPage1, ViewRibbonPage });
+            BookRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemFontEdit1, repositoryItemSpreadsheetFontSizeEdit1, repositoryItemPopupGalleryEdit1, repositoryItemTextEdit1, repositoryItemZoomTrackBar1, repositoryItemCalcEdit1 });
+            BookRibbon.Size = new System.Drawing.Size(1106, 203);
             BookRibbon.StatusBar = ribbonStatusBar;
+            BookRibbon.Merge += BookRibbon_Merge;
+            BookRibbon.UnMerge += BookRibbon_UnMerge;
             // 
             // NewBarButtonItem
             // 
@@ -914,14 +922,14 @@
             spreadsheetCommandBarButtonItem13.CommandName = "CutSelection";
             spreadsheetCommandBarButtonItem13.Id = 23;
             spreadsheetCommandBarButtonItem13.Name = "spreadsheetCommandBarButtonItem13";
-            spreadsheetCommandBarButtonItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            spreadsheetCommandBarButtonItem13.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
             // 
             // spreadsheetCommandBarButtonItem14
             // 
             spreadsheetCommandBarButtonItem14.CommandName = "CopySelection";
             spreadsheetCommandBarButtonItem14.Id = 24;
             spreadsheetCommandBarButtonItem14.Name = "spreadsheetCommandBarButtonItem14";
-            spreadsheetCommandBarButtonItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            spreadsheetCommandBarButtonItem14.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
             // 
             // spreadsheetCommandBarButtonItem15
             // 
@@ -935,8 +943,6 @@
             barButtonGroup1.Id = 12;
             barButtonGroup1.ItemLinks.Add(changeFontNameItem1);
             barButtonGroup1.ItemLinks.Add(changeFontSizeItem1);
-            barButtonGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem16);
-            barButtonGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem17);
             barButtonGroup1.Name = "barButtonGroup1";
             barButtonGroup1.Tag = "{B0CA3FA8-82D6-4BC4-BD31-D9AE56C1D033}";
             // 
@@ -962,18 +968,19 @@
             // 
             repositoryItemSpreadsheetFontSizeEdit1.AutoHeight = false;
             repositoryItemSpreadsheetFontSizeEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-            repositoryItemSpreadsheetFontSizeEdit1.Control = mainSpreadsheetControl;
+            repositoryItemSpreadsheetFontSizeEdit1.Control = ChildSpreadsheetControl;
             repositoryItemSpreadsheetFontSizeEdit1.Name = "repositoryItemSpreadsheetFontSizeEdit1";
             // 
-            // mainSpreadsheetControl
+            // ChildSpreadsheetControl
             // 
-            mainSpreadsheetControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            mainSpreadsheetControl.Location = new System.Drawing.Point(5, 56);
-            mainSpreadsheetControl.MenuManager = BookRibbon;
-            mainSpreadsheetControl.Name = "mainSpreadsheetControl";
-            mainSpreadsheetControl.Size = new System.Drawing.Size(988, 450);
-            mainSpreadsheetControl.TabIndex = 2;
-            mainSpreadsheetControl.Text = "spreadsheetControl1";
+            ChildSpreadsheetControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            ChildSpreadsheetControl.Location = new System.Drawing.Point(5, 56);
+            ChildSpreadsheetControl.MenuManager = BookRibbon;
+            ChildSpreadsheetControl.Name = "ChildSpreadsheetControl";
+            ChildSpreadsheetControl.Size = new System.Drawing.Size(1096, 448);
+            ChildSpreadsheetControl.TabIndex = 2;
+            ChildSpreadsheetControl.Text = "spreadsheetControl1";
+            ChildSpreadsheetControl.TextChanged += ChildSpreadsheetControl_TextChanged;
             // 
             // spreadsheetCommandBarButtonItem16
             // 
@@ -998,6 +1005,8 @@
             barButtonGroup2.ItemLinks.Add(spreadsheetCommandBarCheckItem2);
             barButtonGroup2.ItemLinks.Add(spreadsheetCommandBarCheckItem3);
             barButtonGroup2.ItemLinks.Add(spreadsheetCommandBarCheckItem4);
+            barButtonGroup2.ItemLinks.Add(spreadsheetCommandBarButtonItem16);
+            barButtonGroup2.ItemLinks.Add(spreadsheetCommandBarButtonItem17);
             barButtonGroup2.Name = "barButtonGroup2";
             barButtonGroup2.Tag = "{56C139FB-52E5-405B-A03F-FA7DCABD1D17}";
             // 
@@ -1270,7 +1279,7 @@
             spreadsheetCommandBarCheckItem11.CommandName = "FormatWrapText";
             spreadsheetCommandBarCheckItem11.Id = 60;
             spreadsheetCommandBarCheckItem11.Name = "spreadsheetCommandBarCheckItem11";
-            spreadsheetCommandBarCheckItem11.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            spreadsheetCommandBarCheckItem11.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
             // 
             // spreadsheetCommandBarSubItem2
             // 
@@ -1278,7 +1287,7 @@
             spreadsheetCommandBarSubItem2.Id = 61;
             spreadsheetCommandBarSubItem2.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(spreadsheetCommandBarCheckItem12), new DevExpress.XtraBars.LinkPersistInfo(spreadsheetCommandBarButtonItem33), new DevExpress.XtraBars.LinkPersistInfo(spreadsheetCommandBarButtonItem34), new DevExpress.XtraBars.LinkPersistInfo(spreadsheetCommandBarButtonItem35) });
             spreadsheetCommandBarSubItem2.Name = "spreadsheetCommandBarSubItem2";
-            spreadsheetCommandBarSubItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            spreadsheetCommandBarSubItem2.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText | DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
             // 
             // spreadsheetCommandBarCheckItem12
             // 
@@ -3983,7 +3992,7 @@
             // progressBarItem1
             // 
             progressBarItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Left;
-            progressBarItem1.Control = mainSpreadsheetControl;
+            progressBarItem1.Control = ChildSpreadsheetControl;
             progressBarItem1.Edit = repositoryItemProgressBar1;
             progressBarItem1.EditWidth = 150;
             progressBarItem1.Id = 362;
@@ -4091,9 +4100,36 @@
             superToolTip8.Items.Add(toolTipItem8);
             showZoomButtonItem1.SuperTip = superToolTip8;
             // 
+            // CalcEditStatusItem
+            // 
+            CalcEditStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            CalcEditStatusItem.Caption = "Calculator";
+            CalcEditStatusItem.Edit = repositoryItemCalcEdit1;
+            CalcEditStatusItem.EditValue = 0D;
+            CalcEditStatusItem.EditWidth = 100;
+            CalcEditStatusItem.Id = 372;
+            CalcEditStatusItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("CalcEditStatusItem.ImageOptions.SvgImage");
+            CalcEditStatusItem.Name = "CalcEditStatusItem";
+            CalcEditStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
+            // repositoryItemCalcEdit1
+            // 
+            repositoryItemCalcEdit1.AutoHeight = false;
+            repositoryItemCalcEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
+            repositoryItemCalcEdit1.Name = "repositoryItemCalcEdit1";
+            // 
+            // InsertNumStatusButton
+            // 
+            InsertNumStatusButton.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
+            InsertNumStatusButton.Caption = "Insert Calculation";
+            InsertNumStatusButton.Id = 373;
+            InsertNumStatusButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("InsertNumStatusButton.ImageOptions.SvgImage");
+            InsertNumStatusButton.Name = "InsertNumStatusButton";
+            InsertNumStatusButton.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
+            // 
             // chartToolsRibbonPageCategory1
             // 
-            chartToolsRibbonPageCategory1.Control = mainSpreadsheetControl;
+            chartToolsRibbonPageCategory1.Control = ChildSpreadsheetControl;
             chartToolsRibbonPageCategory1.Name = "chartToolsRibbonPageCategory1";
             chartToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { chartsDesignRibbonPage1, chartsLayoutRibbonPage1, chartsFormatRibbonPage1 });
             chartToolsRibbonPageCategory1.Visible = false;
@@ -4180,7 +4216,7 @@
             // 
             // tableToolsRibbonPageCategory1
             // 
-            tableToolsRibbonPageCategory1.Control = mainSpreadsheetControl;
+            tableToolsRibbonPageCategory1.Control = ChildSpreadsheetControl;
             tableToolsRibbonPageCategory1.Name = "tableToolsRibbonPageCategory1";
             tableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { tableToolsDesignRibbonPage1 });
             tableToolsRibbonPageCategory1.Visible = false;
@@ -4223,7 +4259,7 @@
             // 
             // pictureToolsRibbonPageCategory1
             // 
-            pictureToolsRibbonPageCategory1.Control = mainSpreadsheetControl;
+            pictureToolsRibbonPageCategory1.Control = ChildSpreadsheetControl;
             pictureToolsRibbonPageCategory1.Name = "pictureToolsRibbonPageCategory1";
             pictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { pictureFormatRibbonPage1 });
             pictureToolsRibbonPageCategory1.Visible = false;
@@ -4243,7 +4279,7 @@
             // 
             // drawingToolsRibbonPageCategory1
             // 
-            drawingToolsRibbonPageCategory1.Control = mainSpreadsheetControl;
+            drawingToolsRibbonPageCategory1.Control = ChildSpreadsheetControl;
             drawingToolsRibbonPageCategory1.Name = "drawingToolsRibbonPageCategory1";
             drawingToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { drawingFormatRibbonPage1 });
             drawingToolsRibbonPageCategory1.Visible = false;
@@ -4263,7 +4299,7 @@
             // 
             // pivotTableToolsRibbonPageCategory1
             // 
-            pivotTableToolsRibbonPageCategory1.Control = mainSpreadsheetControl;
+            pivotTableToolsRibbonPageCategory1.Control = ChildSpreadsheetControl;
             pivotTableToolsRibbonPageCategory1.Name = "pivotTableToolsRibbonPageCategory1";
             pivotTableToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { pivotTableAnalyzeRibbonPage1, pivotTableDesignRibbonPage1 });
             pivotTableToolsRibbonPageCategory1.Visible = false;
@@ -4358,7 +4394,7 @@
             // 
             // fileRibbonPage1
             // 
-            fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { commonRibbonPageGroup1, infoRibbonPageGroup1, OptionsRibbonGroup, LicenseRibbonGroup });
+            fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { commonRibbonPageGroup1, infoRibbonPageGroup1, optionsRibbonGroup, licenseRibbonGroup });
             fileRibbonPage1.Name = "fileRibbonPage1";
             // 
             // commonRibbonPageGroup1
@@ -4384,15 +4420,15 @@
             infoRibbonPageGroup1.MergeOrder = 0;
             infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
             // 
-            // OptionsRibbonGroup
+            // optionsRibbonGroup
             // 
-            OptionsRibbonGroup.Name = "OptionsRibbonGroup";
-            OptionsRibbonGroup.Text = "Options";
+            optionsRibbonGroup.Name = "optionsRibbonGroup";
+            optionsRibbonGroup.Text = "Options";
             // 
-            // LicenseRibbonGroup
+            // licenseRibbonGroup
             // 
-            LicenseRibbonGroup.Name = "LicenseRibbonGroup";
-            LicenseRibbonGroup.Text = "Registration";
+            licenseRibbonGroup.Name = "licenseRibbonGroup";
+            licenseRibbonGroup.Text = "Registration";
             // 
             // homeRibbonPage1
             // 
@@ -4408,6 +4444,7 @@
             // clipboardRibbonPageGroup1
             // 
             clipboardRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
+            clipboardRibbonPageGroup1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("clipboardRibbonPageGroup1.ImageOptions.SvgImage");
             clipboardRibbonPageGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem12);
             clipboardRibbonPageGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem13);
             clipboardRibbonPageGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem14);
@@ -4422,6 +4459,7 @@
             fontRibbonPageGroup1.ItemLinks.Add(barButtonGroup3);
             fontRibbonPageGroup1.ItemLinks.Add(barButtonGroup4);
             fontRibbonPageGroup1.Name = "fontRibbonPageGroup1";
+            fontRibbonPageGroup1.State = DevExpress.XtraBars.Ribbon.RibbonPageGroupState.Expanded;
             // 
             // alignmentRibbonPageGroup1
             // 
@@ -4697,6 +4735,17 @@
             mailMergeBindingRibbonPageGroup1.ItemLinks.Add(spreadsheetCommandBarButtonItem210);
             mailMergeBindingRibbonPageGroup1.Name = "mailMergeBindingRibbonPageGroup1";
             // 
+            // ViewRibbonPage
+            // 
+            ViewRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { ribbonPageGroup1 });
+            ViewRibbonPage.Name = "ViewRibbonPage";
+            ViewRibbonPage.Text = "View";
+            // 
+            // ribbonPageGroup1
+            // 
+            ribbonPageGroup1.Name = "ribbonPageGroup1";
+            ribbonPageGroup1.Text = "ribbonPageGroup1";
+            // 
             // ribbonStatusBar
             // 
             ribbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
@@ -4708,12 +4757,14 @@
             ribbonStatusBar.ItemLinks.Add(minInfoStaticItem1);
             ribbonStatusBar.ItemLinks.Add(maxInfoStaticItem1);
             ribbonStatusBar.ItemLinks.Add(sumInfoStaticItem1);
-            ribbonStatusBar.ItemLinks.Add(zoomEditItem1);
+            ribbonStatusBar.ItemLinks.Add(zoomEditItem1, true);
             ribbonStatusBar.ItemLinks.Add(showZoomButtonItem1);
+            ribbonStatusBar.ItemLinks.Add(CalcEditStatusItem, true);
+            ribbonStatusBar.ItemLinks.Add(InsertNumStatusButton);
             ribbonStatusBar.Location = new System.Drawing.Point(0, 712);
             ribbonStatusBar.Name = "ribbonStatusBar";
             ribbonStatusBar.Ribbon = BookRibbon;
-            ribbonStatusBar.Size = new System.Drawing.Size(998, 37);
+            ribbonStatusBar.Size = new System.Drawing.Size(1106, 37);
             // 
             // spreadsheetBarController1
             // 
@@ -5078,19 +5129,19 @@
             spreadsheetBarController1.BarItems.Add(sumInfoStaticItem1);
             spreadsheetBarController1.BarItems.Add(zoomEditItem1);
             spreadsheetBarController1.BarItems.Add(showZoomButtonItem1);
-            spreadsheetBarController1.Control = mainSpreadsheetControl;
+            spreadsheetBarController1.Control = ChildSpreadsheetControl;
             // 
             // panelControl1
             // 
             panelControl1.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            panelControl1.Controls.Add(mainSpreadsheetControl);
+            panelControl1.Controls.Add(ChildSpreadsheetControl);
             panelControl1.Controls.Add(splitterControl1);
             panelControl1.Controls.Add(spreadsheetFormulaBar1);
             panelControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            panelControl1.Location = new System.Drawing.Point(0, 201);
+            panelControl1.Location = new System.Drawing.Point(0, 203);
             panelControl1.Name = "panelControl1";
             panelControl1.Padding = new System.Windows.Forms.Padding(5, 8, 5, 5);
-            panelControl1.Size = new System.Drawing.Size(998, 511);
+            panelControl1.Size = new System.Drawing.Size(1106, 509);
             panelControl1.TabIndex = 7;
             // 
             // splitterControl1
@@ -5099,7 +5150,7 @@
             splitterControl1.Location = new System.Drawing.Point(5, 40);
             splitterControl1.MinSize = 20;
             splitterControl1.Name = "splitterControl1";
-            splitterControl1.Size = new System.Drawing.Size(988, 16);
+            splitterControl1.Size = new System.Drawing.Size(1096, 16);
             splitterControl1.TabIndex = 3;
             splitterControl1.TabStop = false;
             // 
@@ -5109,23 +5160,28 @@
             spreadsheetFormulaBar1.Location = new System.Drawing.Point(5, 8);
             spreadsheetFormulaBar1.MinimumSize = new System.Drawing.Size(0, 32);
             spreadsheetFormulaBar1.Name = "spreadsheetFormulaBar1";
-            spreadsheetFormulaBar1.Size = new System.Drawing.Size(988, 32);
-            spreadsheetFormulaBar1.SpreadsheetControl = mainSpreadsheetControl;
+            spreadsheetFormulaBar1.Size = new System.Drawing.Size(1096, 32);
+            spreadsheetFormulaBar1.SpreadsheetControl = ChildSpreadsheetControl;
             spreadsheetFormulaBar1.TabIndex = 4;
             // 
             // BookForm
             // 
+            Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(998, 749);
+            ClientSize = new System.Drawing.Size(1106, 749);
             Controls.Add(panelControl1);
             Controls.Add(ribbonStatusBar);
             Controls.Add(BookRibbon);
+            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("BookForm.IconOptions.SvgImage");
             Name = "BookForm";
             Ribbon = BookRibbon;
             StatusBar = ribbonStatusBar;
             Text = "Workbook";
+            Activated += BookForm_Activated;
+            FormClosing += BookForm_FormClosing;
+            Load += BookForm_Load;
             ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar1).EndInit();
             ((System.ComponentModel.ISupportInitialize)BookRibbon).EndInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemFontEdit1).EndInit();
@@ -5159,6 +5215,7 @@
             ((System.ComponentModel.ISupportInitialize)commandBarGalleryDropDown26).EndInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemTextEdit1).EndInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemZoomTrackBar1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).EndInit();
             ((System.ComponentModel.ISupportInitialize)spreadsheetBarController1).EndInit();
             ((System.ComponentModel.ISupportInitialize)panelControl1).EndInit();
             panelControl1.ResumeLayout(false);
@@ -5190,7 +5247,7 @@
         private DevExpress.XtraEditors.Repository.RepositoryItemFontEdit repositoryItemFontEdit1;
         private DevExpress.XtraSpreadsheet.UI.ChangeFontSizeItem changeFontSizeItem1;
         private DevExpress.XtraSpreadsheet.Design.RepositoryItemSpreadsheetFontSizeEdit repositoryItemSpreadsheetFontSizeEdit1;
-        private DevExpress.XtraSpreadsheet.SpreadsheetControl mainSpreadsheetControl;
+        private DevExpress.XtraSpreadsheet.SpreadsheetControl ChildSpreadsheetControl;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem16;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandBarButtonItem spreadsheetCommandBarButtonItem17;
         private DevExpress.XtraBars.BarButtonGroup barButtonGroup2;
@@ -5654,10 +5711,15 @@
         private DevExpress.XtraSpreadsheet.UI.MailMergeBindingRibbonPageGroup mailMergeBindingRibbonPageGroup1;
         private DevExpress.XtraSpreadsheet.UI.SpreadsheetBarController spreadsheetBarController1;
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar repositoryItemProgressBar1;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup OptionsRibbonGroup;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup LicenseRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup optionsRibbonGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup licenseRibbonGroup;
         private DevExpress.XtraEditors.PanelControl panelControl1;
         private DevExpress.XtraEditors.SplitterControl splitterControl1;
         private DevExpress.XtraSpreadsheet.SpreadsheetFormulaBar spreadsheetFormulaBar1;
+        private DevExpress.XtraBars.Ribbon.RibbonPage ViewRibbonPage;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup ribbonPageGroup1;
+        private DevExpress.XtraBars.BarEditItem CalcEditStatusItem;
+        private DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit repositoryItemCalcEdit1;
+        private DevExpress.XtraBars.BarButtonItem InsertNumStatusButton;
     }
 }

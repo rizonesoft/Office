@@ -49,7 +49,7 @@
             OnShowMdiChildCaptionInParentTitle();
             CreateProgramDirectories();
             InitializeComponent();
-            base.Text = $"{StcFlow.ProductName} {GlobalProperties.ProductVersionMajor}";
+            base.Text = $"{StcFlow.ProductName} {RizonesoftEx.ProductVersionMajor}";
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcFlow.ProductName}");
@@ -107,7 +107,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -163,13 +163,13 @@
 
         private void LoadSettings()
         {
-            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcFlow.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(StcFlow.CurrentRegGeneralPath, "Geometry", string.Empty), this);
 
         }
 
         private void SaveSettings()
         {
-            Settings.Settings.SaveSetting(StcFlow.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcFlow.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
 
         }
 

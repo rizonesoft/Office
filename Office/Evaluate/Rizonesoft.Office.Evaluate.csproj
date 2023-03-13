@@ -9,14 +9,14 @@
     <AssemblyName>Evaluate</AssemblyName>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <ApplicationIcon>Evaluate.ico</ApplicationIcon>
-    <Version>2023.3.33</Version>
+    <Version>2023.3.89</Version>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<PublishSingleFile>true</PublishSingleFile>
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.10.33</AssemblyVersion>
-	<FileVersion>2023.3.10.33</FileVersion>
+	<AssemblyVersion>2023.3.13.87</AssemblyVersion>
+	<FileVersion>2023.3.13.87</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -60,7 +60,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Update="SplashScreenForm.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
 </Project>

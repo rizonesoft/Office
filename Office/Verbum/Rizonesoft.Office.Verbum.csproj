@@ -9,7 +9,7 @@
     <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
-    <Version>2023.3.465</Version>
+    <Version>2023.3.483</Version>
     <PackageIcon>Verbum-128.png</PackageIcon>
     <UseWPF>False</UseWPF>
     <ApplicationIcon>Verbum.ico</ApplicationIcon>
@@ -20,8 +20,8 @@
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	<PlatformTarget>x64</PlatformTarget>
-	<AssemblyVersion>2023.3.10.477</AssemblyVersion>
-	<FileVersion>2023.3.10.477</FileVersion>
+	<AssemblyVersion>2023.3.13.493</AssemblyVersion>
+	<FileVersion>2023.3.13.493</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -74,11 +74,6 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Properties\Settings.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
 

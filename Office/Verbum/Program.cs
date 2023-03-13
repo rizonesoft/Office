@@ -45,10 +45,10 @@
                 // check whether there's an instance running already
                 if (grantedOwnership)
                 {
-                    WindowsFormsSettings.EnableFormSkins();
-                    WindowsFormsSettings.ForceDirectXPaint();
-                    WindowsFormsSettings.DefaultRibbonStyle = DefaultRibbonControlStyle.Office2019;
-                    WindowsFormsSettings.AllowPixelScrolling = DevExpress.Utils.DefaultBoolean.True;
+                    // WindowsFormsSettings.EnableFormSkins();
+                    // WindowsFormsSettings.ForceDirectXPaint();
+                    // WindowsFormsSettings.DefaultRibbonStyle = DefaultRibbonControlStyle.Office2019;
+                    // WindowsFormsSettings.AllowPixelScrolling = DevExpress.Utils.DefaultBoolean.True;
                     if (!SystemInformation.TerminalServerSession && Screen.AllScreens.Length > 1)
                     {
                         WindowsFormsSettings.SetPerMonitorDpiAware();
@@ -58,8 +58,8 @@
                         WindowsFormsSettings.SetDPIAware();
                     }
 
-                    DevExpress.Utils.AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
-                    DevExpress.Skins.SkinManager.EnableFormSkins();
+                    // DevExpress.Utils.AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
+                    // DevExpress.Skins.SkinManager.EnableFormSkins();
 
                     XtraForm mainForm = new MainForm(fileName);
                     Application.Run(mainForm);
@@ -77,7 +77,7 @@
             catch (Exception ex)
             {
                 ErrorMessage.Show("Woops!", $"{StcVerbum.ProductName} was unable to start.");
-                Logging.ROLogger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
+                Logging.logger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
             }
         }
 

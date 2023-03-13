@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Rizonesoft.Office</RootNamespace>
-    <Version>2023.3.210</Version>
+    <Version>2023.3.224</Version>
     <Company>Rizonesoft</Company>
     <Product>Rizonesoft Office</Product>
 	<PublishReadyToRun>true</PublishReadyToRun>
@@ -16,8 +16,8 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.10.193</AssemblyVersion>
-	<FileVersion>2023.3.10.193</FileVersion>
+	<AssemblyVersion>2023.3.13.205</AssemblyVersion>
+	<FileVersion>2023.3.13.205</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

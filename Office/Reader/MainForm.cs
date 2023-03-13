@@ -50,7 +50,7 @@
             OnShowMdiChildCaptionInParentTitle();
             CreateProgramDirectories();
             InitializeComponent();
-            base.Text = $"{StcReader.ProductName} {GlobalProperties.ProductVersionMajor}";
+            base.Text = $"{StcReader.ProductName} {RizonesoftEx.ProductVersionMajor}";
             Initialize();
             CreateNewViewer(StcReader.WelcomePDFPath);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcReader.ProductName}");
@@ -111,7 +111,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -219,13 +219,13 @@
 
         private void LoadSettings()
         {
-            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty), this);
 
         }
 
         private void SaveSettings()
         {
-            Settings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
 
         }
 

@@ -10,7 +10,7 @@
         public SplashScreenForm()
         {
             InitializeComponent();
-            labelNameVersion.Text = $"{StcFlow.ProductName} {Office.Utilities.GlobalProperties.ProductVersionMajor}";
+            labelNameVersion.Text = $"{StcFlow.ProductName} {Office.Utilities.RizonesoftEx.ProductVersionMajor}";
             labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 

@@ -79,8 +79,8 @@
             }
             catch (Exception ex)
             {
-                ROErrorMessage.Show("Woops!", $"{StcEvaluate.ProductName} was unable to start.");
-                Logging.ROLogger.Fatal($"{StcEvaluate.ProductName} was unable to start.", ex);
+                ErrorMessageEx.Show("Woops!", $"{EvaluateEx.ProductName} was unable to start.");
+                Logging.logger.Fatal($"{EvaluateEx.ProductName} was unable to start.", ex);
             }
 
         }

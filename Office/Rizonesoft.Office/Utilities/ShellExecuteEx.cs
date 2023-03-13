@@ -36,7 +36,7 @@ namespace Rizonesoft.Office.Utilities
             catch (Exception ex)
             {
                 XtraMessageBox.Show($"Error opening PDF document: {fileName}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Logging.ROLogger.Error(ex, $"Error opening PDF document: {fileName}");
+                Logging.logger.Error(ex, $"Error opening PDF document: {fileName}");
             }
 
         }

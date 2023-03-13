@@ -3,7 +3,7 @@
     using DevExpress.XtraEditors;
     using System.Windows.Forms;
 
-    internal class ROErrorMessage
+    internal class ErrorMessageEx
     {
         public static void Show(string title, string message)
         {

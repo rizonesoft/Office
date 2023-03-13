@@ -14,11 +14,11 @@
         public static readonly string ProductBasePath = Path.GetDirectoryName(Application.ExecutablePath);
         public static readonly string DocumentsBasePath = Path.Combine(ProductBasePath, "Documents");
         public static readonly string WelcomePDFPath = Path.Combine(DocumentsBasePath, "Welcome.pdf");
-        public static readonly string UserAppDirectory = Path.Combine(GlobalFunctions.GetUserAppDataPath(), $"Rizonesoft\\Office\\{ProductName}\\");
-        public static readonly string CurrentRegConfigPath = $"Rizonesoft\\{GlobalProperties.ProductName}\\{ProductName}";
+        public static readonly string UserAppDirectory = Path.Combine(RizonesoftEx.GetUserAppDataPath(), $"Rizonesoft\\Office\\{ProductName}\\");
+        public static readonly string CurrentRegConfigPath = $"Rizonesoft\\{RizonesoftEx.ProductName}\\{ProductName}";
         public static readonly string CurrentRegGeneralPath = $"{CurrentRegConfigPath}\\General";
         public static readonly string CurrentRegInterfacePath = $"{CurrentRegConfigPath}\\Interface";
-        public static readonly string StaticRegInterfacePath = $"{GlobalProperties.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
+        public static readonly string StaticRegInterfacePath = $"{RizonesoftEx.CurrentUserReg}\\{CurrentRegConfigPath}\\Interface";
 
     }
 }

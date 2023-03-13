@@ -78,7 +78,7 @@
             catch (Exception ex)
             {
                 ROErrorMessage.Show("Woops!", $"{StcReader.ProductName} was unable to start.");
-                Logging.ROLogger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
+                Logging.logger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
             }
 
         }

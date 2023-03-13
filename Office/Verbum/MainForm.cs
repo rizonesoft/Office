@@ -28,7 +28,6 @@
         private static MruList mruList;
         internal int documentIndex;
         internal bool IsFloating;
-        internal bool IsLicensed;
         internal bool IsUpdateDismiss;
         internal BackgroundWorker UpdateWorker;
         OptionsForm optionsDlg = null;
@@ -55,8 +54,9 @@
         public MainForm(string fileName)
         {
 
-            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{GlobalProperties.ProductName}\\General", "UpdateMessage", "True");
-            IsUpdateDismiss = GlobalFunctions.StringToBoolean(sUpdateDismissed);
+            // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
+            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "True");
+            IsUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed);
 
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
@@ -64,8 +64,8 @@
             CreateProgramDirectories();
             OnShowMdiChildCaptionInParentTitle();
             InitializeComponent();
-            IsLicensed = LicenseCheck.IsLicensed();
-            GlobalProperties.IsBetaVersion = true;
+            RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
+            RizonesoftEx.IsBetaVersion = true;
 
             if (string.IsNullOrEmpty(fileName))
             {
@@ -78,7 +78,11 @@
             CreateNewDocument(fileName);
 
             debugRibbonPage.Visible = Debugging.IsDebugging;
-            mainRibbonControl.SelectedPage = homeRibbonPage;
+            if (mainRibbonControl != null)
+            {
+                // mainRibbonControl.AutoHideEmptyItems = true;
+                mainRibbonControl.SelectedPage = homeRibbonPage;
+            }
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Dictionaries");
@@ -157,6 +161,16 @@
 
         }
 
+        private void BarNewItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        { 
+            this.CreateNewDocument(null); 
+        }
+
+        private void barOpenItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e) 
+        { 
+            OpenFile(); 
+        }   
+
         internal void OpenFile()
         {
             OpenFileFolder(string.Empty);
@@ -171,7 +185,7 @@
             else
             {
                 string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
-                Logging.ROLogger.Error(Logging.CleanMessageForLogging(sMessage));
+                Logging.logger.Error(Logging.CleanMessageForLogging(sMessage));
                 XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -183,21 +197,58 @@
 
             List<string> fileTypes = new()
             {
-                "docx", "docm", ".docx", "dotx", "dotm", "doc", ".dot", "odt", "rtf", "htm", ".html", "mht", "eml", "epub", "xml", "txt"
+                ".docx", ".docm", ".docx", ".dotx", ".dotm", ".doc", ".dot", ".odt", ".rtf", ".htm", ".html", ".mht", ".eml", ".epub", ".xml", ".txt"
             };
-            //etc
 
-            for (int i = 0; i < fileTypes.Count; i++)
+            if (fileTypes.Contains(fileExt))
             {
-                if (string.Compare(fileExt, fileTypes[i], true) == 0)
-                {
-                    results = true;
-                    break;
-                    //or just return true;
-                }
+                results = true;
+            }
+            return results;
+        }
+
+        private void OpenFileFolder(string sIniDir)
+        {
+
+            OpenFileDialog openFileDlg = new();
+
+            if (sIniDir != String.Empty)
+            {
+                openFileDlg.InitialDirectory = sIniDir;
             }
 
-            return results;
+            // openFileDlg.KeepPosition = true;
+            // openFileDlg.ShowDragDropConfirmation = true;
+            // openFileDlg.AutoUpdateFilterDescription = false;
+            openFileDlg.Filter = "All Files (*.*)|*.*|" +
+                "All Supported Files (*.docx; *.docm; *.dotx; *.dotm; *.doc; *.dot; *.odt; *.rtf; *.htm; *.html; *.mht; *.eml; *.epub; *.xml; *.txt)|*.docx;*.docm;*.dotx;*.dotm;*.doc;*.dot;*.odt;*.rtf;*.htm;*.html;*.mht;*.eml;*.epub;*.xml;*.txt|" +
+                "Word 2007 Document (*.docx)|*.docx|" +
+                "Word Macro-Enabled Document (*.docm)|*.docm|" +
+                "Word Template (*.dotx)|*.dotx|" +
+                "Word Macro-Enabled Template (*.dotm)|*.dotm|" +
+                "Microsoft Word Document (*.doc)|*.doc|" +
+                "Word 97-2003 Template (*.dot)|*.dot|" +
+                "OpenDocument Text Document (*.odt)|*.odt|" +
+                "Rich Text Format (*.rtf)|*.rtf|" +
+                "HyperText Markup Language Format (*.htm; *.html)|*.htm;*.html|" +
+                "Web Archive, single file (*.mht)|*.mht|" +
+                "Email Message (*.eml)|*.eml|" +
+                "Electronic Publication (*.epub)|*.epub|" +
+                "Word XML Document (*.xml)|*.xml|" +
+                "Text Files (*.txt)|*.txt";
+            openFileDlg.FilterIndex = 3;
+            openFileDlg.Title = "Select a Document";
+
+            DialogResult dlgResult = openFileDlg.ShowDialog();
+            Logging.logger.Info("Open Document Result - " + dlgResult.ToString());
+
+            // Show the dialog and get result.
+            if (dlgResult == DialogResult.OK)
+            {
+                string fileName = openFileDlg.FileName;
+                OpenFile(fileName);
+                AddFileToMRUList(fileName);
+            }
         }
 
         public static void AddFileToMRUList(string fileName)
@@ -211,9 +262,14 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.ROLogger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
+        }
+
+        private void BarCloseItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            CurrentDocument.Close();
         }
 
         private void RestoreRibbon()
@@ -223,6 +279,7 @@
 
         private void MainForm_Load(object sender, System.EventArgs e)
         {
+            
             LoadSettings();
 
             mainRibbonControl.ForceInitialize();
@@ -238,20 +295,20 @@
 
         private void LoadSettings()
         {
-            GlobalFunctions.GeometryFromString(Settings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", string.Empty), this);
         }
 
         private void CheckLicense()
         {
             string FormCaptionBase;
 
-            if (GlobalProperties.IsBetaVersion)
+            if (RizonesoftEx.IsBetaVersion)
             {
-                FormCaptionBase = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor} ({GlobalProperties.BetaVersionString})";
+                FormCaptionBase = $"{StcVerbum.ProductName} {RizonesoftEx.ProductVersionMajor} ({RizonesoftEx.BetaVersionString})";
             }
             else
             {
-                FormCaptionBase = $"{StcVerbum.ProductName} {GlobalProperties.ProductVersionMajor}";
+                FormCaptionBase = $"{StcVerbum.ProductName} {RizonesoftEx.ProductVersionMajor}";
             }
 
             if (LicenseCheck.IsLicensed())
@@ -259,15 +316,17 @@
                 Text = $"{FormCaptionBase} - Business";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[1];
-                DonateRibbonGroup.Visible = false;
             }
             else
             {
                 Text = $"{FormCaptionBase} - Home";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[0];
-                DonateRibbonGroup.Visible = true;
             }
+
+            RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
+            DonateRibbonGroup.Visible = !RizonesoftEx.IsLicensed;
+
         }
 
         protected override void OnLoad(EventArgs e)
@@ -327,6 +386,11 @@
             SaveSkins();
         }
 
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // ActiveMdiChild?.Close();
+        }
+
         private void SaveRibbon()
         {
             mainRibbonControl?.Toolbar.SaveLayoutToRegistry(StcVerbum.StaticRegInterfacePath);
@@ -335,8 +399,8 @@
 
         private void SaveSettings()
         {
-            Settings.Settings.SaveSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", GlobalFunctions.GeometryToString(this));
-            Settings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", GlobalFunctions.BooleanToString(StcVerbum.AutoSpellCheck));
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
+            Settings.Settings.SaveSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", RizonesoftEx.BooleanToString(StcVerbum.AutoSpellCheck));
 
         }
 
@@ -346,132 +410,13 @@
             Settings.Settings.SaveSetting(StcVerbum.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
-
-        
-
-       
-
-        
-
-        private void barNewItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        { this.CreateNewDocument(null); }
-
-        private void barOpenItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e) { OpenFile(); }
-
-        private void barCloseItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            CurrentDocument.Close();
-        }
-
-        private void barOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-
-            try
-            {
-                if (optionsDlg != null)
-                {
-                    optionsDlg.BringToFront();
-                }
-                else
-                {
-                    optionsDlg = new OptionsForm();
-                    optionsDlg.Show(this);
-                }
-
-                if (optionsDlg.IsDisposed)
-                {
-                    optionsDlg = new OptionsForm();
-                    optionsDlg.Show(this);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void OpenFileFolder(string sIniDir)
-        {
-
-            OpenFileDialog openFileDlg = new();
-
-            if (sIniDir != String.Empty)
-            {
-                openFileDlg.InitialDirectory = sIniDir;
-            }
-
-            // openFileDlg.KeepPosition = true;
-            // openFileDlg.ShowDragDropConfirmation = true;
-            // openFileDlg.AutoUpdateFilterDescription = false;
-            openFileDlg.Filter = "All Files (*.*)|*.*|" +
-                "All Supported Files (*.docx; *.docm; *.dotx; *.dotm; *.doc; *.dot; *.odt; *.rtf; *.htm; *.html; *.mht; *.eml; *.epub; *.xml; *.txt)|*.docx;*.docm;*.dotx;*.dotm;*.doc;*.dot;*.odt;*.rtf;*.htm;*.html;*.mht;*.eml;*.epub;*.xml;*.txt|" +
-                "Word 2007 Document (*.docx)|*.docx|" +
-                "Word Macro-Enabled Document (*.docm)|*.docm|" +
-                "Word Template (*.dotx)|*.dotx|" +
-                "Word Macro-Enabled Template (*.dotm)|*.dotm|" +
-                "Microsoft Word Document (*.doc)|*.doc|" +
-                "Word 97-2003 Template (*.dot)|*.dot|" +
-                "OpenDocument Text Document (*.odt)|*.odt|" +
-                "Rich Text Format (*.rtf)|*.rtf|" +
-                "HyperText Markup Language Format (*.htm; *.html)|*.htm;*.html|" +
-                "Web Archive, single file (*.mht)|*.mht|" +
-                "Email Message (*.eml)|*.eml|" +
-                "Electronic Publication (*.epub)|*.epub|" +
-                "Word XML Document (*.xml)|*.xml|" +
-                "Text Files (*.txt)|*.txt";
-            openFileDlg.FilterIndex = 3;
-            openFileDlg.Title = "Select a Document";
-
-            DialogResult dlgResult = openFileDlg.ShowDialog();
-
-            // Show the dialog and get result.
-            if (dlgResult == DialogResult.OK)
-            {
-                string fileName = openFileDlg.FileName;
-                OpenFile(fileName);
-                AddFileToMRUList(fileName);
-            }
-        }
-
         private void LoadDictionaries()
         {
             string sAutoSpellCheck;
 
             sAutoSpellCheck = Settings.Settings
                 .GetSetting(StcVerbum.CurrentRegSpellingPath, "AutoSpellCheck", "True");
-            StcVerbum.AutoSpellCheck = GlobalFunctions.StringToBoolean(sAutoSpellCheck);
+            StcVerbum.AutoSpellCheck = RizonesoftEx.StringToBoolean(sAutoSpellCheck);
             try
             {
                 string sFileNoExtension = string.Empty;
@@ -505,7 +450,7 @@
             }
             catch (Exception ex)
             {
-                Logging.ROLogger.Error(ex, "Woops!");
+                Logging.logger.Error(ex, "Woops!");
                 MessageBox.Show(ex.Message, "Woops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -515,12 +460,8 @@
         {
             if (File.Exists(dictionaryPath) && File.Exists(grammarPath))
             {
-                DevExpress.XtraSpellChecker.HunspellDictionary spellCheckerHunspellDic =
-                    new DevExpress.XtraSpellChecker.HunspellDictionary();
-
-                spellCheckerHunspellDic.Culture = dicCulture;
-                spellCheckerHunspellDic.DictionaryPath = dictionaryPath;
-                spellCheckerHunspellDic.GrammarPath = grammarPath;
+                HunspellDictionary spellCheckerHunspellDic =
+                    new HunspellDictionary() { Culture = dicCulture, DictionaryPath = dictionaryPath, GrammarPath = grammarPath };
                 MainForm mainForm = this;
                 mainForm.mainSharedDictionaryStorage.Dictionaries.Add(spellCheckerHunspellDic);
                 SpellingHelper.availableDictionaries.Add(dicCulture.Name, spellCheckerHunspellDic);
@@ -551,22 +492,6 @@
             mainForm.mainSharedDictionaryStorage.Dictionaries.Add(customDictionary);
         }
 
-        private void MainRibbonControl_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            // ActiveMdiChild?.Close();
-        }
-
-        private void DevBarBtnItem_ItemDoubleClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
-        {
-            Debugging.IsDebugging = !Debugging.IsDebugging;
-            debugRibbonPage.Visible = Debugging.IsDebugging;
-        }
-
         private void LicenseButtonItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
             try
@@ -593,10 +518,10 @@
 
         private void LicenseTimer_Tick(object sender, EventArgs e)
         {
-            if (LicenseCheck.IsLicensed() != IsLicensed)
+            if (LicenseCheck.IsLicensed() != RizonesoftEx.IsLicensed)
             {
                 CheckLicense();
-                IsLicensed = LicenseCheck.IsLicensed();
+                RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
             }
 
             TimeStatusButton.Caption = DateTime.Now.ToString("HH:mm");
@@ -623,9 +548,49 @@
             }
         }
 
+        private void barOptionsItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+
+            try
+            {
+                if (optionsDlg != null)
+                {
+                    optionsDlg.BringToFront();
+                }
+                else
+                {
+                    optionsDlg = new OptionsForm();
+                    optionsDlg.Show(this);
+                }
+
+                if (optionsDlg.IsDisposed)
+                {
+                    optionsDlg = new OptionsForm();
+                    optionsDlg.Show(this);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void MainRibbonControl_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void DevBarBtnItem_ItemDoubleClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            Debugging.IsDebugging = !Debugging.IsDebugging;
+            debugRibbonPage.Visible = Debugging.IsDebugging;
+        }
+
         private void mainTabbedMdiManager_SelectedPageChanged(object sender, EventArgs e)
         {
 
         }
+
     }
 }
