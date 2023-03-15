@@ -55,7 +55,7 @@
             repositoryItemCalcEdit2 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
             repositoryItemCalcEdit3 = new DevExpress.XtraEditors.Repository.RepositoryItemCalcEdit();
             MainRibbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            MainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
+            mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
             topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
             ribbonSVGImageCollection = new DevExpress.Utils.SvgImageCollection(components);
             LicenseTimer = new System.Windows.Forms.Timer(components);
@@ -64,7 +64,7 @@
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit3).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)MainTabbedMdiManager).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).BeginInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).BeginInit();
             SuspendLayout();
@@ -255,26 +255,27 @@
             MainRibbonStatusBar.Size = new System.Drawing.Size(898, 37);
             MainRibbonStatusBar.Click += MainRibbonStatusBar_Click;
             // 
-            // MainTabbedMdiManager
+            // mainTabbedMdiManager
             // 
-            MainTabbedMdiManager.AllowDragDrop = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            MainTabbedMdiManager.Appearance.Options.UseFont = true;
-            MainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeader;
-            MainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
-            MainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.FullWindow;
-            MainTabbedMdiManager.HeaderButtons = DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next | DevExpress.XtraTab.TabButtons.Close | DevExpress.XtraTab.TabButtons.Default;
-            MainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
-            MainTabbedMdiManager.MdiParent = this;
-            MainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InAllTabPageHeaders;
-            MainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
-            MainTabbedMdiManager.PageAdded += MainTabbedMdiManager_PageAdded;
-            MainTabbedMdiManager.PageRemoved += MainTabbedMdiManager_PageRemoved;
+            mainTabbedMdiManager.AllowDragDrop = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.AllowGlyphSkinning = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            mainTabbedMdiManager.Appearance.Options.UseFont = true;
+            mainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeader;
+            mainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
+            mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.FullWindow;
+            mainTabbedMdiManager.HeaderButtons = DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next | DevExpress.XtraTab.TabButtons.Close | DevExpress.XtraTab.TabButtons.Default;
+            mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
+            mainTabbedMdiManager.MdiParent = this;
+            mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InAllTabPageHeaders;
+            mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.PageAdded += MainTabbedMdiManager_PageAdded;
+            mainTabbedMdiManager.PageRemoved += MainTabbedMdiManager_PageRemoved;
             // 
             // topSpacerPanel
             // 
@@ -305,7 +306,7 @@
             Controls.Add(topSpacerPanel);
             Controls.Add(MainRibbonStatusBar);
             Controls.Add(MainRibbonControl);
-            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            DoubleBuffered = false;
             IconOptions.ShowIcon = false;
             IsMdiContainer = true;
             Name = "MainForm";
@@ -319,7 +320,7 @@
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit1).EndInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit2).EndInit();
             ((System.ComponentModel.ISupportInitialize)repositoryItemCalcEdit3).EndInit();
-            ((System.ComponentModel.ISupportInitialize)MainTabbedMdiManager).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).EndInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).EndInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).EndInit();
             ResumeLayout(false);
@@ -331,7 +332,7 @@
         private DevExpress.XtraBars.Ribbon.RibbonControl MainRibbonControl;
         private DevExpress.XtraBars.Ribbon.RibbonPage fileRibbonPage;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup commonRibbonGroup;
-        private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager MainTabbedMdiManager;
+        private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar MainRibbonStatusBar;
         private DevExpress.XtraBars.PopupMenu mruPopupMenu;
         private DevExpress.XtraBars.BarButtonItem NewBarButtonItem;

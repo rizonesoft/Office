@@ -1,7 +1,7 @@
 ﻿namespace Rizonesoft.Office.Evaluate
 {
     using DevExpress.XtraSplashScreen;
-    using Rizonesoft.Office.Evaluate.Utilities;
+    using Utilities;
     using System;
 
     public partial class SplashScreenForm : SplashScreen

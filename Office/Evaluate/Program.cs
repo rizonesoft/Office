@@ -1,9 +1,9 @@
 ﻿namespace Rizonesoft.Office.Evaluate
 {
     using DevExpress.XtraEditors;
-    using Rizonesoft.Office.Evaluate.Utilities;
-    using Rizonesoft.Office.ExceptionHandlers;
-    using Rizonesoft.Office.Interprocess;
+    using Utilities;
+    using ExceptionHandlers;
+    using Interprocess;
     using Rizonesoft.Office.Utilities;
     using System;
     using System.Drawing;
@@ -17,11 +17,11 @@
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
 
-            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
-            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+            Application.ThreadException += Application_ThreadException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Logging.ConfigureLogging();
 
             try
@@ -38,7 +38,7 @@
                 }
 
                 // get first parameter as a file name
-                string fileName = string.Empty;
+                var fileName = string.Empty;
                 if (args.Length > 0)
                 {
                     fileName = args[0];
@@ -69,7 +69,7 @@
                 else
                 {
                     // Create a new instance of the class:
-                    CopyData copyData = new CopyData();
+                    var copyData = new CopyData();
                     // Create the named channels to send and receive on.
                     copyData.Channels.Add("WorkbookChannel");
                     copyData.Channels["WorkbookChannel"].Send(fileName);
@@ -80,12 +80,12 @@
             catch (Exception ex)
             {
                 ErrorMessageEx.Show("Woops!", $"{EvaluateEx.ProductName} was unable to start.");
-                Logging.logger.Fatal($"{EvaluateEx.ProductName} was unable to start.", ex);
+                Logging.logger.Fatal($"{EvaluateEx.ProductName} was unable to start.");
             }
 
         }
 
         private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e) => new ExceptionForm(e.Exception).ShowDialog();
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) => new ExceptionForm(e.ExceptionObject as Exception).ShowDialog();
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) => new ExceptionForm(e.ExceptionObject as Exception ?? throw new InvalidOperationException()).ShowDialog();
     }
 }

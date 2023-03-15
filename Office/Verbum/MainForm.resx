@@ -285,7 +285,7 @@
 </value>
   </data>
   <metadata name="officePopupMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>560, 20</value>
+    <value>784, 20</value>
   </metadata>
   <data name="barButtonItem2.ImageOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.2" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -369,7 +369,7 @@
         LDR6IiBjbGFzcz0iUmVkIiAvPg0KICA8L2c+DQo8L3N2Zz4L
 </value>
   </data>
-  <data name="DonateButton.ImageOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.2" mimetype="application/x-microsoft.net.object.bytearray.base64">
+  <data name="DonateButtonItem.ImageOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.2" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         AAEAAAD/////AQAAAAAAAAAMAgAAAFlEZXZFeHByZXNzLkRhdGEudjIyLjIsIFZlcnNpb249MjIuMi40
         LjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49Yjg4ZDE3NTRkNzAwZTQ5YQUBAAAAHURl
@@ -412,14 +412,8 @@
         Y2xhc3M9IkJsYWNrIiAvPg0KICA8L2c+DQo8L3N2Zz4L
 </value>
   </data>
-  <metadata name="mruPopupMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>15, 20</value>
-  </metadata>
-  <metadata name="officePopupMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>560, 20</value>
-  </metadata>
   <metadata name="mainTabbedMdiManager.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>156, 20</value>
+    <value>210, 20</value>
   </metadata>
   <data name="MainForm.IconOptions.SvgImage" type="DevExpress.Utils.Svg.SvgImage, DevExpress.Data.v22.2" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -451,10 +445,10 @@
 </value>
   </data>
   <metadata name="mainSharedDictionaryStorage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>346, 20</value>
+    <value>479, 20</value>
   </metadata>
   <metadata name="updateAlert.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>709, 20</value>
+    <value>992, 20</value>
   </metadata>
   <data name="updateAlert.HtmlTemplate.Styles" xml:space="preserve">
     <value>.container{
@@ -594,9 +588,9 @@
 &lt;/div&gt;</value>
   </data>
   <metadata name="ribbonSVGImageCollection.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>825, 20</value>
+    <value>1150, 20</value>
   </metadata>
   <metadata name="LicenseTimer.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>1024, 20</value>
+    <value>1432, 20</value>
   </metadata>
 </root>

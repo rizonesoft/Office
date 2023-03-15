@@ -1,40 +1,33 @@
-﻿using NLog;
-using Rizonesoft.Office.EnvironmentEx;
-using Rizonesoft.Office.ExceptionHandlers;
-using Rizonesoft.Office.Utilities;
+﻿namespace Rizonesoft.Office.ExceptionHandlers;
 
-namespace Rizonesoft.Office.ExceptionHandlers
+using Utilities;
+
+public sealed partial class ExceptionForm : DevExpress.XtraEditors.DirectXForm
 {
-    public partial class ExceptionForm : DevExpress.XtraEditors.DirectXForm
+    public ExceptionForm()
     {
+        InitializeComponent();
+        // ReSharper disable once LocalizableElement
+        bugMemoEdit.Text = $"{ExceptionHandler.EnvironmentToString()}\r\n\r\nException:";
+    }
 
-        public ExceptionForm()
-        {
-            InitializeComponent();
-            bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
-                ExceptionHandler.EnvironmentToString(),
-                "Exception:");
-        }
+    public ExceptionForm(Exception? ex)
+    {
+        InitializeComponent();
+        bugMemoEdit.Text =
+            // ReSharper disable once LocalizableElement
+            $"{ExceptionHandler.EnvironmentToString()}\r\n\r\n{ExceptionHandler.ExceptionToString(ex)}";
+        Logging.logger.Error(ex, "Whoops!");
+    }
 
-        public ExceptionForm(Exception ex)
-        {
+    private void cancelButton_Click(object sender, EventArgs e)
+    {
+        Close();
+    }
 
-            InitializeComponent();
-            bugMemoEdit.Text = String.Format("{0}\r\n\r\n{1}",
-                ExceptionHandler.EnvironmentToString(),
-                ExceptionHandler.ExceptionToString(ex));
-            Logging.logger.Error(ex, "Whoops!");
-        }
-
-        private void copyButton_Click(object sender, EventArgs e)
-        {
-            bugMemoEdit.Focus();
-            bugMemoEdit.Copy();
-        }
-
-        private void cancelButton_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
+    private void copyButton_Click(object sender, EventArgs e)
+    {
+        bugMemoEdit.Focus();
+        bugMemoEdit.Copy();
     }
 }

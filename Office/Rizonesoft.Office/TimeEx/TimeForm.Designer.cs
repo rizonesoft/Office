@@ -51,11 +51,12 @@
             tabPane1.Controls.Add(tabNavigationPage2);
             tabPane1.Dock = DockStyle.Top;
             tabPane1.Location = new Point(0, 0);
+            tabPane1.Margin = new Padding(4, 4, 4, 4);
             tabPane1.Name = "tabPane1";
             tabPane1.Pages.AddRange(new DevExpress.XtraBars.Navigation.NavigationPageBase[] { tabNavigationPage1, tabNavigationPage2 });
-            tabPane1.RegularSize = new Size(348, 170);
+            tabPane1.RegularSize = new Size(522, 248);
             tabPane1.SelectedPage = tabNavigationPage1;
-            tabPane1.Size = new Size(348, 170);
+            tabPane1.Size = new Size(522, 248);
             tabPane1.TabIndex = 0;
             tabPane1.Text = "tabPane1";
             // 
@@ -66,36 +67,41 @@
             tabNavigationPage1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("tabNavigationPage1.ImageOptions.SvgImage");
             tabNavigationPage1.ImageOptions.SvgImageSize = new Size(24, 24);
             tabNavigationPage1.ItemShowMode = DevExpress.XtraBars.Navigation.ItemShowMode.ImageAndText;
+            tabNavigationPage1.Margin = new Padding(4, 4, 4, 4);
             tabNavigationPage1.Name = "tabNavigationPage1";
             tabNavigationPage1.Properties.ShowMode = DevExpress.XtraBars.Navigation.ItemShowMode.ImageAndText;
-            tabNavigationPage1.Size = new Size(348, 135);
+            tabNavigationPage1.Size = new Size(522, 196);
             // 
             // gaugeControl1
             // 
             gaugeControl1.BackColor = SystemColors.ControlLight;
             gaugeControl1.Dock = DockStyle.Top;
             gaugeControl1.Gauges.AddRange(new DevExpress.XtraGauges.Base.IGauge[] { DigitalTime });
+            gaugeControl1.LayoutInterval = 9;
+            gaugeControl1.LayoutPadding = new DevExpress.XtraGauges.Core.Base.Thickness(9);
             gaugeControl1.Location = new Point(0, 0);
+            gaugeControl1.Margin = new Padding(4, 4, 4, 4);
             gaugeControl1.Name = "gaugeControl1";
-            gaugeControl1.Size = new Size(348, 129);
+            gaugeControl1.Size = new Size(522, 189);
             gaugeControl1.TabIndex = 0;
             // 
             // DigitalTime
             // 
-            DigitalTime.AppearanceOff.ContentBrush = new DevExpress.XtraGauges.Core.Drawing.SolidBrushObject("Color:#0A151A");
-            DigitalTime.AppearanceOn.ContentBrush = new DevExpress.XtraGauges.Core.Drawing.SolidBrushObject("Color:#289FB8");
+            DigitalTime.AppearanceOff.ContentBrush = new DevExpress.XtraGauges.Core.Drawing.SolidBrushObject("Color:#34000000");
+            DigitalTime.AppearanceOn.ContentBrush = new DevExpress.XtraGauges.Core.Drawing.SolidBrushObject("Color:Black");
             DigitalTime.BackgroundLayers.AddRange(new DevExpress.XtraGauges.Win.Gauges.Digital.DigitalBackgroundLayerComponent[] { digitalBackgroundLayerComponent1 });
-            DigitalTime.Bounds = new Rectangle(6, 6, 336, 117);
+            DigitalTime.Bounds = new Rectangle(9, 9, 504, 171);
             DigitalTime.DigitCount = 6;
+            DigitalTime.DisplayMode = DevExpress.XtraGauges.Core.Model.DigitalGaugeDisplayMode.SevenSegment;
             DigitalTime.Name = "DigitalTime";
             DigitalTime.Padding = new DevExpress.XtraGauges.Core.Base.TextSpacing(26, 20, 26, 20);
             DigitalTime.Text = "";
             // 
             // digitalBackgroundLayerComponent1
             // 
-            digitalBackgroundLayerComponent1.BottomRight = new DevExpress.XtraGauges.Core.Base.PointF2D(313.775F, 99.9625F);
+            digitalBackgroundLayerComponent1.BottomRight = new DevExpress.XtraGauges.Core.Base.PointF2D(303.65F, 106.075F);
             digitalBackgroundLayerComponent1.Name = "digitalBackgroundLayerComponent1";
-            digitalBackgroundLayerComponent1.ShapeType = DevExpress.XtraGauges.Core.Model.DigitalBackgroundShapeSetType.Style21;
+            digitalBackgroundLayerComponent1.ShapeType = DevExpress.XtraGauges.Core.Model.DigitalBackgroundShapeSetType.Style4;
             digitalBackgroundLayerComponent1.TopLeft = new DevExpress.XtraGauges.Core.Base.PointF2D(26F, 0F);
             digitalBackgroundLayerComponent1.ZOrder = 1000;
             // 
@@ -105,9 +111,10 @@
             tabNavigationPage2.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("tabNavigationPage2.ImageOptions.SvgImage");
             tabNavigationPage2.ImageOptions.SvgImageSize = new Size(24, 24);
             tabNavigationPage2.ItemShowMode = DevExpress.XtraBars.Navigation.ItemShowMode.ImageAndText;
+            tabNavigationPage2.Margin = new Padding(4, 4, 4, 4);
             tabNavigationPage2.Name = "tabNavigationPage2";
             tabNavigationPage2.Properties.ShowMode = DevExpress.XtraBars.Navigation.ItemShowMode.ImageAndText;
-            tabNavigationPage2.Size = new Size(348, 170);
+            tabNavigationPage2.Size = new Size(522, 248);
             // 
             // CoreTimer
             // 
@@ -117,27 +124,29 @@
             // 
             // DateLabel
             // 
-            DateLabel.Appearance.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            DateLabel.Appearance.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
             DateLabel.Appearance.Options.UseFont = true;
             DateLabel.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.Vertical;
             DateLabel.Dock = DockStyle.Left;
-            DateLabel.Location = new Point(0, 170);
+            DateLabel.Location = new Point(0, 248);
+            DateLabel.Margin = new Padding(4, 4, 4, 4);
             DateLabel.Name = "DateLabel";
-            DateLabel.Padding = new Padding(20, 0, 0, 0);
-            DateLabel.Size = new Size(214, 17);
+            DateLabel.Padding = new Padding(30, 0, 0, 0);
+            DateLabel.Size = new Size(321, 28);
             DateLabel.TabIndex = 1;
             DateLabel.Text = "Monday, 01 January 2000";
             // 
             // TimeForm
             // 
-            AutoScaleDimensions = new SizeF(6F, 13F);
+            AutoScaleDimensions = new SizeF(9F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(348, 198);
+            ClientSize = new Size(522, 289);
             Controls.Add(DateLabel);
             Controls.Add(tabPane1);
             DoubleBuffered = true;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("TimeForm.IconOptions.SvgImage");
+            Margin = new Padding(4, 4, 4, 4);
             Name = "TimeForm";
             Text = "Time";
             TopMost = true;

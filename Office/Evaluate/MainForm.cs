@@ -1,14 +1,13 @@
-﻿
-namespace Rizonesoft.Office.Evaluate
+﻿namespace Rizonesoft.Office.Evaluate
 {
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
     using DevExpress.XtraSplashScreen;
-    using Rizonesoft.Office.Evaluate.Utilities;
-    using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.LicensingEx;
-    using Rizonesoft.Office.MessagesEx;
-    using Rizonesoft.Office.TimeEx;
+    using Utilities;
+    using Interprocess;
+    using LicensingEx;
+    using MessagesEx;
+    using TimeEx;
     using Rizonesoft.Office.Utilities;
     using System;
     using System.Collections.Generic;
@@ -19,14 +18,14 @@ namespace Rizonesoft.Office.Evaluate
     public partial class MainForm : RibbonForm
     {
         private CopyData copyData;
-        MruList mruList;
-        internal int bookIndex;
-        internal bool IsFloating;
+        private MruList mruList;
+        internal int BookIndex;
+        // internal bool IsFloating;
         internal bool IsUpdateDismiss;
         internal BackgroundWorker UpdateWorker;
         // OptionsForm optionsDlg = null;
 
-        BookForm CurrentDocument
+        private BookForm CurrentDocument
         {
             get
             {
@@ -34,9 +33,9 @@ namespace Rizonesoft.Office.Evaluate
                 {
                     return null;
                 }
-                if (MainTabbedMdiManager.ActiveFloatForm != null)
+                if (mainTabbedMdiManager.ActiveFloatForm != null)
                 {
-                    return MainTabbedMdiManager.ActiveFloatForm as BookForm;
+                    return mainTabbedMdiManager.ActiveFloatForm as BookForm;
                 }
 
                 return ActiveMdiChild as BookForm;
@@ -46,7 +45,7 @@ namespace Rizonesoft.Office.Evaluate
         public MainForm(string fileName)
         {
             // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
-            string sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "False");
+            var sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "False");
             IsUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed);
 
             SetSkins();
@@ -57,7 +56,6 @@ namespace Rizonesoft.Office.Evaluate
             InitializeComponent();
             RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
             RizonesoftEx.IsBetaVersion = true;
-
 
             if (string.IsNullOrEmpty(fileName))
             {
@@ -89,7 +87,6 @@ namespace Rizonesoft.Office.Evaluate
             {
                 UpdateWorker.RunWorkerAsync();
             }
-
         }
 
         public static void SetSkins()
@@ -122,7 +119,7 @@ namespace Rizonesoft.Office.Evaluate
             {
                 string fileName = (string)e.Data;
                 CreateNewWorkbook(fileName);
-                AddFileToMRUList(fileName);
+                AddFileToMruList(fileName);
             }
         }
 
@@ -130,7 +127,7 @@ namespace Rizonesoft.Office.Evaluate
         {
             if (!string.IsNullOrEmpty(fileName))
             {
-                foreach (BookForm openForm in this.MdiChildren)
+                foreach (BookForm openForm in MdiChildren)
                 {
                     if (string.Compare(openForm.FileName, fileName, true) == 0)
                     {
@@ -141,11 +138,11 @@ namespace Rizonesoft.Office.Evaluate
             }
             else
             {
-                bookIndex++;
+                BookIndex++;
             }
 
             BookForm newBook = new BookForm();
-            newBook.OpenFile(fileName, bookIndex);
+            newBook.OpenFile(fileName, BookIndex);
             newBook.MdiParent = this;
             newBook.Show();
         }
@@ -179,7 +176,7 @@ namespace Rizonesoft.Office.Evaluate
             }
         }
 
-        static bool IsValidFileType(string fileName)
+        private static bool IsValidFileType(string fileName)
         {
             bool results = false;
             string fileExt = Path.GetExtension(fileName);
@@ -228,12 +225,11 @@ namespace Rizonesoft.Office.Evaluate
             {
                 string fileName = openFileDlg.FileName;
                 OpenFile(fileName);
-                AddFileToMRUList(fileName);
+                AddFileToMruList(fileName);
             }
-
         }
 
-        public void AddFileToMRUList(string fileName)
+        public void AddFileToMruList(string fileName)
         {
             if (!string.IsNullOrEmpty(fileName))
             {
@@ -268,7 +264,7 @@ namespace Rizonesoft.Office.Evaluate
         {
             LoadSettings();
 
-            this.MainRibbonControl.ForceInitialize();
+            MainRibbonControl.ForceInitialize();
             mruList = new MruList("MRU", mruPopupMenu, 10, EvaluateEx.CurrentRegMRUPath);
             mruList.FileSelected += MruList_FileSelected;
             CheckLicense();
@@ -276,32 +272,32 @@ namespace Rizonesoft.Office.Evaluate
 
         private void LoadSettings()
         {
-            RizonesoftEx.GeometryFromString(Office.Settings.Settings.GetSetting(EvaluateEx.CurrentRegGeneralPath, "Geometry", string.Empty), this);
+            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(EvaluateEx.CurrentRegGeneralPath, "Geometry", string.Empty), this);
         }
 
         private void CheckLicense()
         {
-            string FormCaptionBase;
+            string formCaptionBase;
             RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
 
             if (RizonesoftEx.IsBetaVersion)
             {
-                FormCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor} ({RizonesoftEx.BetaVersionString})";
+                formCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor} ({RizonesoftEx.BetaVersionString})";
             }
             else
             {
-                FormCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor}";
+                formCaptionBase = $"{EvaluateEx.ProductName} {RizonesoftEx.ProductVersionMajor}";
             }
 
             if (RizonesoftEx.IsLicensed)
             {
-                Text = $"{FormCaptionBase} - Business";
+                Text = $"{formCaptionBase} - Business";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[1];
             }
             else
             {
-                Text = $"{FormCaptionBase} - Home";
+                Text = $"{formCaptionBase} - Home";
                 GetLicenseButtonItem.Visibility = DevExpress.XtraBars.BarItemVisibility.Always;
                 LicenseButtonItem.ImageOptions.SvgImage = ribbonSVGImageCollection[0];
             }
@@ -320,7 +316,7 @@ namespace Rizonesoft.Office.Evaluate
             OfficeUpdate.CheckForUpdates();
         }
 
-        private void MainRibbonControl_Merge(object sender, DevExpress.XtraBars.Ribbon.RibbonMergeEventArgs e)
+        private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
@@ -346,11 +342,11 @@ namespace Rizonesoft.Office.Evaluate
             }
         }
 
-        private void ChangeMainFormState(bool State)
+        private void ChangeMainFormState(bool state)
         {
             MainForm mainForm = this;
-            mainForm.HomeRibbonPage.Visible = State;
-            mainForm.CloseBarButtonItem.Enabled = State;
+            mainForm.HomeRibbonPage.Visible = state;
+            mainForm.CloseBarButtonItem.Enabled = state;
         }
 
         protected override void OnClosed(EventArgs e)
@@ -364,13 +360,11 @@ namespace Rizonesoft.Office.Evaluate
         private void SaveRibbon()
         {
             MainRibbonControl?.Toolbar.SaveLayoutToRegistry(EvaluateEx.StaticRegInterfacePath);
-
         }
 
         private void SaveSettings()
         {
             Settings.Settings.SaveSetting(EvaluateEx.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
-
         }
 
         private static void SaveSkins()
@@ -437,7 +431,6 @@ namespace Rizonesoft.Office.Evaluate
 
         private void MainRibbonStatusBar_Click(object sender, EventArgs e)
         {
-
         }
 
         private void MainForm_DragDrop(object sender, DragEventArgs e)

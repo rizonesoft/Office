@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
-    partial class MainForm
+    sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -78,9 +78,6 @@
             mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
             mainSharedDictionaryStorage = new DevExpress.XtraSpellChecker.SharedDictionaryStorage(components);
             topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
             updateAlert = new DevExpress.XtraBars.Alerter.AlertControl(components);
             ribbonSVGImageCollection = new DevExpress.Utils.SvgImageCollection(components);
             LicenseTimer = new System.Windows.Forms.Timer(components);
@@ -91,9 +88,6 @@
             ((System.ComponentModel.ISupportInitialize)repositoryItemMarqueeProgressBar1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).BeginInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)leftSpacerPanel).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)rightSpacerPanel).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)bottomSpacerPannel).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).BeginInit();
             SuspendLayout();
             // 
@@ -102,13 +96,15 @@
             mainRibbonControl.AllowCustomization = true;
             mainRibbonControl.AutoSaveLayoutToXmlPath = "";
             mainRibbonControl.CaptionBarItemLinks.Add(darkModeButton);
+            mainRibbonControl.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(27, 30, 27, 30);
             mainRibbonControl.ExpandCollapseItem.Id = 0;
             mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { darkModeButton, mainRibbonControl.ExpandCollapseItem, mainRibbonControl.SearchEditItem, mainBarMdiChildrenListItem, barNewItem, barOpenItem, barCloseItem, skinDropDownItem, skinPaletteDropDownItem, barOptionsItem, exceptionButtonItem, evaluatePopupMenuItem, barButtonItem2, devBarBtnItem, LicenseButtonItem, GetLicenseButtonItem, DonateButtonItem, TimeStatusButton, barToggleSwitchItem3 });
             mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            mainRibbonControl.Margin = new System.Windows.Forms.Padding(10);
+            mainRibbonControl.Margin = new System.Windows.Forms.Padding(0);
             mainRibbonControl.MaxItemId = 39;
             mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             mainRibbonControl.Name = "mainRibbonControl";
+            mainRibbonControl.OptionsMenuMinWidth = 297;
             mainRibbonControl.OptionsTouch.ShowTouchUISelectorInQAT = true;
             mainRibbonControl.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
             mainRibbonControl.OptionsTouch.TouchMouseModeSelectorImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("mainRibbonControl.OptionsTouch.TouchMouseModeSelectorImageOptions.SvgImage");
@@ -125,7 +121,7 @@
             mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
             mainRibbonControl.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
             mainRibbonControl.ShowSearchItem = true;
-            mainRibbonControl.Size = new System.Drawing.Size(998, 201);
+            mainRibbonControl.Size = new System.Drawing.Size(1498, 293);
             mainRibbonControl.StatusBar = mainRibbonStatusBar;
             mainRibbonControl.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             mainRibbonControl.Merge += MainRibbonControl_Merge;
@@ -268,7 +264,7 @@
             // 
             DonateButtonItem.Caption = "Donate";
             DonateButtonItem.Id = 30;
-            DonateButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DonateButton.ImageOptions.SvgImage");
+            DonateButtonItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DonateButtonItem.ImageOptions.SvgImage");
             DonateButtonItem.Name = "DonateButtonItem";
             // 
             // TimeStatusButton
@@ -428,15 +424,17 @@
             mainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             mainRibbonStatusBar.ItemLinks.Add(devBarBtnItem);
             mainRibbonStatusBar.ItemLinks.Add(TimeStatusButton, true);
-            mainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
+            mainRibbonStatusBar.Location = new System.Drawing.Point(0, 846);
             mainRibbonStatusBar.Name = "mainRibbonStatusBar";
             mainRibbonStatusBar.Ribbon = mainRibbonControl;
-            mainRibbonStatusBar.Size = new System.Drawing.Size(998, 37);
+            mainRibbonStatusBar.Size = new System.Drawing.Size(1498, 53);
             // 
             // mainTabbedMdiManager
             // 
-            mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             mainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
+            mainTabbedMdiManager.AppearancePage.Header.Options.UseTextOptions = true;
+            mainTabbedMdiManager.AppearancePage.Header.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             mainTabbedMdiManager.ClosePageButtonShowMode = DevExpress.XtraTab.ClosePageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
             mainTabbedMdiManager.CloseTabOnMiddleClick = DevExpress.XtraTabbedMdi.CloseTabOnMiddleClick.Never;
             mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
@@ -459,37 +457,10 @@
             // 
             topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            topSpacerPanel.Location = new System.Drawing.Point(0, 201);
+            topSpacerPanel.Location = new System.Drawing.Point(0, 293);
             topSpacerPanel.Name = "topSpacerPanel";
-            topSpacerPanel.Size = new System.Drawing.Size(998, 5);
+            topSpacerPanel.Size = new System.Drawing.Size(1498, 10);
             topSpacerPanel.TabIndex = 3;
-            // 
-            // leftSpacerPanel
-            // 
-            leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            leftSpacerPanel.Location = new System.Drawing.Point(0, 206);
-            leftSpacerPanel.Name = "leftSpacerPanel";
-            leftSpacerPanel.Size = new System.Drawing.Size(5, 406);
-            leftSpacerPanel.TabIndex = 6;
-            // 
-            // rightSpacerPanel
-            // 
-            rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            rightSpacerPanel.Location = new System.Drawing.Point(993, 206);
-            rightSpacerPanel.Name = "rightSpacerPanel";
-            rightSpacerPanel.Size = new System.Drawing.Size(5, 406);
-            rightSpacerPanel.TabIndex = 9;
-            // 
-            // bottomSpacerPannel
-            // 
-            bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            bottomSpacerPannel.Location = new System.Drawing.Point(5, 607);
-            bottomSpacerPannel.Name = "bottomSpacerPannel";
-            bottomSpacerPannel.Size = new System.Drawing.Size(988, 5);
-            bottomSpacerPannel.TabIndex = 10;
             // 
             // updateAlert
             // 
@@ -512,16 +483,14 @@
             // 
             AllowMdiBar = true;
             Appearance.Options.UseFont = true;
-            AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(998, 649);
-            Controls.Add(bottomSpacerPannel);
-            Controls.Add(rightSpacerPanel);
-            Controls.Add(leftSpacerPanel);
+            AutoScaleDimensions = new System.Drawing.SizeF(144F, 144F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            ClientSize = new System.Drawing.Size(1498, 899);
             Controls.Add(topSpacerPanel);
             Controls.Add(mainRibbonStatusBar);
             Controls.Add(mainRibbonControl);
-            Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            DoubleBuffered = false;
+            Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("MainForm.IconOptions.SvgImage");
             IsMdiContainer = true;
@@ -529,7 +498,6 @@
             Ribbon = mainRibbonControl;
             StatusBar = mainRibbonStatusBar;
             Text = "Verbum";
-            FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
             ((System.ComponentModel.ISupportInitialize)mainRibbonControl).EndInit();
             ((System.ComponentModel.ISupportInitialize)mruPopupMenu).EndInit();
@@ -538,9 +506,6 @@
             ((System.ComponentModel.ISupportInitialize)repositoryItemMarqueeProgressBar1).EndInit();
             ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).EndInit();
             ((System.ComponentModel.ISupportInitialize)topSpacerPanel).EndInit();
-            ((System.ComponentModel.ISupportInitialize)leftSpacerPanel).EndInit();
-            ((System.ComponentModel.ISupportInitialize)rightSpacerPanel).EndInit();
-            ((System.ComponentModel.ISupportInitialize)bottomSpacerPannel).EndInit();
             ((System.ComponentModel.ISupportInitialize)ribbonSVGImageCollection).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -582,9 +547,6 @@
         private DevExpress.XtraEditors.Repository.RepositoryItemProgressBar workProgressBar;
         private DevExpress.XtraEditors.Repository.RepositoryItemMarqueeProgressBar repositoryItemMarqueeProgressBar1;
         private DevExpress.XtraEditors.PanelControl topSpacerPanel;
-        private DevExpress.XtraEditors.PanelControl leftSpacerPanel;
-        private DevExpress.XtraEditors.PanelControl bottomSpacerPannel;
-        private DevExpress.XtraEditors.PanelControl rightSpacerPanel;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup themeRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup zoomRibbonGroup;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup showRibbonGroup;

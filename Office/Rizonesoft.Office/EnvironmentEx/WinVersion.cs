@@ -2,14 +2,14 @@
 {
     using System;
 
-    public struct VersionInfo
+    internal struct VersionInfo
     {
         public int Major;
         public int Minor;
         public int BuildNum;
     }
 
-    internal class WinVersion
+    internal abstract class WinVersion
     {
         public static void GetVersion(out VersionInfo info)
         {

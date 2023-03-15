@@ -1,29 +1,16 @@
 ﻿namespace Rizonesoft.Office.Evaluate
 {
-    using DevExpress.LookAndFeel;
+    using DevExpress.Spreadsheet;
     using DevExpress.XtraBars;
     using DevExpress.XtraEditors;
-    using Rizonesoft.Office.Evaluate.Utilities;
-    using Rizonesoft.Office.LicensingEx;
+    using DevExpress.XtraSpreadsheet;
     using Rizonesoft.Office.Utilities;
     using System;
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.Data;
-    using System.Drawing;
     using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using System.Windows.Forms;
-    using System.Globalization;
-    using DevExpress.XtraSpreadsheet;
-    using WinRT;
-    using DevExpress.Spreadsheet;
 
     public partial class BookForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
-
         public string FileName { get; internal set; }
 
         public BookForm()
@@ -41,7 +28,6 @@
             ChildSpreadsheetControl.LoadDocument(fileName);
             ChildSpreadsheetControl.Modified = false;
             ChildSpreadsheetControl.Focus();
-
         }
 
         private void BookForm_Load(object sender, EventArgs e)
@@ -90,7 +76,6 @@
 
         private void CheckLicense()
         {
-
             if (RizonesoftEx.IsLicensed)
             {
                 CalcEditStatusItem.Visibility = BarItemVisibility.Always;
@@ -101,7 +86,6 @@
                 CalcEditStatusItem.Visibility = BarItemVisibility.Never;
                 InsertNumStatusButton.Visibility = BarItemVisibility.Never;
             }
-
         }
 
         private void BookForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -109,7 +93,7 @@
             e.Cancel = !SaveQuestion();
         }
 
-        bool SaveQuestion()
+        private bool SaveQuestion()
         {
             string tempName = FileName;
             if (string.IsNullOrEmpty(tempName))
@@ -126,6 +110,7 @@
                 {
                     case DialogResult.Cancel:
                         return false;
+
                     case DialogResult.Yes:
                         ChildSpreadsheetControl.SaveDocument();
                         break;
@@ -155,8 +140,6 @@
 
         private void ChildSpreadsheetControl_TextChanged(object sender, EventArgs e)
         {
-
         }
     }
-
 }

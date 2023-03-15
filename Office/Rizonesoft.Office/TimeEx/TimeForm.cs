@@ -1,47 +1,39 @@
 ﻿using DevExpress.XtraEditors;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Rizonesoft.Office.TimeEx
 {
-    public partial class TimeForm : DevExpress.XtraEditors.XtraForm
+    public partial class TimeForm : XtraForm
     {
         public TimeForm()
         {
+            if (!SystemInformation.TerminalServerSession && Screen.AllScreens.Length > 1)
+            {
+                WindowsFormsSettings.SetPerMonitorDpiAware();
+            }
+            else
+            {
+                WindowsFormsSettings.SetDPIAware();
+            }
+
             InitializeComponent();
             SetTimeDate();
         }
 
-
-        private static TimeForm? formInstance;
 
         private void CoreTimer_Tick(object sender, EventArgs e)
         {
             SetTimeDate();
         }
 
-        public static TimeForm? CheckInstance
-        {
-            get
-            {
-                return formInstance;
-            }
-        }
+        public static TimeForm? CheckInstance { get; private set; }
 
         // Create a public static property that will create an instance of the form and return it
         public static TimeForm CreateInstance
         {
             get
             {
-                formInstance ??= new TimeForm();
-                return formInstance;
+                CheckInstance ??= new TimeForm();
+                return CheckInstance;
             }
         }
 
@@ -53,7 +45,7 @@ namespace Rizonesoft.Office.TimeEx
 
         private void TimeForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            formInstance = null;
+            CheckInstance = null;
         }
     }
 }

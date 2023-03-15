@@ -3,11 +3,6 @@
     using DevExpress.XtraRichEdit.Commands;
     using DevExpress.XtraRichEdit;
     using DevExpress.XtraRichEdit.Services;
-    using System.IO;
-    using System;
-    using DevExpress.XtraBars;
-    using DevExpress.XtraEditors;
-    using System.Windows.Forms;
 
     public class CustomCommandFactoryService : IRichEditCommandFactoryService
     {
@@ -65,7 +60,7 @@
             {
 
                 // MessageBox.Show("Document is saved successfully");
-                MainForm.AddFileToMRUList(Options.DocumentSaveOptions.CurrentFileName);
+                MainForm.AddFileToMruList(Options.DocumentSaveOptions.CurrentFileName);
             }
 
         }

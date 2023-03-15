@@ -1,37 +1,34 @@
 ﻿namespace Rizonesoft.Office.Verbum
 {
     using DevExpress.XtraSplashScreen;
-    using Rizonesoft.Office.Utilities;
-    using Rizonesoft.Office.Verbum.Utilities;
     using System;
+    using Utilities;
 
-    public partial class SplashScreenForm : SplashScreen
+    internal sealed partial class SplashScreenForm : SplashScreen
     {
         public SplashScreenForm()
         {
             InitializeComponent();
-            labelNameVersion.Text = $"{StcVerbum.ProductName} {Office.Utilities.RizonesoftEx.ProductVersionMajor}";
-            labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
+            labelNameVersion.Text = $@"{StcVerbum.ProductName} {Office.Utilities.RizonesoftEx.ProductVersionMajor}";
+            labelCopyright.Text = $@"Copyright © 1998-{DateTime.Now.Year}";
         }
 
-        #region Overrides
         public override void ProcessCommand(Enum cmd, object arg)
         {
             base.ProcessCommand(cmd, arg);
-            SplashScreenCommand command = (SplashScreenCommand)cmd;
-            if (command != SplashScreenCommand.SetStatusLabel)
+            var command = (SplashScreenCommand)cmd;
+            if (command != SplashScreenCommand.WS_SET_STATUS_LABEL)
             {
                 return;
             }
 
-            string labelText = (string)arg;
+            var labelText = (string)arg;
             StatusLabel.Text = labelText;
         }
-        #endregion
 
         public enum SplashScreenCommand
         {
-            SetStatusLabel
+            WS_SET_STATUS_LABEL
         }
     }
 }

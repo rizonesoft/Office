@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.ExceptionHandlers
 {
-    partial class ExceptionForm
+    sealed partial class ExceptionForm
     {
         /// <summary>
         /// Required designer variable.
