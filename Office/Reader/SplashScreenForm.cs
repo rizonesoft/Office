@@ -5,13 +5,13 @@
     using Rizonesoft.Office.Utilities;
     using System;
 
-    public partial class SplashScreenForm : SplashScreen
+    internal sealed partial class SplashScreenForm : SplashScreen
     {
         public SplashScreenForm()
         {
             InitializeComponent();
-            labelNameVersion.Text = $"{StcReader.ProductName} {Office.Utilities.RizonesoftEx.ProductVersionMajor}";
-            labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
+            labelNameVersion.Text = $@"{StcReader.ProductName} {Office.Utilities.RizonesoftEx.ProductVersionMajor}";
+            labelCopyright.Text = $@"Copyright © 1998-{DateTime.Now.Year}";
         }
 
         #region Overrides
@@ -19,7 +19,7 @@
         {
             base.ProcessCommand(cmd, arg);
             SplashScreenCommand command = (SplashScreenCommand)cmd;
-            if (command != SplashScreenCommand.SetStatusLabel)
+            if (command != SplashScreenCommand.WS_SET_STATUS_LABEL)
             {
                 return;
             }
@@ -31,7 +31,7 @@
 
         public enum SplashScreenCommand
         {
-            SetStatusLabel
+            WS_SET_STATUS_LABEL
         }
     }
 }

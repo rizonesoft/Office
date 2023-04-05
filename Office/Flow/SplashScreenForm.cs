@@ -14,7 +14,6 @@
             labelCopyright.Text = $"Copyright © 1998-{DateTime.Now.Year}";
         }
 
-        #region Overrides
         public override void ProcessCommand(Enum cmd, object arg)
         {
             base.ProcessCommand(cmd, arg);
@@ -27,7 +26,6 @@
             string labelText = (string)arg;
             StatusLabel.Text = labelText;
         }
-        #endregion
 
         public enum SplashScreenCommand
         {

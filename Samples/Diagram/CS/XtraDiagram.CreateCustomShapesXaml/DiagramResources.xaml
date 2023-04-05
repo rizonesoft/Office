@@ -1,0 +1,82 @@
+<p:ResourceDictionary xmlns:p="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns="http://schemas.devexpress.com/winfx/2008/xaml/diagram"
+                    xmlns:local="clr-namespace:XtraDiagram.CreateCustomShapes">
+
+    <ShapeTemplate x:Key="{local:ShapeKey Shape1}" DefaultSize="50, 100" >
+        <Start X="0" Y="0"/>
+        <Line X="1" Y="0" />
+        <Line X="0.8" Y="0.8" />
+        <Line X="0" Y="1" />
+        <ShapeTemplate.ConnectionPoints>
+            <ShapePoint X="0" Y="0" />
+            <ShapePoint X="0.5" Y="0" />
+            <ShapePoint X="1" Y="0" />
+            <ShapePoint X="0.8" Y="0.8" />
+            <ShapePoint X="0" Y="1" />
+            <ShapePoint X="0" Y="0.5" />
+        </ShapeTemplate.ConnectionPoints>
+    </ShapeTemplate>
+
+    <!--W - shape width-->
+    <!--H - shape height-->
+    <ShapeTemplate x:Key="{local:ShapeKey Shape2}" DefaultSize="60, 120">
+        <Start X="0" Y="0" FillColor="Brown"/>
+        <Arc X="1" Y="0" Size="CreateSize(W/2, H/10)" Direction="Counterclockwise" />
+        <Arc X="1" Y="1" Size="CreateSize(W/10, H/2)" Direction="Counterclockwise" />
+        <Arc X="0" Y="1" Size="CreateSize(W/2, H/10)" Direction="Counterclockwise" />
+        <Arc X="0" Y="0" Size="CreateSize(W/10, H/2)" Direction="Counterclockwise" />
+        <ShapeTemplate.ConnectionPoints>
+            <ShapePoint X="0" Y="0" />
+            <ShapePoint X="1" Y="0" />
+            <ShapePoint X="0" Y="1" />
+        </ShapeTemplate.ConnectionPoints>
+    </ShapeTemplate>
+
+    <!--P0 - parameter 0-->
+    <!--P in Point definition - parameter value -->
+    <!--P in Value definition - parameter point-->
+    <ShapeTemplate x:Key="{local:ShapeKey Shape3}" DefaultSize="60, 120">
+        <Start X="0" Y="0" FillColor="Brown"/>
+        <Arc X="1" Y="0" Size="CreateSize(W/2, P0 * H)" Direction="Counterclockwise" />
+        <Line X="1" Y="1"/>
+        <Line X="0" Y="1"/>
+        <Line X="0" Y="0"/>
+        <ShapeTemplate.ConnectionPoints>
+            <ShapePoint X="0" Y="0" />
+            <ShapePoint X="1" Y="0" />
+            <ShapePoint X="0" Y="1" />
+        </ShapeTemplate.ConnectionPoints>
+        <ShapeTemplate.Parameters>
+            <Parameter DefaultValue="0.1" 
+                       Point="CreatePoint(W / 2, P * H)" 
+                       Value="P.Y / H" 
+                       Min="0" Max="1" />
+        </ShapeTemplate.Parameters>
+    </ShapeTemplate>
+
+    <!--this shape contains two rows-->
+    <ShapeTemplate x:Key="{local:ShapeKey Shape4}" DefaultSize="60, 120" Rows="H*P0;H*(1-P0)" IsQuick="True">
+        <Start X="0" Y="0" FillColor="Green"/>
+        <Line X="1" Y="0"/>
+        <Line X="1" Y="1"/>
+        <Line X="0" Y="1"/>
+        <Start X="0" Y="1" FillColor="Red"/>
+        <Line X="1" Y="1"/>
+        <Line X="1" Y="2"/>
+        <Line X="0" Y="2"/>
+        <ShapeTemplate.ConnectionPoints>
+            <ShapePoint X="0.5" Y="0" />
+            <ShapePoint X="1" Y="1" />
+            <ShapePoint X="0.5" Y="2" />
+            <ShapePoint X="0" Y="1" />
+        </ShapeTemplate.ConnectionPoints>
+        <ShapeTemplate.Parameters>
+            <Parameter DefaultValue="0.5" 
+                       Point="CreatePoint(W, P * H)" 
+                       Value="P.Y / H" 
+                       Min="0" Max="1" />
+        </ShapeTemplate.Parameters>
+    </ShapeTemplate>
+
+</p:ResourceDictionary>

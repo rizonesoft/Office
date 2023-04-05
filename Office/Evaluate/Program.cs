@@ -62,6 +62,7 @@
 
                     DevExpress.Utils.AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
                     DevExpress.Skins.SkinManager.EnableFormSkins();
+                    DevExpress.UserSkins.BonusSkins.Register();
 
                     XtraForm mainForm = new MainForm(fileName);
                     Application.Run(mainForm);
@@ -80,7 +81,7 @@
             catch (Exception ex)
             {
                 ErrorMessageEx.Show("Woops!", $"{EvaluateEx.ProductName} was unable to start.");
-                Logging.logger.Fatal($"{EvaluateEx.ProductName} was unable to start.");
+                Logging.Logger.Fatal($"{EvaluateEx.ProductName} was unable to start.");
             }
 
         }

@@ -7,27 +7,21 @@
 
     public static class RizonesoftEx
     {
-        public const int CurrentBetaVersion = 1;
+        private const int CURRENT_BETA_VERSION = 1;
         public const string CurrentUserReg = "HKEY_CURRENT_USER\\Software";
         public const string ProductName = "Office";
-        public static readonly string LicenseRegPath = $"{CurrentUserReg}\\Rizonesoft\\{ProductName}\\General";
+        internal const string LicenseRegPath = $"{CurrentUserReg}\\Rizonesoft\\{ProductName}\\General";
         public static readonly Version ProductVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!;
         public static readonly string ProductVersionMajor = ProductVersion.Major.ToString();
-        public static readonly string UserAppDirectory = Path.Combine(GetUserAppDataPath(), "Rizonesoft\\" + ProductName + "\\");
+        internal static readonly string UserAppDirectory = Path.Combine(GetUserAppDataPath(), $"Rizonesoft\\{ProductName}");
         public static Regex UrlRegex = new(@"((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|
                                 www\d{0,3}[.]|ftp[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()
                                 <>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+
                                 |(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'"".,<>?«»“”‘’]))", RegexOptions.IgnoreCase);
 
         public static bool AutoSpellCheck { get; set; }
-        public static string BetaVersionString
-        {
-            get => IsBetaVersion ? $"Beta {CurrentBetaVersion}" : string.Empty;
-            set => throw new NotImplementedException();
-        }
-
+        public static string BetaVersionString => IsBetaVersion ? $"Beta {CURRENT_BETA_VERSION}" : string.Empty;
         public static bool IsBetaVersion { get; set; }
-
         public static bool IsLicensed { get; set; }
 
         // public static bool ReviewPanelVisible { get; set; }
@@ -87,7 +81,7 @@
 
         public static string GetRelativePath(string name)
         {
-            name = "Data\\" + name;
+            name = $"Data\\{name}";
             var path = Application.StartupPath;
             var s = "\\";
             for (var i = 0; i <= 10; i++)

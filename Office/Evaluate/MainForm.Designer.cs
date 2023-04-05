@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Evaluate
 {
-    partial class MainForm
+    internal sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -71,17 +71,22 @@
             // 
             // MainRibbonControl
             // 
+            MainRibbonControl.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(45, 49, 45, 49);
             MainRibbonControl.ExpandCollapseItem.Id = 0;
             MainRibbonControl.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             MainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { MainRibbonControl.ExpandCollapseItem, MainRibbonControl.SearchEditItem, NewBarButtonItem, OpenBarButtonItem, CloseBarButtonItem, SkinDropDownButtonItem, PaletteDropDownButtonItem, LicenseButtonItem, GetLicenseButtonItem, DonateButtonItem, OptionsBarButtonItem, TimeStatusButton });
             MainRibbonControl.Location = new System.Drawing.Point(0, 0);
+            MainRibbonControl.Margin = new System.Windows.Forms.Padding(4);
             MainRibbonControl.MaxItemId = 16;
             MainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             MainRibbonControl.Name = "MainRibbonControl";
+            MainRibbonControl.OptionsMenuMinWidth = 495;
             MainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage, HomeRibbonPage, ViewRibbonPage });
+            MainRibbonControl.QuickToolbarItemLinks.Add(NewBarButtonItem);
+            MainRibbonControl.QuickToolbarItemLinks.Add(OpenBarButtonItem);
             MainRibbonControl.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemCalcEdit1, repositoryItemCalcEdit2, repositoryItemCalcEdit3 });
             MainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            MainRibbonControl.Size = new System.Drawing.Size(898, 203);
+            MainRibbonControl.Size = new System.Drawing.Size(1347, 296);
             MainRibbonControl.StatusBar = MainRibbonStatusBar;
             MainRibbonControl.Merge += MainRibbonControl_Merge;
             // 
@@ -249,10 +254,11 @@
             // 
             MainRibbonStatusBar.AutoUpdateMergedBars = DevExpress.Utils.DefaultBoolean.True;
             MainRibbonStatusBar.ItemLinks.Add(TimeStatusButton, true);
-            MainRibbonStatusBar.Location = new System.Drawing.Point(0, 612);
+            MainRibbonStatusBar.Location = new System.Drawing.Point(0, 994);
+            MainRibbonStatusBar.Margin = new System.Windows.Forms.Padding(4);
             MainRibbonStatusBar.Name = "MainRibbonStatusBar";
             MainRibbonStatusBar.Ribbon = MainRibbonControl;
-            MainRibbonStatusBar.Size = new System.Drawing.Size(898, 37);
+            MainRibbonStatusBar.Size = new System.Drawing.Size(1347, 55);
             MainRibbonStatusBar.Click += MainRibbonStatusBar_Click;
             // 
             // mainTabbedMdiManager
@@ -281,9 +287,10 @@
             // 
             topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            topSpacerPanel.Location = new System.Drawing.Point(0, 203);
+            topSpacerPanel.Location = new System.Drawing.Point(0, 296);
+            topSpacerPanel.Margin = new System.Windows.Forms.Padding(4);
             topSpacerPanel.Name = "topSpacerPanel";
-            topSpacerPanel.Size = new System.Drawing.Size(898, 5);
+            topSpacerPanel.Size = new System.Drawing.Size(1347, 8);
             topSpacerPanel.TabIndex = 11;
             // 
             // ribbonSVGImageCollection
@@ -300,15 +307,15 @@
             // MainForm
             // 
             Appearance.Options.UseFont = true;
-            AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(898, 649);
+            ClientSize = new System.Drawing.Size(1347, 1049);
             Controls.Add(topSpacerPanel);
             Controls.Add(MainRibbonStatusBar);
             Controls.Add(MainRibbonControl);
             DoubleBuffered = false;
-            IconOptions.ShowIcon = false;
             IsMdiContainer = true;
+            Margin = new System.Windows.Forms.Padding(4);
             Name = "MainForm";
             Ribbon = MainRibbonControl;
             StatusBar = MainRibbonStatusBar;

@@ -9,7 +9,7 @@
     <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
-    <Version>2023.3.578</Version>
+    <Version>2023.3.652</Version>
     <PackageIcon>Verbum-128.png</PackageIcon>
     <UseWPF>False</UseWPF>
     <ApplicationIcon>Verbum.ico</ApplicationIcon>
@@ -20,8 +20,8 @@
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	<PlatformTarget>x64</PlatformTarget>
-	<AssemblyVersion>2023.3.15.588</AssemblyVersion>
-	<FileVersion>2023.3.15.588</FileVersion>
+	<AssemblyVersion>2023.3.29.662</AssemblyVersion>
+	<FileVersion>2023.3.29.662</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -66,7 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="22.2.4" />
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,6 +83,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="DocForm.af-za.resx">
+      <DependentUpon>DocForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Forms\DocumentStatisticsForm.af-za.resx">
+      <DependentUpon>DocumentStatisticsForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Forms\OptionsForm.af-za.resx">
+      <DependentUpon>OptionsForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.af-za.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.af-za.resx">
+      <DependentUpon>Resources.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Verbum.af-za.resx">
+      <DependentUpon>Verbum.resx</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\Verbum.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Verbum.Designer.cs</LastGenOutput>
@@ -90,6 +108,9 @@
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="SplashScreenForm.af-za.resx">
+      <DependentUpon>SplashScreenForm.resx</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
 

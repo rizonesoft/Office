@@ -36,7 +36,7 @@ namespace Rizonesoft.Office.Reader
             if (!string.IsNullOrEmpty(pdfName))
             {
                 FileName = pdfName;
-                mainPDFViewer.LoadDocument(pdfName);
+                ChildPDFViewer.LoadDocument(pdfName);
                 SetDocumentCaption(pdfName);
                 return;
             }
@@ -45,7 +45,7 @@ namespace Rizonesoft.Office.Reader
                 Text = FileName = $@"Document {docIndex}";
             }
 
-            
+
         }
 
         private void SetDocumentCaption(string fileName)

@@ -23,22 +23,23 @@ namespace Rizonesoft.Office.Verbum
     using System.Linq;
     using System.Windows.Forms;
 
-    public sealed partial class MainForm : RibbonForm
+    internal sealed partial class MainForm : RibbonForm
     {
-        internal int DocumentIndex;
-        internal bool IsFloating;
-        internal bool IsUpdateDismiss;
-        internal BackgroundWorker UpdateWorker;
+        private int documentIndex;
+        private bool isFloating;
         private static MruList _mruList;
         private CopyData copyData;
         private OptionsForm optionsDlg;
 
+        public string FileName { get; set; }
+
         public MainForm(string fileName)
         {
+
             // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
             var sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General",
                 "UpdateMessage", "True");
-            IsUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed ?? "False");
+            var isUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed ?? "False");
 
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
@@ -67,13 +68,11 @@ namespace Rizonesoft.Office.Verbum
             RestoreRibbon();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.WS_SET_STATUS_LABEL, $"Completed - Loading {StcVerbum.ProductName}");
 
-            UpdateWorker = new BackgroundWorker();
-            UpdateWorker.DoWork += UpdateWorker_DoWork;
-
-            if (IsUpdateDismiss)
-            {
-                UpdateWorker.RunWorkerAsync();
-            }
+            //if (isUpdateDismiss)
+            //{
+                //updateWorker.RunWorkerAsync();
+                OfficeUpdate.CheckForUpdates();
+            //}
         }
 
         private DocForm CurrentDocument
@@ -94,21 +93,19 @@ namespace Rizonesoft.Office.Verbum
         }
         public static void AddFileToMruList(string fileName)
         {
-            if (!string.IsNullOrEmpty(fileName))
+            if (string.IsNullOrEmpty(fileName)) return;
+            try
             {
-                try
-                {
-                    _mruList.AddFile(fileName);
-                }
-                catch (IOException ioEx)
-                {
-                    _mruList.RemoveFile(fileName);
-                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
-                }
+                _mruList.AddFile(fileName);
+            }
+            catch (IOException ioEx)
+            {
+                _mruList.RemoveFile(fileName);
+                Logging.Logger.Error(ioEx, "Unable to add filename to MRU list.");
             }
         }
 
-        public static void SetSkins()
+        private static void SetSkins()
         {
             var sSkin = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Skin", "WXI");
             var sPalette = Settings.Settings.GetSetting(StcVerbum.CurrentRegInterfacePath, "Palette", "Clearness");
@@ -116,9 +113,8 @@ namespace Rizonesoft.Office.Verbum
             WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
         }
 
-        public void CreateNewDocument(string fileName)
+        private void CreateNewDocument(string fileName)
         {
-
 
             if (!string.IsNullOrEmpty(fileName))
             {
@@ -131,16 +127,16 @@ namespace Rizonesoft.Office.Verbum
             }
             else
             {
-                DocumentIndex++;
+                documentIndex++;
             }
 
             var newDoc = new DocForm();
-            newDoc.OpenFile(fileName, DocumentIndex);
+            newDoc.OpenFile(fileName, documentIndex);
             newDoc.MdiParent = this;
             newDoc.Show();
         }
 
-        public void OpenFile(string fileName)
+        private void OpenFile(string fileName)
         {
             if (IsValidFileType(fileName))
             {
@@ -148,20 +144,15 @@ namespace Rizonesoft.Office.Verbum
             }
             else
             {
-                string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
-                Logging.logger.Error(Logging.CleanMessageForLogging(sMessage));
+                var sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
+                Logging.Logger.Error(Logging.CleanMessageForLogging(sMessage));
                 XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        internal void OpenFile()
+        private void OpenFile()
         {
             OpenFileFolder(string.Empty);
-        }
-
-        internal void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            OfficeUpdate.CheckForUpdates();
         }
 
         protected override void OnClosed(EventArgs e)
@@ -400,7 +391,7 @@ namespace Rizonesoft.Office.Verbum
             }
             catch (Exception ex)
             {
-                Logging.logger.Error(ex, "Woops!");
+                Logging.Logger.Error(ex, "Woops!");
                 MessageBox.Show(ex.Message, @"Woops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -476,7 +467,7 @@ namespace Rizonesoft.Office.Verbum
             openFileDlg.Title = Resources.Verbum.MainForm_OpenFileFolder_Title;
 
             DialogResult dlgResult = openFileDlg.ShowDialog();
-            Logging.logger.Info("Open Document Result - " + dlgResult.ToString());
+            Logging.Logger.Info("Open Document Result - " + dlgResult.ToString());
 
             // Show the dialog and get result.
             if (dlgResult == DialogResult.OK)

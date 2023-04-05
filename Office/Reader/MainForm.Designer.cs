@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Reader
 {
-    partial class MainForm
+    internal sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,153 +28,135 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.mainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
-            this.viewerRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            this.ribbonStatusBar1 = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            this.mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(this.components);
-            this.bottomSpacerPannel = new DevExpress.XtraEditors.PanelControl();
-            this.rightSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.leftSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
-            this.pdfToolsPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).BeginInit();
-            this.SuspendLayout();
+            mainRibbonControl = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            barOpenItem = new DevExpress.XtraBars.BarButtonItem();
+            mruPopupMenu = new DevExpress.XtraBars.PopupMenu(components);
+            viewerRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
+            filePageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            ribbonStatusBar1 = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
+            mainTabbedMdiManager = new DevExpress.XtraTabbedMdi.XtraTabbedMdiManager(components);
+            topSpacerPanel = new DevExpress.XtraEditors.PanelControl();
+            ((System.ComponentModel.ISupportInitialize)mainRibbonControl).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mruPopupMenu).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)topSpacerPanel).BeginInit();
+            SuspendLayout();
             // 
             // mainRibbonControl
             // 
-            this.mainRibbonControl.AllowContentChangeAnimation = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.AutoUpdateMergedRibbons = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ExpandCollapseItem.Id = 0;
-            this.mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] {
-            this.mainRibbonControl.ExpandCollapseItem,
-            this.mainRibbonControl.SearchEditItem});
-            this.mainRibbonControl.Location = new System.Drawing.Point(0, 0);
-            this.mainRibbonControl.MaxItemId = 1;
-            this.mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
-            this.mainRibbonControl.Name = "mainRibbonControl";
-            this.mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] {
-            this.viewerRibbonPage});
-            this.mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            this.mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowExpandCollapseButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
-            this.mainRibbonControl.ShowItemCaptionsInPageHeader = true;
-            this.mainRibbonControl.ShowItemCaptionsInQAT = true;
-            this.mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
-            this.mainRibbonControl.ShowSearchItem = true;
-            this.mainRibbonControl.Size = new System.Drawing.Size(993, 158);
-            this.mainRibbonControl.StatusBar = this.ribbonStatusBar1;
-            this.mainRibbonControl.Merge += new DevExpress.XtraBars.Ribbon.RibbonMergeEventHandler(this.MainRibbonControl_Merge);
+            mainRibbonControl.AllowContentChangeAnimation = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.AutoUpdateMergedRibbons = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(45, 49, 45, 49);
+            mainRibbonControl.ExpandCollapseItem.Id = 0;
+            mainRibbonControl.Items.AddRange(new DevExpress.XtraBars.BarItem[] { mainRibbonControl.ExpandCollapseItem, mainRibbonControl.SearchEditItem, barOpenItem });
+            mainRibbonControl.Location = new System.Drawing.Point(0, 0);
+            mainRibbonControl.Margin = new System.Windows.Forms.Padding(4);
+            mainRibbonControl.MaxItemId = 2;
+            mainRibbonControl.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
+            mainRibbonControl.Name = "mainRibbonControl";
+            mainRibbonControl.OptionsMenuMinWidth = 495;
+            mainRibbonControl.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { viewerRibbonPage });
+            mainRibbonControl.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
+            mainRibbonControl.ShowDisplayOptionsMenuButton = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowExpandCollapseButton = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowItemCaptionsInCaptionBar = true;
+            mainRibbonControl.ShowItemCaptionsInPageHeader = true;
+            mainRibbonControl.ShowItemCaptionsInQAT = true;
+            mainRibbonControl.ShowMoreCommandsButton = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowPageHeadersInFormCaption = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbonControl.ShowSearchItem = true;
+            mainRibbonControl.Size = new System.Drawing.Size(1490, 292);
+            mainRibbonControl.StatusBar = ribbonStatusBar1;
+            mainRibbonControl.Merge += MainRibbonControl_Merge;
+            // 
+            // barOpenItem
+            // 
+            barOpenItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            barOpenItem.Caption = "Open";
+            barOpenItem.DropDownControl = mruPopupMenu;
+            barOpenItem.Id = 1;
+            barOpenItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barOpenItem.ImageOptions.SvgImage");
+            barOpenItem.Name = "barOpenItem";
+            barOpenItem.ItemClick += barOpenItem_ItemClick;
+            // 
+            // mruPopupMenu
+            // 
+            mruPopupMenu.Name = "mruPopupMenu";
+            mruPopupMenu.Ribbon = mainRibbonControl;
             // 
             // viewerRibbonPage
             // 
-            this.viewerRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] {
-            this.pdfToolsPageGroup});
-            this.viewerRibbonPage.Name = "viewerRibbonPage";
-            this.viewerRibbonPage.Text = "PDF Viewer";
+            viewerRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { filePageGroup });
+            viewerRibbonPage.Name = "viewerRibbonPage";
+            viewerRibbonPage.Text = "PDF Viewer";
+            // 
+            // filePageGroup
+            // 
+            filePageGroup.ItemLinks.Add(barOpenItem);
+            filePageGroup.Name = "filePageGroup";
+            filePageGroup.Text = "File";
             // 
             // ribbonStatusBar1
             // 
-            this.ribbonStatusBar1.Location = new System.Drawing.Point(0, 588);
-            this.ribbonStatusBar1.Name = "ribbonStatusBar1";
-            this.ribbonStatusBar1.Ribbon = this.mainRibbonControl;
-            this.ribbonStatusBar1.Size = new System.Drawing.Size(993, 24);
+            ribbonStatusBar1.Location = new System.Drawing.Point(0, 933);
+            ribbonStatusBar1.Margin = new System.Windows.Forms.Padding(4);
+            ribbonStatusBar1.Name = "ribbonStatusBar1";
+            ribbonStatusBar1.Ribbon = mainRibbonControl;
+            ribbonStatusBar1.Size = new System.Drawing.Size(1490, 55);
             // 
             // mainTabbedMdiManager
             // 
-            this.mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.mainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
-            this.mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
-            this.mainTabbedMdiManager.HeaderButtons = ((DevExpress.XtraTab.TabButtons)((((DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next) 
-            | DevExpress.XtraTab.TabButtons.Close) 
-            | DevExpress.XtraTab.TabButtons.Default)));
-            this.mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
-            this.mainTabbedMdiManager.MdiParent = this;
-            this.mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
-            this.mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
-            this.mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
-            // 
-            // bottomSpacerPannel
-            // 
-            this.bottomSpacerPannel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.bottomSpacerPannel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomSpacerPannel.Location = new System.Drawing.Point(5, 583);
-            this.bottomSpacerPannel.Name = "bottomSpacerPannel";
-            this.bottomSpacerPannel.Size = new System.Drawing.Size(983, 5);
-            this.bottomSpacerPannel.TabIndex = 14;
-            // 
-            // rightSpacerPanel
-            // 
-            this.rightSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.rightSpacerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.rightSpacerPanel.Location = new System.Drawing.Point(988, 163);
-            this.rightSpacerPanel.Name = "rightSpacerPanel";
-            this.rightSpacerPanel.Size = new System.Drawing.Size(5, 425);
-            this.rightSpacerPanel.TabIndex = 13;
-            // 
-            // leftSpacerPanel
-            // 
-            this.leftSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.leftSpacerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.leftSpacerPanel.Location = new System.Drawing.Point(0, 163);
-            this.leftSpacerPanel.Name = "leftSpacerPanel";
-            this.leftSpacerPanel.Size = new System.Drawing.Size(5, 425);
-            this.leftSpacerPanel.TabIndex = 12;
+            mainTabbedMdiManager.AppearancePage.Header.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            mainTabbedMdiManager.AppearancePage.Header.Options.UseFont = true;
+            mainTabbedMdiManager.FloatOnDoubleClick = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatOnDrag = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.FloatPageDragMode = DevExpress.XtraTabbedMdi.FloatPageDragMode.Preview;
+            mainTabbedMdiManager.HeaderButtons = DevExpress.XtraTab.TabButtons.Prev | DevExpress.XtraTab.TabButtons.Next | DevExpress.XtraTab.TabButtons.Close | DevExpress.XtraTab.TabButtons.Default;
+            mainTabbedMdiManager.HeaderButtonsShowMode = DevExpress.XtraTab.TabButtonShowMode.Always;
+            mainTabbedMdiManager.MdiParent = this;
+            mainTabbedMdiManager.PinPageButtonShowMode = DevExpress.XtraTab.PinPageButtonShowMode.InActiveTabPageHeaderAndOnMouseHover;
+            mainTabbedMdiManager.ShowFloatingDropHint = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.ShowHeaderFocus = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseDocumentSelector = DevExpress.Utils.DefaultBoolean.True;
+            mainTabbedMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.True;
             // 
             // topSpacerPanel
             // 
-            this.topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topSpacerPanel.Location = new System.Drawing.Point(0, 158);
-            this.topSpacerPanel.Name = "topSpacerPanel";
-            this.topSpacerPanel.Size = new System.Drawing.Size(993, 5);
-            this.topSpacerPanel.TabIndex = 11;
-            // 
-            // pdfToolsPageGroup
-            // 
-            this.pdfToolsPageGroup.Name = "pdfToolsPageGroup";
-            this.pdfToolsPageGroup.Text = "PDF Tools";
+            topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            topSpacerPanel.Location = new System.Drawing.Point(0, 292);
+            topSpacerPanel.Margin = new System.Windows.Forms.Padding(4);
+            topSpacerPanel.Name = "topSpacerPanel";
+            topSpacerPanel.Size = new System.Drawing.Size(1490, 8);
+            topSpacerPanel.TabIndex = 11;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(993, 612);
-            this.Controls.Add(this.bottomSpacerPannel);
-            this.Controls.Add(this.rightSpacerPanel);
-            this.Controls.Add(this.leftSpacerPanel);
-            this.Controls.Add(this.topSpacerPanel);
-            this.Controls.Add(this.ribbonStatusBar1);
-            this.Controls.Add(this.mainRibbonControl);
-            this.IconOptions.ShowIcon = false;
-            this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("MainForm.IconOptions.SvgImage")));
-            this.IsMdiContainer = true;
-            this.Name = "MainForm";
-            this.Ribbon = this.mainRibbonControl;
-            this.StatusBar = this.ribbonStatusBar1;
-            this.Text = "Rizonesoft Reader";
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.mainRibbonControl)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTabbedMdiManager)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bottomSpacerPannel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.rightSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.leftSpacerPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.topSpacerPanel)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            Appearance.Options.UseFont = true;
+            AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(1490, 988);
+            Controls.Add(topSpacerPanel);
+            Controls.Add(ribbonStatusBar1);
+            Controls.Add(mainRibbonControl);
+            Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            IconOptions.ShowIcon = false;
+            IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("MainForm.IconOptions.SvgImage");
+            IsMdiContainer = true;
+            Margin = new System.Windows.Forms.Padding(4);
+            Name = "MainForm";
+            Ribbon = mainRibbonControl;
+            StatusBar = ribbonStatusBar1;
+            Text = "Rizonesoft Reader";
+            Load += MainForm_Load;
+            ((System.ComponentModel.ISupportInitialize)mainRibbonControl).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mruPopupMenu).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mainTabbedMdiManager).EndInit();
+            ((System.ComponentModel.ISupportInitialize)topSpacerPanel).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -182,12 +164,11 @@
         private DevExpress.XtraBars.Ribbon.RibbonControl mainRibbonControl;
         private DevExpress.XtraBars.Ribbon.RibbonPage viewerRibbonPage;
         private DevExpress.XtraTabbedMdi.XtraTabbedMdiManager mainTabbedMdiManager;
-        private DevExpress.XtraEditors.PanelControl bottomSpacerPannel;
-        private DevExpress.XtraEditors.PanelControl rightSpacerPanel;
-        private DevExpress.XtraEditors.PanelControl leftSpacerPanel;
         private DevExpress.XtraEditors.PanelControl topSpacerPanel;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar ribbonStatusBar1;
-        private DevExpress.XtraBars.Ribbon.RibbonPageGroup pdfToolsPageGroup;
+        private DevExpress.XtraBars.BarButtonItem barOpenItem;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup filePageGroup;
+        private DevExpress.XtraBars.PopupMenu mruPopupMenu;
     }
 }
 

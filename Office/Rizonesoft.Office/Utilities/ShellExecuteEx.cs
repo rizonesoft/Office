@@ -1,16 +1,9 @@
-﻿using DevExpress.XtraEditors;
-using DevExpress.XtraRichEdit;
-using DevExpress.XtraVerticalGrid;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Rizonesoft.Office.Utilities
+﻿namespace Rizonesoft.Office.Utilities
 {
+    using DevExpress.XtraEditors;
+    using System;
+    using System.Diagnostics;
+
     public static class ShellExecuteEx
     {
 
@@ -18,7 +11,7 @@ namespace Rizonesoft.Office.Utilities
         /// Open a PDF document using the default PDF reader.
         /// </summary>
         /// <param name="fileName"></param>
-        public static void OpenPDFDocument(string fileName)
+        public static void OpenPdfDocument(string fileName)
         {
             try 
             {
@@ -36,7 +29,7 @@ namespace Rizonesoft.Office.Utilities
             catch (Exception ex)
             {
                 XtraMessageBox.Show($"Error opening PDF document: {fileName}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Logging.logger.Error(ex, $"Error opening PDF document: {fileName}");
+                Logging.Logger.Error(ex, $"Error opening PDF document: {fileName}");
             }
 
         }

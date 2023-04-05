@@ -9,14 +9,14 @@
     <AssemblyName>Evaluate</AssemblyName>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <ApplicationIcon>Evaluate.ico</ApplicationIcon>
-    <Version>2023.3.97</Version>
+    <Version>2023.3.126</Version>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<PublishSingleFile>true</PublishSingleFile>
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.14.95</AssemblyVersion>
-	<FileVersion>2023.3.14.95</FileVersion>
+	<AssemblyVersion>2023.3.31.124</AssemblyVersion>
+	<FileVersion>2023.3.31.124</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -52,7 +52,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="22.2.4" />
+    <PackageReference Include="DevExpress.Win.BonusSkins" Version="22.2.5" />
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -66,6 +67,18 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Update="SplashScreenForm.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="BookForm.af-za.resx">
+      <DependentUpon>BookForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.af-za.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="SplashScreenForm.af-za.resx">
+      <DependentUpon>SplashScreenForm.resx</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

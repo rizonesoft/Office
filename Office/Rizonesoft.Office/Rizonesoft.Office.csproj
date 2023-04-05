@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Rizonesoft.Office</RootNamespace>
-    <Version>2023.3.244</Version>
+    <Version>2023.3.302</Version>
     <Company>Rizonesoft</Company>
     <Product>Rizonesoft Office</Product>
 	<PublishReadyToRun>true</PublishReadyToRun>
@@ -16,8 +16,8 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.15.225</AssemblyVersion>
-	<FileVersion>2023.3.15.225</FileVersion>
+	<AssemblyVersion>2023.3.31.283</AssemblyVersion>
+	<FileVersion>2023.3.31.283</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -55,9 +55,45 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="22.2.4" />
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
-    <PackageReference Include="NLog" Version="5.1.0" />
+    <PackageReference Include="NLog" Version="5.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Office.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Office.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="ExceptionHandlers\ExceptionForm.af-za.resx">
+      <DependentUpon>ExceptionForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="LicensingEx\RegistrationForm.af-za.resx">
+      <DependentUpon>RegistrationForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MessagesEx\MessageForm.af-za.resx">
+      <DependentUpon>MessageForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Office.af-za.resx">
+      <DependentUpon>Office.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Office.af.resx">
+      <DependentUpon>Office.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Office.en.resx">
+      <DependentUpon>Office.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Office.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Office.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="TimeEx\TimeForm.af-za.resx">
+      <DependentUpon>TimeForm.resx</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

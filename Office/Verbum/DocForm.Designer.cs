@@ -27,4400 +27,4399 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DocForm));
-            DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling2 = new DevExpress.XtraSpellChecker.OptionsSpelling();
-            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup4 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
-            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup5 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
-            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation2 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
-            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup6 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
-            DocRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
-            fileSaveAsItem1 = new DevExpress.XtraRichEdit.UI.FileSaveAsItem();
-            printItem1 = new DevExpress.XtraRichEdit.UI.PrintItem();
-            switchToPrintLayoutViewItem1 = new DevExpress.XtraRichEdit.UI.SwitchToPrintLayoutViewItem();
-            undoItem1 = new DevExpress.XtraRichEdit.UI.UndoItem();
-            redoItem1 = new DevExpress.XtraRichEdit.UI.RedoItem();
-            fileNewItem1 = new DevExpress.XtraRichEdit.UI.FileNewItem();
-            fileOpenItem1 = new DevExpress.XtraRichEdit.UI.FileOpenItem();
-            fileSaveItem1 = new DevExpress.XtraRichEdit.UI.FileSaveItem();
-            printPreviewItem1 = new DevExpress.XtraRichEdit.UI.PrintPreviewItem();
-            encryptDocumentItem1 = new DevExpress.XtraRichEdit.UI.EncryptDocumentItem();
-            showDocumentPropertiesFormItem1 = new DevExpress.XtraRichEdit.UI.ShowDocumentPropertiesFormItem();
-            pasteItem1 = new DevExpress.XtraRichEdit.UI.PasteItem();
-            cutItem1 = new DevExpress.XtraRichEdit.UI.CutItem();
-            copyItem1 = new DevExpress.XtraRichEdit.UI.CopyItem();
-            pasteSpecialItem1 = new DevExpress.XtraRichEdit.UI.PasteSpecialItem();
-            barButtonGroup1 = new DevExpress.XtraBars.BarButtonGroup();
-            changeFontNameItem1 = new DevExpress.XtraRichEdit.UI.ChangeFontNameItem();
-            repositoryItemFontEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemFontEdit();
-            changeFontSizeItem1 = new DevExpress.XtraRichEdit.UI.ChangeFontSizeItem();
-            repositoryItemRichEditFontSizeEdit1 = new DevExpress.XtraRichEdit.Design.RepositoryItemRichEditFontSizeEdit();
-            ChildRichEditControl = new DevExpress.XtraRichEdit.RichEditControl();
-            mainSpellChecker = new DevExpress.XtraSpellChecker.SpellChecker(components);
-            fontSizeIncreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeIncreaseItem();
-            fontSizeDecreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeDecreaseItem();
-            toggleFontBoldItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontBoldItem();
-            toggleFontItalicItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontItalicItem();
-            toggleFontUnderlineItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontUnderlineItem();
-            toggleFontDoubleUnderlineItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontDoubleUnderlineItem();
-            toggleFontStrikeoutItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontStrikeoutItem();
-            toggleFontDoubleStrikeoutItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontDoubleStrikeoutItem();
-            toggleFontSuperscriptItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontSuperscriptItem();
-            toggleFontSubscriptItem1 = new DevExpress.XtraRichEdit.UI.ToggleFontSubscriptItem();
-            barButtonGroup3 = new DevExpress.XtraBars.BarButtonGroup();
-            changeFontColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeFontColorItem();
-            changeFontHighlightColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeFontHighlightColorItem();
-            changeTextCaseItem1 = new DevExpress.XtraRichEdit.UI.ChangeTextCaseItem();
-            makeTextUpperCaseItem1 = new DevExpress.XtraRichEdit.UI.MakeTextUpperCaseItem();
-            makeTextLowerCaseItem1 = new DevExpress.XtraRichEdit.UI.MakeTextLowerCaseItem();
-            capitalizeEachWordCaseItem1 = new DevExpress.XtraRichEdit.UI.CapitalizeEachWordCaseItem();
-            toggleTextCaseItem1 = new DevExpress.XtraRichEdit.UI.ToggleTextCaseItem();
-            clearFormattingItem1 = new DevExpress.XtraRichEdit.UI.ClearFormattingItem();
-            barButtonGroup4 = new DevExpress.XtraBars.BarButtonGroup();
-            toggleBulletedListItem1 = new DevExpress.XtraRichEdit.UI.ToggleBulletedListItem();
-            toggleNumberingListItem1 = new DevExpress.XtraRichEdit.UI.ToggleNumberingListItem();
-            toggleMultiLevelListItem1 = new DevExpress.XtraRichEdit.UI.ToggleMultiLevelListItem();
-            rtlToggleBulletedListItem1 = new DevExpress.XtraRichEdit.UI.RtlToggleBulletedListItem();
-            rtlToggleNumberingListItem1 = new DevExpress.XtraRichEdit.UI.RtlToggleNumberingListItem();
-            rtlToggleMultiLevelListItem1 = new DevExpress.XtraRichEdit.UI.RtlToggleMultiLevelListItem();
-            barButtonGroup5 = new DevExpress.XtraBars.BarButtonGroup();
-            decreaseIndentItem1 = new DevExpress.XtraRichEdit.UI.DecreaseIndentItem();
-            increaseIndentItem1 = new DevExpress.XtraRichEdit.UI.IncreaseIndentItem();
-            rtlDecreaseIndentItem1 = new DevExpress.XtraRichEdit.UI.RtlDecreaseIndentItem();
-            rtlIncreaseIndentItem1 = new DevExpress.XtraRichEdit.UI.RtlIncreaseIndentItem();
-            toggleParagraphLeftToRightItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphLeftToRightItem();
-            toggleParagraphRightToLeftItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphRightToLeftItem();
-            toggleShowWhitespaceItem1 = new DevExpress.XtraRichEdit.UI.ToggleShowWhitespaceItem();
-            barButtonGroup6 = new DevExpress.XtraBars.BarButtonGroup();
-            toggleParagraphAlignmentLeftItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentLeftItem();
-            toggleParagraphAlignmentCenterItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentCenterItem();
-            toggleParagraphAlignmentRightItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentRightItem();
-            toggleParagraphAlignmentJustifyItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyItem();
-            toggleParagraphAlignmentArabicJustifyGroupItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentArabicJustifyGroupItem();
-            toggleParagraphAlignmentArabicJustifyItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentArabicJustifyItem();
-            toggleParagraphAlignmentJustifyLowItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyLowItem();
-            toggleParagraphAlignmentJustifyMediumItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyMediumItem();
-            toggleParagraphAlignmentJustifyHighItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyHighItem();
-            toggleParagraphAlignmentDistributeItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentDistributeItem();
-            toggleParagraphAlignmentThaiDistributeItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentThaiDistributeItem();
-            barButtonGroup7 = new DevExpress.XtraBars.BarButtonGroup();
-            changeParagraphLineSpacingItem1 = new DevExpress.XtraRichEdit.UI.ChangeParagraphLineSpacingItem();
-            setSingleParagraphSpacingItem1 = new DevExpress.XtraRichEdit.UI.SetSingleParagraphSpacingItem();
-            setSesquialteralParagraphSpacingItem1 = new DevExpress.XtraRichEdit.UI.SetSesquialteralParagraphSpacingItem();
-            setDoubleParagraphSpacingItem1 = new DevExpress.XtraRichEdit.UI.SetDoubleParagraphSpacingItem();
-            showLineSpacingFormItem1 = new DevExpress.XtraRichEdit.UI.ShowLineSpacingFormItem();
-            addSpacingBeforeParagraphItem1 = new DevExpress.XtraRichEdit.UI.AddSpacingBeforeParagraphItem();
-            removeSpacingBeforeParagraphItem1 = new DevExpress.XtraRichEdit.UI.RemoveSpacingBeforeParagraphItem();
-            addSpacingAfterParagraphItem1 = new DevExpress.XtraRichEdit.UI.AddSpacingAfterParagraphItem();
-            removeSpacingAfterParagraphItem1 = new DevExpress.XtraRichEdit.UI.RemoveSpacingAfterParagraphItem();
-            changeParagraphBackColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeParagraphBackColorItem();
-            galleryChangeStyleItem1 = new DevExpress.XtraRichEdit.UI.GalleryChangeStyleItem();
-            findItem1 = new DevExpress.XtraRichEdit.UI.FindItem();
-            replaceItem1 = new DevExpress.XtraRichEdit.UI.ReplaceItem();
-            insertPageBreakItem21 = new DevExpress.XtraRichEdit.UI.InsertPageBreakItem2();
-            insertTableItem1 = new DevExpress.XtraRichEdit.UI.InsertTableItem();
-            insertFloatingPictureItem1 = new DevExpress.XtraRichEdit.UI.InsertFloatingPictureItem();
-            insertBookmarkItem1 = new DevExpress.XtraRichEdit.UI.InsertBookmarkItem();
-            insertHyperlinkItem1 = new DevExpress.XtraRichEdit.UI.InsertHyperlinkItem();
-            editPageHeaderItem1 = new DevExpress.XtraRichEdit.UI.EditPageHeaderItem();
-            editPageFooterItem1 = new DevExpress.XtraRichEdit.UI.EditPageFooterItem();
-            insertPageNumberItem1 = new DevExpress.XtraRichEdit.UI.InsertPageNumberItem();
-            insertPageCountItem1 = new DevExpress.XtraRichEdit.UI.InsertPageCountItem();
-            insertTextBoxItem1 = new DevExpress.XtraRichEdit.UI.InsertTextBoxItem();
-            insertObjectItem1 = new DevExpress.XtraRichEdit.UI.InsertObjectItem();
-            insertSymbolItem1 = new DevExpress.XtraRichEdit.UI.InsertSymbolItem();
-            changeSectionPageMarginsItem1 = new DevExpress.XtraRichEdit.UI.ChangeSectionPageMarginsItem();
-            setNormalSectionPageMarginsItem1 = new DevExpress.XtraRichEdit.UI.SetNormalSectionPageMarginsItem();
-            setNarrowSectionPageMarginsItem1 = new DevExpress.XtraRichEdit.UI.SetNarrowSectionPageMarginsItem();
-            setModerateSectionPageMarginsItem1 = new DevExpress.XtraRichEdit.UI.SetModerateSectionPageMarginsItem();
-            setWideSectionPageMarginsItem1 = new DevExpress.XtraRichEdit.UI.SetWideSectionPageMarginsItem();
-            showPageMarginsSetupFormItem1 = new DevExpress.XtraRichEdit.UI.ShowPageMarginsSetupFormItem();
-            changeSectionPageOrientationItem1 = new DevExpress.XtraRichEdit.UI.ChangeSectionPageOrientationItem();
-            setPortraitPageOrientationItem1 = new DevExpress.XtraRichEdit.UI.SetPortraitPageOrientationItem();
-            setLandscapePageOrientationItem1 = new DevExpress.XtraRichEdit.UI.SetLandscapePageOrientationItem();
-            changeSectionPaperKindItem1 = new DevExpress.XtraRichEdit.UI.ChangeSectionPaperKindItem();
-            changeSectionColumnsItem1 = new DevExpress.XtraRichEdit.UI.ChangeSectionColumnsItem();
-            setSectionOneColumnItem1 = new DevExpress.XtraRichEdit.UI.SetSectionOneColumnItem();
-            setSectionTwoColumnsItem1 = new DevExpress.XtraRichEdit.UI.SetSectionTwoColumnsItem();
-            setSectionThreeColumnsItem1 = new DevExpress.XtraRichEdit.UI.SetSectionThreeColumnsItem();
-            showColumnsSetupFormItem1 = new DevExpress.XtraRichEdit.UI.ShowColumnsSetupFormItem();
-            insertBreakItem1 = new DevExpress.XtraRichEdit.UI.InsertBreakItem();
-            insertPageBreakItem1 = new DevExpress.XtraRichEdit.UI.InsertPageBreakItem();
-            insertColumnBreakItem1 = new DevExpress.XtraRichEdit.UI.InsertColumnBreakItem();
-            insertSectionBreakNextPageItem1 = new DevExpress.XtraRichEdit.UI.InsertSectionBreakNextPageItem();
-            insertSectionBreakContinuousItem1 = new DevExpress.XtraRichEdit.UI.InsertSectionBreakContinuousItem();
-            insertSectionBreakEvenPageItem1 = new DevExpress.XtraRichEdit.UI.InsertSectionBreakEvenPageItem();
-            insertSectionBreakOddPageItem1 = new DevExpress.XtraRichEdit.UI.InsertSectionBreakOddPageItem();
-            changeSectionLineNumberingItem1 = new DevExpress.XtraRichEdit.UI.ChangeSectionLineNumberingItem();
-            setSectionLineNumberingNoneItem1 = new DevExpress.XtraRichEdit.UI.SetSectionLineNumberingNoneItem();
-            setSectionLineNumberingContinuousItem1 = new DevExpress.XtraRichEdit.UI.SetSectionLineNumberingContinuousItem();
-            setSectionLineNumberingRestartNewPageItem1 = new DevExpress.XtraRichEdit.UI.SetSectionLineNumberingRestartNewPageItem();
-            setSectionLineNumberingRestartNewSectionItem1 = new DevExpress.XtraRichEdit.UI.SetSectionLineNumberingRestartNewSectionItem();
-            toggleParagraphSuppressLineNumbersItem1 = new DevExpress.XtraRichEdit.UI.ToggleParagraphSuppressLineNumbersItem();
-            showLineNumberingFormItem1 = new DevExpress.XtraRichEdit.UI.ShowLineNumberingFormItem();
-            changeHyphenationOptionsItem1 = new DevExpress.XtraRichEdit.UI.ChangeHyphenationOptionsItem();
-            setHyphenateDocumentNoneItem1 = new DevExpress.XtraRichEdit.UI.SetHyphenateDocumentNoneItem();
-            setHyphenateDocumentAutomaticItem1 = new DevExpress.XtraRichEdit.UI.SetHyphenateDocumentAutomaticItem();
-            showHyphenationOptionsFormItem1 = new DevExpress.XtraRichEdit.UI.ShowHyphenationOptionsFormItem();
-            changePageColorItem1 = new DevExpress.XtraRichEdit.UI.ChangePageColorItem();
-            watermarkItem1 = new DevExpress.XtraRichEdit.UI.WatermarkItem();
-            deleteWatermarkItem1 = new DevExpress.XtraRichEdit.UI.DeleteWatermarkItem();
-            insertTableOfContentsItem1 = new DevExpress.XtraRichEdit.UI.InsertTableOfContentsItem();
-            updateTableOfContentsItem1 = new DevExpress.XtraRichEdit.UI.UpdateTableOfContentsItem();
-            addParagraphsToTableOfContentItem1 = new DevExpress.XtraRichEdit.UI.AddParagraphsToTableOfContentItem();
-            setParagraphHeadingLevelItem1 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem2 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem3 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem4 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem5 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem6 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem7 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem8 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem9 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            setParagraphHeadingLevelItem10 = new DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem();
-            insertCaptionPlaceholderItem1 = new DevExpress.XtraRichEdit.UI.InsertCaptionPlaceholderItem();
-            insertFiguresCaptionItems1 = new DevExpress.XtraRichEdit.UI.InsertFiguresCaptionItems();
-            insertTablesCaptionItems1 = new DevExpress.XtraRichEdit.UI.InsertTablesCaptionItems();
-            insertEquationsCaptionItems1 = new DevExpress.XtraRichEdit.UI.InsertEquationsCaptionItems();
-            insertTableOfFiguresPlaceholderItem1 = new DevExpress.XtraRichEdit.UI.InsertTableOfFiguresPlaceholderItem();
-            insertTableOfFiguresItems1 = new DevExpress.XtraRichEdit.UI.InsertTableOfFiguresItems();
-            insertTableOfTablesItems1 = new DevExpress.XtraRichEdit.UI.InsertTableOfTablesItems();
-            insertTableOfEquationsItems1 = new DevExpress.XtraRichEdit.UI.InsertTableOfEquationsItems();
-            updateTableOfFiguresItem1 = new DevExpress.XtraRichEdit.UI.UpdateTableOfFiguresItem();
-            insertFootnoteItem1 = new DevExpress.XtraRichEdit.UI.InsertFootnoteItem();
-            insertEndnoteItem1 = new DevExpress.XtraRichEdit.UI.InsertEndnoteItem();
-            navigationNotesItem1 = new DevExpress.XtraRichEdit.UI.NavigationNotesItem();
-            showNotesItem1 = new DevExpress.XtraRichEdit.UI.ShowNotesItem();
-            insertMergeFieldItem1 = new DevExpress.XtraRichEdit.UI.InsertMergeFieldItem();
-            showAllFieldCodesItem1 = new DevExpress.XtraRichEdit.UI.ShowAllFieldCodesItem();
-            showAllFieldResultsItem1 = new DevExpress.XtraRichEdit.UI.ShowAllFieldResultsItem();
-            toggleViewMergedDataItem1 = new DevExpress.XtraRichEdit.UI.ToggleViewMergedDataItem();
-            checkSpellingItem1 = new DevExpress.XtraRichEdit.UI.CheckSpellingItem();
-            changeLanguageItem1 = new DevExpress.XtraRichEdit.UI.ChangeLanguageItem();
-            protectDocumentItem1 = new DevExpress.XtraRichEdit.UI.ProtectDocumentItem();
-            changeRangeEditingPermissionsItem1 = new DevExpress.XtraRichEdit.UI.ChangeRangeEditingPermissionsItem();
-            unprotectDocumentItem1 = new DevExpress.XtraRichEdit.UI.UnprotectDocumentItem();
-            newCommentItem1 = new DevExpress.XtraRichEdit.UI.NewCommentItem();
-            deleteCommentsItem1 = new DevExpress.XtraRichEdit.UI.DeleteCommentsItem();
-            deleteOneCommentItem1 = new DevExpress.XtraRichEdit.UI.DeleteOneCommentItem();
-            deleteAllCommentsShownItem1 = new DevExpress.XtraRichEdit.UI.DeleteAllCommentsShownItem();
-            deleteAllCommentsItem1 = new DevExpress.XtraRichEdit.UI.DeleteAllCommentsItem();
-            previousCommentItem1 = new DevExpress.XtraRichEdit.UI.PreviousCommentItem();
-            nextCommentItem1 = new DevExpress.XtraRichEdit.UI.NextCommentItem();
-            toggleTrackChangesBarItem1 = new DevExpress.XtraRichEdit.UI.ToggleTrackChangesBarItem();
-            changeDisplayForReviewModeItem1 = new DevExpress.XtraRichEdit.UI.ChangeDisplayForReviewModeItem();
-            displayForReviewModeComboBox1 = new DevExpress.XtraRichEdit.UI.DisplayForReviewModeComboBox();
-            showMarkupSubItem1 = new DevExpress.XtraRichEdit.UI.ShowMarkupSubItem();
-            reviewingPaneItem1 = new DevExpress.XtraRichEdit.UI.ReviewingPaneItem();
-            acceptAndMoveToNextSubItem1 = new DevExpress.XtraRichEdit.UI.AcceptAndMoveToNextSubItem();
-            rejectAndMoveToNextSubItem1 = new DevExpress.XtraRichEdit.UI.RejectAndMoveToNextSubItem();
-            previousChangeItem1 = new DevExpress.XtraRichEdit.UI.PreviousChangeItem();
-            nextChangeItem1 = new DevExpress.XtraRichEdit.UI.NextChangeItem();
-            switchToSimpleViewItem1 = new DevExpress.XtraRichEdit.UI.SwitchToSimpleViewItem();
-            switchToDraftViewItem1 = new DevExpress.XtraRichEdit.UI.SwitchToDraftViewItem();
-            toggleShowHorizontalRulerItem1 = new DevExpress.XtraRichEdit.UI.ToggleShowHorizontalRulerItem();
-            toggleShowVerticalRulerItem1 = new DevExpress.XtraRichEdit.UI.ToggleShowVerticalRulerItem();
-            zoomOutItem1 = new DevExpress.XtraRichEdit.UI.ZoomOutItem();
-            zoomInItem1 = new DevExpress.XtraRichEdit.UI.ZoomInItem();
-            goToPageHeaderItem1 = new DevExpress.XtraRichEdit.UI.GoToPageHeaderItem();
-            goToPageFooterItem1 = new DevExpress.XtraRichEdit.UI.GoToPageFooterItem();
-            goToNextHeaderFooterItem1 = new DevExpress.XtraRichEdit.UI.GoToNextHeaderFooterItem();
-            goToPreviousHeaderFooterItem1 = new DevExpress.XtraRichEdit.UI.GoToPreviousHeaderFooterItem();
-            toggleLinkToPreviousItem1 = new DevExpress.XtraRichEdit.UI.ToggleLinkToPreviousItem();
-            toggleDifferentFirstPageItem1 = new DevExpress.XtraRichEdit.UI.ToggleDifferentFirstPageItem();
-            toggleDifferentOddAndEvenPagesItem1 = new DevExpress.XtraRichEdit.UI.ToggleDifferentOddAndEvenPagesItem();
-            closePageHeaderFooterItem1 = new DevExpress.XtraRichEdit.UI.ClosePageHeaderFooterItem();
-            toggleFirstRowItem1 = new DevExpress.XtraRichEdit.UI.ToggleFirstRowItem();
-            toggleLastRowItem1 = new DevExpress.XtraRichEdit.UI.ToggleLastRowItem();
-            toggleBandedRowsItem1 = new DevExpress.XtraRichEdit.UI.ToggleBandedRowsItem();
-            toggleFirstColumnItem1 = new DevExpress.XtraRichEdit.UI.ToggleFirstColumnItem();
-            toggleLastColumnItem1 = new DevExpress.XtraRichEdit.UI.ToggleLastColumnItem();
-            toggleBandedColumnsItem1 = new DevExpress.XtraRichEdit.UI.ToggleBandedColumnsItem();
-            changeTableBorderLineStyleItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderLineStyleItem();
-            workProgressBar = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle();
-            changeTableBorderLineWeightItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderLineWeightItem();
-            repositoryItemBorderLineWeight1 = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineWeight();
-            changeTableBorderColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBorderColorItem();
-            changeTableBordersItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableBordersItem();
-            toggleTableCellsBottomBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomBorderItem();
-            toggleTableCellsTopBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsTopBorderItem();
-            toggleTableCellsLeftBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsLeftBorderItem();
-            toggleTableCellsRightBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsRightBorderItem();
-            resetTableCellsAllBordersItem1 = new DevExpress.XtraRichEdit.UI.ResetTableCellsAllBordersItem();
-            toggleTableCellsAllBordersItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsAllBordersItem();
-            toggleTableCellsOutsideBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsOutsideBorderItem();
-            toggleTableCellsInsideBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideBorderItem();
-            toggleTableCellsInsideHorizontalBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideHorizontalBorderItem();
-            toggleTableCellsInsideVerticalBorderItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideVerticalBorderItem();
-            toggleShowTableGridLinesItem1 = new DevExpress.XtraRichEdit.UI.ToggleShowTableGridLinesItem();
-            changeTableCellsShadingItem1 = new DevExpress.XtraRichEdit.UI.ChangeTableCellsShadingItem();
-            selectTableElementsItem1 = new DevExpress.XtraRichEdit.UI.SelectTableElementsItem();
-            selectTableCellItem1 = new DevExpress.XtraRichEdit.UI.SelectTableCellItem();
-            selectTableColumnItem1 = new DevExpress.XtraRichEdit.UI.SelectTableColumnItem();
-            selectTableRowItem1 = new DevExpress.XtraRichEdit.UI.SelectTableRowItem();
-            selectTableItem1 = new DevExpress.XtraRichEdit.UI.SelectTableItem();
-            showTablePropertiesFormItem1 = new DevExpress.XtraRichEdit.UI.ShowTablePropertiesFormItem();
-            deleteTableElementsItem1 = new DevExpress.XtraRichEdit.UI.DeleteTableElementsItem();
-            showDeleteTableCellsFormItem1 = new DevExpress.XtraRichEdit.UI.ShowDeleteTableCellsFormItem();
-            deleteTableColumnsItem1 = new DevExpress.XtraRichEdit.UI.DeleteTableColumnsItem();
-            deleteTableRowsItem1 = new DevExpress.XtraRichEdit.UI.DeleteTableRowsItem();
-            deleteTableItem1 = new DevExpress.XtraRichEdit.UI.DeleteTableItem();
-            insertTableRowAboveItem1 = new DevExpress.XtraRichEdit.UI.InsertTableRowAboveItem();
-            insertTableRowBelowItem1 = new DevExpress.XtraRichEdit.UI.InsertTableRowBelowItem();
-            insertTableColumnToLeftItem1 = new DevExpress.XtraRichEdit.UI.InsertTableColumnToLeftItem();
-            insertTableColumnToRightItem1 = new DevExpress.XtraRichEdit.UI.InsertTableColumnToRightItem();
-            mergeTableCellsItem1 = new DevExpress.XtraRichEdit.UI.MergeTableCellsItem();
-            showSplitTableCellsForm1 = new DevExpress.XtraRichEdit.UI.ShowSplitTableCellsForm();
-            splitTableItem1 = new DevExpress.XtraRichEdit.UI.SplitTableItem();
-            toggleTableAutoFitItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableAutoFitItem();
-            toggleTableAutoFitContentsItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableAutoFitContentsItem();
-            toggleTableAutoFitWindowItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableAutoFitWindowItem();
-            toggleTableFixedColumnWidthItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableFixedColumnWidthItem();
-            toggleTableCellsTopLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsTopLeftAlignmentItem();
-            toggleTableCellsMiddleLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleLeftAlignmentItem();
-            toggleTableCellsBottomLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomLeftAlignmentItem();
-            toggleTableCellsTopCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsTopCenterAlignmentItem();
-            toggleTableCellsMiddleCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleCenterAlignmentItem();
-            toggleTableCellsBottomCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomCenterAlignmentItem();
-            toggleTableCellsTopRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsTopRightAlignmentItem();
-            toggleTableCellsMiddleRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleRightAlignmentItem();
-            toggleTableCellsBottomRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomRightAlignmentItem();
-            showTableOptionsFormItem1 = new DevExpress.XtraRichEdit.UI.ShowTableOptionsFormItem();
-            changeFloatingObjectFillColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeFloatingObjectFillColorItem();
-            changeFloatingObjectOutlineColorItem1 = new DevExpress.XtraRichEdit.UI.ChangeFloatingObjectOutlineColorItem();
-            changeFloatingObjectOutlineWeightItem1 = new DevExpress.XtraRichEdit.UI.ChangeFloatingObjectOutlineWeightItem();
-            repositoryItemFloatingObjectOutlineWeight1 = new DevExpress.XtraRichEdit.Forms.Design.RepositoryItemFloatingObjectOutlineWeight();
-            changeFloatingObjectTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.ChangeFloatingObjectTextWrapTypeItem();
-            setFloatingObjectInlineTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectInlineTextWrapTypeItem();
-            setFloatingObjectSquareTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectSquareTextWrapTypeItem();
-            setFloatingObjectTightTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectTightTextWrapTypeItem();
-            setFloatingObjectThroughTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectThroughTextWrapTypeItem();
-            setFloatingObjectTopAndBottomTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectTopAndBottomTextWrapTypeItem();
-            setFloatingObjectBehindTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectBehindTextWrapTypeItem();
-            setFloatingObjectInFrontOfTextWrapTypeItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectInFrontOfTextWrapTypeItem();
-            changeFloatingObjectAlignmentItem1 = new DevExpress.XtraRichEdit.UI.ChangeFloatingObjectAlignmentItem();
-            setFloatingObjectTopLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectTopLeftAlignmentItem();
-            setFloatingObjectTopCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectTopCenterAlignmentItem();
-            setFloatingObjectTopRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectTopRightAlignmentItem();
-            setFloatingObjectMiddleLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleLeftAlignmentItem();
-            setFloatingObjectMiddleCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleCenterAlignmentItem();
-            setFloatingObjectMiddleRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleRightAlignmentItem();
-            setFloatingObjectBottomLeftAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomLeftAlignmentItem();
-            setFloatingObjectBottomCenterAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomCenterAlignmentItem();
-            setFloatingObjectBottomRightAlignmentItem1 = new DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomRightAlignmentItem();
-            floatingObjectBringForwardSubItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectBringForwardSubItem();
-            floatingObjectBringForwardItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectBringForwardItem();
-            floatingObjectBringToFrontItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectBringToFrontItem();
-            floatingObjectBringInFrontOfTextItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectBringInFrontOfTextItem();
-            floatingObjectSendBackwardSubItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectSendBackwardSubItem();
-            floatingObjectSendBackwardItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectSendBackwardItem();
-            floatingObjectSendToBackItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectSendToBackItem();
-            floatingObjectSendBehindTextItem1 = new DevExpress.XtraRichEdit.UI.FloatingObjectSendBehindTextItem();
-            pagesBarItem = new DevExpress.XtraBars.BarStaticItem();
-            docStatBtnItem = new DevExpress.XtraBars.BarButtonItem();
-            barLangBtnItem = new DevExpress.XtraBars.BarButtonItem();
-            zoomBarEditItem = new DevExpress.XtraBars.BarEditItem();
-            repositoryItemZoomTrackBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar();
-            autoSpellingItem = new DevExpress.XtraBars.BarCheckItem();
-            spellOptionsItem = new DevExpress.XtraBars.BarButtonItem();
-            zoomResetItem = new DevExpress.XtraBars.BarButtonItem();
-            zoomBarResetItem = new DevExpress.XtraBars.BarButtonItem();
-            exportBarButton = new DevExpress.XtraBars.BarButtonItem();
-            exportPopupMenu = new DevExpress.XtraBars.PopupMenu(components);
-            exportPDFPopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            exportEBUPopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            exportImagePopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            exportHTMLPopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            exportMHTPopupMenuItem = new DevExpress.XtraBars.BarButtonItem();
-            mailBarButton = new DevExpress.XtraBars.BarButtonItem();
-            quickPrintItem1 = new DevExpress.XtraRichEdit.UI.QuickPrintItem();
-            barButtonGroup2 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup8 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup9 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup10 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup11 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup12 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup13 = new DevExpress.XtraBars.BarButtonGroup();
-            barButtonGroup14 = new DevExpress.XtraBars.BarButtonGroup();
-            galleryChangeTableStyleItem2 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
-            barCurrLineItem = new DevExpress.XtraBars.BarStaticItem();
-            barCurrColumnItem = new DevExpress.XtraBars.BarStaticItem();
-            SimpleViewStatusItem = new DevExpress.XtraBars.BarButtonItem();
-            DraftViewStatusItem = new DevExpress.XtraBars.BarButtonItem();
-            PrintLayoutStatusItem = new DevExpress.XtraBars.BarButtonItem();
-            headerToolsChildRibbonCategory = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsRibbonPageCategory();
-            headerFooterToolsDesignRibbonPage1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignRibbonPage();
-            headerFooterToolsDesignNavigationRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignNavigationRibbonPageGroup();
-            headerFooterToolsDesignOptionsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignOptionsRibbonPageGroup();
-            headerFooterToolsDesignCloseRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignCloseRibbonPageGroup();
-            tableToolsRibbonCategory = new DevExpress.XtraRichEdit.UI.TableToolsRibbonPageCategory();
-            tableDesignChildRibbonPage = new DevExpress.XtraRichEdit.UI.TableDesignRibbonPage();
-            tableStyleOptionsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableStyleOptionsRibbonPageGroup();
-            tableStylesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableStylesRibbonPageGroup();
-            tableDrawBordersRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableDrawBordersRibbonPageGroup();
-            tableLayoutRibbonPage1 = new DevExpress.XtraRichEdit.UI.TableLayoutRibbonPage();
-            tableTableRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableTableRibbonPageGroup();
-            tableRowsAndColumnsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableRowsAndColumnsRibbonPageGroup();
-            tableMergeRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableMergeRibbonPageGroup();
-            tableCellSizeRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableCellSizeRibbonPageGroup();
-            tableAlignmentRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableAlignmentRibbonPageGroup();
-            floatingPictureToolsRibbonPageCategory1 = new DevExpress.XtraRichEdit.UI.FloatingPictureToolsRibbonPageCategory();
-            floatingPictureToolsFormatPage1 = new DevExpress.XtraRichEdit.UI.FloatingPictureToolsFormatPage();
-            floatingPictureToolsShapeStylesPageGroup1 = new DevExpress.XtraRichEdit.UI.FloatingPictureToolsShapeStylesPageGroup();
-            floatingPictureToolsArrangePageGroup1 = new DevExpress.XtraRichEdit.UI.FloatingPictureToolsArrangePageGroup();
-            fileRibbonPage1 = new DevExpress.XtraRichEdit.UI.FileRibbonPage();
-            commonRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.CommonRibbonPageGroup();
-            exportRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            infoRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.InfoRibbonPageGroup();
-            optionsRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            licenseRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            homeRibbonPage1 = new DevExpress.XtraRichEdit.UI.HomeRibbonPage();
-            clipboardRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ClipboardRibbonPageGroup();
-            fontRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.FontRibbonPageGroup();
-            paragraphRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ParagraphRibbonPageGroup();
-            stylesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.StylesRibbonPageGroup();
-            editingRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.EditingRibbonPageGroup();
-            insertRibbonPage1 = new DevExpress.XtraRichEdit.UI.InsertRibbonPage();
-            pagesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.PagesRibbonPageGroup();
-            tablesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TablesRibbonPageGroup();
-            illustrationsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.IllustrationsRibbonPageGroup();
-            linksRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.LinksRibbonPageGroup();
-            headerFooterRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.HeaderFooterRibbonPageGroup();
-            textRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TextRibbonPageGroup();
-            symbolsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.SymbolsRibbonPageGroup();
-            pageLayoutRibbonPage1 = new DevExpress.XtraRichEdit.UI.PageLayoutRibbonPage();
-            pageSetupRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.PageSetupRibbonPageGroup();
-            pageBackgroundRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.PageBackgroundRibbonPageGroup();
-            referencesRibbonPage1 = new DevExpress.XtraRichEdit.UI.ReferencesRibbonPage();
-            tableOfContentsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.TableOfContentsRibbonPageGroup();
-            captionsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.CaptionsRibbonPageGroup();
-            notesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.NotesRibbonPageGroup();
-            mailingsRibbonPage1 = new DevExpress.XtraRichEdit.UI.MailingsRibbonPage();
-            mailMergeRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.MailMergeRibbonPageGroup();
-            reviewRibbonPage1 = new DevExpress.XtraRichEdit.UI.ReviewRibbonPage();
-            documentProofingRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentProofingRibbonPageGroup();
-            documentProtectionRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentProtectionRibbonPageGroup();
-            documentCommentRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentCommentRibbonPageGroup();
-            documentTrackingRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentTrackingRibbonPageGroup();
-            documentChangesRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentChangesRibbonPageGroup();
-            viewRibbonPage1 = new DevExpress.XtraRichEdit.UI.ViewRibbonPage();
-            documentViewsRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.DocumentViewsRibbonPageGroup();
-            showRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ShowRibbonPageGroup();
-            zoomRibbonPageGroup1 = new DevExpress.XtraRichEdit.UI.ZoomRibbonPageGroup();
-            themeRibbonGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            debugRibbonPage = new DevExpress.XtraBars.Ribbon.RibbonPage();
-            debugPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
-            repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
-            repositoryItemProgressBar2 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
-            repositoryItemProgressBar3 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
-            ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            richEditBarController1 = new DevExpress.XtraRichEdit.UI.RichEditBarController(components);
-            documentStatsTimer = new System.Windows.Forms.Timer(components);
-            galleryChangeTableStyleItem1 = new DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem();
-            richEditCommentControl1 = new DevExpress.XtraRichEdit.RichEditCommentControl();
-            dockManager1 = new DevExpress.XtraBars.Docking.DockManager(components);
-            dockPanel1 = new DevExpress.XtraBars.Docking.DockPanel();
-            dockPanel1_Container = new DevExpress.XtraBars.Docking.ControlContainer();
-            richEditCommentControl2 = new DevExpress.XtraRichEdit.RichEditCommentControl();
-            ((System.ComponentModel.ISupportInitialize)DocRibbon).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemFontEdit1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemRichEditFontSizeEdit1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)displayForReviewModeComboBox1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)workProgressBar).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemBorderLineWeight1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemFloatingObjectOutlineWeight1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemZoomTrackBar1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)exportPopupMenu).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar2).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar3).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)richEditBarController1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)dockManager1).BeginInit();
-            dockPanel1.SuspendLayout();
-            dockPanel1_Container.SuspendLayout();
-            SuspendLayout();
+            this.components = (new global::System.ComponentModel.Container());
+            global::System.ComponentModel.ComponentResourceManager resources = new global::System.ComponentModel.ComponentResourceManager(typeof(global::Rizonesoft.Office.Verbum.DocForm));
+            global::DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling1 = new global::DevExpress.XtraSpellChecker.OptionsSpelling();
+            global::DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup1 = new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup();
+            global::DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup2 = new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup();
+            global::DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new global::DevExpress.XtraBars.Ribbon.ReduceOperation();
+            global::DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup3 = new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup();
+            this.DocRibbon = (new global::DevExpress.XtraBars.Ribbon.RibbonControl());
+            this.fileSaveAsItem1 = (new global::DevExpress.XtraRichEdit.UI.FileSaveAsItem());
+            this.printItem1 = (new global::DevExpress.XtraRichEdit.UI.PrintItem());
+            this.switchToPrintLayoutViewItem1 = (new global::DevExpress.XtraRichEdit.UI.SwitchToPrintLayoutViewItem());
+            this.undoItem1 = (new global::DevExpress.XtraRichEdit.UI.UndoItem());
+            this.redoItem1 = (new global::DevExpress.XtraRichEdit.UI.RedoItem());
+            this.fileNewItem1 = (new global::DevExpress.XtraRichEdit.UI.FileNewItem());
+            this.fileOpenItem1 = (new global::DevExpress.XtraRichEdit.UI.FileOpenItem());
+            this.fileSaveItem1 = (new global::DevExpress.XtraRichEdit.UI.FileSaveItem());
+            this.printPreviewItem1 = (new global::DevExpress.XtraRichEdit.UI.PrintPreviewItem());
+            this.encryptDocumentItem1 = (new global::DevExpress.XtraRichEdit.UI.EncryptDocumentItem());
+            this.showDocumentPropertiesFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowDocumentPropertiesFormItem());
+            this.pasteItem1 = (new global::DevExpress.XtraRichEdit.UI.PasteItem());
+            this.cutItem1 = (new global::DevExpress.XtraRichEdit.UI.CutItem());
+            this.copyItem1 = (new global::DevExpress.XtraRichEdit.UI.CopyItem());
+            this.pasteSpecialItem1 = (new global::DevExpress.XtraRichEdit.UI.PasteSpecialItem());
+            this.barButtonGroup1 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.changeFontNameItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFontNameItem());
+            this.repositoryItemFontEdit1 = (new global::DevExpress.XtraEditors.Repository.RepositoryItemFontEdit());
+            this.changeFontSizeItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFontSizeItem());
+            this.repositoryItemRichEditFontSizeEdit1 = (new global::DevExpress.XtraRichEdit.Design.RepositoryItemRichEditFontSizeEdit());
+            this.ChildRichEditControl = (new global::DevExpress.XtraRichEdit.RichEditControl());
+            this.mainSpellChecker = (new global::DevExpress.XtraSpellChecker.SpellChecker(this.components));
+            this.fontSizeIncreaseItem1 = (new global::DevExpress.XtraRichEdit.UI.FontSizeIncreaseItem());
+            this.fontSizeDecreaseItem1 = (new global::DevExpress.XtraRichEdit.UI.FontSizeDecreaseItem());
+            this.toggleFontBoldItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontBoldItem());
+            this.toggleFontItalicItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontItalicItem());
+            this.toggleFontUnderlineItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontUnderlineItem());
+            this.toggleFontDoubleUnderlineItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontDoubleUnderlineItem());
+            this.toggleFontStrikeoutItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontStrikeoutItem());
+            this.toggleFontDoubleStrikeoutItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontDoubleStrikeoutItem());
+            this.toggleFontSuperscriptItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontSuperscriptItem());
+            this.toggleFontSubscriptItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFontSubscriptItem());
+            this.barButtonGroup3 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.changeFontColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFontColorItem());
+            this.changeFontHighlightColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFontHighlightColorItem());
+            this.changeTextCaseItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTextCaseItem());
+            this.makeTextUpperCaseItem1 = (new global::DevExpress.XtraRichEdit.UI.MakeTextUpperCaseItem());
+            this.makeTextLowerCaseItem1 = (new global::DevExpress.XtraRichEdit.UI.MakeTextLowerCaseItem());
+            this.capitalizeEachWordCaseItem1 = (new global::DevExpress.XtraRichEdit.UI.CapitalizeEachWordCaseItem());
+            this.toggleTextCaseItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTextCaseItem());
+            this.clearFormattingItem1 = (new global::DevExpress.XtraRichEdit.UI.ClearFormattingItem());
+            this.barButtonGroup4 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.toggleBulletedListItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleBulletedListItem());
+            this.toggleNumberingListItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleNumberingListItem());
+            this.toggleMultiLevelListItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleMultiLevelListItem());
+            this.rtlToggleBulletedListItem1 = (new global::DevExpress.XtraRichEdit.UI.RtlToggleBulletedListItem());
+            this.rtlToggleNumberingListItem1 = (new global::DevExpress.XtraRichEdit.UI.RtlToggleNumberingListItem());
+            this.rtlToggleMultiLevelListItem1 = (new global::DevExpress.XtraRichEdit.UI.RtlToggleMultiLevelListItem());
+            this.barButtonGroup5 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.decreaseIndentItem1 = (new global::DevExpress.XtraRichEdit.UI.DecreaseIndentItem());
+            this.increaseIndentItem1 = (new global::DevExpress.XtraRichEdit.UI.IncreaseIndentItem());
+            this.rtlDecreaseIndentItem1 = (new global::DevExpress.XtraRichEdit.UI.RtlDecreaseIndentItem());
+            this.rtlIncreaseIndentItem1 = (new global::DevExpress.XtraRichEdit.UI.RtlIncreaseIndentItem());
+            this.toggleParagraphLeftToRightItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphLeftToRightItem());
+            this.toggleParagraphRightToLeftItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphRightToLeftItem());
+            this.toggleShowWhitespaceItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleShowWhitespaceItem());
+            this.barButtonGroup6 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.toggleParagraphAlignmentLeftItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentLeftItem());
+            this.toggleParagraphAlignmentCenterItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentCenterItem());
+            this.toggleParagraphAlignmentRightItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentRightItem());
+            this.toggleParagraphAlignmentJustifyItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyItem());
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentArabicJustifyGroupItem());
+            this.toggleParagraphAlignmentArabicJustifyItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentArabicJustifyItem());
+            this.toggleParagraphAlignmentJustifyLowItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyLowItem());
+            this.toggleParagraphAlignmentJustifyMediumItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyMediumItem());
+            this.toggleParagraphAlignmentJustifyHighItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentJustifyHighItem());
+            this.toggleParagraphAlignmentDistributeItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentDistributeItem());
+            this.toggleParagraphAlignmentThaiDistributeItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphAlignmentThaiDistributeItem());
+            this.barButtonGroup7 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.changeParagraphLineSpacingItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeParagraphLineSpacingItem());
+            this.setSingleParagraphSpacingItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSingleParagraphSpacingItem());
+            this.setSesquialteralParagraphSpacingItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSesquialteralParagraphSpacingItem());
+            this.setDoubleParagraphSpacingItem1 = (new global::DevExpress.XtraRichEdit.UI.SetDoubleParagraphSpacingItem());
+            this.showLineSpacingFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowLineSpacingFormItem());
+            this.addSpacingBeforeParagraphItem1 = (new global::DevExpress.XtraRichEdit.UI.AddSpacingBeforeParagraphItem());
+            this.removeSpacingBeforeParagraphItem1 = (new global::DevExpress.XtraRichEdit.UI.RemoveSpacingBeforeParagraphItem());
+            this.addSpacingAfterParagraphItem1 = (new global::DevExpress.XtraRichEdit.UI.AddSpacingAfterParagraphItem());
+            this.removeSpacingAfterParagraphItem1 = (new global::DevExpress.XtraRichEdit.UI.RemoveSpacingAfterParagraphItem());
+            this.changeParagraphBackColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeParagraphBackColorItem());
+            this.galleryChangeStyleItem1 = (new global::DevExpress.XtraRichEdit.UI.GalleryChangeStyleItem());
+            this.findItem1 = (new global::DevExpress.XtraRichEdit.UI.FindItem());
+            this.replaceItem1 = (new global::DevExpress.XtraRichEdit.UI.ReplaceItem());
+            this.insertPageBreakItem21 = (new global::DevExpress.XtraRichEdit.UI.InsertPageBreakItem2());
+            this.insertTableItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableItem());
+            this.insertFloatingPictureItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertFloatingPictureItem());
+            this.insertBookmarkItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertBookmarkItem());
+            this.insertHyperlinkItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertHyperlinkItem());
+            this.editPageHeaderItem1 = (new global::DevExpress.XtraRichEdit.UI.EditPageHeaderItem());
+            this.editPageFooterItem1 = (new global::DevExpress.XtraRichEdit.UI.EditPageFooterItem());
+            this.insertPageNumberItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertPageNumberItem());
+            this.insertPageCountItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertPageCountItem());
+            this.insertTextBoxItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTextBoxItem());
+            this.insertObjectItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertObjectItem());
+            this.insertSymbolItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertSymbolItem());
+            this.changeSectionPageMarginsItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeSectionPageMarginsItem());
+            this.setNormalSectionPageMarginsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetNormalSectionPageMarginsItem());
+            this.setNarrowSectionPageMarginsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetNarrowSectionPageMarginsItem());
+            this.setModerateSectionPageMarginsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetModerateSectionPageMarginsItem());
+            this.setWideSectionPageMarginsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetWideSectionPageMarginsItem());
+            this.showPageMarginsSetupFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowPageMarginsSetupFormItem());
+            this.changeSectionPageOrientationItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeSectionPageOrientationItem());
+            this.setPortraitPageOrientationItem1 = (new global::DevExpress.XtraRichEdit.UI.SetPortraitPageOrientationItem());
+            this.setLandscapePageOrientationItem1 = (new global::DevExpress.XtraRichEdit.UI.SetLandscapePageOrientationItem());
+            this.changeSectionPaperKindItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeSectionPaperKindItem());
+            this.changeSectionColumnsItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeSectionColumnsItem());
+            this.setSectionOneColumnItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionOneColumnItem());
+            this.setSectionTwoColumnsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionTwoColumnsItem());
+            this.setSectionThreeColumnsItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionThreeColumnsItem());
+            this.showColumnsSetupFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowColumnsSetupFormItem());
+            this.insertBreakItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertBreakItem());
+            this.insertPageBreakItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertPageBreakItem());
+            this.insertColumnBreakItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertColumnBreakItem());
+            this.insertSectionBreakNextPageItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertSectionBreakNextPageItem());
+            this.insertSectionBreakContinuousItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertSectionBreakContinuousItem());
+            this.insertSectionBreakEvenPageItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertSectionBreakEvenPageItem());
+            this.insertSectionBreakOddPageItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertSectionBreakOddPageItem());
+            this.changeSectionLineNumberingItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeSectionLineNumberingItem());
+            this.setSectionLineNumberingNoneItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionLineNumberingNoneItem());
+            this.setSectionLineNumberingContinuousItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionLineNumberingContinuousItem());
+            this.setSectionLineNumberingRestartNewPageItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionLineNumberingRestartNewPageItem());
+            this.setSectionLineNumberingRestartNewSectionItem1 = (new global::DevExpress.XtraRichEdit.UI.SetSectionLineNumberingRestartNewSectionItem());
+            this.toggleParagraphSuppressLineNumbersItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleParagraphSuppressLineNumbersItem());
+            this.showLineNumberingFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowLineNumberingFormItem());
+            this.changeHyphenationOptionsItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeHyphenationOptionsItem());
+            this.setHyphenateDocumentNoneItem1 = (new global::DevExpress.XtraRichEdit.UI.SetHyphenateDocumentNoneItem());
+            this.setHyphenateDocumentAutomaticItem1 = (new global::DevExpress.XtraRichEdit.UI.SetHyphenateDocumentAutomaticItem());
+            this.showHyphenationOptionsFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowHyphenationOptionsFormItem());
+            this.changePageColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangePageColorItem());
+            this.watermarkItem1 = (new global::DevExpress.XtraRichEdit.UI.WatermarkItem());
+            this.deleteWatermarkItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteWatermarkItem());
+            this.insertTableOfContentsItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableOfContentsItem());
+            this.updateTableOfContentsItem1 = (new global::DevExpress.XtraRichEdit.UI.UpdateTableOfContentsItem());
+            this.addParagraphsToTableOfContentItem1 = (new global::DevExpress.XtraRichEdit.UI.AddParagraphsToTableOfContentItem());
+            this.setParagraphHeadingLevelItem1 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem2 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem3 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem4 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem5 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem6 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem7 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem8 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem9 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.setParagraphHeadingLevelItem10 = (new global::DevExpress.XtraRichEdit.UI.SetParagraphHeadingLevelItem());
+            this.insertCaptionPlaceholderItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertCaptionPlaceholderItem());
+            this.insertFiguresCaptionItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertFiguresCaptionItems());
+            this.insertTablesCaptionItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertTablesCaptionItems());
+            this.insertEquationsCaptionItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertEquationsCaptionItems());
+            this.insertTableOfFiguresPlaceholderItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableOfFiguresPlaceholderItem());
+            this.insertTableOfFiguresItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableOfFiguresItems());
+            this.insertTableOfTablesItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableOfTablesItems());
+            this.insertTableOfEquationsItems1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableOfEquationsItems());
+            this.updateTableOfFiguresItem1 = (new global::DevExpress.XtraRichEdit.UI.UpdateTableOfFiguresItem());
+            this.insertFootnoteItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertFootnoteItem());
+            this.insertEndnoteItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertEndnoteItem());
+            this.navigationNotesItem1 = (new global::DevExpress.XtraRichEdit.UI.NavigationNotesItem());
+            this.showNotesItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowNotesItem());
+            this.insertMergeFieldItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertMergeFieldItem());
+            this.showAllFieldCodesItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowAllFieldCodesItem());
+            this.showAllFieldResultsItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowAllFieldResultsItem());
+            this.toggleViewMergedDataItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleViewMergedDataItem());
+            this.checkSpellingItem1 = (new global::DevExpress.XtraRichEdit.UI.CheckSpellingItem());
+            this.changeLanguageItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeLanguageItem());
+            this.protectDocumentItem1 = (new global::DevExpress.XtraRichEdit.UI.ProtectDocumentItem());
+            this.changeRangeEditingPermissionsItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeRangeEditingPermissionsItem());
+            this.unprotectDocumentItem1 = (new global::DevExpress.XtraRichEdit.UI.UnprotectDocumentItem());
+            this.newCommentItem1 = (new global::DevExpress.XtraRichEdit.UI.NewCommentItem());
+            this.deleteCommentsItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteCommentsItem());
+            this.deleteOneCommentItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteOneCommentItem());
+            this.deleteAllCommentsShownItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteAllCommentsShownItem());
+            this.deleteAllCommentsItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteAllCommentsItem());
+            this.previousCommentItem1 = (new global::DevExpress.XtraRichEdit.UI.PreviousCommentItem());
+            this.nextCommentItem1 = (new global::DevExpress.XtraRichEdit.UI.NextCommentItem());
+            this.toggleTrackChangesBarItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTrackChangesBarItem());
+            this.changeDisplayForReviewModeItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeDisplayForReviewModeItem());
+            this.displayForReviewModeComboBox1 = (new global::DevExpress.XtraRichEdit.UI.DisplayForReviewModeComboBox());
+            this.showMarkupSubItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowMarkupSubItem());
+            this.reviewingPaneItem1 = (new global::DevExpress.XtraRichEdit.UI.ReviewingPaneItem());
+            this.acceptAndMoveToNextSubItem1 = (new global::DevExpress.XtraRichEdit.UI.AcceptAndMoveToNextSubItem());
+            this.rejectAndMoveToNextSubItem1 = (new global::DevExpress.XtraRichEdit.UI.RejectAndMoveToNextSubItem());
+            this.previousChangeItem1 = (new global::DevExpress.XtraRichEdit.UI.PreviousChangeItem());
+            this.nextChangeItem1 = (new global::DevExpress.XtraRichEdit.UI.NextChangeItem());
+            this.switchToSimpleViewItem1 = (new global::DevExpress.XtraRichEdit.UI.SwitchToSimpleViewItem());
+            this.switchToDraftViewItem1 = (new global::DevExpress.XtraRichEdit.UI.SwitchToDraftViewItem());
+            this.toggleShowHorizontalRulerItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleShowHorizontalRulerItem());
+            this.toggleShowVerticalRulerItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleShowVerticalRulerItem());
+            this.zoomOutItem1 = (new global::DevExpress.XtraRichEdit.UI.ZoomOutItem());
+            this.zoomInItem1 = (new global::DevExpress.XtraRichEdit.UI.ZoomInItem());
+            this.goToPageHeaderItem1 = (new global::DevExpress.XtraRichEdit.UI.GoToPageHeaderItem());
+            this.goToPageFooterItem1 = (new global::DevExpress.XtraRichEdit.UI.GoToPageFooterItem());
+            this.goToNextHeaderFooterItem1 = (new global::DevExpress.XtraRichEdit.UI.GoToNextHeaderFooterItem());
+            this.goToPreviousHeaderFooterItem1 = (new global::DevExpress.XtraRichEdit.UI.GoToPreviousHeaderFooterItem());
+            this.toggleLinkToPreviousItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleLinkToPreviousItem());
+            this.toggleDifferentFirstPageItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleDifferentFirstPageItem());
+            this.toggleDifferentOddAndEvenPagesItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleDifferentOddAndEvenPagesItem());
+            this.closePageHeaderFooterItem1 = (new global::DevExpress.XtraRichEdit.UI.ClosePageHeaderFooterItem());
+            this.toggleFirstRowItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFirstRowItem());
+            this.toggleLastRowItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleLastRowItem());
+            this.toggleBandedRowsItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleBandedRowsItem());
+            this.toggleFirstColumnItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleFirstColumnItem());
+            this.toggleLastColumnItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleLastColumnItem());
+            this.toggleBandedColumnsItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleBandedColumnsItem());
+            this.changeTableBorderLineStyleItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTableBorderLineStyleItem());
+            this.workProgressBar = (new global::DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineStyle());
+            this.changeTableBorderLineWeightItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTableBorderLineWeightItem());
+            this.repositoryItemBorderLineWeight1 = (new global::DevExpress.XtraRichEdit.Forms.Design.RepositoryItemBorderLineWeight());
+            this.changeTableBorderColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTableBorderColorItem());
+            this.changeTableBordersItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTableBordersItem());
+            this.toggleTableCellsBottomBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomBorderItem());
+            this.toggleTableCellsTopBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsTopBorderItem());
+            this.toggleTableCellsLeftBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsLeftBorderItem());
+            this.toggleTableCellsRightBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsRightBorderItem());
+            this.resetTableCellsAllBordersItem1 = (new global::DevExpress.XtraRichEdit.UI.ResetTableCellsAllBordersItem());
+            this.toggleTableCellsAllBordersItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsAllBordersItem());
+            this.toggleTableCellsOutsideBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsOutsideBorderItem());
+            this.toggleTableCellsInsideBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideBorderItem());
+            this.toggleTableCellsInsideHorizontalBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideHorizontalBorderItem());
+            this.toggleTableCellsInsideVerticalBorderItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsInsideVerticalBorderItem());
+            this.toggleShowTableGridLinesItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleShowTableGridLinesItem());
+            this.changeTableCellsShadingItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeTableCellsShadingItem());
+            this.selectTableElementsItem1 = (new global::DevExpress.XtraRichEdit.UI.SelectTableElementsItem());
+            this.selectTableCellItem1 = (new global::DevExpress.XtraRichEdit.UI.SelectTableCellItem());
+            this.selectTableColumnItem1 = (new global::DevExpress.XtraRichEdit.UI.SelectTableColumnItem());
+            this.selectTableRowItem1 = (new global::DevExpress.XtraRichEdit.UI.SelectTableRowItem());
+            this.selectTableItem1 = (new global::DevExpress.XtraRichEdit.UI.SelectTableItem());
+            this.showTablePropertiesFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowTablePropertiesFormItem());
+            this.deleteTableElementsItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteTableElementsItem());
+            this.showDeleteTableCellsFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowDeleteTableCellsFormItem());
+            this.deleteTableColumnsItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteTableColumnsItem());
+            this.deleteTableRowsItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteTableRowsItem());
+            this.deleteTableItem1 = (new global::DevExpress.XtraRichEdit.UI.DeleteTableItem());
+            this.insertTableRowAboveItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableRowAboveItem());
+            this.insertTableRowBelowItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableRowBelowItem());
+            this.insertTableColumnToLeftItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableColumnToLeftItem());
+            this.insertTableColumnToRightItem1 = (new global::DevExpress.XtraRichEdit.UI.InsertTableColumnToRightItem());
+            this.mergeTableCellsItem1 = (new global::DevExpress.XtraRichEdit.UI.MergeTableCellsItem());
+            this.showSplitTableCellsForm1 = (new global::DevExpress.XtraRichEdit.UI.ShowSplitTableCellsForm());
+            this.splitTableItem1 = (new global::DevExpress.XtraRichEdit.UI.SplitTableItem());
+            this.toggleTableAutoFitItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableAutoFitItem());
+            this.toggleTableAutoFitContentsItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableAutoFitContentsItem());
+            this.toggleTableAutoFitWindowItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableAutoFitWindowItem());
+            this.toggleTableFixedColumnWidthItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableFixedColumnWidthItem());
+            this.toggleTableCellsTopLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsTopLeftAlignmentItem());
+            this.toggleTableCellsMiddleLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleLeftAlignmentItem());
+            this.toggleTableCellsBottomLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomLeftAlignmentItem());
+            this.toggleTableCellsTopCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsTopCenterAlignmentItem());
+            this.toggleTableCellsMiddleCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleCenterAlignmentItem());
+            this.toggleTableCellsBottomCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomCenterAlignmentItem());
+            this.toggleTableCellsTopRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsTopRightAlignmentItem());
+            this.toggleTableCellsMiddleRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsMiddleRightAlignmentItem());
+            this.toggleTableCellsBottomRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ToggleTableCellsBottomRightAlignmentItem());
+            this.showTableOptionsFormItem1 = (new global::DevExpress.XtraRichEdit.UI.ShowTableOptionsFormItem());
+            this.changeFloatingObjectFillColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFloatingObjectFillColorItem());
+            this.changeFloatingObjectOutlineColorItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFloatingObjectOutlineColorItem());
+            this.changeFloatingObjectOutlineWeightItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFloatingObjectOutlineWeightItem());
+            this.repositoryItemFloatingObjectOutlineWeight1 = (new global::DevExpress.XtraRichEdit.Forms.Design.RepositoryItemFloatingObjectOutlineWeight());
+            this.changeFloatingObjectTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFloatingObjectTextWrapTypeItem());
+            this.setFloatingObjectInlineTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectInlineTextWrapTypeItem());
+            this.setFloatingObjectSquareTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectSquareTextWrapTypeItem());
+            this.setFloatingObjectTightTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectTightTextWrapTypeItem());
+            this.setFloatingObjectThroughTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectThroughTextWrapTypeItem());
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectTopAndBottomTextWrapTypeItem());
+            this.setFloatingObjectBehindTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectBehindTextWrapTypeItem());
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectInFrontOfTextWrapTypeItem());
+            this.changeFloatingObjectAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.ChangeFloatingObjectAlignmentItem());
+            this.setFloatingObjectTopLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectTopLeftAlignmentItem());
+            this.setFloatingObjectTopCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectTopCenterAlignmentItem());
+            this.setFloatingObjectTopRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectTopRightAlignmentItem());
+            this.setFloatingObjectMiddleLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleLeftAlignmentItem());
+            this.setFloatingObjectMiddleCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleCenterAlignmentItem());
+            this.setFloatingObjectMiddleRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectMiddleRightAlignmentItem());
+            this.setFloatingObjectBottomLeftAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomLeftAlignmentItem());
+            this.setFloatingObjectBottomCenterAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomCenterAlignmentItem());
+            this.setFloatingObjectBottomRightAlignmentItem1 = (new global::DevExpress.XtraRichEdit.UI.SetFloatingObjectBottomRightAlignmentItem());
+            this.floatingObjectBringForwardSubItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectBringForwardSubItem());
+            this.floatingObjectBringForwardItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectBringForwardItem());
+            this.floatingObjectBringToFrontItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectBringToFrontItem());
+            this.floatingObjectBringInFrontOfTextItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectBringInFrontOfTextItem());
+            this.floatingObjectSendBackwardSubItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectSendBackwardSubItem());
+            this.floatingObjectSendBackwardItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectSendBackwardItem());
+            this.floatingObjectSendToBackItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectSendToBackItem());
+            this.floatingObjectSendBehindTextItem1 = (new global::DevExpress.XtraRichEdit.UI.FloatingObjectSendBehindTextItem());
+            this.pagesBarItem = (new global::DevExpress.XtraBars.BarStaticItem());
+            this.docStatBtnItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.barLangBtnItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.zoomBarEditItem = (new global::DevExpress.XtraBars.BarEditItem());
+            this.repositoryItemZoomTrackBar1 = (new global::DevExpress.XtraEditors.Repository.RepositoryItemZoomTrackBar());
+            this.autoSpellingItem = (new global::DevExpress.XtraBars.BarCheckItem());
+            this.spellOptionsItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.zoomResetItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.zoomBarResetItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportBarButton = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportPopupMenu = (new global::DevExpress.XtraBars.PopupMenu(this.components));
+            this.exportPDFPopupMenuItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportEBUPopupMenuItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportImagePopupMenuItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportHTMLPopupMenuItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.exportMHTPopupMenuItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.mailBarButton = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.quickPrintItem1 = (new global::DevExpress.XtraRichEdit.UI.QuickPrintItem());
+            this.barButtonGroup2 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup8 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup9 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup10 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup11 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup12 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup13 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.barButtonGroup14 = (new global::DevExpress.XtraBars.BarButtonGroup());
+            this.galleryChangeTableStyleItem2 = (new global::DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem());
+            this.barCurrLineItem = (new global::DevExpress.XtraBars.BarStaticItem());
+            this.barCurrColumnItem = (new global::DevExpress.XtraBars.BarStaticItem());
+            this.SimpleViewStatusItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.DraftViewStatusItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.PrintLayoutStatusItem = (new global::DevExpress.XtraBars.BarButtonItem());
+            this.headerToolsChildRibbonCategory = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterToolsRibbonPageCategory());
+            this.headerFooterToolsDesignRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignRibbonPage());
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignNavigationRibbonPageGroup());
+            this.headerFooterToolsDesignOptionsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignOptionsRibbonPageGroup());
+            this.headerFooterToolsDesignCloseRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterToolsDesignCloseRibbonPageGroup());
+            this.tableToolsRibbonCategory = (new global::DevExpress.XtraRichEdit.UI.TableToolsRibbonPageCategory());
+            this.tableDesignChildRibbonPage = (new global::DevExpress.XtraRichEdit.UI.TableDesignRibbonPage());
+            this.tableStyleOptionsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableStyleOptionsRibbonPageGroup());
+            this.tableStylesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableStylesRibbonPageGroup());
+            this.tableDrawBordersRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableDrawBordersRibbonPageGroup());
+            this.tableLayoutRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.TableLayoutRibbonPage());
+            this.tableTableRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableTableRibbonPageGroup());
+            this.tableRowsAndColumnsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableRowsAndColumnsRibbonPageGroup());
+            this.tableMergeRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableMergeRibbonPageGroup());
+            this.tableCellSizeRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableCellSizeRibbonPageGroup());
+            this.tableAlignmentRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableAlignmentRibbonPageGroup());
+            this.floatingPictureToolsRibbonPageCategory1 = (new global::DevExpress.XtraRichEdit.UI.FloatingPictureToolsRibbonPageCategory());
+            this.floatingPictureToolsFormatPage1 = (new global::DevExpress.XtraRichEdit.UI.FloatingPictureToolsFormatPage());
+            this.floatingPictureToolsShapeStylesPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.FloatingPictureToolsShapeStylesPageGroup());
+            this.floatingPictureToolsArrangePageGroup1 = (new global::DevExpress.XtraRichEdit.UI.FloatingPictureToolsArrangePageGroup());
+            this.fileRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.FileRibbonPage());
+            this.commonRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.CommonRibbonPageGroup());
+            this.exportRibbonGroup = (new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup());
+            this.infoRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.InfoRibbonPageGroup());
+            this.optionsRibbonGroup = (new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup());
+            this.licenseRibbonGroup = (new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup());
+            this.homeRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.HomeRibbonPage());
+            this.clipboardRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.ClipboardRibbonPageGroup());
+            this.fontRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.FontRibbonPageGroup());
+            this.paragraphRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.ParagraphRibbonPageGroup());
+            this.stylesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.StylesRibbonPageGroup());
+            this.editingRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.EditingRibbonPageGroup());
+            this.insertRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.InsertRibbonPage());
+            this.pagesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.PagesRibbonPageGroup());
+            this.tablesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TablesRibbonPageGroup());
+            this.illustrationsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.IllustrationsRibbonPageGroup());
+            this.linksRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.LinksRibbonPageGroup());
+            this.headerFooterRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.HeaderFooterRibbonPageGroup());
+            this.textRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TextRibbonPageGroup());
+            this.symbolsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.SymbolsRibbonPageGroup());
+            this.pageLayoutRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.PageLayoutRibbonPage());
+            this.pageSetupRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.PageSetupRibbonPageGroup());
+            this.pageBackgroundRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.PageBackgroundRibbonPageGroup());
+            this.referencesRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.ReferencesRibbonPage());
+            this.tableOfContentsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.TableOfContentsRibbonPageGroup());
+            this.captionsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.CaptionsRibbonPageGroup());
+            this.notesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.NotesRibbonPageGroup());
+            this.mailingsRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.MailingsRibbonPage());
+            this.mailMergeRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.MailMergeRibbonPageGroup());
+            this.reviewRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.ReviewRibbonPage());
+            this.documentProofingRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentProofingRibbonPageGroup());
+            this.documentProtectionRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentProtectionRibbonPageGroup());
+            this.documentCommentRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentCommentRibbonPageGroup());
+            this.documentTrackingRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentTrackingRibbonPageGroup());
+            this.documentChangesRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentChangesRibbonPageGroup());
+            this.viewRibbonPage1 = (new global::DevExpress.XtraRichEdit.UI.ViewRibbonPage());
+            this.documentViewsRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.DocumentViewsRibbonPageGroup());
+            this.showRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.ShowRibbonPageGroup());
+            this.zoomRibbonPageGroup1 = (new global::DevExpress.XtraRichEdit.UI.ZoomRibbonPageGroup());
+            this.themeRibbonGroup = (new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup());
+            this.debugRibbonPage = (new global::DevExpress.XtraBars.Ribbon.RibbonPage());
+            this.debugPageGroup = (new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup());
+            this.repositoryItemProgressBar1 = (new global::DevExpress.XtraEditors.Repository.RepositoryItemProgressBar());
+            this.repositoryItemProgressBar2 = (new global::DevExpress.XtraEditors.Repository.RepositoryItemProgressBar());
+            this.repositoryItemProgressBar3 = (new global::DevExpress.XtraEditors.Repository.RepositoryItemProgressBar());
+            this.ribbonStatusBar = (new global::DevExpress.XtraBars.Ribbon.RibbonStatusBar());
+            this.richEditBarController1 = (new global::DevExpress.XtraRichEdit.UI.RichEditBarController(this.components));
+            this.documentStatsTimer = (new global::System.Windows.Forms.Timer(this.components));
+            this.galleryChangeTableStyleItem1 = (new global::DevExpress.XtraRichEdit.UI.GalleryChangeTableStyleItem());
+            this.richEditCommentControl1 = (new global::DevExpress.XtraRichEdit.RichEditCommentControl());
+            this.dockManager1 = (new global::DevExpress.XtraBars.Docking.DockManager(this.components));
+            this.dockPanel1 = (new global::DevExpress.XtraBars.Docking.DockPanel());
+            this.dockPanel1_Container = (new global::DevExpress.XtraBars.Docking.ControlContainer());
+            this.richEditCommentControl2 = (new global::DevExpress.XtraRichEdit.RichEditCommentControl());
+            ((global::System.ComponentModel.ISupportInitialize)(this.DocRibbon)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemRichEditFontSizeEdit1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.displayForReviewModeComboBox1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.workProgressBar)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineWeight1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemFloatingObjectOutlineWeight1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.exportPopupMenu)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar2)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar3)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.richEditBarController1)).BeginInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.dockManager1)).BeginInit();
+            this.dockPanel1.SuspendLayout();
+            this.dockPanel1_Container.SuspendLayout();
+            this.SuspendLayout();
             // 
             // DocRibbon
             // 
-            resources.ApplyResources(DocRibbon, "DocRibbon");
-            DocRibbon.AllowCustomization = true;
-            DocRibbon.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(45, 46, 45, 46);
-            DocRibbon.EmptyAreaImageOptions.SizeMode = DevExpress.XtraBars.Ribbon.ViewInfo.RibbonEmptyAreaImageSizeMode.Squeeze;
-            DocRibbon.ExpandCollapseItem.Id = 0;
-            DocRibbon.ExpandCollapseItem.ImageOptions.ImageIndex = (int)resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.ImageIndex");
-            DocRibbon.ExpandCollapseItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.LargeImageIndex");
-            DocRibbon.ExpandCollapseItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.SvgImage");
-            DocRibbon.ExpandCollapseItem.SearchTags = resources.GetString("DocRibbon.ExpandCollapseItem.SearchTags");
-            DocRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { DocRibbon.ExpandCollapseItem, DocRibbon.SearchEditItem, fileSaveAsItem1, printItem1, switchToPrintLayoutViewItem1, undoItem1, redoItem1, fileNewItem1, fileOpenItem1, fileSaveItem1, printPreviewItem1, encryptDocumentItem1, showDocumentPropertiesFormItem1, pasteItem1, cutItem1, copyItem1, pasteSpecialItem1, barButtonGroup1, changeFontNameItem1, changeFontSizeItem1, fontSizeIncreaseItem1, fontSizeDecreaseItem1, toggleFontBoldItem1, toggleFontItalicItem1, toggleFontUnderlineItem1, toggleFontDoubleUnderlineItem1, toggleFontStrikeoutItem1, toggleFontDoubleStrikeoutItem1, toggleFontSuperscriptItem1, toggleFontSubscriptItem1, barButtonGroup3, changeFontColorItem1, changeFontHighlightColorItem1, changeTextCaseItem1, makeTextUpperCaseItem1, makeTextLowerCaseItem1, capitalizeEachWordCaseItem1, toggleTextCaseItem1, clearFormattingItem1, barButtonGroup4, toggleBulletedListItem1, toggleNumberingListItem1, toggleMultiLevelListItem1, barButtonGroup5, decreaseIndentItem1, increaseIndentItem1, rtlToggleBulletedListItem1, rtlToggleNumberingListItem1, rtlToggleMultiLevelListItem1, rtlDecreaseIndentItem1, rtlIncreaseIndentItem1, toggleParagraphLeftToRightItem1, toggleParagraphRightToLeftItem1, barButtonGroup6, toggleParagraphAlignmentLeftItem1, toggleParagraphAlignmentCenterItem1, toggleParagraphAlignmentRightItem1, toggleParagraphAlignmentJustifyItem1, toggleParagraphAlignmentArabicJustifyGroupItem1, toggleParagraphAlignmentArabicJustifyItem1, toggleParagraphAlignmentJustifyLowItem1, toggleParagraphAlignmentJustifyMediumItem1, toggleParagraphAlignmentJustifyHighItem1, toggleParagraphAlignmentDistributeItem1, toggleParagraphAlignmentThaiDistributeItem1, toggleShowWhitespaceItem1, barButtonGroup7, changeParagraphLineSpacingItem1, setSingleParagraphSpacingItem1, setSesquialteralParagraphSpacingItem1, setDoubleParagraphSpacingItem1, showLineSpacingFormItem1, addSpacingBeforeParagraphItem1, removeSpacingBeforeParagraphItem1, addSpacingAfterParagraphItem1, removeSpacingAfterParagraphItem1, changeParagraphBackColorItem1, galleryChangeStyleItem1, findItem1, replaceItem1, insertPageBreakItem21, insertTableItem1, insertFloatingPictureItem1, insertBookmarkItem1, insertHyperlinkItem1, editPageHeaderItem1, editPageFooterItem1, insertPageNumberItem1, insertPageCountItem1, insertTextBoxItem1, insertObjectItem1, insertSymbolItem1, changeSectionPageMarginsItem1, setNormalSectionPageMarginsItem1, setNarrowSectionPageMarginsItem1, setModerateSectionPageMarginsItem1, setWideSectionPageMarginsItem1, showPageMarginsSetupFormItem1, changeSectionPageOrientationItem1, setPortraitPageOrientationItem1, setLandscapePageOrientationItem1, changeSectionPaperKindItem1, changeSectionColumnsItem1, setSectionOneColumnItem1, setSectionTwoColumnsItem1, setSectionThreeColumnsItem1, showColumnsSetupFormItem1, insertBreakItem1, insertPageBreakItem1, insertColumnBreakItem1, insertSectionBreakNextPageItem1, insertSectionBreakContinuousItem1, insertSectionBreakEvenPageItem1, insertSectionBreakOddPageItem1, changeSectionLineNumberingItem1, setSectionLineNumberingNoneItem1, setSectionLineNumberingContinuousItem1, setSectionLineNumberingRestartNewPageItem1, setSectionLineNumberingRestartNewSectionItem1, toggleParagraphSuppressLineNumbersItem1, showLineNumberingFormItem1, changeHyphenationOptionsItem1, setHyphenateDocumentNoneItem1, setHyphenateDocumentAutomaticItem1, showHyphenationOptionsFormItem1, changePageColorItem1, watermarkItem1, deleteWatermarkItem1, insertTableOfContentsItem1, updateTableOfContentsItem1, addParagraphsToTableOfContentItem1, setParagraphHeadingLevelItem1, setParagraphHeadingLevelItem2, setParagraphHeadingLevelItem3, setParagraphHeadingLevelItem4, setParagraphHeadingLevelItem5, setParagraphHeadingLevelItem6, setParagraphHeadingLevelItem7, setParagraphHeadingLevelItem8, setParagraphHeadingLevelItem9, setParagraphHeadingLevelItem10, insertCaptionPlaceholderItem1, insertFiguresCaptionItems1, insertTablesCaptionItems1, insertEquationsCaptionItems1, insertTableOfFiguresPlaceholderItem1, insertTableOfFiguresItems1, insertTableOfTablesItems1, insertTableOfEquationsItems1, updateTableOfFiguresItem1, insertFootnoteItem1, insertEndnoteItem1, navigationNotesItem1, showNotesItem1, insertMergeFieldItem1, showAllFieldCodesItem1, showAllFieldResultsItem1, toggleViewMergedDataItem1, checkSpellingItem1, changeLanguageItem1, protectDocumentItem1, changeRangeEditingPermissionsItem1, unprotectDocumentItem1, newCommentItem1, deleteCommentsItem1, deleteOneCommentItem1, deleteAllCommentsShownItem1, deleteAllCommentsItem1, previousCommentItem1, nextCommentItem1, toggleTrackChangesBarItem1, changeDisplayForReviewModeItem1, showMarkupSubItem1, reviewingPaneItem1, acceptAndMoveToNextSubItem1, rejectAndMoveToNextSubItem1, previousChangeItem1, nextChangeItem1, switchToSimpleViewItem1, switchToDraftViewItem1, toggleShowHorizontalRulerItem1, toggleShowVerticalRulerItem1, zoomOutItem1, zoomInItem1, goToPageHeaderItem1, goToPageFooterItem1, goToNextHeaderFooterItem1, goToPreviousHeaderFooterItem1, toggleLinkToPreviousItem1, toggleDifferentFirstPageItem1, toggleDifferentOddAndEvenPagesItem1, closePageHeaderFooterItem1, toggleFirstRowItem1, toggleLastRowItem1, toggleBandedRowsItem1, toggleFirstColumnItem1, toggleLastColumnItem1, toggleBandedColumnsItem1, changeTableBorderLineStyleItem1, changeTableBorderLineWeightItem1, changeTableBorderColorItem1, changeTableBordersItem1, toggleTableCellsBottomBorderItem1, toggleTableCellsTopBorderItem1, toggleTableCellsLeftBorderItem1, toggleTableCellsRightBorderItem1, resetTableCellsAllBordersItem1, toggleTableCellsAllBordersItem1, toggleTableCellsOutsideBorderItem1, toggleTableCellsInsideBorderItem1, toggleTableCellsInsideHorizontalBorderItem1, toggleTableCellsInsideVerticalBorderItem1, toggleShowTableGridLinesItem1, changeTableCellsShadingItem1, selectTableElementsItem1, selectTableCellItem1, selectTableColumnItem1, selectTableRowItem1, selectTableItem1, showTablePropertiesFormItem1, deleteTableElementsItem1, showDeleteTableCellsFormItem1, deleteTableColumnsItem1, deleteTableRowsItem1, deleteTableItem1, insertTableRowAboveItem1, insertTableRowBelowItem1, insertTableColumnToLeftItem1, insertTableColumnToRightItem1, mergeTableCellsItem1, showSplitTableCellsForm1, splitTableItem1, toggleTableAutoFitItem1, toggleTableAutoFitContentsItem1, toggleTableAutoFitWindowItem1, toggleTableFixedColumnWidthItem1, toggleTableCellsTopLeftAlignmentItem1, toggleTableCellsMiddleLeftAlignmentItem1, toggleTableCellsBottomLeftAlignmentItem1, toggleTableCellsTopCenterAlignmentItem1, toggleTableCellsMiddleCenterAlignmentItem1, toggleTableCellsBottomCenterAlignmentItem1, toggleTableCellsTopRightAlignmentItem1, toggleTableCellsMiddleRightAlignmentItem1, toggleTableCellsBottomRightAlignmentItem1, showTableOptionsFormItem1, changeFloatingObjectFillColorItem1, changeFloatingObjectOutlineColorItem1, changeFloatingObjectOutlineWeightItem1, changeFloatingObjectTextWrapTypeItem1, setFloatingObjectInlineTextWrapTypeItem1, setFloatingObjectSquareTextWrapTypeItem1, setFloatingObjectTightTextWrapTypeItem1, setFloatingObjectThroughTextWrapTypeItem1, setFloatingObjectTopAndBottomTextWrapTypeItem1, setFloatingObjectBehindTextWrapTypeItem1, setFloatingObjectInFrontOfTextWrapTypeItem1, changeFloatingObjectAlignmentItem1, setFloatingObjectTopLeftAlignmentItem1, setFloatingObjectTopCenterAlignmentItem1, setFloatingObjectTopRightAlignmentItem1, setFloatingObjectMiddleLeftAlignmentItem1, setFloatingObjectMiddleCenterAlignmentItem1, setFloatingObjectMiddleRightAlignmentItem1, setFloatingObjectBottomLeftAlignmentItem1, setFloatingObjectBottomCenterAlignmentItem1, setFloatingObjectBottomRightAlignmentItem1, floatingObjectBringForwardSubItem1, floatingObjectBringForwardItem1, floatingObjectBringToFrontItem1, floatingObjectBringInFrontOfTextItem1, floatingObjectSendBackwardSubItem1, floatingObjectSendBackwardItem1, floatingObjectSendToBackItem1, floatingObjectSendBehindTextItem1, pagesBarItem, docStatBtnItem, barLangBtnItem, zoomBarEditItem, autoSpellingItem, spellOptionsItem, zoomResetItem, zoomBarResetItem, exportBarButton, mailBarButton, exportPDFPopupMenuItem, exportEBUPopupMenuItem, exportImagePopupMenuItem, exportHTMLPopupMenuItem, exportMHTPopupMenuItem, quickPrintItem1, barButtonGroup2, barButtonGroup8, barButtonGroup9, barButtonGroup10, barButtonGroup11, barButtonGroup12, barButtonGroup13, barButtonGroup14, galleryChangeTableStyleItem2, barCurrLineItem, barCurrColumnItem, SimpleViewStatusItem, DraftViewStatusItem, PrintLayoutStatusItem });
-            DocRibbon.MaxItemId = 318;
-            DocRibbon.Name = "DocRibbon";
-            DocRibbon.OptionsMenuMinWidth = 495;
-            DocRibbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { headerToolsChildRibbonCategory, tableToolsRibbonCategory, floatingPictureToolsRibbonPageCategory1 });
-            DocRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { fileRibbonPage1, homeRibbonPage1, insertRibbonPage1, pageLayoutRibbonPage1, referencesRibbonPage1, mailingsRibbonPage1, reviewRibbonPage1, viewRibbonPage1, debugRibbonPage });
-            DocRibbon.QuickToolbarItemLinks.Add(fileSaveItem1, "S");
-            DocRibbon.QuickToolbarItemLinks.Add(undoItem1);
-            DocRibbon.QuickToolbarItemLinks.Add(redoItem1);
-            DocRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemFontEdit1, repositoryItemRichEditFontSizeEdit1, displayForReviewModeComboBox1, workProgressBar, repositoryItemBorderLineWeight1, repositoryItemFloatingObjectOutlineWeight1, repositoryItemZoomTrackBar1, repositoryItemProgressBar1, repositoryItemProgressBar2, repositoryItemProgressBar3 });
-            DocRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            DocRibbon.ShowPageHeadersMode = DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show;
-            DocRibbon.StatusBar = ribbonStatusBar;
-            DocRibbon.Merge += DocRibbon_Merge;
-            DocRibbon.UnMerge += DocRibbon_UnMerge;
+            resources.ApplyResources(this.DocRibbon, "DocRibbon");
+            this.DocRibbon.AllowCustomization = (true);
+            this.DocRibbon.EmptyAreaImageOptions.ImagePadding = (new global::System.Windows.Forms.Padding(45, 46, 45, 46));
+            this.DocRibbon.EmptyAreaImageOptions.SizeMode = (global::DevExpress.XtraBars.Ribbon.ViewInfo.RibbonEmptyAreaImageSizeMode.Squeeze);
+            this.DocRibbon.ExpandCollapseItem.Id = (0);
+            this.DocRibbon.ExpandCollapseItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.ImageIndex")));
+            this.DocRibbon.ExpandCollapseItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.LargeImageIndex")));
+            this.DocRibbon.ExpandCollapseItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("DocRibbon.ExpandCollapseItem.ImageOptions.SvgImage")));
+            this.DocRibbon.ExpandCollapseItem.SearchTags = (resources.GetString("DocRibbon.ExpandCollapseItem.SearchTags"));
+            this.DocRibbon.Items.AddRange(new global::DevExpress.XtraBars.BarItem[] { this.DocRibbon.ExpandCollapseItem, this.DocRibbon.SearchEditItem, this.fileSaveAsItem1, this.printItem1, this.switchToPrintLayoutViewItem1, this.undoItem1, this.redoItem1, this.fileNewItem1, this.fileOpenItem1, this.fileSaveItem1, this.printPreviewItem1, this.encryptDocumentItem1, this.showDocumentPropertiesFormItem1, this.pasteItem1, this.cutItem1, this.copyItem1, this.pasteSpecialItem1, this.barButtonGroup1, this.changeFontNameItem1, this.changeFontSizeItem1, this.fontSizeIncreaseItem1, this.fontSizeDecreaseItem1, this.toggleFontBoldItem1, this.toggleFontItalicItem1, this.toggleFontUnderlineItem1, this.toggleFontDoubleUnderlineItem1, this.toggleFontStrikeoutItem1, this.toggleFontDoubleStrikeoutItem1, this.toggleFontSuperscriptItem1, this.toggleFontSubscriptItem1, this.barButtonGroup3, this.changeFontColorItem1, this.changeFontHighlightColorItem1, this.changeTextCaseItem1, this.makeTextUpperCaseItem1, this.makeTextLowerCaseItem1, this.capitalizeEachWordCaseItem1, this.toggleTextCaseItem1, this.clearFormattingItem1, this.barButtonGroup4, this.toggleBulletedListItem1, this.toggleNumberingListItem1, this.toggleMultiLevelListItem1, this.barButtonGroup5, this.decreaseIndentItem1, this.increaseIndentItem1, this.rtlToggleBulletedListItem1, this.rtlToggleNumberingListItem1, this.rtlToggleMultiLevelListItem1, this.rtlDecreaseIndentItem1, this.rtlIncreaseIndentItem1, this.toggleParagraphLeftToRightItem1, this.toggleParagraphRightToLeftItem1, this.barButtonGroup6, this.toggleParagraphAlignmentLeftItem1, this.toggleParagraphAlignmentCenterItem1, this.toggleParagraphAlignmentRightItem1, this.toggleParagraphAlignmentJustifyItem1, this.toggleParagraphAlignmentArabicJustifyGroupItem1, this.toggleParagraphAlignmentArabicJustifyItem1, this.toggleParagraphAlignmentJustifyLowItem1, this.toggleParagraphAlignmentJustifyMediumItem1, this.toggleParagraphAlignmentJustifyHighItem1, this.toggleParagraphAlignmentDistributeItem1, this.toggleParagraphAlignmentThaiDistributeItem1, this.toggleShowWhitespaceItem1, this.barButtonGroup7, this.changeParagraphLineSpacingItem1, this.setSingleParagraphSpacingItem1, this.setSesquialteralParagraphSpacingItem1, this.setDoubleParagraphSpacingItem1, this.showLineSpacingFormItem1, this.addSpacingBeforeParagraphItem1, this.removeSpacingBeforeParagraphItem1, this.addSpacingAfterParagraphItem1, this.removeSpacingAfterParagraphItem1, this.changeParagraphBackColorItem1, this.galleryChangeStyleItem1, this.findItem1, this.replaceItem1, this.insertPageBreakItem21, this.insertTableItem1, this.insertFloatingPictureItem1, this.insertBookmarkItem1, this.insertHyperlinkItem1, this.editPageHeaderItem1, this.editPageFooterItem1, this.insertPageNumberItem1, this.insertPageCountItem1, this.insertTextBoxItem1, this.insertObjectItem1, this.insertSymbolItem1, this.changeSectionPageMarginsItem1, this.setNormalSectionPageMarginsItem1, this.setNarrowSectionPageMarginsItem1, this.setModerateSectionPageMarginsItem1, this.setWideSectionPageMarginsItem1, this.showPageMarginsSetupFormItem1, this.changeSectionPageOrientationItem1, this.setPortraitPageOrientationItem1, this.setLandscapePageOrientationItem1, this.changeSectionPaperKindItem1, this.changeSectionColumnsItem1, this.setSectionOneColumnItem1, this.setSectionTwoColumnsItem1, this.setSectionThreeColumnsItem1, this.showColumnsSetupFormItem1, this.insertBreakItem1, this.insertPageBreakItem1, this.insertColumnBreakItem1, this.insertSectionBreakNextPageItem1, this.insertSectionBreakContinuousItem1, this.insertSectionBreakEvenPageItem1, this.insertSectionBreakOddPageItem1, this.changeSectionLineNumberingItem1, this.setSectionLineNumberingNoneItem1, this.setSectionLineNumberingContinuousItem1, this.setSectionLineNumberingRestartNewPageItem1, this.setSectionLineNumberingRestartNewSectionItem1, this.toggleParagraphSuppressLineNumbersItem1, this.showLineNumberingFormItem1, this.changeHyphenationOptionsItem1, this.setHyphenateDocumentNoneItem1, this.setHyphenateDocumentAutomaticItem1, this.showHyphenationOptionsFormItem1, this.changePageColorItem1, this.watermarkItem1, this.deleteWatermarkItem1, this.insertTableOfContentsItem1, this.updateTableOfContentsItem1, this.addParagraphsToTableOfContentItem1, this.setParagraphHeadingLevelItem1, this.setParagraphHeadingLevelItem2, this.setParagraphHeadingLevelItem3, this.setParagraphHeadingLevelItem4, this.setParagraphHeadingLevelItem5, this.setParagraphHeadingLevelItem6, this.setParagraphHeadingLevelItem7, this.setParagraphHeadingLevelItem8, this.setParagraphHeadingLevelItem9, this.setParagraphHeadingLevelItem10, this.insertCaptionPlaceholderItem1, this.insertFiguresCaptionItems1, this.insertTablesCaptionItems1, this.insertEquationsCaptionItems1, this.insertTableOfFiguresPlaceholderItem1, this.insertTableOfFiguresItems1, this.insertTableOfTablesItems1, this.insertTableOfEquationsItems1, this.updateTableOfFiguresItem1, this.insertFootnoteItem1, this.insertEndnoteItem1, this.navigationNotesItem1, this.showNotesItem1, this.insertMergeFieldItem1, this.showAllFieldCodesItem1, this.showAllFieldResultsItem1, this.toggleViewMergedDataItem1, this.checkSpellingItem1, this.changeLanguageItem1, this.protectDocumentItem1, this.changeRangeEditingPermissionsItem1, this.unprotectDocumentItem1, this.newCommentItem1, this.deleteCommentsItem1, this.deleteOneCommentItem1, this.deleteAllCommentsShownItem1, this.deleteAllCommentsItem1, this.previousCommentItem1, this.nextCommentItem1, this.toggleTrackChangesBarItem1, this.changeDisplayForReviewModeItem1, this.showMarkupSubItem1, this.reviewingPaneItem1, this.acceptAndMoveToNextSubItem1, this.rejectAndMoveToNextSubItem1, this.previousChangeItem1, this.nextChangeItem1, this.switchToSimpleViewItem1, this.switchToDraftViewItem1, this.toggleShowHorizontalRulerItem1, this.toggleShowVerticalRulerItem1, this.zoomOutItem1, this.zoomInItem1, this.goToPageHeaderItem1, this.goToPageFooterItem1, this.goToNextHeaderFooterItem1, this.goToPreviousHeaderFooterItem1, this.toggleLinkToPreviousItem1, this.toggleDifferentFirstPageItem1, this.toggleDifferentOddAndEvenPagesItem1, this.closePageHeaderFooterItem1, this.toggleFirstRowItem1, this.toggleLastRowItem1, this.toggleBandedRowsItem1, this.toggleFirstColumnItem1, this.toggleLastColumnItem1, this.toggleBandedColumnsItem1, this.changeTableBorderLineStyleItem1, this.changeTableBorderLineWeightItem1, this.changeTableBorderColorItem1, this.changeTableBordersItem1, this.toggleTableCellsBottomBorderItem1, this.toggleTableCellsTopBorderItem1, this.toggleTableCellsLeftBorderItem1, this.toggleTableCellsRightBorderItem1, this.resetTableCellsAllBordersItem1, this.toggleTableCellsAllBordersItem1, this.toggleTableCellsOutsideBorderItem1, this.toggleTableCellsInsideBorderItem1, this.toggleTableCellsInsideHorizontalBorderItem1, this.toggleTableCellsInsideVerticalBorderItem1, this.toggleShowTableGridLinesItem1, this.changeTableCellsShadingItem1, this.selectTableElementsItem1, this.selectTableCellItem1, this.selectTableColumnItem1, this.selectTableRowItem1, this.selectTableItem1, this.showTablePropertiesFormItem1, this.deleteTableElementsItem1, this.showDeleteTableCellsFormItem1, this.deleteTableColumnsItem1, this.deleteTableRowsItem1, this.deleteTableItem1, this.insertTableRowAboveItem1, this.insertTableRowBelowItem1, this.insertTableColumnToLeftItem1, this.insertTableColumnToRightItem1, this.mergeTableCellsItem1, this.showSplitTableCellsForm1, this.splitTableItem1, this.toggleTableAutoFitItem1, this.toggleTableAutoFitContentsItem1, this.toggleTableAutoFitWindowItem1, this.toggleTableFixedColumnWidthItem1, this.toggleTableCellsTopLeftAlignmentItem1, this.toggleTableCellsMiddleLeftAlignmentItem1, this.toggleTableCellsBottomLeftAlignmentItem1, this.toggleTableCellsTopCenterAlignmentItem1, this.toggleTableCellsMiddleCenterAlignmentItem1, this.toggleTableCellsBottomCenterAlignmentItem1, this.toggleTableCellsTopRightAlignmentItem1, this.toggleTableCellsMiddleRightAlignmentItem1, this.toggleTableCellsBottomRightAlignmentItem1, this.showTableOptionsFormItem1, this.changeFloatingObjectFillColorItem1, this.changeFloatingObjectOutlineColorItem1, this.changeFloatingObjectOutlineWeightItem1, this.changeFloatingObjectTextWrapTypeItem1, this.setFloatingObjectInlineTextWrapTypeItem1, this.setFloatingObjectSquareTextWrapTypeItem1, this.setFloatingObjectTightTextWrapTypeItem1, this.setFloatingObjectThroughTextWrapTypeItem1, this.setFloatingObjectTopAndBottomTextWrapTypeItem1, this.setFloatingObjectBehindTextWrapTypeItem1, this.setFloatingObjectInFrontOfTextWrapTypeItem1, this.changeFloatingObjectAlignmentItem1, this.setFloatingObjectTopLeftAlignmentItem1, this.setFloatingObjectTopCenterAlignmentItem1, this.setFloatingObjectTopRightAlignmentItem1, this.setFloatingObjectMiddleLeftAlignmentItem1, this.setFloatingObjectMiddleCenterAlignmentItem1, this.setFloatingObjectMiddleRightAlignmentItem1, this.setFloatingObjectBottomLeftAlignmentItem1, this.setFloatingObjectBottomCenterAlignmentItem1, this.setFloatingObjectBottomRightAlignmentItem1, this.floatingObjectBringForwardSubItem1, this.floatingObjectBringForwardItem1, this.floatingObjectBringToFrontItem1, this.floatingObjectBringInFrontOfTextItem1, this.floatingObjectSendBackwardSubItem1, this.floatingObjectSendBackwardItem1, this.floatingObjectSendToBackItem1, this.floatingObjectSendBehindTextItem1, this.pagesBarItem, this.docStatBtnItem, this.barLangBtnItem, this.zoomBarEditItem, this.autoSpellingItem, this.spellOptionsItem, this.zoomResetItem, this.zoomBarResetItem, this.exportBarButton, this.mailBarButton, this.exportPDFPopupMenuItem, this.exportEBUPopupMenuItem, this.exportImagePopupMenuItem, this.exportHTMLPopupMenuItem, this.exportMHTPopupMenuItem, this.quickPrintItem1, this.barButtonGroup2, this.barButtonGroup8, this.barButtonGroup9, this.barButtonGroup10, this.barButtonGroup11, this.barButtonGroup12, this.barButtonGroup13, this.barButtonGroup14, this.galleryChangeTableStyleItem2, this.barCurrLineItem, this.barCurrColumnItem, this.SimpleViewStatusItem, this.DraftViewStatusItem, this.PrintLayoutStatusItem });
+            this.DocRibbon.MaxItemId = (318);
+            this.DocRibbon.Name = ("DocRibbon");
+            this.DocRibbon.OptionsMenuMinWidth = (495);
+            this.DocRibbon.PageCategories.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { this.headerToolsChildRibbonCategory, this.tableToolsRibbonCategory, this.floatingPictureToolsRibbonPageCategory1 });
+            this.DocRibbon.Pages.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPage[] { this.fileRibbonPage1, this.homeRibbonPage1, this.insertRibbonPage1, this.pageLayoutRibbonPage1, this.referencesRibbonPage1, this.mailingsRibbonPage1, this.reviewRibbonPage1, this.viewRibbonPage1, this.debugRibbonPage });
+            this.DocRibbon.QuickToolbarItemLinks.Add(this.fileSaveItem1, "S");
+            this.DocRibbon.QuickToolbarItemLinks.Add(this.undoItem1);
+            this.DocRibbon.QuickToolbarItemLinks.Add(this.redoItem1);
+            this.DocRibbon.RepositoryItems.AddRange(new global::DevExpress.XtraEditors.Repository.RepositoryItem[] { this.repositoryItemFontEdit1, this.repositoryItemRichEditFontSizeEdit1, this.displayForReviewModeComboBox1, this.workProgressBar, this.repositoryItemBorderLineWeight1, this.repositoryItemFloatingObjectOutlineWeight1, this.repositoryItemZoomTrackBar1, this.repositoryItemProgressBar1, this.repositoryItemProgressBar2, this.repositoryItemProgressBar3 });
+            this.DocRibbon.ShowApplicationButton = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.DocRibbon.ShowPageHeadersMode = (global::DevExpress.XtraBars.Ribbon.ShowPageHeadersMode.Show);
+            this.DocRibbon.StatusBar = (this.ribbonStatusBar);
+            this.DocRibbon.Merge += (this.DocRibbon_Merge);
+            this.DocRibbon.UnMerge += (this.DocRibbon_UnMerge);
             // 
             // fileSaveAsItem1
             // 
-            resources.ApplyResources(fileSaveAsItem1, "fileSaveAsItem1");
-            fileSaveAsItem1.Id = 6;
-            fileSaveAsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fileSaveAsItem1.ImageOptions.ImageIndex");
-            fileSaveAsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fileSaveAsItem1.ImageOptions.LargeImageIndex");
-            fileSaveAsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fileSaveAsItem1.ImageOptions.SvgImage");
-            fileSaveAsItem1.MergeOrder = 7;
-            fileSaveAsItem1.Name = "fileSaveAsItem1";
+            resources.ApplyResources(this.fileSaveAsItem1, "fileSaveAsItem1");
+            this.fileSaveAsItem1.Id = (6);
+            this.fileSaveAsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fileSaveAsItem1.ImageOptions.ImageIndex")));
+            this.fileSaveAsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fileSaveAsItem1.ImageOptions.LargeImageIndex")));
+            this.fileSaveAsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fileSaveAsItem1.ImageOptions.SvgImage")));
+            this.fileSaveAsItem1.MergeOrder = (7);
+            this.fileSaveAsItem1.Name = ("fileSaveAsItem1");
             // 
             // printItem1
             // 
-            resources.ApplyResources(printItem1, "printItem1");
-            printItem1.Id = 8;
-            printItem1.ImageOptions.ImageIndex = (int)resources.GetObject("printItem1.ImageOptions.ImageIndex");
-            printItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("printItem1.ImageOptions.LargeImageIndex");
-            printItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("printItem1.ImageOptions.SvgImage");
-            printItem1.MergeOrder = 9;
-            printItem1.Name = "printItem1";
+            resources.ApplyResources(this.printItem1, "printItem1");
+            this.printItem1.Id = (8);
+            this.printItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("printItem1.ImageOptions.ImageIndex")));
+            this.printItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("printItem1.ImageOptions.LargeImageIndex")));
+            this.printItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("printItem1.ImageOptions.SvgImage")));
+            this.printItem1.MergeOrder = (9);
+            this.printItem1.Name = ("printItem1");
             // 
             // switchToPrintLayoutViewItem1
             // 
-            resources.ApplyResources(switchToPrintLayoutViewItem1, "switchToPrintLayoutViewItem1");
-            switchToPrintLayoutViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            switchToPrintLayoutViewItem1.Id = 180;
-            switchToPrintLayoutViewItem1.ImageOptions.ImageIndex = (int)resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.ImageIndex");
-            switchToPrintLayoutViewItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.LargeImageIndex");
-            switchToPrintLayoutViewItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.SvgImage");
-            switchToPrintLayoutViewItem1.Name = "switchToPrintLayoutViewItem1";
+            resources.ApplyResources(this.switchToPrintLayoutViewItem1, "switchToPrintLayoutViewItem1");
+            this.switchToPrintLayoutViewItem1.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.switchToPrintLayoutViewItem1.Id = (180);
+            this.switchToPrintLayoutViewItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.ImageIndex")));
+            this.switchToPrintLayoutViewItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.LargeImageIndex")));
+            this.switchToPrintLayoutViewItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("switchToPrintLayoutViewItem1.ImageOptions.SvgImage")));
+            this.switchToPrintLayoutViewItem1.Name = ("switchToPrintLayoutViewItem1");
             // 
             // undoItem1
             // 
-            resources.ApplyResources(undoItem1, "undoItem1");
-            undoItem1.Id = 1;
-            undoItem1.ImageOptions.ImageIndex = (int)resources.GetObject("undoItem1.ImageOptions.ImageIndex");
-            undoItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("undoItem1.ImageOptions.LargeImageIndex");
-            undoItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("undoItem1.ImageOptions.SvgImage");
-            undoItem1.MergeOrder = 4;
-            undoItem1.Name = "undoItem1";
+            resources.ApplyResources(this.undoItem1, "undoItem1");
+            this.undoItem1.Id = (1);
+            this.undoItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("undoItem1.ImageOptions.ImageIndex")));
+            this.undoItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("undoItem1.ImageOptions.LargeImageIndex")));
+            this.undoItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("undoItem1.ImageOptions.SvgImage")));
+            this.undoItem1.MergeOrder = (4);
+            this.undoItem1.Name = ("undoItem1");
             // 
             // redoItem1
             // 
-            resources.ApplyResources(redoItem1, "redoItem1");
-            redoItem1.Id = 2;
-            redoItem1.ImageOptions.ImageIndex = (int)resources.GetObject("redoItem1.ImageOptions.ImageIndex");
-            redoItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("redoItem1.ImageOptions.LargeImageIndex");
-            redoItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("redoItem1.ImageOptions.SvgImage");
-            redoItem1.MergeOrder = 5;
-            redoItem1.Name = "redoItem1";
+            resources.ApplyResources(this.redoItem1, "redoItem1");
+            this.redoItem1.Id = (2);
+            this.redoItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("redoItem1.ImageOptions.ImageIndex")));
+            this.redoItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("redoItem1.ImageOptions.LargeImageIndex")));
+            this.redoItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("redoItem1.ImageOptions.SvgImage")));
+            this.redoItem1.MergeOrder = (5);
+            this.redoItem1.Name = ("redoItem1");
             // 
             // fileNewItem1
             // 
-            resources.ApplyResources(fileNewItem1, "fileNewItem1");
-            fileNewItem1.Id = 3;
-            fileNewItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fileNewItem1.ImageOptions.ImageIndex");
-            fileNewItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fileNewItem1.ImageOptions.LargeImageIndex");
-            fileNewItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fileNewItem1.ImageOptions.SvgImage");
-            fileNewItem1.MergeType = DevExpress.XtraBars.BarMenuMerge.Remove;
-            fileNewItem1.Name = "fileNewItem1";
+            resources.ApplyResources(this.fileNewItem1, "fileNewItem1");
+            this.fileNewItem1.Id = (3);
+            this.fileNewItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fileNewItem1.ImageOptions.ImageIndex")));
+            this.fileNewItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fileNewItem1.ImageOptions.LargeImageIndex")));
+            this.fileNewItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fileNewItem1.ImageOptions.SvgImage")));
+            this.fileNewItem1.MergeType = (global::DevExpress.XtraBars.BarMenuMerge.Remove);
+            this.fileNewItem1.Name = ("fileNewItem1");
             // 
             // fileOpenItem1
             // 
-            resources.ApplyResources(fileOpenItem1, "fileOpenItem1");
-            fileOpenItem1.Id = 4;
-            fileOpenItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fileOpenItem1.ImageOptions.ImageIndex");
-            fileOpenItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fileOpenItem1.ImageOptions.LargeImageIndex");
-            fileOpenItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fileOpenItem1.ImageOptions.SvgImage");
-            fileOpenItem1.MergeOrder = 1;
-            fileOpenItem1.MergeType = DevExpress.XtraBars.BarMenuMerge.Remove;
-            fileOpenItem1.Name = "fileOpenItem1";
+            resources.ApplyResources(this.fileOpenItem1, "fileOpenItem1");
+            this.fileOpenItem1.Id = (4);
+            this.fileOpenItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fileOpenItem1.ImageOptions.ImageIndex")));
+            this.fileOpenItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fileOpenItem1.ImageOptions.LargeImageIndex")));
+            this.fileOpenItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fileOpenItem1.ImageOptions.SvgImage")));
+            this.fileOpenItem1.MergeOrder = (1);
+            this.fileOpenItem1.MergeType = (global::DevExpress.XtraBars.BarMenuMerge.Remove);
+            this.fileOpenItem1.Name = ("fileOpenItem1");
             // 
             // fileSaveItem1
             // 
-            resources.ApplyResources(fileSaveItem1, "fileSaveItem1");
-            fileSaveItem1.Id = 5;
-            fileSaveItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fileSaveItem1.ImageOptions.ImageIndex");
-            fileSaveItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fileSaveItem1.ImageOptions.LargeImageIndex");
-            fileSaveItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fileSaveItem1.ImageOptions.SvgImage");
-            fileSaveItem1.MergeOrder = 6;
-            fileSaveItem1.Name = "fileSaveItem1";
+            resources.ApplyResources(this.fileSaveItem1, "fileSaveItem1");
+            this.fileSaveItem1.Id = (5);
+            this.fileSaveItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fileSaveItem1.ImageOptions.ImageIndex")));
+            this.fileSaveItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fileSaveItem1.ImageOptions.LargeImageIndex")));
+            this.fileSaveItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fileSaveItem1.ImageOptions.SvgImage")));
+            this.fileSaveItem1.MergeOrder = (6);
+            this.fileSaveItem1.Name = ("fileSaveItem1");
             // 
             // printPreviewItem1
             // 
-            resources.ApplyResources(printPreviewItem1, "printPreviewItem1");
-            printPreviewItem1.Id = 9;
-            printPreviewItem1.ImageOptions.ImageIndex = (int)resources.GetObject("printPreviewItem1.ImageOptions.ImageIndex");
-            printPreviewItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("printPreviewItem1.ImageOptions.LargeImageIndex");
-            printPreviewItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("printPreviewItem1.ImageOptions.SvgImage");
-            printPreviewItem1.MergeOrder = 10;
-            printPreviewItem1.Name = "printPreviewItem1";
+            resources.ApplyResources(this.printPreviewItem1, "printPreviewItem1");
+            this.printPreviewItem1.Id = (9);
+            this.printPreviewItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("printPreviewItem1.ImageOptions.ImageIndex")));
+            this.printPreviewItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("printPreviewItem1.ImageOptions.LargeImageIndex")));
+            this.printPreviewItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("printPreviewItem1.ImageOptions.SvgImage")));
+            this.printPreviewItem1.MergeOrder = (10);
+            this.printPreviewItem1.Name = ("printPreviewItem1");
             // 
             // encryptDocumentItem1
             // 
-            resources.ApplyResources(encryptDocumentItem1, "encryptDocumentItem1");
-            encryptDocumentItem1.Id = 10;
-            encryptDocumentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("encryptDocumentItem1.ImageOptions.ImageIndex");
-            encryptDocumentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("encryptDocumentItem1.ImageOptions.LargeImageIndex");
-            encryptDocumentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("encryptDocumentItem1.ImageOptions.SvgImage");
-            encryptDocumentItem1.MergeOrder = 12;
-            encryptDocumentItem1.Name = "encryptDocumentItem1";
+            resources.ApplyResources(this.encryptDocumentItem1, "encryptDocumentItem1");
+            this.encryptDocumentItem1.Id = (10);
+            this.encryptDocumentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("encryptDocumentItem1.ImageOptions.ImageIndex")));
+            this.encryptDocumentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("encryptDocumentItem1.ImageOptions.LargeImageIndex")));
+            this.encryptDocumentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("encryptDocumentItem1.ImageOptions.SvgImage")));
+            this.encryptDocumentItem1.MergeOrder = (12);
+            this.encryptDocumentItem1.Name = ("encryptDocumentItem1");
             // 
             // showDocumentPropertiesFormItem1
             // 
-            resources.ApplyResources(showDocumentPropertiesFormItem1, "showDocumentPropertiesFormItem1");
-            showDocumentPropertiesFormItem1.Id = 11;
-            showDocumentPropertiesFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.ImageIndex");
-            showDocumentPropertiesFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.LargeImageIndex");
-            showDocumentPropertiesFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.SvgImage");
-            showDocumentPropertiesFormItem1.MergeOrder = 13;
-            showDocumentPropertiesFormItem1.Name = "showDocumentPropertiesFormItem1";
+            resources.ApplyResources(this.showDocumentPropertiesFormItem1, "showDocumentPropertiesFormItem1");
+            this.showDocumentPropertiesFormItem1.Id = (11);
+            this.showDocumentPropertiesFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.ImageIndex")));
+            this.showDocumentPropertiesFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.LargeImageIndex")));
+            this.showDocumentPropertiesFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showDocumentPropertiesFormItem1.ImageOptions.SvgImage")));
+            this.showDocumentPropertiesFormItem1.MergeOrder = (13);
+            this.showDocumentPropertiesFormItem1.Name = ("showDocumentPropertiesFormItem1");
             // 
             // pasteItem1
             // 
-            resources.ApplyResources(pasteItem1, "pasteItem1");
-            pasteItem1.Id = 19;
-            pasteItem1.ImageOptions.ImageIndex = (int)resources.GetObject("pasteItem1.ImageOptions.ImageIndex");
-            pasteItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("pasteItem1.ImageOptions.LargeImageIndex");
-            pasteItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("pasteItem1.ImageOptions.SvgImage");
-            pasteItem1.Name = "pasteItem1";
+            resources.ApplyResources(this.pasteItem1, "pasteItem1");
+            this.pasteItem1.Id = (19);
+            this.pasteItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("pasteItem1.ImageOptions.ImageIndex")));
+            this.pasteItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("pasteItem1.ImageOptions.LargeImageIndex")));
+            this.pasteItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("pasteItem1.ImageOptions.SvgImage")));
+            this.pasteItem1.Name = ("pasteItem1");
             // 
             // cutItem1
             // 
-            resources.ApplyResources(cutItem1, "cutItem1");
-            cutItem1.Id = 20;
-            cutItem1.ImageOptions.ImageIndex = (int)resources.GetObject("cutItem1.ImageOptions.ImageIndex");
-            cutItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("cutItem1.ImageOptions.LargeImageIndex");
-            cutItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("cutItem1.ImageOptions.SvgImage");
-            cutItem1.Name = "cutItem1";
+            resources.ApplyResources(this.cutItem1, "cutItem1");
+            this.cutItem1.Id = (20);
+            this.cutItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("cutItem1.ImageOptions.ImageIndex")));
+            this.cutItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("cutItem1.ImageOptions.LargeImageIndex")));
+            this.cutItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("cutItem1.ImageOptions.SvgImage")));
+            this.cutItem1.Name = ("cutItem1");
             // 
             // copyItem1
             // 
-            resources.ApplyResources(copyItem1, "copyItem1");
-            copyItem1.Id = 21;
-            copyItem1.ImageOptions.ImageIndex = (int)resources.GetObject("copyItem1.ImageOptions.ImageIndex");
-            copyItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("copyItem1.ImageOptions.LargeImageIndex");
-            copyItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("copyItem1.ImageOptions.SvgImage");
-            copyItem1.Name = "copyItem1";
+            resources.ApplyResources(this.copyItem1, "copyItem1");
+            this.copyItem1.Id = (21);
+            this.copyItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("copyItem1.ImageOptions.ImageIndex")));
+            this.copyItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("copyItem1.ImageOptions.LargeImageIndex")));
+            this.copyItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("copyItem1.ImageOptions.SvgImage")));
+            this.copyItem1.Name = ("copyItem1");
             // 
             // pasteSpecialItem1
             // 
-            resources.ApplyResources(pasteSpecialItem1, "pasteSpecialItem1");
-            pasteSpecialItem1.Id = 22;
-            pasteSpecialItem1.ImageOptions.ImageIndex = (int)resources.GetObject("pasteSpecialItem1.ImageOptions.ImageIndex");
-            pasteSpecialItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("pasteSpecialItem1.ImageOptions.LargeImageIndex");
-            pasteSpecialItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("pasteSpecialItem1.ImageOptions.SvgImage");
-            pasteSpecialItem1.Name = "pasteSpecialItem1";
+            resources.ApplyResources(this.pasteSpecialItem1, "pasteSpecialItem1");
+            this.pasteSpecialItem1.Id = (22);
+            this.pasteSpecialItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("pasteSpecialItem1.ImageOptions.ImageIndex")));
+            this.pasteSpecialItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("pasteSpecialItem1.ImageOptions.LargeImageIndex")));
+            this.pasteSpecialItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("pasteSpecialItem1.ImageOptions.SvgImage")));
+            this.pasteSpecialItem1.Name = ("pasteSpecialItem1");
             // 
             // barButtonGroup1
             // 
-            resources.ApplyResources(barButtonGroup1, "barButtonGroup1");
-            barButtonGroup1.Id = 12;
-            barButtonGroup1.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup1.ImageOptions.ImageIndex");
-            barButtonGroup1.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup1.ImageOptions.LargeImageIndex");
-            barButtonGroup1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup1.ImageOptions.SvgImage");
-            barButtonGroup1.ItemLinks.Add(changeFontNameItem1, "FF");
-            barButtonGroup1.ItemLinks.Add(changeFontSizeItem1);
-            barButtonGroup1.ItemLinks.Add(fontSizeIncreaseItem1, "FG");
-            barButtonGroup1.ItemLinks.Add(fontSizeDecreaseItem1, "FK");
-            barButtonGroup1.Name = "barButtonGroup1";
-            barButtonGroup1.Tag = "{97BBE334-159B-44d9-A168-0411957565E8}";
+            resources.ApplyResources(this.barButtonGroup1, "barButtonGroup1");
+            this.barButtonGroup1.Id = (12);
+            this.barButtonGroup1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup1.ImageOptions.ImageIndex")));
+            this.barButtonGroup1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup1.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup1.ImageOptions.SvgImage")));
+            this.barButtonGroup1.ItemLinks.Add(this.changeFontNameItem1, "FF");
+            this.barButtonGroup1.ItemLinks.Add(this.changeFontSizeItem1);
+            this.barButtonGroup1.ItemLinks.Add(this.fontSizeIncreaseItem1, "FG");
+            this.barButtonGroup1.ItemLinks.Add(this.fontSizeDecreaseItem1, "FK");
+            this.barButtonGroup1.Name = ("barButtonGroup1");
+            this.barButtonGroup1.Tag = ("{97BBE334-159B-44d9-A168-0411957565E8}");
             // 
             // changeFontNameItem1
             // 
-            resources.ApplyResources(changeFontNameItem1, "changeFontNameItem1");
-            changeFontNameItem1.Edit = repositoryItemFontEdit1;
-            changeFontNameItem1.Id = 23;
-            changeFontNameItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFontNameItem1.ImageOptions.ImageIndex");
-            changeFontNameItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFontNameItem1.ImageOptions.LargeImageIndex");
-            changeFontNameItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFontNameItem1.ImageOptions.SvgImage");
-            changeFontNameItem1.Name = "changeFontNameItem1";
+            resources.ApplyResources(this.changeFontNameItem1, "changeFontNameItem1");
+            this.changeFontNameItem1.Edit = (this.repositoryItemFontEdit1);
+            this.changeFontNameItem1.Id = (23);
+            this.changeFontNameItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFontNameItem1.ImageOptions.ImageIndex")));
+            this.changeFontNameItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFontNameItem1.ImageOptions.LargeImageIndex")));
+            this.changeFontNameItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFontNameItem1.ImageOptions.SvgImage")));
+            this.changeFontNameItem1.Name = ("changeFontNameItem1");
             // 
             // repositoryItemFontEdit1
             // 
-            resources.ApplyResources(repositoryItemFontEdit1, "repositoryItemFontEdit1");
-            repositoryItemFontEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("repositoryItemFontEdit1.Buttons")) });
-            repositoryItemFontEdit1.Name = "repositoryItemFontEdit1";
+            resources.ApplyResources(this.repositoryItemFontEdit1, "repositoryItemFontEdit1");
+            this.repositoryItemFontEdit1.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("repositoryItemFontEdit1.Buttons"))) });
+            this.repositoryItemFontEdit1.Name = ("repositoryItemFontEdit1");
             // 
             // changeFontSizeItem1
             // 
-            resources.ApplyResources(changeFontSizeItem1, "changeFontSizeItem1");
-            changeFontSizeItem1.Edit = repositoryItemRichEditFontSizeEdit1;
-            changeFontSizeItem1.Id = 24;
-            changeFontSizeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFontSizeItem1.ImageOptions.ImageIndex");
-            changeFontSizeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFontSizeItem1.ImageOptions.LargeImageIndex");
-            changeFontSizeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFontSizeItem1.ImageOptions.SvgImage");
-            changeFontSizeItem1.Name = "changeFontSizeItem1";
+            resources.ApplyResources(this.changeFontSizeItem1, "changeFontSizeItem1");
+            this.changeFontSizeItem1.Edit = (this.repositoryItemRichEditFontSizeEdit1);
+            this.changeFontSizeItem1.Id = (24);
+            this.changeFontSizeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFontSizeItem1.ImageOptions.ImageIndex")));
+            this.changeFontSizeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFontSizeItem1.ImageOptions.LargeImageIndex")));
+            this.changeFontSizeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFontSizeItem1.ImageOptions.SvgImage")));
+            this.changeFontSizeItem1.Name = ("changeFontSizeItem1");
             // 
             // repositoryItemRichEditFontSizeEdit1
             // 
-            resources.ApplyResources(repositoryItemRichEditFontSizeEdit1, "repositoryItemRichEditFontSizeEdit1");
-            repositoryItemRichEditFontSizeEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("repositoryItemRichEditFontSizeEdit1.Buttons")) });
-            repositoryItemRichEditFontSizeEdit1.Control = ChildRichEditControl;
-            repositoryItemRichEditFontSizeEdit1.Name = "repositoryItemRichEditFontSizeEdit1";
+            resources.ApplyResources(this.repositoryItemRichEditFontSizeEdit1, "repositoryItemRichEditFontSizeEdit1");
+            this.repositoryItemRichEditFontSizeEdit1.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("repositoryItemRichEditFontSizeEdit1.Buttons"))) });
+            this.repositoryItemRichEditFontSizeEdit1.Control = (this.ChildRichEditControl);
+            this.repositoryItemRichEditFontSizeEdit1.Name = ("repositoryItemRichEditFontSizeEdit1");
             // 
             // ChildRichEditControl
             // 
-            resources.ApplyResources(ChildRichEditControl, "ChildRichEditControl");
-            ChildRichEditControl.MenuManager = DocRibbon;
-            ChildRichEditControl.Name = "ChildRichEditControl";
-            ChildRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
-            ChildRichEditControl.SpellChecker = mainSpellChecker;
-            mainSpellChecker.SetSpellCheckerOptions(ChildRichEditControl, optionsSpelling2);
-            ChildRichEditControl.ActiveViewChanged += MainRichEditControl_ActiveViewChanged;
-            ChildRichEditControl.SelectionChanged += MainRichEditControl_SelectionChanged;
-            ChildRichEditControl.DocumentLoaded += MainRichEditControl_DocumentLoaded;
-            ChildRichEditControl.ContentChanged += MainRichEditControl_ContentChanged;
-            ChildRichEditControl.ZoomChanged += MainRichEditControl_ZoomChanged;
-            ChildRichEditControl.BeforeImport += MainRichEditControl_BeforeImport;
-            ChildRichEditControl.BeforeExport += MainRichEditControl_BeforeExport;
-            ChildRichEditControl.StartHeaderFooterEditing += MainRichEditControl_StartHeaderFooterEditing;
-            ChildRichEditControl.FinishHeaderFooterEditing += MainRichEditControl_FinishHeaderFooterEditing;
-            ChildRichEditControl.InvalidFormatException += mainRichEditControl_InvalidFormatException;
-            ChildRichEditControl.VisiblePagesChanged += MainRichEditControl_VisiblePagesChanged;
-            ChildRichEditControl.DockChanged += MainRichEditControl_DockChanged;
+            resources.ApplyResources(this.ChildRichEditControl, "ChildRichEditControl");
+            this.ChildRichEditControl.MenuManager = (this.DocRibbon);
+            this.ChildRichEditControl.Name = ("ChildRichEditControl");
+            this.ChildRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = (false);
+            this.ChildRichEditControl.SpellChecker = (this.mainSpellChecker);
+            this.mainSpellChecker.SetSpellCheckerOptions(this.ChildRichEditControl, optionsSpelling1);
+            this.ChildRichEditControl.ActiveViewChanged += (this.MainRichEditControl_ActiveViewChanged);
+            this.ChildRichEditControl.SelectionChanged += (this.MainRichEditControl_SelectionChanged);
+            this.ChildRichEditControl.DocumentLoaded += (this.MainRichEditControl_DocumentLoaded);
+            this.ChildRichEditControl.ContentChanged += (this.MainRichEditControl_ContentChanged);
+            this.ChildRichEditControl.ZoomChanged += (this.MainRichEditControl_ZoomChanged);
+            this.ChildRichEditControl.BeforeImport += (this.MainRichEditControl_BeforeImport);
+            this.ChildRichEditControl.BeforeExport += (this.MainRichEditControl_BeforeExport);
+            this.ChildRichEditControl.StartHeaderFooterEditing += (this.MainRichEditControl_StartHeaderFooterEditing);
+            this.ChildRichEditControl.FinishHeaderFooterEditing += (this.MainRichEditControl_FinishHeaderFooterEditing);
+            this.ChildRichEditControl.InvalidFormatException += (this.mainRichEditControl_InvalidFormatException);
+            this.ChildRichEditControl.VisiblePagesChanged += (this.MainRichEditControl_VisiblePagesChanged);
             // 
             // mainSpellChecker
             // 
-            mainSpellChecker.Culture = new System.Globalization.CultureInfo("en-US");
-            mainSpellChecker.LoadOnDemand = true;
-            mainSpellChecker.ParentContainer = null;
-            mainSpellChecker.SpellingFormType = DevExpress.XtraSpellChecker.SpellingFormType.Word;
+            this.mainSpellChecker.Culture = (new global::System.Globalization.CultureInfo("en-US"));
+            this.mainSpellChecker.LoadOnDemand = (true);
+            this.mainSpellChecker.ParentContainer = (null);
+            this.mainSpellChecker.SpellingFormType = (global::DevExpress.XtraSpellChecker.SpellingFormType.Word);
             // 
             // fontSizeIncreaseItem1
             // 
-            resources.ApplyResources(fontSizeIncreaseItem1, "fontSizeIncreaseItem1");
-            fontSizeIncreaseItem1.Id = 25;
-            fontSizeIncreaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fontSizeIncreaseItem1.ImageOptions.ImageIndex");
-            fontSizeIncreaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fontSizeIncreaseItem1.ImageOptions.LargeImageIndex");
-            fontSizeIncreaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fontSizeIncreaseItem1.ImageOptions.SvgImage");
-            fontSizeIncreaseItem1.Name = "fontSizeIncreaseItem1";
+            resources.ApplyResources(this.fontSizeIncreaseItem1, "fontSizeIncreaseItem1");
+            this.fontSizeIncreaseItem1.Id = (25);
+            this.fontSizeIncreaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fontSizeIncreaseItem1.ImageOptions.ImageIndex")));
+            this.fontSizeIncreaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fontSizeIncreaseItem1.ImageOptions.LargeImageIndex")));
+            this.fontSizeIncreaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fontSizeIncreaseItem1.ImageOptions.SvgImage")));
+            this.fontSizeIncreaseItem1.Name = ("fontSizeIncreaseItem1");
             // 
             // fontSizeDecreaseItem1
             // 
-            resources.ApplyResources(fontSizeDecreaseItem1, "fontSizeDecreaseItem1");
-            fontSizeDecreaseItem1.Id = 26;
-            fontSizeDecreaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("fontSizeDecreaseItem1.ImageOptions.ImageIndex");
-            fontSizeDecreaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("fontSizeDecreaseItem1.ImageOptions.LargeImageIndex");
-            fontSizeDecreaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("fontSizeDecreaseItem1.ImageOptions.SvgImage");
-            fontSizeDecreaseItem1.Name = "fontSizeDecreaseItem1";
+            resources.ApplyResources(this.fontSizeDecreaseItem1, "fontSizeDecreaseItem1");
+            this.fontSizeDecreaseItem1.Id = (26);
+            this.fontSizeDecreaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("fontSizeDecreaseItem1.ImageOptions.ImageIndex")));
+            this.fontSizeDecreaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("fontSizeDecreaseItem1.ImageOptions.LargeImageIndex")));
+            this.fontSizeDecreaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("fontSizeDecreaseItem1.ImageOptions.SvgImage")));
+            this.fontSizeDecreaseItem1.Name = ("fontSizeDecreaseItem1");
             // 
             // toggleFontBoldItem1
             // 
-            resources.ApplyResources(toggleFontBoldItem1, "toggleFontBoldItem1");
-            toggleFontBoldItem1.Id = 27;
-            toggleFontBoldItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontBoldItem1.ImageOptions.ImageIndex");
-            toggleFontBoldItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontBoldItem1.ImageOptions.LargeImageIndex");
-            toggleFontBoldItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontBoldItem1.ImageOptions.SvgImage");
-            toggleFontBoldItem1.Name = "toggleFontBoldItem1";
+            resources.ApplyResources(this.toggleFontBoldItem1, "toggleFontBoldItem1");
+            this.toggleFontBoldItem1.Id = (27);
+            this.toggleFontBoldItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontBoldItem1.ImageOptions.ImageIndex")));
+            this.toggleFontBoldItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontBoldItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontBoldItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontBoldItem1.ImageOptions.SvgImage")));
+            this.toggleFontBoldItem1.Name = ("toggleFontBoldItem1");
             // 
             // toggleFontItalicItem1
             // 
-            resources.ApplyResources(toggleFontItalicItem1, "toggleFontItalicItem1");
-            toggleFontItalicItem1.Id = 28;
-            toggleFontItalicItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontItalicItem1.ImageOptions.ImageIndex");
-            toggleFontItalicItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontItalicItem1.ImageOptions.LargeImageIndex");
-            toggleFontItalicItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontItalicItem1.ImageOptions.SvgImage");
-            toggleFontItalicItem1.Name = "toggleFontItalicItem1";
+            resources.ApplyResources(this.toggleFontItalicItem1, "toggleFontItalicItem1");
+            this.toggleFontItalicItem1.Id = (28);
+            this.toggleFontItalicItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontItalicItem1.ImageOptions.ImageIndex")));
+            this.toggleFontItalicItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontItalicItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontItalicItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontItalicItem1.ImageOptions.SvgImage")));
+            this.toggleFontItalicItem1.Name = ("toggleFontItalicItem1");
             // 
             // toggleFontUnderlineItem1
             // 
-            resources.ApplyResources(toggleFontUnderlineItem1, "toggleFontUnderlineItem1");
-            toggleFontUnderlineItem1.Id = 29;
-            toggleFontUnderlineItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontUnderlineItem1.ImageOptions.ImageIndex");
-            toggleFontUnderlineItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontUnderlineItem1.ImageOptions.LargeImageIndex");
-            toggleFontUnderlineItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontUnderlineItem1.ImageOptions.SvgImage");
-            toggleFontUnderlineItem1.Name = "toggleFontUnderlineItem1";
+            resources.ApplyResources(this.toggleFontUnderlineItem1, "toggleFontUnderlineItem1");
+            this.toggleFontUnderlineItem1.Id = (29);
+            this.toggleFontUnderlineItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontUnderlineItem1.ImageOptions.ImageIndex")));
+            this.toggleFontUnderlineItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontUnderlineItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontUnderlineItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontUnderlineItem1.ImageOptions.SvgImage")));
+            this.toggleFontUnderlineItem1.Name = ("toggleFontUnderlineItem1");
             // 
             // toggleFontDoubleUnderlineItem1
             // 
-            resources.ApplyResources(toggleFontDoubleUnderlineItem1, "toggleFontDoubleUnderlineItem1");
-            toggleFontDoubleUnderlineItem1.Id = 30;
-            toggleFontDoubleUnderlineItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.ImageIndex");
-            toggleFontDoubleUnderlineItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.LargeImageIndex");
-            toggleFontDoubleUnderlineItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.SvgImage");
-            toggleFontDoubleUnderlineItem1.Name = "toggleFontDoubleUnderlineItem1";
+            resources.ApplyResources(this.toggleFontDoubleUnderlineItem1, "toggleFontDoubleUnderlineItem1");
+            this.toggleFontDoubleUnderlineItem1.Id = (30);
+            this.toggleFontDoubleUnderlineItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.ImageIndex")));
+            this.toggleFontDoubleUnderlineItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontDoubleUnderlineItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontDoubleUnderlineItem1.ImageOptions.SvgImage")));
+            this.toggleFontDoubleUnderlineItem1.Name = ("toggleFontDoubleUnderlineItem1");
             // 
             // toggleFontStrikeoutItem1
             // 
-            resources.ApplyResources(toggleFontStrikeoutItem1, "toggleFontStrikeoutItem1");
-            toggleFontStrikeoutItem1.Id = 31;
-            toggleFontStrikeoutItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.ImageIndex");
-            toggleFontStrikeoutItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.LargeImageIndex");
-            toggleFontStrikeoutItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.SvgImage");
-            toggleFontStrikeoutItem1.Name = "toggleFontStrikeoutItem1";
+            resources.ApplyResources(this.toggleFontStrikeoutItem1, "toggleFontStrikeoutItem1");
+            this.toggleFontStrikeoutItem1.Id = (31);
+            this.toggleFontStrikeoutItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.ImageIndex")));
+            this.toggleFontStrikeoutItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontStrikeoutItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontStrikeoutItem1.ImageOptions.SvgImage")));
+            this.toggleFontStrikeoutItem1.Name = ("toggleFontStrikeoutItem1");
             // 
             // toggleFontDoubleStrikeoutItem1
             // 
-            resources.ApplyResources(toggleFontDoubleStrikeoutItem1, "toggleFontDoubleStrikeoutItem1");
-            toggleFontDoubleStrikeoutItem1.Id = 32;
-            toggleFontDoubleStrikeoutItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.ImageIndex");
-            toggleFontDoubleStrikeoutItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.LargeImageIndex");
-            toggleFontDoubleStrikeoutItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.SvgImage");
-            toggleFontDoubleStrikeoutItem1.Name = "toggleFontDoubleStrikeoutItem1";
+            resources.ApplyResources(this.toggleFontDoubleStrikeoutItem1, "toggleFontDoubleStrikeoutItem1");
+            this.toggleFontDoubleStrikeoutItem1.Id = (32);
+            this.toggleFontDoubleStrikeoutItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.ImageIndex")));
+            this.toggleFontDoubleStrikeoutItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontDoubleStrikeoutItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontDoubleStrikeoutItem1.ImageOptions.SvgImage")));
+            this.toggleFontDoubleStrikeoutItem1.Name = ("toggleFontDoubleStrikeoutItem1");
             // 
             // toggleFontSuperscriptItem1
             // 
-            resources.ApplyResources(toggleFontSuperscriptItem1, "toggleFontSuperscriptItem1");
-            toggleFontSuperscriptItem1.Id = 33;
-            toggleFontSuperscriptItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.ImageIndex");
-            toggleFontSuperscriptItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.LargeImageIndex");
-            toggleFontSuperscriptItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.SvgImage");
-            toggleFontSuperscriptItem1.Name = "toggleFontSuperscriptItem1";
+            resources.ApplyResources(this.toggleFontSuperscriptItem1, "toggleFontSuperscriptItem1");
+            this.toggleFontSuperscriptItem1.Id = (33);
+            this.toggleFontSuperscriptItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.ImageIndex")));
+            this.toggleFontSuperscriptItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontSuperscriptItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontSuperscriptItem1.ImageOptions.SvgImage")));
+            this.toggleFontSuperscriptItem1.Name = ("toggleFontSuperscriptItem1");
             // 
             // toggleFontSubscriptItem1
             // 
-            resources.ApplyResources(toggleFontSubscriptItem1, "toggleFontSubscriptItem1");
-            toggleFontSubscriptItem1.Id = 34;
-            toggleFontSubscriptItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFontSubscriptItem1.ImageOptions.ImageIndex");
-            toggleFontSubscriptItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFontSubscriptItem1.ImageOptions.LargeImageIndex");
-            toggleFontSubscriptItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFontSubscriptItem1.ImageOptions.SvgImage");
-            toggleFontSubscriptItem1.Name = "toggleFontSubscriptItem1";
+            resources.ApplyResources(this.toggleFontSubscriptItem1, "toggleFontSubscriptItem1");
+            this.toggleFontSubscriptItem1.Id = (34);
+            this.toggleFontSubscriptItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontSubscriptItem1.ImageOptions.ImageIndex")));
+            this.toggleFontSubscriptItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFontSubscriptItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFontSubscriptItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFontSubscriptItem1.ImageOptions.SvgImage")));
+            this.toggleFontSubscriptItem1.Name = ("toggleFontSubscriptItem1");
             // 
             // barButtonGroup3
             // 
-            resources.ApplyResources(barButtonGroup3, "barButtonGroup3");
-            barButtonGroup3.Id = 14;
-            barButtonGroup3.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup3.ImageOptions.ImageIndex");
-            barButtonGroup3.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup3.ImageOptions.LargeImageIndex");
-            barButtonGroup3.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup3.ImageOptions.SvgImage");
-            barButtonGroup3.ItemLinks.Add(changeFontColorItem1, "FC");
-            barButtonGroup3.ItemLinks.Add(changeFontHighlightColorItem1, "I");
-            barButtonGroup3.Name = "barButtonGroup3";
-            barButtonGroup3.Tag = "{DF8C5334-EDE3-47c9-A42C-FE9A9247E180}";
+            resources.ApplyResources(this.barButtonGroup3, "barButtonGroup3");
+            this.barButtonGroup3.Id = (14);
+            this.barButtonGroup3.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup3.ImageOptions.ImageIndex")));
+            this.barButtonGroup3.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup3.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup3.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup3.ImageOptions.SvgImage")));
+            this.barButtonGroup3.ItemLinks.Add(this.changeFontColorItem1, "FC");
+            this.barButtonGroup3.ItemLinks.Add(this.changeFontHighlightColorItem1, "I");
+            this.barButtonGroup3.Name = ("barButtonGroup3");
+            this.barButtonGroup3.Tag = ("{DF8C5334-EDE3-47c9-A42C-FE9A9247E180}");
             // 
             // changeFontColorItem1
             // 
-            resources.ApplyResources(changeFontColorItem1, "changeFontColorItem1");
-            changeFontColorItem1.Id = 35;
-            changeFontColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFontColorItem1.ImageOptions.ImageIndex");
-            changeFontColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFontColorItem1.ImageOptions.LargeImageIndex");
-            changeFontColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFontColorItem1.ImageOptions.SvgImage");
-            changeFontColorItem1.Name = "changeFontColorItem1";
+            resources.ApplyResources(this.changeFontColorItem1, "changeFontColorItem1");
+            this.changeFontColorItem1.Id = (35);
+            this.changeFontColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFontColorItem1.ImageOptions.ImageIndex")));
+            this.changeFontColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFontColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeFontColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFontColorItem1.ImageOptions.SvgImage")));
+            this.changeFontColorItem1.Name = ("changeFontColorItem1");
             // 
             // changeFontHighlightColorItem1
             // 
-            resources.ApplyResources(changeFontHighlightColorItem1, "changeFontHighlightColorItem1");
-            changeFontHighlightColorItem1.Id = 36;
-            changeFontHighlightColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFontHighlightColorItem1.ImageOptions.ImageIndex");
-            changeFontHighlightColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFontHighlightColorItem1.ImageOptions.LargeImageIndex");
-            changeFontHighlightColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFontHighlightColorItem1.ImageOptions.SvgImage");
-            changeFontHighlightColorItem1.Name = "changeFontHighlightColorItem1";
+            resources.ApplyResources(this.changeFontHighlightColorItem1, "changeFontHighlightColorItem1");
+            this.changeFontHighlightColorItem1.Id = (36);
+            this.changeFontHighlightColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFontHighlightColorItem1.ImageOptions.ImageIndex")));
+            this.changeFontHighlightColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFontHighlightColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeFontHighlightColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFontHighlightColorItem1.ImageOptions.SvgImage")));
+            this.changeFontHighlightColorItem1.Name = ("changeFontHighlightColorItem1");
             // 
             // changeTextCaseItem1
             // 
-            resources.ApplyResources(changeTextCaseItem1, "changeTextCaseItem1");
-            changeTextCaseItem1.Id = 37;
-            changeTextCaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTextCaseItem1.ImageOptions.ImageIndex");
-            changeTextCaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTextCaseItem1.ImageOptions.LargeImageIndex");
-            changeTextCaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTextCaseItem1.ImageOptions.SvgImage");
-            changeTextCaseItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(makeTextUpperCaseItem1), new DevExpress.XtraBars.LinkPersistInfo(makeTextLowerCaseItem1), new DevExpress.XtraBars.LinkPersistInfo(capitalizeEachWordCaseItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTextCaseItem1) });
-            changeTextCaseItem1.Name = "changeTextCaseItem1";
+            resources.ApplyResources(this.changeTextCaseItem1, "changeTextCaseItem1");
+            this.changeTextCaseItem1.Id = (37);
+            this.changeTextCaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTextCaseItem1.ImageOptions.ImageIndex")));
+            this.changeTextCaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTextCaseItem1.ImageOptions.LargeImageIndex")));
+            this.changeTextCaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTextCaseItem1.ImageOptions.SvgImage")));
+            this.changeTextCaseItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.makeTextUpperCaseItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.makeTextLowerCaseItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.capitalizeEachWordCaseItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTextCaseItem1) });
+            this.changeTextCaseItem1.Name = ("changeTextCaseItem1");
             // 
             // makeTextUpperCaseItem1
             // 
-            resources.ApplyResources(makeTextUpperCaseItem1, "makeTextUpperCaseItem1");
-            makeTextUpperCaseItem1.Id = 38;
-            makeTextUpperCaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("makeTextUpperCaseItem1.ImageOptions.ImageIndex");
-            makeTextUpperCaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("makeTextUpperCaseItem1.ImageOptions.LargeImageIndex");
-            makeTextUpperCaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("makeTextUpperCaseItem1.ImageOptions.SvgImage");
-            makeTextUpperCaseItem1.Name = "makeTextUpperCaseItem1";
+            resources.ApplyResources(this.makeTextUpperCaseItem1, "makeTextUpperCaseItem1");
+            this.makeTextUpperCaseItem1.Id = (38);
+            this.makeTextUpperCaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("makeTextUpperCaseItem1.ImageOptions.ImageIndex")));
+            this.makeTextUpperCaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("makeTextUpperCaseItem1.ImageOptions.LargeImageIndex")));
+            this.makeTextUpperCaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("makeTextUpperCaseItem1.ImageOptions.SvgImage")));
+            this.makeTextUpperCaseItem1.Name = ("makeTextUpperCaseItem1");
             // 
             // makeTextLowerCaseItem1
             // 
-            resources.ApplyResources(makeTextLowerCaseItem1, "makeTextLowerCaseItem1");
-            makeTextLowerCaseItem1.Id = 39;
-            makeTextLowerCaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("makeTextLowerCaseItem1.ImageOptions.ImageIndex");
-            makeTextLowerCaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("makeTextLowerCaseItem1.ImageOptions.LargeImageIndex");
-            makeTextLowerCaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("makeTextLowerCaseItem1.ImageOptions.SvgImage");
-            makeTextLowerCaseItem1.Name = "makeTextLowerCaseItem1";
+            resources.ApplyResources(this.makeTextLowerCaseItem1, "makeTextLowerCaseItem1");
+            this.makeTextLowerCaseItem1.Id = (39);
+            this.makeTextLowerCaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("makeTextLowerCaseItem1.ImageOptions.ImageIndex")));
+            this.makeTextLowerCaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("makeTextLowerCaseItem1.ImageOptions.LargeImageIndex")));
+            this.makeTextLowerCaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("makeTextLowerCaseItem1.ImageOptions.SvgImage")));
+            this.makeTextLowerCaseItem1.Name = ("makeTextLowerCaseItem1");
             // 
             // capitalizeEachWordCaseItem1
             // 
-            resources.ApplyResources(capitalizeEachWordCaseItem1, "capitalizeEachWordCaseItem1");
-            capitalizeEachWordCaseItem1.Id = 40;
-            capitalizeEachWordCaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.ImageIndex");
-            capitalizeEachWordCaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.LargeImageIndex");
-            capitalizeEachWordCaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.SvgImage");
-            capitalizeEachWordCaseItem1.Name = "capitalizeEachWordCaseItem1";
+            resources.ApplyResources(this.capitalizeEachWordCaseItem1, "capitalizeEachWordCaseItem1");
+            this.capitalizeEachWordCaseItem1.Id = (40);
+            this.capitalizeEachWordCaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.ImageIndex")));
+            this.capitalizeEachWordCaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.LargeImageIndex")));
+            this.capitalizeEachWordCaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("capitalizeEachWordCaseItem1.ImageOptions.SvgImage")));
+            this.capitalizeEachWordCaseItem1.Name = ("capitalizeEachWordCaseItem1");
             // 
             // toggleTextCaseItem1
             // 
-            resources.ApplyResources(toggleTextCaseItem1, "toggleTextCaseItem1");
-            toggleTextCaseItem1.Id = 41;
-            toggleTextCaseItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTextCaseItem1.ImageOptions.ImageIndex");
-            toggleTextCaseItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTextCaseItem1.ImageOptions.LargeImageIndex");
-            toggleTextCaseItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTextCaseItem1.ImageOptions.SvgImage");
-            toggleTextCaseItem1.Name = "toggleTextCaseItem1";
+            resources.ApplyResources(this.toggleTextCaseItem1, "toggleTextCaseItem1");
+            this.toggleTextCaseItem1.Id = (41);
+            this.toggleTextCaseItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTextCaseItem1.ImageOptions.ImageIndex")));
+            this.toggleTextCaseItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTextCaseItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTextCaseItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTextCaseItem1.ImageOptions.SvgImage")));
+            this.toggleTextCaseItem1.Name = ("toggleTextCaseItem1");
             // 
             // clearFormattingItem1
             // 
-            resources.ApplyResources(clearFormattingItem1, "clearFormattingItem1");
-            clearFormattingItem1.Id = 42;
-            clearFormattingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("clearFormattingItem1.ImageOptions.ImageIndex");
-            clearFormattingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("clearFormattingItem1.ImageOptions.LargeImageIndex");
-            clearFormattingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("clearFormattingItem1.ImageOptions.SvgImage");
-            clearFormattingItem1.Name = "clearFormattingItem1";
+            resources.ApplyResources(this.clearFormattingItem1, "clearFormattingItem1");
+            this.clearFormattingItem1.Id = (42);
+            this.clearFormattingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("clearFormattingItem1.ImageOptions.ImageIndex")));
+            this.clearFormattingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("clearFormattingItem1.ImageOptions.LargeImageIndex")));
+            this.clearFormattingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("clearFormattingItem1.ImageOptions.SvgImage")));
+            this.clearFormattingItem1.Name = ("clearFormattingItem1");
             // 
             // barButtonGroup4
             // 
-            resources.ApplyResources(barButtonGroup4, "barButtonGroup4");
-            barButtonGroup4.Id = 15;
-            barButtonGroup4.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup4.ImageOptions.ImageIndex");
-            barButtonGroup4.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup4.ImageOptions.LargeImageIndex");
-            barButtonGroup4.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup4.ImageOptions.SvgImage");
-            barButtonGroup4.ItemLinks.Add(toggleBulletedListItem1, "U");
-            barButtonGroup4.ItemLinks.Add(toggleNumberingListItem1, "N");
-            barButtonGroup4.ItemLinks.Add(toggleMultiLevelListItem1, "M");
-            barButtonGroup4.ItemLinks.Add(rtlToggleBulletedListItem1, "U");
-            barButtonGroup4.ItemLinks.Add(rtlToggleNumberingListItem1, "N");
-            barButtonGroup4.ItemLinks.Add(rtlToggleMultiLevelListItem1, "M");
-            barButtonGroup4.Name = "barButtonGroup4";
-            barButtonGroup4.Tag = "{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}";
+            resources.ApplyResources(this.barButtonGroup4, "barButtonGroup4");
+            this.barButtonGroup4.Id = (15);
+            this.barButtonGroup4.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup4.ImageOptions.ImageIndex")));
+            this.barButtonGroup4.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup4.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup4.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup4.ImageOptions.SvgImage")));
+            this.barButtonGroup4.ItemLinks.Add(this.toggleBulletedListItem1, "U");
+            this.barButtonGroup4.ItemLinks.Add(this.toggleNumberingListItem1, "N");
+            this.barButtonGroup4.ItemLinks.Add(this.toggleMultiLevelListItem1, "M");
+            this.barButtonGroup4.ItemLinks.Add(this.rtlToggleBulletedListItem1, "U");
+            this.barButtonGroup4.ItemLinks.Add(this.rtlToggleNumberingListItem1, "N");
+            this.barButtonGroup4.ItemLinks.Add(this.rtlToggleMultiLevelListItem1, "M");
+            this.barButtonGroup4.Name = ("barButtonGroup4");
+            this.barButtonGroup4.Tag = ("{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}");
             // 
             // toggleBulletedListItem1
             // 
-            resources.ApplyResources(toggleBulletedListItem1, "toggleBulletedListItem1");
-            toggleBulletedListItem1.Id = 43;
-            toggleBulletedListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleBulletedListItem1.ImageOptions.ImageIndex");
-            toggleBulletedListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleBulletedListItem1.ImageOptions.LargeImageIndex");
-            toggleBulletedListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleBulletedListItem1.ImageOptions.SvgImage");
-            toggleBulletedListItem1.Name = "toggleBulletedListItem1";
+            resources.ApplyResources(this.toggleBulletedListItem1, "toggleBulletedListItem1");
+            this.toggleBulletedListItem1.Id = (43);
+            this.toggleBulletedListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleBulletedListItem1.ImageOptions.ImageIndex")));
+            this.toggleBulletedListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleBulletedListItem1.ImageOptions.LargeImageIndex")));
+            this.toggleBulletedListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleBulletedListItem1.ImageOptions.SvgImage")));
+            this.toggleBulletedListItem1.Name = ("toggleBulletedListItem1");
             // 
             // toggleNumberingListItem1
             // 
-            resources.ApplyResources(toggleNumberingListItem1, "toggleNumberingListItem1");
-            toggleNumberingListItem1.Id = 44;
-            toggleNumberingListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleNumberingListItem1.ImageOptions.ImageIndex");
-            toggleNumberingListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleNumberingListItem1.ImageOptions.LargeImageIndex");
-            toggleNumberingListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleNumberingListItem1.ImageOptions.SvgImage");
-            toggleNumberingListItem1.Name = "toggleNumberingListItem1";
+            resources.ApplyResources(this.toggleNumberingListItem1, "toggleNumberingListItem1");
+            this.toggleNumberingListItem1.Id = (44);
+            this.toggleNumberingListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleNumberingListItem1.ImageOptions.ImageIndex")));
+            this.toggleNumberingListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleNumberingListItem1.ImageOptions.LargeImageIndex")));
+            this.toggleNumberingListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleNumberingListItem1.ImageOptions.SvgImage")));
+            this.toggleNumberingListItem1.Name = ("toggleNumberingListItem1");
             // 
             // toggleMultiLevelListItem1
             // 
-            resources.ApplyResources(toggleMultiLevelListItem1, "toggleMultiLevelListItem1");
-            toggleMultiLevelListItem1.Id = 45;
-            toggleMultiLevelListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleMultiLevelListItem1.ImageOptions.ImageIndex");
-            toggleMultiLevelListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleMultiLevelListItem1.ImageOptions.LargeImageIndex");
-            toggleMultiLevelListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleMultiLevelListItem1.ImageOptions.SvgImage");
-            toggleMultiLevelListItem1.Name = "toggleMultiLevelListItem1";
+            resources.ApplyResources(this.toggleMultiLevelListItem1, "toggleMultiLevelListItem1");
+            this.toggleMultiLevelListItem1.Id = (45);
+            this.toggleMultiLevelListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleMultiLevelListItem1.ImageOptions.ImageIndex")));
+            this.toggleMultiLevelListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleMultiLevelListItem1.ImageOptions.LargeImageIndex")));
+            this.toggleMultiLevelListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleMultiLevelListItem1.ImageOptions.SvgImage")));
+            this.toggleMultiLevelListItem1.Name = ("toggleMultiLevelListItem1");
             // 
             // rtlToggleBulletedListItem1
             // 
-            resources.ApplyResources(rtlToggleBulletedListItem1, "rtlToggleBulletedListItem1");
-            rtlToggleBulletedListItem1.Id = 48;
-            rtlToggleBulletedListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.ImageIndex");
-            rtlToggleBulletedListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.LargeImageIndex");
-            rtlToggleBulletedListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.SvgImage");
-            rtlToggleBulletedListItem1.Name = "rtlToggleBulletedListItem1";
+            resources.ApplyResources(this.rtlToggleBulletedListItem1, "rtlToggleBulletedListItem1");
+            this.rtlToggleBulletedListItem1.Id = (48);
+            this.rtlToggleBulletedListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.ImageIndex")));
+            this.rtlToggleBulletedListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.LargeImageIndex")));
+            this.rtlToggleBulletedListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rtlToggleBulletedListItem1.ImageOptions.SvgImage")));
+            this.rtlToggleBulletedListItem1.Name = ("rtlToggleBulletedListItem1");
             // 
             // rtlToggleNumberingListItem1
             // 
-            resources.ApplyResources(rtlToggleNumberingListItem1, "rtlToggleNumberingListItem1");
-            rtlToggleNumberingListItem1.Id = 49;
-            rtlToggleNumberingListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.ImageIndex");
-            rtlToggleNumberingListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.LargeImageIndex");
-            rtlToggleNumberingListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.SvgImage");
-            rtlToggleNumberingListItem1.Name = "rtlToggleNumberingListItem1";
+            resources.ApplyResources(this.rtlToggleNumberingListItem1, "rtlToggleNumberingListItem1");
+            this.rtlToggleNumberingListItem1.Id = (49);
+            this.rtlToggleNumberingListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.ImageIndex")));
+            this.rtlToggleNumberingListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.LargeImageIndex")));
+            this.rtlToggleNumberingListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rtlToggleNumberingListItem1.ImageOptions.SvgImage")));
+            this.rtlToggleNumberingListItem1.Name = ("rtlToggleNumberingListItem1");
             // 
             // rtlToggleMultiLevelListItem1
             // 
-            resources.ApplyResources(rtlToggleMultiLevelListItem1, "rtlToggleMultiLevelListItem1");
-            rtlToggleMultiLevelListItem1.Id = 50;
-            rtlToggleMultiLevelListItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.ImageIndex");
-            rtlToggleMultiLevelListItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.LargeImageIndex");
-            rtlToggleMultiLevelListItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.SvgImage");
-            rtlToggleMultiLevelListItem1.Name = "rtlToggleMultiLevelListItem1";
+            resources.ApplyResources(this.rtlToggleMultiLevelListItem1, "rtlToggleMultiLevelListItem1");
+            this.rtlToggleMultiLevelListItem1.Id = (50);
+            this.rtlToggleMultiLevelListItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.ImageIndex")));
+            this.rtlToggleMultiLevelListItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.LargeImageIndex")));
+            this.rtlToggleMultiLevelListItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rtlToggleMultiLevelListItem1.ImageOptions.SvgImage")));
+            this.rtlToggleMultiLevelListItem1.Name = ("rtlToggleMultiLevelListItem1");
             // 
             // barButtonGroup5
             // 
-            resources.ApplyResources(barButtonGroup5, "barButtonGroup5");
-            barButtonGroup5.Id = 16;
-            barButtonGroup5.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup5.ImageOptions.ImageIndex");
-            barButtonGroup5.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup5.ImageOptions.LargeImageIndex");
-            barButtonGroup5.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup5.ImageOptions.SvgImage");
-            barButtonGroup5.ItemLinks.Add(decreaseIndentItem1, "AO");
-            barButtonGroup5.ItemLinks.Add(increaseIndentItem1, "AI");
-            barButtonGroup5.ItemLinks.Add(rtlDecreaseIndentItem1, "AO");
-            barButtonGroup5.ItemLinks.Add(rtlIncreaseIndentItem1, "AI");
-            barButtonGroup5.ItemLinks.Add(toggleParagraphLeftToRightItem1);
-            barButtonGroup5.ItemLinks.Add(toggleParagraphRightToLeftItem1);
-            barButtonGroup5.ItemLinks.Add(toggleShowWhitespaceItem1);
-            barButtonGroup5.Name = "barButtonGroup5";
-            barButtonGroup5.Tag = "{4747D5AB-2BEB-4ea6-9A1D-8E4FB36F1B40}";
+            resources.ApplyResources(this.barButtonGroup5, "barButtonGroup5");
+            this.barButtonGroup5.Id = (16);
+            this.barButtonGroup5.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup5.ImageOptions.ImageIndex")));
+            this.barButtonGroup5.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup5.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup5.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup5.ImageOptions.SvgImage")));
+            this.barButtonGroup5.ItemLinks.Add(this.decreaseIndentItem1, "AO");
+            this.barButtonGroup5.ItemLinks.Add(this.increaseIndentItem1, "AI");
+            this.barButtonGroup5.ItemLinks.Add(this.rtlDecreaseIndentItem1, "AO");
+            this.barButtonGroup5.ItemLinks.Add(this.rtlIncreaseIndentItem1, "AI");
+            this.barButtonGroup5.ItemLinks.Add(this.toggleParagraphLeftToRightItem1);
+            this.barButtonGroup5.ItemLinks.Add(this.toggleParagraphRightToLeftItem1);
+            this.barButtonGroup5.ItemLinks.Add(this.toggleShowWhitespaceItem1);
+            this.barButtonGroup5.Name = ("barButtonGroup5");
+            this.barButtonGroup5.Tag = ("{4747D5AB-2BEB-4ea6-9A1D-8E4FB36F1B40}");
             // 
             // decreaseIndentItem1
             // 
-            resources.ApplyResources(decreaseIndentItem1, "decreaseIndentItem1");
-            decreaseIndentItem1.Id = 46;
-            decreaseIndentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("decreaseIndentItem1.ImageOptions.ImageIndex");
-            decreaseIndentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("decreaseIndentItem1.ImageOptions.LargeImageIndex");
-            decreaseIndentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("decreaseIndentItem1.ImageOptions.SvgImage");
-            decreaseIndentItem1.Name = "decreaseIndentItem1";
+            resources.ApplyResources(this.decreaseIndentItem1, "decreaseIndentItem1");
+            this.decreaseIndentItem1.Id = (46);
+            this.decreaseIndentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("decreaseIndentItem1.ImageOptions.ImageIndex")));
+            this.decreaseIndentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("decreaseIndentItem1.ImageOptions.LargeImageIndex")));
+            this.decreaseIndentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("decreaseIndentItem1.ImageOptions.SvgImage")));
+            this.decreaseIndentItem1.Name = ("decreaseIndentItem1");
             // 
             // increaseIndentItem1
             // 
-            resources.ApplyResources(increaseIndentItem1, "increaseIndentItem1");
-            increaseIndentItem1.Id = 47;
-            increaseIndentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("increaseIndentItem1.ImageOptions.ImageIndex");
-            increaseIndentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("increaseIndentItem1.ImageOptions.LargeImageIndex");
-            increaseIndentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("increaseIndentItem1.ImageOptions.SvgImage");
-            increaseIndentItem1.Name = "increaseIndentItem1";
+            resources.ApplyResources(this.increaseIndentItem1, "increaseIndentItem1");
+            this.increaseIndentItem1.Id = (47);
+            this.increaseIndentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("increaseIndentItem1.ImageOptions.ImageIndex")));
+            this.increaseIndentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("increaseIndentItem1.ImageOptions.LargeImageIndex")));
+            this.increaseIndentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("increaseIndentItem1.ImageOptions.SvgImage")));
+            this.increaseIndentItem1.Name = ("increaseIndentItem1");
             // 
             // rtlDecreaseIndentItem1
             // 
-            resources.ApplyResources(rtlDecreaseIndentItem1, "rtlDecreaseIndentItem1");
-            rtlDecreaseIndentItem1.Id = 51;
-            rtlDecreaseIndentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.ImageIndex");
-            rtlDecreaseIndentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.LargeImageIndex");
-            rtlDecreaseIndentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.SvgImage");
-            rtlDecreaseIndentItem1.Name = "rtlDecreaseIndentItem1";
+            resources.ApplyResources(this.rtlDecreaseIndentItem1, "rtlDecreaseIndentItem1");
+            this.rtlDecreaseIndentItem1.Id = (51);
+            this.rtlDecreaseIndentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.ImageIndex")));
+            this.rtlDecreaseIndentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.LargeImageIndex")));
+            this.rtlDecreaseIndentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rtlDecreaseIndentItem1.ImageOptions.SvgImage")));
+            this.rtlDecreaseIndentItem1.Name = ("rtlDecreaseIndentItem1");
             // 
             // rtlIncreaseIndentItem1
             // 
-            resources.ApplyResources(rtlIncreaseIndentItem1, "rtlIncreaseIndentItem1");
-            rtlIncreaseIndentItem1.Id = 52;
-            rtlIncreaseIndentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.ImageIndex");
-            rtlIncreaseIndentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.LargeImageIndex");
-            rtlIncreaseIndentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.SvgImage");
-            rtlIncreaseIndentItem1.Name = "rtlIncreaseIndentItem1";
+            resources.ApplyResources(this.rtlIncreaseIndentItem1, "rtlIncreaseIndentItem1");
+            this.rtlIncreaseIndentItem1.Id = (52);
+            this.rtlIncreaseIndentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.ImageIndex")));
+            this.rtlIncreaseIndentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.LargeImageIndex")));
+            this.rtlIncreaseIndentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rtlIncreaseIndentItem1.ImageOptions.SvgImage")));
+            this.rtlIncreaseIndentItem1.Name = ("rtlIncreaseIndentItem1");
             // 
             // toggleParagraphLeftToRightItem1
             // 
-            resources.ApplyResources(toggleParagraphLeftToRightItem1, "toggleParagraphLeftToRightItem1");
-            toggleParagraphLeftToRightItem1.Id = 53;
-            toggleParagraphLeftToRightItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.ImageIndex");
-            toggleParagraphLeftToRightItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphLeftToRightItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.SvgImage");
-            toggleParagraphLeftToRightItem1.Name = "toggleParagraphLeftToRightItem1";
+            resources.ApplyResources(this.toggleParagraphLeftToRightItem1, "toggleParagraphLeftToRightItem1");
+            this.toggleParagraphLeftToRightItem1.Id = (53);
+            this.toggleParagraphLeftToRightItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphLeftToRightItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphLeftToRightItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphLeftToRightItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphLeftToRightItem1.Name = ("toggleParagraphLeftToRightItem1");
             // 
             // toggleParagraphRightToLeftItem1
             // 
-            resources.ApplyResources(toggleParagraphRightToLeftItem1, "toggleParagraphRightToLeftItem1");
-            toggleParagraphRightToLeftItem1.Id = 54;
-            toggleParagraphRightToLeftItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.ImageIndex");
-            toggleParagraphRightToLeftItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphRightToLeftItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.SvgImage");
-            toggleParagraphRightToLeftItem1.Name = "toggleParagraphRightToLeftItem1";
+            resources.ApplyResources(this.toggleParagraphRightToLeftItem1, "toggleParagraphRightToLeftItem1");
+            this.toggleParagraphRightToLeftItem1.Id = (54);
+            this.toggleParagraphRightToLeftItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphRightToLeftItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphRightToLeftItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphRightToLeftItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphRightToLeftItem1.Name = ("toggleParagraphRightToLeftItem1");
             // 
             // toggleShowWhitespaceItem1
             // 
-            resources.ApplyResources(toggleShowWhitespaceItem1, "toggleShowWhitespaceItem1");
-            toggleShowWhitespaceItem1.Id = 66;
-            toggleShowWhitespaceItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.ImageIndex");
-            toggleShowWhitespaceItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.LargeImageIndex");
-            toggleShowWhitespaceItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.SvgImage");
-            toggleShowWhitespaceItem1.Name = "toggleShowWhitespaceItem1";
+            resources.ApplyResources(this.toggleShowWhitespaceItem1, "toggleShowWhitespaceItem1");
+            this.toggleShowWhitespaceItem1.Id = (66);
+            this.toggleShowWhitespaceItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.ImageIndex")));
+            this.toggleShowWhitespaceItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.LargeImageIndex")));
+            this.toggleShowWhitespaceItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleShowWhitespaceItem1.ImageOptions.SvgImage")));
+            this.toggleShowWhitespaceItem1.Name = ("toggleShowWhitespaceItem1");
             // 
             // barButtonGroup6
             // 
-            resources.ApplyResources(barButtonGroup6, "barButtonGroup6");
-            barButtonGroup6.Id = 17;
-            barButtonGroup6.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup6.ImageOptions.ImageIndex");
-            barButtonGroup6.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup6.ImageOptions.LargeImageIndex");
-            barButtonGroup6.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup6.ImageOptions.SvgImage");
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentLeftItem1, "AL");
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentCenterItem1, "AC");
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentRightItem1, "AR");
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentJustifyItem1, "AJ");
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentArabicJustifyGroupItem1);
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentDistributeItem1);
-            barButtonGroup6.ItemLinks.Add(toggleParagraphAlignmentThaiDistributeItem1);
-            barButtonGroup6.Name = "barButtonGroup6";
-            barButtonGroup6.Tag = "{8E89E775-996E-49a0-AADA-DE338E34732E}";
+            resources.ApplyResources(this.barButtonGroup6, "barButtonGroup6");
+            this.barButtonGroup6.Id = (17);
+            this.barButtonGroup6.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup6.ImageOptions.ImageIndex")));
+            this.barButtonGroup6.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup6.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup6.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup6.ImageOptions.SvgImage")));
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentLeftItem1, "AL");
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentCenterItem1, "AC");
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentRightItem1, "AR");
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentJustifyItem1, "AJ");
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentArabicJustifyGroupItem1);
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentDistributeItem1);
+            this.barButtonGroup6.ItemLinks.Add(this.toggleParagraphAlignmentThaiDistributeItem1);
+            this.barButtonGroup6.Name = ("barButtonGroup6");
+            this.barButtonGroup6.Tag = ("{8E89E775-996E-49a0-AADA-DE338E34732E}");
             // 
             // toggleParagraphAlignmentLeftItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentLeftItem1, "toggleParagraphAlignmentLeftItem1");
-            toggleParagraphAlignmentLeftItem1.Id = 55;
-            toggleParagraphAlignmentLeftItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentLeftItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentLeftItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentLeftItem1.Name = "toggleParagraphAlignmentLeftItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentLeftItem1, "toggleParagraphAlignmentLeftItem1");
+            this.toggleParagraphAlignmentLeftItem1.Id = (55);
+            this.toggleParagraphAlignmentLeftItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentLeftItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentLeftItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentLeftItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentLeftItem1.Name = ("toggleParagraphAlignmentLeftItem1");
             // 
             // toggleParagraphAlignmentCenterItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentCenterItem1, "toggleParagraphAlignmentCenterItem1");
-            toggleParagraphAlignmentCenterItem1.Id = 56;
-            toggleParagraphAlignmentCenterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentCenterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentCenterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentCenterItem1.Name = "toggleParagraphAlignmentCenterItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentCenterItem1, "toggleParagraphAlignmentCenterItem1");
+            this.toggleParagraphAlignmentCenterItem1.Id = (56);
+            this.toggleParagraphAlignmentCenterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentCenterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentCenterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentCenterItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentCenterItem1.Name = ("toggleParagraphAlignmentCenterItem1");
             // 
             // toggleParagraphAlignmentRightItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentRightItem1, "toggleParagraphAlignmentRightItem1");
-            toggleParagraphAlignmentRightItem1.Id = 57;
-            toggleParagraphAlignmentRightItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentRightItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentRightItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentRightItem1.Name = "toggleParagraphAlignmentRightItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentRightItem1, "toggleParagraphAlignmentRightItem1");
+            this.toggleParagraphAlignmentRightItem1.Id = (57);
+            this.toggleParagraphAlignmentRightItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentRightItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentRightItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentRightItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentRightItem1.Name = ("toggleParagraphAlignmentRightItem1");
             // 
             // toggleParagraphAlignmentJustifyItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentJustifyItem1, "toggleParagraphAlignmentJustifyItem1");
-            toggleParagraphAlignmentJustifyItem1.Id = 58;
-            toggleParagraphAlignmentJustifyItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentJustifyItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentJustifyItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentJustifyItem1.Name = "toggleParagraphAlignmentJustifyItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentJustifyItem1, "toggleParagraphAlignmentJustifyItem1");
+            this.toggleParagraphAlignmentJustifyItem1.Id = (58);
+            this.toggleParagraphAlignmentJustifyItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentJustifyItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentJustifyItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentJustifyItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentJustifyItem1.Name = ("toggleParagraphAlignmentJustifyItem1");
             // 
             // toggleParagraphAlignmentArabicJustifyGroupItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentArabicJustifyGroupItem1, "toggleParagraphAlignmentArabicJustifyGroupItem1");
-            toggleParagraphAlignmentArabicJustifyGroupItem1.Id = 59;
-            toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentArabicJustifyGroupItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(DevExpress.XtraBars.BarLinkUserDefines.KeyTip, toggleParagraphAlignmentArabicJustifyItem1, "", false, true, true, 0, null, DevExpress.XtraBars.BarItemPaintStyle.Standard, "AJ", ""), new DevExpress.XtraBars.LinkPersistInfo(toggleParagraphAlignmentJustifyLowItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleParagraphAlignmentJustifyMediumItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleParagraphAlignmentJustifyHighItem1) });
-            toggleParagraphAlignmentArabicJustifyGroupItem1.Name = "toggleParagraphAlignmentArabicJustifyGroupItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentArabicJustifyGroupItem1, "toggleParagraphAlignmentArabicJustifyGroupItem1");
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.Id = (59);
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentArabicJustifyGroupItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(global::DevExpress.XtraBars.BarLinkUserDefines.KeyTip, this.toggleParagraphAlignmentArabicJustifyItem1, "", false, true, true, 0, null, global::DevExpress.XtraBars.BarItemPaintStyle.Standard, "AJ", ""), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleParagraphAlignmentJustifyLowItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleParagraphAlignmentJustifyMediumItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleParagraphAlignmentJustifyHighItem1) });
+            this.toggleParagraphAlignmentArabicJustifyGroupItem1.Name = ("toggleParagraphAlignmentArabicJustifyGroupItem1");
             // 
             // toggleParagraphAlignmentArabicJustifyItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentArabicJustifyItem1, "toggleParagraphAlignmentArabicJustifyItem1");
-            toggleParagraphAlignmentArabicJustifyItem1.Id = 60;
-            toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentArabicJustifyItem1.Name = "toggleParagraphAlignmentArabicJustifyItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentArabicJustifyItem1, "toggleParagraphAlignmentArabicJustifyItem1");
+            this.toggleParagraphAlignmentArabicJustifyItem1.Id = (60);
+            this.toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentArabicJustifyItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentArabicJustifyItem1.Name = ("toggleParagraphAlignmentArabicJustifyItem1");
             // 
             // toggleParagraphAlignmentJustifyLowItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentJustifyLowItem1, "toggleParagraphAlignmentJustifyLowItem1");
-            toggleParagraphAlignmentJustifyLowItem1.Id = 61;
-            toggleParagraphAlignmentJustifyLowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentJustifyLowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentJustifyLowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentJustifyLowItem1.Name = "toggleParagraphAlignmentJustifyLowItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentJustifyLowItem1, "toggleParagraphAlignmentJustifyLowItem1");
+            this.toggleParagraphAlignmentJustifyLowItem1.Id = (61);
+            this.toggleParagraphAlignmentJustifyLowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentJustifyLowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentJustifyLowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentJustifyLowItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentJustifyLowItem1.Name = ("toggleParagraphAlignmentJustifyLowItem1");
             // 
             // toggleParagraphAlignmentJustifyMediumItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentJustifyMediumItem1, "toggleParagraphAlignmentJustifyMediumItem1");
-            toggleParagraphAlignmentJustifyMediumItem1.Id = 62;
-            toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentJustifyMediumItem1.Name = "toggleParagraphAlignmentJustifyMediumItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentJustifyMediumItem1, "toggleParagraphAlignmentJustifyMediumItem1");
+            this.toggleParagraphAlignmentJustifyMediumItem1.Id = (62);
+            this.toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentJustifyMediumItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentJustifyMediumItem1.Name = ("toggleParagraphAlignmentJustifyMediumItem1");
             // 
             // toggleParagraphAlignmentJustifyHighItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentJustifyHighItem1, "toggleParagraphAlignmentJustifyHighItem1");
-            toggleParagraphAlignmentJustifyHighItem1.Id = 63;
-            toggleParagraphAlignmentJustifyHighItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentJustifyHighItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentJustifyHighItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentJustifyHighItem1.Name = "toggleParagraphAlignmentJustifyHighItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentJustifyHighItem1, "toggleParagraphAlignmentJustifyHighItem1");
+            this.toggleParagraphAlignmentJustifyHighItem1.Id = (63);
+            this.toggleParagraphAlignmentJustifyHighItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentJustifyHighItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentJustifyHighItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentJustifyHighItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentJustifyHighItem1.Name = ("toggleParagraphAlignmentJustifyHighItem1");
             // 
             // toggleParagraphAlignmentDistributeItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentDistributeItem1, "toggleParagraphAlignmentDistributeItem1");
-            toggleParagraphAlignmentDistributeItem1.Id = 64;
-            toggleParagraphAlignmentDistributeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentDistributeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentDistributeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentDistributeItem1.Name = "toggleParagraphAlignmentDistributeItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentDistributeItem1, "toggleParagraphAlignmentDistributeItem1");
+            this.toggleParagraphAlignmentDistributeItem1.Id = (64);
+            this.toggleParagraphAlignmentDistributeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentDistributeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentDistributeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentDistributeItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentDistributeItem1.Name = ("toggleParagraphAlignmentDistributeItem1");
             // 
             // toggleParagraphAlignmentThaiDistributeItem1
             // 
-            resources.ApplyResources(toggleParagraphAlignmentThaiDistributeItem1, "toggleParagraphAlignmentThaiDistributeItem1");
-            toggleParagraphAlignmentThaiDistributeItem1.Id = 65;
-            toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.ImageIndex");
-            toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.SvgImage");
-            toggleParagraphAlignmentThaiDistributeItem1.Name = "toggleParagraphAlignmentThaiDistributeItem1";
+            resources.ApplyResources(this.toggleParagraphAlignmentThaiDistributeItem1, "toggleParagraphAlignmentThaiDistributeItem1");
+            this.toggleParagraphAlignmentThaiDistributeItem1.Id = (65);
+            this.toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphAlignmentThaiDistributeItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphAlignmentThaiDistributeItem1.Name = ("toggleParagraphAlignmentThaiDistributeItem1");
             // 
             // barButtonGroup7
             // 
-            resources.ApplyResources(barButtonGroup7, "barButtonGroup7");
-            barButtonGroup7.Id = 18;
-            barButtonGroup7.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup7.ImageOptions.ImageIndex");
-            barButtonGroup7.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup7.ImageOptions.LargeImageIndex");
-            barButtonGroup7.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup7.ImageOptions.SvgImage");
-            barButtonGroup7.ItemLinks.Add(changeParagraphLineSpacingItem1, "K");
-            barButtonGroup7.ItemLinks.Add(changeParagraphBackColorItem1, "H");
-            barButtonGroup7.Name = "barButtonGroup7";
-            barButtonGroup7.Tag = "{9A8DEAD8-3890-4857-A395-EC625FD02217}";
+            resources.ApplyResources(this.barButtonGroup7, "barButtonGroup7");
+            this.barButtonGroup7.Id = (18);
+            this.barButtonGroup7.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup7.ImageOptions.ImageIndex")));
+            this.barButtonGroup7.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup7.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup7.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup7.ImageOptions.SvgImage")));
+            this.barButtonGroup7.ItemLinks.Add(this.changeParagraphLineSpacingItem1, "K");
+            this.barButtonGroup7.ItemLinks.Add(this.changeParagraphBackColorItem1, "H");
+            this.barButtonGroup7.Name = ("barButtonGroup7");
+            this.barButtonGroup7.Tag = ("{9A8DEAD8-3890-4857-A395-EC625FD02217}");
             // 
             // changeParagraphLineSpacingItem1
             // 
-            resources.ApplyResources(changeParagraphLineSpacingItem1, "changeParagraphLineSpacingItem1");
-            changeParagraphLineSpacingItem1.Id = 67;
-            changeParagraphLineSpacingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.ImageIndex");
-            changeParagraphLineSpacingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.LargeImageIndex");
-            changeParagraphLineSpacingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.SvgImage");
-            changeParagraphLineSpacingItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setSingleParagraphSpacingItem1), new DevExpress.XtraBars.LinkPersistInfo(setSesquialteralParagraphSpacingItem1), new DevExpress.XtraBars.LinkPersistInfo(setDoubleParagraphSpacingItem1), new DevExpress.XtraBars.LinkPersistInfo(showLineSpacingFormItem1), new DevExpress.XtraBars.LinkPersistInfo(DevExpress.XtraBars.BarLinkUserDefines.KeyTip, addSpacingBeforeParagraphItem1, "", false, true, true, 0, null, DevExpress.XtraBars.BarItemPaintStyle.Standard, "B", ""), new DevExpress.XtraBars.LinkPersistInfo(removeSpacingBeforeParagraphItem1), new DevExpress.XtraBars.LinkPersistInfo(addSpacingAfterParagraphItem1), new DevExpress.XtraBars.LinkPersistInfo(removeSpacingAfterParagraphItem1) });
-            changeParagraphLineSpacingItem1.Name = "changeParagraphLineSpacingItem1";
+            resources.ApplyResources(this.changeParagraphLineSpacingItem1, "changeParagraphLineSpacingItem1");
+            this.changeParagraphLineSpacingItem1.Id = (67);
+            this.changeParagraphLineSpacingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.ImageIndex")));
+            this.changeParagraphLineSpacingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.LargeImageIndex")));
+            this.changeParagraphLineSpacingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeParagraphLineSpacingItem1.ImageOptions.SvgImage")));
+            this.changeParagraphLineSpacingItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setSingleParagraphSpacingItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSesquialteralParagraphSpacingItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setDoubleParagraphSpacingItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.showLineSpacingFormItem1), new global::DevExpress.XtraBars.LinkPersistInfo(global::DevExpress.XtraBars.BarLinkUserDefines.KeyTip, this.addSpacingBeforeParagraphItem1, "", false, true, true, 0, null, global::DevExpress.XtraBars.BarItemPaintStyle.Standard, "B", ""), new global::DevExpress.XtraBars.LinkPersistInfo(this.removeSpacingBeforeParagraphItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.addSpacingAfterParagraphItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.removeSpacingAfterParagraphItem1) });
+            this.changeParagraphLineSpacingItem1.Name = ("changeParagraphLineSpacingItem1");
             // 
             // setSingleParagraphSpacingItem1
             // 
-            resources.ApplyResources(setSingleParagraphSpacingItem1, "setSingleParagraphSpacingItem1");
-            setSingleParagraphSpacingItem1.Id = 68;
-            setSingleParagraphSpacingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.ImageIndex");
-            setSingleParagraphSpacingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.LargeImageIndex");
-            setSingleParagraphSpacingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.SvgImage");
-            setSingleParagraphSpacingItem1.Name = "setSingleParagraphSpacingItem1";
+            resources.ApplyResources(this.setSingleParagraphSpacingItem1, "setSingleParagraphSpacingItem1");
+            this.setSingleParagraphSpacingItem1.Id = (68);
+            this.setSingleParagraphSpacingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.ImageIndex")));
+            this.setSingleParagraphSpacingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.LargeImageIndex")));
+            this.setSingleParagraphSpacingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSingleParagraphSpacingItem1.ImageOptions.SvgImage")));
+            this.setSingleParagraphSpacingItem1.Name = ("setSingleParagraphSpacingItem1");
             // 
             // setSesquialteralParagraphSpacingItem1
             // 
-            resources.ApplyResources(setSesquialteralParagraphSpacingItem1, "setSesquialteralParagraphSpacingItem1");
-            setSesquialteralParagraphSpacingItem1.Id = 69;
-            setSesquialteralParagraphSpacingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.ImageIndex");
-            setSesquialteralParagraphSpacingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.LargeImageIndex");
-            setSesquialteralParagraphSpacingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.SvgImage");
-            setSesquialteralParagraphSpacingItem1.Name = "setSesquialteralParagraphSpacingItem1";
+            resources.ApplyResources(this.setSesquialteralParagraphSpacingItem1, "setSesquialteralParagraphSpacingItem1");
+            this.setSesquialteralParagraphSpacingItem1.Id = (69);
+            this.setSesquialteralParagraphSpacingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.ImageIndex")));
+            this.setSesquialteralParagraphSpacingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.LargeImageIndex")));
+            this.setSesquialteralParagraphSpacingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSesquialteralParagraphSpacingItem1.ImageOptions.SvgImage")));
+            this.setSesquialteralParagraphSpacingItem1.Name = ("setSesquialteralParagraphSpacingItem1");
             // 
             // setDoubleParagraphSpacingItem1
             // 
-            resources.ApplyResources(setDoubleParagraphSpacingItem1, "setDoubleParagraphSpacingItem1");
-            setDoubleParagraphSpacingItem1.Id = 70;
-            setDoubleParagraphSpacingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.ImageIndex");
-            setDoubleParagraphSpacingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.LargeImageIndex");
-            setDoubleParagraphSpacingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.SvgImage");
-            setDoubleParagraphSpacingItem1.Name = "setDoubleParagraphSpacingItem1";
+            resources.ApplyResources(this.setDoubleParagraphSpacingItem1, "setDoubleParagraphSpacingItem1");
+            this.setDoubleParagraphSpacingItem1.Id = (70);
+            this.setDoubleParagraphSpacingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.ImageIndex")));
+            this.setDoubleParagraphSpacingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.LargeImageIndex")));
+            this.setDoubleParagraphSpacingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setDoubleParagraphSpacingItem1.ImageOptions.SvgImage")));
+            this.setDoubleParagraphSpacingItem1.Name = ("setDoubleParagraphSpacingItem1");
             // 
             // showLineSpacingFormItem1
             // 
-            resources.ApplyResources(showLineSpacingFormItem1, "showLineSpacingFormItem1");
-            showLineSpacingFormItem1.Id = 71;
-            showLineSpacingFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showLineSpacingFormItem1.ImageOptions.ImageIndex");
-            showLineSpacingFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showLineSpacingFormItem1.ImageOptions.LargeImageIndex");
-            showLineSpacingFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showLineSpacingFormItem1.ImageOptions.SvgImage");
-            showLineSpacingFormItem1.Name = "showLineSpacingFormItem1";
+            resources.ApplyResources(this.showLineSpacingFormItem1, "showLineSpacingFormItem1");
+            this.showLineSpacingFormItem1.Id = (71);
+            this.showLineSpacingFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showLineSpacingFormItem1.ImageOptions.ImageIndex")));
+            this.showLineSpacingFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showLineSpacingFormItem1.ImageOptions.LargeImageIndex")));
+            this.showLineSpacingFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showLineSpacingFormItem1.ImageOptions.SvgImage")));
+            this.showLineSpacingFormItem1.Name = ("showLineSpacingFormItem1");
             // 
             // addSpacingBeforeParagraphItem1
             // 
-            resources.ApplyResources(addSpacingBeforeParagraphItem1, "addSpacingBeforeParagraphItem1");
-            addSpacingBeforeParagraphItem1.Id = 72;
-            addSpacingBeforeParagraphItem1.ImageOptions.ImageIndex = (int)resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.ImageIndex");
-            addSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex");
-            addSpacingBeforeParagraphItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.SvgImage");
-            addSpacingBeforeParagraphItem1.Name = "addSpacingBeforeParagraphItem1";
+            resources.ApplyResources(this.addSpacingBeforeParagraphItem1, "addSpacingBeforeParagraphItem1");
+            this.addSpacingBeforeParagraphItem1.Id = (72);
+            this.addSpacingBeforeParagraphItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.ImageIndex")));
+            this.addSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex")));
+            this.addSpacingBeforeParagraphItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("addSpacingBeforeParagraphItem1.ImageOptions.SvgImage")));
+            this.addSpacingBeforeParagraphItem1.Name = ("addSpacingBeforeParagraphItem1");
             // 
             // removeSpacingBeforeParagraphItem1
             // 
-            resources.ApplyResources(removeSpacingBeforeParagraphItem1, "removeSpacingBeforeParagraphItem1");
-            removeSpacingBeforeParagraphItem1.Id = 73;
-            removeSpacingBeforeParagraphItem1.ImageOptions.ImageIndex = (int)resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.ImageIndex");
-            removeSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex");
-            removeSpacingBeforeParagraphItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.SvgImage");
-            removeSpacingBeforeParagraphItem1.Name = "removeSpacingBeforeParagraphItem1";
+            resources.ApplyResources(this.removeSpacingBeforeParagraphItem1, "removeSpacingBeforeParagraphItem1");
+            this.removeSpacingBeforeParagraphItem1.Id = (73);
+            this.removeSpacingBeforeParagraphItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.ImageIndex")));
+            this.removeSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.LargeImageIndex")));
+            this.removeSpacingBeforeParagraphItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("removeSpacingBeforeParagraphItem1.ImageOptions.SvgImage")));
+            this.removeSpacingBeforeParagraphItem1.Name = ("removeSpacingBeforeParagraphItem1");
             // 
             // addSpacingAfterParagraphItem1
             // 
-            resources.ApplyResources(addSpacingAfterParagraphItem1, "addSpacingAfterParagraphItem1");
-            addSpacingAfterParagraphItem1.Id = 74;
-            addSpacingAfterParagraphItem1.ImageOptions.ImageIndex = (int)resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.ImageIndex");
-            addSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex");
-            addSpacingAfterParagraphItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.SvgImage");
-            addSpacingAfterParagraphItem1.Name = "addSpacingAfterParagraphItem1";
+            resources.ApplyResources(this.addSpacingAfterParagraphItem1, "addSpacingAfterParagraphItem1");
+            this.addSpacingAfterParagraphItem1.Id = (74);
+            this.addSpacingAfterParagraphItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.ImageIndex")));
+            this.addSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex")));
+            this.addSpacingAfterParagraphItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("addSpacingAfterParagraphItem1.ImageOptions.SvgImage")));
+            this.addSpacingAfterParagraphItem1.Name = ("addSpacingAfterParagraphItem1");
             // 
             // removeSpacingAfterParagraphItem1
             // 
-            resources.ApplyResources(removeSpacingAfterParagraphItem1, "removeSpacingAfterParagraphItem1");
-            removeSpacingAfterParagraphItem1.Id = 75;
-            removeSpacingAfterParagraphItem1.ImageOptions.ImageIndex = (int)resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.ImageIndex");
-            removeSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex");
-            removeSpacingAfterParagraphItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.SvgImage");
-            removeSpacingAfterParagraphItem1.Name = "removeSpacingAfterParagraphItem1";
+            resources.ApplyResources(this.removeSpacingAfterParagraphItem1, "removeSpacingAfterParagraphItem1");
+            this.removeSpacingAfterParagraphItem1.Id = (75);
+            this.removeSpacingAfterParagraphItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.ImageIndex")));
+            this.removeSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.LargeImageIndex")));
+            this.removeSpacingAfterParagraphItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("removeSpacingAfterParagraphItem1.ImageOptions.SvgImage")));
+            this.removeSpacingAfterParagraphItem1.Name = ("removeSpacingAfterParagraphItem1");
             // 
             // changeParagraphBackColorItem1
             // 
-            resources.ApplyResources(changeParagraphBackColorItem1, "changeParagraphBackColorItem1");
-            changeParagraphBackColorItem1.Id = 76;
-            changeParagraphBackColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeParagraphBackColorItem1.ImageOptions.ImageIndex");
-            changeParagraphBackColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeParagraphBackColorItem1.ImageOptions.LargeImageIndex");
-            changeParagraphBackColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeParagraphBackColorItem1.ImageOptions.SvgImage");
-            changeParagraphBackColorItem1.Name = "changeParagraphBackColorItem1";
+            resources.ApplyResources(this.changeParagraphBackColorItem1, "changeParagraphBackColorItem1");
+            this.changeParagraphBackColorItem1.Id = (76);
+            this.changeParagraphBackColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeParagraphBackColorItem1.ImageOptions.ImageIndex")));
+            this.changeParagraphBackColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeParagraphBackColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeParagraphBackColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeParagraphBackColorItem1.ImageOptions.SvgImage")));
+            this.changeParagraphBackColorItem1.Name = ("changeParagraphBackColorItem1");
             // 
             // galleryChangeStyleItem1
             // 
-            resources.ApplyResources(galleryChangeStyleItem1, "galleryChangeStyleItem1");
+            resources.ApplyResources(this.galleryChangeStyleItem1, "galleryChangeStyleItem1");
             // 
             // 
             // 
-            galleryChangeStyleItem1.Gallery.ColumnCount = 10;
-            galleryChangeStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup4 });
-            galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(97, 71);
-            galleryChangeStyleItem1.Id = 77;
-            galleryChangeStyleItem1.ImageOptions.ImageIndex = (int)resources.GetObject("galleryChangeStyleItem1.ImageOptions.ImageIndex");
-            galleryChangeStyleItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("galleryChangeStyleItem1.ImageOptions.LargeImageIndex");
-            galleryChangeStyleItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("galleryChangeStyleItem1.ImageOptions.SvgImage");
-            galleryChangeStyleItem1.Name = "galleryChangeStyleItem1";
+            this.galleryChangeStyleItem1.Gallery.ColumnCount = (10);
+            this.galleryChangeStyleItem1.Gallery.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup1 });
+            this.galleryChangeStyleItem1.Gallery.ImageSize = (new global::System.Drawing.Size(97, 71));
+            this.galleryChangeStyleItem1.Id = (77);
+            this.galleryChangeStyleItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeStyleItem1.ImageOptions.ImageIndex")));
+            this.galleryChangeStyleItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeStyleItem1.ImageOptions.LargeImageIndex")));
+            this.galleryChangeStyleItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("galleryChangeStyleItem1.ImageOptions.SvgImage")));
+            this.galleryChangeStyleItem1.Name = ("galleryChangeStyleItem1");
             // 
             // findItem1
             // 
-            resources.ApplyResources(findItem1, "findItem1");
-            findItem1.Id = 78;
-            findItem1.ImageOptions.ImageIndex = (int)resources.GetObject("findItem1.ImageOptions.ImageIndex");
-            findItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("findItem1.ImageOptions.LargeImageIndex");
-            findItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("findItem1.ImageOptions.SvgImage");
-            findItem1.Name = "findItem1";
+            resources.ApplyResources(this.findItem1, "findItem1");
+            this.findItem1.Id = (78);
+            this.findItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("findItem1.ImageOptions.ImageIndex")));
+            this.findItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("findItem1.ImageOptions.LargeImageIndex")));
+            this.findItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("findItem1.ImageOptions.SvgImage")));
+            this.findItem1.Name = ("findItem1");
             // 
             // replaceItem1
             // 
-            resources.ApplyResources(replaceItem1, "replaceItem1");
-            replaceItem1.Id = 79;
-            replaceItem1.ImageOptions.ImageIndex = (int)resources.GetObject("replaceItem1.ImageOptions.ImageIndex");
-            replaceItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("replaceItem1.ImageOptions.LargeImageIndex");
-            replaceItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("replaceItem1.ImageOptions.SvgImage");
-            replaceItem1.Name = "replaceItem1";
+            resources.ApplyResources(this.replaceItem1, "replaceItem1");
+            this.replaceItem1.Id = (79);
+            this.replaceItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("replaceItem1.ImageOptions.ImageIndex")));
+            this.replaceItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("replaceItem1.ImageOptions.LargeImageIndex")));
+            this.replaceItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("replaceItem1.ImageOptions.SvgImage")));
+            this.replaceItem1.Name = ("replaceItem1");
             // 
             // insertPageBreakItem21
             // 
-            resources.ApplyResources(insertPageBreakItem21, "insertPageBreakItem21");
-            insertPageBreakItem21.Id = 80;
-            insertPageBreakItem21.ImageOptions.ImageIndex = (int)resources.GetObject("insertPageBreakItem21.ImageOptions.ImageIndex");
-            insertPageBreakItem21.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertPageBreakItem21.ImageOptions.LargeImageIndex");
-            insertPageBreakItem21.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertPageBreakItem21.ImageOptions.SvgImage");
-            insertPageBreakItem21.Name = "insertPageBreakItem21";
+            resources.ApplyResources(this.insertPageBreakItem21, "insertPageBreakItem21");
+            this.insertPageBreakItem21.Id = (80);
+            this.insertPageBreakItem21.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertPageBreakItem21.ImageOptions.ImageIndex")));
+            this.insertPageBreakItem21.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertPageBreakItem21.ImageOptions.LargeImageIndex")));
+            this.insertPageBreakItem21.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertPageBreakItem21.ImageOptions.SvgImage")));
+            this.insertPageBreakItem21.Name = ("insertPageBreakItem21");
             // 
             // insertTableItem1
             // 
-            resources.ApplyResources(insertTableItem1, "insertTableItem1");
-            insertTableItem1.Id = 81;
-            insertTableItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableItem1.ImageOptions.ImageIndex");
-            insertTableItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableItem1.ImageOptions.LargeImageIndex");
-            insertTableItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableItem1.ImageOptions.SvgImage");
-            insertTableItem1.Name = "insertTableItem1";
+            resources.ApplyResources(this.insertTableItem1, "insertTableItem1");
+            this.insertTableItem1.Id = (81);
+            this.insertTableItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableItem1.ImageOptions.ImageIndex")));
+            this.insertTableItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableItem1.ImageOptions.SvgImage")));
+            this.insertTableItem1.Name = ("insertTableItem1");
             // 
             // insertFloatingPictureItem1
             // 
-            resources.ApplyResources(insertFloatingPictureItem1, "insertFloatingPictureItem1");
-            insertFloatingPictureItem1.Id = 82;
-            insertFloatingPictureItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertFloatingPictureItem1.ImageOptions.ImageIndex");
-            insertFloatingPictureItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertFloatingPictureItem1.ImageOptions.LargeImageIndex");
-            insertFloatingPictureItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertFloatingPictureItem1.ImageOptions.SvgImage");
-            insertFloatingPictureItem1.Name = "insertFloatingPictureItem1";
+            resources.ApplyResources(this.insertFloatingPictureItem1, "insertFloatingPictureItem1");
+            this.insertFloatingPictureItem1.Id = (82);
+            this.insertFloatingPictureItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertFloatingPictureItem1.ImageOptions.ImageIndex")));
+            this.insertFloatingPictureItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertFloatingPictureItem1.ImageOptions.LargeImageIndex")));
+            this.insertFloatingPictureItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertFloatingPictureItem1.ImageOptions.SvgImage")));
+            this.insertFloatingPictureItem1.Name = ("insertFloatingPictureItem1");
             // 
             // insertBookmarkItem1
             // 
-            resources.ApplyResources(insertBookmarkItem1, "insertBookmarkItem1");
-            insertBookmarkItem1.Id = 83;
-            insertBookmarkItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertBookmarkItem1.ImageOptions.ImageIndex");
-            insertBookmarkItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertBookmarkItem1.ImageOptions.LargeImageIndex");
-            insertBookmarkItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertBookmarkItem1.ImageOptions.SvgImage");
-            insertBookmarkItem1.Name = "insertBookmarkItem1";
+            resources.ApplyResources(this.insertBookmarkItem1, "insertBookmarkItem1");
+            this.insertBookmarkItem1.Id = (83);
+            this.insertBookmarkItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertBookmarkItem1.ImageOptions.ImageIndex")));
+            this.insertBookmarkItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertBookmarkItem1.ImageOptions.LargeImageIndex")));
+            this.insertBookmarkItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertBookmarkItem1.ImageOptions.SvgImage")));
+            this.insertBookmarkItem1.Name = ("insertBookmarkItem1");
             // 
             // insertHyperlinkItem1
             // 
-            resources.ApplyResources(insertHyperlinkItem1, "insertHyperlinkItem1");
-            insertHyperlinkItem1.Id = 84;
-            insertHyperlinkItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertHyperlinkItem1.ImageOptions.ImageIndex");
-            insertHyperlinkItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertHyperlinkItem1.ImageOptions.LargeImageIndex");
-            insertHyperlinkItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertHyperlinkItem1.ImageOptions.SvgImage");
-            insertHyperlinkItem1.Name = "insertHyperlinkItem1";
+            resources.ApplyResources(this.insertHyperlinkItem1, "insertHyperlinkItem1");
+            this.insertHyperlinkItem1.Id = (84);
+            this.insertHyperlinkItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertHyperlinkItem1.ImageOptions.ImageIndex")));
+            this.insertHyperlinkItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertHyperlinkItem1.ImageOptions.LargeImageIndex")));
+            this.insertHyperlinkItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertHyperlinkItem1.ImageOptions.SvgImage")));
+            this.insertHyperlinkItem1.Name = ("insertHyperlinkItem1");
             // 
             // editPageHeaderItem1
             // 
-            resources.ApplyResources(editPageHeaderItem1, "editPageHeaderItem1");
-            editPageHeaderItem1.Id = 85;
-            editPageHeaderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("editPageHeaderItem1.ImageOptions.ImageIndex");
-            editPageHeaderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("editPageHeaderItem1.ImageOptions.LargeImageIndex");
-            editPageHeaderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("editPageHeaderItem1.ImageOptions.SvgImage");
-            editPageHeaderItem1.Name = "editPageHeaderItem1";
+            resources.ApplyResources(this.editPageHeaderItem1, "editPageHeaderItem1");
+            this.editPageHeaderItem1.Id = (85);
+            this.editPageHeaderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("editPageHeaderItem1.ImageOptions.ImageIndex")));
+            this.editPageHeaderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("editPageHeaderItem1.ImageOptions.LargeImageIndex")));
+            this.editPageHeaderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("editPageHeaderItem1.ImageOptions.SvgImage")));
+            this.editPageHeaderItem1.Name = ("editPageHeaderItem1");
             // 
             // editPageFooterItem1
             // 
-            resources.ApplyResources(editPageFooterItem1, "editPageFooterItem1");
-            editPageFooterItem1.Id = 86;
-            editPageFooterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("editPageFooterItem1.ImageOptions.ImageIndex");
-            editPageFooterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("editPageFooterItem1.ImageOptions.LargeImageIndex");
-            editPageFooterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("editPageFooterItem1.ImageOptions.SvgImage");
-            editPageFooterItem1.Name = "editPageFooterItem1";
+            resources.ApplyResources(this.editPageFooterItem1, "editPageFooterItem1");
+            this.editPageFooterItem1.Id = (86);
+            this.editPageFooterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("editPageFooterItem1.ImageOptions.ImageIndex")));
+            this.editPageFooterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("editPageFooterItem1.ImageOptions.LargeImageIndex")));
+            this.editPageFooterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("editPageFooterItem1.ImageOptions.SvgImage")));
+            this.editPageFooterItem1.Name = ("editPageFooterItem1");
             // 
             // insertPageNumberItem1
             // 
-            resources.ApplyResources(insertPageNumberItem1, "insertPageNumberItem1");
-            insertPageNumberItem1.Id = 87;
-            insertPageNumberItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertPageNumberItem1.ImageOptions.ImageIndex");
-            insertPageNumberItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertPageNumberItem1.ImageOptions.LargeImageIndex");
-            insertPageNumberItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertPageNumberItem1.ImageOptions.SvgImage");
-            insertPageNumberItem1.Name = "insertPageNumberItem1";
+            resources.ApplyResources(this.insertPageNumberItem1, "insertPageNumberItem1");
+            this.insertPageNumberItem1.Id = (87);
+            this.insertPageNumberItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertPageNumberItem1.ImageOptions.ImageIndex")));
+            this.insertPageNumberItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertPageNumberItem1.ImageOptions.LargeImageIndex")));
+            this.insertPageNumberItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertPageNumberItem1.ImageOptions.SvgImage")));
+            this.insertPageNumberItem1.Name = ("insertPageNumberItem1");
             // 
             // insertPageCountItem1
             // 
-            resources.ApplyResources(insertPageCountItem1, "insertPageCountItem1");
-            insertPageCountItem1.Id = 88;
-            insertPageCountItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertPageCountItem1.ImageOptions.ImageIndex");
-            insertPageCountItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertPageCountItem1.ImageOptions.LargeImageIndex");
-            insertPageCountItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertPageCountItem1.ImageOptions.SvgImage");
-            insertPageCountItem1.Name = "insertPageCountItem1";
+            resources.ApplyResources(this.insertPageCountItem1, "insertPageCountItem1");
+            this.insertPageCountItem1.Id = (88);
+            this.insertPageCountItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertPageCountItem1.ImageOptions.ImageIndex")));
+            this.insertPageCountItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertPageCountItem1.ImageOptions.LargeImageIndex")));
+            this.insertPageCountItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertPageCountItem1.ImageOptions.SvgImage")));
+            this.insertPageCountItem1.Name = ("insertPageCountItem1");
             // 
             // insertTextBoxItem1
             // 
-            resources.ApplyResources(insertTextBoxItem1, "insertTextBoxItem1");
-            insertTextBoxItem1.Id = 89;
-            insertTextBoxItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTextBoxItem1.ImageOptions.ImageIndex");
-            insertTextBoxItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTextBoxItem1.ImageOptions.LargeImageIndex");
-            insertTextBoxItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTextBoxItem1.ImageOptions.SvgImage");
-            insertTextBoxItem1.Name = "insertTextBoxItem1";
+            resources.ApplyResources(this.insertTextBoxItem1, "insertTextBoxItem1");
+            this.insertTextBoxItem1.Id = (89);
+            this.insertTextBoxItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTextBoxItem1.ImageOptions.ImageIndex")));
+            this.insertTextBoxItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTextBoxItem1.ImageOptions.LargeImageIndex")));
+            this.insertTextBoxItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTextBoxItem1.ImageOptions.SvgImage")));
+            this.insertTextBoxItem1.Name = ("insertTextBoxItem1");
             // 
             // insertObjectItem1
             // 
-            resources.ApplyResources(insertObjectItem1, "insertObjectItem1");
-            insertObjectItem1.Id = 90;
-            insertObjectItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertObjectItem1.ImageOptions.ImageIndex");
-            insertObjectItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertObjectItem1.ImageOptions.LargeImageIndex");
-            insertObjectItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertObjectItem1.ImageOptions.SvgImage");
-            insertObjectItem1.Name = "insertObjectItem1";
+            resources.ApplyResources(this.insertObjectItem1, "insertObjectItem1");
+            this.insertObjectItem1.Id = (90);
+            this.insertObjectItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertObjectItem1.ImageOptions.ImageIndex")));
+            this.insertObjectItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertObjectItem1.ImageOptions.LargeImageIndex")));
+            this.insertObjectItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertObjectItem1.ImageOptions.SvgImage")));
+            this.insertObjectItem1.Name = ("insertObjectItem1");
             // 
             // insertSymbolItem1
             // 
-            resources.ApplyResources(insertSymbolItem1, "insertSymbolItem1");
-            insertSymbolItem1.Id = 91;
-            insertSymbolItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertSymbolItem1.ImageOptions.ImageIndex");
-            insertSymbolItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertSymbolItem1.ImageOptions.LargeImageIndex");
-            insertSymbolItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertSymbolItem1.ImageOptions.SvgImage");
-            insertSymbolItem1.Name = "insertSymbolItem1";
+            resources.ApplyResources(this.insertSymbolItem1, "insertSymbolItem1");
+            this.insertSymbolItem1.Id = (91);
+            this.insertSymbolItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertSymbolItem1.ImageOptions.ImageIndex")));
+            this.insertSymbolItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertSymbolItem1.ImageOptions.LargeImageIndex")));
+            this.insertSymbolItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertSymbolItem1.ImageOptions.SvgImage")));
+            this.insertSymbolItem1.Name = ("insertSymbolItem1");
             // 
             // changeSectionPageMarginsItem1
             // 
-            resources.ApplyResources(changeSectionPageMarginsItem1, "changeSectionPageMarginsItem1");
-            changeSectionPageMarginsItem1.Id = 92;
-            changeSectionPageMarginsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.ImageIndex");
-            changeSectionPageMarginsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.LargeImageIndex");
-            changeSectionPageMarginsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.SvgImage");
-            changeSectionPageMarginsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setNormalSectionPageMarginsItem1), new DevExpress.XtraBars.LinkPersistInfo(setNarrowSectionPageMarginsItem1), new DevExpress.XtraBars.LinkPersistInfo(setModerateSectionPageMarginsItem1), new DevExpress.XtraBars.LinkPersistInfo(setWideSectionPageMarginsItem1), new DevExpress.XtraBars.LinkPersistInfo(showPageMarginsSetupFormItem1, true) });
-            changeSectionPageMarginsItem1.Name = "changeSectionPageMarginsItem1";
+            resources.ApplyResources(this.changeSectionPageMarginsItem1, "changeSectionPageMarginsItem1");
+            this.changeSectionPageMarginsItem1.Id = (92);
+            this.changeSectionPageMarginsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.ImageIndex")));
+            this.changeSectionPageMarginsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.LargeImageIndex")));
+            this.changeSectionPageMarginsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeSectionPageMarginsItem1.ImageOptions.SvgImage")));
+            this.changeSectionPageMarginsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setNormalSectionPageMarginsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setNarrowSectionPageMarginsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setModerateSectionPageMarginsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setWideSectionPageMarginsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.showPageMarginsSetupFormItem1, true) });
+            this.changeSectionPageMarginsItem1.Name = ("changeSectionPageMarginsItem1");
             // 
             // setNormalSectionPageMarginsItem1
             // 
-            resources.ApplyResources(setNormalSectionPageMarginsItem1, "setNormalSectionPageMarginsItem1");
-            setNormalSectionPageMarginsItem1.Id = 93;
-            setNormalSectionPageMarginsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.ImageIndex");
-            setNormalSectionPageMarginsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.LargeImageIndex");
-            setNormalSectionPageMarginsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.SvgImage");
-            setNormalSectionPageMarginsItem1.Name = "setNormalSectionPageMarginsItem1";
+            resources.ApplyResources(this.setNormalSectionPageMarginsItem1, "setNormalSectionPageMarginsItem1");
+            this.setNormalSectionPageMarginsItem1.Id = (93);
+            this.setNormalSectionPageMarginsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.ImageIndex")));
+            this.setNormalSectionPageMarginsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.LargeImageIndex")));
+            this.setNormalSectionPageMarginsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setNormalSectionPageMarginsItem1.ImageOptions.SvgImage")));
+            this.setNormalSectionPageMarginsItem1.Name = ("setNormalSectionPageMarginsItem1");
             // 
             // setNarrowSectionPageMarginsItem1
             // 
-            resources.ApplyResources(setNarrowSectionPageMarginsItem1, "setNarrowSectionPageMarginsItem1");
-            setNarrowSectionPageMarginsItem1.Id = 94;
-            setNarrowSectionPageMarginsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.ImageIndex");
-            setNarrowSectionPageMarginsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.LargeImageIndex");
-            setNarrowSectionPageMarginsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.SvgImage");
-            setNarrowSectionPageMarginsItem1.Name = "setNarrowSectionPageMarginsItem1";
+            resources.ApplyResources(this.setNarrowSectionPageMarginsItem1, "setNarrowSectionPageMarginsItem1");
+            this.setNarrowSectionPageMarginsItem1.Id = (94);
+            this.setNarrowSectionPageMarginsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.ImageIndex")));
+            this.setNarrowSectionPageMarginsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.LargeImageIndex")));
+            this.setNarrowSectionPageMarginsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setNarrowSectionPageMarginsItem1.ImageOptions.SvgImage")));
+            this.setNarrowSectionPageMarginsItem1.Name = ("setNarrowSectionPageMarginsItem1");
             // 
             // setModerateSectionPageMarginsItem1
             // 
-            resources.ApplyResources(setModerateSectionPageMarginsItem1, "setModerateSectionPageMarginsItem1");
-            setModerateSectionPageMarginsItem1.Id = 95;
-            setModerateSectionPageMarginsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.ImageIndex");
-            setModerateSectionPageMarginsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.LargeImageIndex");
-            setModerateSectionPageMarginsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.SvgImage");
-            setModerateSectionPageMarginsItem1.Name = "setModerateSectionPageMarginsItem1";
+            resources.ApplyResources(this.setModerateSectionPageMarginsItem1, "setModerateSectionPageMarginsItem1");
+            this.setModerateSectionPageMarginsItem1.Id = (95);
+            this.setModerateSectionPageMarginsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.ImageIndex")));
+            this.setModerateSectionPageMarginsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.LargeImageIndex")));
+            this.setModerateSectionPageMarginsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setModerateSectionPageMarginsItem1.ImageOptions.SvgImage")));
+            this.setModerateSectionPageMarginsItem1.Name = ("setModerateSectionPageMarginsItem1");
             // 
             // setWideSectionPageMarginsItem1
             // 
-            resources.ApplyResources(setWideSectionPageMarginsItem1, "setWideSectionPageMarginsItem1");
-            setWideSectionPageMarginsItem1.Id = 96;
-            setWideSectionPageMarginsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.ImageIndex");
-            setWideSectionPageMarginsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.LargeImageIndex");
-            setWideSectionPageMarginsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.SvgImage");
-            setWideSectionPageMarginsItem1.Name = "setWideSectionPageMarginsItem1";
+            resources.ApplyResources(this.setWideSectionPageMarginsItem1, "setWideSectionPageMarginsItem1");
+            this.setWideSectionPageMarginsItem1.Id = (96);
+            this.setWideSectionPageMarginsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.ImageIndex")));
+            this.setWideSectionPageMarginsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.LargeImageIndex")));
+            this.setWideSectionPageMarginsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setWideSectionPageMarginsItem1.ImageOptions.SvgImage")));
+            this.setWideSectionPageMarginsItem1.Name = ("setWideSectionPageMarginsItem1");
             // 
             // showPageMarginsSetupFormItem1
             // 
-            resources.ApplyResources(showPageMarginsSetupFormItem1, "showPageMarginsSetupFormItem1");
-            showPageMarginsSetupFormItem1.Id = 97;
-            showPageMarginsSetupFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.ImageIndex");
-            showPageMarginsSetupFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.LargeImageIndex");
-            showPageMarginsSetupFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.SvgImage");
-            showPageMarginsSetupFormItem1.Name = "showPageMarginsSetupFormItem1";
+            resources.ApplyResources(this.showPageMarginsSetupFormItem1, "showPageMarginsSetupFormItem1");
+            this.showPageMarginsSetupFormItem1.Id = (97);
+            this.showPageMarginsSetupFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.ImageIndex")));
+            this.showPageMarginsSetupFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.LargeImageIndex")));
+            this.showPageMarginsSetupFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showPageMarginsSetupFormItem1.ImageOptions.SvgImage")));
+            this.showPageMarginsSetupFormItem1.Name = ("showPageMarginsSetupFormItem1");
             // 
             // changeSectionPageOrientationItem1
             // 
-            resources.ApplyResources(changeSectionPageOrientationItem1, "changeSectionPageOrientationItem1");
-            changeSectionPageOrientationItem1.Id = 98;
-            changeSectionPageOrientationItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.ImageIndex");
-            changeSectionPageOrientationItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.LargeImageIndex");
-            changeSectionPageOrientationItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.SvgImage");
-            changeSectionPageOrientationItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setPortraitPageOrientationItem1), new DevExpress.XtraBars.LinkPersistInfo(setLandscapePageOrientationItem1) });
-            changeSectionPageOrientationItem1.Name = "changeSectionPageOrientationItem1";
+            resources.ApplyResources(this.changeSectionPageOrientationItem1, "changeSectionPageOrientationItem1");
+            this.changeSectionPageOrientationItem1.Id = (98);
+            this.changeSectionPageOrientationItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.ImageIndex")));
+            this.changeSectionPageOrientationItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.LargeImageIndex")));
+            this.changeSectionPageOrientationItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeSectionPageOrientationItem1.ImageOptions.SvgImage")));
+            this.changeSectionPageOrientationItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setPortraitPageOrientationItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setLandscapePageOrientationItem1) });
+            this.changeSectionPageOrientationItem1.Name = ("changeSectionPageOrientationItem1");
             // 
             // setPortraitPageOrientationItem1
             // 
-            resources.ApplyResources(setPortraitPageOrientationItem1, "setPortraitPageOrientationItem1");
-            setPortraitPageOrientationItem1.Id = 99;
-            setPortraitPageOrientationItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.ImageIndex");
-            setPortraitPageOrientationItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.LargeImageIndex");
-            setPortraitPageOrientationItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.SvgImage");
-            setPortraitPageOrientationItem1.Name = "setPortraitPageOrientationItem1";
+            resources.ApplyResources(this.setPortraitPageOrientationItem1, "setPortraitPageOrientationItem1");
+            this.setPortraitPageOrientationItem1.Id = (99);
+            this.setPortraitPageOrientationItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.ImageIndex")));
+            this.setPortraitPageOrientationItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.LargeImageIndex")));
+            this.setPortraitPageOrientationItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setPortraitPageOrientationItem1.ImageOptions.SvgImage")));
+            this.setPortraitPageOrientationItem1.Name = ("setPortraitPageOrientationItem1");
             // 
             // setLandscapePageOrientationItem1
             // 
-            resources.ApplyResources(setLandscapePageOrientationItem1, "setLandscapePageOrientationItem1");
-            setLandscapePageOrientationItem1.Id = 100;
-            setLandscapePageOrientationItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.ImageIndex");
-            setLandscapePageOrientationItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.LargeImageIndex");
-            setLandscapePageOrientationItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.SvgImage");
-            setLandscapePageOrientationItem1.Name = "setLandscapePageOrientationItem1";
+            resources.ApplyResources(this.setLandscapePageOrientationItem1, "setLandscapePageOrientationItem1");
+            this.setLandscapePageOrientationItem1.Id = (100);
+            this.setLandscapePageOrientationItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.ImageIndex")));
+            this.setLandscapePageOrientationItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.LargeImageIndex")));
+            this.setLandscapePageOrientationItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setLandscapePageOrientationItem1.ImageOptions.SvgImage")));
+            this.setLandscapePageOrientationItem1.Name = ("setLandscapePageOrientationItem1");
             // 
             // changeSectionPaperKindItem1
             // 
-            resources.ApplyResources(changeSectionPaperKindItem1, "changeSectionPaperKindItem1");
-            changeSectionPaperKindItem1.Id = 101;
-            changeSectionPaperKindItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeSectionPaperKindItem1.ImageOptions.ImageIndex");
-            changeSectionPaperKindItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeSectionPaperKindItem1.ImageOptions.LargeImageIndex");
-            changeSectionPaperKindItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeSectionPaperKindItem1.ImageOptions.SvgImage");
-            changeSectionPaperKindItem1.Name = "changeSectionPaperKindItem1";
+            resources.ApplyResources(this.changeSectionPaperKindItem1, "changeSectionPaperKindItem1");
+            this.changeSectionPaperKindItem1.Id = (101);
+            this.changeSectionPaperKindItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPaperKindItem1.ImageOptions.ImageIndex")));
+            this.changeSectionPaperKindItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionPaperKindItem1.ImageOptions.LargeImageIndex")));
+            this.changeSectionPaperKindItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeSectionPaperKindItem1.ImageOptions.SvgImage")));
+            this.changeSectionPaperKindItem1.Name = ("changeSectionPaperKindItem1");
             // 
             // changeSectionColumnsItem1
             // 
-            resources.ApplyResources(changeSectionColumnsItem1, "changeSectionColumnsItem1");
-            changeSectionColumnsItem1.Id = 102;
-            changeSectionColumnsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeSectionColumnsItem1.ImageOptions.ImageIndex");
-            changeSectionColumnsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeSectionColumnsItem1.ImageOptions.LargeImageIndex");
-            changeSectionColumnsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeSectionColumnsItem1.ImageOptions.SvgImage");
-            changeSectionColumnsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setSectionOneColumnItem1), new DevExpress.XtraBars.LinkPersistInfo(setSectionTwoColumnsItem1), new DevExpress.XtraBars.LinkPersistInfo(setSectionThreeColumnsItem1), new DevExpress.XtraBars.LinkPersistInfo(showColumnsSetupFormItem1, true) });
-            changeSectionColumnsItem1.Name = "changeSectionColumnsItem1";
+            resources.ApplyResources(this.changeSectionColumnsItem1, "changeSectionColumnsItem1");
+            this.changeSectionColumnsItem1.Id = (102);
+            this.changeSectionColumnsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionColumnsItem1.ImageOptions.ImageIndex")));
+            this.changeSectionColumnsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionColumnsItem1.ImageOptions.LargeImageIndex")));
+            this.changeSectionColumnsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeSectionColumnsItem1.ImageOptions.SvgImage")));
+            this.changeSectionColumnsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionOneColumnItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionTwoColumnsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionThreeColumnsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.showColumnsSetupFormItem1, true) });
+            this.changeSectionColumnsItem1.Name = ("changeSectionColumnsItem1");
             // 
             // setSectionOneColumnItem1
             // 
-            resources.ApplyResources(setSectionOneColumnItem1, "setSectionOneColumnItem1");
-            setSectionOneColumnItem1.Id = 103;
-            setSectionOneColumnItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionOneColumnItem1.ImageOptions.ImageIndex");
-            setSectionOneColumnItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionOneColumnItem1.ImageOptions.LargeImageIndex");
-            setSectionOneColumnItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionOneColumnItem1.ImageOptions.SvgImage");
-            setSectionOneColumnItem1.Name = "setSectionOneColumnItem1";
+            resources.ApplyResources(this.setSectionOneColumnItem1, "setSectionOneColumnItem1");
+            this.setSectionOneColumnItem1.Id = (103);
+            this.setSectionOneColumnItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionOneColumnItem1.ImageOptions.ImageIndex")));
+            this.setSectionOneColumnItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionOneColumnItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionOneColumnItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionOneColumnItem1.ImageOptions.SvgImage")));
+            this.setSectionOneColumnItem1.Name = ("setSectionOneColumnItem1");
             // 
             // setSectionTwoColumnsItem1
             // 
-            resources.ApplyResources(setSectionTwoColumnsItem1, "setSectionTwoColumnsItem1");
-            setSectionTwoColumnsItem1.Id = 104;
-            setSectionTwoColumnsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.ImageIndex");
-            setSectionTwoColumnsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.LargeImageIndex");
-            setSectionTwoColumnsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.SvgImage");
-            setSectionTwoColumnsItem1.Name = "setSectionTwoColumnsItem1";
+            resources.ApplyResources(this.setSectionTwoColumnsItem1, "setSectionTwoColumnsItem1");
+            this.setSectionTwoColumnsItem1.Id = (104);
+            this.setSectionTwoColumnsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.ImageIndex")));
+            this.setSectionTwoColumnsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionTwoColumnsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionTwoColumnsItem1.ImageOptions.SvgImage")));
+            this.setSectionTwoColumnsItem1.Name = ("setSectionTwoColumnsItem1");
             // 
             // setSectionThreeColumnsItem1
             // 
-            resources.ApplyResources(setSectionThreeColumnsItem1, "setSectionThreeColumnsItem1");
-            setSectionThreeColumnsItem1.Id = 105;
-            setSectionThreeColumnsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.ImageIndex");
-            setSectionThreeColumnsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.LargeImageIndex");
-            setSectionThreeColumnsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.SvgImage");
-            setSectionThreeColumnsItem1.Name = "setSectionThreeColumnsItem1";
+            resources.ApplyResources(this.setSectionThreeColumnsItem1, "setSectionThreeColumnsItem1");
+            this.setSectionThreeColumnsItem1.Id = (105);
+            this.setSectionThreeColumnsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.ImageIndex")));
+            this.setSectionThreeColumnsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionThreeColumnsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionThreeColumnsItem1.ImageOptions.SvgImage")));
+            this.setSectionThreeColumnsItem1.Name = ("setSectionThreeColumnsItem1");
             // 
             // showColumnsSetupFormItem1
             // 
-            resources.ApplyResources(showColumnsSetupFormItem1, "showColumnsSetupFormItem1");
-            showColumnsSetupFormItem1.Id = 106;
-            showColumnsSetupFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showColumnsSetupFormItem1.ImageOptions.ImageIndex");
-            showColumnsSetupFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showColumnsSetupFormItem1.ImageOptions.LargeImageIndex");
-            showColumnsSetupFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showColumnsSetupFormItem1.ImageOptions.SvgImage");
-            showColumnsSetupFormItem1.Name = "showColumnsSetupFormItem1";
+            resources.ApplyResources(this.showColumnsSetupFormItem1, "showColumnsSetupFormItem1");
+            this.showColumnsSetupFormItem1.Id = (106);
+            this.showColumnsSetupFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showColumnsSetupFormItem1.ImageOptions.ImageIndex")));
+            this.showColumnsSetupFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showColumnsSetupFormItem1.ImageOptions.LargeImageIndex")));
+            this.showColumnsSetupFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showColumnsSetupFormItem1.ImageOptions.SvgImage")));
+            this.showColumnsSetupFormItem1.Name = ("showColumnsSetupFormItem1");
             // 
             // insertBreakItem1
             // 
-            resources.ApplyResources(insertBreakItem1, "insertBreakItem1");
-            insertBreakItem1.Id = 107;
-            insertBreakItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertBreakItem1.ImageOptions.ImageIndex");
-            insertBreakItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertBreakItem1.ImageOptions.LargeImageIndex");
-            insertBreakItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertBreakItem1.ImageOptions.SvgImage");
-            insertBreakItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(DevExpress.XtraBars.BarLinkUserDefines.KeyTip, insertPageBreakItem1, "", false, true, true, 0, null, DevExpress.XtraBars.BarItemPaintStyle.Standard, "B", ""), new DevExpress.XtraBars.LinkPersistInfo(insertColumnBreakItem1), new DevExpress.XtraBars.LinkPersistInfo(insertSectionBreakNextPageItem1), new DevExpress.XtraBars.LinkPersistInfo(insertSectionBreakContinuousItem1), new DevExpress.XtraBars.LinkPersistInfo(insertSectionBreakEvenPageItem1), new DevExpress.XtraBars.LinkPersistInfo(insertSectionBreakOddPageItem1) });
-            insertBreakItem1.Name = "insertBreakItem1";
+            resources.ApplyResources(this.insertBreakItem1, "insertBreakItem1");
+            this.insertBreakItem1.Id = (107);
+            this.insertBreakItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertBreakItem1.ImageOptions.ImageIndex")));
+            this.insertBreakItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertBreakItem1.ImageOptions.LargeImageIndex")));
+            this.insertBreakItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertBreakItem1.ImageOptions.SvgImage")));
+            this.insertBreakItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(global::DevExpress.XtraBars.BarLinkUserDefines.KeyTip, this.insertPageBreakItem1, "", false, true, true, 0, null, global::DevExpress.XtraBars.BarItemPaintStyle.Standard, "B", ""), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertColumnBreakItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertSectionBreakNextPageItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertSectionBreakContinuousItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertSectionBreakEvenPageItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertSectionBreakOddPageItem1) });
+            this.insertBreakItem1.Name = ("insertBreakItem1");
             // 
             // insertPageBreakItem1
             // 
-            resources.ApplyResources(insertPageBreakItem1, "insertPageBreakItem1");
-            insertPageBreakItem1.Id = 108;
-            insertPageBreakItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertPageBreakItem1.ImageOptions.ImageIndex");
-            insertPageBreakItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertPageBreakItem1.ImageOptions.LargeImageIndex");
-            insertPageBreakItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertPageBreakItem1.ImageOptions.SvgImage");
-            insertPageBreakItem1.Name = "insertPageBreakItem1";
+            resources.ApplyResources(this.insertPageBreakItem1, "insertPageBreakItem1");
+            this.insertPageBreakItem1.Id = (108);
+            this.insertPageBreakItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertPageBreakItem1.ImageOptions.ImageIndex")));
+            this.insertPageBreakItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertPageBreakItem1.ImageOptions.LargeImageIndex")));
+            this.insertPageBreakItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertPageBreakItem1.ImageOptions.SvgImage")));
+            this.insertPageBreakItem1.Name = ("insertPageBreakItem1");
             // 
             // insertColumnBreakItem1
             // 
-            resources.ApplyResources(insertColumnBreakItem1, "insertColumnBreakItem1");
-            insertColumnBreakItem1.Id = 109;
-            insertColumnBreakItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertColumnBreakItem1.ImageOptions.ImageIndex");
-            insertColumnBreakItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertColumnBreakItem1.ImageOptions.LargeImageIndex");
-            insertColumnBreakItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertColumnBreakItem1.ImageOptions.SvgImage");
-            insertColumnBreakItem1.Name = "insertColumnBreakItem1";
+            resources.ApplyResources(this.insertColumnBreakItem1, "insertColumnBreakItem1");
+            this.insertColumnBreakItem1.Id = (109);
+            this.insertColumnBreakItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertColumnBreakItem1.ImageOptions.ImageIndex")));
+            this.insertColumnBreakItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertColumnBreakItem1.ImageOptions.LargeImageIndex")));
+            this.insertColumnBreakItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertColumnBreakItem1.ImageOptions.SvgImage")));
+            this.insertColumnBreakItem1.Name = ("insertColumnBreakItem1");
             // 
             // insertSectionBreakNextPageItem1
             // 
-            resources.ApplyResources(insertSectionBreakNextPageItem1, "insertSectionBreakNextPageItem1");
-            insertSectionBreakNextPageItem1.Id = 110;
-            insertSectionBreakNextPageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.ImageIndex");
-            insertSectionBreakNextPageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.LargeImageIndex");
-            insertSectionBreakNextPageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.SvgImage");
-            insertSectionBreakNextPageItem1.Name = "insertSectionBreakNextPageItem1";
+            resources.ApplyResources(this.insertSectionBreakNextPageItem1, "insertSectionBreakNextPageItem1");
+            this.insertSectionBreakNextPageItem1.Id = (110);
+            this.insertSectionBreakNextPageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.ImageIndex")));
+            this.insertSectionBreakNextPageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.LargeImageIndex")));
+            this.insertSectionBreakNextPageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertSectionBreakNextPageItem1.ImageOptions.SvgImage")));
+            this.insertSectionBreakNextPageItem1.Name = ("insertSectionBreakNextPageItem1");
             // 
             // insertSectionBreakContinuousItem1
             // 
-            resources.ApplyResources(insertSectionBreakContinuousItem1, "insertSectionBreakContinuousItem1");
-            insertSectionBreakContinuousItem1.Id = 111;
-            insertSectionBreakContinuousItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.ImageIndex");
-            insertSectionBreakContinuousItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.LargeImageIndex");
-            insertSectionBreakContinuousItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.SvgImage");
-            insertSectionBreakContinuousItem1.Name = "insertSectionBreakContinuousItem1";
+            resources.ApplyResources(this.insertSectionBreakContinuousItem1, "insertSectionBreakContinuousItem1");
+            this.insertSectionBreakContinuousItem1.Id = (111);
+            this.insertSectionBreakContinuousItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.ImageIndex")));
+            this.insertSectionBreakContinuousItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.LargeImageIndex")));
+            this.insertSectionBreakContinuousItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertSectionBreakContinuousItem1.ImageOptions.SvgImage")));
+            this.insertSectionBreakContinuousItem1.Name = ("insertSectionBreakContinuousItem1");
             // 
             // insertSectionBreakEvenPageItem1
             // 
-            resources.ApplyResources(insertSectionBreakEvenPageItem1, "insertSectionBreakEvenPageItem1");
-            insertSectionBreakEvenPageItem1.Id = 112;
-            insertSectionBreakEvenPageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.ImageIndex");
-            insertSectionBreakEvenPageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.LargeImageIndex");
-            insertSectionBreakEvenPageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.SvgImage");
-            insertSectionBreakEvenPageItem1.Name = "insertSectionBreakEvenPageItem1";
+            resources.ApplyResources(this.insertSectionBreakEvenPageItem1, "insertSectionBreakEvenPageItem1");
+            this.insertSectionBreakEvenPageItem1.Id = (112);
+            this.insertSectionBreakEvenPageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.ImageIndex")));
+            this.insertSectionBreakEvenPageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.LargeImageIndex")));
+            this.insertSectionBreakEvenPageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertSectionBreakEvenPageItem1.ImageOptions.SvgImage")));
+            this.insertSectionBreakEvenPageItem1.Name = ("insertSectionBreakEvenPageItem1");
             // 
             // insertSectionBreakOddPageItem1
             // 
-            resources.ApplyResources(insertSectionBreakOddPageItem1, "insertSectionBreakOddPageItem1");
-            insertSectionBreakOddPageItem1.Id = 113;
-            insertSectionBreakOddPageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.ImageIndex");
-            insertSectionBreakOddPageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.LargeImageIndex");
-            insertSectionBreakOddPageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.SvgImage");
-            insertSectionBreakOddPageItem1.Name = "insertSectionBreakOddPageItem1";
+            resources.ApplyResources(this.insertSectionBreakOddPageItem1, "insertSectionBreakOddPageItem1");
+            this.insertSectionBreakOddPageItem1.Id = (113);
+            this.insertSectionBreakOddPageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.ImageIndex")));
+            this.insertSectionBreakOddPageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.LargeImageIndex")));
+            this.insertSectionBreakOddPageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertSectionBreakOddPageItem1.ImageOptions.SvgImage")));
+            this.insertSectionBreakOddPageItem1.Name = ("insertSectionBreakOddPageItem1");
             // 
             // changeSectionLineNumberingItem1
             // 
-            resources.ApplyResources(changeSectionLineNumberingItem1, "changeSectionLineNumberingItem1");
-            changeSectionLineNumberingItem1.Id = 114;
-            changeSectionLineNumberingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.ImageIndex");
-            changeSectionLineNumberingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.LargeImageIndex");
-            changeSectionLineNumberingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.SvgImage");
-            changeSectionLineNumberingItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setSectionLineNumberingNoneItem1), new DevExpress.XtraBars.LinkPersistInfo(setSectionLineNumberingContinuousItem1), new DevExpress.XtraBars.LinkPersistInfo(setSectionLineNumberingRestartNewPageItem1), new DevExpress.XtraBars.LinkPersistInfo(setSectionLineNumberingRestartNewSectionItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleParagraphSuppressLineNumbersItem1), new DevExpress.XtraBars.LinkPersistInfo(showLineNumberingFormItem1, true) });
-            changeSectionLineNumberingItem1.Name = "changeSectionLineNumberingItem1";
+            resources.ApplyResources(this.changeSectionLineNumberingItem1, "changeSectionLineNumberingItem1");
+            this.changeSectionLineNumberingItem1.Id = (114);
+            this.changeSectionLineNumberingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.ImageIndex")));
+            this.changeSectionLineNumberingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.LargeImageIndex")));
+            this.changeSectionLineNumberingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeSectionLineNumberingItem1.ImageOptions.SvgImage")));
+            this.changeSectionLineNumberingItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionLineNumberingNoneItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionLineNumberingContinuousItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionLineNumberingRestartNewPageItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setSectionLineNumberingRestartNewSectionItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleParagraphSuppressLineNumbersItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.showLineNumberingFormItem1, true) });
+            this.changeSectionLineNumberingItem1.Name = ("changeSectionLineNumberingItem1");
             // 
             // setSectionLineNumberingNoneItem1
             // 
-            resources.ApplyResources(setSectionLineNumberingNoneItem1, "setSectionLineNumberingNoneItem1");
-            setSectionLineNumberingNoneItem1.Id = 115;
-            setSectionLineNumberingNoneItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.ImageIndex");
-            setSectionLineNumberingNoneItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.LargeImageIndex");
-            setSectionLineNumberingNoneItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.SvgImage");
-            setSectionLineNumberingNoneItem1.Name = "setSectionLineNumberingNoneItem1";
+            resources.ApplyResources(this.setSectionLineNumberingNoneItem1, "setSectionLineNumberingNoneItem1");
+            this.setSectionLineNumberingNoneItem1.Id = (115);
+            this.setSectionLineNumberingNoneItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.ImageIndex")));
+            this.setSectionLineNumberingNoneItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionLineNumberingNoneItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionLineNumberingNoneItem1.ImageOptions.SvgImage")));
+            this.setSectionLineNumberingNoneItem1.Name = ("setSectionLineNumberingNoneItem1");
             // 
             // setSectionLineNumberingContinuousItem1
             // 
-            resources.ApplyResources(setSectionLineNumberingContinuousItem1, "setSectionLineNumberingContinuousItem1");
-            setSectionLineNumberingContinuousItem1.Id = 116;
-            setSectionLineNumberingContinuousItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.ImageIndex");
-            setSectionLineNumberingContinuousItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.LargeImageIndex");
-            setSectionLineNumberingContinuousItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.SvgImage");
-            setSectionLineNumberingContinuousItem1.Name = "setSectionLineNumberingContinuousItem1";
+            resources.ApplyResources(this.setSectionLineNumberingContinuousItem1, "setSectionLineNumberingContinuousItem1");
+            this.setSectionLineNumberingContinuousItem1.Id = (116);
+            this.setSectionLineNumberingContinuousItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.ImageIndex")));
+            this.setSectionLineNumberingContinuousItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionLineNumberingContinuousItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionLineNumberingContinuousItem1.ImageOptions.SvgImage")));
+            this.setSectionLineNumberingContinuousItem1.Name = ("setSectionLineNumberingContinuousItem1");
             // 
             // setSectionLineNumberingRestartNewPageItem1
             // 
-            resources.ApplyResources(setSectionLineNumberingRestartNewPageItem1, "setSectionLineNumberingRestartNewPageItem1");
-            setSectionLineNumberingRestartNewPageItem1.Id = 117;
-            setSectionLineNumberingRestartNewPageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.ImageIndex");
-            setSectionLineNumberingRestartNewPageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.LargeImageIndex");
-            setSectionLineNumberingRestartNewPageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.SvgImage");
-            setSectionLineNumberingRestartNewPageItem1.Name = "setSectionLineNumberingRestartNewPageItem1";
+            resources.ApplyResources(this.setSectionLineNumberingRestartNewPageItem1, "setSectionLineNumberingRestartNewPageItem1");
+            this.setSectionLineNumberingRestartNewPageItem1.Id = (117);
+            this.setSectionLineNumberingRestartNewPageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.ImageIndex")));
+            this.setSectionLineNumberingRestartNewPageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionLineNumberingRestartNewPageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionLineNumberingRestartNewPageItem1.ImageOptions.SvgImage")));
+            this.setSectionLineNumberingRestartNewPageItem1.Name = ("setSectionLineNumberingRestartNewPageItem1");
             // 
             // setSectionLineNumberingRestartNewSectionItem1
             // 
-            resources.ApplyResources(setSectionLineNumberingRestartNewSectionItem1, "setSectionLineNumberingRestartNewSectionItem1");
-            setSectionLineNumberingRestartNewSectionItem1.Id = 118;
-            setSectionLineNumberingRestartNewSectionItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.ImageIndex");
-            setSectionLineNumberingRestartNewSectionItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.LargeImageIndex");
-            setSectionLineNumberingRestartNewSectionItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.SvgImage");
-            setSectionLineNumberingRestartNewSectionItem1.Name = "setSectionLineNumberingRestartNewSectionItem1";
+            resources.ApplyResources(this.setSectionLineNumberingRestartNewSectionItem1, "setSectionLineNumberingRestartNewSectionItem1");
+            this.setSectionLineNumberingRestartNewSectionItem1.Id = (118);
+            this.setSectionLineNumberingRestartNewSectionItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.ImageIndex")));
+            this.setSectionLineNumberingRestartNewSectionItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.LargeImageIndex")));
+            this.setSectionLineNumberingRestartNewSectionItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setSectionLineNumberingRestartNewSectionItem1.ImageOptions.SvgImage")));
+            this.setSectionLineNumberingRestartNewSectionItem1.Name = ("setSectionLineNumberingRestartNewSectionItem1");
             // 
             // toggleParagraphSuppressLineNumbersItem1
             // 
-            resources.ApplyResources(toggleParagraphSuppressLineNumbersItem1, "toggleParagraphSuppressLineNumbersItem1");
-            toggleParagraphSuppressLineNumbersItem1.Id = 119;
-            toggleParagraphSuppressLineNumbersItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.ImageIndex");
-            toggleParagraphSuppressLineNumbersItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.LargeImageIndex");
-            toggleParagraphSuppressLineNumbersItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.SvgImage");
-            toggleParagraphSuppressLineNumbersItem1.Name = "toggleParagraphSuppressLineNumbersItem1";
+            resources.ApplyResources(this.toggleParagraphSuppressLineNumbersItem1, "toggleParagraphSuppressLineNumbersItem1");
+            this.toggleParagraphSuppressLineNumbersItem1.Id = (119);
+            this.toggleParagraphSuppressLineNumbersItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.ImageIndex")));
+            this.toggleParagraphSuppressLineNumbersItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.LargeImageIndex")));
+            this.toggleParagraphSuppressLineNumbersItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleParagraphSuppressLineNumbersItem1.ImageOptions.SvgImage")));
+            this.toggleParagraphSuppressLineNumbersItem1.Name = ("toggleParagraphSuppressLineNumbersItem1");
             // 
             // showLineNumberingFormItem1
             // 
-            resources.ApplyResources(showLineNumberingFormItem1, "showLineNumberingFormItem1");
-            showLineNumberingFormItem1.Id = 120;
-            showLineNumberingFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showLineNumberingFormItem1.ImageOptions.ImageIndex");
-            showLineNumberingFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showLineNumberingFormItem1.ImageOptions.LargeImageIndex");
-            showLineNumberingFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showLineNumberingFormItem1.ImageOptions.SvgImage");
-            showLineNumberingFormItem1.Name = "showLineNumberingFormItem1";
+            resources.ApplyResources(this.showLineNumberingFormItem1, "showLineNumberingFormItem1");
+            this.showLineNumberingFormItem1.Id = (120);
+            this.showLineNumberingFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showLineNumberingFormItem1.ImageOptions.ImageIndex")));
+            this.showLineNumberingFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showLineNumberingFormItem1.ImageOptions.LargeImageIndex")));
+            this.showLineNumberingFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showLineNumberingFormItem1.ImageOptions.SvgImage")));
+            this.showLineNumberingFormItem1.Name = ("showLineNumberingFormItem1");
             // 
             // changeHyphenationOptionsItem1
             // 
-            resources.ApplyResources(changeHyphenationOptionsItem1, "changeHyphenationOptionsItem1");
-            changeHyphenationOptionsItem1.Id = 121;
-            changeHyphenationOptionsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.ImageIndex");
-            changeHyphenationOptionsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.LargeImageIndex");
-            changeHyphenationOptionsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.SvgImage");
-            changeHyphenationOptionsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setHyphenateDocumentNoneItem1), new DevExpress.XtraBars.LinkPersistInfo(setHyphenateDocumentAutomaticItem1), new DevExpress.XtraBars.LinkPersistInfo(showHyphenationOptionsFormItem1) });
-            changeHyphenationOptionsItem1.Name = "changeHyphenationOptionsItem1";
+            resources.ApplyResources(this.changeHyphenationOptionsItem1, "changeHyphenationOptionsItem1");
+            this.changeHyphenationOptionsItem1.Id = (121);
+            this.changeHyphenationOptionsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.ImageIndex")));
+            this.changeHyphenationOptionsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.LargeImageIndex")));
+            this.changeHyphenationOptionsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeHyphenationOptionsItem1.ImageOptions.SvgImage")));
+            this.changeHyphenationOptionsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setHyphenateDocumentNoneItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setHyphenateDocumentAutomaticItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.showHyphenationOptionsFormItem1) });
+            this.changeHyphenationOptionsItem1.Name = ("changeHyphenationOptionsItem1");
             // 
             // setHyphenateDocumentNoneItem1
             // 
-            resources.ApplyResources(setHyphenateDocumentNoneItem1, "setHyphenateDocumentNoneItem1");
-            setHyphenateDocumentNoneItem1.Id = 122;
-            setHyphenateDocumentNoneItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.ImageIndex");
-            setHyphenateDocumentNoneItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.LargeImageIndex");
-            setHyphenateDocumentNoneItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.SvgImage");
-            setHyphenateDocumentNoneItem1.Name = "setHyphenateDocumentNoneItem1";
+            resources.ApplyResources(this.setHyphenateDocumentNoneItem1, "setHyphenateDocumentNoneItem1");
+            this.setHyphenateDocumentNoneItem1.Id = (122);
+            this.setHyphenateDocumentNoneItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.ImageIndex")));
+            this.setHyphenateDocumentNoneItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.LargeImageIndex")));
+            this.setHyphenateDocumentNoneItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setHyphenateDocumentNoneItem1.ImageOptions.SvgImage")));
+            this.setHyphenateDocumentNoneItem1.Name = ("setHyphenateDocumentNoneItem1");
             // 
             // setHyphenateDocumentAutomaticItem1
             // 
-            resources.ApplyResources(setHyphenateDocumentAutomaticItem1, "setHyphenateDocumentAutomaticItem1");
-            setHyphenateDocumentAutomaticItem1.Id = 123;
-            setHyphenateDocumentAutomaticItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.ImageIndex");
-            setHyphenateDocumentAutomaticItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.LargeImageIndex");
-            setHyphenateDocumentAutomaticItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.SvgImage");
-            setHyphenateDocumentAutomaticItem1.Name = "setHyphenateDocumentAutomaticItem1";
+            resources.ApplyResources(this.setHyphenateDocumentAutomaticItem1, "setHyphenateDocumentAutomaticItem1");
+            this.setHyphenateDocumentAutomaticItem1.Id = (123);
+            this.setHyphenateDocumentAutomaticItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.ImageIndex")));
+            this.setHyphenateDocumentAutomaticItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.LargeImageIndex")));
+            this.setHyphenateDocumentAutomaticItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setHyphenateDocumentAutomaticItem1.ImageOptions.SvgImage")));
+            this.setHyphenateDocumentAutomaticItem1.Name = ("setHyphenateDocumentAutomaticItem1");
             // 
             // showHyphenationOptionsFormItem1
             // 
-            resources.ApplyResources(showHyphenationOptionsFormItem1, "showHyphenationOptionsFormItem1");
-            showHyphenationOptionsFormItem1.Id = 124;
-            showHyphenationOptionsFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.ImageIndex");
-            showHyphenationOptionsFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.LargeImageIndex");
-            showHyphenationOptionsFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.SvgImage");
-            showHyphenationOptionsFormItem1.Name = "showHyphenationOptionsFormItem1";
+            resources.ApplyResources(this.showHyphenationOptionsFormItem1, "showHyphenationOptionsFormItem1");
+            this.showHyphenationOptionsFormItem1.Id = (124);
+            this.showHyphenationOptionsFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.ImageIndex")));
+            this.showHyphenationOptionsFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.LargeImageIndex")));
+            this.showHyphenationOptionsFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showHyphenationOptionsFormItem1.ImageOptions.SvgImage")));
+            this.showHyphenationOptionsFormItem1.Name = ("showHyphenationOptionsFormItem1");
             // 
             // changePageColorItem1
             // 
-            resources.ApplyResources(changePageColorItem1, "changePageColorItem1");
-            changePageColorItem1.Id = 125;
-            changePageColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changePageColorItem1.ImageOptions.ImageIndex");
-            changePageColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changePageColorItem1.ImageOptions.LargeImageIndex");
-            changePageColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changePageColorItem1.ImageOptions.SvgImage");
-            changePageColorItem1.Name = "changePageColorItem1";
+            resources.ApplyResources(this.changePageColorItem1, "changePageColorItem1");
+            this.changePageColorItem1.Id = (125);
+            this.changePageColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changePageColorItem1.ImageOptions.ImageIndex")));
+            this.changePageColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changePageColorItem1.ImageOptions.LargeImageIndex")));
+            this.changePageColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changePageColorItem1.ImageOptions.SvgImage")));
+            this.changePageColorItem1.Name = ("changePageColorItem1");
             // 
             // watermarkItem1
             // 
-            resources.ApplyResources(watermarkItem1, "watermarkItem1");
-            watermarkItem1.Id = 126;
-            watermarkItem1.ImageOptions.ImageIndex = (int)resources.GetObject("watermarkItem1.ImageOptions.ImageIndex");
-            watermarkItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("watermarkItem1.ImageOptions.LargeImageIndex");
-            watermarkItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("watermarkItem1.ImageOptions.SvgImage");
-            watermarkItem1.Name = "watermarkItem1";
+            resources.ApplyResources(this.watermarkItem1, "watermarkItem1");
+            this.watermarkItem1.Id = (126);
+            this.watermarkItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("watermarkItem1.ImageOptions.ImageIndex")));
+            this.watermarkItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("watermarkItem1.ImageOptions.LargeImageIndex")));
+            this.watermarkItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("watermarkItem1.ImageOptions.SvgImage")));
+            this.watermarkItem1.Name = ("watermarkItem1");
             // 
             // deleteWatermarkItem1
             // 
-            resources.ApplyResources(deleteWatermarkItem1, "deleteWatermarkItem1");
-            deleteWatermarkItem1.Id = 127;
-            deleteWatermarkItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteWatermarkItem1.ImageOptions.ImageIndex");
-            deleteWatermarkItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteWatermarkItem1.ImageOptions.LargeImageIndex");
-            deleteWatermarkItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteWatermarkItem1.ImageOptions.SvgImage");
-            deleteWatermarkItem1.Name = "deleteWatermarkItem1";
+            resources.ApplyResources(this.deleteWatermarkItem1, "deleteWatermarkItem1");
+            this.deleteWatermarkItem1.Id = (127);
+            this.deleteWatermarkItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteWatermarkItem1.ImageOptions.ImageIndex")));
+            this.deleteWatermarkItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteWatermarkItem1.ImageOptions.LargeImageIndex")));
+            this.deleteWatermarkItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteWatermarkItem1.ImageOptions.SvgImage")));
+            this.deleteWatermarkItem1.Name = ("deleteWatermarkItem1");
             // 
             // insertTableOfContentsItem1
             // 
-            resources.ApplyResources(insertTableOfContentsItem1, "insertTableOfContentsItem1");
-            insertTableOfContentsItem1.Id = 128;
-            insertTableOfContentsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableOfContentsItem1.ImageOptions.ImageIndex");
-            insertTableOfContentsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableOfContentsItem1.ImageOptions.LargeImageIndex");
-            insertTableOfContentsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableOfContentsItem1.ImageOptions.SvgImage");
-            insertTableOfContentsItem1.Name = "insertTableOfContentsItem1";
+            resources.ApplyResources(this.insertTableOfContentsItem1, "insertTableOfContentsItem1");
+            this.insertTableOfContentsItem1.Id = (128);
+            this.insertTableOfContentsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfContentsItem1.ImageOptions.ImageIndex")));
+            this.insertTableOfContentsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfContentsItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableOfContentsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableOfContentsItem1.ImageOptions.SvgImage")));
+            this.insertTableOfContentsItem1.Name = ("insertTableOfContentsItem1");
             // 
             // updateTableOfContentsItem1
             // 
-            resources.ApplyResources(updateTableOfContentsItem1, "updateTableOfContentsItem1");
-            updateTableOfContentsItem1.Id = 129;
-            updateTableOfContentsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("updateTableOfContentsItem1.ImageOptions.ImageIndex");
-            updateTableOfContentsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("updateTableOfContentsItem1.ImageOptions.LargeImageIndex");
-            updateTableOfContentsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("updateTableOfContentsItem1.ImageOptions.SvgImage");
-            updateTableOfContentsItem1.Name = "updateTableOfContentsItem1";
+            resources.ApplyResources(this.updateTableOfContentsItem1, "updateTableOfContentsItem1");
+            this.updateTableOfContentsItem1.Id = (129);
+            this.updateTableOfContentsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("updateTableOfContentsItem1.ImageOptions.ImageIndex")));
+            this.updateTableOfContentsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("updateTableOfContentsItem1.ImageOptions.LargeImageIndex")));
+            this.updateTableOfContentsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("updateTableOfContentsItem1.ImageOptions.SvgImage")));
+            this.updateTableOfContentsItem1.Name = ("updateTableOfContentsItem1");
             // 
             // addParagraphsToTableOfContentItem1
             // 
-            resources.ApplyResources(addParagraphsToTableOfContentItem1, "addParagraphsToTableOfContentItem1");
-            addParagraphsToTableOfContentItem1.Id = 130;
-            addParagraphsToTableOfContentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.ImageIndex");
-            addParagraphsToTableOfContentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.LargeImageIndex");
-            addParagraphsToTableOfContentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.SvgImage");
-            addParagraphsToTableOfContentItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem1), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem2), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem3), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem4), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem5), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem6), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem7), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem8), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem9), new DevExpress.XtraBars.LinkPersistInfo(setParagraphHeadingLevelItem10) });
-            addParagraphsToTableOfContentItem1.Name = "addParagraphsToTableOfContentItem1";
+            resources.ApplyResources(this.addParagraphsToTableOfContentItem1, "addParagraphsToTableOfContentItem1");
+            this.addParagraphsToTableOfContentItem1.Id = (130);
+            this.addParagraphsToTableOfContentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.ImageIndex")));
+            this.addParagraphsToTableOfContentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.LargeImageIndex")));
+            this.addParagraphsToTableOfContentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("addParagraphsToTableOfContentItem1.ImageOptions.SvgImage")));
+            this.addParagraphsToTableOfContentItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem2), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem3), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem4), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem5), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem6), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem7), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem8), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem9), new global::DevExpress.XtraBars.LinkPersistInfo(this.setParagraphHeadingLevelItem10) });
+            this.addParagraphsToTableOfContentItem1.Name = ("addParagraphsToTableOfContentItem1");
             // 
             // setParagraphHeadingLevelItem1
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem1, "setParagraphHeadingLevelItem1");
-            setParagraphHeadingLevelItem1.Id = 131;
-            setParagraphHeadingLevelItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem1.Name = "setParagraphHeadingLevelItem1";
-            setParagraphHeadingLevelItem1.OutlineLevel = 0;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem1, "setParagraphHeadingLevelItem1");
+            this.setParagraphHeadingLevelItem1.Id = (131);
+            this.setParagraphHeadingLevelItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem1.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem1.Name = ("setParagraphHeadingLevelItem1");
+            this.setParagraphHeadingLevelItem1.OutlineLevel = (0);
             // 
             // setParagraphHeadingLevelItem2
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem2, "setParagraphHeadingLevelItem2");
-            setParagraphHeadingLevelItem2.Id = 132;
-            setParagraphHeadingLevelItem2.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem2.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem2.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem2.Name = "setParagraphHeadingLevelItem2";
-            setParagraphHeadingLevelItem2.OutlineLevel = 1;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem2, "setParagraphHeadingLevelItem2");
+            this.setParagraphHeadingLevelItem2.Id = (132);
+            this.setParagraphHeadingLevelItem2.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem2.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem2.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem2.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem2.Name = ("setParagraphHeadingLevelItem2");
+            this.setParagraphHeadingLevelItem2.OutlineLevel = (1);
             // 
             // setParagraphHeadingLevelItem3
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem3, "setParagraphHeadingLevelItem3");
-            setParagraphHeadingLevelItem3.Id = 133;
-            setParagraphHeadingLevelItem3.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem3.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem3.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem3.Name = "setParagraphHeadingLevelItem3";
-            setParagraphHeadingLevelItem3.OutlineLevel = 2;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem3, "setParagraphHeadingLevelItem3");
+            this.setParagraphHeadingLevelItem3.Id = (133);
+            this.setParagraphHeadingLevelItem3.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem3.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem3.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem3.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem3.Name = ("setParagraphHeadingLevelItem3");
+            this.setParagraphHeadingLevelItem3.OutlineLevel = (2);
             // 
             // setParagraphHeadingLevelItem4
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem4, "setParagraphHeadingLevelItem4");
-            setParagraphHeadingLevelItem4.Id = 134;
-            setParagraphHeadingLevelItem4.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem4.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem4.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem4.Name = "setParagraphHeadingLevelItem4";
-            setParagraphHeadingLevelItem4.OutlineLevel = 3;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem4, "setParagraphHeadingLevelItem4");
+            this.setParagraphHeadingLevelItem4.Id = (134);
+            this.setParagraphHeadingLevelItem4.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem4.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem4.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem4.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem4.Name = ("setParagraphHeadingLevelItem4");
+            this.setParagraphHeadingLevelItem4.OutlineLevel = (3);
             // 
             // setParagraphHeadingLevelItem5
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem5, "setParagraphHeadingLevelItem5");
-            setParagraphHeadingLevelItem5.Id = 135;
-            setParagraphHeadingLevelItem5.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem5.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem5.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem5.Name = "setParagraphHeadingLevelItem5";
-            setParagraphHeadingLevelItem5.OutlineLevel = 4;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem5, "setParagraphHeadingLevelItem5");
+            this.setParagraphHeadingLevelItem5.Id = (135);
+            this.setParagraphHeadingLevelItem5.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem5.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem5.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem5.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem5.Name = ("setParagraphHeadingLevelItem5");
+            this.setParagraphHeadingLevelItem5.OutlineLevel = (4);
             // 
             // setParagraphHeadingLevelItem6
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem6, "setParagraphHeadingLevelItem6");
-            setParagraphHeadingLevelItem6.Id = 136;
-            setParagraphHeadingLevelItem6.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem6.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem6.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem6.Name = "setParagraphHeadingLevelItem6";
-            setParagraphHeadingLevelItem6.OutlineLevel = 5;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem6, "setParagraphHeadingLevelItem6");
+            this.setParagraphHeadingLevelItem6.Id = (136);
+            this.setParagraphHeadingLevelItem6.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem6.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem6.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem6.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem6.Name = ("setParagraphHeadingLevelItem6");
+            this.setParagraphHeadingLevelItem6.OutlineLevel = (5);
             // 
             // setParagraphHeadingLevelItem7
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem7, "setParagraphHeadingLevelItem7");
-            setParagraphHeadingLevelItem7.Id = 137;
-            setParagraphHeadingLevelItem7.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem7.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem7.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem7.Name = "setParagraphHeadingLevelItem7";
-            setParagraphHeadingLevelItem7.OutlineLevel = 6;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem7, "setParagraphHeadingLevelItem7");
+            this.setParagraphHeadingLevelItem7.Id = (137);
+            this.setParagraphHeadingLevelItem7.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem7.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem7.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem7.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem7.Name = ("setParagraphHeadingLevelItem7");
+            this.setParagraphHeadingLevelItem7.OutlineLevel = (6);
             // 
             // setParagraphHeadingLevelItem8
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem8, "setParagraphHeadingLevelItem8");
-            setParagraphHeadingLevelItem8.Id = 138;
-            setParagraphHeadingLevelItem8.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem8.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem8.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem8.Name = "setParagraphHeadingLevelItem8";
-            setParagraphHeadingLevelItem8.OutlineLevel = 7;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem8, "setParagraphHeadingLevelItem8");
+            this.setParagraphHeadingLevelItem8.Id = (138);
+            this.setParagraphHeadingLevelItem8.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem8.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem8.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem8.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem8.Name = ("setParagraphHeadingLevelItem8");
+            this.setParagraphHeadingLevelItem8.OutlineLevel = (7);
             // 
             // setParagraphHeadingLevelItem9
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem9, "setParagraphHeadingLevelItem9");
-            setParagraphHeadingLevelItem9.Id = 139;
-            setParagraphHeadingLevelItem9.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem9.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem9.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem9.Name = "setParagraphHeadingLevelItem9";
-            setParagraphHeadingLevelItem9.OutlineLevel = 8;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem9, "setParagraphHeadingLevelItem9");
+            this.setParagraphHeadingLevelItem9.Id = (139);
+            this.setParagraphHeadingLevelItem9.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem9.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem9.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem9.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem9.Name = ("setParagraphHeadingLevelItem9");
+            this.setParagraphHeadingLevelItem9.OutlineLevel = (8);
             // 
             // setParagraphHeadingLevelItem10
             // 
-            resources.ApplyResources(setParagraphHeadingLevelItem10, "setParagraphHeadingLevelItem10");
-            setParagraphHeadingLevelItem10.Id = 140;
-            setParagraphHeadingLevelItem10.ImageOptions.ImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.ImageIndex");
-            setParagraphHeadingLevelItem10.ImageOptions.LargeImageIndex = (int)resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.LargeImageIndex");
-            setParagraphHeadingLevelItem10.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.SvgImage");
-            setParagraphHeadingLevelItem10.Name = "setParagraphHeadingLevelItem10";
-            setParagraphHeadingLevelItem10.OutlineLevel = 9;
+            resources.ApplyResources(this.setParagraphHeadingLevelItem10, "setParagraphHeadingLevelItem10");
+            this.setParagraphHeadingLevelItem10.Id = (140);
+            this.setParagraphHeadingLevelItem10.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.ImageIndex")));
+            this.setParagraphHeadingLevelItem10.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.LargeImageIndex")));
+            this.setParagraphHeadingLevelItem10.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setParagraphHeadingLevelItem10.ImageOptions.SvgImage")));
+            this.setParagraphHeadingLevelItem10.Name = ("setParagraphHeadingLevelItem10");
+            this.setParagraphHeadingLevelItem10.OutlineLevel = (9);
             // 
             // insertCaptionPlaceholderItem1
             // 
-            resources.ApplyResources(insertCaptionPlaceholderItem1, "insertCaptionPlaceholderItem1");
-            insertCaptionPlaceholderItem1.Id = 141;
-            insertCaptionPlaceholderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.ImageIndex");
-            insertCaptionPlaceholderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.LargeImageIndex");
-            insertCaptionPlaceholderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.SvgImage");
-            insertCaptionPlaceholderItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(insertFiguresCaptionItems1), new DevExpress.XtraBars.LinkPersistInfo(insertTablesCaptionItems1), new DevExpress.XtraBars.LinkPersistInfo(insertEquationsCaptionItems1) });
-            insertCaptionPlaceholderItem1.Name = "insertCaptionPlaceholderItem1";
+            resources.ApplyResources(this.insertCaptionPlaceholderItem1, "insertCaptionPlaceholderItem1");
+            this.insertCaptionPlaceholderItem1.Id = (141);
+            this.insertCaptionPlaceholderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.ImageIndex")));
+            this.insertCaptionPlaceholderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.LargeImageIndex")));
+            this.insertCaptionPlaceholderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertCaptionPlaceholderItem1.ImageOptions.SvgImage")));
+            this.insertCaptionPlaceholderItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.insertFiguresCaptionItems1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertTablesCaptionItems1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertEquationsCaptionItems1) });
+            this.insertCaptionPlaceholderItem1.Name = ("insertCaptionPlaceholderItem1");
             // 
             // insertFiguresCaptionItems1
             // 
-            resources.ApplyResources(insertFiguresCaptionItems1, "insertFiguresCaptionItems1");
-            insertFiguresCaptionItems1.Id = 142;
-            insertFiguresCaptionItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertFiguresCaptionItems1.ImageOptions.ImageIndex");
-            insertFiguresCaptionItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertFiguresCaptionItems1.ImageOptions.LargeImageIndex");
-            insertFiguresCaptionItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertFiguresCaptionItems1.ImageOptions.SvgImage");
-            insertFiguresCaptionItems1.Name = "insertFiguresCaptionItems1";
+            resources.ApplyResources(this.insertFiguresCaptionItems1, "insertFiguresCaptionItems1");
+            this.insertFiguresCaptionItems1.Id = (142);
+            this.insertFiguresCaptionItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertFiguresCaptionItems1.ImageOptions.ImageIndex")));
+            this.insertFiguresCaptionItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertFiguresCaptionItems1.ImageOptions.LargeImageIndex")));
+            this.insertFiguresCaptionItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertFiguresCaptionItems1.ImageOptions.SvgImage")));
+            this.insertFiguresCaptionItems1.Name = ("insertFiguresCaptionItems1");
             // 
             // insertTablesCaptionItems1
             // 
-            resources.ApplyResources(insertTablesCaptionItems1, "insertTablesCaptionItems1");
-            insertTablesCaptionItems1.Id = 143;
-            insertTablesCaptionItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTablesCaptionItems1.ImageOptions.ImageIndex");
-            insertTablesCaptionItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTablesCaptionItems1.ImageOptions.LargeImageIndex");
-            insertTablesCaptionItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTablesCaptionItems1.ImageOptions.SvgImage");
-            insertTablesCaptionItems1.Name = "insertTablesCaptionItems1";
+            resources.ApplyResources(this.insertTablesCaptionItems1, "insertTablesCaptionItems1");
+            this.insertTablesCaptionItems1.Id = (143);
+            this.insertTablesCaptionItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTablesCaptionItems1.ImageOptions.ImageIndex")));
+            this.insertTablesCaptionItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTablesCaptionItems1.ImageOptions.LargeImageIndex")));
+            this.insertTablesCaptionItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTablesCaptionItems1.ImageOptions.SvgImage")));
+            this.insertTablesCaptionItems1.Name = ("insertTablesCaptionItems1");
             // 
             // insertEquationsCaptionItems1
             // 
-            resources.ApplyResources(insertEquationsCaptionItems1, "insertEquationsCaptionItems1");
-            insertEquationsCaptionItems1.Id = 144;
-            insertEquationsCaptionItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertEquationsCaptionItems1.ImageOptions.ImageIndex");
-            insertEquationsCaptionItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertEquationsCaptionItems1.ImageOptions.LargeImageIndex");
-            insertEquationsCaptionItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertEquationsCaptionItems1.ImageOptions.SvgImage");
-            insertEquationsCaptionItems1.Name = "insertEquationsCaptionItems1";
+            resources.ApplyResources(this.insertEquationsCaptionItems1, "insertEquationsCaptionItems1");
+            this.insertEquationsCaptionItems1.Id = (144);
+            this.insertEquationsCaptionItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertEquationsCaptionItems1.ImageOptions.ImageIndex")));
+            this.insertEquationsCaptionItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertEquationsCaptionItems1.ImageOptions.LargeImageIndex")));
+            this.insertEquationsCaptionItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertEquationsCaptionItems1.ImageOptions.SvgImage")));
+            this.insertEquationsCaptionItems1.Name = ("insertEquationsCaptionItems1");
             // 
             // insertTableOfFiguresPlaceholderItem1
             // 
-            resources.ApplyResources(insertTableOfFiguresPlaceholderItem1, "insertTableOfFiguresPlaceholderItem1");
-            insertTableOfFiguresPlaceholderItem1.Id = 145;
-            insertTableOfFiguresPlaceholderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.ImageIndex");
-            insertTableOfFiguresPlaceholderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.LargeImageIndex");
-            insertTableOfFiguresPlaceholderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.SvgImage");
-            insertTableOfFiguresPlaceholderItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(insertTableOfFiguresItems1), new DevExpress.XtraBars.LinkPersistInfo(insertTableOfTablesItems1), new DevExpress.XtraBars.LinkPersistInfo(insertTableOfEquationsItems1) });
-            insertTableOfFiguresPlaceholderItem1.Name = "insertTableOfFiguresPlaceholderItem1";
+            resources.ApplyResources(this.insertTableOfFiguresPlaceholderItem1, "insertTableOfFiguresPlaceholderItem1");
+            this.insertTableOfFiguresPlaceholderItem1.Id = (145);
+            this.insertTableOfFiguresPlaceholderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.ImageIndex")));
+            this.insertTableOfFiguresPlaceholderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableOfFiguresPlaceholderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableOfFiguresPlaceholderItem1.ImageOptions.SvgImage")));
+            this.insertTableOfFiguresPlaceholderItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.insertTableOfFiguresItems1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertTableOfTablesItems1), new global::DevExpress.XtraBars.LinkPersistInfo(this.insertTableOfEquationsItems1) });
+            this.insertTableOfFiguresPlaceholderItem1.Name = ("insertTableOfFiguresPlaceholderItem1");
             // 
             // insertTableOfFiguresItems1
             // 
-            resources.ApplyResources(insertTableOfFiguresItems1, "insertTableOfFiguresItems1");
-            insertTableOfFiguresItems1.Id = 146;
-            insertTableOfFiguresItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableOfFiguresItems1.ImageOptions.ImageIndex");
-            insertTableOfFiguresItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableOfFiguresItems1.ImageOptions.LargeImageIndex");
-            insertTableOfFiguresItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableOfFiguresItems1.ImageOptions.SvgImage");
-            insertTableOfFiguresItems1.Name = "insertTableOfFiguresItems1";
+            resources.ApplyResources(this.insertTableOfFiguresItems1, "insertTableOfFiguresItems1");
+            this.insertTableOfFiguresItems1.Id = (146);
+            this.insertTableOfFiguresItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfFiguresItems1.ImageOptions.ImageIndex")));
+            this.insertTableOfFiguresItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfFiguresItems1.ImageOptions.LargeImageIndex")));
+            this.insertTableOfFiguresItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableOfFiguresItems1.ImageOptions.SvgImage")));
+            this.insertTableOfFiguresItems1.Name = ("insertTableOfFiguresItems1");
             // 
             // insertTableOfTablesItems1
             // 
-            resources.ApplyResources(insertTableOfTablesItems1, "insertTableOfTablesItems1");
-            insertTableOfTablesItems1.Id = 147;
-            insertTableOfTablesItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableOfTablesItems1.ImageOptions.ImageIndex");
-            insertTableOfTablesItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableOfTablesItems1.ImageOptions.LargeImageIndex");
-            insertTableOfTablesItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableOfTablesItems1.ImageOptions.SvgImage");
-            insertTableOfTablesItems1.Name = "insertTableOfTablesItems1";
+            resources.ApplyResources(this.insertTableOfTablesItems1, "insertTableOfTablesItems1");
+            this.insertTableOfTablesItems1.Id = (147);
+            this.insertTableOfTablesItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfTablesItems1.ImageOptions.ImageIndex")));
+            this.insertTableOfTablesItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfTablesItems1.ImageOptions.LargeImageIndex")));
+            this.insertTableOfTablesItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableOfTablesItems1.ImageOptions.SvgImage")));
+            this.insertTableOfTablesItems1.Name = ("insertTableOfTablesItems1");
             // 
             // insertTableOfEquationsItems1
             // 
-            resources.ApplyResources(insertTableOfEquationsItems1, "insertTableOfEquationsItems1");
-            insertTableOfEquationsItems1.Id = 148;
-            insertTableOfEquationsItems1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableOfEquationsItems1.ImageOptions.ImageIndex");
-            insertTableOfEquationsItems1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableOfEquationsItems1.ImageOptions.LargeImageIndex");
-            insertTableOfEquationsItems1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableOfEquationsItems1.ImageOptions.SvgImage");
-            insertTableOfEquationsItems1.Name = "insertTableOfEquationsItems1";
+            resources.ApplyResources(this.insertTableOfEquationsItems1, "insertTableOfEquationsItems1");
+            this.insertTableOfEquationsItems1.Id = (148);
+            this.insertTableOfEquationsItems1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfEquationsItems1.ImageOptions.ImageIndex")));
+            this.insertTableOfEquationsItems1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableOfEquationsItems1.ImageOptions.LargeImageIndex")));
+            this.insertTableOfEquationsItems1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableOfEquationsItems1.ImageOptions.SvgImage")));
+            this.insertTableOfEquationsItems1.Name = ("insertTableOfEquationsItems1");
             // 
             // updateTableOfFiguresItem1
             // 
-            resources.ApplyResources(updateTableOfFiguresItem1, "updateTableOfFiguresItem1");
-            updateTableOfFiguresItem1.Id = 149;
-            updateTableOfFiguresItem1.ImageOptions.ImageIndex = (int)resources.GetObject("updateTableOfFiguresItem1.ImageOptions.ImageIndex");
-            updateTableOfFiguresItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("updateTableOfFiguresItem1.ImageOptions.LargeImageIndex");
-            updateTableOfFiguresItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("updateTableOfFiguresItem1.ImageOptions.SvgImage");
-            updateTableOfFiguresItem1.Name = "updateTableOfFiguresItem1";
+            resources.ApplyResources(this.updateTableOfFiguresItem1, "updateTableOfFiguresItem1");
+            this.updateTableOfFiguresItem1.Id = (149);
+            this.updateTableOfFiguresItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("updateTableOfFiguresItem1.ImageOptions.ImageIndex")));
+            this.updateTableOfFiguresItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("updateTableOfFiguresItem1.ImageOptions.LargeImageIndex")));
+            this.updateTableOfFiguresItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("updateTableOfFiguresItem1.ImageOptions.SvgImage")));
+            this.updateTableOfFiguresItem1.Name = ("updateTableOfFiguresItem1");
             // 
             // insertFootnoteItem1
             // 
-            resources.ApplyResources(insertFootnoteItem1, "insertFootnoteItem1");
-            insertFootnoteItem1.Id = 150;
-            insertFootnoteItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertFootnoteItem1.ImageOptions.ImageIndex");
-            insertFootnoteItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertFootnoteItem1.ImageOptions.LargeImageIndex");
-            insertFootnoteItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertFootnoteItem1.ImageOptions.SvgImage");
-            insertFootnoteItem1.Name = "insertFootnoteItem1";
+            resources.ApplyResources(this.insertFootnoteItem1, "insertFootnoteItem1");
+            this.insertFootnoteItem1.Id = (150);
+            this.insertFootnoteItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertFootnoteItem1.ImageOptions.ImageIndex")));
+            this.insertFootnoteItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertFootnoteItem1.ImageOptions.LargeImageIndex")));
+            this.insertFootnoteItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertFootnoteItem1.ImageOptions.SvgImage")));
+            this.insertFootnoteItem1.Name = ("insertFootnoteItem1");
             // 
             // insertEndnoteItem1
             // 
-            resources.ApplyResources(insertEndnoteItem1, "insertEndnoteItem1");
-            insertEndnoteItem1.Id = 151;
-            insertEndnoteItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertEndnoteItem1.ImageOptions.ImageIndex");
-            insertEndnoteItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertEndnoteItem1.ImageOptions.LargeImageIndex");
-            insertEndnoteItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertEndnoteItem1.ImageOptions.SvgImage");
-            insertEndnoteItem1.Name = "insertEndnoteItem1";
+            resources.ApplyResources(this.insertEndnoteItem1, "insertEndnoteItem1");
+            this.insertEndnoteItem1.Id = (151);
+            this.insertEndnoteItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertEndnoteItem1.ImageOptions.ImageIndex")));
+            this.insertEndnoteItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertEndnoteItem1.ImageOptions.LargeImageIndex")));
+            this.insertEndnoteItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertEndnoteItem1.ImageOptions.SvgImage")));
+            this.insertEndnoteItem1.Name = ("insertEndnoteItem1");
             // 
             // navigationNotesItem1
             // 
-            resources.ApplyResources(navigationNotesItem1, "navigationNotesItem1");
-            navigationNotesItem1.Id = 152;
-            navigationNotesItem1.ImageOptions.ImageIndex = (int)resources.GetObject("navigationNotesItem1.ImageOptions.ImageIndex");
-            navigationNotesItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("navigationNotesItem1.ImageOptions.LargeImageIndex");
-            navigationNotesItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("navigationNotesItem1.ImageOptions.SvgImage");
-            navigationNotesItem1.Name = "navigationNotesItem1";
+            resources.ApplyResources(this.navigationNotesItem1, "navigationNotesItem1");
+            this.navigationNotesItem1.Id = (152);
+            this.navigationNotesItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("navigationNotesItem1.ImageOptions.ImageIndex")));
+            this.navigationNotesItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("navigationNotesItem1.ImageOptions.LargeImageIndex")));
+            this.navigationNotesItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("navigationNotesItem1.ImageOptions.SvgImage")));
+            this.navigationNotesItem1.Name = ("navigationNotesItem1");
             // 
             // showNotesItem1
             // 
-            resources.ApplyResources(showNotesItem1, "showNotesItem1");
-            showNotesItem1.Id = 153;
-            showNotesItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showNotesItem1.ImageOptions.ImageIndex");
-            showNotesItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showNotesItem1.ImageOptions.LargeImageIndex");
-            showNotesItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showNotesItem1.ImageOptions.SvgImage");
-            showNotesItem1.Name = "showNotesItem1";
+            resources.ApplyResources(this.showNotesItem1, "showNotesItem1");
+            this.showNotesItem1.Id = (153);
+            this.showNotesItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showNotesItem1.ImageOptions.ImageIndex")));
+            this.showNotesItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showNotesItem1.ImageOptions.LargeImageIndex")));
+            this.showNotesItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showNotesItem1.ImageOptions.SvgImage")));
+            this.showNotesItem1.Name = ("showNotesItem1");
             // 
             // insertMergeFieldItem1
             // 
-            resources.ApplyResources(insertMergeFieldItem1, "insertMergeFieldItem1");
-            insertMergeFieldItem1.Id = 154;
-            insertMergeFieldItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertMergeFieldItem1.ImageOptions.ImageIndex");
-            insertMergeFieldItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertMergeFieldItem1.ImageOptions.LargeImageIndex");
-            insertMergeFieldItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertMergeFieldItem1.ImageOptions.SvgImage");
-            insertMergeFieldItem1.Name = "insertMergeFieldItem1";
+            resources.ApplyResources(this.insertMergeFieldItem1, "insertMergeFieldItem1");
+            this.insertMergeFieldItem1.Id = (154);
+            this.insertMergeFieldItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertMergeFieldItem1.ImageOptions.ImageIndex")));
+            this.insertMergeFieldItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertMergeFieldItem1.ImageOptions.LargeImageIndex")));
+            this.insertMergeFieldItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertMergeFieldItem1.ImageOptions.SvgImage")));
+            this.insertMergeFieldItem1.Name = ("insertMergeFieldItem1");
             // 
             // showAllFieldCodesItem1
             // 
-            resources.ApplyResources(showAllFieldCodesItem1, "showAllFieldCodesItem1");
-            showAllFieldCodesItem1.Id = 155;
-            showAllFieldCodesItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showAllFieldCodesItem1.ImageOptions.ImageIndex");
-            showAllFieldCodesItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showAllFieldCodesItem1.ImageOptions.LargeImageIndex");
-            showAllFieldCodesItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showAllFieldCodesItem1.ImageOptions.SvgImage");
-            showAllFieldCodesItem1.Name = "showAllFieldCodesItem1";
+            resources.ApplyResources(this.showAllFieldCodesItem1, "showAllFieldCodesItem1");
+            this.showAllFieldCodesItem1.Id = (155);
+            this.showAllFieldCodesItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showAllFieldCodesItem1.ImageOptions.ImageIndex")));
+            this.showAllFieldCodesItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showAllFieldCodesItem1.ImageOptions.LargeImageIndex")));
+            this.showAllFieldCodesItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showAllFieldCodesItem1.ImageOptions.SvgImage")));
+            this.showAllFieldCodesItem1.Name = ("showAllFieldCodesItem1");
             // 
             // showAllFieldResultsItem1
             // 
-            resources.ApplyResources(showAllFieldResultsItem1, "showAllFieldResultsItem1");
-            showAllFieldResultsItem1.Id = 156;
-            showAllFieldResultsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showAllFieldResultsItem1.ImageOptions.ImageIndex");
-            showAllFieldResultsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showAllFieldResultsItem1.ImageOptions.LargeImageIndex");
-            showAllFieldResultsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showAllFieldResultsItem1.ImageOptions.SvgImage");
-            showAllFieldResultsItem1.Name = "showAllFieldResultsItem1";
+            resources.ApplyResources(this.showAllFieldResultsItem1, "showAllFieldResultsItem1");
+            this.showAllFieldResultsItem1.Id = (156);
+            this.showAllFieldResultsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showAllFieldResultsItem1.ImageOptions.ImageIndex")));
+            this.showAllFieldResultsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showAllFieldResultsItem1.ImageOptions.LargeImageIndex")));
+            this.showAllFieldResultsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showAllFieldResultsItem1.ImageOptions.SvgImage")));
+            this.showAllFieldResultsItem1.Name = ("showAllFieldResultsItem1");
             // 
             // toggleViewMergedDataItem1
             // 
-            resources.ApplyResources(toggleViewMergedDataItem1, "toggleViewMergedDataItem1");
-            toggleViewMergedDataItem1.Id = 157;
-            toggleViewMergedDataItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleViewMergedDataItem1.ImageOptions.ImageIndex");
-            toggleViewMergedDataItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleViewMergedDataItem1.ImageOptions.LargeImageIndex");
-            toggleViewMergedDataItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleViewMergedDataItem1.ImageOptions.SvgImage");
-            toggleViewMergedDataItem1.Name = "toggleViewMergedDataItem1";
+            resources.ApplyResources(this.toggleViewMergedDataItem1, "toggleViewMergedDataItem1");
+            this.toggleViewMergedDataItem1.Id = (157);
+            this.toggleViewMergedDataItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleViewMergedDataItem1.ImageOptions.ImageIndex")));
+            this.toggleViewMergedDataItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleViewMergedDataItem1.ImageOptions.LargeImageIndex")));
+            this.toggleViewMergedDataItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleViewMergedDataItem1.ImageOptions.SvgImage")));
+            this.toggleViewMergedDataItem1.Name = ("toggleViewMergedDataItem1");
             // 
             // checkSpellingItem1
             // 
-            resources.ApplyResources(checkSpellingItem1, "checkSpellingItem1");
-            checkSpellingItem1.Id = 158;
-            checkSpellingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("checkSpellingItem1.ImageOptions.ImageIndex");
-            checkSpellingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("checkSpellingItem1.ImageOptions.LargeImageIndex");
-            checkSpellingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("checkSpellingItem1.ImageOptions.SvgImage");
-            checkSpellingItem1.Name = "checkSpellingItem1";
+            resources.ApplyResources(this.checkSpellingItem1, "checkSpellingItem1");
+            this.checkSpellingItem1.Id = (158);
+            this.checkSpellingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("checkSpellingItem1.ImageOptions.ImageIndex")));
+            this.checkSpellingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("checkSpellingItem1.ImageOptions.LargeImageIndex")));
+            this.checkSpellingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("checkSpellingItem1.ImageOptions.SvgImage")));
+            this.checkSpellingItem1.Name = ("checkSpellingItem1");
             // 
             // changeLanguageItem1
             // 
-            resources.ApplyResources(changeLanguageItem1, "changeLanguageItem1");
-            changeLanguageItem1.Id = 159;
-            changeLanguageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeLanguageItem1.ImageOptions.ImageIndex");
-            changeLanguageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeLanguageItem1.ImageOptions.LargeImageIndex");
-            changeLanguageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeLanguageItem1.ImageOptions.SvgImage");
-            changeLanguageItem1.Name = "changeLanguageItem1";
+            resources.ApplyResources(this.changeLanguageItem1, "changeLanguageItem1");
+            this.changeLanguageItem1.Id = (159);
+            this.changeLanguageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeLanguageItem1.ImageOptions.ImageIndex")));
+            this.changeLanguageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeLanguageItem1.ImageOptions.LargeImageIndex")));
+            this.changeLanguageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeLanguageItem1.ImageOptions.SvgImage")));
+            this.changeLanguageItem1.Name = ("changeLanguageItem1");
             // 
             // protectDocumentItem1
             // 
-            resources.ApplyResources(protectDocumentItem1, "protectDocumentItem1");
-            protectDocumentItem1.Id = 160;
-            protectDocumentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("protectDocumentItem1.ImageOptions.ImageIndex");
-            protectDocumentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("protectDocumentItem1.ImageOptions.LargeImageIndex");
-            protectDocumentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("protectDocumentItem1.ImageOptions.SvgImage");
-            protectDocumentItem1.Name = "protectDocumentItem1";
+            resources.ApplyResources(this.protectDocumentItem1, "protectDocumentItem1");
+            this.protectDocumentItem1.Id = (160);
+            this.protectDocumentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("protectDocumentItem1.ImageOptions.ImageIndex")));
+            this.protectDocumentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("protectDocumentItem1.ImageOptions.LargeImageIndex")));
+            this.protectDocumentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("protectDocumentItem1.ImageOptions.SvgImage")));
+            this.protectDocumentItem1.Name = ("protectDocumentItem1");
             // 
             // changeRangeEditingPermissionsItem1
             // 
-            resources.ApplyResources(changeRangeEditingPermissionsItem1, "changeRangeEditingPermissionsItem1");
-            changeRangeEditingPermissionsItem1.Id = 161;
-            changeRangeEditingPermissionsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.ImageIndex");
-            changeRangeEditingPermissionsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.LargeImageIndex");
-            changeRangeEditingPermissionsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.SvgImage");
-            changeRangeEditingPermissionsItem1.Name = "changeRangeEditingPermissionsItem1";
+            resources.ApplyResources(this.changeRangeEditingPermissionsItem1, "changeRangeEditingPermissionsItem1");
+            this.changeRangeEditingPermissionsItem1.Id = (161);
+            this.changeRangeEditingPermissionsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.ImageIndex")));
+            this.changeRangeEditingPermissionsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.LargeImageIndex")));
+            this.changeRangeEditingPermissionsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeRangeEditingPermissionsItem1.ImageOptions.SvgImage")));
+            this.changeRangeEditingPermissionsItem1.Name = ("changeRangeEditingPermissionsItem1");
             // 
             // unprotectDocumentItem1
             // 
-            resources.ApplyResources(unprotectDocumentItem1, "unprotectDocumentItem1");
-            unprotectDocumentItem1.Id = 162;
-            unprotectDocumentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("unprotectDocumentItem1.ImageOptions.ImageIndex");
-            unprotectDocumentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("unprotectDocumentItem1.ImageOptions.LargeImageIndex");
-            unprotectDocumentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("unprotectDocumentItem1.ImageOptions.SvgImage");
-            unprotectDocumentItem1.Name = "unprotectDocumentItem1";
+            resources.ApplyResources(this.unprotectDocumentItem1, "unprotectDocumentItem1");
+            this.unprotectDocumentItem1.Id = (162);
+            this.unprotectDocumentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("unprotectDocumentItem1.ImageOptions.ImageIndex")));
+            this.unprotectDocumentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("unprotectDocumentItem1.ImageOptions.LargeImageIndex")));
+            this.unprotectDocumentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("unprotectDocumentItem1.ImageOptions.SvgImage")));
+            this.unprotectDocumentItem1.Name = ("unprotectDocumentItem1");
             // 
             // newCommentItem1
             // 
-            resources.ApplyResources(newCommentItem1, "newCommentItem1");
-            newCommentItem1.Id = 163;
-            newCommentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("newCommentItem1.ImageOptions.ImageIndex");
-            newCommentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("newCommentItem1.ImageOptions.LargeImageIndex");
-            newCommentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("newCommentItem1.ImageOptions.SvgImage");
-            newCommentItem1.Name = "newCommentItem1";
+            resources.ApplyResources(this.newCommentItem1, "newCommentItem1");
+            this.newCommentItem1.Id = (163);
+            this.newCommentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("newCommentItem1.ImageOptions.ImageIndex")));
+            this.newCommentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("newCommentItem1.ImageOptions.LargeImageIndex")));
+            this.newCommentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("newCommentItem1.ImageOptions.SvgImage")));
+            this.newCommentItem1.Name = ("newCommentItem1");
             // 
             // deleteCommentsItem1
             // 
-            resources.ApplyResources(deleteCommentsItem1, "deleteCommentsItem1");
-            deleteCommentsItem1.Id = 164;
-            deleteCommentsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteCommentsItem1.ImageOptions.ImageIndex");
-            deleteCommentsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteCommentsItem1.ImageOptions.LargeImageIndex");
-            deleteCommentsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteCommentsItem1.ImageOptions.SvgImage");
-            deleteCommentsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(deleteOneCommentItem1), new DevExpress.XtraBars.LinkPersistInfo(deleteAllCommentsShownItem1), new DevExpress.XtraBars.LinkPersistInfo(deleteAllCommentsItem1) });
-            deleteCommentsItem1.Name = "deleteCommentsItem1";
+            resources.ApplyResources(this.deleteCommentsItem1, "deleteCommentsItem1");
+            this.deleteCommentsItem1.Id = (164);
+            this.deleteCommentsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteCommentsItem1.ImageOptions.ImageIndex")));
+            this.deleteCommentsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteCommentsItem1.ImageOptions.LargeImageIndex")));
+            this.deleteCommentsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteCommentsItem1.ImageOptions.SvgImage")));
+            this.deleteCommentsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteOneCommentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteAllCommentsShownItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteAllCommentsItem1) });
+            this.deleteCommentsItem1.Name = ("deleteCommentsItem1");
             // 
             // deleteOneCommentItem1
             // 
-            resources.ApplyResources(deleteOneCommentItem1, "deleteOneCommentItem1");
-            deleteOneCommentItem1.Id = 165;
-            deleteOneCommentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteOneCommentItem1.ImageOptions.ImageIndex");
-            deleteOneCommentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteOneCommentItem1.ImageOptions.LargeImageIndex");
-            deleteOneCommentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteOneCommentItem1.ImageOptions.SvgImage");
-            deleteOneCommentItem1.Name = "deleteOneCommentItem1";
+            resources.ApplyResources(this.deleteOneCommentItem1, "deleteOneCommentItem1");
+            this.deleteOneCommentItem1.Id = (165);
+            this.deleteOneCommentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteOneCommentItem1.ImageOptions.ImageIndex")));
+            this.deleteOneCommentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteOneCommentItem1.ImageOptions.LargeImageIndex")));
+            this.deleteOneCommentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteOneCommentItem1.ImageOptions.SvgImage")));
+            this.deleteOneCommentItem1.Name = ("deleteOneCommentItem1");
             // 
             // deleteAllCommentsShownItem1
             // 
-            resources.ApplyResources(deleteAllCommentsShownItem1, "deleteAllCommentsShownItem1");
-            deleteAllCommentsShownItem1.Id = 166;
-            deleteAllCommentsShownItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.ImageIndex");
-            deleteAllCommentsShownItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.LargeImageIndex");
-            deleteAllCommentsShownItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.SvgImage");
-            deleteAllCommentsShownItem1.Name = "deleteAllCommentsShownItem1";
+            resources.ApplyResources(this.deleteAllCommentsShownItem1, "deleteAllCommentsShownItem1");
+            this.deleteAllCommentsShownItem1.Id = (166);
+            this.deleteAllCommentsShownItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.ImageIndex")));
+            this.deleteAllCommentsShownItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.LargeImageIndex")));
+            this.deleteAllCommentsShownItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteAllCommentsShownItem1.ImageOptions.SvgImage")));
+            this.deleteAllCommentsShownItem1.Name = ("deleteAllCommentsShownItem1");
             // 
             // deleteAllCommentsItem1
             // 
-            resources.ApplyResources(deleteAllCommentsItem1, "deleteAllCommentsItem1");
-            deleteAllCommentsItem1.Id = 167;
-            deleteAllCommentsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteAllCommentsItem1.ImageOptions.ImageIndex");
-            deleteAllCommentsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteAllCommentsItem1.ImageOptions.LargeImageIndex");
-            deleteAllCommentsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteAllCommentsItem1.ImageOptions.SvgImage");
-            deleteAllCommentsItem1.Name = "deleteAllCommentsItem1";
+            resources.ApplyResources(this.deleteAllCommentsItem1, "deleteAllCommentsItem1");
+            this.deleteAllCommentsItem1.Id = (167);
+            this.deleteAllCommentsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteAllCommentsItem1.ImageOptions.ImageIndex")));
+            this.deleteAllCommentsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteAllCommentsItem1.ImageOptions.LargeImageIndex")));
+            this.deleteAllCommentsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteAllCommentsItem1.ImageOptions.SvgImage")));
+            this.deleteAllCommentsItem1.Name = ("deleteAllCommentsItem1");
             // 
             // previousCommentItem1
             // 
-            resources.ApplyResources(previousCommentItem1, "previousCommentItem1");
-            previousCommentItem1.Id = 168;
-            previousCommentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("previousCommentItem1.ImageOptions.ImageIndex");
-            previousCommentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("previousCommentItem1.ImageOptions.LargeImageIndex");
-            previousCommentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("previousCommentItem1.ImageOptions.SvgImage");
-            previousCommentItem1.Name = "previousCommentItem1";
+            resources.ApplyResources(this.previousCommentItem1, "previousCommentItem1");
+            this.previousCommentItem1.Id = (168);
+            this.previousCommentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("previousCommentItem1.ImageOptions.ImageIndex")));
+            this.previousCommentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("previousCommentItem1.ImageOptions.LargeImageIndex")));
+            this.previousCommentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("previousCommentItem1.ImageOptions.SvgImage")));
+            this.previousCommentItem1.Name = ("previousCommentItem1");
             // 
             // nextCommentItem1
             // 
-            resources.ApplyResources(nextCommentItem1, "nextCommentItem1");
-            nextCommentItem1.Id = 169;
-            nextCommentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("nextCommentItem1.ImageOptions.ImageIndex");
-            nextCommentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("nextCommentItem1.ImageOptions.LargeImageIndex");
-            nextCommentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("nextCommentItem1.ImageOptions.SvgImage");
-            nextCommentItem1.Name = "nextCommentItem1";
+            resources.ApplyResources(this.nextCommentItem1, "nextCommentItem1");
+            this.nextCommentItem1.Id = (169);
+            this.nextCommentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("nextCommentItem1.ImageOptions.ImageIndex")));
+            this.nextCommentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("nextCommentItem1.ImageOptions.LargeImageIndex")));
+            this.nextCommentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("nextCommentItem1.ImageOptions.SvgImage")));
+            this.nextCommentItem1.Name = ("nextCommentItem1");
             // 
             // toggleTrackChangesBarItem1
             // 
-            resources.ApplyResources(toggleTrackChangesBarItem1, "toggleTrackChangesBarItem1");
-            toggleTrackChangesBarItem1.Id = 170;
-            toggleTrackChangesBarItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.ImageIndex");
-            toggleTrackChangesBarItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.LargeImageIndex");
-            toggleTrackChangesBarItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.SvgImage");
-            toggleTrackChangesBarItem1.Name = "toggleTrackChangesBarItem1";
+            resources.ApplyResources(this.toggleTrackChangesBarItem1, "toggleTrackChangesBarItem1");
+            this.toggleTrackChangesBarItem1.Id = (170);
+            this.toggleTrackChangesBarItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.ImageIndex")));
+            this.toggleTrackChangesBarItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTrackChangesBarItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTrackChangesBarItem1.ImageOptions.SvgImage")));
+            this.toggleTrackChangesBarItem1.Name = ("toggleTrackChangesBarItem1");
             // 
             // changeDisplayForReviewModeItem1
             // 
-            resources.ApplyResources(changeDisplayForReviewModeItem1, "changeDisplayForReviewModeItem1");
-            changeDisplayForReviewModeItem1.Edit = displayForReviewModeComboBox1;
-            changeDisplayForReviewModeItem1.Id = 171;
-            changeDisplayForReviewModeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.ImageIndex");
-            changeDisplayForReviewModeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.LargeImageIndex");
-            changeDisplayForReviewModeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.SvgImage");
-            changeDisplayForReviewModeItem1.Name = "changeDisplayForReviewModeItem1";
+            resources.ApplyResources(this.changeDisplayForReviewModeItem1, "changeDisplayForReviewModeItem1");
+            this.changeDisplayForReviewModeItem1.Edit = (this.displayForReviewModeComboBox1);
+            this.changeDisplayForReviewModeItem1.Id = (171);
+            this.changeDisplayForReviewModeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.ImageIndex")));
+            this.changeDisplayForReviewModeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.LargeImageIndex")));
+            this.changeDisplayForReviewModeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeDisplayForReviewModeItem1.ImageOptions.SvgImage")));
+            this.changeDisplayForReviewModeItem1.Name = ("changeDisplayForReviewModeItem1");
             // 
             // displayForReviewModeComboBox1
             // 
-            resources.ApplyResources(displayForReviewModeComboBox1, "displayForReviewModeComboBox1");
-            displayForReviewModeComboBox1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("displayForReviewModeComboBox1.Buttons")) });
-            displayForReviewModeComboBox1.Name = "displayForReviewModeComboBox1";
-            displayForReviewModeComboBox1.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+            resources.ApplyResources(this.displayForReviewModeComboBox1, "displayForReviewModeComboBox1");
+            this.displayForReviewModeComboBox1.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("displayForReviewModeComboBox1.Buttons"))) });
+            this.displayForReviewModeComboBox1.Name = ("displayForReviewModeComboBox1");
+            this.displayForReviewModeComboBox1.TextEditStyle = (global::DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor);
             // 
             // showMarkupSubItem1
             // 
-            resources.ApplyResources(showMarkupSubItem1, "showMarkupSubItem1");
-            showMarkupSubItem1.ActAsDropDown = true;
-            showMarkupSubItem1.Id = 172;
-            showMarkupSubItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showMarkupSubItem1.ImageOptions.ImageIndex");
-            showMarkupSubItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showMarkupSubItem1.ImageOptions.LargeImageIndex");
-            showMarkupSubItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showMarkupSubItem1.ImageOptions.SvgImage");
-            showMarkupSubItem1.Name = "showMarkupSubItem1";
-            showMarkupSubItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
+            resources.ApplyResources(this.showMarkupSubItem1, "showMarkupSubItem1");
+            this.showMarkupSubItem1.ActAsDropDown = (true);
+            this.showMarkupSubItem1.Id = (172);
+            this.showMarkupSubItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showMarkupSubItem1.ImageOptions.ImageIndex")));
+            this.showMarkupSubItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showMarkupSubItem1.ImageOptions.LargeImageIndex")));
+            this.showMarkupSubItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showMarkupSubItem1.ImageOptions.SvgImage")));
+            this.showMarkupSubItem1.Name = ("showMarkupSubItem1");
+            this.showMarkupSubItem1.RibbonStyle = (global::DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText);
             // 
             // reviewingPaneItem1
             // 
-            resources.ApplyResources(reviewingPaneItem1, "reviewingPaneItem1");
-            reviewingPaneItem1.Id = 173;
-            reviewingPaneItem1.ImageOptions.ImageIndex = (int)resources.GetObject("reviewingPaneItem1.ImageOptions.ImageIndex");
-            reviewingPaneItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("reviewingPaneItem1.ImageOptions.LargeImageIndex");
-            reviewingPaneItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("reviewingPaneItem1.ImageOptions.SvgImage");
-            reviewingPaneItem1.Name = "reviewingPaneItem1";
+            resources.ApplyResources(this.reviewingPaneItem1, "reviewingPaneItem1");
+            this.reviewingPaneItem1.Id = (173);
+            this.reviewingPaneItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("reviewingPaneItem1.ImageOptions.ImageIndex")));
+            this.reviewingPaneItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("reviewingPaneItem1.ImageOptions.LargeImageIndex")));
+            this.reviewingPaneItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("reviewingPaneItem1.ImageOptions.SvgImage")));
+            this.reviewingPaneItem1.Name = ("reviewingPaneItem1");
             // 
             // acceptAndMoveToNextSubItem1
             // 
-            resources.ApplyResources(acceptAndMoveToNextSubItem1, "acceptAndMoveToNextSubItem1");
-            acceptAndMoveToNextSubItem1.Id = 174;
-            acceptAndMoveToNextSubItem1.ImageOptions.ImageIndex = (int)resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.ImageIndex");
-            acceptAndMoveToNextSubItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.LargeImageIndex");
-            acceptAndMoveToNextSubItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.SvgImage");
-            acceptAndMoveToNextSubItem1.Name = "acceptAndMoveToNextSubItem1";
+            resources.ApplyResources(this.acceptAndMoveToNextSubItem1, "acceptAndMoveToNextSubItem1");
+            this.acceptAndMoveToNextSubItem1.Id = (174);
+            this.acceptAndMoveToNextSubItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.ImageIndex")));
+            this.acceptAndMoveToNextSubItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.LargeImageIndex")));
+            this.acceptAndMoveToNextSubItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("acceptAndMoveToNextSubItem1.ImageOptions.SvgImage")));
+            this.acceptAndMoveToNextSubItem1.Name = ("acceptAndMoveToNextSubItem1");
             // 
             // rejectAndMoveToNextSubItem1
             // 
-            resources.ApplyResources(rejectAndMoveToNextSubItem1, "rejectAndMoveToNextSubItem1");
-            rejectAndMoveToNextSubItem1.Id = 175;
-            rejectAndMoveToNextSubItem1.ImageOptions.ImageIndex = (int)resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.ImageIndex");
-            rejectAndMoveToNextSubItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.LargeImageIndex");
-            rejectAndMoveToNextSubItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.SvgImage");
-            rejectAndMoveToNextSubItem1.Name = "rejectAndMoveToNextSubItem1";
+            resources.ApplyResources(this.rejectAndMoveToNextSubItem1, "rejectAndMoveToNextSubItem1");
+            this.rejectAndMoveToNextSubItem1.Id = (175);
+            this.rejectAndMoveToNextSubItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.ImageIndex")));
+            this.rejectAndMoveToNextSubItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.LargeImageIndex")));
+            this.rejectAndMoveToNextSubItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("rejectAndMoveToNextSubItem1.ImageOptions.SvgImage")));
+            this.rejectAndMoveToNextSubItem1.Name = ("rejectAndMoveToNextSubItem1");
             // 
             // previousChangeItem1
             // 
-            resources.ApplyResources(previousChangeItem1, "previousChangeItem1");
-            previousChangeItem1.Id = 176;
-            previousChangeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("previousChangeItem1.ImageOptions.ImageIndex");
-            previousChangeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("previousChangeItem1.ImageOptions.LargeImageIndex");
-            previousChangeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("previousChangeItem1.ImageOptions.SvgImage");
-            previousChangeItem1.Name = "previousChangeItem1";
+            resources.ApplyResources(this.previousChangeItem1, "previousChangeItem1");
+            this.previousChangeItem1.Id = (176);
+            this.previousChangeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("previousChangeItem1.ImageOptions.ImageIndex")));
+            this.previousChangeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("previousChangeItem1.ImageOptions.LargeImageIndex")));
+            this.previousChangeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("previousChangeItem1.ImageOptions.SvgImage")));
+            this.previousChangeItem1.Name = ("previousChangeItem1");
             // 
             // nextChangeItem1
             // 
-            resources.ApplyResources(nextChangeItem1, "nextChangeItem1");
-            nextChangeItem1.Id = 177;
-            nextChangeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("nextChangeItem1.ImageOptions.ImageIndex");
-            nextChangeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("nextChangeItem1.ImageOptions.LargeImageIndex");
-            nextChangeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("nextChangeItem1.ImageOptions.SvgImage");
-            nextChangeItem1.Name = "nextChangeItem1";
+            resources.ApplyResources(this.nextChangeItem1, "nextChangeItem1");
+            this.nextChangeItem1.Id = (177);
+            this.nextChangeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("nextChangeItem1.ImageOptions.ImageIndex")));
+            this.nextChangeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("nextChangeItem1.ImageOptions.LargeImageIndex")));
+            this.nextChangeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("nextChangeItem1.ImageOptions.SvgImage")));
+            this.nextChangeItem1.Name = ("nextChangeItem1");
             // 
             // switchToSimpleViewItem1
             // 
-            resources.ApplyResources(switchToSimpleViewItem1, "switchToSimpleViewItem1");
-            switchToSimpleViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            switchToSimpleViewItem1.Id = 178;
-            switchToSimpleViewItem1.ImageOptions.ImageIndex = (int)resources.GetObject("switchToSimpleViewItem1.ImageOptions.ImageIndex");
-            switchToSimpleViewItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("switchToSimpleViewItem1.ImageOptions.LargeImageIndex");
-            switchToSimpleViewItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("switchToSimpleViewItem1.ImageOptions.SvgImage");
-            switchToSimpleViewItem1.Name = "switchToSimpleViewItem1";
+            resources.ApplyResources(this.switchToSimpleViewItem1, "switchToSimpleViewItem1");
+            this.switchToSimpleViewItem1.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.switchToSimpleViewItem1.Id = (178);
+            this.switchToSimpleViewItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("switchToSimpleViewItem1.ImageOptions.ImageIndex")));
+            this.switchToSimpleViewItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("switchToSimpleViewItem1.ImageOptions.LargeImageIndex")));
+            this.switchToSimpleViewItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("switchToSimpleViewItem1.ImageOptions.SvgImage")));
+            this.switchToSimpleViewItem1.Name = ("switchToSimpleViewItem1");
             // 
             // switchToDraftViewItem1
             // 
-            resources.ApplyResources(switchToDraftViewItem1, "switchToDraftViewItem1");
-            switchToDraftViewItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            switchToDraftViewItem1.Id = 179;
-            switchToDraftViewItem1.ImageOptions.ImageIndex = (int)resources.GetObject("switchToDraftViewItem1.ImageOptions.ImageIndex");
-            switchToDraftViewItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("switchToDraftViewItem1.ImageOptions.LargeImageIndex");
-            switchToDraftViewItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("switchToDraftViewItem1.ImageOptions.SvgImage");
-            switchToDraftViewItem1.Name = "switchToDraftViewItem1";
+            resources.ApplyResources(this.switchToDraftViewItem1, "switchToDraftViewItem1");
+            this.switchToDraftViewItem1.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.switchToDraftViewItem1.Id = (179);
+            this.switchToDraftViewItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("switchToDraftViewItem1.ImageOptions.ImageIndex")));
+            this.switchToDraftViewItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("switchToDraftViewItem1.ImageOptions.LargeImageIndex")));
+            this.switchToDraftViewItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("switchToDraftViewItem1.ImageOptions.SvgImage")));
+            this.switchToDraftViewItem1.Name = ("switchToDraftViewItem1");
             // 
             // toggleShowHorizontalRulerItem1
             // 
-            resources.ApplyResources(toggleShowHorizontalRulerItem1, "toggleShowHorizontalRulerItem1");
-            toggleShowHorizontalRulerItem1.Id = 181;
-            toggleShowHorizontalRulerItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.ImageIndex");
-            toggleShowHorizontalRulerItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.LargeImageIndex");
-            toggleShowHorizontalRulerItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.SvgImage");
-            toggleShowHorizontalRulerItem1.Name = "toggleShowHorizontalRulerItem1";
+            resources.ApplyResources(this.toggleShowHorizontalRulerItem1, "toggleShowHorizontalRulerItem1");
+            this.toggleShowHorizontalRulerItem1.Id = (181);
+            this.toggleShowHorizontalRulerItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.ImageIndex")));
+            this.toggleShowHorizontalRulerItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.LargeImageIndex")));
+            this.toggleShowHorizontalRulerItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleShowHorizontalRulerItem1.ImageOptions.SvgImage")));
+            this.toggleShowHorizontalRulerItem1.Name = ("toggleShowHorizontalRulerItem1");
             // 
             // toggleShowVerticalRulerItem1
             // 
-            resources.ApplyResources(toggleShowVerticalRulerItem1, "toggleShowVerticalRulerItem1");
-            toggleShowVerticalRulerItem1.Id = 182;
-            toggleShowVerticalRulerItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.ImageIndex");
-            toggleShowVerticalRulerItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.LargeImageIndex");
-            toggleShowVerticalRulerItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.SvgImage");
-            toggleShowVerticalRulerItem1.Name = "toggleShowVerticalRulerItem1";
+            resources.ApplyResources(this.toggleShowVerticalRulerItem1, "toggleShowVerticalRulerItem1");
+            this.toggleShowVerticalRulerItem1.Id = (182);
+            this.toggleShowVerticalRulerItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.ImageIndex")));
+            this.toggleShowVerticalRulerItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.LargeImageIndex")));
+            this.toggleShowVerticalRulerItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleShowVerticalRulerItem1.ImageOptions.SvgImage")));
+            this.toggleShowVerticalRulerItem1.Name = ("toggleShowVerticalRulerItem1");
             // 
             // zoomOutItem1
             // 
-            resources.ApplyResources(zoomOutItem1, "zoomOutItem1");
-            zoomOutItem1.Id = 183;
-            zoomOutItem1.ImageOptions.ImageIndex = (int)resources.GetObject("zoomOutItem1.ImageOptions.ImageIndex");
-            zoomOutItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("zoomOutItem1.ImageOptions.LargeImageIndex");
-            zoomOutItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("zoomOutItem1.ImageOptions.SvgImage");
-            zoomOutItem1.Name = "zoomOutItem1";
+            resources.ApplyResources(this.zoomOutItem1, "zoomOutItem1");
+            this.zoomOutItem1.Id = (183);
+            this.zoomOutItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("zoomOutItem1.ImageOptions.ImageIndex")));
+            this.zoomOutItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("zoomOutItem1.ImageOptions.LargeImageIndex")));
+            this.zoomOutItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomOutItem1.ImageOptions.SvgImage")));
+            this.zoomOutItem1.Name = ("zoomOutItem1");
             // 
             // zoomInItem1
             // 
-            resources.ApplyResources(zoomInItem1, "zoomInItem1");
-            zoomInItem1.Id = 184;
-            zoomInItem1.ImageOptions.ImageIndex = (int)resources.GetObject("zoomInItem1.ImageOptions.ImageIndex");
-            zoomInItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("zoomInItem1.ImageOptions.LargeImageIndex");
-            zoomInItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("zoomInItem1.ImageOptions.SvgImage");
-            zoomInItem1.Name = "zoomInItem1";
+            resources.ApplyResources(this.zoomInItem1, "zoomInItem1");
+            this.zoomInItem1.Id = (184);
+            this.zoomInItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("zoomInItem1.ImageOptions.ImageIndex")));
+            this.zoomInItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("zoomInItem1.ImageOptions.LargeImageIndex")));
+            this.zoomInItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomInItem1.ImageOptions.SvgImage")));
+            this.zoomInItem1.Name = ("zoomInItem1");
             // 
             // goToPageHeaderItem1
             // 
-            resources.ApplyResources(goToPageHeaderItem1, "goToPageHeaderItem1");
-            goToPageHeaderItem1.Id = 185;
-            goToPageHeaderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("goToPageHeaderItem1.ImageOptions.ImageIndex");
-            goToPageHeaderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("goToPageHeaderItem1.ImageOptions.LargeImageIndex");
-            goToPageHeaderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("goToPageHeaderItem1.ImageOptions.SvgImage");
-            goToPageHeaderItem1.Name = "goToPageHeaderItem1";
+            resources.ApplyResources(this.goToPageHeaderItem1, "goToPageHeaderItem1");
+            this.goToPageHeaderItem1.Id = (185);
+            this.goToPageHeaderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("goToPageHeaderItem1.ImageOptions.ImageIndex")));
+            this.goToPageHeaderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("goToPageHeaderItem1.ImageOptions.LargeImageIndex")));
+            this.goToPageHeaderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("goToPageHeaderItem1.ImageOptions.SvgImage")));
+            this.goToPageHeaderItem1.Name = ("goToPageHeaderItem1");
             // 
             // goToPageFooterItem1
             // 
-            resources.ApplyResources(goToPageFooterItem1, "goToPageFooterItem1");
-            goToPageFooterItem1.Id = 186;
-            goToPageFooterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("goToPageFooterItem1.ImageOptions.ImageIndex");
-            goToPageFooterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("goToPageFooterItem1.ImageOptions.LargeImageIndex");
-            goToPageFooterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("goToPageFooterItem1.ImageOptions.SvgImage");
-            goToPageFooterItem1.Name = "goToPageFooterItem1";
+            resources.ApplyResources(this.goToPageFooterItem1, "goToPageFooterItem1");
+            this.goToPageFooterItem1.Id = (186);
+            this.goToPageFooterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("goToPageFooterItem1.ImageOptions.ImageIndex")));
+            this.goToPageFooterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("goToPageFooterItem1.ImageOptions.LargeImageIndex")));
+            this.goToPageFooterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("goToPageFooterItem1.ImageOptions.SvgImage")));
+            this.goToPageFooterItem1.Name = ("goToPageFooterItem1");
             // 
             // goToNextHeaderFooterItem1
             // 
-            resources.ApplyResources(goToNextHeaderFooterItem1, "goToNextHeaderFooterItem1");
-            goToNextHeaderFooterItem1.Id = 187;
-            goToNextHeaderFooterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.ImageIndex");
-            goToNextHeaderFooterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.LargeImageIndex");
-            goToNextHeaderFooterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.SvgImage");
-            goToNextHeaderFooterItem1.Name = "goToNextHeaderFooterItem1";
+            resources.ApplyResources(this.goToNextHeaderFooterItem1, "goToNextHeaderFooterItem1");
+            this.goToNextHeaderFooterItem1.Id = (187);
+            this.goToNextHeaderFooterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.ImageIndex")));
+            this.goToNextHeaderFooterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.LargeImageIndex")));
+            this.goToNextHeaderFooterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("goToNextHeaderFooterItem1.ImageOptions.SvgImage")));
+            this.goToNextHeaderFooterItem1.Name = ("goToNextHeaderFooterItem1");
             // 
             // goToPreviousHeaderFooterItem1
             // 
-            resources.ApplyResources(goToPreviousHeaderFooterItem1, "goToPreviousHeaderFooterItem1");
-            goToPreviousHeaderFooterItem1.Id = 188;
-            goToPreviousHeaderFooterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.ImageIndex");
-            goToPreviousHeaderFooterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.LargeImageIndex");
-            goToPreviousHeaderFooterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.SvgImage");
-            goToPreviousHeaderFooterItem1.Name = "goToPreviousHeaderFooterItem1";
+            resources.ApplyResources(this.goToPreviousHeaderFooterItem1, "goToPreviousHeaderFooterItem1");
+            this.goToPreviousHeaderFooterItem1.Id = (188);
+            this.goToPreviousHeaderFooterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.ImageIndex")));
+            this.goToPreviousHeaderFooterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.LargeImageIndex")));
+            this.goToPreviousHeaderFooterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("goToPreviousHeaderFooterItem1.ImageOptions.SvgImage")));
+            this.goToPreviousHeaderFooterItem1.Name = ("goToPreviousHeaderFooterItem1");
             // 
             // toggleLinkToPreviousItem1
             // 
-            resources.ApplyResources(toggleLinkToPreviousItem1, "toggleLinkToPreviousItem1");
-            toggleLinkToPreviousItem1.Id = 189;
-            toggleLinkToPreviousItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.ImageIndex");
-            toggleLinkToPreviousItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.LargeImageIndex");
-            toggleLinkToPreviousItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.SvgImage");
-            toggleLinkToPreviousItem1.Name = "toggleLinkToPreviousItem1";
+            resources.ApplyResources(this.toggleLinkToPreviousItem1, "toggleLinkToPreviousItem1");
+            this.toggleLinkToPreviousItem1.Id = (189);
+            this.toggleLinkToPreviousItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.ImageIndex")));
+            this.toggleLinkToPreviousItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.LargeImageIndex")));
+            this.toggleLinkToPreviousItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleLinkToPreviousItem1.ImageOptions.SvgImage")));
+            this.toggleLinkToPreviousItem1.Name = ("toggleLinkToPreviousItem1");
             // 
             // toggleDifferentFirstPageItem1
             // 
-            resources.ApplyResources(toggleDifferentFirstPageItem1, "toggleDifferentFirstPageItem1");
-            toggleDifferentFirstPageItem1.Id = 190;
-            toggleDifferentFirstPageItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.ImageIndex");
-            toggleDifferentFirstPageItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.LargeImageIndex");
-            toggleDifferentFirstPageItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.SvgImage");
-            toggleDifferentFirstPageItem1.Name = "toggleDifferentFirstPageItem1";
+            resources.ApplyResources(this.toggleDifferentFirstPageItem1, "toggleDifferentFirstPageItem1");
+            this.toggleDifferentFirstPageItem1.Id = (190);
+            this.toggleDifferentFirstPageItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.ImageIndex")));
+            this.toggleDifferentFirstPageItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.LargeImageIndex")));
+            this.toggleDifferentFirstPageItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleDifferentFirstPageItem1.ImageOptions.SvgImage")));
+            this.toggleDifferentFirstPageItem1.Name = ("toggleDifferentFirstPageItem1");
             // 
             // toggleDifferentOddAndEvenPagesItem1
             // 
-            resources.ApplyResources(toggleDifferentOddAndEvenPagesItem1, "toggleDifferentOddAndEvenPagesItem1");
-            toggleDifferentOddAndEvenPagesItem1.Id = 191;
-            toggleDifferentOddAndEvenPagesItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.ImageIndex");
-            toggleDifferentOddAndEvenPagesItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.LargeImageIndex");
-            toggleDifferentOddAndEvenPagesItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.SvgImage");
-            toggleDifferentOddAndEvenPagesItem1.Name = "toggleDifferentOddAndEvenPagesItem1";
+            resources.ApplyResources(this.toggleDifferentOddAndEvenPagesItem1, "toggleDifferentOddAndEvenPagesItem1");
+            this.toggleDifferentOddAndEvenPagesItem1.Id = (191);
+            this.toggleDifferentOddAndEvenPagesItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.ImageIndex")));
+            this.toggleDifferentOddAndEvenPagesItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.LargeImageIndex")));
+            this.toggleDifferentOddAndEvenPagesItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleDifferentOddAndEvenPagesItem1.ImageOptions.SvgImage")));
+            this.toggleDifferentOddAndEvenPagesItem1.Name = ("toggleDifferentOddAndEvenPagesItem1");
             // 
             // closePageHeaderFooterItem1
             // 
-            resources.ApplyResources(closePageHeaderFooterItem1, "closePageHeaderFooterItem1");
-            closePageHeaderFooterItem1.Id = 192;
-            closePageHeaderFooterItem1.ImageOptions.ImageIndex = (int)resources.GetObject("closePageHeaderFooterItem1.ImageOptions.ImageIndex");
-            closePageHeaderFooterItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("closePageHeaderFooterItem1.ImageOptions.LargeImageIndex");
-            closePageHeaderFooterItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("closePageHeaderFooterItem1.ImageOptions.SvgImage");
-            closePageHeaderFooterItem1.Name = "closePageHeaderFooterItem1";
+            resources.ApplyResources(this.closePageHeaderFooterItem1, "closePageHeaderFooterItem1");
+            this.closePageHeaderFooterItem1.Id = (192);
+            this.closePageHeaderFooterItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("closePageHeaderFooterItem1.ImageOptions.ImageIndex")));
+            this.closePageHeaderFooterItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("closePageHeaderFooterItem1.ImageOptions.LargeImageIndex")));
+            this.closePageHeaderFooterItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("closePageHeaderFooterItem1.ImageOptions.SvgImage")));
+            this.closePageHeaderFooterItem1.Name = ("closePageHeaderFooterItem1");
             // 
             // toggleFirstRowItem1
             // 
-            resources.ApplyResources(toggleFirstRowItem1, "toggleFirstRowItem1");
-            toggleFirstRowItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleFirstRowItem1.Id = 193;
-            toggleFirstRowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFirstRowItem1.ImageOptions.ImageIndex");
-            toggleFirstRowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFirstRowItem1.ImageOptions.LargeImageIndex");
-            toggleFirstRowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFirstRowItem1.ImageOptions.SvgImage");
-            toggleFirstRowItem1.Name = "toggleFirstRowItem1";
+            resources.ApplyResources(this.toggleFirstRowItem1, "toggleFirstRowItem1");
+            this.toggleFirstRowItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleFirstRowItem1.Id = (193);
+            this.toggleFirstRowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFirstRowItem1.ImageOptions.ImageIndex")));
+            this.toggleFirstRowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFirstRowItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFirstRowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFirstRowItem1.ImageOptions.SvgImage")));
+            this.toggleFirstRowItem1.Name = ("toggleFirstRowItem1");
             // 
             // toggleLastRowItem1
             // 
-            resources.ApplyResources(toggleLastRowItem1, "toggleLastRowItem1");
-            toggleLastRowItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleLastRowItem1.Id = 194;
-            toggleLastRowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleLastRowItem1.ImageOptions.ImageIndex");
-            toggleLastRowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleLastRowItem1.ImageOptions.LargeImageIndex");
-            toggleLastRowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleLastRowItem1.ImageOptions.SvgImage");
-            toggleLastRowItem1.Name = "toggleLastRowItem1";
+            resources.ApplyResources(this.toggleLastRowItem1, "toggleLastRowItem1");
+            this.toggleLastRowItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleLastRowItem1.Id = (194);
+            this.toggleLastRowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleLastRowItem1.ImageOptions.ImageIndex")));
+            this.toggleLastRowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleLastRowItem1.ImageOptions.LargeImageIndex")));
+            this.toggleLastRowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleLastRowItem1.ImageOptions.SvgImage")));
+            this.toggleLastRowItem1.Name = ("toggleLastRowItem1");
             // 
             // toggleBandedRowsItem1
             // 
-            resources.ApplyResources(toggleBandedRowsItem1, "toggleBandedRowsItem1");
-            toggleBandedRowsItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleBandedRowsItem1.Id = 195;
-            toggleBandedRowsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleBandedRowsItem1.ImageOptions.ImageIndex");
-            toggleBandedRowsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleBandedRowsItem1.ImageOptions.LargeImageIndex");
-            toggleBandedRowsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleBandedRowsItem1.ImageOptions.SvgImage");
-            toggleBandedRowsItem1.Name = "toggleBandedRowsItem1";
+            resources.ApplyResources(this.toggleBandedRowsItem1, "toggleBandedRowsItem1");
+            this.toggleBandedRowsItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleBandedRowsItem1.Id = (195);
+            this.toggleBandedRowsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleBandedRowsItem1.ImageOptions.ImageIndex")));
+            this.toggleBandedRowsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleBandedRowsItem1.ImageOptions.LargeImageIndex")));
+            this.toggleBandedRowsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleBandedRowsItem1.ImageOptions.SvgImage")));
+            this.toggleBandedRowsItem1.Name = ("toggleBandedRowsItem1");
             // 
             // toggleFirstColumnItem1
             // 
-            resources.ApplyResources(toggleFirstColumnItem1, "toggleFirstColumnItem1");
-            toggleFirstColumnItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleFirstColumnItem1.Id = 196;
-            toggleFirstColumnItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleFirstColumnItem1.ImageOptions.ImageIndex");
-            toggleFirstColumnItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleFirstColumnItem1.ImageOptions.LargeImageIndex");
-            toggleFirstColumnItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleFirstColumnItem1.ImageOptions.SvgImage");
-            toggleFirstColumnItem1.Name = "toggleFirstColumnItem1";
+            resources.ApplyResources(this.toggleFirstColumnItem1, "toggleFirstColumnItem1");
+            this.toggleFirstColumnItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleFirstColumnItem1.Id = (196);
+            this.toggleFirstColumnItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleFirstColumnItem1.ImageOptions.ImageIndex")));
+            this.toggleFirstColumnItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleFirstColumnItem1.ImageOptions.LargeImageIndex")));
+            this.toggleFirstColumnItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleFirstColumnItem1.ImageOptions.SvgImage")));
+            this.toggleFirstColumnItem1.Name = ("toggleFirstColumnItem1");
             // 
             // toggleLastColumnItem1
             // 
-            resources.ApplyResources(toggleLastColumnItem1, "toggleLastColumnItem1");
-            toggleLastColumnItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleLastColumnItem1.Id = 197;
-            toggleLastColumnItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleLastColumnItem1.ImageOptions.ImageIndex");
-            toggleLastColumnItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleLastColumnItem1.ImageOptions.LargeImageIndex");
-            toggleLastColumnItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleLastColumnItem1.ImageOptions.SvgImage");
-            toggleLastColumnItem1.Name = "toggleLastColumnItem1";
+            resources.ApplyResources(this.toggleLastColumnItem1, "toggleLastColumnItem1");
+            this.toggleLastColumnItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleLastColumnItem1.Id = (197);
+            this.toggleLastColumnItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleLastColumnItem1.ImageOptions.ImageIndex")));
+            this.toggleLastColumnItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleLastColumnItem1.ImageOptions.LargeImageIndex")));
+            this.toggleLastColumnItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleLastColumnItem1.ImageOptions.SvgImage")));
+            this.toggleLastColumnItem1.Name = ("toggleLastColumnItem1");
             // 
             // toggleBandedColumnsItem1
             // 
-            resources.ApplyResources(toggleBandedColumnsItem1, "toggleBandedColumnsItem1");
-            toggleBandedColumnsItem1.CheckBoxVisibility = DevExpress.XtraBars.CheckBoxVisibility.BeforeText;
-            toggleBandedColumnsItem1.Id = 198;
-            toggleBandedColumnsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleBandedColumnsItem1.ImageOptions.ImageIndex");
-            toggleBandedColumnsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleBandedColumnsItem1.ImageOptions.LargeImageIndex");
-            toggleBandedColumnsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleBandedColumnsItem1.ImageOptions.SvgImage");
-            toggleBandedColumnsItem1.Name = "toggleBandedColumnsItem1";
+            resources.ApplyResources(this.toggleBandedColumnsItem1, "toggleBandedColumnsItem1");
+            this.toggleBandedColumnsItem1.CheckBoxVisibility = (global::DevExpress.XtraBars.CheckBoxVisibility.BeforeText);
+            this.toggleBandedColumnsItem1.Id = (198);
+            this.toggleBandedColumnsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleBandedColumnsItem1.ImageOptions.ImageIndex")));
+            this.toggleBandedColumnsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleBandedColumnsItem1.ImageOptions.LargeImageIndex")));
+            this.toggleBandedColumnsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleBandedColumnsItem1.ImageOptions.SvgImage")));
+            this.toggleBandedColumnsItem1.Name = ("toggleBandedColumnsItem1");
             // 
             // changeTableBorderLineStyleItem1
             // 
-            resources.ApplyResources(changeTableBorderLineStyleItem1, "changeTableBorderLineStyleItem1");
-            changeTableBorderLineStyleItem1.Edit = workProgressBar;
-            changeTableBorderLineStyleItem1.Id = 200;
-            changeTableBorderLineStyleItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.ImageIndex");
-            changeTableBorderLineStyleItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.LargeImageIndex");
-            changeTableBorderLineStyleItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.SvgImage");
-            changeTableBorderLineStyleItem1.Name = "changeTableBorderLineStyleItem1";
+            resources.ApplyResources(this.changeTableBorderLineStyleItem1, "changeTableBorderLineStyleItem1");
+            this.changeTableBorderLineStyleItem1.Edit = (this.workProgressBar);
+            this.changeTableBorderLineStyleItem1.Id = (200);
+            this.changeTableBorderLineStyleItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.ImageIndex")));
+            this.changeTableBorderLineStyleItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.LargeImageIndex")));
+            this.changeTableBorderLineStyleItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTableBorderLineStyleItem1.ImageOptions.SvgImage")));
+            this.changeTableBorderLineStyleItem1.Name = ("changeTableBorderLineStyleItem1");
             // 
             // workProgressBar
             // 
-            resources.ApplyResources(workProgressBar, "workProgressBar");
-            workProgressBar.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("workProgressBar.Buttons")) });
-            workProgressBar.Control = ChildRichEditControl;
-            workProgressBar.Name = "workProgressBar";
+            resources.ApplyResources(this.workProgressBar, "workProgressBar");
+            this.workProgressBar.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("workProgressBar.Buttons"))) });
+            this.workProgressBar.Control = (this.ChildRichEditControl);
+            this.workProgressBar.Name = ("workProgressBar");
             // 
             // changeTableBorderLineWeightItem1
             // 
-            resources.ApplyResources(changeTableBorderLineWeightItem1, "changeTableBorderLineWeightItem1");
-            changeTableBorderLineWeightItem1.Edit = repositoryItemBorderLineWeight1;
-            changeTableBorderLineWeightItem1.EditValue = 20;
-            changeTableBorderLineWeightItem1.Id = 201;
-            changeTableBorderLineWeightItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.ImageIndex");
-            changeTableBorderLineWeightItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.LargeImageIndex");
-            changeTableBorderLineWeightItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.SvgImage");
-            changeTableBorderLineWeightItem1.Name = "changeTableBorderLineWeightItem1";
+            resources.ApplyResources(this.changeTableBorderLineWeightItem1, "changeTableBorderLineWeightItem1");
+            this.changeTableBorderLineWeightItem1.Edit = (this.repositoryItemBorderLineWeight1);
+            this.changeTableBorderLineWeightItem1.EditValue = (20);
+            this.changeTableBorderLineWeightItem1.Id = (201);
+            this.changeTableBorderLineWeightItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.ImageIndex")));
+            this.changeTableBorderLineWeightItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.LargeImageIndex")));
+            this.changeTableBorderLineWeightItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTableBorderLineWeightItem1.ImageOptions.SvgImage")));
+            this.changeTableBorderLineWeightItem1.Name = ("changeTableBorderLineWeightItem1");
             // 
             // repositoryItemBorderLineWeight1
             // 
-            resources.ApplyResources(repositoryItemBorderLineWeight1, "repositoryItemBorderLineWeight1");
-            repositoryItemBorderLineWeight1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("repositoryItemBorderLineWeight1.Buttons")) });
-            repositoryItemBorderLineWeight1.Control = ChildRichEditControl;
-            repositoryItemBorderLineWeight1.Name = "repositoryItemBorderLineWeight1";
+            resources.ApplyResources(this.repositoryItemBorderLineWeight1, "repositoryItemBorderLineWeight1");
+            this.repositoryItemBorderLineWeight1.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("repositoryItemBorderLineWeight1.Buttons"))) });
+            this.repositoryItemBorderLineWeight1.Control = (this.ChildRichEditControl);
+            this.repositoryItemBorderLineWeight1.Name = ("repositoryItemBorderLineWeight1");
             // 
             // changeTableBorderColorItem1
             // 
-            resources.ApplyResources(changeTableBorderColorItem1, "changeTableBorderColorItem1");
-            changeTableBorderColorItem1.Id = 202;
-            changeTableBorderColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTableBorderColorItem1.ImageOptions.ImageIndex");
-            changeTableBorderColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTableBorderColorItem1.ImageOptions.LargeImageIndex");
-            changeTableBorderColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTableBorderColorItem1.ImageOptions.SvgImage");
-            changeTableBorderColorItem1.Name = "changeTableBorderColorItem1";
+            resources.ApplyResources(this.changeTableBorderColorItem1, "changeTableBorderColorItem1");
+            this.changeTableBorderColorItem1.Id = (202);
+            this.changeTableBorderColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderColorItem1.ImageOptions.ImageIndex")));
+            this.changeTableBorderColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBorderColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeTableBorderColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTableBorderColorItem1.ImageOptions.SvgImage")));
+            this.changeTableBorderColorItem1.Name = ("changeTableBorderColorItem1");
             // 
             // changeTableBordersItem1
             // 
-            resources.ApplyResources(changeTableBordersItem1, "changeTableBordersItem1");
-            changeTableBordersItem1.Id = 203;
-            changeTableBordersItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTableBordersItem1.ImageOptions.ImageIndex");
-            changeTableBordersItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTableBordersItem1.ImageOptions.LargeImageIndex");
-            changeTableBordersItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTableBordersItem1.ImageOptions.SvgImage");
-            changeTableBordersItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsBottomBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsTopBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsLeftBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsRightBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(resetTableCellsAllBordersItem1, true), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsAllBordersItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsOutsideBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsInsideBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsInsideHorizontalBorderItem1, true), new DevExpress.XtraBars.LinkPersistInfo(toggleTableCellsInsideVerticalBorderItem1), new DevExpress.XtraBars.LinkPersistInfo(DevExpress.XtraBars.BarLinkUserDefines.KeyTip, toggleShowTableGridLinesItem1, "", true, true, true, 0, null, DevExpress.XtraBars.BarItemPaintStyle.Standard, "TG", "") });
-            changeTableBordersItem1.Name = "changeTableBordersItem1";
+            resources.ApplyResources(this.changeTableBordersItem1, "changeTableBordersItem1");
+            this.changeTableBordersItem1.Id = (203);
+            this.changeTableBordersItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBordersItem1.ImageOptions.ImageIndex")));
+            this.changeTableBordersItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTableBordersItem1.ImageOptions.LargeImageIndex")));
+            this.changeTableBordersItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTableBordersItem1.ImageOptions.SvgImage")));
+            this.changeTableBordersItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsBottomBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsTopBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsLeftBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsRightBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.resetTableCellsAllBordersItem1, true), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsAllBordersItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsOutsideBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsInsideBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsInsideHorizontalBorderItem1, true), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableCellsInsideVerticalBorderItem1), new global::DevExpress.XtraBars.LinkPersistInfo(global::DevExpress.XtraBars.BarLinkUserDefines.KeyTip, this.toggleShowTableGridLinesItem1, "", true, true, true, 0, null, global::DevExpress.XtraBars.BarItemPaintStyle.Standard, "TG", "") });
+            this.changeTableBordersItem1.Name = ("changeTableBordersItem1");
             // 
             // toggleTableCellsBottomBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsBottomBorderItem1, "toggleTableCellsBottomBorderItem1");
-            toggleTableCellsBottomBorderItem1.Id = 204;
-            toggleTableCellsBottomBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsBottomBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsBottomBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsBottomBorderItem1.Name = "toggleTableCellsBottomBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsBottomBorderItem1, "toggleTableCellsBottomBorderItem1");
+            this.toggleTableCellsBottomBorderItem1.Id = (204);
+            this.toggleTableCellsBottomBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsBottomBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsBottomBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsBottomBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsBottomBorderItem1.Name = ("toggleTableCellsBottomBorderItem1");
             // 
             // toggleTableCellsTopBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsTopBorderItem1, "toggleTableCellsTopBorderItem1");
-            toggleTableCellsTopBorderItem1.Id = 205;
-            toggleTableCellsTopBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsTopBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsTopBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsTopBorderItem1.Name = "toggleTableCellsTopBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsTopBorderItem1, "toggleTableCellsTopBorderItem1");
+            this.toggleTableCellsTopBorderItem1.Id = (205);
+            this.toggleTableCellsTopBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsTopBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsTopBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsTopBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsTopBorderItem1.Name = ("toggleTableCellsTopBorderItem1");
             // 
             // toggleTableCellsLeftBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsLeftBorderItem1, "toggleTableCellsLeftBorderItem1");
-            toggleTableCellsLeftBorderItem1.Id = 206;
-            toggleTableCellsLeftBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsLeftBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsLeftBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsLeftBorderItem1.Name = "toggleTableCellsLeftBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsLeftBorderItem1, "toggleTableCellsLeftBorderItem1");
+            this.toggleTableCellsLeftBorderItem1.Id = (206);
+            this.toggleTableCellsLeftBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsLeftBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsLeftBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsLeftBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsLeftBorderItem1.Name = ("toggleTableCellsLeftBorderItem1");
             // 
             // toggleTableCellsRightBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsRightBorderItem1, "toggleTableCellsRightBorderItem1");
-            toggleTableCellsRightBorderItem1.Id = 207;
-            toggleTableCellsRightBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsRightBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsRightBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsRightBorderItem1.Name = "toggleTableCellsRightBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsRightBorderItem1, "toggleTableCellsRightBorderItem1");
+            this.toggleTableCellsRightBorderItem1.Id = (207);
+            this.toggleTableCellsRightBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsRightBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsRightBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsRightBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsRightBorderItem1.Name = ("toggleTableCellsRightBorderItem1");
             // 
             // resetTableCellsAllBordersItem1
             // 
-            resources.ApplyResources(resetTableCellsAllBordersItem1, "resetTableCellsAllBordersItem1");
-            resetTableCellsAllBordersItem1.Id = 208;
-            resetTableCellsAllBordersItem1.ImageOptions.ImageIndex = (int)resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.ImageIndex");
-            resetTableCellsAllBordersItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.LargeImageIndex");
-            resetTableCellsAllBordersItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.SvgImage");
-            resetTableCellsAllBordersItem1.Name = "resetTableCellsAllBordersItem1";
+            resources.ApplyResources(this.resetTableCellsAllBordersItem1, "resetTableCellsAllBordersItem1");
+            this.resetTableCellsAllBordersItem1.Id = (208);
+            this.resetTableCellsAllBordersItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.ImageIndex")));
+            this.resetTableCellsAllBordersItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.LargeImageIndex")));
+            this.resetTableCellsAllBordersItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("resetTableCellsAllBordersItem1.ImageOptions.SvgImage")));
+            this.resetTableCellsAllBordersItem1.Name = ("resetTableCellsAllBordersItem1");
             // 
             // toggleTableCellsAllBordersItem1
             // 
-            resources.ApplyResources(toggleTableCellsAllBordersItem1, "toggleTableCellsAllBordersItem1");
-            toggleTableCellsAllBordersItem1.Id = 209;
-            toggleTableCellsAllBordersItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.ImageIndex");
-            toggleTableCellsAllBordersItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsAllBordersItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.SvgImage");
-            toggleTableCellsAllBordersItem1.Name = "toggleTableCellsAllBordersItem1";
+            resources.ApplyResources(this.toggleTableCellsAllBordersItem1, "toggleTableCellsAllBordersItem1");
+            this.toggleTableCellsAllBordersItem1.Id = (209);
+            this.toggleTableCellsAllBordersItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsAllBordersItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsAllBordersItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsAllBordersItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsAllBordersItem1.Name = ("toggleTableCellsAllBordersItem1");
             // 
             // toggleTableCellsOutsideBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsOutsideBorderItem1, "toggleTableCellsOutsideBorderItem1");
-            toggleTableCellsOutsideBorderItem1.Id = 210;
-            toggleTableCellsOutsideBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsOutsideBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsOutsideBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsOutsideBorderItem1.Name = "toggleTableCellsOutsideBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsOutsideBorderItem1, "toggleTableCellsOutsideBorderItem1");
+            this.toggleTableCellsOutsideBorderItem1.Id = (210);
+            this.toggleTableCellsOutsideBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsOutsideBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsOutsideBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsOutsideBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsOutsideBorderItem1.Name = ("toggleTableCellsOutsideBorderItem1");
             // 
             // toggleTableCellsInsideBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsInsideBorderItem1, "toggleTableCellsInsideBorderItem1");
-            toggleTableCellsInsideBorderItem1.Id = 211;
-            toggleTableCellsInsideBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsInsideBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsInsideBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsInsideBorderItem1.Name = "toggleTableCellsInsideBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsInsideBorderItem1, "toggleTableCellsInsideBorderItem1");
+            this.toggleTableCellsInsideBorderItem1.Id = (211);
+            this.toggleTableCellsInsideBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsInsideBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsInsideBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsInsideBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsInsideBorderItem1.Name = ("toggleTableCellsInsideBorderItem1");
             // 
             // toggleTableCellsInsideHorizontalBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsInsideHorizontalBorderItem1, "toggleTableCellsInsideHorizontalBorderItem1");
-            toggleTableCellsInsideHorizontalBorderItem1.Id = 212;
-            toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsInsideHorizontalBorderItem1.Name = "toggleTableCellsInsideHorizontalBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsInsideHorizontalBorderItem1, "toggleTableCellsInsideHorizontalBorderItem1");
+            this.toggleTableCellsInsideHorizontalBorderItem1.Id = (212);
+            this.toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsInsideHorizontalBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsInsideHorizontalBorderItem1.Name = ("toggleTableCellsInsideHorizontalBorderItem1");
             // 
             // toggleTableCellsInsideVerticalBorderItem1
             // 
-            resources.ApplyResources(toggleTableCellsInsideVerticalBorderItem1, "toggleTableCellsInsideVerticalBorderItem1");
-            toggleTableCellsInsideVerticalBorderItem1.Id = 213;
-            toggleTableCellsInsideVerticalBorderItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.ImageIndex");
-            toggleTableCellsInsideVerticalBorderItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsInsideVerticalBorderItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.SvgImage");
-            toggleTableCellsInsideVerticalBorderItem1.Name = "toggleTableCellsInsideVerticalBorderItem1";
+            resources.ApplyResources(this.toggleTableCellsInsideVerticalBorderItem1, "toggleTableCellsInsideVerticalBorderItem1");
+            this.toggleTableCellsInsideVerticalBorderItem1.Id = (213);
+            this.toggleTableCellsInsideVerticalBorderItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsInsideVerticalBorderItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsInsideVerticalBorderItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsInsideVerticalBorderItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsInsideVerticalBorderItem1.Name = ("toggleTableCellsInsideVerticalBorderItem1");
             // 
             // toggleShowTableGridLinesItem1
             // 
-            resources.ApplyResources(toggleShowTableGridLinesItem1, "toggleShowTableGridLinesItem1");
-            toggleShowTableGridLinesItem1.Id = 214;
-            toggleShowTableGridLinesItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.ImageIndex");
-            toggleShowTableGridLinesItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.LargeImageIndex");
-            toggleShowTableGridLinesItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.SvgImage");
-            toggleShowTableGridLinesItem1.Name = "toggleShowTableGridLinesItem1";
+            resources.ApplyResources(this.toggleShowTableGridLinesItem1, "toggleShowTableGridLinesItem1");
+            this.toggleShowTableGridLinesItem1.Id = (214);
+            this.toggleShowTableGridLinesItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.ImageIndex")));
+            this.toggleShowTableGridLinesItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.LargeImageIndex")));
+            this.toggleShowTableGridLinesItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleShowTableGridLinesItem1.ImageOptions.SvgImage")));
+            this.toggleShowTableGridLinesItem1.Name = ("toggleShowTableGridLinesItem1");
             // 
             // changeTableCellsShadingItem1
             // 
-            resources.ApplyResources(changeTableCellsShadingItem1, "changeTableCellsShadingItem1");
-            changeTableCellsShadingItem1.Id = 215;
-            changeTableCellsShadingItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeTableCellsShadingItem1.ImageOptions.ImageIndex");
-            changeTableCellsShadingItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeTableCellsShadingItem1.ImageOptions.LargeImageIndex");
-            changeTableCellsShadingItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeTableCellsShadingItem1.ImageOptions.SvgImage");
-            changeTableCellsShadingItem1.Name = "changeTableCellsShadingItem1";
+            resources.ApplyResources(this.changeTableCellsShadingItem1, "changeTableCellsShadingItem1");
+            this.changeTableCellsShadingItem1.Id = (215);
+            this.changeTableCellsShadingItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeTableCellsShadingItem1.ImageOptions.ImageIndex")));
+            this.changeTableCellsShadingItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeTableCellsShadingItem1.ImageOptions.LargeImageIndex")));
+            this.changeTableCellsShadingItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeTableCellsShadingItem1.ImageOptions.SvgImage")));
+            this.changeTableCellsShadingItem1.Name = ("changeTableCellsShadingItem1");
             // 
             // selectTableElementsItem1
             // 
-            resources.ApplyResources(selectTableElementsItem1, "selectTableElementsItem1");
-            selectTableElementsItem1.Id = 216;
-            selectTableElementsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("selectTableElementsItem1.ImageOptions.ImageIndex");
-            selectTableElementsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("selectTableElementsItem1.ImageOptions.LargeImageIndex");
-            selectTableElementsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("selectTableElementsItem1.ImageOptions.SvgImage");
-            selectTableElementsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(selectTableCellItem1), new DevExpress.XtraBars.LinkPersistInfo(selectTableColumnItem1), new DevExpress.XtraBars.LinkPersistInfo(selectTableRowItem1), new DevExpress.XtraBars.LinkPersistInfo(selectTableItem1) });
-            selectTableElementsItem1.Name = "selectTableElementsItem1";
+            resources.ApplyResources(this.selectTableElementsItem1, "selectTableElementsItem1");
+            this.selectTableElementsItem1.Id = (216);
+            this.selectTableElementsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("selectTableElementsItem1.ImageOptions.ImageIndex")));
+            this.selectTableElementsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("selectTableElementsItem1.ImageOptions.LargeImageIndex")));
+            this.selectTableElementsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("selectTableElementsItem1.ImageOptions.SvgImage")));
+            this.selectTableElementsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.selectTableCellItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.selectTableColumnItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.selectTableRowItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.selectTableItem1) });
+            this.selectTableElementsItem1.Name = ("selectTableElementsItem1");
             // 
             // selectTableCellItem1
             // 
-            resources.ApplyResources(selectTableCellItem1, "selectTableCellItem1");
-            selectTableCellItem1.Id = 217;
-            selectTableCellItem1.ImageOptions.ImageIndex = (int)resources.GetObject("selectTableCellItem1.ImageOptions.ImageIndex");
-            selectTableCellItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("selectTableCellItem1.ImageOptions.LargeImageIndex");
-            selectTableCellItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("selectTableCellItem1.ImageOptions.SvgImage");
-            selectTableCellItem1.Name = "selectTableCellItem1";
+            resources.ApplyResources(this.selectTableCellItem1, "selectTableCellItem1");
+            this.selectTableCellItem1.Id = (217);
+            this.selectTableCellItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("selectTableCellItem1.ImageOptions.ImageIndex")));
+            this.selectTableCellItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("selectTableCellItem1.ImageOptions.LargeImageIndex")));
+            this.selectTableCellItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("selectTableCellItem1.ImageOptions.SvgImage")));
+            this.selectTableCellItem1.Name = ("selectTableCellItem1");
             // 
             // selectTableColumnItem1
             // 
-            resources.ApplyResources(selectTableColumnItem1, "selectTableColumnItem1");
-            selectTableColumnItem1.Id = 218;
-            selectTableColumnItem1.ImageOptions.ImageIndex = (int)resources.GetObject("selectTableColumnItem1.ImageOptions.ImageIndex");
-            selectTableColumnItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("selectTableColumnItem1.ImageOptions.LargeImageIndex");
-            selectTableColumnItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("selectTableColumnItem1.ImageOptions.SvgImage");
-            selectTableColumnItem1.Name = "selectTableColumnItem1";
+            resources.ApplyResources(this.selectTableColumnItem1, "selectTableColumnItem1");
+            this.selectTableColumnItem1.Id = (218);
+            this.selectTableColumnItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("selectTableColumnItem1.ImageOptions.ImageIndex")));
+            this.selectTableColumnItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("selectTableColumnItem1.ImageOptions.LargeImageIndex")));
+            this.selectTableColumnItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("selectTableColumnItem1.ImageOptions.SvgImage")));
+            this.selectTableColumnItem1.Name = ("selectTableColumnItem1");
             // 
             // selectTableRowItem1
             // 
-            resources.ApplyResources(selectTableRowItem1, "selectTableRowItem1");
-            selectTableRowItem1.Id = 219;
-            selectTableRowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("selectTableRowItem1.ImageOptions.ImageIndex");
-            selectTableRowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("selectTableRowItem1.ImageOptions.LargeImageIndex");
-            selectTableRowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("selectTableRowItem1.ImageOptions.SvgImage");
-            selectTableRowItem1.Name = "selectTableRowItem1";
+            resources.ApplyResources(this.selectTableRowItem1, "selectTableRowItem1");
+            this.selectTableRowItem1.Id = (219);
+            this.selectTableRowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("selectTableRowItem1.ImageOptions.ImageIndex")));
+            this.selectTableRowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("selectTableRowItem1.ImageOptions.LargeImageIndex")));
+            this.selectTableRowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("selectTableRowItem1.ImageOptions.SvgImage")));
+            this.selectTableRowItem1.Name = ("selectTableRowItem1");
             // 
             // selectTableItem1
             // 
-            resources.ApplyResources(selectTableItem1, "selectTableItem1");
-            selectTableItem1.Id = 220;
-            selectTableItem1.ImageOptions.ImageIndex = (int)resources.GetObject("selectTableItem1.ImageOptions.ImageIndex");
-            selectTableItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("selectTableItem1.ImageOptions.LargeImageIndex");
-            selectTableItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("selectTableItem1.ImageOptions.SvgImage");
-            selectTableItem1.Name = "selectTableItem1";
+            resources.ApplyResources(this.selectTableItem1, "selectTableItem1");
+            this.selectTableItem1.Id = (220);
+            this.selectTableItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("selectTableItem1.ImageOptions.ImageIndex")));
+            this.selectTableItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("selectTableItem1.ImageOptions.LargeImageIndex")));
+            this.selectTableItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("selectTableItem1.ImageOptions.SvgImage")));
+            this.selectTableItem1.Name = ("selectTableItem1");
             // 
             // showTablePropertiesFormItem1
             // 
-            resources.ApplyResources(showTablePropertiesFormItem1, "showTablePropertiesFormItem1");
-            showTablePropertiesFormItem1.Id = 221;
-            showTablePropertiesFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showTablePropertiesFormItem1.ImageOptions.ImageIndex");
-            showTablePropertiesFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showTablePropertiesFormItem1.ImageOptions.LargeImageIndex");
-            showTablePropertiesFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showTablePropertiesFormItem1.ImageOptions.SvgImage");
-            showTablePropertiesFormItem1.Name = "showTablePropertiesFormItem1";
+            resources.ApplyResources(this.showTablePropertiesFormItem1, "showTablePropertiesFormItem1");
+            this.showTablePropertiesFormItem1.Id = (221);
+            this.showTablePropertiesFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showTablePropertiesFormItem1.ImageOptions.ImageIndex")));
+            this.showTablePropertiesFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showTablePropertiesFormItem1.ImageOptions.LargeImageIndex")));
+            this.showTablePropertiesFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showTablePropertiesFormItem1.ImageOptions.SvgImage")));
+            this.showTablePropertiesFormItem1.Name = ("showTablePropertiesFormItem1");
             // 
             // deleteTableElementsItem1
             // 
-            resources.ApplyResources(deleteTableElementsItem1, "deleteTableElementsItem1");
-            deleteTableElementsItem1.Id = 222;
-            deleteTableElementsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteTableElementsItem1.ImageOptions.ImageIndex");
-            deleteTableElementsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteTableElementsItem1.ImageOptions.LargeImageIndex");
-            deleteTableElementsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteTableElementsItem1.ImageOptions.SvgImage");
-            deleteTableElementsItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(showDeleteTableCellsFormItem1), new DevExpress.XtraBars.LinkPersistInfo(deleteTableColumnsItem1), new DevExpress.XtraBars.LinkPersistInfo(deleteTableRowsItem1), new DevExpress.XtraBars.LinkPersistInfo(deleteTableItem1) });
-            deleteTableElementsItem1.Name = "deleteTableElementsItem1";
+            resources.ApplyResources(this.deleteTableElementsItem1, "deleteTableElementsItem1");
+            this.deleteTableElementsItem1.Id = (222);
+            this.deleteTableElementsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableElementsItem1.ImageOptions.ImageIndex")));
+            this.deleteTableElementsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableElementsItem1.ImageOptions.LargeImageIndex")));
+            this.deleteTableElementsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteTableElementsItem1.ImageOptions.SvgImage")));
+            this.deleteTableElementsItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.showDeleteTableCellsFormItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteTableColumnsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteTableRowsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.deleteTableItem1) });
+            this.deleteTableElementsItem1.Name = ("deleteTableElementsItem1");
             // 
             // showDeleteTableCellsFormItem1
             // 
-            resources.ApplyResources(showDeleteTableCellsFormItem1, "showDeleteTableCellsFormItem1");
-            showDeleteTableCellsFormItem1.Id = 223;
-            showDeleteTableCellsFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.ImageIndex");
-            showDeleteTableCellsFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.LargeImageIndex");
-            showDeleteTableCellsFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.SvgImage");
-            showDeleteTableCellsFormItem1.Name = "showDeleteTableCellsFormItem1";
+            resources.ApplyResources(this.showDeleteTableCellsFormItem1, "showDeleteTableCellsFormItem1");
+            this.showDeleteTableCellsFormItem1.Id = (223);
+            this.showDeleteTableCellsFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.ImageIndex")));
+            this.showDeleteTableCellsFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.LargeImageIndex")));
+            this.showDeleteTableCellsFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showDeleteTableCellsFormItem1.ImageOptions.SvgImage")));
+            this.showDeleteTableCellsFormItem1.Name = ("showDeleteTableCellsFormItem1");
             // 
             // deleteTableColumnsItem1
             // 
-            resources.ApplyResources(deleteTableColumnsItem1, "deleteTableColumnsItem1");
-            deleteTableColumnsItem1.Id = 224;
-            deleteTableColumnsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteTableColumnsItem1.ImageOptions.ImageIndex");
-            deleteTableColumnsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteTableColumnsItem1.ImageOptions.LargeImageIndex");
-            deleteTableColumnsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteTableColumnsItem1.ImageOptions.SvgImage");
-            deleteTableColumnsItem1.Name = "deleteTableColumnsItem1";
+            resources.ApplyResources(this.deleteTableColumnsItem1, "deleteTableColumnsItem1");
+            this.deleteTableColumnsItem1.Id = (224);
+            this.deleteTableColumnsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableColumnsItem1.ImageOptions.ImageIndex")));
+            this.deleteTableColumnsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableColumnsItem1.ImageOptions.LargeImageIndex")));
+            this.deleteTableColumnsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteTableColumnsItem1.ImageOptions.SvgImage")));
+            this.deleteTableColumnsItem1.Name = ("deleteTableColumnsItem1");
             // 
             // deleteTableRowsItem1
             // 
-            resources.ApplyResources(deleteTableRowsItem1, "deleteTableRowsItem1");
-            deleteTableRowsItem1.Id = 225;
-            deleteTableRowsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteTableRowsItem1.ImageOptions.ImageIndex");
-            deleteTableRowsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteTableRowsItem1.ImageOptions.LargeImageIndex");
-            deleteTableRowsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteTableRowsItem1.ImageOptions.SvgImage");
-            deleteTableRowsItem1.Name = "deleteTableRowsItem1";
+            resources.ApplyResources(this.deleteTableRowsItem1, "deleteTableRowsItem1");
+            this.deleteTableRowsItem1.Id = (225);
+            this.deleteTableRowsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableRowsItem1.ImageOptions.ImageIndex")));
+            this.deleteTableRowsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableRowsItem1.ImageOptions.LargeImageIndex")));
+            this.deleteTableRowsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteTableRowsItem1.ImageOptions.SvgImage")));
+            this.deleteTableRowsItem1.Name = ("deleteTableRowsItem1");
             // 
             // deleteTableItem1
             // 
-            resources.ApplyResources(deleteTableItem1, "deleteTableItem1");
-            deleteTableItem1.Id = 226;
-            deleteTableItem1.ImageOptions.ImageIndex = (int)resources.GetObject("deleteTableItem1.ImageOptions.ImageIndex");
-            deleteTableItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("deleteTableItem1.ImageOptions.LargeImageIndex");
-            deleteTableItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("deleteTableItem1.ImageOptions.SvgImage");
-            deleteTableItem1.Name = "deleteTableItem1";
+            resources.ApplyResources(this.deleteTableItem1, "deleteTableItem1");
+            this.deleteTableItem1.Id = (226);
+            this.deleteTableItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableItem1.ImageOptions.ImageIndex")));
+            this.deleteTableItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("deleteTableItem1.ImageOptions.LargeImageIndex")));
+            this.deleteTableItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("deleteTableItem1.ImageOptions.SvgImage")));
+            this.deleteTableItem1.Name = ("deleteTableItem1");
             // 
             // insertTableRowAboveItem1
             // 
-            resources.ApplyResources(insertTableRowAboveItem1, "insertTableRowAboveItem1");
-            insertTableRowAboveItem1.Id = 227;
-            insertTableRowAboveItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableRowAboveItem1.ImageOptions.ImageIndex");
-            insertTableRowAboveItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableRowAboveItem1.ImageOptions.LargeImageIndex");
-            insertTableRowAboveItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableRowAboveItem1.ImageOptions.SvgImage");
-            insertTableRowAboveItem1.Name = "insertTableRowAboveItem1";
+            resources.ApplyResources(this.insertTableRowAboveItem1, "insertTableRowAboveItem1");
+            this.insertTableRowAboveItem1.Id = (227);
+            this.insertTableRowAboveItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableRowAboveItem1.ImageOptions.ImageIndex")));
+            this.insertTableRowAboveItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableRowAboveItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableRowAboveItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableRowAboveItem1.ImageOptions.SvgImage")));
+            this.insertTableRowAboveItem1.Name = ("insertTableRowAboveItem1");
             // 
             // insertTableRowBelowItem1
             // 
-            resources.ApplyResources(insertTableRowBelowItem1, "insertTableRowBelowItem1");
-            insertTableRowBelowItem1.Id = 228;
-            insertTableRowBelowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableRowBelowItem1.ImageOptions.ImageIndex");
-            insertTableRowBelowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableRowBelowItem1.ImageOptions.LargeImageIndex");
-            insertTableRowBelowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableRowBelowItem1.ImageOptions.SvgImage");
-            insertTableRowBelowItem1.Name = "insertTableRowBelowItem1";
+            resources.ApplyResources(this.insertTableRowBelowItem1, "insertTableRowBelowItem1");
+            this.insertTableRowBelowItem1.Id = (228);
+            this.insertTableRowBelowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableRowBelowItem1.ImageOptions.ImageIndex")));
+            this.insertTableRowBelowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableRowBelowItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableRowBelowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableRowBelowItem1.ImageOptions.SvgImage")));
+            this.insertTableRowBelowItem1.Name = ("insertTableRowBelowItem1");
             // 
             // insertTableColumnToLeftItem1
             // 
-            resources.ApplyResources(insertTableColumnToLeftItem1, "insertTableColumnToLeftItem1");
-            insertTableColumnToLeftItem1.Id = 229;
-            insertTableColumnToLeftItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.ImageIndex");
-            insertTableColumnToLeftItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.LargeImageIndex");
-            insertTableColumnToLeftItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.SvgImage");
-            insertTableColumnToLeftItem1.Name = "insertTableColumnToLeftItem1";
+            resources.ApplyResources(this.insertTableColumnToLeftItem1, "insertTableColumnToLeftItem1");
+            this.insertTableColumnToLeftItem1.Id = (229);
+            this.insertTableColumnToLeftItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.ImageIndex")));
+            this.insertTableColumnToLeftItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableColumnToLeftItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableColumnToLeftItem1.ImageOptions.SvgImage")));
+            this.insertTableColumnToLeftItem1.Name = ("insertTableColumnToLeftItem1");
             // 
             // insertTableColumnToRightItem1
             // 
-            resources.ApplyResources(insertTableColumnToRightItem1, "insertTableColumnToRightItem1");
-            insertTableColumnToRightItem1.Id = 230;
-            insertTableColumnToRightItem1.ImageOptions.ImageIndex = (int)resources.GetObject("insertTableColumnToRightItem1.ImageOptions.ImageIndex");
-            insertTableColumnToRightItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("insertTableColumnToRightItem1.ImageOptions.LargeImageIndex");
-            insertTableColumnToRightItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("insertTableColumnToRightItem1.ImageOptions.SvgImage");
-            insertTableColumnToRightItem1.Name = "insertTableColumnToRightItem1";
+            resources.ApplyResources(this.insertTableColumnToRightItem1, "insertTableColumnToRightItem1");
+            this.insertTableColumnToRightItem1.Id = (230);
+            this.insertTableColumnToRightItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("insertTableColumnToRightItem1.ImageOptions.ImageIndex")));
+            this.insertTableColumnToRightItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("insertTableColumnToRightItem1.ImageOptions.LargeImageIndex")));
+            this.insertTableColumnToRightItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("insertTableColumnToRightItem1.ImageOptions.SvgImage")));
+            this.insertTableColumnToRightItem1.Name = ("insertTableColumnToRightItem1");
             // 
             // mergeTableCellsItem1
             // 
-            resources.ApplyResources(mergeTableCellsItem1, "mergeTableCellsItem1");
-            mergeTableCellsItem1.Id = 231;
-            mergeTableCellsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("mergeTableCellsItem1.ImageOptions.ImageIndex");
-            mergeTableCellsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("mergeTableCellsItem1.ImageOptions.LargeImageIndex");
-            mergeTableCellsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("mergeTableCellsItem1.ImageOptions.SvgImage");
-            mergeTableCellsItem1.Name = "mergeTableCellsItem1";
+            resources.ApplyResources(this.mergeTableCellsItem1, "mergeTableCellsItem1");
+            this.mergeTableCellsItem1.Id = (231);
+            this.mergeTableCellsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("mergeTableCellsItem1.ImageOptions.ImageIndex")));
+            this.mergeTableCellsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("mergeTableCellsItem1.ImageOptions.LargeImageIndex")));
+            this.mergeTableCellsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("mergeTableCellsItem1.ImageOptions.SvgImage")));
+            this.mergeTableCellsItem1.Name = ("mergeTableCellsItem1");
             // 
             // showSplitTableCellsForm1
             // 
-            resources.ApplyResources(showSplitTableCellsForm1, "showSplitTableCellsForm1");
-            showSplitTableCellsForm1.Id = 232;
-            showSplitTableCellsForm1.ImageOptions.ImageIndex = (int)resources.GetObject("showSplitTableCellsForm1.ImageOptions.ImageIndex");
-            showSplitTableCellsForm1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showSplitTableCellsForm1.ImageOptions.LargeImageIndex");
-            showSplitTableCellsForm1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showSplitTableCellsForm1.ImageOptions.SvgImage");
-            showSplitTableCellsForm1.Name = "showSplitTableCellsForm1";
+            resources.ApplyResources(this.showSplitTableCellsForm1, "showSplitTableCellsForm1");
+            this.showSplitTableCellsForm1.Id = (232);
+            this.showSplitTableCellsForm1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showSplitTableCellsForm1.ImageOptions.ImageIndex")));
+            this.showSplitTableCellsForm1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showSplitTableCellsForm1.ImageOptions.LargeImageIndex")));
+            this.showSplitTableCellsForm1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showSplitTableCellsForm1.ImageOptions.SvgImage")));
+            this.showSplitTableCellsForm1.Name = ("showSplitTableCellsForm1");
             // 
             // splitTableItem1
             // 
-            resources.ApplyResources(splitTableItem1, "splitTableItem1");
-            splitTableItem1.Id = 233;
-            splitTableItem1.ImageOptions.ImageIndex = (int)resources.GetObject("splitTableItem1.ImageOptions.ImageIndex");
-            splitTableItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("splitTableItem1.ImageOptions.LargeImageIndex");
-            splitTableItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("splitTableItem1.ImageOptions.SvgImage");
-            splitTableItem1.Name = "splitTableItem1";
+            resources.ApplyResources(this.splitTableItem1, "splitTableItem1");
+            this.splitTableItem1.Id = (233);
+            this.splitTableItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("splitTableItem1.ImageOptions.ImageIndex")));
+            this.splitTableItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("splitTableItem1.ImageOptions.LargeImageIndex")));
+            this.splitTableItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("splitTableItem1.ImageOptions.SvgImage")));
+            this.splitTableItem1.Name = ("splitTableItem1");
             // 
             // toggleTableAutoFitItem1
             // 
-            resources.ApplyResources(toggleTableAutoFitItem1, "toggleTableAutoFitItem1");
-            toggleTableAutoFitItem1.Id = 234;
-            toggleTableAutoFitItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableAutoFitItem1.ImageOptions.ImageIndex");
-            toggleTableAutoFitItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableAutoFitItem1.ImageOptions.LargeImageIndex");
-            toggleTableAutoFitItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableAutoFitItem1.ImageOptions.SvgImage");
-            toggleTableAutoFitItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(toggleTableAutoFitContentsItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableAutoFitWindowItem1), new DevExpress.XtraBars.LinkPersistInfo(toggleTableFixedColumnWidthItem1) });
-            toggleTableAutoFitItem1.Name = "toggleTableAutoFitItem1";
+            resources.ApplyResources(this.toggleTableAutoFitItem1, "toggleTableAutoFitItem1");
+            this.toggleTableAutoFitItem1.Id = (234);
+            this.toggleTableAutoFitItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitItem1.ImageOptions.ImageIndex")));
+            this.toggleTableAutoFitItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableAutoFitItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableAutoFitItem1.ImageOptions.SvgImage")));
+            this.toggleTableAutoFitItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableAutoFitContentsItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableAutoFitWindowItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.toggleTableFixedColumnWidthItem1) });
+            this.toggleTableAutoFitItem1.Name = ("toggleTableAutoFitItem1");
             // 
             // toggleTableAutoFitContentsItem1
             // 
-            resources.ApplyResources(toggleTableAutoFitContentsItem1, "toggleTableAutoFitContentsItem1");
-            toggleTableAutoFitContentsItem1.Id = 235;
-            toggleTableAutoFitContentsItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.ImageIndex");
-            toggleTableAutoFitContentsItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.LargeImageIndex");
-            toggleTableAutoFitContentsItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.SvgImage");
-            toggleTableAutoFitContentsItem1.Name = "toggleTableAutoFitContentsItem1";
+            resources.ApplyResources(this.toggleTableAutoFitContentsItem1, "toggleTableAutoFitContentsItem1");
+            this.toggleTableAutoFitContentsItem1.Id = (235);
+            this.toggleTableAutoFitContentsItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.ImageIndex")));
+            this.toggleTableAutoFitContentsItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableAutoFitContentsItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableAutoFitContentsItem1.ImageOptions.SvgImage")));
+            this.toggleTableAutoFitContentsItem1.Name = ("toggleTableAutoFitContentsItem1");
             // 
             // toggleTableAutoFitWindowItem1
             // 
-            resources.ApplyResources(toggleTableAutoFitWindowItem1, "toggleTableAutoFitWindowItem1");
-            toggleTableAutoFitWindowItem1.Id = 236;
-            toggleTableAutoFitWindowItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.ImageIndex");
-            toggleTableAutoFitWindowItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.LargeImageIndex");
-            toggleTableAutoFitWindowItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.SvgImage");
-            toggleTableAutoFitWindowItem1.Name = "toggleTableAutoFitWindowItem1";
+            resources.ApplyResources(this.toggleTableAutoFitWindowItem1, "toggleTableAutoFitWindowItem1");
+            this.toggleTableAutoFitWindowItem1.Id = (236);
+            this.toggleTableAutoFitWindowItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.ImageIndex")));
+            this.toggleTableAutoFitWindowItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableAutoFitWindowItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableAutoFitWindowItem1.ImageOptions.SvgImage")));
+            this.toggleTableAutoFitWindowItem1.Name = ("toggleTableAutoFitWindowItem1");
             // 
             // toggleTableFixedColumnWidthItem1
             // 
-            resources.ApplyResources(toggleTableFixedColumnWidthItem1, "toggleTableFixedColumnWidthItem1");
-            toggleTableFixedColumnWidthItem1.Id = 237;
-            toggleTableFixedColumnWidthItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.ImageIndex");
-            toggleTableFixedColumnWidthItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.LargeImageIndex");
-            toggleTableFixedColumnWidthItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.SvgImage");
-            toggleTableFixedColumnWidthItem1.Name = "toggleTableFixedColumnWidthItem1";
+            resources.ApplyResources(this.toggleTableFixedColumnWidthItem1, "toggleTableFixedColumnWidthItem1");
+            this.toggleTableFixedColumnWidthItem1.Id = (237);
+            this.toggleTableFixedColumnWidthItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.ImageIndex")));
+            this.toggleTableFixedColumnWidthItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableFixedColumnWidthItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableFixedColumnWidthItem1.ImageOptions.SvgImage")));
+            this.toggleTableFixedColumnWidthItem1.Name = ("toggleTableFixedColumnWidthItem1");
             // 
             // toggleTableCellsTopLeftAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsTopLeftAlignmentItem1, "toggleTableCellsTopLeftAlignmentItem1");
-            toggleTableCellsTopLeftAlignmentItem1.Id = 238;
-            toggleTableCellsTopLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsTopLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsTopLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsTopLeftAlignmentItem1.Name = "toggleTableCellsTopLeftAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsTopLeftAlignmentItem1, "toggleTableCellsTopLeftAlignmentItem1");
+            this.toggleTableCellsTopLeftAlignmentItem1.Id = (238);
+            this.toggleTableCellsTopLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsTopLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsTopLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsTopLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsTopLeftAlignmentItem1.Name = ("toggleTableCellsTopLeftAlignmentItem1");
             // 
             // toggleTableCellsMiddleLeftAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsMiddleLeftAlignmentItem1, "toggleTableCellsMiddleLeftAlignmentItem1");
-            toggleTableCellsMiddleLeftAlignmentItem1.Id = 239;
-            toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsMiddleLeftAlignmentItem1.Name = "toggleTableCellsMiddleLeftAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsMiddleLeftAlignmentItem1, "toggleTableCellsMiddleLeftAlignmentItem1");
+            this.toggleTableCellsMiddleLeftAlignmentItem1.Id = (239);
+            this.toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsMiddleLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsMiddleLeftAlignmentItem1.Name = ("toggleTableCellsMiddleLeftAlignmentItem1");
             // 
             // toggleTableCellsBottomLeftAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsBottomLeftAlignmentItem1, "toggleTableCellsBottomLeftAlignmentItem1");
-            toggleTableCellsBottomLeftAlignmentItem1.Id = 240;
-            toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsBottomLeftAlignmentItem1.Name = "toggleTableCellsBottomLeftAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsBottomLeftAlignmentItem1, "toggleTableCellsBottomLeftAlignmentItem1");
+            this.toggleTableCellsBottomLeftAlignmentItem1.Id = (240);
+            this.toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsBottomLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsBottomLeftAlignmentItem1.Name = ("toggleTableCellsBottomLeftAlignmentItem1");
             // 
             // toggleTableCellsTopCenterAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsTopCenterAlignmentItem1, "toggleTableCellsTopCenterAlignmentItem1");
-            toggleTableCellsTopCenterAlignmentItem1.Id = 241;
-            toggleTableCellsTopCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsTopCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsTopCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsTopCenterAlignmentItem1.Name = "toggleTableCellsTopCenterAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsTopCenterAlignmentItem1, "toggleTableCellsTopCenterAlignmentItem1");
+            this.toggleTableCellsTopCenterAlignmentItem1.Id = (241);
+            this.toggleTableCellsTopCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsTopCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsTopCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsTopCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsTopCenterAlignmentItem1.Name = ("toggleTableCellsTopCenterAlignmentItem1");
             // 
             // toggleTableCellsMiddleCenterAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsMiddleCenterAlignmentItem1, "toggleTableCellsMiddleCenterAlignmentItem1");
-            toggleTableCellsMiddleCenterAlignmentItem1.Id = 242;
-            toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsMiddleCenterAlignmentItem1.Name = "toggleTableCellsMiddleCenterAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsMiddleCenterAlignmentItem1, "toggleTableCellsMiddleCenterAlignmentItem1");
+            this.toggleTableCellsMiddleCenterAlignmentItem1.Id = (242);
+            this.toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsMiddleCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsMiddleCenterAlignmentItem1.Name = ("toggleTableCellsMiddleCenterAlignmentItem1");
             // 
             // toggleTableCellsBottomCenterAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsBottomCenterAlignmentItem1, "toggleTableCellsBottomCenterAlignmentItem1");
-            toggleTableCellsBottomCenterAlignmentItem1.Id = 243;
-            toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsBottomCenterAlignmentItem1.Name = "toggleTableCellsBottomCenterAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsBottomCenterAlignmentItem1, "toggleTableCellsBottomCenterAlignmentItem1");
+            this.toggleTableCellsBottomCenterAlignmentItem1.Id = (243);
+            this.toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsBottomCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsBottomCenterAlignmentItem1.Name = ("toggleTableCellsBottomCenterAlignmentItem1");
             // 
             // toggleTableCellsTopRightAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsTopRightAlignmentItem1, "toggleTableCellsTopRightAlignmentItem1");
-            toggleTableCellsTopRightAlignmentItem1.Id = 244;
-            toggleTableCellsTopRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsTopRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsTopRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsTopRightAlignmentItem1.Name = "toggleTableCellsTopRightAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsTopRightAlignmentItem1, "toggleTableCellsTopRightAlignmentItem1");
+            this.toggleTableCellsTopRightAlignmentItem1.Id = (244);
+            this.toggleTableCellsTopRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsTopRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsTopRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsTopRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsTopRightAlignmentItem1.Name = ("toggleTableCellsTopRightAlignmentItem1");
             // 
             // toggleTableCellsMiddleRightAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsMiddleRightAlignmentItem1, "toggleTableCellsMiddleRightAlignmentItem1");
-            toggleTableCellsMiddleRightAlignmentItem1.Id = 245;
-            toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsMiddleRightAlignmentItem1.Name = "toggleTableCellsMiddleRightAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsMiddleRightAlignmentItem1, "toggleTableCellsMiddleRightAlignmentItem1");
+            this.toggleTableCellsMiddleRightAlignmentItem1.Id = (245);
+            this.toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsMiddleRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsMiddleRightAlignmentItem1.Name = ("toggleTableCellsMiddleRightAlignmentItem1");
             // 
             // toggleTableCellsBottomRightAlignmentItem1
             // 
-            resources.ApplyResources(toggleTableCellsBottomRightAlignmentItem1, "toggleTableCellsBottomRightAlignmentItem1");
-            toggleTableCellsBottomRightAlignmentItem1.Id = 246;
-            toggleTableCellsBottomRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.ImageIndex");
-            toggleTableCellsBottomRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            toggleTableCellsBottomRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.SvgImage");
-            toggleTableCellsBottomRightAlignmentItem1.Name = "toggleTableCellsBottomRightAlignmentItem1";
+            resources.ApplyResources(this.toggleTableCellsBottomRightAlignmentItem1, "toggleTableCellsBottomRightAlignmentItem1");
+            this.toggleTableCellsBottomRightAlignmentItem1.Id = (246);
+            this.toggleTableCellsBottomRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.toggleTableCellsBottomRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.toggleTableCellsBottomRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("toggleTableCellsBottomRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.toggleTableCellsBottomRightAlignmentItem1.Name = ("toggleTableCellsBottomRightAlignmentItem1");
             // 
             // showTableOptionsFormItem1
             // 
-            resources.ApplyResources(showTableOptionsFormItem1, "showTableOptionsFormItem1");
-            showTableOptionsFormItem1.Id = 247;
-            showTableOptionsFormItem1.ImageOptions.ImageIndex = (int)resources.GetObject("showTableOptionsFormItem1.ImageOptions.ImageIndex");
-            showTableOptionsFormItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("showTableOptionsFormItem1.ImageOptions.LargeImageIndex");
-            showTableOptionsFormItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("showTableOptionsFormItem1.ImageOptions.SvgImage");
-            showTableOptionsFormItem1.Name = "showTableOptionsFormItem1";
+            resources.ApplyResources(this.showTableOptionsFormItem1, "showTableOptionsFormItem1");
+            this.showTableOptionsFormItem1.Id = (247);
+            this.showTableOptionsFormItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("showTableOptionsFormItem1.ImageOptions.ImageIndex")));
+            this.showTableOptionsFormItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("showTableOptionsFormItem1.ImageOptions.LargeImageIndex")));
+            this.showTableOptionsFormItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("showTableOptionsFormItem1.ImageOptions.SvgImage")));
+            this.showTableOptionsFormItem1.Name = ("showTableOptionsFormItem1");
             // 
             // changeFloatingObjectFillColorItem1
             // 
-            resources.ApplyResources(changeFloatingObjectFillColorItem1, "changeFloatingObjectFillColorItem1");
-            changeFloatingObjectFillColorItem1.Id = 248;
-            changeFloatingObjectFillColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.ImageIndex");
-            changeFloatingObjectFillColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.LargeImageIndex");
-            changeFloatingObjectFillColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.SvgImage");
-            changeFloatingObjectFillColorItem1.Name = "changeFloatingObjectFillColorItem1";
+            resources.ApplyResources(this.changeFloatingObjectFillColorItem1, "changeFloatingObjectFillColorItem1");
+            this.changeFloatingObjectFillColorItem1.Id = (248);
+            this.changeFloatingObjectFillColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.ImageIndex")));
+            this.changeFloatingObjectFillColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeFloatingObjectFillColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFloatingObjectFillColorItem1.ImageOptions.SvgImage")));
+            this.changeFloatingObjectFillColorItem1.Name = ("changeFloatingObjectFillColorItem1");
             // 
             // changeFloatingObjectOutlineColorItem1
             // 
-            resources.ApplyResources(changeFloatingObjectOutlineColorItem1, "changeFloatingObjectOutlineColorItem1");
-            changeFloatingObjectOutlineColorItem1.Id = 249;
-            changeFloatingObjectOutlineColorItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.ImageIndex");
-            changeFloatingObjectOutlineColorItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.LargeImageIndex");
-            changeFloatingObjectOutlineColorItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.SvgImage");
-            changeFloatingObjectOutlineColorItem1.Name = "changeFloatingObjectOutlineColorItem1";
+            resources.ApplyResources(this.changeFloatingObjectOutlineColorItem1, "changeFloatingObjectOutlineColorItem1");
+            this.changeFloatingObjectOutlineColorItem1.Id = (249);
+            this.changeFloatingObjectOutlineColorItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.ImageIndex")));
+            this.changeFloatingObjectOutlineColorItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.LargeImageIndex")));
+            this.changeFloatingObjectOutlineColorItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFloatingObjectOutlineColorItem1.ImageOptions.SvgImage")));
+            this.changeFloatingObjectOutlineColorItem1.Name = ("changeFloatingObjectOutlineColorItem1");
             // 
             // changeFloatingObjectOutlineWeightItem1
             // 
-            resources.ApplyResources(changeFloatingObjectOutlineWeightItem1, "changeFloatingObjectOutlineWeightItem1");
-            changeFloatingObjectOutlineWeightItem1.Edit = repositoryItemFloatingObjectOutlineWeight1;
-            changeFloatingObjectOutlineWeightItem1.EditValue = 20;
-            changeFloatingObjectOutlineWeightItem1.Id = 250;
-            changeFloatingObjectOutlineWeightItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.ImageIndex");
-            changeFloatingObjectOutlineWeightItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.LargeImageIndex");
-            changeFloatingObjectOutlineWeightItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.SvgImage");
-            changeFloatingObjectOutlineWeightItem1.Name = "changeFloatingObjectOutlineWeightItem1";
+            resources.ApplyResources(this.changeFloatingObjectOutlineWeightItem1, "changeFloatingObjectOutlineWeightItem1");
+            this.changeFloatingObjectOutlineWeightItem1.Edit = (this.repositoryItemFloatingObjectOutlineWeight1);
+            this.changeFloatingObjectOutlineWeightItem1.EditValue = (20);
+            this.changeFloatingObjectOutlineWeightItem1.Id = (250);
+            this.changeFloatingObjectOutlineWeightItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.ImageIndex")));
+            this.changeFloatingObjectOutlineWeightItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.LargeImageIndex")));
+            this.changeFloatingObjectOutlineWeightItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFloatingObjectOutlineWeightItem1.ImageOptions.SvgImage")));
+            this.changeFloatingObjectOutlineWeightItem1.Name = ("changeFloatingObjectOutlineWeightItem1");
             // 
             // repositoryItemFloatingObjectOutlineWeight1
             // 
-            resources.ApplyResources(repositoryItemFloatingObjectOutlineWeight1, "repositoryItemFloatingObjectOutlineWeight1");
-            repositoryItemFloatingObjectOutlineWeight1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton((DevExpress.XtraEditors.Controls.ButtonPredefines)resources.GetObject("repositoryItemFloatingObjectOutlineWeight1.Buttons")) });
-            repositoryItemFloatingObjectOutlineWeight1.Control = ChildRichEditControl;
-            repositoryItemFloatingObjectOutlineWeight1.Name = "repositoryItemFloatingObjectOutlineWeight1";
+            resources.ApplyResources(this.repositoryItemFloatingObjectOutlineWeight1, "repositoryItemFloatingObjectOutlineWeight1");
+            this.repositoryItemFloatingObjectOutlineWeight1.Buttons.AddRange(new global::DevExpress.XtraEditors.Controls.EditorButton[] { new global::DevExpress.XtraEditors.Controls.EditorButton((global::DevExpress.XtraEditors.Controls.ButtonPredefines)(resources.GetObject("repositoryItemFloatingObjectOutlineWeight1.Buttons"))) });
+            this.repositoryItemFloatingObjectOutlineWeight1.Control = (this.ChildRichEditControl);
+            this.repositoryItemFloatingObjectOutlineWeight1.Name = ("repositoryItemFloatingObjectOutlineWeight1");
             // 
             // changeFloatingObjectTextWrapTypeItem1
             // 
-            resources.ApplyResources(changeFloatingObjectTextWrapTypeItem1, "changeFloatingObjectTextWrapTypeItem1");
-            changeFloatingObjectTextWrapTypeItem1.Id = 251;
-            changeFloatingObjectTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.ImageIndex");
-            changeFloatingObjectTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            changeFloatingObjectTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.SvgImage");
-            changeFloatingObjectTextWrapTypeItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectInlineTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectSquareTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectTightTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectThroughTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectTopAndBottomTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectBehindTextWrapTypeItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectInFrontOfTextWrapTypeItem1) });
-            changeFloatingObjectTextWrapTypeItem1.Name = "changeFloatingObjectTextWrapTypeItem1";
+            resources.ApplyResources(this.changeFloatingObjectTextWrapTypeItem1, "changeFloatingObjectTextWrapTypeItem1");
+            this.changeFloatingObjectTextWrapTypeItem1.Id = (251);
+            this.changeFloatingObjectTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.changeFloatingObjectTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.changeFloatingObjectTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFloatingObjectTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.changeFloatingObjectTextWrapTypeItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectInlineTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectSquareTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectTightTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectThroughTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectTopAndBottomTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectBehindTextWrapTypeItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectInFrontOfTextWrapTypeItem1) });
+            this.changeFloatingObjectTextWrapTypeItem1.Name = ("changeFloatingObjectTextWrapTypeItem1");
             // 
             // setFloatingObjectInlineTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectInlineTextWrapTypeItem1, "setFloatingObjectInlineTextWrapTypeItem1");
-            setFloatingObjectInlineTextWrapTypeItem1.Id = 252;
-            setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectInlineTextWrapTypeItem1.Name = "setFloatingObjectInlineTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectInlineTextWrapTypeItem1, "setFloatingObjectInlineTextWrapTypeItem1");
+            this.setFloatingObjectInlineTextWrapTypeItem1.Id = (252);
+            this.setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectInlineTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectInlineTextWrapTypeItem1.Name = ("setFloatingObjectInlineTextWrapTypeItem1");
             // 
             // setFloatingObjectSquareTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectSquareTextWrapTypeItem1, "setFloatingObjectSquareTextWrapTypeItem1");
-            setFloatingObjectSquareTextWrapTypeItem1.Id = 253;
-            setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectSquareTextWrapTypeItem1.Name = "setFloatingObjectSquareTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectSquareTextWrapTypeItem1, "setFloatingObjectSquareTextWrapTypeItem1");
+            this.setFloatingObjectSquareTextWrapTypeItem1.Id = (253);
+            this.setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectSquareTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectSquareTextWrapTypeItem1.Name = ("setFloatingObjectSquareTextWrapTypeItem1");
             // 
             // setFloatingObjectTightTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectTightTextWrapTypeItem1, "setFloatingObjectTightTextWrapTypeItem1");
-            setFloatingObjectTightTextWrapTypeItem1.Id = 254;
-            setFloatingObjectTightTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectTightTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectTightTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectTightTextWrapTypeItem1.Name = "setFloatingObjectTightTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectTightTextWrapTypeItem1, "setFloatingObjectTightTextWrapTypeItem1");
+            this.setFloatingObjectTightTextWrapTypeItem1.Id = (254);
+            this.setFloatingObjectTightTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectTightTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectTightTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectTightTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectTightTextWrapTypeItem1.Name = ("setFloatingObjectTightTextWrapTypeItem1");
             // 
             // setFloatingObjectThroughTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectThroughTextWrapTypeItem1, "setFloatingObjectThroughTextWrapTypeItem1");
-            setFloatingObjectThroughTextWrapTypeItem1.Id = 255;
-            setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectThroughTextWrapTypeItem1.Name = "setFloatingObjectThroughTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectThroughTextWrapTypeItem1, "setFloatingObjectThroughTextWrapTypeItem1");
+            this.setFloatingObjectThroughTextWrapTypeItem1.Id = (255);
+            this.setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectThroughTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectThroughTextWrapTypeItem1.Name = ("setFloatingObjectThroughTextWrapTypeItem1");
             // 
             // setFloatingObjectTopAndBottomTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectTopAndBottomTextWrapTypeItem1, "setFloatingObjectTopAndBottomTextWrapTypeItem1");
-            setFloatingObjectTopAndBottomTextWrapTypeItem1.Id = 256;
-            setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectTopAndBottomTextWrapTypeItem1.Name = "setFloatingObjectTopAndBottomTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectTopAndBottomTextWrapTypeItem1, "setFloatingObjectTopAndBottomTextWrapTypeItem1");
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1.Id = (256);
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectTopAndBottomTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectTopAndBottomTextWrapTypeItem1.Name = ("setFloatingObjectTopAndBottomTextWrapTypeItem1");
             // 
             // setFloatingObjectBehindTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectBehindTextWrapTypeItem1, "setFloatingObjectBehindTextWrapTypeItem1");
-            setFloatingObjectBehindTextWrapTypeItem1.Id = 257;
-            setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectBehindTextWrapTypeItem1.Name = "setFloatingObjectBehindTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectBehindTextWrapTypeItem1, "setFloatingObjectBehindTextWrapTypeItem1");
+            this.setFloatingObjectBehindTextWrapTypeItem1.Id = (257);
+            this.setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectBehindTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectBehindTextWrapTypeItem1.Name = ("setFloatingObjectBehindTextWrapTypeItem1");
             // 
             // setFloatingObjectInFrontOfTextWrapTypeItem1
             // 
-            resources.ApplyResources(setFloatingObjectInFrontOfTextWrapTypeItem1, "setFloatingObjectInFrontOfTextWrapTypeItem1");
-            setFloatingObjectInFrontOfTextWrapTypeItem1.Id = 258;
-            setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.ImageIndex");
-            setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.SvgImage");
-            setFloatingObjectInFrontOfTextWrapTypeItem1.Name = "setFloatingObjectInFrontOfTextWrapTypeItem1";
+            resources.ApplyResources(this.setFloatingObjectInFrontOfTextWrapTypeItem1, "setFloatingObjectInFrontOfTextWrapTypeItem1");
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1.Id = (258);
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectInFrontOfTextWrapTypeItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectInFrontOfTextWrapTypeItem1.Name = ("setFloatingObjectInFrontOfTextWrapTypeItem1");
             // 
             // changeFloatingObjectAlignmentItem1
             // 
-            resources.ApplyResources(changeFloatingObjectAlignmentItem1, "changeFloatingObjectAlignmentItem1");
-            changeFloatingObjectAlignmentItem1.Id = 259;
-            changeFloatingObjectAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.ImageIndex");
-            changeFloatingObjectAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.LargeImageIndex");
-            changeFloatingObjectAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.SvgImage");
-            changeFloatingObjectAlignmentItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectTopLeftAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectTopCenterAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectTopRightAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectMiddleLeftAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectMiddleCenterAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectMiddleRightAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectBottomLeftAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectBottomCenterAlignmentItem1), new DevExpress.XtraBars.LinkPersistInfo(setFloatingObjectBottomRightAlignmentItem1) });
-            changeFloatingObjectAlignmentItem1.Name = "changeFloatingObjectAlignmentItem1";
+            resources.ApplyResources(this.changeFloatingObjectAlignmentItem1, "changeFloatingObjectAlignmentItem1");
+            this.changeFloatingObjectAlignmentItem1.Id = (259);
+            this.changeFloatingObjectAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.ImageIndex")));
+            this.changeFloatingObjectAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.changeFloatingObjectAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("changeFloatingObjectAlignmentItem1.ImageOptions.SvgImage")));
+            this.changeFloatingObjectAlignmentItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectTopLeftAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectTopCenterAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectTopRightAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectMiddleLeftAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectMiddleCenterAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectMiddleRightAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectBottomLeftAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectBottomCenterAlignmentItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.setFloatingObjectBottomRightAlignmentItem1) });
+            this.changeFloatingObjectAlignmentItem1.Name = ("changeFloatingObjectAlignmentItem1");
             // 
             // setFloatingObjectTopLeftAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectTopLeftAlignmentItem1, "setFloatingObjectTopLeftAlignmentItem1");
-            setFloatingObjectTopLeftAlignmentItem1.Id = 260;
-            setFloatingObjectTopLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectTopLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectTopLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectTopLeftAlignmentItem1.Name = "setFloatingObjectTopLeftAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectTopLeftAlignmentItem1, "setFloatingObjectTopLeftAlignmentItem1");
+            this.setFloatingObjectTopLeftAlignmentItem1.Id = (260);
+            this.setFloatingObjectTopLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectTopLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectTopLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectTopLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectTopLeftAlignmentItem1.Name = ("setFloatingObjectTopLeftAlignmentItem1");
             // 
             // setFloatingObjectTopCenterAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectTopCenterAlignmentItem1, "setFloatingObjectTopCenterAlignmentItem1");
-            setFloatingObjectTopCenterAlignmentItem1.Id = 261;
-            setFloatingObjectTopCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectTopCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectTopCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectTopCenterAlignmentItem1.Name = "setFloatingObjectTopCenterAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectTopCenterAlignmentItem1, "setFloatingObjectTopCenterAlignmentItem1");
+            this.setFloatingObjectTopCenterAlignmentItem1.Id = (261);
+            this.setFloatingObjectTopCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectTopCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectTopCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectTopCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectTopCenterAlignmentItem1.Name = ("setFloatingObjectTopCenterAlignmentItem1");
             // 
             // setFloatingObjectTopRightAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectTopRightAlignmentItem1, "setFloatingObjectTopRightAlignmentItem1");
-            setFloatingObjectTopRightAlignmentItem1.Id = 262;
-            setFloatingObjectTopRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectTopRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectTopRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectTopRightAlignmentItem1.Name = "setFloatingObjectTopRightAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectTopRightAlignmentItem1, "setFloatingObjectTopRightAlignmentItem1");
+            this.setFloatingObjectTopRightAlignmentItem1.Id = (262);
+            this.setFloatingObjectTopRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectTopRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectTopRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectTopRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectTopRightAlignmentItem1.Name = ("setFloatingObjectTopRightAlignmentItem1");
             // 
             // setFloatingObjectMiddleLeftAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectMiddleLeftAlignmentItem1, "setFloatingObjectMiddleLeftAlignmentItem1");
-            setFloatingObjectMiddleLeftAlignmentItem1.Id = 263;
-            setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectMiddleLeftAlignmentItem1.Name = "setFloatingObjectMiddleLeftAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectMiddleLeftAlignmentItem1, "setFloatingObjectMiddleLeftAlignmentItem1");
+            this.setFloatingObjectMiddleLeftAlignmentItem1.Id = (263);
+            this.setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectMiddleLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectMiddleLeftAlignmentItem1.Name = ("setFloatingObjectMiddleLeftAlignmentItem1");
             // 
             // setFloatingObjectMiddleCenterAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectMiddleCenterAlignmentItem1, "setFloatingObjectMiddleCenterAlignmentItem1");
-            setFloatingObjectMiddleCenterAlignmentItem1.Id = 264;
-            setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectMiddleCenterAlignmentItem1.Name = "setFloatingObjectMiddleCenterAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectMiddleCenterAlignmentItem1, "setFloatingObjectMiddleCenterAlignmentItem1");
+            this.setFloatingObjectMiddleCenterAlignmentItem1.Id = (264);
+            this.setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectMiddleCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectMiddleCenterAlignmentItem1.Name = ("setFloatingObjectMiddleCenterAlignmentItem1");
             // 
             // setFloatingObjectMiddleRightAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectMiddleRightAlignmentItem1, "setFloatingObjectMiddleRightAlignmentItem1");
-            setFloatingObjectMiddleRightAlignmentItem1.Id = 265;
-            setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectMiddleRightAlignmentItem1.Name = "setFloatingObjectMiddleRightAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectMiddleRightAlignmentItem1, "setFloatingObjectMiddleRightAlignmentItem1");
+            this.setFloatingObjectMiddleRightAlignmentItem1.Id = (265);
+            this.setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectMiddleRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectMiddleRightAlignmentItem1.Name = ("setFloatingObjectMiddleRightAlignmentItem1");
             // 
             // setFloatingObjectBottomLeftAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectBottomLeftAlignmentItem1, "setFloatingObjectBottomLeftAlignmentItem1");
-            setFloatingObjectBottomLeftAlignmentItem1.Id = 266;
-            setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectBottomLeftAlignmentItem1.Name = "setFloatingObjectBottomLeftAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectBottomLeftAlignmentItem1, "setFloatingObjectBottomLeftAlignmentItem1");
+            this.setFloatingObjectBottomLeftAlignmentItem1.Id = (266);
+            this.setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectBottomLeftAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectBottomLeftAlignmentItem1.Name = ("setFloatingObjectBottomLeftAlignmentItem1");
             // 
             // setFloatingObjectBottomCenterAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectBottomCenterAlignmentItem1, "setFloatingObjectBottomCenterAlignmentItem1");
-            setFloatingObjectBottomCenterAlignmentItem1.Id = 267;
-            setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectBottomCenterAlignmentItem1.Name = "setFloatingObjectBottomCenterAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectBottomCenterAlignmentItem1, "setFloatingObjectBottomCenterAlignmentItem1");
+            this.setFloatingObjectBottomCenterAlignmentItem1.Id = (267);
+            this.setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectBottomCenterAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectBottomCenterAlignmentItem1.Name = ("setFloatingObjectBottomCenterAlignmentItem1");
             // 
             // setFloatingObjectBottomRightAlignmentItem1
             // 
-            resources.ApplyResources(setFloatingObjectBottomRightAlignmentItem1, "setFloatingObjectBottomRightAlignmentItem1");
-            setFloatingObjectBottomRightAlignmentItem1.Id = 268;
-            setFloatingObjectBottomRightAlignmentItem1.ImageOptions.ImageIndex = (int)resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.ImageIndex");
-            setFloatingObjectBottomRightAlignmentItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.LargeImageIndex");
-            setFloatingObjectBottomRightAlignmentItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.SvgImage");
-            setFloatingObjectBottomRightAlignmentItem1.Name = "setFloatingObjectBottomRightAlignmentItem1";
+            resources.ApplyResources(this.setFloatingObjectBottomRightAlignmentItem1, "setFloatingObjectBottomRightAlignmentItem1");
+            this.setFloatingObjectBottomRightAlignmentItem1.Id = (268);
+            this.setFloatingObjectBottomRightAlignmentItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.ImageIndex")));
+            this.setFloatingObjectBottomRightAlignmentItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.LargeImageIndex")));
+            this.setFloatingObjectBottomRightAlignmentItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("setFloatingObjectBottomRightAlignmentItem1.ImageOptions.SvgImage")));
+            this.setFloatingObjectBottomRightAlignmentItem1.Name = ("setFloatingObjectBottomRightAlignmentItem1");
             // 
             // floatingObjectBringForwardSubItem1
             // 
-            resources.ApplyResources(floatingObjectBringForwardSubItem1, "floatingObjectBringForwardSubItem1");
-            floatingObjectBringForwardSubItem1.Id = 269;
-            floatingObjectBringForwardSubItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.ImageIndex");
-            floatingObjectBringForwardSubItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.LargeImageIndex");
-            floatingObjectBringForwardSubItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.SvgImage");
-            floatingObjectBringForwardSubItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(floatingObjectBringForwardItem1), new DevExpress.XtraBars.LinkPersistInfo(floatingObjectBringToFrontItem1), new DevExpress.XtraBars.LinkPersistInfo(floatingObjectBringInFrontOfTextItem1) });
-            floatingObjectBringForwardSubItem1.Name = "floatingObjectBringForwardSubItem1";
+            resources.ApplyResources(this.floatingObjectBringForwardSubItem1, "floatingObjectBringForwardSubItem1");
+            this.floatingObjectBringForwardSubItem1.Id = (269);
+            this.floatingObjectBringForwardSubItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectBringForwardSubItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectBringForwardSubItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectBringForwardSubItem1.ImageOptions.SvgImage")));
+            this.floatingObjectBringForwardSubItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectBringForwardItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectBringToFrontItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectBringInFrontOfTextItem1) });
+            this.floatingObjectBringForwardSubItem1.Name = ("floatingObjectBringForwardSubItem1");
             // 
             // floatingObjectBringForwardItem1
             // 
-            resources.ApplyResources(floatingObjectBringForwardItem1, "floatingObjectBringForwardItem1");
-            floatingObjectBringForwardItem1.Id = 270;
-            floatingObjectBringForwardItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.ImageIndex");
-            floatingObjectBringForwardItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.LargeImageIndex");
-            floatingObjectBringForwardItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.SvgImage");
-            floatingObjectBringForwardItem1.Name = "floatingObjectBringForwardItem1";
+            resources.ApplyResources(this.floatingObjectBringForwardItem1, "floatingObjectBringForwardItem1");
+            this.floatingObjectBringForwardItem1.Id = (270);
+            this.floatingObjectBringForwardItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectBringForwardItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectBringForwardItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectBringForwardItem1.ImageOptions.SvgImage")));
+            this.floatingObjectBringForwardItem1.Name = ("floatingObjectBringForwardItem1");
             // 
             // floatingObjectBringToFrontItem1
             // 
-            resources.ApplyResources(floatingObjectBringToFrontItem1, "floatingObjectBringToFrontItem1");
-            floatingObjectBringToFrontItem1.Id = 271;
-            floatingObjectBringToFrontItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.ImageIndex");
-            floatingObjectBringToFrontItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.LargeImageIndex");
-            floatingObjectBringToFrontItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.SvgImage");
-            floatingObjectBringToFrontItem1.Name = "floatingObjectBringToFrontItem1";
+            resources.ApplyResources(this.floatingObjectBringToFrontItem1, "floatingObjectBringToFrontItem1");
+            this.floatingObjectBringToFrontItem1.Id = (271);
+            this.floatingObjectBringToFrontItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectBringToFrontItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectBringToFrontItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectBringToFrontItem1.ImageOptions.SvgImage")));
+            this.floatingObjectBringToFrontItem1.Name = ("floatingObjectBringToFrontItem1");
             // 
             // floatingObjectBringInFrontOfTextItem1
             // 
-            resources.ApplyResources(floatingObjectBringInFrontOfTextItem1, "floatingObjectBringInFrontOfTextItem1");
-            floatingObjectBringInFrontOfTextItem1.Id = 272;
-            floatingObjectBringInFrontOfTextItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.ImageIndex");
-            floatingObjectBringInFrontOfTextItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.LargeImageIndex");
-            floatingObjectBringInFrontOfTextItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.SvgImage");
-            floatingObjectBringInFrontOfTextItem1.Name = "floatingObjectBringInFrontOfTextItem1";
+            resources.ApplyResources(this.floatingObjectBringInFrontOfTextItem1, "floatingObjectBringInFrontOfTextItem1");
+            this.floatingObjectBringInFrontOfTextItem1.Id = (272);
+            this.floatingObjectBringInFrontOfTextItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectBringInFrontOfTextItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectBringInFrontOfTextItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectBringInFrontOfTextItem1.ImageOptions.SvgImage")));
+            this.floatingObjectBringInFrontOfTextItem1.Name = ("floatingObjectBringInFrontOfTextItem1");
             // 
             // floatingObjectSendBackwardSubItem1
             // 
-            resources.ApplyResources(floatingObjectSendBackwardSubItem1, "floatingObjectSendBackwardSubItem1");
-            floatingObjectSendBackwardSubItem1.Id = 273;
-            floatingObjectSendBackwardSubItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.ImageIndex");
-            floatingObjectSendBackwardSubItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.LargeImageIndex");
-            floatingObjectSendBackwardSubItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.SvgImage");
-            floatingObjectSendBackwardSubItem1.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(floatingObjectSendBackwardItem1), new DevExpress.XtraBars.LinkPersistInfo(floatingObjectSendToBackItem1), new DevExpress.XtraBars.LinkPersistInfo(floatingObjectSendBehindTextItem1) });
-            floatingObjectSendBackwardSubItem1.Name = "floatingObjectSendBackwardSubItem1";
+            resources.ApplyResources(this.floatingObjectSendBackwardSubItem1, "floatingObjectSendBackwardSubItem1");
+            this.floatingObjectSendBackwardSubItem1.Id = (273);
+            this.floatingObjectSendBackwardSubItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectSendBackwardSubItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectSendBackwardSubItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectSendBackwardSubItem1.ImageOptions.SvgImage")));
+            this.floatingObjectSendBackwardSubItem1.LinksPersistInfo.AddRange(new global::DevExpress.XtraBars.LinkPersistInfo[] { new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectSendBackwardItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectSendToBackItem1), new global::DevExpress.XtraBars.LinkPersistInfo(this.floatingObjectSendBehindTextItem1) });
+            this.floatingObjectSendBackwardSubItem1.Name = ("floatingObjectSendBackwardSubItem1");
             // 
             // floatingObjectSendBackwardItem1
             // 
-            resources.ApplyResources(floatingObjectSendBackwardItem1, "floatingObjectSendBackwardItem1");
-            floatingObjectSendBackwardItem1.Id = 274;
-            floatingObjectSendBackwardItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.ImageIndex");
-            floatingObjectSendBackwardItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.LargeImageIndex");
-            floatingObjectSendBackwardItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.SvgImage");
-            floatingObjectSendBackwardItem1.Name = "floatingObjectSendBackwardItem1";
+            resources.ApplyResources(this.floatingObjectSendBackwardItem1, "floatingObjectSendBackwardItem1");
+            this.floatingObjectSendBackwardItem1.Id = (274);
+            this.floatingObjectSendBackwardItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectSendBackwardItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectSendBackwardItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectSendBackwardItem1.ImageOptions.SvgImage")));
+            this.floatingObjectSendBackwardItem1.Name = ("floatingObjectSendBackwardItem1");
             // 
             // floatingObjectSendToBackItem1
             // 
-            resources.ApplyResources(floatingObjectSendToBackItem1, "floatingObjectSendToBackItem1");
-            floatingObjectSendToBackItem1.Id = 275;
-            floatingObjectSendToBackItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.ImageIndex");
-            floatingObjectSendToBackItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.LargeImageIndex");
-            floatingObjectSendToBackItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.SvgImage");
-            floatingObjectSendToBackItem1.Name = "floatingObjectSendToBackItem1";
+            resources.ApplyResources(this.floatingObjectSendToBackItem1, "floatingObjectSendToBackItem1");
+            this.floatingObjectSendToBackItem1.Id = (275);
+            this.floatingObjectSendToBackItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectSendToBackItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectSendToBackItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectSendToBackItem1.ImageOptions.SvgImage")));
+            this.floatingObjectSendToBackItem1.Name = ("floatingObjectSendToBackItem1");
             // 
             // floatingObjectSendBehindTextItem1
             // 
-            resources.ApplyResources(floatingObjectSendBehindTextItem1, "floatingObjectSendBehindTextItem1");
-            floatingObjectSendBehindTextItem1.Id = 276;
-            floatingObjectSendBehindTextItem1.ImageOptions.ImageIndex = (int)resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.ImageIndex");
-            floatingObjectSendBehindTextItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.LargeImageIndex");
-            floatingObjectSendBehindTextItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.SvgImage");
-            floatingObjectSendBehindTextItem1.Name = "floatingObjectSendBehindTextItem1";
+            resources.ApplyResources(this.floatingObjectSendBehindTextItem1, "floatingObjectSendBehindTextItem1");
+            this.floatingObjectSendBehindTextItem1.Id = (276);
+            this.floatingObjectSendBehindTextItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.ImageIndex")));
+            this.floatingObjectSendBehindTextItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.LargeImageIndex")));
+            this.floatingObjectSendBehindTextItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("floatingObjectSendBehindTextItem1.ImageOptions.SvgImage")));
+            this.floatingObjectSendBehindTextItem1.Name = ("floatingObjectSendBehindTextItem1");
             // 
             // pagesBarItem
             // 
-            resources.ApplyResources(pagesBarItem, "pagesBarItem");
-            pagesBarItem.Id = 277;
-            pagesBarItem.ImageOptions.ImageIndex = (int)resources.GetObject("pagesBarItem.ImageOptions.ImageIndex");
-            pagesBarItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("pagesBarItem.ImageOptions.LargeImageIndex");
-            pagesBarItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("pagesBarItem.ImageOptions.SvgImage");
-            pagesBarItem.Name = "pagesBarItem";
+            resources.ApplyResources(this.pagesBarItem, "pagesBarItem");
+            this.pagesBarItem.Id = (277);
+            this.pagesBarItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("pagesBarItem.ImageOptions.ImageIndex")));
+            this.pagesBarItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("pagesBarItem.ImageOptions.LargeImageIndex")));
+            this.pagesBarItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("pagesBarItem.ImageOptions.SvgImage")));
+            this.pagesBarItem.Name = ("pagesBarItem");
             // 
             // docStatBtnItem
             // 
-            resources.ApplyResources(docStatBtnItem, "docStatBtnItem");
-            docStatBtnItem.Id = 278;
-            docStatBtnItem.ImageOptions.ImageIndex = (int)resources.GetObject("docStatBtnItem.ImageOptions.ImageIndex");
-            docStatBtnItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("docStatBtnItem.ImageOptions.LargeImageIndex");
-            docStatBtnItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("docStatBtnItem.ImageOptions.SvgImage");
-            docStatBtnItem.Name = "docStatBtnItem";
-            docStatBtnItem.ItemClick += DocStatBtnItem_ItemClick;
+            resources.ApplyResources(this.docStatBtnItem, "docStatBtnItem");
+            this.docStatBtnItem.Id = (278);
+            this.docStatBtnItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("docStatBtnItem.ImageOptions.ImageIndex")));
+            this.docStatBtnItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("docStatBtnItem.ImageOptions.LargeImageIndex")));
+            this.docStatBtnItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("docStatBtnItem.ImageOptions.SvgImage")));
+            this.docStatBtnItem.Name = ("docStatBtnItem");
+            this.docStatBtnItem.ItemClick += (this.DocStatBtnItem_ItemClick);
             // 
             // barLangBtnItem
             // 
-            resources.ApplyResources(barLangBtnItem, "barLangBtnItem");
-            barLangBtnItem.Id = 279;
-            barLangBtnItem.ImageOptions.ImageIndex = (int)resources.GetObject("barLangBtnItem.ImageOptions.ImageIndex");
-            barLangBtnItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("barLangBtnItem.ImageOptions.LargeImageIndex");
-            barLangBtnItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barLangBtnItem.ImageOptions.SvgImage");
-            barLangBtnItem.Name = "barLangBtnItem";
-            barLangBtnItem.ItemClick += spellOptionsItem_ItemClick;
+            resources.ApplyResources(this.barLangBtnItem, "barLangBtnItem");
+            this.barLangBtnItem.Id = (279);
+            this.barLangBtnItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barLangBtnItem.ImageOptions.ImageIndex")));
+            this.barLangBtnItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barLangBtnItem.ImageOptions.LargeImageIndex")));
+            this.barLangBtnItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barLangBtnItem.ImageOptions.SvgImage")));
+            this.barLangBtnItem.Name = ("barLangBtnItem");
+            this.barLangBtnItem.ItemClick += (this.spellOptionsItem_ItemClick);
             // 
             // zoomBarEditItem
             // 
-            resources.ApplyResources(zoomBarEditItem, "zoomBarEditItem");
-            zoomBarEditItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            zoomBarEditItem.Edit = repositoryItemZoomTrackBar1;
-            zoomBarEditItem.EditValue = "100";
-            zoomBarEditItem.Id = 280;
-            zoomBarEditItem.ImageOptions.ImageIndex = (int)resources.GetObject("zoomBarEditItem.ImageOptions.ImageIndex");
-            zoomBarEditItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("zoomBarEditItem.ImageOptions.LargeImageIndex");
-            zoomBarEditItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("zoomBarEditItem.ImageOptions.SvgImage");
-            zoomBarEditItem.MergeOrder = 6;
-            zoomBarEditItem.Name = "zoomBarEditItem";
-            zoomBarEditItem.EditValueChanged += ZoomBarEditItem_EditValueChanged;
+            resources.ApplyResources(this.zoomBarEditItem, "zoomBarEditItem");
+            this.zoomBarEditItem.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.zoomBarEditItem.Edit = (this.repositoryItemZoomTrackBar1);
+            this.zoomBarEditItem.EditValue = ("100");
+            this.zoomBarEditItem.Id = (280);
+            this.zoomBarEditItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("zoomBarEditItem.ImageOptions.ImageIndex")));
+            this.zoomBarEditItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("zoomBarEditItem.ImageOptions.LargeImageIndex")));
+            this.zoomBarEditItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomBarEditItem.ImageOptions.SvgImage")));
+            this.zoomBarEditItem.MergeOrder = (6);
+            this.zoomBarEditItem.Name = ("zoomBarEditItem");
+            this.zoomBarEditItem.EditValueChanged += (this.ZoomBarEditItem_EditValueChanged);
             // 
             // repositoryItemZoomTrackBar1
             // 
-            repositoryItemZoomTrackBar1.AllowUseMiddleValue = true;
-            repositoryItemZoomTrackBar1.LargeChange = 50;
-            repositoryItemZoomTrackBar1.Maximum = 500;
-            repositoryItemZoomTrackBar1.Middle = 100;
-            repositoryItemZoomTrackBar1.Minimum = 10;
-            repositoryItemZoomTrackBar1.Name = "repositoryItemZoomTrackBar1";
-            resources.ApplyResources(repositoryItemZoomTrackBar1, "repositoryItemZoomTrackBar1");
+            this.repositoryItemZoomTrackBar1.AllowUseMiddleValue = (true);
+            this.repositoryItemZoomTrackBar1.LargeChange = (50);
+            this.repositoryItemZoomTrackBar1.Maximum = (500);
+            this.repositoryItemZoomTrackBar1.Middle = (100);
+            this.repositoryItemZoomTrackBar1.Minimum = (10);
+            this.repositoryItemZoomTrackBar1.Name = ("repositoryItemZoomTrackBar1");
+            resources.ApplyResources(this.repositoryItemZoomTrackBar1, "repositoryItemZoomTrackBar1");
             // 
             // autoSpellingItem
             // 
-            resources.ApplyResources(autoSpellingItem, "autoSpellingItem");
-            autoSpellingItem.Id = 284;
-            autoSpellingItem.ImageOptions.ImageIndex = (int)resources.GetObject("autoSpellingItem.ImageOptions.ImageIndex");
-            autoSpellingItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("autoSpellingItem.ImageOptions.LargeImageIndex");
-            autoSpellingItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("autoSpellingItem.ImageOptions.SvgImage");
-            autoSpellingItem.Name = "autoSpellingItem";
-            autoSpellingItem.CheckedChanged += AutoSpellingItem_CheckedChanged;
+            resources.ApplyResources(this.autoSpellingItem, "autoSpellingItem");
+            this.autoSpellingItem.Id = (284);
+            this.autoSpellingItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("autoSpellingItem.ImageOptions.ImageIndex")));
+            this.autoSpellingItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("autoSpellingItem.ImageOptions.LargeImageIndex")));
+            this.autoSpellingItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("autoSpellingItem.ImageOptions.SvgImage")));
+            this.autoSpellingItem.Name = ("autoSpellingItem");
+            this.autoSpellingItem.CheckedChanged += (this.AutoSpellingItem_CheckedChanged);
             // 
             // spellOptionsItem
             // 
-            resources.ApplyResources(spellOptionsItem, "spellOptionsItem");
-            spellOptionsItem.Id = 285;
-            spellOptionsItem.ImageOptions.ImageIndex = (int)resources.GetObject("spellOptionsItem.ImageOptions.ImageIndex");
-            spellOptionsItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("spellOptionsItem.ImageOptions.LargeImageIndex");
-            spellOptionsItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("spellOptionsItem.ImageOptions.SvgImage");
-            spellOptionsItem.Name = "spellOptionsItem";
-            spellOptionsItem.ItemClick += spellOptionsItem_ItemClick;
+            resources.ApplyResources(this.spellOptionsItem, "spellOptionsItem");
+            this.spellOptionsItem.Id = (285);
+            this.spellOptionsItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("spellOptionsItem.ImageOptions.ImageIndex")));
+            this.spellOptionsItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("spellOptionsItem.ImageOptions.LargeImageIndex")));
+            this.spellOptionsItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("spellOptionsItem.ImageOptions.SvgImage")));
+            this.spellOptionsItem.Name = ("spellOptionsItem");
+            this.spellOptionsItem.ItemClick += (this.spellOptionsItem_ItemClick);
             // 
             // zoomResetItem
             // 
-            resources.ApplyResources(zoomResetItem, "zoomResetItem");
-            zoomResetItem.Id = 286;
-            zoomResetItem.ImageOptions.ImageIndex = (int)resources.GetObject("zoomResetItem.ImageOptions.ImageIndex");
-            zoomResetItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("zoomResetItem.ImageOptions.LargeImageIndex");
-            zoomResetItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("zoomResetItem.ImageOptions.SvgImage");
-            zoomResetItem.Name = "zoomResetItem";
-            zoomResetItem.ItemClick += ZoomResetItem_ItemClick;
+            resources.ApplyResources(this.zoomResetItem, "zoomResetItem");
+            this.zoomResetItem.Id = (286);
+            this.zoomResetItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("zoomResetItem.ImageOptions.ImageIndex")));
+            this.zoomResetItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("zoomResetItem.ImageOptions.LargeImageIndex")));
+            this.zoomResetItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomResetItem.ImageOptions.SvgImage")));
+            this.zoomResetItem.Name = ("zoomResetItem");
+            this.zoomResetItem.ItemClick += (this.ZoomResetItem_ItemClick);
             // 
             // zoomBarResetItem
             // 
-            resources.ApplyResources(zoomBarResetItem, "zoomBarResetItem");
-            zoomBarResetItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            zoomBarResetItem.Id = 287;
-            zoomBarResetItem.ImageOptions.ImageIndex = (int)resources.GetObject("zoomBarResetItem.ImageOptions.ImageIndex");
-            zoomBarResetItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("zoomBarResetItem.ImageOptions.LargeImageIndex");
-            zoomBarResetItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("zoomBarResetItem.ImageOptions.SvgImage");
-            zoomBarResetItem.MergeOrder = 5;
-            zoomBarResetItem.Name = "zoomBarResetItem";
-            zoomBarResetItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            zoomBarResetItem.ItemClick += ZoomResetItem_ItemClick;
+            resources.ApplyResources(this.zoomBarResetItem, "zoomBarResetItem");
+            this.zoomBarResetItem.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.zoomBarResetItem.Id = (287);
+            this.zoomBarResetItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("zoomBarResetItem.ImageOptions.ImageIndex")));
+            this.zoomBarResetItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("zoomBarResetItem.ImageOptions.LargeImageIndex")));
+            this.zoomBarResetItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("zoomBarResetItem.ImageOptions.SvgImage")));
+            this.zoomBarResetItem.MergeOrder = (5);
+            this.zoomBarResetItem.Name = ("zoomBarResetItem");
+            this.zoomBarResetItem.RibbonStyle = (global::DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText);
+            this.zoomBarResetItem.ItemClick += (this.ZoomResetItem_ItemClick);
             // 
             // exportBarButton
             // 
-            resources.ApplyResources(exportBarButton, "exportBarButton");
-            exportBarButton.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            exportBarButton.DropDownControl = exportPopupMenu;
-            exportBarButton.Id = 289;
-            exportBarButton.ImageOptions.ImageIndex = (int)resources.GetObject("exportBarButton.ImageOptions.ImageIndex");
-            exportBarButton.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportBarButton.ImageOptions.LargeImageIndex");
-            exportBarButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportBarButton.ImageOptions.SvgImage");
-            exportBarButton.Name = "exportBarButton";
-            exportBarButton.RememberLastCommand = true;
+            resources.ApplyResources(this.exportBarButton, "exportBarButton");
+            this.exportBarButton.ButtonStyle = (global::DevExpress.XtraBars.BarButtonStyle.DropDown);
+            this.exportBarButton.DropDownControl = (this.exportPopupMenu);
+            this.exportBarButton.Id = (289);
+            this.exportBarButton.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportBarButton.ImageOptions.ImageIndex")));
+            this.exportBarButton.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportBarButton.ImageOptions.LargeImageIndex")));
+            this.exportBarButton.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportBarButton.ImageOptions.SvgImage")));
+            this.exportBarButton.Name = ("exportBarButton");
+            this.exportBarButton.RememberLastCommand = (true);
             // 
             // exportPopupMenu
             // 
-            exportPopupMenu.ItemLinks.Add(exportPDFPopupMenuItem);
-            exportPopupMenu.ItemLinks.Add(exportEBUPopupMenuItem);
-            exportPopupMenu.ItemLinks.Add(exportImagePopupMenuItem);
-            exportPopupMenu.ItemLinks.Add(exportHTMLPopupMenuItem);
-            exportPopupMenu.ItemLinks.Add(exportMHTPopupMenuItem);
-            exportPopupMenu.MenuDrawMode = DevExpress.XtraBars.MenuDrawMode.LargeImagesTextDescription;
-            exportPopupMenu.Name = "exportPopupMenu";
-            exportPopupMenu.Ribbon = DocRibbon;
+            this.exportPopupMenu.ItemLinks.Add(this.exportPDFPopupMenuItem);
+            this.exportPopupMenu.ItemLinks.Add(this.exportEBUPopupMenuItem);
+            this.exportPopupMenu.ItemLinks.Add(this.exportImagePopupMenuItem);
+            this.exportPopupMenu.ItemLinks.Add(this.exportHTMLPopupMenuItem);
+            this.exportPopupMenu.ItemLinks.Add(this.exportMHTPopupMenuItem);
+            this.exportPopupMenu.MenuDrawMode = (global::DevExpress.XtraBars.MenuDrawMode.LargeImagesTextDescription);
+            this.exportPopupMenu.Name = ("exportPopupMenu");
+            this.exportPopupMenu.Ribbon = (this.DocRibbon);
             // 
             // exportPDFPopupMenuItem
             // 
-            resources.ApplyResources(exportPDFPopupMenuItem, "exportPDFPopupMenuItem");
-            exportPDFPopupMenuItem.Id = 291;
-            exportPDFPopupMenuItem.ImageOptions.ImageIndex = (int)resources.GetObject("exportPDFPopupMenuItem.ImageOptions.ImageIndex");
-            exportPDFPopupMenuItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportPDFPopupMenuItem.ImageOptions.LargeImageIndex");
-            exportPDFPopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportPDFPopupMenuItem.ImageOptions.SvgImage");
-            exportPDFPopupMenuItem.Name = "exportPDFPopupMenuItem";
-            exportPDFPopupMenuItem.Tag = "PDF";
+            resources.ApplyResources(this.exportPDFPopupMenuItem, "exportPDFPopupMenuItem");
+            this.exportPDFPopupMenuItem.Id = (291);
+            this.exportPDFPopupMenuItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportPDFPopupMenuItem.ImageOptions.ImageIndex")));
+            this.exportPDFPopupMenuItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportPDFPopupMenuItem.ImageOptions.LargeImageIndex")));
+            this.exportPDFPopupMenuItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportPDFPopupMenuItem.ImageOptions.SvgImage")));
+            this.exportPDFPopupMenuItem.Name = ("exportPDFPopupMenuItem");
+            this.exportPDFPopupMenuItem.Tag = ("PDF");
             // 
             // exportEBUPopupMenuItem
             // 
-            resources.ApplyResources(exportEBUPopupMenuItem, "exportEBUPopupMenuItem");
-            exportEBUPopupMenuItem.Id = 292;
-            exportEBUPopupMenuItem.ImageOptions.ImageIndex = (int)resources.GetObject("exportEBUPopupMenuItem.ImageOptions.ImageIndex");
-            exportEBUPopupMenuItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportEBUPopupMenuItem.ImageOptions.LargeImageIndex");
-            exportEBUPopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportEBUPopupMenuItem.ImageOptions.SvgImage");
-            exportEBUPopupMenuItem.Name = "exportEBUPopupMenuItem";
-            exportEBUPopupMenuItem.Tag = "EPUB";
+            resources.ApplyResources(this.exportEBUPopupMenuItem, "exportEBUPopupMenuItem");
+            this.exportEBUPopupMenuItem.Id = (292);
+            this.exportEBUPopupMenuItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportEBUPopupMenuItem.ImageOptions.ImageIndex")));
+            this.exportEBUPopupMenuItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportEBUPopupMenuItem.ImageOptions.LargeImageIndex")));
+            this.exportEBUPopupMenuItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportEBUPopupMenuItem.ImageOptions.SvgImage")));
+            this.exportEBUPopupMenuItem.Name = ("exportEBUPopupMenuItem");
+            this.exportEBUPopupMenuItem.Tag = ("EPUB");
             // 
             // exportImagePopupMenuItem
             // 
-            resources.ApplyResources(exportImagePopupMenuItem, "exportImagePopupMenuItem");
-            exportImagePopupMenuItem.Id = 293;
-            exportImagePopupMenuItem.ImageOptions.ImageIndex = (int)resources.GetObject("exportImagePopupMenuItem.ImageOptions.ImageIndex");
-            exportImagePopupMenuItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportImagePopupMenuItem.ImageOptions.LargeImageIndex");
-            exportImagePopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportImagePopupMenuItem.ImageOptions.SvgImage");
-            exportImagePopupMenuItem.Name = "exportImagePopupMenuItem";
-            exportImagePopupMenuItem.Tag = "Image";
+            resources.ApplyResources(this.exportImagePopupMenuItem, "exportImagePopupMenuItem");
+            this.exportImagePopupMenuItem.Id = (293);
+            this.exportImagePopupMenuItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportImagePopupMenuItem.ImageOptions.ImageIndex")));
+            this.exportImagePopupMenuItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportImagePopupMenuItem.ImageOptions.LargeImageIndex")));
+            this.exportImagePopupMenuItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportImagePopupMenuItem.ImageOptions.SvgImage")));
+            this.exportImagePopupMenuItem.Name = ("exportImagePopupMenuItem");
+            this.exportImagePopupMenuItem.Tag = ("Image");
             // 
             // exportHTMLPopupMenuItem
             // 
-            resources.ApplyResources(exportHTMLPopupMenuItem, "exportHTMLPopupMenuItem");
-            exportHTMLPopupMenuItem.Id = 294;
-            exportHTMLPopupMenuItem.ImageOptions.ImageIndex = (int)resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.ImageIndex");
-            exportHTMLPopupMenuItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.LargeImageIndex");
-            exportHTMLPopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.SvgImage");
-            exportHTMLPopupMenuItem.Name = "exportHTMLPopupMenuItem";
-            exportHTMLPopupMenuItem.Tag = "HTML";
+            resources.ApplyResources(this.exportHTMLPopupMenuItem, "exportHTMLPopupMenuItem");
+            this.exportHTMLPopupMenuItem.Id = (294);
+            this.exportHTMLPopupMenuItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.ImageIndex")));
+            this.exportHTMLPopupMenuItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.LargeImageIndex")));
+            this.exportHTMLPopupMenuItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportHTMLPopupMenuItem.ImageOptions.SvgImage")));
+            this.exportHTMLPopupMenuItem.Name = ("exportHTMLPopupMenuItem");
+            this.exportHTMLPopupMenuItem.Tag = ("HTML");
             // 
             // exportMHTPopupMenuItem
             // 
-            resources.ApplyResources(exportMHTPopupMenuItem, "exportMHTPopupMenuItem");
-            exportMHTPopupMenuItem.Id = 295;
-            exportMHTPopupMenuItem.ImageOptions.ImageIndex = (int)resources.GetObject("exportMHTPopupMenuItem.ImageOptions.ImageIndex");
-            exportMHTPopupMenuItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("exportMHTPopupMenuItem.ImageOptions.LargeImageIndex");
-            exportMHTPopupMenuItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("exportMHTPopupMenuItem.ImageOptions.SvgImage");
-            exportMHTPopupMenuItem.Name = "exportMHTPopupMenuItem";
-            exportMHTPopupMenuItem.Tag = "MHT";
+            resources.ApplyResources(this.exportMHTPopupMenuItem, "exportMHTPopupMenuItem");
+            this.exportMHTPopupMenuItem.Id = (295);
+            this.exportMHTPopupMenuItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("exportMHTPopupMenuItem.ImageOptions.ImageIndex")));
+            this.exportMHTPopupMenuItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("exportMHTPopupMenuItem.ImageOptions.LargeImageIndex")));
+            this.exportMHTPopupMenuItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("exportMHTPopupMenuItem.ImageOptions.SvgImage")));
+            this.exportMHTPopupMenuItem.Name = ("exportMHTPopupMenuItem");
+            this.exportMHTPopupMenuItem.Tag = ("MHT");
             // 
             // mailBarButton
             // 
-            resources.ApplyResources(mailBarButton, "mailBarButton");
-            mailBarButton.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            mailBarButton.Id = 290;
-            mailBarButton.ImageOptions.ImageIndex = (int)resources.GetObject("mailBarButton.ImageOptions.ImageIndex");
-            mailBarButton.ImageOptions.LargeImageIndex = (int)resources.GetObject("mailBarButton.ImageOptions.LargeImageIndex");
-            mailBarButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("mailBarButton.ImageOptions.SvgImage");
-            mailBarButton.Name = "mailBarButton";
+            resources.ApplyResources(this.mailBarButton, "mailBarButton");
+            this.mailBarButton.ButtonStyle = (global::DevExpress.XtraBars.BarButtonStyle.DropDown);
+            this.mailBarButton.Id = (290);
+            this.mailBarButton.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("mailBarButton.ImageOptions.ImageIndex")));
+            this.mailBarButton.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("mailBarButton.ImageOptions.LargeImageIndex")));
+            this.mailBarButton.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("mailBarButton.ImageOptions.SvgImage")));
+            this.mailBarButton.Name = ("mailBarButton");
             // 
             // quickPrintItem1
             // 
-            resources.ApplyResources(quickPrintItem1, "quickPrintItem1");
-            quickPrintItem1.Id = 296;
-            quickPrintItem1.ImageOptions.ImageIndex = (int)resources.GetObject("quickPrintItem1.ImageOptions.ImageIndex");
-            quickPrintItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("quickPrintItem1.ImageOptions.LargeImageIndex");
-            quickPrintItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("quickPrintItem1.ImageOptions.SvgImage");
-            quickPrintItem1.MergeOrder = 8;
-            quickPrintItem1.Name = "quickPrintItem1";
+            resources.ApplyResources(this.quickPrintItem1, "quickPrintItem1");
+            this.quickPrintItem1.Id = (296);
+            this.quickPrintItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("quickPrintItem1.ImageOptions.ImageIndex")));
+            this.quickPrintItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("quickPrintItem1.ImageOptions.LargeImageIndex")));
+            this.quickPrintItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("quickPrintItem1.ImageOptions.SvgImage")));
+            this.quickPrintItem1.MergeOrder = (8);
+            this.quickPrintItem1.Name = ("quickPrintItem1");
             // 
             // barButtonGroup2
             // 
-            resources.ApplyResources(barButtonGroup2, "barButtonGroup2");
-            barButtonGroup2.Id = 297;
-            barButtonGroup2.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup2.ImageOptions.ImageIndex");
-            barButtonGroup2.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup2.ImageOptions.LargeImageIndex");
-            barButtonGroup2.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup2.ImageOptions.SvgImage");
-            barButtonGroup2.ItemLinks.Add(toggleFontBoldItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontItalicItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontUnderlineItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontDoubleUnderlineItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontStrikeoutItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontDoubleStrikeoutItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontSuperscriptItem1);
-            barButtonGroup2.ItemLinks.Add(toggleFontSubscriptItem1);
-            barButtonGroup2.Name = "barButtonGroup2";
-            barButtonGroup2.Tag = "{433DA7F0-03E2-4650-9DB5-66DD92D16E39}";
+            resources.ApplyResources(this.barButtonGroup2, "barButtonGroup2");
+            this.barButtonGroup2.Id = (297);
+            this.barButtonGroup2.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup2.ImageOptions.ImageIndex")));
+            this.barButtonGroup2.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup2.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup2.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup2.ImageOptions.SvgImage")));
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontBoldItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontItalicItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontUnderlineItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontDoubleUnderlineItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontStrikeoutItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontDoubleStrikeoutItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontSuperscriptItem1);
+            this.barButtonGroup2.ItemLinks.Add(this.toggleFontSubscriptItem1);
+            this.barButtonGroup2.Name = ("barButtonGroup2");
+            this.barButtonGroup2.Tag = ("{433DA7F0-03E2-4650-9DB5-66DD92D16E39}");
             // 
             // barButtonGroup8
             // 
-            resources.ApplyResources(barButtonGroup8, "barButtonGroup8");
-            barButtonGroup8.Id = 298;
-            barButtonGroup8.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup8.ImageOptions.ImageIndex");
-            barButtonGroup8.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup8.ImageOptions.LargeImageIndex");
-            barButtonGroup8.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup8.ImageOptions.SvgImage");
-            barButtonGroup8.ItemLinks.Add(changeFontNameItem1, "FF");
-            barButtonGroup8.ItemLinks.Add(changeFontSizeItem1);
-            barButtonGroup8.ItemLinks.Add(fontSizeIncreaseItem1, "FG");
-            barButtonGroup8.ItemLinks.Add(fontSizeDecreaseItem1, "FK");
-            barButtonGroup8.Name = "barButtonGroup8";
-            barButtonGroup8.Tag = "{97BBE334-159B-44d9-A168-0411957565E8}";
+            resources.ApplyResources(this.barButtonGroup8, "barButtonGroup8");
+            this.barButtonGroup8.Id = (298);
+            this.barButtonGroup8.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup8.ImageOptions.ImageIndex")));
+            this.barButtonGroup8.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup8.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup8.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup8.ImageOptions.SvgImage")));
+            this.barButtonGroup8.ItemLinks.Add(this.changeFontNameItem1, "FF");
+            this.barButtonGroup8.ItemLinks.Add(this.changeFontSizeItem1);
+            this.barButtonGroup8.ItemLinks.Add(this.fontSizeIncreaseItem1, "FG");
+            this.barButtonGroup8.ItemLinks.Add(this.fontSizeDecreaseItem1, "FK");
+            this.barButtonGroup8.Name = ("barButtonGroup8");
+            this.barButtonGroup8.Tag = ("{97BBE334-159B-44d9-A168-0411957565E8}");
             // 
             // barButtonGroup9
             // 
-            resources.ApplyResources(barButtonGroup9, "barButtonGroup9");
-            barButtonGroup9.Id = 299;
-            barButtonGroup9.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup9.ImageOptions.ImageIndex");
-            barButtonGroup9.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup9.ImageOptions.LargeImageIndex");
-            barButtonGroup9.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup9.ImageOptions.SvgImage");
-            barButtonGroup9.ItemLinks.Add(toggleFontBoldItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontItalicItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontUnderlineItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontDoubleUnderlineItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontStrikeoutItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontDoubleStrikeoutItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontSuperscriptItem1);
-            barButtonGroup9.ItemLinks.Add(toggleFontSubscriptItem1);
-            barButtonGroup9.Name = "barButtonGroup9";
-            barButtonGroup9.Tag = "{433DA7F0-03E2-4650-9DB5-66DD92D16E39}";
+            resources.ApplyResources(this.barButtonGroup9, "barButtonGroup9");
+            this.barButtonGroup9.Id = (299);
+            this.barButtonGroup9.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup9.ImageOptions.ImageIndex")));
+            this.barButtonGroup9.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup9.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup9.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup9.ImageOptions.SvgImage")));
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontBoldItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontItalicItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontUnderlineItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontDoubleUnderlineItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontStrikeoutItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontDoubleStrikeoutItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontSuperscriptItem1);
+            this.barButtonGroup9.ItemLinks.Add(this.toggleFontSubscriptItem1);
+            this.barButtonGroup9.Name = ("barButtonGroup9");
+            this.barButtonGroup9.Tag = ("{433DA7F0-03E2-4650-9DB5-66DD92D16E39}");
             // 
             // barButtonGroup10
             // 
-            resources.ApplyResources(barButtonGroup10, "barButtonGroup10");
-            barButtonGroup10.Id = 300;
-            barButtonGroup10.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup10.ImageOptions.ImageIndex");
-            barButtonGroup10.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup10.ImageOptions.LargeImageIndex");
-            barButtonGroup10.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup10.ImageOptions.SvgImage");
-            barButtonGroup10.ItemLinks.Add(changeFontColorItem1, "FC");
-            barButtonGroup10.ItemLinks.Add(changeFontHighlightColorItem1, "I");
-            barButtonGroup10.Name = "barButtonGroup10";
-            barButtonGroup10.Tag = "{DF8C5334-EDE3-47c9-A42C-FE9A9247E180}";
+            resources.ApplyResources(this.barButtonGroup10, "barButtonGroup10");
+            this.barButtonGroup10.Id = (300);
+            this.barButtonGroup10.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup10.ImageOptions.ImageIndex")));
+            this.barButtonGroup10.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup10.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup10.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup10.ImageOptions.SvgImage")));
+            this.barButtonGroup10.ItemLinks.Add(this.changeFontColorItem1, "FC");
+            this.barButtonGroup10.ItemLinks.Add(this.changeFontHighlightColorItem1, "I");
+            this.barButtonGroup10.Name = ("barButtonGroup10");
+            this.barButtonGroup10.Tag = ("{DF8C5334-EDE3-47c9-A42C-FE9A9247E180}");
             // 
             // barButtonGroup11
             // 
-            resources.ApplyResources(barButtonGroup11, "barButtonGroup11");
-            barButtonGroup11.Id = 301;
-            barButtonGroup11.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup11.ImageOptions.ImageIndex");
-            barButtonGroup11.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup11.ImageOptions.LargeImageIndex");
-            barButtonGroup11.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup11.ImageOptions.SvgImage");
-            barButtonGroup11.ItemLinks.Add(toggleBulletedListItem1, "U");
-            barButtonGroup11.ItemLinks.Add(toggleNumberingListItem1, "N");
-            barButtonGroup11.ItemLinks.Add(toggleMultiLevelListItem1, "M");
-            barButtonGroup11.ItemLinks.Add(rtlToggleBulletedListItem1, "U");
-            barButtonGroup11.ItemLinks.Add(rtlToggleNumberingListItem1, "N");
-            barButtonGroup11.ItemLinks.Add(rtlToggleMultiLevelListItem1, "M");
-            barButtonGroup11.Name = "barButtonGroup11";
-            barButtonGroup11.Tag = "{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}";
+            resources.ApplyResources(this.barButtonGroup11, "barButtonGroup11");
+            this.barButtonGroup11.Id = (301);
+            this.barButtonGroup11.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup11.ImageOptions.ImageIndex")));
+            this.barButtonGroup11.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup11.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup11.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup11.ImageOptions.SvgImage")));
+            this.barButtonGroup11.ItemLinks.Add(this.toggleBulletedListItem1, "U");
+            this.barButtonGroup11.ItemLinks.Add(this.toggleNumberingListItem1, "N");
+            this.barButtonGroup11.ItemLinks.Add(this.toggleMultiLevelListItem1, "M");
+            this.barButtonGroup11.ItemLinks.Add(this.rtlToggleBulletedListItem1, "U");
+            this.barButtonGroup11.ItemLinks.Add(this.rtlToggleNumberingListItem1, "N");
+            this.barButtonGroup11.ItemLinks.Add(this.rtlToggleMultiLevelListItem1, "M");
+            this.barButtonGroup11.Name = ("barButtonGroup11");
+            this.barButtonGroup11.Tag = ("{0B3A7A43-3079-4ce0-83A8-3789F5F6DC9F}");
             // 
             // barButtonGroup12
             // 
-            resources.ApplyResources(barButtonGroup12, "barButtonGroup12");
-            barButtonGroup12.Id = 302;
-            barButtonGroup12.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup12.ImageOptions.ImageIndex");
-            barButtonGroup12.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup12.ImageOptions.LargeImageIndex");
-            barButtonGroup12.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup12.ImageOptions.SvgImage");
-            barButtonGroup12.ItemLinks.Add(decreaseIndentItem1, "AO");
-            barButtonGroup12.ItemLinks.Add(increaseIndentItem1, "AI");
-            barButtonGroup12.ItemLinks.Add(rtlDecreaseIndentItem1, "AO");
-            barButtonGroup12.ItemLinks.Add(rtlIncreaseIndentItem1, "AI");
-            barButtonGroup12.ItemLinks.Add(toggleParagraphLeftToRightItem1);
-            barButtonGroup12.ItemLinks.Add(toggleParagraphRightToLeftItem1);
-            barButtonGroup12.ItemLinks.Add(toggleShowWhitespaceItem1);
-            barButtonGroup12.Name = "barButtonGroup12";
-            barButtonGroup12.Tag = "{4747D5AB-2BEB-4ea6-9A1D-8E4FB36F1B40}";
+            resources.ApplyResources(this.barButtonGroup12, "barButtonGroup12");
+            this.barButtonGroup12.Id = (302);
+            this.barButtonGroup12.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup12.ImageOptions.ImageIndex")));
+            this.barButtonGroup12.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup12.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup12.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup12.ImageOptions.SvgImage")));
+            this.barButtonGroup12.ItemLinks.Add(this.decreaseIndentItem1, "AO");
+            this.barButtonGroup12.ItemLinks.Add(this.increaseIndentItem1, "AI");
+            this.barButtonGroup12.ItemLinks.Add(this.rtlDecreaseIndentItem1, "AO");
+            this.barButtonGroup12.ItemLinks.Add(this.rtlIncreaseIndentItem1, "AI");
+            this.barButtonGroup12.ItemLinks.Add(this.toggleParagraphLeftToRightItem1);
+            this.barButtonGroup12.ItemLinks.Add(this.toggleParagraphRightToLeftItem1);
+            this.barButtonGroup12.ItemLinks.Add(this.toggleShowWhitespaceItem1);
+            this.barButtonGroup12.Name = ("barButtonGroup12");
+            this.barButtonGroup12.Tag = ("{4747D5AB-2BEB-4ea6-9A1D-8E4FB36F1B40}");
             // 
             // barButtonGroup13
             // 
-            resources.ApplyResources(barButtonGroup13, "barButtonGroup13");
-            barButtonGroup13.Id = 303;
-            barButtonGroup13.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup13.ImageOptions.ImageIndex");
-            barButtonGroup13.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup13.ImageOptions.LargeImageIndex");
-            barButtonGroup13.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup13.ImageOptions.SvgImage");
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentLeftItem1, "AL");
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentCenterItem1, "AC");
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentRightItem1, "AR");
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentJustifyItem1, "AJ");
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentArabicJustifyGroupItem1);
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentDistributeItem1);
-            barButtonGroup13.ItemLinks.Add(toggleParagraphAlignmentThaiDistributeItem1);
-            barButtonGroup13.Name = "barButtonGroup13";
-            barButtonGroup13.Tag = "{8E89E775-996E-49a0-AADA-DE338E34732E}";
+            resources.ApplyResources(this.barButtonGroup13, "barButtonGroup13");
+            this.barButtonGroup13.Id = (303);
+            this.barButtonGroup13.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup13.ImageOptions.ImageIndex")));
+            this.barButtonGroup13.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup13.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup13.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup13.ImageOptions.SvgImage")));
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentLeftItem1, "AL");
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentCenterItem1, "AC");
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentRightItem1, "AR");
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentJustifyItem1, "AJ");
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentArabicJustifyGroupItem1);
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentDistributeItem1);
+            this.barButtonGroup13.ItemLinks.Add(this.toggleParagraphAlignmentThaiDistributeItem1);
+            this.barButtonGroup13.Name = ("barButtonGroup13");
+            this.barButtonGroup13.Tag = ("{8E89E775-996E-49a0-AADA-DE338E34732E}");
             // 
             // barButtonGroup14
             // 
-            resources.ApplyResources(barButtonGroup14, "barButtonGroup14");
-            barButtonGroup14.Id = 304;
-            barButtonGroup14.ImageOptions.ImageIndex = (int)resources.GetObject("barButtonGroup14.ImageOptions.ImageIndex");
-            barButtonGroup14.ImageOptions.LargeImageIndex = (int)resources.GetObject("barButtonGroup14.ImageOptions.LargeImageIndex");
-            barButtonGroup14.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barButtonGroup14.ImageOptions.SvgImage");
-            barButtonGroup14.ItemLinks.Add(changeParagraphLineSpacingItem1, "K");
-            barButtonGroup14.ItemLinks.Add(changeParagraphBackColorItem1, "H");
-            barButtonGroup14.Name = "barButtonGroup14";
-            barButtonGroup14.Tag = "{9A8DEAD8-3890-4857-A395-EC625FD02217}";
+            resources.ApplyResources(this.barButtonGroup14, "barButtonGroup14");
+            this.barButtonGroup14.Id = (304);
+            this.barButtonGroup14.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup14.ImageOptions.ImageIndex")));
+            this.barButtonGroup14.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barButtonGroup14.ImageOptions.LargeImageIndex")));
+            this.barButtonGroup14.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barButtonGroup14.ImageOptions.SvgImage")));
+            this.barButtonGroup14.ItemLinks.Add(this.changeParagraphLineSpacingItem1, "K");
+            this.barButtonGroup14.ItemLinks.Add(this.changeParagraphBackColorItem1, "H");
+            this.barButtonGroup14.Name = ("barButtonGroup14");
+            this.barButtonGroup14.Tag = ("{9A8DEAD8-3890-4857-A395-EC625FD02217}");
             // 
             // galleryChangeTableStyleItem2
             // 
-            resources.ApplyResources(galleryChangeTableStyleItem2, "galleryChangeTableStyleItem2");
-            galleryChangeTableStyleItem2.CurrentItem = null;
-            galleryChangeTableStyleItem2.DeleteItemLink = null;
+            resources.ApplyResources(this.galleryChangeTableStyleItem2, "galleryChangeTableStyleItem2");
+            this.galleryChangeTableStyleItem2.CurrentItem = (null);
+            this.galleryChangeTableStyleItem2.DeleteItemLink = (null);
             // 
             // 
             // 
-            galleryChangeTableStyleItem2.Gallery.ColumnCount = 3;
-            galleryChangeTableStyleItem2.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup5 });
-            galleryChangeTableStyleItem2.Gallery.ImageSize = new System.Drawing.Size(97, 71);
-            galleryChangeTableStyleItem2.Id = 305;
-            galleryChangeTableStyleItem2.ImageOptions.ImageIndex = (int)resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.ImageIndex");
-            galleryChangeTableStyleItem2.ImageOptions.LargeImageIndex = (int)resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.LargeImageIndex");
-            galleryChangeTableStyleItem2.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.SvgImage");
-            galleryChangeTableStyleItem2.ModifyItemLink = null;
-            galleryChangeTableStyleItem2.Name = "galleryChangeTableStyleItem2";
-            galleryChangeTableStyleItem2.NewItemLink = null;
-            galleryChangeTableStyleItem2.PopupGallery = null;
+            this.galleryChangeTableStyleItem2.Gallery.ColumnCount = (3);
+            this.galleryChangeTableStyleItem2.Gallery.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup2 });
+            this.galleryChangeTableStyleItem2.Gallery.ImageSize = (new global::System.Drawing.Size(97, 71));
+            this.galleryChangeTableStyleItem2.Id = (305);
+            this.galleryChangeTableStyleItem2.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.ImageIndex")));
+            this.galleryChangeTableStyleItem2.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.LargeImageIndex")));
+            this.galleryChangeTableStyleItem2.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("galleryChangeTableStyleItem2.ImageOptions.SvgImage")));
+            this.galleryChangeTableStyleItem2.ModifyItemLink = (null);
+            this.galleryChangeTableStyleItem2.Name = ("galleryChangeTableStyleItem2");
+            this.galleryChangeTableStyleItem2.NewItemLink = (null);
+            this.galleryChangeTableStyleItem2.PopupGallery = (null);
             // 
             // barCurrLineItem
             // 
-            resources.ApplyResources(barCurrLineItem, "barCurrLineItem");
-            barCurrLineItem.Id = 306;
-            barCurrLineItem.ImageOptions.ImageIndex = (int)resources.GetObject("barCurrLineItem.ImageOptions.ImageIndex");
-            barCurrLineItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("barCurrLineItem.ImageOptions.LargeImageIndex");
-            barCurrLineItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barCurrLineItem.ImageOptions.SvgImage");
-            barCurrLineItem.Name = "barCurrLineItem";
+            resources.ApplyResources(this.barCurrLineItem, "barCurrLineItem");
+            this.barCurrLineItem.Id = (306);
+            this.barCurrLineItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barCurrLineItem.ImageOptions.ImageIndex")));
+            this.barCurrLineItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barCurrLineItem.ImageOptions.LargeImageIndex")));
+            this.barCurrLineItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barCurrLineItem.ImageOptions.SvgImage")));
+            this.barCurrLineItem.Name = ("barCurrLineItem");
             // 
             // barCurrColumnItem
             // 
-            resources.ApplyResources(barCurrColumnItem, "barCurrColumnItem");
-            barCurrColumnItem.Id = 307;
-            barCurrColumnItem.ImageOptions.ImageIndex = (int)resources.GetObject("barCurrColumnItem.ImageOptions.ImageIndex");
-            barCurrColumnItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("barCurrColumnItem.ImageOptions.LargeImageIndex");
-            barCurrColumnItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("barCurrColumnItem.ImageOptions.SvgImage");
-            barCurrColumnItem.Name = "barCurrColumnItem";
+            resources.ApplyResources(this.barCurrColumnItem, "barCurrColumnItem");
+            this.barCurrColumnItem.Id = (307);
+            this.barCurrColumnItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("barCurrColumnItem.ImageOptions.ImageIndex")));
+            this.barCurrColumnItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("barCurrColumnItem.ImageOptions.LargeImageIndex")));
+            this.barCurrColumnItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("barCurrColumnItem.ImageOptions.SvgImage")));
+            this.barCurrColumnItem.Name = ("barCurrColumnItem");
             // 
             // SimpleViewStatusItem
             // 
-            resources.ApplyResources(SimpleViewStatusItem, "SimpleViewStatusItem");
-            SimpleViewStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            SimpleViewStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
-            SimpleViewStatusItem.Id = 313;
-            SimpleViewStatusItem.ImageOptions.ImageIndex = (int)resources.GetObject("SimpleViewStatusItem.ImageOptions.ImageIndex");
-            SimpleViewStatusItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("SimpleViewStatusItem.ImageOptions.LargeImageIndex");
-            SimpleViewStatusItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("SimpleViewStatusItem.ImageOptions.SvgImage");
-            SimpleViewStatusItem.MergeOrder = 2;
-            SimpleViewStatusItem.Name = "SimpleViewStatusItem";
-            SimpleViewStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            SimpleViewStatusItem.DownChanged += ViewStatusItem_DownChanged;
+            resources.ApplyResources(this.SimpleViewStatusItem, "SimpleViewStatusItem");
+            this.SimpleViewStatusItem.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.SimpleViewStatusItem.ButtonStyle = (global::DevExpress.XtraBars.BarButtonStyle.Check);
+            this.SimpleViewStatusItem.Id = (313);
+            this.SimpleViewStatusItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("SimpleViewStatusItem.ImageOptions.ImageIndex")));
+            this.SimpleViewStatusItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("SimpleViewStatusItem.ImageOptions.LargeImageIndex")));
+            this.SimpleViewStatusItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("SimpleViewStatusItem.ImageOptions.SvgImage")));
+            this.SimpleViewStatusItem.MergeOrder = (2);
+            this.SimpleViewStatusItem.Name = ("SimpleViewStatusItem");
+            this.SimpleViewStatusItem.RibbonStyle = (global::DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText);
+            this.SimpleViewStatusItem.DownChanged += (this.ViewStatusItem_DownChanged);
             // 
             // DraftViewStatusItem
             // 
-            resources.ApplyResources(DraftViewStatusItem, "DraftViewStatusItem");
-            DraftViewStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            DraftViewStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
-            DraftViewStatusItem.Id = 314;
-            DraftViewStatusItem.ImageOptions.ImageIndex = (int)resources.GetObject("DraftViewStatusItem.ImageOptions.ImageIndex");
-            DraftViewStatusItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("DraftViewStatusItem.ImageOptions.LargeImageIndex");
-            DraftViewStatusItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DraftViewStatusItem.ImageOptions.SvgImage");
-            DraftViewStatusItem.MergeOrder = 3;
-            DraftViewStatusItem.Name = "DraftViewStatusItem";
-            DraftViewStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            DraftViewStatusItem.DownChanged += ViewStatusItem_DownChanged;
+            resources.ApplyResources(this.DraftViewStatusItem, "DraftViewStatusItem");
+            this.DraftViewStatusItem.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.DraftViewStatusItem.ButtonStyle = (global::DevExpress.XtraBars.BarButtonStyle.Check);
+            this.DraftViewStatusItem.Id = (314);
+            this.DraftViewStatusItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("DraftViewStatusItem.ImageOptions.ImageIndex")));
+            this.DraftViewStatusItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("DraftViewStatusItem.ImageOptions.LargeImageIndex")));
+            this.DraftViewStatusItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("DraftViewStatusItem.ImageOptions.SvgImage")));
+            this.DraftViewStatusItem.MergeOrder = (3);
+            this.DraftViewStatusItem.Name = ("DraftViewStatusItem");
+            this.DraftViewStatusItem.RibbonStyle = (global::DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText);
+            this.DraftViewStatusItem.DownChanged += (this.ViewStatusItem_DownChanged);
             // 
             // PrintLayoutStatusItem
             // 
-            resources.ApplyResources(PrintLayoutStatusItem, "PrintLayoutStatusItem");
-            PrintLayoutStatusItem.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
-            PrintLayoutStatusItem.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.Check;
-            PrintLayoutStatusItem.Id = 315;
-            PrintLayoutStatusItem.ImageOptions.ImageIndex = (int)resources.GetObject("PrintLayoutStatusItem.ImageOptions.ImageIndex");
-            PrintLayoutStatusItem.ImageOptions.LargeImageIndex = (int)resources.GetObject("PrintLayoutStatusItem.ImageOptions.LargeImageIndex");
-            PrintLayoutStatusItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("PrintLayoutStatusItem.ImageOptions.SvgImage");
-            PrintLayoutStatusItem.MergeOrder = 4;
-            PrintLayoutStatusItem.Name = "PrintLayoutStatusItem";
-            PrintLayoutStatusItem.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText;
-            PrintLayoutStatusItem.DownChanged += ViewStatusItem_DownChanged;
+            resources.ApplyResources(this.PrintLayoutStatusItem, "PrintLayoutStatusItem");
+            this.PrintLayoutStatusItem.Alignment = (global::DevExpress.XtraBars.BarItemLinkAlignment.Right);
+            this.PrintLayoutStatusItem.ButtonStyle = (global::DevExpress.XtraBars.BarButtonStyle.Check);
+            this.PrintLayoutStatusItem.Id = (315);
+            this.PrintLayoutStatusItem.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("PrintLayoutStatusItem.ImageOptions.ImageIndex")));
+            this.PrintLayoutStatusItem.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("PrintLayoutStatusItem.ImageOptions.LargeImageIndex")));
+            this.PrintLayoutStatusItem.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("PrintLayoutStatusItem.ImageOptions.SvgImage")));
+            this.PrintLayoutStatusItem.MergeOrder = (4);
+            this.PrintLayoutStatusItem.Name = ("PrintLayoutStatusItem");
+            this.PrintLayoutStatusItem.RibbonStyle = (global::DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithoutText);
+            this.PrintLayoutStatusItem.DownChanged += (this.ViewStatusItem_DownChanged);
             // 
             // headerToolsChildRibbonCategory
             // 
-            resources.ApplyResources(headerToolsChildRibbonCategory, "headerToolsChildRibbonCategory");
-            headerToolsChildRibbonCategory.Control = ChildRichEditControl;
-            headerToolsChildRibbonCategory.Name = "headerToolsChildRibbonCategory";
-            headerToolsChildRibbonCategory.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { headerFooterToolsDesignRibbonPage1 });
+            resources.ApplyResources(this.headerToolsChildRibbonCategory, "headerToolsChildRibbonCategory");
+            this.headerToolsChildRibbonCategory.Control = (this.ChildRichEditControl);
+            this.headerToolsChildRibbonCategory.Name = ("headerToolsChildRibbonCategory");
+            this.headerToolsChildRibbonCategory.Pages.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPage[] { this.headerFooterToolsDesignRibbonPage1 });
             // 
             // headerFooterToolsDesignRibbonPage1
             // 
-            resources.ApplyResources(headerFooterToolsDesignRibbonPage1, "headerFooterToolsDesignRibbonPage1");
-            headerFooterToolsDesignRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { headerFooterToolsDesignNavigationRibbonPageGroup1, headerFooterToolsDesignOptionsRibbonPageGroup1, headerFooterToolsDesignCloseRibbonPageGroup1 });
-            headerFooterToolsDesignRibbonPage1.Name = "headerFooterToolsDesignRibbonPage1";
-            headerFooterToolsDesignRibbonPage1.Visible = false;
+            resources.ApplyResources(this.headerFooterToolsDesignRibbonPage1, "headerFooterToolsDesignRibbonPage1");
+            this.headerFooterToolsDesignRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.headerFooterToolsDesignNavigationRibbonPageGroup1, this.headerFooterToolsDesignOptionsRibbonPageGroup1, this.headerFooterToolsDesignCloseRibbonPageGroup1 });
+            this.headerFooterToolsDesignRibbonPage1.Name = ("headerFooterToolsDesignRibbonPage1");
+            this.headerFooterToolsDesignRibbonPage1.Visible = (false);
             // 
             // headerFooterToolsDesignNavigationRibbonPageGroup1
             // 
-            resources.ApplyResources(headerFooterToolsDesignNavigationRibbonPageGroup1, "headerFooterToolsDesignNavigationRibbonPageGroup1");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(goToPageHeaderItem1, "E");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(goToPageFooterItem1, "G");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(goToNextHeaderFooterItem1, "X");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(goToPreviousHeaderFooterItem1, "R");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(toggleLinkToPreviousItem1, "K");
-            headerFooterToolsDesignNavigationRibbonPageGroup1.Name = "headerFooterToolsDesignNavigationRibbonPageGroup1";
+            resources.ApplyResources(this.headerFooterToolsDesignNavigationRibbonPageGroup1, "headerFooterToolsDesignNavigationRibbonPageGroup1");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(this.goToPageHeaderItem1, "E");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(this.goToPageFooterItem1, "G");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(this.goToNextHeaderFooterItem1, "X");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(this.goToPreviousHeaderFooterItem1, "R");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.ItemLinks.Add(this.toggleLinkToPreviousItem1, "K");
+            this.headerFooterToolsDesignNavigationRibbonPageGroup1.Name = ("headerFooterToolsDesignNavigationRibbonPageGroup1");
             // 
             // headerFooterToolsDesignOptionsRibbonPageGroup1
             // 
-            resources.ApplyResources(headerFooterToolsDesignOptionsRibbonPageGroup1, "headerFooterToolsDesignOptionsRibbonPageGroup1");
-            headerFooterToolsDesignOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            headerFooterToolsDesignOptionsRibbonPageGroup1.ItemLinks.Add(toggleDifferentFirstPageItem1, "A");
-            headerFooterToolsDesignOptionsRibbonPageGroup1.ItemLinks.Add(toggleDifferentOddAndEvenPagesItem1, "V");
-            headerFooterToolsDesignOptionsRibbonPageGroup1.Name = "headerFooterToolsDesignOptionsRibbonPageGroup1";
+            resources.ApplyResources(this.headerFooterToolsDesignOptionsRibbonPageGroup1, "headerFooterToolsDesignOptionsRibbonPageGroup1");
+            this.headerFooterToolsDesignOptionsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.headerFooterToolsDesignOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleDifferentFirstPageItem1, "A");
+            this.headerFooterToolsDesignOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleDifferentOddAndEvenPagesItem1, "V");
+            this.headerFooterToolsDesignOptionsRibbonPageGroup1.Name = ("headerFooterToolsDesignOptionsRibbonPageGroup1");
             // 
             // headerFooterToolsDesignCloseRibbonPageGroup1
             // 
-            resources.ApplyResources(headerFooterToolsDesignCloseRibbonPageGroup1, "headerFooterToolsDesignCloseRibbonPageGroup1");
-            headerFooterToolsDesignCloseRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            headerFooterToolsDesignCloseRibbonPageGroup1.ItemLinks.Add(closePageHeaderFooterItem1, "C");
-            headerFooterToolsDesignCloseRibbonPageGroup1.Name = "headerFooterToolsDesignCloseRibbonPageGroup1";
+            resources.ApplyResources(this.headerFooterToolsDesignCloseRibbonPageGroup1, "headerFooterToolsDesignCloseRibbonPageGroup1");
+            this.headerFooterToolsDesignCloseRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.headerFooterToolsDesignCloseRibbonPageGroup1.ItemLinks.Add(this.closePageHeaderFooterItem1, "C");
+            this.headerFooterToolsDesignCloseRibbonPageGroup1.Name = ("headerFooterToolsDesignCloseRibbonPageGroup1");
             // 
             // tableToolsRibbonCategory
             // 
-            resources.ApplyResources(tableToolsRibbonCategory, "tableToolsRibbonCategory");
-            tableToolsRibbonCategory.Control = ChildRichEditControl;
-            tableToolsRibbonCategory.Name = "tableToolsRibbonCategory";
-            tableToolsRibbonCategory.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { tableDesignChildRibbonPage, tableLayoutRibbonPage1 });
+            resources.ApplyResources(this.tableToolsRibbonCategory, "tableToolsRibbonCategory");
+            this.tableToolsRibbonCategory.Control = (this.ChildRichEditControl);
+            this.tableToolsRibbonCategory.Name = ("tableToolsRibbonCategory");
+            this.tableToolsRibbonCategory.Pages.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPage[] { this.tableDesignChildRibbonPage, this.tableLayoutRibbonPage1 });
             // 
             // tableDesignChildRibbonPage
             // 
-            resources.ApplyResources(tableDesignChildRibbonPage, "tableDesignChildRibbonPage");
-            tableDesignChildRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { tableStyleOptionsRibbonPageGroup1, tableStylesRibbonPageGroup1, tableDrawBordersRibbonPageGroup1 });
-            tableDesignChildRibbonPage.Name = "tableDesignChildRibbonPage";
-            tableDesignChildRibbonPage.Visible = false;
+            resources.ApplyResources(this.tableDesignChildRibbonPage, "tableDesignChildRibbonPage");
+            this.tableDesignChildRibbonPage.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.tableStyleOptionsRibbonPageGroup1, this.tableStylesRibbonPageGroup1, this.tableDrawBordersRibbonPageGroup1 });
+            this.tableDesignChildRibbonPage.Name = ("tableDesignChildRibbonPage");
+            this.tableDesignChildRibbonPage.Visible = (false);
             // 
             // tableStyleOptionsRibbonPageGroup1
             // 
-            resources.ApplyResources(tableStyleOptionsRibbonPageGroup1, "tableStyleOptionsRibbonPageGroup1");
-            tableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleFirstRowItem1);
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleLastRowItem1);
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleBandedRowsItem1);
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleFirstColumnItem1);
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleLastColumnItem1);
-            tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(toggleBandedColumnsItem1);
-            tableStyleOptionsRibbonPageGroup1.Name = "tableStyleOptionsRibbonPageGroup1";
+            resources.ApplyResources(this.tableStyleOptionsRibbonPageGroup1, "tableStyleOptionsRibbonPageGroup1");
+            this.tableStyleOptionsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleFirstRowItem1);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleLastRowItem1);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleBandedRowsItem1);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleFirstColumnItem1);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleLastColumnItem1);
+            this.tableStyleOptionsRibbonPageGroup1.ItemLinks.Add(this.toggleBandedColumnsItem1);
+            this.tableStyleOptionsRibbonPageGroup1.Name = ("tableStyleOptionsRibbonPageGroup1");
             // 
             // tableStylesRibbonPageGroup1
             // 
-            resources.ApplyResources(tableStylesRibbonPageGroup1, "tableStylesRibbonPageGroup1");
-            tableStylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableStylesRibbonPageGroup1.ItemLinks.Add(galleryChangeTableStyleItem2);
-            tableStylesRibbonPageGroup1.Name = "tableStylesRibbonPageGroup1";
+            resources.ApplyResources(this.tableStylesRibbonPageGroup1, "tableStylesRibbonPageGroup1");
+            this.tableStylesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableStylesRibbonPageGroup1.ItemLinks.Add(this.galleryChangeTableStyleItem2);
+            this.tableStylesRibbonPageGroup1.Name = ("tableStylesRibbonPageGroup1");
             // 
             // tableDrawBordersRibbonPageGroup1
             // 
-            resources.ApplyResources(tableDrawBordersRibbonPageGroup1, "tableDrawBordersRibbonPageGroup1");
-            tableDrawBordersRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            tableDrawBordersRibbonPageGroup1.ItemLinks.Add(changeTableBorderLineStyleItem1);
-            tableDrawBordersRibbonPageGroup1.ItemLinks.Add(changeTableBorderLineWeightItem1);
-            tableDrawBordersRibbonPageGroup1.ItemLinks.Add(changeTableBorderColorItem1, "C");
-            tableDrawBordersRibbonPageGroup1.ItemLinks.Add(changeTableBordersItem1, "B");
-            tableDrawBordersRibbonPageGroup1.ItemLinks.Add(changeTableCellsShadingItem1, "H");
-            tableDrawBordersRibbonPageGroup1.Name = "tableDrawBordersRibbonPageGroup1";
+            resources.ApplyResources(this.tableDrawBordersRibbonPageGroup1, "tableDrawBordersRibbonPageGroup1");
+            this.tableDrawBordersRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.tableDrawBordersRibbonPageGroup1.ItemLinks.Add(this.changeTableBorderLineStyleItem1);
+            this.tableDrawBordersRibbonPageGroup1.ItemLinks.Add(this.changeTableBorderLineWeightItem1);
+            this.tableDrawBordersRibbonPageGroup1.ItemLinks.Add(this.changeTableBorderColorItem1, "C");
+            this.tableDrawBordersRibbonPageGroup1.ItemLinks.Add(this.changeTableBordersItem1, "B");
+            this.tableDrawBordersRibbonPageGroup1.ItemLinks.Add(this.changeTableCellsShadingItem1, "H");
+            this.tableDrawBordersRibbonPageGroup1.Name = ("tableDrawBordersRibbonPageGroup1");
             // 
             // tableLayoutRibbonPage1
             // 
-            resources.ApplyResources(tableLayoutRibbonPage1, "tableLayoutRibbonPage1");
-            tableLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { tableTableRibbonPageGroup1, tableRowsAndColumnsRibbonPageGroup1, tableMergeRibbonPageGroup1, tableCellSizeRibbonPageGroup1, tableAlignmentRibbonPageGroup1 });
-            tableLayoutRibbonPage1.Name = "tableLayoutRibbonPage1";
-            tableLayoutRibbonPage1.Visible = false;
+            resources.ApplyResources(this.tableLayoutRibbonPage1, "tableLayoutRibbonPage1");
+            this.tableLayoutRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.tableTableRibbonPageGroup1, this.tableRowsAndColumnsRibbonPageGroup1, this.tableMergeRibbonPageGroup1, this.tableCellSizeRibbonPageGroup1, this.tableAlignmentRibbonPageGroup1 });
+            this.tableLayoutRibbonPage1.Name = ("tableLayoutRibbonPage1");
+            this.tableLayoutRibbonPage1.Visible = (false);
             // 
             // tableTableRibbonPageGroup1
             // 
-            resources.ApplyResources(tableTableRibbonPageGroup1, "tableTableRibbonPageGroup1");
-            tableTableRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableTableRibbonPageGroup1.ItemLinks.Add(selectTableElementsItem1, "K");
-            tableTableRibbonPageGroup1.ItemLinks.Add(toggleShowTableGridLinesItem1, "TG");
-            tableTableRibbonPageGroup1.ItemLinks.Add(showTablePropertiesFormItem1, "O");
-            tableTableRibbonPageGroup1.Name = "tableTableRibbonPageGroup1";
+            resources.ApplyResources(this.tableTableRibbonPageGroup1, "tableTableRibbonPageGroup1");
+            this.tableTableRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableTableRibbonPageGroup1.ItemLinks.Add(this.selectTableElementsItem1, "K");
+            this.tableTableRibbonPageGroup1.ItemLinks.Add(this.toggleShowTableGridLinesItem1, "TG");
+            this.tableTableRibbonPageGroup1.ItemLinks.Add(this.showTablePropertiesFormItem1, "O");
+            this.tableTableRibbonPageGroup1.Name = ("tableTableRibbonPageGroup1");
             // 
             // tableRowsAndColumnsRibbonPageGroup1
             // 
-            resources.ApplyResources(tableRowsAndColumnsRibbonPageGroup1, "tableRowsAndColumnsRibbonPageGroup1");
-            tableRowsAndColumnsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(deleteTableElementsItem1, "D");
-            tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(insertTableRowAboveItem1, "A");
-            tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(insertTableRowBelowItem1, "E");
-            tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(insertTableColumnToLeftItem1, "L");
-            tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(insertTableColumnToRightItem1, "R");
-            tableRowsAndColumnsRibbonPageGroup1.Name = "tableRowsAndColumnsRibbonPageGroup1";
+            resources.ApplyResources(this.tableRowsAndColumnsRibbonPageGroup1, "tableRowsAndColumnsRibbonPageGroup1");
+            this.tableRowsAndColumnsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(this.deleteTableElementsItem1, "D");
+            this.tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(this.insertTableRowAboveItem1, "A");
+            this.tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(this.insertTableRowBelowItem1, "E");
+            this.tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(this.insertTableColumnToLeftItem1, "L");
+            this.tableRowsAndColumnsRibbonPageGroup1.ItemLinks.Add(this.insertTableColumnToRightItem1, "R");
+            this.tableRowsAndColumnsRibbonPageGroup1.Name = ("tableRowsAndColumnsRibbonPageGroup1");
             // 
             // tableMergeRibbonPageGroup1
             // 
-            resources.ApplyResources(tableMergeRibbonPageGroup1, "tableMergeRibbonPageGroup1");
-            tableMergeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableMergeRibbonPageGroup1.ItemLinks.Add(mergeTableCellsItem1, "M");
-            tableMergeRibbonPageGroup1.ItemLinks.Add(showSplitTableCellsForm1, "P");
-            tableMergeRibbonPageGroup1.ItemLinks.Add(splitTableItem1, "Q");
-            tableMergeRibbonPageGroup1.Name = "tableMergeRibbonPageGroup1";
+            resources.ApplyResources(this.tableMergeRibbonPageGroup1, "tableMergeRibbonPageGroup1");
+            this.tableMergeRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableMergeRibbonPageGroup1.ItemLinks.Add(this.mergeTableCellsItem1, "M");
+            this.tableMergeRibbonPageGroup1.ItemLinks.Add(this.showSplitTableCellsForm1, "P");
+            this.tableMergeRibbonPageGroup1.ItemLinks.Add(this.splitTableItem1, "Q");
+            this.tableMergeRibbonPageGroup1.Name = ("tableMergeRibbonPageGroup1");
             // 
             // tableCellSizeRibbonPageGroup1
             // 
-            resources.ApplyResources(tableCellSizeRibbonPageGroup1, "tableCellSizeRibbonPageGroup1");
-            tableCellSizeRibbonPageGroup1.AllowTextClipping = false;
-            tableCellSizeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            tableCellSizeRibbonPageGroup1.ItemLinks.Add(toggleTableAutoFitItem1, "F");
-            tableCellSizeRibbonPageGroup1.Name = "tableCellSizeRibbonPageGroup1";
+            resources.ApplyResources(this.tableCellSizeRibbonPageGroup1, "tableCellSizeRibbonPageGroup1");
+            this.tableCellSizeRibbonPageGroup1.AllowTextClipping = (false);
+            this.tableCellSizeRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.tableCellSizeRibbonPageGroup1.ItemLinks.Add(this.toggleTableAutoFitItem1, "F");
+            this.tableCellSizeRibbonPageGroup1.Name = ("tableCellSizeRibbonPageGroup1");
             // 
             // tableAlignmentRibbonPageGroup1
             // 
-            resources.ApplyResources(tableAlignmentRibbonPageGroup1, "tableAlignmentRibbonPageGroup1");
-            tableAlignmentRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableAlignmentRibbonPageGroup1.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("tableAlignmentRibbonPageGroup1.ImageOptions.Image");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsTopLeftAlignmentItem1, "TL");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsMiddleLeftAlignmentItem1, "CL");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsBottomLeftAlignmentItem1, "BL");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsTopCenterAlignmentItem1, "TC");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsMiddleCenterAlignmentItem1, "CC");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsBottomCenterAlignmentItem1, "BC");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsTopRightAlignmentItem1, "TR");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsMiddleRightAlignmentItem1, "CR");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(toggleTableCellsBottomRightAlignmentItem1, "BR");
-            tableAlignmentRibbonPageGroup1.ItemLinks.Add(showTableOptionsFormItem1, "N");
-            tableAlignmentRibbonPageGroup1.Name = "tableAlignmentRibbonPageGroup1";
+            resources.ApplyResources(this.tableAlignmentRibbonPageGroup1, "tableAlignmentRibbonPageGroup1");
+            this.tableAlignmentRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableAlignmentRibbonPageGroup1.ImageOptions.Image = ((global::System.Drawing.Image)(resources.GetObject("tableAlignmentRibbonPageGroup1.ImageOptions.Image")));
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsTopLeftAlignmentItem1, "TL");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsMiddleLeftAlignmentItem1, "CL");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsBottomLeftAlignmentItem1, "BL");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsTopCenterAlignmentItem1, "TC");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsMiddleCenterAlignmentItem1, "CC");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsBottomCenterAlignmentItem1, "BC");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsTopRightAlignmentItem1, "TR");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsMiddleRightAlignmentItem1, "CR");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.toggleTableCellsBottomRightAlignmentItem1, "BR");
+            this.tableAlignmentRibbonPageGroup1.ItemLinks.Add(this.showTableOptionsFormItem1, "N");
+            this.tableAlignmentRibbonPageGroup1.Name = ("tableAlignmentRibbonPageGroup1");
             // 
             // floatingPictureToolsRibbonPageCategory1
             // 
-            resources.ApplyResources(floatingPictureToolsRibbonPageCategory1, "floatingPictureToolsRibbonPageCategory1");
-            floatingPictureToolsRibbonPageCategory1.Control = ChildRichEditControl;
-            floatingPictureToolsRibbonPageCategory1.Name = "floatingPictureToolsRibbonPageCategory1";
-            floatingPictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { floatingPictureToolsFormatPage1 });
+            resources.ApplyResources(this.floatingPictureToolsRibbonPageCategory1, "floatingPictureToolsRibbonPageCategory1");
+            this.floatingPictureToolsRibbonPageCategory1.Control = (this.ChildRichEditControl);
+            this.floatingPictureToolsRibbonPageCategory1.Name = ("floatingPictureToolsRibbonPageCategory1");
+            this.floatingPictureToolsRibbonPageCategory1.Pages.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPage[] { this.floatingPictureToolsFormatPage1 });
             // 
             // floatingPictureToolsFormatPage1
             // 
-            resources.ApplyResources(floatingPictureToolsFormatPage1, "floatingPictureToolsFormatPage1");
-            floatingPictureToolsFormatPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { floatingPictureToolsShapeStylesPageGroup1, floatingPictureToolsArrangePageGroup1 });
-            floatingPictureToolsFormatPage1.Name = "floatingPictureToolsFormatPage1";
-            floatingPictureToolsFormatPage1.Visible = false;
+            resources.ApplyResources(this.floatingPictureToolsFormatPage1, "floatingPictureToolsFormatPage1");
+            this.floatingPictureToolsFormatPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.floatingPictureToolsShapeStylesPageGroup1, this.floatingPictureToolsArrangePageGroup1 });
+            this.floatingPictureToolsFormatPage1.Name = ("floatingPictureToolsFormatPage1");
+            this.floatingPictureToolsFormatPage1.Visible = (false);
             // 
             // floatingPictureToolsShapeStylesPageGroup1
             // 
-            resources.ApplyResources(floatingPictureToolsShapeStylesPageGroup1, "floatingPictureToolsShapeStylesPageGroup1");
-            floatingPictureToolsShapeStylesPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(changeFloatingObjectFillColorItem1);
-            floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(changeFloatingObjectOutlineColorItem1);
-            floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(changeFloatingObjectOutlineWeightItem1);
-            floatingPictureToolsShapeStylesPageGroup1.Name = "floatingPictureToolsShapeStylesPageGroup1";
+            resources.ApplyResources(this.floatingPictureToolsShapeStylesPageGroup1, "floatingPictureToolsShapeStylesPageGroup1");
+            this.floatingPictureToolsShapeStylesPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(this.changeFloatingObjectFillColorItem1);
+            this.floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(this.changeFloatingObjectOutlineColorItem1);
+            this.floatingPictureToolsShapeStylesPageGroup1.ItemLinks.Add(this.changeFloatingObjectOutlineWeightItem1);
+            this.floatingPictureToolsShapeStylesPageGroup1.Name = ("floatingPictureToolsShapeStylesPageGroup1");
             // 
             // floatingPictureToolsArrangePageGroup1
             // 
-            resources.ApplyResources(floatingPictureToolsArrangePageGroup1, "floatingPictureToolsArrangePageGroup1");
-            floatingPictureToolsArrangePageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            floatingPictureToolsArrangePageGroup1.ItemLinks.Add(changeFloatingObjectTextWrapTypeItem1, "TW");
-            floatingPictureToolsArrangePageGroup1.ItemLinks.Add(changeFloatingObjectAlignmentItem1, "PO");
-            floatingPictureToolsArrangePageGroup1.ItemLinks.Add(floatingObjectBringForwardSubItem1, "AF");
-            floatingPictureToolsArrangePageGroup1.ItemLinks.Add(floatingObjectSendBackwardSubItem1, "AE");
-            floatingPictureToolsArrangePageGroup1.Name = "floatingPictureToolsArrangePageGroup1";
+            resources.ApplyResources(this.floatingPictureToolsArrangePageGroup1, "floatingPictureToolsArrangePageGroup1");
+            this.floatingPictureToolsArrangePageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.floatingPictureToolsArrangePageGroup1.ItemLinks.Add(this.changeFloatingObjectTextWrapTypeItem1, "TW");
+            this.floatingPictureToolsArrangePageGroup1.ItemLinks.Add(this.changeFloatingObjectAlignmentItem1, "PO");
+            this.floatingPictureToolsArrangePageGroup1.ItemLinks.Add(this.floatingObjectBringForwardSubItem1, "AF");
+            this.floatingPictureToolsArrangePageGroup1.ItemLinks.Add(this.floatingObjectSendBackwardSubItem1, "AE");
+            this.floatingPictureToolsArrangePageGroup1.Name = ("floatingPictureToolsArrangePageGroup1");
             // 
             // fileRibbonPage1
             // 
-            resources.ApplyResources(fileRibbonPage1, "fileRibbonPage1");
-            fileRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { commonRibbonPageGroup1, exportRibbonGroup, infoRibbonPageGroup1, optionsRibbonGroup, licenseRibbonGroup });
-            fileRibbonPage1.Name = "fileRibbonPage1";
+            resources.ApplyResources(this.fileRibbonPage1, "fileRibbonPage1");
+            this.fileRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.commonRibbonPageGroup1, this.exportRibbonGroup, this.infoRibbonPageGroup1, this.optionsRibbonGroup, this.licenseRibbonGroup });
+            this.fileRibbonPage1.Name = ("fileRibbonPage1");
             // 
             // commonRibbonPageGroup1
             // 
-            resources.ApplyResources(commonRibbonPageGroup1, "commonRibbonPageGroup1");
-            commonRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            commonRibbonPageGroup1.ItemLinks.Add(fileNewItem1, "N");
-            commonRibbonPageGroup1.ItemLinks.Add(fileOpenItem1, "O");
-            commonRibbonPageGroup1.ItemLinks.Add(undoItem1, true);
-            commonRibbonPageGroup1.ItemLinks.Add(redoItem1);
-            commonRibbonPageGroup1.ItemLinks.Add(fileSaveItem1, true, "S");
-            commonRibbonPageGroup1.ItemLinks.Add(fileSaveAsItem1, "A");
-            commonRibbonPageGroup1.ItemLinks.Add(quickPrintItem1, true);
-            commonRibbonPageGroup1.ItemLinks.Add(printItem1, "P");
-            commonRibbonPageGroup1.ItemLinks.Add(printPreviewItem1);
-            commonRibbonPageGroup1.MergeOrder = 0;
-            commonRibbonPageGroup1.Name = "commonRibbonPageGroup1";
+            resources.ApplyResources(this.commonRibbonPageGroup1, "commonRibbonPageGroup1");
+            this.commonRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.fileNewItem1, "N");
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.fileOpenItem1, "O");
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.undoItem1, true);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.redoItem1);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.fileSaveItem1, true, "S");
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.fileSaveAsItem1, "A");
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.quickPrintItem1, true);
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.printItem1, "P");
+            this.commonRibbonPageGroup1.ItemLinks.Add(this.printPreviewItem1);
+            this.commonRibbonPageGroup1.MergeOrder = (0);
+            this.commonRibbonPageGroup1.Name = ("commonRibbonPageGroup1");
             // 
             // exportRibbonGroup
             // 
-            resources.ApplyResources(exportRibbonGroup, "exportRibbonGroup");
-            exportRibbonGroup.ItemLinks.Add(exportBarButton);
-            exportRibbonGroup.ItemLinks.Add(mailBarButton);
-            exportRibbonGroup.Name = "exportRibbonGroup";
+            resources.ApplyResources(this.exportRibbonGroup, "exportRibbonGroup");
+            this.exportRibbonGroup.ItemLinks.Add(this.exportBarButton);
+            this.exportRibbonGroup.ItemLinks.Add(this.mailBarButton);
+            this.exportRibbonGroup.Name = ("exportRibbonGroup");
             // 
             // infoRibbonPageGroup1
             // 
-            resources.ApplyResources(infoRibbonPageGroup1, "infoRibbonPageGroup1");
-            infoRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            infoRibbonPageGroup1.ItemLinks.Add(encryptDocumentItem1);
-            infoRibbonPageGroup1.ItemLinks.Add(showDocumentPropertiesFormItem1);
-            infoRibbonPageGroup1.MergeOrder = 0;
-            infoRibbonPageGroup1.Name = "infoRibbonPageGroup1";
+            resources.ApplyResources(this.infoRibbonPageGroup1, "infoRibbonPageGroup1");
+            this.infoRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.infoRibbonPageGroup1.ItemLinks.Add(this.encryptDocumentItem1);
+            this.infoRibbonPageGroup1.ItemLinks.Add(this.showDocumentPropertiesFormItem1);
+            this.infoRibbonPageGroup1.MergeOrder = (0);
+            this.infoRibbonPageGroup1.Name = ("infoRibbonPageGroup1");
             // 
             // optionsRibbonGroup
             // 
-            resources.ApplyResources(optionsRibbonGroup, "optionsRibbonGroup");
-            optionsRibbonGroup.Name = "optionsRibbonGroup";
+            resources.ApplyResources(this.optionsRibbonGroup, "optionsRibbonGroup");
+            this.optionsRibbonGroup.Name = ("optionsRibbonGroup");
             // 
             // licenseRibbonGroup
             // 
-            resources.ApplyResources(licenseRibbonGroup, "licenseRibbonGroup");
-            licenseRibbonGroup.Name = "licenseRibbonGroup";
+            resources.ApplyResources(this.licenseRibbonGroup, "licenseRibbonGroup");
+            this.licenseRibbonGroup.Name = ("licenseRibbonGroup");
             // 
             // homeRibbonPage1
             // 
-            resources.ApplyResources(homeRibbonPage1, "homeRibbonPage1");
-            homeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { clipboardRibbonPageGroup1, fontRibbonPageGroup1, paragraphRibbonPageGroup1, stylesRibbonPageGroup1, editingRibbonPageGroup1 });
-            homeRibbonPage1.Name = "homeRibbonPage1";
-            reduceOperation2.Behavior = DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable;
-            reduceOperation2.GroupName = null;
-            reduceOperation2.ItemLinkIndex = 0;
-            reduceOperation2.ItemLinksCount = 0;
-            reduceOperation2.Operation = DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery;
-            homeRibbonPage1.ReduceOperations.Add(reduceOperation2);
+            resources.ApplyResources(this.homeRibbonPage1, "homeRibbonPage1");
+            this.homeRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.clipboardRibbonPageGroup1, this.fontRibbonPageGroup1, this.paragraphRibbonPageGroup1, this.stylesRibbonPageGroup1, this.editingRibbonPageGroup1 });
+            this.homeRibbonPage1.Name = ("homeRibbonPage1");
+            reduceOperation1.Behavior = (global::DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable);
+            reduceOperation1.GroupName = (null);
+            reduceOperation1.ItemLinkIndex = (0);
+            reduceOperation1.ItemLinksCount = (0);
+            reduceOperation1.Operation = (global::DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery);
+            this.homeRibbonPage1.ReduceOperations.Add(reduceOperation1);
             // 
             // clipboardRibbonPageGroup1
             // 
-            resources.ApplyResources(clipboardRibbonPageGroup1, "clipboardRibbonPageGroup1");
-            clipboardRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            clipboardRibbonPageGroup1.ItemLinks.Add(pasteItem1, "V");
-            clipboardRibbonPageGroup1.ItemLinks.Add(cutItem1, "X");
-            clipboardRibbonPageGroup1.ItemLinks.Add(copyItem1, "C");
-            clipboardRibbonPageGroup1.ItemLinks.Add(pasteSpecialItem1);
-            clipboardRibbonPageGroup1.Name = "clipboardRibbonPageGroup1";
+            resources.ApplyResources(this.clipboardRibbonPageGroup1, "clipboardRibbonPageGroup1");
+            this.clipboardRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.pasteItem1, "V");
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.cutItem1, "X");
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.copyItem1, "C");
+            this.clipboardRibbonPageGroup1.ItemLinks.Add(this.pasteSpecialItem1);
+            this.clipboardRibbonPageGroup1.Name = ("clipboardRibbonPageGroup1");
             // 
             // fontRibbonPageGroup1
             // 
-            resources.ApplyResources(fontRibbonPageGroup1, "fontRibbonPageGroup1");
-            fontRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            fontRibbonPageGroup1.ItemLinks.Add(barButtonGroup8);
-            fontRibbonPageGroup1.ItemLinks.Add(barButtonGroup9);
-            fontRibbonPageGroup1.ItemLinks.Add(barButtonGroup10);
-            fontRibbonPageGroup1.ItemLinks.Add(changeTextCaseItem1);
-            fontRibbonPageGroup1.ItemLinks.Add(clearFormattingItem1, "E");
-            fontRibbonPageGroup1.Name = "fontRibbonPageGroup1";
+            resources.ApplyResources(this.fontRibbonPageGroup1, "fontRibbonPageGroup1");
+            this.fontRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup8);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup9);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup10);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.changeTextCaseItem1);
+            this.fontRibbonPageGroup1.ItemLinks.Add(this.clearFormattingItem1, "E");
+            this.fontRibbonPageGroup1.Name = ("fontRibbonPageGroup1");
             // 
             // paragraphRibbonPageGroup1
             // 
-            resources.ApplyResources(paragraphRibbonPageGroup1, "paragraphRibbonPageGroup1");
-            paragraphRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            paragraphRibbonPageGroup1.ItemLinks.Add(barButtonGroup11);
-            paragraphRibbonPageGroup1.ItemLinks.Add(barButtonGroup12);
-            paragraphRibbonPageGroup1.ItemLinks.Add(barButtonGroup13);
-            paragraphRibbonPageGroup1.ItemLinks.Add(barButtonGroup14);
-            paragraphRibbonPageGroup1.Name = "paragraphRibbonPageGroup1";
+            resources.ApplyResources(this.paragraphRibbonPageGroup1, "paragraphRibbonPageGroup1");
+            this.paragraphRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.paragraphRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup11);
+            this.paragraphRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup12);
+            this.paragraphRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup13);
+            this.paragraphRibbonPageGroup1.ItemLinks.Add(this.barButtonGroup14);
+            this.paragraphRibbonPageGroup1.Name = ("paragraphRibbonPageGroup1");
             // 
             // stylesRibbonPageGroup1
             // 
-            resources.ApplyResources(stylesRibbonPageGroup1, "stylesRibbonPageGroup1");
-            stylesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            stylesRibbonPageGroup1.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("stylesRibbonPageGroup1.ImageOptions.Image");
-            stylesRibbonPageGroup1.ItemLinks.Add(galleryChangeStyleItem1);
-            stylesRibbonPageGroup1.Name = "stylesRibbonPageGroup1";
+            resources.ApplyResources(this.stylesRibbonPageGroup1, "stylesRibbonPageGroup1");
+            this.stylesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.stylesRibbonPageGroup1.ImageOptions.Image = ((global::System.Drawing.Image)(resources.GetObject("stylesRibbonPageGroup1.ImageOptions.Image")));
+            this.stylesRibbonPageGroup1.ItemLinks.Add(this.galleryChangeStyleItem1);
+            this.stylesRibbonPageGroup1.Name = ("stylesRibbonPageGroup1");
             // 
             // editingRibbonPageGroup1
             // 
-            resources.ApplyResources(editingRibbonPageGroup1, "editingRibbonPageGroup1");
-            editingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            editingRibbonPageGroup1.ItemLinks.Add(findItem1, "FD");
-            editingRibbonPageGroup1.ItemLinks.Add(replaceItem1, "R");
-            editingRibbonPageGroup1.Name = "editingRibbonPageGroup1";
+            resources.ApplyResources(this.editingRibbonPageGroup1, "editingRibbonPageGroup1");
+            this.editingRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.findItem1, "FD");
+            this.editingRibbonPageGroup1.ItemLinks.Add(this.replaceItem1, "R");
+            this.editingRibbonPageGroup1.Name = ("editingRibbonPageGroup1");
             // 
             // insertRibbonPage1
             // 
-            resources.ApplyResources(insertRibbonPage1, "insertRibbonPage1");
-            insertRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pagesRibbonPageGroup1, tablesRibbonPageGroup1, illustrationsRibbonPageGroup1, linksRibbonPageGroup1, headerFooterRibbonPageGroup1, textRibbonPageGroup1, symbolsRibbonPageGroup1 });
-            insertRibbonPage1.Name = "insertRibbonPage1";
+            resources.ApplyResources(this.insertRibbonPage1, "insertRibbonPage1");
+            this.insertRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.pagesRibbonPageGroup1, this.tablesRibbonPageGroup1, this.illustrationsRibbonPageGroup1, this.linksRibbonPageGroup1, this.headerFooterRibbonPageGroup1, this.textRibbonPageGroup1, this.symbolsRibbonPageGroup1 });
+            this.insertRibbonPage1.Name = ("insertRibbonPage1");
             // 
             // pagesRibbonPageGroup1
             // 
-            resources.ApplyResources(pagesRibbonPageGroup1, "pagesRibbonPageGroup1");
-            pagesRibbonPageGroup1.AllowTextClipping = false;
-            pagesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            pagesRibbonPageGroup1.ItemLinks.Add(insertPageBreakItem21, "B");
-            pagesRibbonPageGroup1.Name = "pagesRibbonPageGroup1";
+            resources.ApplyResources(this.pagesRibbonPageGroup1, "pagesRibbonPageGroup1");
+            this.pagesRibbonPageGroup1.AllowTextClipping = (false);
+            this.pagesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.pagesRibbonPageGroup1.ItemLinks.Add(this.insertPageBreakItem21, "B");
+            this.pagesRibbonPageGroup1.Name = ("pagesRibbonPageGroup1");
             // 
             // tablesRibbonPageGroup1
             // 
-            resources.ApplyResources(tablesRibbonPageGroup1, "tablesRibbonPageGroup1");
-            tablesRibbonPageGroup1.AllowTextClipping = false;
-            tablesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tablesRibbonPageGroup1.ItemLinks.Add(insertTableItem1, "T");
-            tablesRibbonPageGroup1.Name = "tablesRibbonPageGroup1";
+            resources.ApplyResources(this.tablesRibbonPageGroup1, "tablesRibbonPageGroup1");
+            this.tablesRibbonPageGroup1.AllowTextClipping = (false);
+            this.tablesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tablesRibbonPageGroup1.ItemLinks.Add(this.insertTableItem1, "T");
+            this.tablesRibbonPageGroup1.Name = ("tablesRibbonPageGroup1");
             // 
             // illustrationsRibbonPageGroup1
             // 
-            resources.ApplyResources(illustrationsRibbonPageGroup1, "illustrationsRibbonPageGroup1");
-            illustrationsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            illustrationsRibbonPageGroup1.ItemLinks.Add(insertFloatingPictureItem1);
-            illustrationsRibbonPageGroup1.Name = "illustrationsRibbonPageGroup1";
+            resources.ApplyResources(this.illustrationsRibbonPageGroup1, "illustrationsRibbonPageGroup1");
+            this.illustrationsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.illustrationsRibbonPageGroup1.ItemLinks.Add(this.insertFloatingPictureItem1);
+            this.illustrationsRibbonPageGroup1.Name = ("illustrationsRibbonPageGroup1");
             // 
             // linksRibbonPageGroup1
             // 
-            resources.ApplyResources(linksRibbonPageGroup1, "linksRibbonPageGroup1");
-            linksRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            linksRibbonPageGroup1.ItemLinks.Add(insertBookmarkItem1, "K");
-            linksRibbonPageGroup1.ItemLinks.Add(insertHyperlinkItem1, "I");
-            linksRibbonPageGroup1.Name = "linksRibbonPageGroup1";
+            resources.ApplyResources(this.linksRibbonPageGroup1, "linksRibbonPageGroup1");
+            this.linksRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.linksRibbonPageGroup1.ItemLinks.Add(this.insertBookmarkItem1, "K");
+            this.linksRibbonPageGroup1.ItemLinks.Add(this.insertHyperlinkItem1, "I");
+            this.linksRibbonPageGroup1.Name = ("linksRibbonPageGroup1");
             // 
             // headerFooterRibbonPageGroup1
             // 
-            resources.ApplyResources(headerFooterRibbonPageGroup1, "headerFooterRibbonPageGroup1");
-            headerFooterRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            headerFooterRibbonPageGroup1.ItemLinks.Add(editPageHeaderItem1, "H");
-            headerFooterRibbonPageGroup1.ItemLinks.Add(editPageFooterItem1, "O");
-            headerFooterRibbonPageGroup1.ItemLinks.Add(insertPageNumberItem1, "NU");
-            headerFooterRibbonPageGroup1.ItemLinks.Add(insertPageCountItem1);
-            headerFooterRibbonPageGroup1.Name = "headerFooterRibbonPageGroup1";
+            resources.ApplyResources(this.headerFooterRibbonPageGroup1, "headerFooterRibbonPageGroup1");
+            this.headerFooterRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.headerFooterRibbonPageGroup1.ItemLinks.Add(this.editPageHeaderItem1, "H");
+            this.headerFooterRibbonPageGroup1.ItemLinks.Add(this.editPageFooterItem1, "O");
+            this.headerFooterRibbonPageGroup1.ItemLinks.Add(this.insertPageNumberItem1, "NU");
+            this.headerFooterRibbonPageGroup1.ItemLinks.Add(this.insertPageCountItem1);
+            this.headerFooterRibbonPageGroup1.Name = ("headerFooterRibbonPageGroup1");
             // 
             // textRibbonPageGroup1
             // 
-            resources.ApplyResources(textRibbonPageGroup1, "textRibbonPageGroup1");
-            textRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            textRibbonPageGroup1.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("textRibbonPageGroup1.ImageOptions.Image");
-            textRibbonPageGroup1.ItemLinks.Add(insertTextBoxItem1, "X");
-            textRibbonPageGroup1.ItemLinks.Add(insertObjectItem1);
-            textRibbonPageGroup1.Name = "textRibbonPageGroup1";
+            resources.ApplyResources(this.textRibbonPageGroup1, "textRibbonPageGroup1");
+            this.textRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.textRibbonPageGroup1.ImageOptions.Image = ((global::System.Drawing.Image)(resources.GetObject("textRibbonPageGroup1.ImageOptions.Image")));
+            this.textRibbonPageGroup1.ItemLinks.Add(this.insertTextBoxItem1, "X");
+            this.textRibbonPageGroup1.ItemLinks.Add(this.insertObjectItem1);
+            this.textRibbonPageGroup1.Name = ("textRibbonPageGroup1");
             // 
             // symbolsRibbonPageGroup1
             // 
-            resources.ApplyResources(symbolsRibbonPageGroup1, "symbolsRibbonPageGroup1");
-            symbolsRibbonPageGroup1.AllowTextClipping = false;
-            symbolsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            symbolsRibbonPageGroup1.ItemLinks.Add(insertSymbolItem1, "U");
-            symbolsRibbonPageGroup1.Name = "symbolsRibbonPageGroup1";
+            resources.ApplyResources(this.symbolsRibbonPageGroup1, "symbolsRibbonPageGroup1");
+            this.symbolsRibbonPageGroup1.AllowTextClipping = (false);
+            this.symbolsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.symbolsRibbonPageGroup1.ItemLinks.Add(this.insertSymbolItem1, "U");
+            this.symbolsRibbonPageGroup1.Name = ("symbolsRibbonPageGroup1");
             // 
             // pageLayoutRibbonPage1
             // 
-            resources.ApplyResources(pageLayoutRibbonPage1, "pageLayoutRibbonPage1");
-            pageLayoutRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pageSetupRibbonPageGroup1, pageBackgroundRibbonPageGroup1 });
-            pageLayoutRibbonPage1.Name = "pageLayoutRibbonPage1";
+            resources.ApplyResources(this.pageLayoutRibbonPage1, "pageLayoutRibbonPage1");
+            this.pageLayoutRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.pageSetupRibbonPageGroup1, this.pageBackgroundRibbonPageGroup1 });
+            this.pageLayoutRibbonPage1.Name = ("pageLayoutRibbonPage1");
             // 
             // pageSetupRibbonPageGroup1
             // 
-            resources.ApplyResources(pageSetupRibbonPageGroup1, "pageSetupRibbonPageGroup1");
-            pageSetupRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeSectionPageMarginsItem1, "M");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeSectionPageOrientationItem1, "O");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeSectionPaperKindItem1, "SZ");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeSectionColumnsItem1, "J");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(insertBreakItem1, "B");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeSectionLineNumberingItem1, "LN");
-            pageSetupRibbonPageGroup1.ItemLinks.Add(changeHyphenationOptionsItem1);
-            pageSetupRibbonPageGroup1.Name = "pageSetupRibbonPageGroup1";
+            resources.ApplyResources(this.pageSetupRibbonPageGroup1, "pageSetupRibbonPageGroup1");
+            this.pageSetupRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeSectionPageMarginsItem1, "M");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeSectionPageOrientationItem1, "O");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeSectionPaperKindItem1, "SZ");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeSectionColumnsItem1, "J");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.insertBreakItem1, "B");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeSectionLineNumberingItem1, "LN");
+            this.pageSetupRibbonPageGroup1.ItemLinks.Add(this.changeHyphenationOptionsItem1);
+            this.pageSetupRibbonPageGroup1.Name = ("pageSetupRibbonPageGroup1");
             // 
             // pageBackgroundRibbonPageGroup1
             // 
-            resources.ApplyResources(pageBackgroundRibbonPageGroup1, "pageBackgroundRibbonPageGroup1");
-            pageBackgroundRibbonPageGroup1.AllowTextClipping = false;
-            pageBackgroundRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            pageBackgroundRibbonPageGroup1.ItemLinks.Add(changePageColorItem1, "PC");
-            pageBackgroundRibbonPageGroup1.ItemLinks.Add(watermarkItem1);
-            pageBackgroundRibbonPageGroup1.ItemLinks.Add(deleteWatermarkItem1);
-            pageBackgroundRibbonPageGroup1.Name = "pageBackgroundRibbonPageGroup1";
+            resources.ApplyResources(this.pageBackgroundRibbonPageGroup1, "pageBackgroundRibbonPageGroup1");
+            this.pageBackgroundRibbonPageGroup1.AllowTextClipping = (false);
+            this.pageBackgroundRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.pageBackgroundRibbonPageGroup1.ItemLinks.Add(this.changePageColorItem1, "PC");
+            this.pageBackgroundRibbonPageGroup1.ItemLinks.Add(this.watermarkItem1);
+            this.pageBackgroundRibbonPageGroup1.ItemLinks.Add(this.deleteWatermarkItem1);
+            this.pageBackgroundRibbonPageGroup1.Name = ("pageBackgroundRibbonPageGroup1");
             // 
             // referencesRibbonPage1
             // 
-            resources.ApplyResources(referencesRibbonPage1, "referencesRibbonPage1");
-            referencesRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { tableOfContentsRibbonPageGroup1, captionsRibbonPageGroup1, notesRibbonPageGroup1 });
-            referencesRibbonPage1.Name = "referencesRibbonPage1";
+            resources.ApplyResources(this.referencesRibbonPage1, "referencesRibbonPage1");
+            this.referencesRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.tableOfContentsRibbonPageGroup1, this.captionsRibbonPageGroup1, this.notesRibbonPageGroup1 });
+            this.referencesRibbonPage1.Name = ("referencesRibbonPage1");
             // 
             // tableOfContentsRibbonPageGroup1
             // 
-            resources.ApplyResources(tableOfContentsRibbonPageGroup1, "tableOfContentsRibbonPageGroup1");
-            tableOfContentsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            tableOfContentsRibbonPageGroup1.ItemLinks.Add(insertTableOfContentsItem1, "T");
-            tableOfContentsRibbonPageGroup1.ItemLinks.Add(updateTableOfContentsItem1, "U");
-            tableOfContentsRibbonPageGroup1.ItemLinks.Add(addParagraphsToTableOfContentItem1, "A");
-            tableOfContentsRibbonPageGroup1.Name = "tableOfContentsRibbonPageGroup1";
+            resources.ApplyResources(this.tableOfContentsRibbonPageGroup1, "tableOfContentsRibbonPageGroup1");
+            this.tableOfContentsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.tableOfContentsRibbonPageGroup1.ItemLinks.Add(this.insertTableOfContentsItem1, "T");
+            this.tableOfContentsRibbonPageGroup1.ItemLinks.Add(this.updateTableOfContentsItem1, "U");
+            this.tableOfContentsRibbonPageGroup1.ItemLinks.Add(this.addParagraphsToTableOfContentItem1, "A");
+            this.tableOfContentsRibbonPageGroup1.Name = ("tableOfContentsRibbonPageGroup1");
             // 
             // captionsRibbonPageGroup1
             // 
-            resources.ApplyResources(captionsRibbonPageGroup1, "captionsRibbonPageGroup1");
-            captionsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            captionsRibbonPageGroup1.ItemLinks.Add(insertCaptionPlaceholderItem1, "C");
-            captionsRibbonPageGroup1.ItemLinks.Add(insertTableOfFiguresPlaceholderItem1, "G");
-            captionsRibbonPageGroup1.ItemLinks.Add(updateTableOfFiguresItem1, "V");
-            captionsRibbonPageGroup1.Name = "captionsRibbonPageGroup1";
+            resources.ApplyResources(this.captionsRibbonPageGroup1, "captionsRibbonPageGroup1");
+            this.captionsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.captionsRibbonPageGroup1.ItemLinks.Add(this.insertCaptionPlaceholderItem1, "C");
+            this.captionsRibbonPageGroup1.ItemLinks.Add(this.insertTableOfFiguresPlaceholderItem1, "G");
+            this.captionsRibbonPageGroup1.ItemLinks.Add(this.updateTableOfFiguresItem1, "V");
+            this.captionsRibbonPageGroup1.Name = ("captionsRibbonPageGroup1");
             // 
             // notesRibbonPageGroup1
             // 
-            resources.ApplyResources(notesRibbonPageGroup1, "notesRibbonPageGroup1");
-            notesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.True;
-            notesRibbonPageGroup1.ItemLinks.Add(insertFootnoteItem1);
-            notesRibbonPageGroup1.ItemLinks.Add(insertEndnoteItem1);
-            notesRibbonPageGroup1.ItemLinks.Add(navigationNotesItem1);
-            notesRibbonPageGroup1.ItemLinks.Add(showNotesItem1);
-            notesRibbonPageGroup1.Name = "notesRibbonPageGroup1";
+            resources.ApplyResources(this.notesRibbonPageGroup1, "notesRibbonPageGroup1");
+            this.notesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.notesRibbonPageGroup1.ItemLinks.Add(this.insertFootnoteItem1);
+            this.notesRibbonPageGroup1.ItemLinks.Add(this.insertEndnoteItem1);
+            this.notesRibbonPageGroup1.ItemLinks.Add(this.navigationNotesItem1);
+            this.notesRibbonPageGroup1.ItemLinks.Add(this.showNotesItem1);
+            this.notesRibbonPageGroup1.Name = ("notesRibbonPageGroup1");
             // 
             // mailingsRibbonPage1
             // 
-            resources.ApplyResources(mailingsRibbonPage1, "mailingsRibbonPage1");
-            mailingsRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { mailMergeRibbonPageGroup1 });
-            mailingsRibbonPage1.Name = "mailingsRibbonPage1";
+            resources.ApplyResources(this.mailingsRibbonPage1, "mailingsRibbonPage1");
+            this.mailingsRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.mailMergeRibbonPageGroup1 });
+            this.mailingsRibbonPage1.Name = ("mailingsRibbonPage1");
             // 
             // mailMergeRibbonPageGroup1
             // 
-            resources.ApplyResources(mailMergeRibbonPageGroup1, "mailMergeRibbonPageGroup1");
-            mailMergeRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            mailMergeRibbonPageGroup1.ItemLinks.Add(insertMergeFieldItem1);
-            mailMergeRibbonPageGroup1.ItemLinks.Add(showAllFieldCodesItem1);
-            mailMergeRibbonPageGroup1.ItemLinks.Add(showAllFieldResultsItem1);
-            mailMergeRibbonPageGroup1.ItemLinks.Add(toggleViewMergedDataItem1, "P");
-            mailMergeRibbonPageGroup1.Name = "mailMergeRibbonPageGroup1";
+            resources.ApplyResources(this.mailMergeRibbonPageGroup1, "mailMergeRibbonPageGroup1");
+            this.mailMergeRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.mailMergeRibbonPageGroup1.ItemLinks.Add(this.insertMergeFieldItem1);
+            this.mailMergeRibbonPageGroup1.ItemLinks.Add(this.showAllFieldCodesItem1);
+            this.mailMergeRibbonPageGroup1.ItemLinks.Add(this.showAllFieldResultsItem1);
+            this.mailMergeRibbonPageGroup1.ItemLinks.Add(this.toggleViewMergedDataItem1, "P");
+            this.mailMergeRibbonPageGroup1.Name = ("mailMergeRibbonPageGroup1");
             // 
             // reviewRibbonPage1
             // 
-            resources.ApplyResources(reviewRibbonPage1, "reviewRibbonPage1");
-            reviewRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { documentProofingRibbonPageGroup1, documentProtectionRibbonPageGroup1, documentCommentRibbonPageGroup1, documentTrackingRibbonPageGroup1, documentChangesRibbonPageGroup1 });
-            reviewRibbonPage1.Name = "reviewRibbonPage1";
+            resources.ApplyResources(this.reviewRibbonPage1, "reviewRibbonPage1");
+            this.reviewRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.documentProofingRibbonPageGroup1, this.documentProtectionRibbonPageGroup1, this.documentCommentRibbonPageGroup1, this.documentTrackingRibbonPageGroup1, this.documentChangesRibbonPageGroup1 });
+            this.reviewRibbonPage1.Name = ("reviewRibbonPage1");
             // 
             // documentProofingRibbonPageGroup1
             // 
-            resources.ApplyResources(documentProofingRibbonPageGroup1, "documentProofingRibbonPageGroup1");
-            documentProofingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentProofingRibbonPageGroup1.ItemLinks.Add(autoSpellingItem);
-            documentProofingRibbonPageGroup1.ItemLinks.Add(checkSpellingItem1, "S");
-            documentProofingRibbonPageGroup1.ItemLinks.Add(changeLanguageItem1);
-            documentProofingRibbonPageGroup1.ItemLinks.Add(spellOptionsItem);
-            documentProofingRibbonPageGroup1.Name = "documentProofingRibbonPageGroup1";
+            resources.ApplyResources(this.documentProofingRibbonPageGroup1, "documentProofingRibbonPageGroup1");
+            this.documentProofingRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentProofingRibbonPageGroup1.ItemLinks.Add(this.autoSpellingItem);
+            this.documentProofingRibbonPageGroup1.ItemLinks.Add(this.checkSpellingItem1, "S");
+            this.documentProofingRibbonPageGroup1.ItemLinks.Add(this.changeLanguageItem1);
+            this.documentProofingRibbonPageGroup1.ItemLinks.Add(this.spellOptionsItem);
+            this.documentProofingRibbonPageGroup1.Name = ("documentProofingRibbonPageGroup1");
             // 
             // documentProtectionRibbonPageGroup1
             // 
-            resources.ApplyResources(documentProtectionRibbonPageGroup1, "documentProtectionRibbonPageGroup1");
-            documentProtectionRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentProtectionRibbonPageGroup1.ItemLinks.Add(protectDocumentItem1);
-            documentProtectionRibbonPageGroup1.ItemLinks.Add(changeRangeEditingPermissionsItem1);
-            documentProtectionRibbonPageGroup1.ItemLinks.Add(unprotectDocumentItem1);
-            documentProtectionRibbonPageGroup1.Name = "documentProtectionRibbonPageGroup1";
+            resources.ApplyResources(this.documentProtectionRibbonPageGroup1, "documentProtectionRibbonPageGroup1");
+            this.documentProtectionRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentProtectionRibbonPageGroup1.ItemLinks.Add(this.protectDocumentItem1);
+            this.documentProtectionRibbonPageGroup1.ItemLinks.Add(this.changeRangeEditingPermissionsItem1);
+            this.documentProtectionRibbonPageGroup1.ItemLinks.Add(this.unprotectDocumentItem1);
+            this.documentProtectionRibbonPageGroup1.Name = ("documentProtectionRibbonPageGroup1");
             // 
             // documentCommentRibbonPageGroup1
             // 
-            resources.ApplyResources(documentCommentRibbonPageGroup1, "documentCommentRibbonPageGroup1");
-            documentCommentRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentCommentRibbonPageGroup1.ItemLinks.Add(newCommentItem1, "C");
-            documentCommentRibbonPageGroup1.ItemLinks.Add(deleteCommentsItem1, "D");
-            documentCommentRibbonPageGroup1.ItemLinks.Add(previousCommentItem1, "V");
-            documentCommentRibbonPageGroup1.ItemLinks.Add(nextCommentItem1, "N");
-            documentCommentRibbonPageGroup1.Name = "documentCommentRibbonPageGroup1";
+            resources.ApplyResources(this.documentCommentRibbonPageGroup1, "documentCommentRibbonPageGroup1");
+            this.documentCommentRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentCommentRibbonPageGroup1.ItemLinks.Add(this.newCommentItem1, "C");
+            this.documentCommentRibbonPageGroup1.ItemLinks.Add(this.deleteCommentsItem1, "D");
+            this.documentCommentRibbonPageGroup1.ItemLinks.Add(this.previousCommentItem1, "V");
+            this.documentCommentRibbonPageGroup1.ItemLinks.Add(this.nextCommentItem1, "N");
+            this.documentCommentRibbonPageGroup1.Name = ("documentCommentRibbonPageGroup1");
             // 
             // documentTrackingRibbonPageGroup1
             // 
-            resources.ApplyResources(documentTrackingRibbonPageGroup1, "documentTrackingRibbonPageGroup1");
-            documentTrackingRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentTrackingRibbonPageGroup1.ItemLinks.Add(toggleTrackChangesBarItem1, "G");
-            documentTrackingRibbonPageGroup1.ItemLinks.Add(changeDisplayForReviewModeItem1, "TD");
-            documentTrackingRibbonPageGroup1.ItemLinks.Add(showMarkupSubItem1, "TM");
-            documentTrackingRibbonPageGroup1.ItemLinks.Add(reviewingPaneItem1);
-            documentTrackingRibbonPageGroup1.Name = "documentTrackingRibbonPageGroup1";
+            resources.ApplyResources(this.documentTrackingRibbonPageGroup1, "documentTrackingRibbonPageGroup1");
+            this.documentTrackingRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentTrackingRibbonPageGroup1.ItemLinks.Add(this.toggleTrackChangesBarItem1, "G");
+            this.documentTrackingRibbonPageGroup1.ItemLinks.Add(this.changeDisplayForReviewModeItem1, "TD");
+            this.documentTrackingRibbonPageGroup1.ItemLinks.Add(this.showMarkupSubItem1, "TM");
+            this.documentTrackingRibbonPageGroup1.ItemLinks.Add(this.reviewingPaneItem1);
+            this.documentTrackingRibbonPageGroup1.Name = ("documentTrackingRibbonPageGroup1");
             // 
             // documentChangesRibbonPageGroup1
             // 
-            resources.ApplyResources(documentChangesRibbonPageGroup1, "documentChangesRibbonPageGroup1");
-            documentChangesRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentChangesRibbonPageGroup1.ItemLinks.Add(acceptAndMoveToNextSubItem1, "M");
-            documentChangesRibbonPageGroup1.ItemLinks.Add(rejectAndMoveToNextSubItem1, "M");
-            documentChangesRibbonPageGroup1.ItemLinks.Add(previousChangeItem1, "H");
-            documentChangesRibbonPageGroup1.ItemLinks.Add(nextChangeItem1, "F");
-            documentChangesRibbonPageGroup1.Name = "documentChangesRibbonPageGroup1";
+            resources.ApplyResources(this.documentChangesRibbonPageGroup1, "documentChangesRibbonPageGroup1");
+            this.documentChangesRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentChangesRibbonPageGroup1.ItemLinks.Add(this.acceptAndMoveToNextSubItem1, "M");
+            this.documentChangesRibbonPageGroup1.ItemLinks.Add(this.rejectAndMoveToNextSubItem1, "M");
+            this.documentChangesRibbonPageGroup1.ItemLinks.Add(this.previousChangeItem1, "H");
+            this.documentChangesRibbonPageGroup1.ItemLinks.Add(this.nextChangeItem1, "F");
+            this.documentChangesRibbonPageGroup1.Name = ("documentChangesRibbonPageGroup1");
             // 
             // viewRibbonPage1
             // 
-            resources.ApplyResources(viewRibbonPage1, "viewRibbonPage1");
-            viewRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { documentViewsRibbonPageGroup1, showRibbonPageGroup1, zoomRibbonPageGroup1, themeRibbonGroup });
-            viewRibbonPage1.Name = "viewRibbonPage1";
+            resources.ApplyResources(this.viewRibbonPage1, "viewRibbonPage1");
+            this.viewRibbonPage1.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.documentViewsRibbonPageGroup1, this.showRibbonPageGroup1, this.zoomRibbonPageGroup1, this.themeRibbonGroup });
+            this.viewRibbonPage1.Name = ("viewRibbonPage1");
             // 
             // documentViewsRibbonPageGroup1
             // 
-            resources.ApplyResources(documentViewsRibbonPageGroup1, "documentViewsRibbonPageGroup1");
-            documentViewsRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            documentViewsRibbonPageGroup1.ItemLinks.Add(switchToSimpleViewItem1, "L");
-            documentViewsRibbonPageGroup1.ItemLinks.Add(switchToDraftViewItem1, "E");
-            documentViewsRibbonPageGroup1.ItemLinks.Add(switchToPrintLayoutViewItem1, "P");
-            documentViewsRibbonPageGroup1.Name = "documentViewsRibbonPageGroup1";
+            resources.ApplyResources(this.documentViewsRibbonPageGroup1, "documentViewsRibbonPageGroup1");
+            this.documentViewsRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToSimpleViewItem1, "L");
+            this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToDraftViewItem1, "E");
+            this.documentViewsRibbonPageGroup1.ItemLinks.Add(this.switchToPrintLayoutViewItem1, "P");
+            this.documentViewsRibbonPageGroup1.Name = ("documentViewsRibbonPageGroup1");
             // 
             // showRibbonPageGroup1
             // 
-            resources.ApplyResources(showRibbonPageGroup1, "showRibbonPageGroup1");
-            showRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            showRibbonPageGroup1.ItemLinks.Add(toggleShowHorizontalRulerItem1);
-            showRibbonPageGroup1.ItemLinks.Add(toggleShowVerticalRulerItem1);
-            showRibbonPageGroup1.Name = "showRibbonPageGroup1";
+            resources.ApplyResources(this.showRibbonPageGroup1, "showRibbonPageGroup1");
+            this.showRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.showRibbonPageGroup1.ItemLinks.Add(this.toggleShowHorizontalRulerItem1);
+            this.showRibbonPageGroup1.ItemLinks.Add(this.toggleShowVerticalRulerItem1);
+            this.showRibbonPageGroup1.Name = ("showRibbonPageGroup1");
             // 
             // zoomRibbonPageGroup1
             // 
-            resources.ApplyResources(zoomRibbonPageGroup1, "zoomRibbonPageGroup1");
-            zoomRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
-            zoomRibbonPageGroup1.ItemLinks.Add(zoomOutItem1);
-            zoomRibbonPageGroup1.ItemLinks.Add(zoomInItem1);
-            zoomRibbonPageGroup1.ItemLinks.Add(zoomResetItem, true);
-            zoomRibbonPageGroup1.Name = "zoomRibbonPageGroup1";
+            resources.ApplyResources(this.zoomRibbonPageGroup1, "zoomRibbonPageGroup1");
+            this.zoomRibbonPageGroup1.CaptionButtonVisible = (global::DevExpress.Utils.DefaultBoolean.False);
+            this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomOutItem1);
+            this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomInItem1);
+            this.zoomRibbonPageGroup1.ItemLinks.Add(this.zoomResetItem, true);
+            this.zoomRibbonPageGroup1.Name = ("zoomRibbonPageGroup1");
             // 
             // themeRibbonGroup
             // 
-            resources.ApplyResources(themeRibbonGroup, "themeRibbonGroup");
-            themeRibbonGroup.Name = "themeRibbonGroup";
+            resources.ApplyResources(this.themeRibbonGroup, "themeRibbonGroup");
+            this.themeRibbonGroup.Name = ("themeRibbonGroup");
             // 
             // debugRibbonPage
             // 
-            resources.ApplyResources(debugRibbonPage, "debugRibbonPage");
-            debugRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { debugPageGroup });
-            debugRibbonPage.Name = "debugRibbonPage";
+            resources.ApplyResources(this.debugRibbonPage, "debugRibbonPage");
+            this.debugRibbonPage.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { this.debugPageGroup });
+            this.debugRibbonPage.Name = ("debugRibbonPage");
             // 
             // debugPageGroup
             // 
-            resources.ApplyResources(debugPageGroup, "debugPageGroup");
-            debugPageGroup.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("debugPageGroup.ImageOptions.SvgImage");
-            debugPageGroup.Name = "debugPageGroup";
+            resources.ApplyResources(this.debugPageGroup, "debugPageGroup");
+            this.debugPageGroup.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("debugPageGroup.ImageOptions.SvgImage")));
+            this.debugPageGroup.Name = ("debugPageGroup");
             // 
             // repositoryItemProgressBar1
             // 
-            resources.ApplyResources(repositoryItemProgressBar1, "repositoryItemProgressBar1");
-            repositoryItemProgressBar1.Name = "repositoryItemProgressBar1";
+            resources.ApplyResources(this.repositoryItemProgressBar1, "repositoryItemProgressBar1");
+            this.repositoryItemProgressBar1.Name = ("repositoryItemProgressBar1");
             // 
             // repositoryItemProgressBar2
             // 
-            resources.ApplyResources(repositoryItemProgressBar2, "repositoryItemProgressBar2");
-            repositoryItemProgressBar2.Name = "repositoryItemProgressBar2";
+            resources.ApplyResources(this.repositoryItemProgressBar2, "repositoryItemProgressBar2");
+            this.repositoryItemProgressBar2.Name = ("repositoryItemProgressBar2");
             // 
             // repositoryItemProgressBar3
             // 
-            resources.ApplyResources(repositoryItemProgressBar3, "repositoryItemProgressBar3");
-            repositoryItemProgressBar3.Name = "repositoryItemProgressBar3";
+            resources.ApplyResources(this.repositoryItemProgressBar3, "repositoryItemProgressBar3");
+            this.repositoryItemProgressBar3.Name = ("repositoryItemProgressBar3");
             // 
             // ribbonStatusBar
             // 
-            resources.ApplyResources(ribbonStatusBar, "ribbonStatusBar");
-            ribbonStatusBar.ItemLinks.Add(pagesBarItem, true);
-            ribbonStatusBar.ItemLinks.Add(docStatBtnItem, true);
-            ribbonStatusBar.ItemLinks.Add(barCurrLineItem, true);
-            ribbonStatusBar.ItemLinks.Add(barCurrColumnItem, true);
-            ribbonStatusBar.ItemLinks.Add(barLangBtnItem, true);
-            ribbonStatusBar.ItemLinks.Add(SimpleViewStatusItem, true);
-            ribbonStatusBar.ItemLinks.Add(DraftViewStatusItem);
-            ribbonStatusBar.ItemLinks.Add(PrintLayoutStatusItem, false, "", "", true);
-            ribbonStatusBar.ItemLinks.Add(zoomBarResetItem, true);
-            ribbonStatusBar.ItemLinks.Add(zoomBarEditItem, false, "", "", true);
-            ribbonStatusBar.Name = "ribbonStatusBar";
-            ribbonStatusBar.Ribbon = DocRibbon;
+            resources.ApplyResources(this.ribbonStatusBar, "ribbonStatusBar");
+            this.ribbonStatusBar.ItemLinks.Add(this.pagesBarItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.docStatBtnItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.barCurrLineItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.barCurrColumnItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.barLangBtnItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.SimpleViewStatusItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.DraftViewStatusItem);
+            this.ribbonStatusBar.ItemLinks.Add(this.PrintLayoutStatusItem, false, "", "", true);
+            this.ribbonStatusBar.ItemLinks.Add(this.zoomBarResetItem, true);
+            this.ribbonStatusBar.ItemLinks.Add(this.zoomBarEditItem, false, "", "", true);
+            this.ribbonStatusBar.Name = ("ribbonStatusBar");
+            this.ribbonStatusBar.Ribbon = (this.DocRibbon);
             // 
             // richEditBarController1
             // 
-            richEditBarController1.BarItems.Add(undoItem1);
-            richEditBarController1.BarItems.Add(redoItem1);
-            richEditBarController1.BarItems.Add(fileNewItem1);
-            richEditBarController1.BarItems.Add(fileOpenItem1);
-            richEditBarController1.BarItems.Add(fileSaveItem1);
-            richEditBarController1.BarItems.Add(fileSaveAsItem1);
-            richEditBarController1.BarItems.Add(printItem1);
-            richEditBarController1.BarItems.Add(printPreviewItem1);
-            richEditBarController1.BarItems.Add(encryptDocumentItem1);
-            richEditBarController1.BarItems.Add(showDocumentPropertiesFormItem1);
-            richEditBarController1.BarItems.Add(pasteItem1);
-            richEditBarController1.BarItems.Add(cutItem1);
-            richEditBarController1.BarItems.Add(copyItem1);
-            richEditBarController1.BarItems.Add(pasteSpecialItem1);
-            richEditBarController1.BarItems.Add(changeFontNameItem1);
-            richEditBarController1.BarItems.Add(changeFontSizeItem1);
-            richEditBarController1.BarItems.Add(fontSizeIncreaseItem1);
-            richEditBarController1.BarItems.Add(fontSizeDecreaseItem1);
-            richEditBarController1.BarItems.Add(toggleFontBoldItem1);
-            richEditBarController1.BarItems.Add(toggleFontItalicItem1);
-            richEditBarController1.BarItems.Add(toggleFontUnderlineItem1);
-            richEditBarController1.BarItems.Add(toggleFontDoubleUnderlineItem1);
-            richEditBarController1.BarItems.Add(toggleFontStrikeoutItem1);
-            richEditBarController1.BarItems.Add(toggleFontDoubleStrikeoutItem1);
-            richEditBarController1.BarItems.Add(toggleFontSuperscriptItem1);
-            richEditBarController1.BarItems.Add(toggleFontSubscriptItem1);
-            richEditBarController1.BarItems.Add(changeFontColorItem1);
-            richEditBarController1.BarItems.Add(changeFontHighlightColorItem1);
-            richEditBarController1.BarItems.Add(makeTextUpperCaseItem1);
-            richEditBarController1.BarItems.Add(makeTextLowerCaseItem1);
-            richEditBarController1.BarItems.Add(capitalizeEachWordCaseItem1);
-            richEditBarController1.BarItems.Add(toggleTextCaseItem1);
-            richEditBarController1.BarItems.Add(changeTextCaseItem1);
-            richEditBarController1.BarItems.Add(clearFormattingItem1);
-            richEditBarController1.BarItems.Add(toggleBulletedListItem1);
-            richEditBarController1.BarItems.Add(toggleNumberingListItem1);
-            richEditBarController1.BarItems.Add(toggleMultiLevelListItem1);
-            richEditBarController1.BarItems.Add(decreaseIndentItem1);
-            richEditBarController1.BarItems.Add(increaseIndentItem1);
-            richEditBarController1.BarItems.Add(rtlToggleBulletedListItem1);
-            richEditBarController1.BarItems.Add(rtlToggleNumberingListItem1);
-            richEditBarController1.BarItems.Add(rtlToggleMultiLevelListItem1);
-            richEditBarController1.BarItems.Add(rtlDecreaseIndentItem1);
-            richEditBarController1.BarItems.Add(rtlIncreaseIndentItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphLeftToRightItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphRightToLeftItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentLeftItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentCenterItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentRightItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentJustifyItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentArabicJustifyItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentJustifyLowItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentJustifyMediumItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentJustifyHighItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentArabicJustifyGroupItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentDistributeItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphAlignmentThaiDistributeItem1);
-            richEditBarController1.BarItems.Add(toggleShowWhitespaceItem1);
-            richEditBarController1.BarItems.Add(setSingleParagraphSpacingItem1);
-            richEditBarController1.BarItems.Add(setSesquialteralParagraphSpacingItem1);
-            richEditBarController1.BarItems.Add(setDoubleParagraphSpacingItem1);
-            richEditBarController1.BarItems.Add(showLineSpacingFormItem1);
-            richEditBarController1.BarItems.Add(addSpacingBeforeParagraphItem1);
-            richEditBarController1.BarItems.Add(removeSpacingBeforeParagraphItem1);
-            richEditBarController1.BarItems.Add(addSpacingAfterParagraphItem1);
-            richEditBarController1.BarItems.Add(removeSpacingAfterParagraphItem1);
-            richEditBarController1.BarItems.Add(changeParagraphLineSpacingItem1);
-            richEditBarController1.BarItems.Add(changeParagraphBackColorItem1);
-            richEditBarController1.BarItems.Add(galleryChangeStyleItem1);
-            richEditBarController1.BarItems.Add(findItem1);
-            richEditBarController1.BarItems.Add(replaceItem1);
-            richEditBarController1.BarItems.Add(insertPageBreakItem21);
-            richEditBarController1.BarItems.Add(insertTableItem1);
-            richEditBarController1.BarItems.Add(insertFloatingPictureItem1);
-            richEditBarController1.BarItems.Add(insertBookmarkItem1);
-            richEditBarController1.BarItems.Add(insertHyperlinkItem1);
-            richEditBarController1.BarItems.Add(editPageHeaderItem1);
-            richEditBarController1.BarItems.Add(editPageFooterItem1);
-            richEditBarController1.BarItems.Add(insertPageNumberItem1);
-            richEditBarController1.BarItems.Add(insertPageCountItem1);
-            richEditBarController1.BarItems.Add(insertTextBoxItem1);
-            richEditBarController1.BarItems.Add(insertObjectItem1);
-            richEditBarController1.BarItems.Add(insertSymbolItem1);
-            richEditBarController1.BarItems.Add(setNormalSectionPageMarginsItem1);
-            richEditBarController1.BarItems.Add(setNarrowSectionPageMarginsItem1);
-            richEditBarController1.BarItems.Add(setModerateSectionPageMarginsItem1);
-            richEditBarController1.BarItems.Add(setWideSectionPageMarginsItem1);
-            richEditBarController1.BarItems.Add(showPageMarginsSetupFormItem1);
-            richEditBarController1.BarItems.Add(changeSectionPageMarginsItem1);
-            richEditBarController1.BarItems.Add(setPortraitPageOrientationItem1);
-            richEditBarController1.BarItems.Add(setLandscapePageOrientationItem1);
-            richEditBarController1.BarItems.Add(changeSectionPageOrientationItem1);
-            richEditBarController1.BarItems.Add(changeSectionPaperKindItem1);
-            richEditBarController1.BarItems.Add(setSectionOneColumnItem1);
-            richEditBarController1.BarItems.Add(setSectionTwoColumnsItem1);
-            richEditBarController1.BarItems.Add(setSectionThreeColumnsItem1);
-            richEditBarController1.BarItems.Add(showColumnsSetupFormItem1);
-            richEditBarController1.BarItems.Add(changeSectionColumnsItem1);
-            richEditBarController1.BarItems.Add(insertPageBreakItem1);
-            richEditBarController1.BarItems.Add(insertColumnBreakItem1);
-            richEditBarController1.BarItems.Add(insertSectionBreakNextPageItem1);
-            richEditBarController1.BarItems.Add(insertSectionBreakContinuousItem1);
-            richEditBarController1.BarItems.Add(insertSectionBreakEvenPageItem1);
-            richEditBarController1.BarItems.Add(insertSectionBreakOddPageItem1);
-            richEditBarController1.BarItems.Add(insertBreakItem1);
-            richEditBarController1.BarItems.Add(setSectionLineNumberingNoneItem1);
-            richEditBarController1.BarItems.Add(setSectionLineNumberingContinuousItem1);
-            richEditBarController1.BarItems.Add(setSectionLineNumberingRestartNewPageItem1);
-            richEditBarController1.BarItems.Add(setSectionLineNumberingRestartNewSectionItem1);
-            richEditBarController1.BarItems.Add(toggleParagraphSuppressLineNumbersItem1);
-            richEditBarController1.BarItems.Add(showLineNumberingFormItem1);
-            richEditBarController1.BarItems.Add(changeSectionLineNumberingItem1);
-            richEditBarController1.BarItems.Add(setHyphenateDocumentNoneItem1);
-            richEditBarController1.BarItems.Add(setHyphenateDocumentAutomaticItem1);
-            richEditBarController1.BarItems.Add(showHyphenationOptionsFormItem1);
-            richEditBarController1.BarItems.Add(changeHyphenationOptionsItem1);
-            richEditBarController1.BarItems.Add(changePageColorItem1);
-            richEditBarController1.BarItems.Add(watermarkItem1);
-            richEditBarController1.BarItems.Add(deleteWatermarkItem1);
-            richEditBarController1.BarItems.Add(insertTableOfContentsItem1);
-            richEditBarController1.BarItems.Add(updateTableOfContentsItem1);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem1);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem2);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem3);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem4);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem5);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem6);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem7);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem8);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem9);
-            richEditBarController1.BarItems.Add(setParagraphHeadingLevelItem10);
-            richEditBarController1.BarItems.Add(addParagraphsToTableOfContentItem1);
-            richEditBarController1.BarItems.Add(insertFiguresCaptionItems1);
-            richEditBarController1.BarItems.Add(insertTablesCaptionItems1);
-            richEditBarController1.BarItems.Add(insertEquationsCaptionItems1);
-            richEditBarController1.BarItems.Add(insertCaptionPlaceholderItem1);
-            richEditBarController1.BarItems.Add(insertTableOfFiguresItems1);
-            richEditBarController1.BarItems.Add(insertTableOfTablesItems1);
-            richEditBarController1.BarItems.Add(insertTableOfEquationsItems1);
-            richEditBarController1.BarItems.Add(insertTableOfFiguresPlaceholderItem1);
-            richEditBarController1.BarItems.Add(updateTableOfFiguresItem1);
-            richEditBarController1.BarItems.Add(insertFootnoteItem1);
-            richEditBarController1.BarItems.Add(insertEndnoteItem1);
-            richEditBarController1.BarItems.Add(navigationNotesItem1);
-            richEditBarController1.BarItems.Add(showNotesItem1);
-            richEditBarController1.BarItems.Add(insertMergeFieldItem1);
-            richEditBarController1.BarItems.Add(showAllFieldCodesItem1);
-            richEditBarController1.BarItems.Add(showAllFieldResultsItem1);
-            richEditBarController1.BarItems.Add(toggleViewMergedDataItem1);
-            richEditBarController1.BarItems.Add(checkSpellingItem1);
-            richEditBarController1.BarItems.Add(changeLanguageItem1);
-            richEditBarController1.BarItems.Add(protectDocumentItem1);
-            richEditBarController1.BarItems.Add(changeRangeEditingPermissionsItem1);
-            richEditBarController1.BarItems.Add(unprotectDocumentItem1);
-            richEditBarController1.BarItems.Add(newCommentItem1);
-            richEditBarController1.BarItems.Add(deleteOneCommentItem1);
-            richEditBarController1.BarItems.Add(deleteAllCommentsShownItem1);
-            richEditBarController1.BarItems.Add(deleteAllCommentsItem1);
-            richEditBarController1.BarItems.Add(deleteCommentsItem1);
-            richEditBarController1.BarItems.Add(previousCommentItem1);
-            richEditBarController1.BarItems.Add(nextCommentItem1);
-            richEditBarController1.BarItems.Add(toggleTrackChangesBarItem1);
-            richEditBarController1.BarItems.Add(changeDisplayForReviewModeItem1);
-            richEditBarController1.BarItems.Add(showMarkupSubItem1);
-            richEditBarController1.BarItems.Add(reviewingPaneItem1);
-            richEditBarController1.BarItems.Add(acceptAndMoveToNextSubItem1);
-            richEditBarController1.BarItems.Add(rejectAndMoveToNextSubItem1);
-            richEditBarController1.BarItems.Add(previousChangeItem1);
-            richEditBarController1.BarItems.Add(nextChangeItem1);
-            richEditBarController1.BarItems.Add(switchToSimpleViewItem1);
-            richEditBarController1.BarItems.Add(switchToDraftViewItem1);
-            richEditBarController1.BarItems.Add(switchToPrintLayoutViewItem1);
-            richEditBarController1.BarItems.Add(toggleShowHorizontalRulerItem1);
-            richEditBarController1.BarItems.Add(toggleShowVerticalRulerItem1);
-            richEditBarController1.BarItems.Add(zoomOutItem1);
-            richEditBarController1.BarItems.Add(zoomInItem1);
-            richEditBarController1.BarItems.Add(goToPageHeaderItem1);
-            richEditBarController1.BarItems.Add(goToPageFooterItem1);
-            richEditBarController1.BarItems.Add(goToNextHeaderFooterItem1);
-            richEditBarController1.BarItems.Add(goToPreviousHeaderFooterItem1);
-            richEditBarController1.BarItems.Add(toggleLinkToPreviousItem1);
-            richEditBarController1.BarItems.Add(toggleDifferentFirstPageItem1);
-            richEditBarController1.BarItems.Add(toggleDifferentOddAndEvenPagesItem1);
-            richEditBarController1.BarItems.Add(closePageHeaderFooterItem1);
-            richEditBarController1.BarItems.Add(toggleFirstRowItem1);
-            richEditBarController1.BarItems.Add(toggleLastRowItem1);
-            richEditBarController1.BarItems.Add(toggleBandedRowsItem1);
-            richEditBarController1.BarItems.Add(toggleFirstColumnItem1);
-            richEditBarController1.BarItems.Add(toggleLastColumnItem1);
-            richEditBarController1.BarItems.Add(toggleBandedColumnsItem1);
-            richEditBarController1.BarItems.Add(changeTableBorderLineStyleItem1);
-            richEditBarController1.BarItems.Add(changeTableBorderLineWeightItem1);
-            richEditBarController1.BarItems.Add(changeTableBorderColorItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsBottomBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsTopBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsLeftBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsRightBorderItem1);
-            richEditBarController1.BarItems.Add(resetTableCellsAllBordersItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsAllBordersItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsOutsideBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsInsideBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsInsideHorizontalBorderItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsInsideVerticalBorderItem1);
-            richEditBarController1.BarItems.Add(toggleShowTableGridLinesItem1);
-            richEditBarController1.BarItems.Add(changeTableBordersItem1);
-            richEditBarController1.BarItems.Add(changeTableCellsShadingItem1);
-            richEditBarController1.BarItems.Add(selectTableCellItem1);
-            richEditBarController1.BarItems.Add(selectTableColumnItem1);
-            richEditBarController1.BarItems.Add(selectTableRowItem1);
-            richEditBarController1.BarItems.Add(selectTableItem1);
-            richEditBarController1.BarItems.Add(selectTableElementsItem1);
-            richEditBarController1.BarItems.Add(showTablePropertiesFormItem1);
-            richEditBarController1.BarItems.Add(showDeleteTableCellsFormItem1);
-            richEditBarController1.BarItems.Add(deleteTableColumnsItem1);
-            richEditBarController1.BarItems.Add(deleteTableRowsItem1);
-            richEditBarController1.BarItems.Add(deleteTableItem1);
-            richEditBarController1.BarItems.Add(deleteTableElementsItem1);
-            richEditBarController1.BarItems.Add(insertTableRowAboveItem1);
-            richEditBarController1.BarItems.Add(insertTableRowBelowItem1);
-            richEditBarController1.BarItems.Add(insertTableColumnToLeftItem1);
-            richEditBarController1.BarItems.Add(insertTableColumnToRightItem1);
-            richEditBarController1.BarItems.Add(mergeTableCellsItem1);
-            richEditBarController1.BarItems.Add(showSplitTableCellsForm1);
-            richEditBarController1.BarItems.Add(splitTableItem1);
-            richEditBarController1.BarItems.Add(toggleTableAutoFitContentsItem1);
-            richEditBarController1.BarItems.Add(toggleTableAutoFitWindowItem1);
-            richEditBarController1.BarItems.Add(toggleTableFixedColumnWidthItem1);
-            richEditBarController1.BarItems.Add(toggleTableAutoFitItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsTopLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsMiddleLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsBottomLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsTopCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsMiddleCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsBottomCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsTopRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsMiddleRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(toggleTableCellsBottomRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(showTableOptionsFormItem1);
-            richEditBarController1.BarItems.Add(changeFloatingObjectFillColorItem1);
-            richEditBarController1.BarItems.Add(changeFloatingObjectOutlineColorItem1);
-            richEditBarController1.BarItems.Add(changeFloatingObjectOutlineWeightItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectInlineTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectSquareTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectTightTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectThroughTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectTopAndBottomTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectBehindTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectInFrontOfTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(changeFloatingObjectTextWrapTypeItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectTopLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectTopCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectTopRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectMiddleLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectMiddleCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectMiddleRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectBottomLeftAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectBottomCenterAlignmentItem1);
-            richEditBarController1.BarItems.Add(setFloatingObjectBottomRightAlignmentItem1);
-            richEditBarController1.BarItems.Add(changeFloatingObjectAlignmentItem1);
-            richEditBarController1.BarItems.Add(floatingObjectBringForwardItem1);
-            richEditBarController1.BarItems.Add(floatingObjectBringToFrontItem1);
-            richEditBarController1.BarItems.Add(floatingObjectBringInFrontOfTextItem1);
-            richEditBarController1.BarItems.Add(floatingObjectBringForwardSubItem1);
-            richEditBarController1.BarItems.Add(floatingObjectSendBackwardItem1);
-            richEditBarController1.BarItems.Add(floatingObjectSendToBackItem1);
-            richEditBarController1.BarItems.Add(floatingObjectSendBehindTextItem1);
-            richEditBarController1.BarItems.Add(floatingObjectSendBackwardSubItem1);
-            richEditBarController1.BarItems.Add(quickPrintItem1);
-            richEditBarController1.BarItems.Add(galleryChangeTableStyleItem2);
-            richEditBarController1.Control = ChildRichEditControl;
+            this.richEditBarController1.BarItems.Add(this.undoItem1);
+            this.richEditBarController1.BarItems.Add(this.redoItem1);
+            this.richEditBarController1.BarItems.Add(this.fileNewItem1);
+            this.richEditBarController1.BarItems.Add(this.fileOpenItem1);
+            this.richEditBarController1.BarItems.Add(this.fileSaveItem1);
+            this.richEditBarController1.BarItems.Add(this.fileSaveAsItem1);
+            this.richEditBarController1.BarItems.Add(this.printItem1);
+            this.richEditBarController1.BarItems.Add(this.printPreviewItem1);
+            this.richEditBarController1.BarItems.Add(this.encryptDocumentItem1);
+            this.richEditBarController1.BarItems.Add(this.showDocumentPropertiesFormItem1);
+            this.richEditBarController1.BarItems.Add(this.pasteItem1);
+            this.richEditBarController1.BarItems.Add(this.cutItem1);
+            this.richEditBarController1.BarItems.Add(this.copyItem1);
+            this.richEditBarController1.BarItems.Add(this.pasteSpecialItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFontNameItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFontSizeItem1);
+            this.richEditBarController1.BarItems.Add(this.fontSizeIncreaseItem1);
+            this.richEditBarController1.BarItems.Add(this.fontSizeDecreaseItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontBoldItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontItalicItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontUnderlineItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontDoubleUnderlineItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontStrikeoutItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontDoubleStrikeoutItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontSuperscriptItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFontSubscriptItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFontColorItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFontHighlightColorItem1);
+            this.richEditBarController1.BarItems.Add(this.makeTextUpperCaseItem1);
+            this.richEditBarController1.BarItems.Add(this.makeTextLowerCaseItem1);
+            this.richEditBarController1.BarItems.Add(this.capitalizeEachWordCaseItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTextCaseItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTextCaseItem1);
+            this.richEditBarController1.BarItems.Add(this.clearFormattingItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleBulletedListItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleNumberingListItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleMultiLevelListItem1);
+            this.richEditBarController1.BarItems.Add(this.decreaseIndentItem1);
+            this.richEditBarController1.BarItems.Add(this.increaseIndentItem1);
+            this.richEditBarController1.BarItems.Add(this.rtlToggleBulletedListItem1);
+            this.richEditBarController1.BarItems.Add(this.rtlToggleNumberingListItem1);
+            this.richEditBarController1.BarItems.Add(this.rtlToggleMultiLevelListItem1);
+            this.richEditBarController1.BarItems.Add(this.rtlDecreaseIndentItem1);
+            this.richEditBarController1.BarItems.Add(this.rtlIncreaseIndentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphLeftToRightItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphRightToLeftItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentLeftItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentCenterItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentRightItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentJustifyItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentArabicJustifyItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentJustifyLowItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentJustifyMediumItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentJustifyHighItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentArabicJustifyGroupItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentDistributeItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphAlignmentThaiDistributeItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleShowWhitespaceItem1);
+            this.richEditBarController1.BarItems.Add(this.setSingleParagraphSpacingItem1);
+            this.richEditBarController1.BarItems.Add(this.setSesquialteralParagraphSpacingItem1);
+            this.richEditBarController1.BarItems.Add(this.setDoubleParagraphSpacingItem1);
+            this.richEditBarController1.BarItems.Add(this.showLineSpacingFormItem1);
+            this.richEditBarController1.BarItems.Add(this.addSpacingBeforeParagraphItem1);
+            this.richEditBarController1.BarItems.Add(this.removeSpacingBeforeParagraphItem1);
+            this.richEditBarController1.BarItems.Add(this.addSpacingAfterParagraphItem1);
+            this.richEditBarController1.BarItems.Add(this.removeSpacingAfterParagraphItem1);
+            this.richEditBarController1.BarItems.Add(this.changeParagraphLineSpacingItem1);
+            this.richEditBarController1.BarItems.Add(this.changeParagraphBackColorItem1);
+            this.richEditBarController1.BarItems.Add(this.galleryChangeStyleItem1);
+            this.richEditBarController1.BarItems.Add(this.findItem1);
+            this.richEditBarController1.BarItems.Add(this.replaceItem1);
+            this.richEditBarController1.BarItems.Add(this.insertPageBreakItem21);
+            this.richEditBarController1.BarItems.Add(this.insertTableItem1);
+            this.richEditBarController1.BarItems.Add(this.insertFloatingPictureItem1);
+            this.richEditBarController1.BarItems.Add(this.insertBookmarkItem1);
+            this.richEditBarController1.BarItems.Add(this.insertHyperlinkItem1);
+            this.richEditBarController1.BarItems.Add(this.editPageHeaderItem1);
+            this.richEditBarController1.BarItems.Add(this.editPageFooterItem1);
+            this.richEditBarController1.BarItems.Add(this.insertPageNumberItem1);
+            this.richEditBarController1.BarItems.Add(this.insertPageCountItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTextBoxItem1);
+            this.richEditBarController1.BarItems.Add(this.insertObjectItem1);
+            this.richEditBarController1.BarItems.Add(this.insertSymbolItem1);
+            this.richEditBarController1.BarItems.Add(this.setNormalSectionPageMarginsItem1);
+            this.richEditBarController1.BarItems.Add(this.setNarrowSectionPageMarginsItem1);
+            this.richEditBarController1.BarItems.Add(this.setModerateSectionPageMarginsItem1);
+            this.richEditBarController1.BarItems.Add(this.setWideSectionPageMarginsItem1);
+            this.richEditBarController1.BarItems.Add(this.showPageMarginsSetupFormItem1);
+            this.richEditBarController1.BarItems.Add(this.changeSectionPageMarginsItem1);
+            this.richEditBarController1.BarItems.Add(this.setPortraitPageOrientationItem1);
+            this.richEditBarController1.BarItems.Add(this.setLandscapePageOrientationItem1);
+            this.richEditBarController1.BarItems.Add(this.changeSectionPageOrientationItem1);
+            this.richEditBarController1.BarItems.Add(this.changeSectionPaperKindItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionOneColumnItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionTwoColumnsItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionThreeColumnsItem1);
+            this.richEditBarController1.BarItems.Add(this.showColumnsSetupFormItem1);
+            this.richEditBarController1.BarItems.Add(this.changeSectionColumnsItem1);
+            this.richEditBarController1.BarItems.Add(this.insertPageBreakItem1);
+            this.richEditBarController1.BarItems.Add(this.insertColumnBreakItem1);
+            this.richEditBarController1.BarItems.Add(this.insertSectionBreakNextPageItem1);
+            this.richEditBarController1.BarItems.Add(this.insertSectionBreakContinuousItem1);
+            this.richEditBarController1.BarItems.Add(this.insertSectionBreakEvenPageItem1);
+            this.richEditBarController1.BarItems.Add(this.insertSectionBreakOddPageItem1);
+            this.richEditBarController1.BarItems.Add(this.insertBreakItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionLineNumberingNoneItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionLineNumberingContinuousItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionLineNumberingRestartNewPageItem1);
+            this.richEditBarController1.BarItems.Add(this.setSectionLineNumberingRestartNewSectionItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleParagraphSuppressLineNumbersItem1);
+            this.richEditBarController1.BarItems.Add(this.showLineNumberingFormItem1);
+            this.richEditBarController1.BarItems.Add(this.changeSectionLineNumberingItem1);
+            this.richEditBarController1.BarItems.Add(this.setHyphenateDocumentNoneItem1);
+            this.richEditBarController1.BarItems.Add(this.setHyphenateDocumentAutomaticItem1);
+            this.richEditBarController1.BarItems.Add(this.showHyphenationOptionsFormItem1);
+            this.richEditBarController1.BarItems.Add(this.changeHyphenationOptionsItem1);
+            this.richEditBarController1.BarItems.Add(this.changePageColorItem1);
+            this.richEditBarController1.BarItems.Add(this.watermarkItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteWatermarkItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableOfContentsItem1);
+            this.richEditBarController1.BarItems.Add(this.updateTableOfContentsItem1);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem1);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem2);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem3);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem4);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem5);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem6);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem7);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem8);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem9);
+            this.richEditBarController1.BarItems.Add(this.setParagraphHeadingLevelItem10);
+            this.richEditBarController1.BarItems.Add(this.addParagraphsToTableOfContentItem1);
+            this.richEditBarController1.BarItems.Add(this.insertFiguresCaptionItems1);
+            this.richEditBarController1.BarItems.Add(this.insertTablesCaptionItems1);
+            this.richEditBarController1.BarItems.Add(this.insertEquationsCaptionItems1);
+            this.richEditBarController1.BarItems.Add(this.insertCaptionPlaceholderItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableOfFiguresItems1);
+            this.richEditBarController1.BarItems.Add(this.insertTableOfTablesItems1);
+            this.richEditBarController1.BarItems.Add(this.insertTableOfEquationsItems1);
+            this.richEditBarController1.BarItems.Add(this.insertTableOfFiguresPlaceholderItem1);
+            this.richEditBarController1.BarItems.Add(this.updateTableOfFiguresItem1);
+            this.richEditBarController1.BarItems.Add(this.insertFootnoteItem1);
+            this.richEditBarController1.BarItems.Add(this.insertEndnoteItem1);
+            this.richEditBarController1.BarItems.Add(this.navigationNotesItem1);
+            this.richEditBarController1.BarItems.Add(this.showNotesItem1);
+            this.richEditBarController1.BarItems.Add(this.insertMergeFieldItem1);
+            this.richEditBarController1.BarItems.Add(this.showAllFieldCodesItem1);
+            this.richEditBarController1.BarItems.Add(this.showAllFieldResultsItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleViewMergedDataItem1);
+            this.richEditBarController1.BarItems.Add(this.checkSpellingItem1);
+            this.richEditBarController1.BarItems.Add(this.changeLanguageItem1);
+            this.richEditBarController1.BarItems.Add(this.protectDocumentItem1);
+            this.richEditBarController1.BarItems.Add(this.changeRangeEditingPermissionsItem1);
+            this.richEditBarController1.BarItems.Add(this.unprotectDocumentItem1);
+            this.richEditBarController1.BarItems.Add(this.newCommentItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteOneCommentItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteAllCommentsShownItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteAllCommentsItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteCommentsItem1);
+            this.richEditBarController1.BarItems.Add(this.previousCommentItem1);
+            this.richEditBarController1.BarItems.Add(this.nextCommentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTrackChangesBarItem1);
+            this.richEditBarController1.BarItems.Add(this.changeDisplayForReviewModeItem1);
+            this.richEditBarController1.BarItems.Add(this.showMarkupSubItem1);
+            this.richEditBarController1.BarItems.Add(this.reviewingPaneItem1);
+            this.richEditBarController1.BarItems.Add(this.acceptAndMoveToNextSubItem1);
+            this.richEditBarController1.BarItems.Add(this.rejectAndMoveToNextSubItem1);
+            this.richEditBarController1.BarItems.Add(this.previousChangeItem1);
+            this.richEditBarController1.BarItems.Add(this.nextChangeItem1);
+            this.richEditBarController1.BarItems.Add(this.switchToSimpleViewItem1);
+            this.richEditBarController1.BarItems.Add(this.switchToDraftViewItem1);
+            this.richEditBarController1.BarItems.Add(this.switchToPrintLayoutViewItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleShowHorizontalRulerItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleShowVerticalRulerItem1);
+            this.richEditBarController1.BarItems.Add(this.zoomOutItem1);
+            this.richEditBarController1.BarItems.Add(this.zoomInItem1);
+            this.richEditBarController1.BarItems.Add(this.goToPageHeaderItem1);
+            this.richEditBarController1.BarItems.Add(this.goToPageFooterItem1);
+            this.richEditBarController1.BarItems.Add(this.goToNextHeaderFooterItem1);
+            this.richEditBarController1.BarItems.Add(this.goToPreviousHeaderFooterItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleLinkToPreviousItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleDifferentFirstPageItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleDifferentOddAndEvenPagesItem1);
+            this.richEditBarController1.BarItems.Add(this.closePageHeaderFooterItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFirstRowItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleLastRowItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleBandedRowsItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleFirstColumnItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleLastColumnItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleBandedColumnsItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTableBorderLineStyleItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTableBorderLineWeightItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTableBorderColorItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsBottomBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsTopBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsLeftBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsRightBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.resetTableCellsAllBordersItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsAllBordersItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsOutsideBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsInsideBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsInsideHorizontalBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsInsideVerticalBorderItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleShowTableGridLinesItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTableBordersItem1);
+            this.richEditBarController1.BarItems.Add(this.changeTableCellsShadingItem1);
+            this.richEditBarController1.BarItems.Add(this.selectTableCellItem1);
+            this.richEditBarController1.BarItems.Add(this.selectTableColumnItem1);
+            this.richEditBarController1.BarItems.Add(this.selectTableRowItem1);
+            this.richEditBarController1.BarItems.Add(this.selectTableItem1);
+            this.richEditBarController1.BarItems.Add(this.selectTableElementsItem1);
+            this.richEditBarController1.BarItems.Add(this.showTablePropertiesFormItem1);
+            this.richEditBarController1.BarItems.Add(this.showDeleteTableCellsFormItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteTableColumnsItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteTableRowsItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteTableItem1);
+            this.richEditBarController1.BarItems.Add(this.deleteTableElementsItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableRowAboveItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableRowBelowItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableColumnToLeftItem1);
+            this.richEditBarController1.BarItems.Add(this.insertTableColumnToRightItem1);
+            this.richEditBarController1.BarItems.Add(this.mergeTableCellsItem1);
+            this.richEditBarController1.BarItems.Add(this.showSplitTableCellsForm1);
+            this.richEditBarController1.BarItems.Add(this.splitTableItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableAutoFitContentsItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableAutoFitWindowItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableFixedColumnWidthItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableAutoFitItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsTopLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsMiddleLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsBottomLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsTopCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsMiddleCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsBottomCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsTopRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsMiddleRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.toggleTableCellsBottomRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.showTableOptionsFormItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFloatingObjectFillColorItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFloatingObjectOutlineColorItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFloatingObjectOutlineWeightItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectInlineTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectSquareTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectTightTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectThroughTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectTopAndBottomTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectBehindTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectInFrontOfTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFloatingObjectTextWrapTypeItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectTopLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectTopCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectTopRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectMiddleLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectMiddleCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectMiddleRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectBottomLeftAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectBottomCenterAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.setFloatingObjectBottomRightAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.changeFloatingObjectAlignmentItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectBringForwardItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectBringToFrontItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectBringInFrontOfTextItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectBringForwardSubItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectSendBackwardItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectSendToBackItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectSendBehindTextItem1);
+            this.richEditBarController1.BarItems.Add(this.floatingObjectSendBackwardSubItem1);
+            this.richEditBarController1.BarItems.Add(this.quickPrintItem1);
+            this.richEditBarController1.BarItems.Add(this.galleryChangeTableStyleItem2);
+            this.richEditBarController1.Control = (this.ChildRichEditControl);
             // 
             // documentStatsTimer
             // 
-            documentStatsTimer.Tick += DocumentStatsTimer_Tick;
+            this.documentStatsTimer.Tick += (this.DocumentStatsTimer_Tick);
             // 
             // galleryChangeTableStyleItem1
             // 
-            resources.ApplyResources(galleryChangeTableStyleItem1, "galleryChangeTableStyleItem1");
-            galleryChangeTableStyleItem1.CurrentItem = null;
-            galleryChangeTableStyleItem1.DeleteItemLink = null;
+            resources.ApplyResources(this.galleryChangeTableStyleItem1, "galleryChangeTableStyleItem1");
+            this.galleryChangeTableStyleItem1.CurrentItem = (null);
+            this.galleryChangeTableStyleItem1.DeleteItemLink = (null);
             // 
             // 
             // 
-            galleryChangeTableStyleItem1.Gallery.ColumnCount = 3;
-            galleryChangeTableStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup6 });
-            galleryChangeTableStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 46);
-            galleryChangeTableStyleItem1.Id = 199;
-            galleryChangeTableStyleItem1.ImageOptions.ImageIndex = (int)resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.ImageIndex");
-            galleryChangeTableStyleItem1.ImageOptions.LargeImageIndex = (int)resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.LargeImageIndex");
-            galleryChangeTableStyleItem1.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.SvgImage");
-            galleryChangeTableStyleItem1.ModifyItemLink = null;
-            galleryChangeTableStyleItem1.Name = "galleryChangeTableStyleItem1";
-            galleryChangeTableStyleItem1.NewItemLink = null;
-            galleryChangeTableStyleItem1.PopupGallery = null;
+            this.galleryChangeTableStyleItem1.Gallery.ColumnCount = (3);
+            this.galleryChangeTableStyleItem1.Gallery.Groups.AddRange(new global::DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup3 });
+            this.galleryChangeTableStyleItem1.Gallery.ImageSize = (new global::System.Drawing.Size(65, 46));
+            this.galleryChangeTableStyleItem1.Id = (199);
+            this.galleryChangeTableStyleItem1.ImageOptions.ImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.ImageIndex")));
+            this.galleryChangeTableStyleItem1.ImageOptions.LargeImageIndex = ((global::System.Int32)(resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.LargeImageIndex")));
+            this.galleryChangeTableStyleItem1.ImageOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("galleryChangeTableStyleItem1.ImageOptions.SvgImage")));
+            this.galleryChangeTableStyleItem1.ModifyItemLink = (null);
+            this.galleryChangeTableStyleItem1.Name = ("galleryChangeTableStyleItem1");
+            this.galleryChangeTableStyleItem1.NewItemLink = (null);
+            this.galleryChangeTableStyleItem1.PopupGallery = (null);
             // 
             // richEditCommentControl1
             // 
-            resources.ApplyResources(richEditCommentControl1, "richEditCommentControl1");
-            richEditCommentControl1.ActiveViewType = DevExpress.XtraRichEdit.RichEditViewType.Simple;
-            richEditCommentControl1.Name = "richEditCommentControl1";
-            richEditCommentControl1.ReadOnly = false;
-            richEditCommentControl1.RichEditControl = null;
+            resources.ApplyResources(this.richEditCommentControl1, "richEditCommentControl1");
+            this.richEditCommentControl1.ActiveViewType = (global::DevExpress.XtraRichEdit.RichEditViewType.Simple);
+            this.richEditCommentControl1.Name = ("richEditCommentControl1");
+            this.richEditCommentControl1.ReadOnly = (false);
+            this.richEditCommentControl1.RichEditControl = (null);
             // 
             // dockManager1
             // 
-            dockManager1.Form = this;
-            dockManager1.HiddenPanels.AddRange(new DevExpress.XtraBars.Docking.DockPanel[] { dockPanel1 });
-            dockManager1.TopZIndexControls.AddRange(new string[] { "DevExpress.XtraBars.BarDockControl", "DevExpress.XtraBars.StandaloneBarDockControl", "System.Windows.Forms.MenuStrip", "System.Windows.Forms.StatusStrip", "System.Windows.Forms.StatusBar", "DevExpress.XtraBars.Ribbon.RibbonStatusBar", "DevExpress.XtraBars.Ribbon.RibbonControl", "DevExpress.XtraBars.Navigation.OfficeNavigationBar", "DevExpress.XtraBars.Navigation.TileNavPane", "DevExpress.XtraBars.TabFormControl", "DevExpress.XtraBars.FluentDesignSystem.FluentDesignFormControl", "DevExpress.XtraBars.ToolbarForm.ToolbarFormControl" });
+            this.dockManager1.Form = (this);
+            this.dockManager1.HiddenPanels.AddRange(new global::DevExpress.XtraBars.Docking.DockPanel[] { this.dockPanel1 });
+            this.dockManager1.TopZIndexControls.AddRange(new global::System.String[] { "DevExpress.XtraBars.BarDockControl", "DevExpress.XtraBars.StandaloneBarDockControl", "System.Windows.Forms.MenuStrip", "System.Windows.Forms.StatusStrip", "System.Windows.Forms.StatusBar", "DevExpress.XtraBars.Ribbon.RibbonStatusBar", "DevExpress.XtraBars.Ribbon.RibbonControl", "DevExpress.XtraBars.Navigation.OfficeNavigationBar", "DevExpress.XtraBars.Navigation.TileNavPane", "DevExpress.XtraBars.TabFormControl", "DevExpress.XtraBars.FluentDesignSystem.FluentDesignFormControl", "DevExpress.XtraBars.ToolbarForm.ToolbarFormControl" });
             // 
             // dockPanel1
             // 
-            resources.ApplyResources(dockPanel1, "dockPanel1");
-            dockPanel1.Controls.Add(dockPanel1_Container);
-            dockPanel1.Dock = DevExpress.XtraBars.Docking.DockingStyle.Left;
-            dockPanel1.ID = new System.Guid("54354b42-dcf8-4ad4-89ff-ff27bff5103e");
-            dockPanel1.Name = "dockPanel1";
-            dockPanel1.OriginalSize = new System.Drawing.Size(400, 200);
-            dockPanel1.SavedDock = DevExpress.XtraBars.Docking.DockingStyle.Left;
-            dockPanel1.SavedIndex = 0;
-            dockPanel1.Visibility = DevExpress.XtraBars.Docking.DockVisibility.Hidden;
+            resources.ApplyResources(this.dockPanel1, "dockPanel1");
+            this.dockPanel1.Controls.Add(this.dockPanel1_Container);
+            this.dockPanel1.Dock = (global::DevExpress.XtraBars.Docking.DockingStyle.Left);
+            this.dockPanel1.ID = (new global::System.Guid("54354b42-dcf8-4ad4-89ff-ff27bff5103e"));
+            this.dockPanel1.Name = ("dockPanel1");
+            this.dockPanel1.OriginalSize = (new global::System.Drawing.Size(400, 200));
+            this.dockPanel1.SavedDock = (global::DevExpress.XtraBars.Docking.DockingStyle.Left);
+            this.dockPanel1.SavedIndex = (0);
+            this.dockPanel1.Visibility = (global::DevExpress.XtraBars.Docking.DockVisibility.Hidden);
             // 
             // dockPanel1_Container
             // 
-            resources.ApplyResources(dockPanel1_Container, "dockPanel1_Container");
-            dockPanel1_Container.Controls.Add(richEditCommentControl2);
-            dockPanel1_Container.Name = "dockPanel1_Container";
+            resources.ApplyResources(this.dockPanel1_Container, "dockPanel1_Container");
+            this.dockPanel1_Container.Controls.Add(this.richEditCommentControl2);
+            this.dockPanel1_Container.Name = ("dockPanel1_Container");
             // 
             // richEditCommentControl2
             // 
-            resources.ApplyResources(richEditCommentControl2, "richEditCommentControl2");
-            richEditCommentControl2.ActiveViewType = DevExpress.XtraRichEdit.RichEditViewType.Simple;
-            richEditCommentControl2.Name = "richEditCommentControl2";
-            richEditCommentControl2.ReadOnly = false;
-            richEditCommentControl2.RichEditControl = ChildRichEditControl;
+            resources.ApplyResources(this.richEditCommentControl2, "richEditCommentControl2");
+            this.richEditCommentControl2.ActiveViewType = (global::DevExpress.XtraRichEdit.RichEditViewType.Simple);
+            this.richEditCommentControl2.Name = ("richEditCommentControl2");
+            this.richEditCommentControl2.ReadOnly = (false);
+            this.richEditCommentControl2.RichEditControl = (this.ChildRichEditControl);
             // 
             // DocForm
             // 
             resources.ApplyResources(this, "$this");
-            AllowFormGlass = DevExpress.Utils.DefaultBoolean.True;
-            Appearance.Options.UseFont = true;
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            Controls.Add(ChildRichEditControl);
-            Controls.Add(ribbonStatusBar);
-            Controls.Add(DocRibbon);
-            IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("DocForm.IconOptions.SvgImage");
-            Name = "DocForm";
-            Ribbon = DocRibbon;
-            StatusBar = ribbonStatusBar;
-            Activated += DocForm_Activated;
-            FormClosing += DocForm_FormClosing;
-            Load += DocForm_Load;
-            ((System.ComponentModel.ISupportInitialize)DocRibbon).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemFontEdit1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemRichEditFontSizeEdit1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)displayForReviewModeComboBox1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)workProgressBar).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemBorderLineWeight1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemFloatingObjectOutlineWeight1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemZoomTrackBar1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)exportPopupMenu).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar2).EndInit();
-            ((System.ComponentModel.ISupportInitialize)repositoryItemProgressBar3).EndInit();
-            ((System.ComponentModel.ISupportInitialize)richEditBarController1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)dockManager1).EndInit();
-            dockPanel1.ResumeLayout(false);
-            dockPanel1_Container.ResumeLayout(false);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AllowFormGlass = (global::DevExpress.Utils.DefaultBoolean.True);
+            this.Appearance.Options.UseFont = (true);
+            this.AutoScaleMode = (global::System.Windows.Forms.AutoScaleMode.Font);
+            this.Controls.Add(this.ChildRichEditControl);
+            this.Controls.Add(this.ribbonStatusBar);
+            this.Controls.Add(this.DocRibbon);
+            this.IconOptions.SvgImage = ((global::DevExpress.Utils.Svg.SvgImage)(resources.GetObject("DocForm.IconOptions.SvgImage")));
+            this.Name = ("DocForm");
+            this.Ribbon = (this.DocRibbon);
+            this.StatusBar = (this.ribbonStatusBar);
+            this.Activated += (this.DocForm_Activated);
+            this.FormClosing += (this.DocForm_FormClosing);
+            this.Load += (this.DocForm_Load);
+            ((global::System.ComponentModel.ISupportInitialize)(this.DocRibbon)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemFontEdit1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemRichEditFontSizeEdit1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.displayForReviewModeComboBox1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.workProgressBar)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemBorderLineWeight1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemFloatingObjectOutlineWeight1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemZoomTrackBar1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.exportPopupMenu)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar2)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.repositoryItemProgressBar3)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.richEditBarController1)).EndInit();
+            ((global::System.ComponentModel.ISupportInitialize)(this.dockManager1)).EndInit();
+            this.dockPanel1.ResumeLayout(false);
+            this.dockPanel1_Container.ResumeLayout(false);
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
         #endregion
 

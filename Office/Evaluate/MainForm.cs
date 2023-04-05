@@ -15,14 +15,14 @@
     using System.IO;
     using System.Windows.Forms;
 
-    public partial class MainForm : RibbonForm
+    internal sealed partial class MainForm : RibbonForm
     {
         private CopyData copyData;
         private MruList mruList;
-        internal int BookIndex;
+        private int bookIndex;
         // internal bool IsFloating;
-        internal bool IsUpdateDismiss;
-        internal BackgroundWorker UpdateWorker;
+        private readonly bool isUpdateDismiss;
+        private readonly BackgroundWorker updateWorker;
         // OptionsForm optionsDlg = null;
 
         private BookForm CurrentDocument
@@ -42,11 +42,11 @@
             }
         }
 
-        public MainForm(string fileName)
+        internal MainForm(string fileName)
         {
             // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
             var sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "False");
-            IsUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed);
+            if (sUpdateDismissed != null) isUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed);
 
             SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
@@ -57,14 +57,8 @@
             RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
             RizonesoftEx.IsBetaVersion = true;
 
-            if (string.IsNullOrEmpty(fileName))
-            {
-                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Creating Document");
-            }
-            else
-            {
-                SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Loading Document");
-            }
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel,
+                string.IsNullOrEmpty(fileName) ? "Creating Document" : "Loading Document");
 
             CreateNewWorkbook(fileName);
 
@@ -74,18 +68,18 @@
                 MainRibbonControl.SelectedPage = HomeRibbonPage;
             }
 
-            UpdateWorker = new BackgroundWorker();
-            UpdateWorker.DoWork += new DoWorkEventHandler(UpdateWorker_DoWork);
-            UpdateWorker.RunWorkerAsync();
+            updateWorker = new BackgroundWorker();
+            updateWorker.DoWork += UpdateWorker_DoWork;
+            updateWorker.RunWorkerAsync();
 
             Initialize();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Restoring Ribbon Layout");
             RestoreRibbon();
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {EvaluateEx.ProductName}");
 
-            if (IsUpdateDismiss)
+            if (isUpdateDismiss)
             {
-                UpdateWorker.RunWorkerAsync();
+                updateWorker.RunWorkerAsync();
             }
         }
 
@@ -138,11 +132,11 @@
             }
             else
             {
-                BookIndex++;
+                bookIndex++;
             }
 
             BookForm newBook = new BookForm();
-            newBook.OpenFile(fileName, BookIndex);
+            newBook.OpenFile(fileName, bookIndex);
             newBook.MdiParent = this;
             newBook.Show();
         }
@@ -171,7 +165,7 @@
             else
             {
                 string sMessage = $"Cannot open the file '{fileName}'\nbecause the file format or file extension is not valid.";
-                Logging.logger.Error(Logging.CleanMessageForLogging(sMessage));
+                Logging.Logger.Error(Logging.CleanMessageForLogging(sMessage));
                 XtraMessageBox.Show(sMessage, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -218,7 +212,7 @@
             openFileDlg.Title = "Select a Document";
 
             DialogResult dlgResult = openFileDlg.ShowDialog();
-            Logging.logger.Info($"Open Document Result - {dlgResult}");
+            Logging.Logger.Info($"Open Document Result - {dlgResult}");
 
             // Show the dialog and get result.
             if (dlgResult == DialogResult.OK)
@@ -240,7 +234,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.Logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }

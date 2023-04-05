@@ -6,19 +6,12 @@ namespace Rizonesoft.Office.Flow
 
     public partial class DiagramForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
-
-        #region Properties
-
         public string FileName { get; internal set; }
-
-        #endregion Properties
 
         public DiagramForm()
         {
             InitializeComponent();
         }
-
-        #region Viewer Processing
 
         public void OpenFile(string diagramName, int docIndex)
         {
@@ -49,8 +42,5 @@ namespace Rizonesoft.Office.Flow
             }
             Text = fileCaption;
         }
-
-        #endregion Viewer Processing
-
     }
 }

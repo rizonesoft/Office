@@ -20,8 +20,6 @@
         internal bool isLicensed;
         internal BackgroundWorker updateWorker;
 
-        #region Properties
-
         DiagramForm CurrentViewer
         {
             get
@@ -39,11 +37,9 @@
             }
         }
 
-        #endregion Properties
-
         public MainForm(string fileName)
         {
-            SetSkins();
+            //SetSkins();
             SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
             SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
             OnShowMdiChildCaptionInParentTitle();
@@ -56,8 +52,6 @@
             CreateNewDiagram(fileName);
 
         }
-
-        #region Overrides
 
         protected override void OnLoad(EventArgs e)
         {
@@ -73,10 +67,6 @@
             SaveSettings();
             SaveSkins();
         }
-
-        #endregion Overrides
-
-        #region Initialize
 
         private void Initialize()
         {
@@ -107,7 +97,7 @@
                 catch (IOException ioEx)
                 {
                     mruList.RemoveFile(fileName);
-                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
+                    Logging.Logger.Error(ioEx, "Unable to add filename to MRU list.");
                 }
             }
         }
@@ -116,10 +106,6 @@
         {
             //OpenFile(fileName);
         }
-
-        #endregion Initialize
-
-        #region Diagram Processing
 
         public void CreateNewDiagram(string fileName)
         {
@@ -146,20 +132,12 @@
             newViewer.Show();
         }
 
-        #endregion Diagram Processing
-
-        #region Merging
-
         private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
         {
             RibbonControl parentRibbon = sender as RibbonControl;
             RibbonControl childRibbon = e.MergedChild;
             parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
         }
-
-        #endregion Merging
-
-        #region Settings
 
         private void LoadSettings()
         {
@@ -206,10 +184,6 @@
 
         }
 
-        #endregion Settings
-
-        #region Configurations
-
         private static void CreateProgramDirectories()
         {
             if (!Directory.Exists(StcFlow.UserAppDirectory))
@@ -217,9 +191,5 @@
                 Directory.CreateDirectory(StcFlow.UserAppDirectory);
             }
         }
-
-        #endregion Configurations
-
-        
     }
 }

@@ -86,7 +86,7 @@ namespace Rizonesoft.Office.Verbum
             catch (Exception ex)
             {
                 ErrorMessage.Show("Woops!", $"{StcVerbum.ProductName} was unable to start.");
-                Logging.logger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
+                Logging.Logger.Fatal($"{StcVerbum.ProductName} was unable to start.", ex);
             }
         }
 

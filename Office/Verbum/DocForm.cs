@@ -24,6 +24,8 @@
     using System.Globalization;
     using System.IO;
     using System.Windows.Forms;
+    using System.Drawing.Printing;
+    using System.Windows.Controls.Ribbon;
 
     internal sealed partial class DocForm : RibbonForm
     {
@@ -44,7 +46,7 @@
             var commandFactory = new CustomCommandFactoryService(ChildRichEditControl, ChildRichEditControl.GetService<IRichEditCommandFactoryService>());
             ChildRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
 
-            MainForm.SetSkins();
+            // MainForm.SetSkins();
 
             exportBarButton.DefaultDropDownLink = exportPopupMenu.ItemLinks[0];
             exportPDFPopupMenuItem.ItemClick += ExportBarButton_ItemClick;
@@ -63,15 +65,15 @@
 
         public string FileName { get; private set; }
 
-/*
-        public RichEditControl RichEditControlCore
-        {
-            get
-            {
-                return this.ChildRichEditControl;
-            }
-        }
-*/
+        /*
+                public RichEditControl RichEditControlCore
+                {
+                    get
+                    {
+                        return this.ChildRichEditControl;
+                    }
+                }
+        */
 
         private bool IncludeTextBoxes
         {
@@ -269,7 +271,7 @@
             }
             catch (Exception ex)
             {
-                Logging.logger.Error(ex.Message);
+                Logging.Logger.Error(ex.Message);
                 XtraMessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -318,7 +320,7 @@
             };
 
             ChildRichEditControl.ExportToPdf(fileName, pdfOptions);
-            ShellExecuteEx.OpenPDFDocument(fileName);
+            ShellExecuteEx.OpenPdfDocument(fileName);
         }
 
         private void ExportToImage(string fileName)
@@ -389,7 +391,7 @@
             }
             catch (Exception ex)
             {
-                Logging.logger.Error(ex, "Whoops!");
+                Logging.Logger.Error(ex, "Whoops!");
                 MessageBox.Show(ex.Message, @"Whoops!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -492,10 +494,6 @@
             documentStatsTimer.Start();
         }
 
-        private void MainRichEditControl_DockChanged(object sender, EventArgs e)
-        {
-        }
-
         private void MainRichEditControl_DocumentLoaded(object sender, EventArgs e)
         {
             SetDocumentCaption(ChildRichEditControl.Options.DocumentSaveOptions.CurrentFileName);
@@ -509,7 +507,7 @@
 
         private void mainRichEditControl_InvalidFormatException(object sender, RichEditInvalidFormatExceptionEventArgs e)
         {
-            Logging.logger.Warn($"Cannot open the file '{FileName}' because the file format or file extension is not valid.");
+            Logging.Logger.Warn($"Cannot open the file '{FileName}' because the file format or file extension is not valid.");
             XtraMessageBox.Show($"Cannot open the file '{FileName}' because the file format or file extension is not valid.\n" +
                 "Verify that file has not been corrupted and that the file extension matches the format of the file.",
                 "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -519,7 +517,7 @@
         {
             if (ChildRichEditControl.DocumentLayout.IsDocumentFormattingCompleted)
             {
-                RangedLayoutElement element = ChildRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(ChildRichEditControl.Document.CaretPosition);
+                var element = ChildRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(ChildRichEditControl.Document.CaretPosition);
                 if (element != null)
                 {
                     currentPage = ChildRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
@@ -528,10 +526,10 @@
 
                 CustomLayoutVisitor visitor = new(ChildRichEditControl.Document);
 
-                for (int i = 0; i < ChildRichEditControl.DocumentLayout.GetPageCount(); i++)
+                for (var i = 0; i < ChildRichEditControl.DocumentLayout.GetPageCount(); i++)
                 {
                     visitor.Reset();
-                    LayoutPage page = ChildRichEditControl.DocumentLayout.GetPage(i);
+                    var page = ChildRichEditControl.DocumentLayout.GetPage(i);
                     visitor.Visit(page);
 
                     if (!visitor.IsFound)
@@ -551,38 +549,42 @@
 
             try
             {
-                RibbonPageCategory tableToolsCat = DocRibbon.MergeOwner.PageCategories["Table Tools"];
-                RibbonPageCategory picToolsCat = DocRibbon.MergeOwner.PageCategories["Picture Tools"];
-                RibbonPageCategory headToolsCat = DocRibbon.MergeOwner.PageCategories["Header & Footer Tools"];
+                var tableToolsCat = DocRibbon.MergeOwner.PageCategories["Table Tools"];
+                var picToolsCat = DocRibbon.MergeOwner.PageCategories["Picture Tools"];
+                var headToolsCat = DocRibbon.MergeOwner.PageCategories["Header & Footer Tools"];
 
-                if (tableToolsCat != null)
+                
+                if (ChildRichEditControl.IsSelectionInTable())
                 {
-                    tableToolsCat.Visible = ChildRichEditControl.IsSelectionInTable();
+                    if (tableToolsCat != null) tableToolsCat.Visible = true;
                     DocRibbon.SelectPage(tableDesignChildRibbonPage);
                 }
+
 
                 if (picToolsCat != null)
                 {
                     // To-Do: Complete logic
-                    picToolsCat.Visible = ChildRichEditControl.IsFloatingObjectSelected;
+                    // picToolsCat.Visible = ChildRichEditControl.IsFloatingObjectSelected;
                 }
 
                 if (headToolsCat != null)
                 {
                     // To-Do: Complete logic
-                    headToolsCat.Visible = ChildRichEditControl.IsSelectionInHeaderOrFooter;
+                    // headToolsCat.Visible = ChildRichEditControl.IsSelectionInHeaderOrFooter;
                 }
             }
             catch (Exception ex)
             {
-                Logging.logger.Error(ex.Message);
+                Logging.Logger.Error(ex.Message);
             }
         }
 
         private void MainRichEditControl_StartHeaderFooterEditing(object sender, HeaderFooterEditingEventArgs e)
         {
             headerToolsChildRibbonCategory.Visible = true;
-            DocRibbon.SelectedPage = hfToolsDesignChildRibPage;
+            // DocRibbon.SelectedPage = hfToolsDesignChildRibPage;
+            // DocRibbon.MergeOwner.SelectedPage = DocRibbon.MergeOwner.PageCategories["Header & Footer Tools"].GetPageByText("Design");
+
         }
 
         private void MainRichEditControl_VisiblePagesChanged(object sender, EventArgs e)

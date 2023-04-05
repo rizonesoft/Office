@@ -16,7 +16,7 @@
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Application.ThreadException += (sender, e) => new ExceptionForm(e.Exception).ShowDialog();
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => new ExceptionForm(e.ExceptionObject as Exception).ShowDialog();
@@ -57,28 +57,31 @@
                         WindowsFormsSettings.SetDPIAware();
                     }
 
-                    DevExpress.Utils.AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
+                    // DevExpress.Utils.AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
                     DevExpress.Skins.SkinManager.EnableFormSkins();
+                    XtraMessageBox.SmartTextWrap = true;
 
-                    XtraForm mainForm = new MainForm(fileName);
+                    XtraForm mainForm = new MainForm(StcReader.WelcomePdfPath);
                     Application.Run(mainForm);
                     return;
                 }
                 else
                 {
                     // Create a new instance of the class:
-                    CopyData copyData = new CopyData();
+                    var copyData = new CopyData();
                     // Create the named channels to send and receive on.
+                    if (copyData.Channels == null) return;
                     copyData.Channels.Add("PDFChannel");
-                    copyData.Channels["PDFChannel"].Send(fileName);
+                    copyData.Channels["PDFChannel"]?.Send(fileName);
+
                     // return;
                 }
 
             }
             catch (Exception ex)
             {
-                ROErrorMessage.Show("Woops!", $"{StcReader.ProductName} was unable to start.");
-                Logging.logger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
+                ErrorMessage.Show("Woops!", $"{StcReader.ProductName} was unable to start.");
+                Logging.Logger.Fatal($"{StcReader.ProductName} was unable to start.", ex);
             }
 
         }

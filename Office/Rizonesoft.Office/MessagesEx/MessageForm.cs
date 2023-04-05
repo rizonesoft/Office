@@ -26,7 +26,7 @@ namespace Rizonesoft.Office.MessagesEx
         {
             InitializeComponent();
             messageAlertControl.HtmlElementMouseClick += (s, e) => {
-                if ((e.ElementId == "closeButton") || (e.ElementId == "dismissButton"))
+                if ((e.ElementId == "closeButton") || (e.ElementId == "dismissButton") || (e.ElementId == "close-button"))
                 {
                     Settings.Settings.SaveSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General", "UpdateMessage", "False");
                     e.HtmlPopup.Close();

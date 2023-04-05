@@ -1,9 +1,9 @@
 ﻿namespace Rizonesoft.Office.Flow
 {
     using DevExpress.XtraEditors;
-    using Rizonesoft.Office.ExceptionHandlers;
-    using Rizonesoft.Office.Flow.Utilities;
-    using Rizonesoft.Office.Interprocess;
+    using ExceptionHandlers;
+    using Utilities;
+    using Interprocess;
     using Rizonesoft.Office.Utilities;
     using System;
     using System.Drawing;
@@ -77,7 +77,7 @@
             catch (Exception ex)
             {
                 ROErrorMessage.Show("Woops!", $"{StcFlow.ProductName} was unable to start.");
-                Logging.logger.Fatal($"{StcFlow.ProductName} was unable to start.", ex);
+                Logging.Logger.Fatal($"{StcFlow.ProductName} was unable to start.", ex);
             }
 
         }

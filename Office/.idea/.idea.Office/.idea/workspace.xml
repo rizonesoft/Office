@@ -27,8 +27,8 @@
   },
   "keyToStringList": {
     "rider.external.source.directories": [
-      "C:\\Users\\DerickPayne\\AppData\\Roaming\\JetBrains\\Rider2022.3\\resharper-host\\DecompilerCache",
-      "C:\\Users\\DerickPayne\\AppData\\Roaming\\JetBrains\\Rider2022.3\\resharper-host\\SourcesCache",
+      "C:\\Users\\DerickPayne\\AppData\\Roaming\\JetBrains\\Rider2023.1\\resharper-host\\DecompilerCache",
+      "C:\\Users\\DerickPayne\\AppData\\Roaming\\JetBrains\\Rider2023.1\\resharper-host\\SourcesCache",
       "C:\\Users\\DerickPayne\\AppData\\Local\\Symbols\\src"
     ]
   }
@@ -128,6 +128,7 @@
       <option name="presentableId" value="Default" />
       <updated>1678859576092</updated>
       <workItem from="1678859578876" duration="166000" />
+      <workItem from="1680248353305" duration="285000" />
     </task>
     <servers />
   </component>

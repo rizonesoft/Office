@@ -1,6 +1,6 @@
 ﻿namespace Rizonesoft.Office.Reader
 {
-    partial class SplashScreenForm
+    internal sealed partial class SplashScreenForm
     {
         /// <summary>
         /// Required designer variable.

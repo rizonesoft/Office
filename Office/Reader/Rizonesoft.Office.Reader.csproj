@@ -15,9 +15,9 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.14.19</AssemblyVersion>
-	<FileVersion>2023.3.14.19</FileVersion>
-	<Version>2023.3.19</Version>
+	<AssemblyVersion>2023.3.29.77</AssemblyVersion>
+	<FileVersion>2023.3.29.77</FileVersion>
+	<Version>2023.3.77</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -53,7 +53,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win" Version="22.2.4" />
+    <PackageReference Include="DevExpress.Win" Version="22.2.5" />
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +66,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="MainForm.af-za.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="SplashScreenForm.af-za.resx">
+      <DependentUpon>SplashScreenForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="ViewerForm.af-za.resx">
+      <DependentUpon>ViewerForm.resx</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Documents\Demo.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documents\Welcome.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

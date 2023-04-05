@@ -9,7 +9,7 @@
     using System.IO;
     using System.Windows.Forms;
 
-    public partial class BookForm : DevExpress.XtraBars.Ribbon.RibbonForm
+    internal partial class BookForm : DevExpress.XtraBars.Ribbon.RibbonForm
     {
         public string FileName { get; internal set; }
 

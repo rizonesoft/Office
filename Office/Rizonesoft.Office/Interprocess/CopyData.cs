@@ -1,12 +1,12 @@
-﻿using System;
-using System.IO;
-using System.Collections;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
-
-namespace Rizonesoft.Office.Interprocess
+﻿namespace Rizonesoft.Office.Interprocess
 {
+    using System;
+    using System.IO;
+    using System.Collections;
+    using System.Windows.Forms;
+    using System.Runtime.InteropServices;
+    using System.Runtime.Serialization.Formatters.Binary;
+
     public delegate void DataReceivedEventHandler(object sender, DataReceivedEventArgs e);
 
     /// <summary>
@@ -18,28 +18,30 @@ namespace Rizonesoft.Office.Interprocess
     /// to register the Remoting name of an object so it
     /// can be read by other applications.
     /// </summary>
-    public class CopyData : NativeWindow, IDisposable
+    public sealed class CopyData : NativeWindow, IDisposable
     {
         /// <summary>
         /// Event raised when data is received on any of the channels 
         /// this class is subscribed to.
         /// </summary>
-        public event DataReceivedEventHandler DataReceived;
+        public event DataReceivedEventHandler? DataReceived;
 
         [StructLayout(LayoutKind.Sequential)]
+        // ReSharper disable once InconsistentNaming
         private struct COPYDATASTRUCT
         {
-            public IntPtr dwData;
-            public int cbData;
-            public IntPtr lpData;
+            private readonly nint dwData;
+            public readonly int cbData;
+            public readonly nint lpData;
         }
 
         private const int WM_COPYDATA = 0x4A;
         private const int WM_DESTROY = 0x2;
 
         #region Member Variables
-        private CopyDataChannels channels = null;
-        private bool disposed = false;
+
+        private bool disposed;
+
         #endregion
 
         /// <summary>
@@ -49,46 +51,51 @@ namespace Rizonesoft.Office.Interprocess
         /// <param name="m">The Windows Message information.</param>
         protected override void WndProc(ref Message m)
         {
-#pragma warning disable SYSLIB0011
-            if (m.Msg == WM_COPYDATA)
+            switch (m.Msg)
             {
-                COPYDATASTRUCT cds = new COPYDATASTRUCT();
-                cds = (COPYDATASTRUCT)Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT));
-                if (cds.cbData > 0)
+                case WM_COPYDATA:
                 {
-                    byte[] data = new byte[cds.cbData];
-                    Marshal.Copy(cds.lpData, data, 0, cds.cbData);
-                    MemoryStream stream = new MemoryStream(data);
-                    BinaryFormatter b = new BinaryFormatter();
-                    CopyDataObjectData cdo = (CopyDataObjectData)b.Deserialize(stream);
-
-                    if (channels.Contains(cdo.Channel))
+                    var cds = (COPYDATASTRUCT)(Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT)) ?? throw new InvalidOperationException());
+                    if (cds.cbData > 0)
                     {
-                        DataReceivedEventArgs d = new DataReceivedEventArgs(cdo.Channel, cdo.Data, cdo.Sent);
-                        OnDataReceived(d);
-                        m.Result = (IntPtr)1;
-                    }
-                }
-            }
-            else if (m.Msg == WM_DESTROY)
-            {
-                // WM_DESTROY fires before OnHandleChanged and is
-                // a better place to ensure that we've cleared 
-                // everything up.
-                channels.OnHandleChange();
-                base.OnHandleChange();
-            }
-            base.WndProc(ref m);
+                        var data = new byte[cds.cbData];
+                        Marshal.Copy(cds.lpData, data, 0, cds.cbData);
+                        var stream = new MemoryStream(data);
+                        var b = new BinaryFormatter();
+#pragma warning disable SYSLIB0011
+                        var cdo = (CopyDataObjectData)b.Deserialize(stream);
 #pragma warning restore SYSLIB0011
+
+                        if (Channels != null && Channels.Contains(cdo.Channel))
+                        {
+                            var d = new DataReceivedEventArgs(cdo.Channel, cdo.Data, cdo.Sent);
+                            OnDataReceived(d);
+                            m.Result = 1;
+                        }
+                    }
+
+                    break;
+                }
+                case WM_DESTROY:
+                    // WM_DESTROY fires before OnHandleChanged and is
+                    // a better place to ensure that we've cleared 
+                    // everything up.
+                    Channels?.OnHandleChange();
+                    base.OnHandleChange();
+                    break;
+            }
+
+            base.WndProc(ref m);
         }
+
 
         /// <summary>
         /// Raises the DataReceived event from this class.
         /// </summary>
         /// <param name="e">The data which has been received.</param>
-        protected void OnDataReceived(DataReceivedEventArgs e)
+        private void OnDataReceived(DataReceivedEventArgs e)
         {
-            DataReceived(this, e);
+            DataReceived?.Invoke(this, e);
         }
 
         /// <summary>
@@ -101,33 +108,25 @@ namespace Rizonesoft.Office.Interprocess
         protected override void OnHandleChange()
         {
             // need to clear up everything we had set.
-            channels.OnHandleChange();
+            Channels?.OnHandleChange();
             base.OnHandleChange();
         }
 
         /// <summary>
         /// Gets the collection of channels.
         /// </summary>
-        public CopyDataChannels Channels
-        {
-            get
-            {
-                return channels;
-            }
-        }
+        public CopyDataChannels? Channels { get; private set; }
 
         /// <summary>
         /// Clears up any resources associated with this object.
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                channels.Clear();
-                channels = null;
-                disposed = true;
-                GC.SuppressFinalize(this);
-            }
+            if (disposed) return;
+            Channels?.Clear();
+            Channels = null;
+            disposed = true;
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -135,12 +134,12 @@ namespace Rizonesoft.Office.Interprocess
         /// </summary>
         public CopyData()
         {
-            channels = new CopyDataChannels(this);
+            Channels = new CopyDataChannels(this);
         }
 
         /// <summary>
-        /// Finalises a CopyData class which has not been disposed.
-        /// There may be a minor resource leak if this class is finalised
+        /// Finalizes a CopyData class which has not been disposed.
+        /// There may be a minor resource leak if this class is finalized
         /// after the form it is associated with.
         /// </summary>
         ~CopyData()
@@ -153,55 +152,32 @@ namespace Rizonesoft.Office.Interprocess
     /// Contains data and other information associated with data
     /// which has been sent from another application.
     /// </summary>
-    public class DataReceivedEventArgs
+    public sealed class DataReceivedEventArgs
     {
-        private string channelName = "";
-        private object data = null;
-        private DateTime sent;
-        private DateTime received;
-
         /// <summary>
         /// Gets the channel name that this data was sent on.
         /// </summary>
-        public string ChannelName
-        {
-            get
-            {
-                return channelName;
-            }
-        }
+        public string ChannelName { get; }
+
         /// <summary>
         /// Gets the data object which was sent.
         /// </summary>
-        public object Data
-        {
-            get
-            {
-                return data;
-            }
-        }
+        public object Data { get; }
+
         /// <summary>
         /// Gets the date and time which at the data was sent
         /// by the sending application.
         /// </summary>
-        public DateTime Sent
-        {
-            get
-            {
-                return sent;
-            }
-        }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
+        private DateTime Sent { get; }
+
         /// <summary>
         /// Gets the date and time which this data item as
         /// received.
         /// </summary>
-        public DateTime Received
-        {
-            get
-            {
-                return received;
-            }
-        }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
+        private DateTime Received { get; }
+
         /// <summary>
         /// Constructs an instance of this class.
         /// </summary>
@@ -210,10 +186,10 @@ namespace Rizonesoft.Office.Interprocess
         /// <param name="sent">The date and time the data was sent</param>
         internal DataReceivedEventArgs(string channelName, object data, DateTime sent)
         {
-            this.channelName = channelName;
-            this.data = data;
-            this.sent = sent;
-            received = DateTime.Now;
+            ChannelName = channelName;
+            Data = data;
+            Sent = sent;
+            Received = DateTime.Now;
         }
     }
 
@@ -221,9 +197,9 @@ namespace Rizonesoft.Office.Interprocess
     /// A strongly-typed collection of channels associated with the CopyData
     /// class.
     /// </summary>
-    public class CopyDataChannels : DictionaryBase
+    public sealed class CopyDataChannels : DictionaryBase
     {
-        private NativeWindow owner = null;
+        private readonly NativeWindow owner;
 
         /// <summary>
         /// Returns an enumerator for each of the CopyDataChannel objects
@@ -239,20 +215,18 @@ namespace Rizonesoft.Office.Interprocess
         /// <summary>
         /// Returns the CopyDataChannel at the specified 0-based index.
         /// </summary>
-        public CopyDataChannel this[int index]
+        public CopyDataChannel? this[int index]
         {
             get
             {
-                CopyDataChannel ret = null;
-                int i = 0;
+                CopyDataChannel? ret = null;
+                var i = 0;
                 foreach (CopyDataChannel cdc in Dictionary.Values)
                 {
                     i++;
-                    if (i == index)
-                    {
-                        ret = cdc;
-                        break;
-                    }
+                    if (i != index) continue;
+                    ret = cdc;
+                    break;
                 }
                 return ret;
             }
@@ -260,20 +234,15 @@ namespace Rizonesoft.Office.Interprocess
         /// <summary>
         /// Returns the CopyDataChannel for the specified channelName
         /// </summary>
-        public CopyDataChannel this[string channelName]
-        {
-            get
-            {
-                return (CopyDataChannel)Dictionary[channelName];
-            }
-        }
+        public CopyDataChannel? this[string channelName] => Dictionary[channelName] as CopyDataChannel;
+
         /// <summary>
         /// Adds a new channel on which this application can send and
         /// receive messages.
         /// </summary>
         public void Add(string channelName)
         {
-            CopyDataChannel cdc = new CopyDataChannel(owner, channelName);
+            var cdc = new CopyDataChannel(owner, channelName);
             Dictionary.Add(channelName, cdc);
         }
         /// <summary>
@@ -288,7 +257,7 @@ namespace Rizonesoft.Office.Interprocess
         /// Gets/sets whether this channel contains a CopyDataChannel
         /// for the specified channelName.
         /// </summary>
-        public bool Contains(string channelName)
+        internal bool Contains(string channelName)
         {
             return Dictionary.Contains(channelName);
         }
@@ -315,11 +284,9 @@ namespace Rizonesoft.Office.Interprocess
         /// just been removed</param>
         protected override void OnRemoveComplete(object? key, object? data)
         {
-            if (key != null && data != null)
-            {
-                ((CopyDataChannel)data).Dispose();
-                base.OnRemove(key, data);
-            }
+            if (key == null || data == null) return;
+            ((CopyDataChannel)data).Dispose();
+            OnRemove(key, data);
 
         }
 
@@ -330,7 +297,7 @@ namespace Rizonesoft.Office.Interprocess
         /// stop responding to events and it should be recreated once
         /// the new handle has been assigned.
         /// </summary>
-        public void OnHandleChange()
+        internal void OnHandleChange()
         {
             foreach (CopyDataChannel cdc in Dictionary.Values)
             {
@@ -353,59 +320,54 @@ namespace Rizonesoft.Office.Interprocess
     /// <summary>
     /// A channel on which messages can be sent.
     /// </summary>
-    public class CopyDataChannel : IDisposable
+    public sealed class CopyDataChannel : IDisposable
     {
         #region Unmanaged Code
         [DllImport("user32", CharSet = CharSet.Auto)]
-        private extern static int GetProp(
-            IntPtr hwnd,
+        private static extern int GetProp(
+            nint hwnd,
             string lpString);
         [DllImport("user32", CharSet = CharSet.Auto)]
-        private extern static int SetProp(
-            IntPtr hwnd,
+        private static extern int SetProp(
+            nint hwnd,
             string lpString,
             int hData);
         [DllImport("user32", CharSet = CharSet.Auto)]
-        private extern static int RemoveProp(
-            IntPtr hwnd,
+        private static extern int RemoveProp(
+            nint hwnd,
             string lpString);
 
         [DllImport("user32", CharSet = CharSet.Auto)]
-        private extern static int SendMessage(
-            IntPtr hwnd,
+        private static extern int SendMessage(
+            nint hwnd,
             int wMsg,
             int wParam,
             ref COPYDATASTRUCT lParam
             );
 
         [StructLayout(LayoutKind.Sequential)]
+        // ReSharper disable once InconsistentNaming
         private struct COPYDATASTRUCT
         {
-            public IntPtr dwData;
+            public nint dwData;
             public int cbData;
-            public IntPtr lpData;
+            public nint lpData;
         }
 
         private const int WM_COPYDATA = 0x4A;
         #endregion
 
         #region Member Variables
-        private string channelName = "";
-        private bool disposed = false;
-        private NativeWindow owner = null;
-        private bool recreateChannel = false;
+
+        private bool disposed;
+        private readonly NativeWindow owner;
+        private bool recreateChannel;
         #endregion
 
         /// <summary>
         /// Gets the name associated with this channel.
         /// </summary>
-        public string ChannelName
-        {
-            get
-            {
-                return channelName;
-            }
-        }
+        private string ChannelName { get; set; }
 
         /// <summary>
         /// Sends the specified object on this channel to any other
@@ -416,7 +378,7 @@ namespace Rizonesoft.Office.Interprocess
         /// <returns>The number of recipients</returns>
         public int Send(object obj)
         {
-            int recipients = 0;
+            var recipients = 0;
 
             if (disposed)
             {
@@ -425,16 +387,16 @@ namespace Rizonesoft.Office.Interprocess
 
             if (recreateChannel) // handle has changed
             {
-                addChannel();
+                AddChannel();
             }
 
-            CopyDataObjectData cdo = new CopyDataObjectData(obj, channelName);
+            var cdo = new CopyDataObjectData(obj, ChannelName);
 
             // Try to do a binary serialization on obj.
             // This will throw and exception if the object to
             // be passed isn't serializable.
-            BinaryFormatter b = new BinaryFormatter();
-            MemoryStream stream = new MemoryStream();
+            var b = new BinaryFormatter();
+            var stream = new MemoryStream();
 #pragma warning disable SYSLIB0011
             b.Serialize(stream, cdo);
 #pragma warning restore SYSLIB0011
@@ -443,7 +405,7 @@ namespace Rizonesoft.Office.Interprocess
             // Now move the data into a pointer so we can send
             // it using WM_COPYDATA:
             // Get the length of the data:
-            int dataSize = (int)stream.Length;
+            var dataSize = (int)stream.Length;
             if (dataSize > 0)
             {
                 // This isn't very efficient if your data is very large.
@@ -451,15 +413,15 @@ namespace Rizonesoft.Office.Interprocess
                 // Mem object... And when we use WM_COPYDATA windows will
                 // make yet another copy!  But if you're talking about 4K
                 // or less of data then it doesn't really matter.
-                byte[] data = new byte[dataSize];
+                var data = new byte[dataSize];
                 stream.Seek(0, SeekOrigin.Begin);
-                stream.Read(data, 0, dataSize);
-                IntPtr ptrData = Marshal.AllocCoTaskMem(dataSize);
+                var read = stream.Read(data, 0, dataSize);
+                var ptrData = Marshal.AllocCoTaskMem(dataSize);
                 Marshal.Copy(data, 0, ptrData, dataSize);
 
                 // Enumerate all windows which have the
                 // channel name, send the data to each one
-                EnumWindows ew = new EnumWindows();
+                var ew = new EnumWindows();
                 ew.GetWindows();
 
                 // Send the data to each window identified on
@@ -468,13 +430,14 @@ namespace Rizonesoft.Office.Interprocess
                 {
                     if (!window.Handle.Equals(owner.Handle))
                     {
-                        if (GetProp(window.Handle, channelName) != 0)
+                        if (GetProp(window.Handle, ChannelName) != 0)
                         {
-                            COPYDATASTRUCT cds = new COPYDATASTRUCT();
+                            var cds = new COPYDATASTRUCT();
                             cds.cbData = dataSize;
-                            cds.dwData = IntPtr.Zero;
+                            cds.dwData = nint.Zero;
                             cds.lpData = ptrData;
-                            int res = SendMessage(window.Handle, WM_COPYDATA, (int)owner.Handle, ref cds);
+                            // ReSharper disable once UnusedVariable
+                            var res = SendMessage(window.Handle, WM_COPYDATA, (int)owner.Handle, ref cds);
                             recipients += Marshal.GetLastWin32Error() == 0 ? 1 : 0;
                         }
                     }
@@ -488,16 +451,16 @@ namespace Rizonesoft.Office.Interprocess
             return recipients;
         }
 
-        private void addChannel()
+        private void AddChannel()
         {
             // Tag this window with property "channelName"
-            SetProp(owner.Handle, channelName, (int)owner.Handle);
+            SetProp(owner.Handle, ChannelName, (int)owner.Handle);
 
         }
-        private void removeChannel()
+        private void RemoveChannel()
         {
             // Remove the "channelName" property from this window
-            RemoveProp(owner.Handle, channelName);
+            RemoveProp(owner.Handle, ChannelName);
         }
 
         /// <summary>
@@ -507,9 +470,9 @@ namespace Rizonesoft.Office.Interprocess
         /// stop responding to events and it should be recreated once
         /// the new handle has been assigned.
         /// </summary>
-        public void OnHandleChange()
+        internal void OnHandleChange()
         {
-            removeChannel();
+            RemoveChannel();
             recreateChannel = true;
         }
 
@@ -518,16 +481,14 @@ namespace Rizonesoft.Office.Interprocess
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
+            if (disposed) return;
+            if (ChannelName.Length > 0)
             {
-                if (channelName.Length > 0)
-                {
-                    removeChannel();
-                }
-                channelName = "";
-                disposed = true;
-                GC.SuppressFinalize(this);
+                RemoveChannel();
             }
+            ChannelName = "";
+            disposed = true;
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -540,8 +501,8 @@ namespace Rizonesoft.Office.Interprocess
         internal CopyDataChannel(NativeWindow owner, string channelName)
         {
             this.owner = owner;
-            this.channelName = channelName;
-            addChannel();
+            this.ChannelName = channelName;
+            AddChannel();
         }
 
         ~CopyDataChannel()
@@ -581,7 +542,7 @@ namespace Rizonesoft.Office.Interprocess
             Data = data;
             if (!data.GetType().IsSerializable)
             {
-                throw new ArgumentException("Data object must be serializable.", "data");
+                throw new ArgumentException(@"Data object must be serializable.", "data");
             }
             Channel = channel;
             Sent = DateTime.Now;

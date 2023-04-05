@@ -5,13 +5,13 @@
 
     public static class Logging
     {
-        public static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public static void ConfigureLogging()
         {
-            DateTime dateNow = DateTime.Now;
-            string padMonth = dateNow.Month.ToString().PadLeft(2, '0');
-            string loggingFilePath = $"{RizonesoftEx.UserAppDirectory}\\Logging\\{dateNow.Year}-{padMonth}.log";
+            var dateNow = DateTime.Now;
+            var padMonth = dateNow.Month.ToString().PadLeft(2, '0');
+            var loggingFilePath = $"{RizonesoftEx.UserAppDirectory}\\Logging\\{dateNow.Year}-{padMonth}.log";
 
             var nlogConfig = new NLog.Config.LoggingConfiguration();
             var nlogFile = new NLog.Targets.FileTarget("logfile")
@@ -29,7 +29,7 @@
 
         public static string CleanMessageForLogging(string sMessage)
         {
-            string sReturn = Regex.Replace(sMessage, 
+            var sReturn = Regex.Replace(sMessage, 
                                  @"\t|\n|\r", 
                                  " ");
             return sReturn;

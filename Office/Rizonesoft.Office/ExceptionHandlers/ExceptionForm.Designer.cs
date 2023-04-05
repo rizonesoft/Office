@@ -29,183 +29,184 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExceptionForm));
-            this.directXFormContainerControl1 = new DevExpress.XtraEditors.DirectXFormContainerControl();
-            this.mainTablePanel = new DevExpress.Utils.Layout.TablePanel();
-            this.bugIntroLabel = new DevExpress.XtraEditors.LabelControl();
-            this.buglTitelabel = new DevExpress.XtraEditors.LabelControl();
-            this.bugSVGImage = new DevExpress.XtraEditors.SvgImageBox();
-            this.cancelButton = new DevExpress.XtraEditors.SimpleButton();
-            this.mailButton = new DevExpress.XtraEditors.SimpleButton();
-            this.copyButton = new DevExpress.XtraEditors.SimpleButton();
-            this.bugMemoEdit = new DevExpress.XtraEditors.MemoEdit();
-            this.directXFormContainerControl1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.mainTablePanel)).BeginInit();
-            this.mainTablePanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bugSVGImage)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bugMemoEdit.Properties)).BeginInit();
-            this.SuspendLayout();
+            directXFormContainerControl1 = new DevExpress.XtraEditors.DirectXFormContainerControl();
+            mainTablePanel = new DevExpress.Utils.Layout.TablePanel();
+            bugIntroLabel = new DevExpress.XtraEditors.LabelControl();
+            buglTitelabel = new DevExpress.XtraEditors.LabelControl();
+            bugSVGImage = new DevExpress.XtraEditors.SvgImageBox();
+            cancelButton = new DevExpress.XtraEditors.SimpleButton();
+            loggingButton = new DevExpress.XtraEditors.SimpleButton();
+            copyButton = new DevExpress.XtraEditors.SimpleButton();
+            bugMemoEdit = new DevExpress.XtraEditors.MemoEdit();
+            directXFormContainerControl1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)mainTablePanel).BeginInit();
+            mainTablePanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)bugSVGImage).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)bugMemoEdit.Properties).BeginInit();
+            SuspendLayout();
             // 
             // directXFormContainerControl1
             // 
-            this.directXFormContainerControl1.Controls.Add(this.mainTablePanel);
-            this.directXFormContainerControl1.Location = new System.Drawing.Point(1, 31);
-            this.directXFormContainerControl1.Name = "directXFormContainerControl1";
-            this.directXFormContainerControl1.Size = new System.Drawing.Size(648, 518);
-            this.directXFormContainerControl1.TabIndex = 0;
+            directXFormContainerControl1.Controls.Add(mainTablePanel);
+            directXFormContainerControl1.Location = new Point(1, 46);
+            directXFormContainerControl1.Margin = new Padding(4);
+            directXFormContainerControl1.Name = "directXFormContainerControl1";
+            directXFormContainerControl1.Size = new Size(998, 853);
+            directXFormContainerControl1.TabIndex = 0;
             // 
             // mainTablePanel
             // 
-            this.mainTablePanel.Columns.AddRange(new DevExpress.Utils.Layout.TablePanelColumn[] {
-            new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 128F),
-            new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 52F),
-            new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 180F),
-            new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 50F),
-            new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 180F)});
-            this.mainTablePanel.Controls.Add(this.bugIntroLabel);
-            this.mainTablePanel.Controls.Add(this.buglTitelabel);
-            this.mainTablePanel.Controls.Add(this.bugSVGImage);
-            this.mainTablePanel.Controls.Add(this.cancelButton);
-            this.mainTablePanel.Controls.Add(this.mailButton);
-            this.mainTablePanel.Controls.Add(this.copyButton);
-            this.mainTablePanel.Controls.Add(this.bugMemoEdit);
-            this.mainTablePanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainTablePanel.Location = new System.Drawing.Point(0, 0);
-            this.mainTablePanel.Name = "mainTablePanel";
-            this.mainTablePanel.Padding = new System.Windows.Forms.Padding(5);
-            this.mainTablePanel.Rows.AddRange(new DevExpress.Utils.Layout.TablePanelRow[] {
-            new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 28F),
-            new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 100F),
-            new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 1000F),
-            new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 50F)});
-            this.mainTablePanel.Size = new System.Drawing.Size(648, 518);
-            this.mainTablePanel.TabIndex = 0;
+            mainTablePanel.Columns.AddRange(new DevExpress.Utils.Layout.TablePanelColumn[] { new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 128F), new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 128F), new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 256F), new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 100F), new DevExpress.Utils.Layout.TablePanelColumn(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 256F) });
+            mainTablePanel.Controls.Add(bugIntroLabel);
+            mainTablePanel.Controls.Add(buglTitelabel);
+            mainTablePanel.Controls.Add(bugSVGImage);
+            mainTablePanel.Controls.Add(cancelButton);
+            mainTablePanel.Controls.Add(loggingButton);
+            mainTablePanel.Controls.Add(copyButton);
+            mainTablePanel.Controls.Add(bugMemoEdit);
+            mainTablePanel.Dock = DockStyle.Fill;
+            mainTablePanel.Location = new Point(0, 0);
+            mainTablePanel.Margin = new Padding(4);
+            mainTablePanel.Name = "mainTablePanel";
+            mainTablePanel.Padding = new Padding(8, 7, 8, 7);
+            mainTablePanel.Rows.AddRange(new DevExpress.Utils.Layout.TablePanelRow[] { new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 50F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 120F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 1000F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 65F) });
+            mainTablePanel.Size = new Size(998, 853);
+            mainTablePanel.TabIndex = 0;
             // 
             // bugIntroLabel
             // 
-            this.bugIntroLabel.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.bugIntroLabel.Appearance.Options.UseFont = true;
-            this.bugIntroLabel.Appearance.Options.UseTextOptions = true;
-            this.bugIntroLabel.Appearance.TextOptions.VAlignment = DevExpress.Utils.VertAlignment.Top;
-            this.bugIntroLabel.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.Vertical;
-            this.mainTablePanel.SetColumn(this.bugIntroLabel, 1);
-            this.mainTablePanel.SetColumnSpan(this.bugIntroLabel, 4);
-            this.bugIntroLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bugIntroLabel.LineLocation = DevExpress.XtraEditors.LineLocation.Top;
-            this.bugIntroLabel.Location = new System.Drawing.Point(136, 36);
-            this.bugIntroLabel.Name = "bugIntroLabel";
-            this.bugIntroLabel.Padding = new System.Windows.Forms.Padding(0, 5, 0, 0);
-            this.mainTablePanel.SetRow(this.bugIntroLabel, 1);
-            this.bugIntroLabel.Size = new System.Drawing.Size(504, 94);
-            this.bugIntroLabel.TabIndex = 6;
-            this.bugIntroLabel.Text = resources.GetString("bugIntroLabel.Text");
+            bugIntroLabel.Appearance.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            bugIntroLabel.Appearance.Options.UseFont = true;
+            bugIntroLabel.Appearance.Options.UseTextOptions = true;
+            bugIntroLabel.Appearance.TextOptions.VAlignment = DevExpress.Utils.VertAlignment.Top;
+            bugIntroLabel.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.Vertical;
+            mainTablePanel.SetColumn(bugIntroLabel, 1);
+            mainTablePanel.SetColumnSpan(bugIntroLabel, 4);
+            bugIntroLabel.Dock = DockStyle.Fill;
+            bugIntroLabel.LineLocation = DevExpress.XtraEditors.LineLocation.Top;
+            bugIntroLabel.Location = new Point(140, 61);
+            bugIntroLabel.Margin = new Padding(4);
+            bugIntroLabel.Name = "bugIntroLabel";
+            bugIntroLabel.Padding = new Padding(0, 7, 0, 0);
+            mainTablePanel.SetRow(bugIntroLabel, 1);
+            bugIntroLabel.Size = new Size(846, 112);
+            bugIntroLabel.TabIndex = 6;
+            bugIntroLabel.Text = resources.GetString("bugIntroLabel.Text");
             // 
             // buglTitelabel
             // 
-            this.buglTitelabel.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.buglTitelabel.Appearance.Options.UseFont = true;
-            this.buglTitelabel.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.Horizontal;
-            this.mainTablePanel.SetColumn(this.buglTitelabel, 1);
-            this.mainTablePanel.SetColumnSpan(this.buglTitelabel, 4);
-            this.buglTitelabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.buglTitelabel.Location = new System.Drawing.Point(136, 8);
-            this.buglTitelabel.Name = "buglTitelabel";
-            this.mainTablePanel.SetRow(this.buglTitelabel, 0);
-            this.buglTitelabel.Size = new System.Drawing.Size(504, 22);
-            this.buglTitelabel.TabIndex = 5;
-            this.buglTitelabel.Text = "Something went wrong!";
+            buglTitelabel.Appearance.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            buglTitelabel.Appearance.Options.UseFont = true;
+            buglTitelabel.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.Horizontal;
+            mainTablePanel.SetColumn(buglTitelabel, 1);
+            mainTablePanel.SetColumnSpan(buglTitelabel, 4);
+            buglTitelabel.Dock = DockStyle.Fill;
+            buglTitelabel.Location = new Point(140, 11);
+            buglTitelabel.Margin = new Padding(4);
+            buglTitelabel.Name = "buglTitelabel";
+            mainTablePanel.SetRow(buglTitelabel, 0);
+            buglTitelabel.Size = new Size(846, 42);
+            buglTitelabel.TabIndex = 5;
+            buglTitelabel.Text = "Something went wrong!";
             // 
             // bugSVGImage
             // 
-            this.mainTablePanel.SetColumn(this.bugSVGImage, 0);
-            this.bugSVGImage.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bugSVGImage.Location = new System.Drawing.Point(8, 8);
-            this.bugSVGImage.Name = "bugSVGImage";
-            this.bugSVGImage.Padding = new System.Windows.Forms.Padding(25);
-            this.mainTablePanel.SetRow(this.bugSVGImage, 0);
-            this.mainTablePanel.SetRowSpan(this.bugSVGImage, 2);
-            this.bugSVGImage.Size = new System.Drawing.Size(122, 122);
-            this.bugSVGImage.SizeMode = DevExpress.XtraEditors.SvgImageSizeMode.Zoom;
-            this.bugSVGImage.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("bugSVGImage.SvgImage")));
-            this.bugSVGImage.TabIndex = 4;
-            this.bugSVGImage.Text = "svgImageBox1";
+            mainTablePanel.SetColumn(bugSVGImage, 0);
+            bugSVGImage.Dock = DockStyle.Fill;
+            bugSVGImage.Location = new Point(12, 11);
+            bugSVGImage.Margin = new Padding(4);
+            bugSVGImage.Name = "bugSVGImage";
+            bugSVGImage.Padding = new Padding(15);
+            mainTablePanel.SetRow(bugSVGImage, 0);
+            mainTablePanel.SetRowSpan(bugSVGImage, 2);
+            bugSVGImage.Size = new Size(120, 162);
+            bugSVGImage.SizeMode = DevExpress.XtraEditors.SvgImageSizeMode.Zoom;
+            bugSVGImage.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("bugSVGImage.SvgImage");
+            bugSVGImage.TabIndex = 4;
+            bugSVGImage.Text = "svgImageBox1";
             // 
             // cancelButton
             // 
-            this.cancelButton.Appearance.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.cancelButton.Appearance.Options.UseFont = true;
-            this.mainTablePanel.SetColumn(this.cancelButton, 4);
-            this.cancelButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cancelButton.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("cancelButton.ImageOptions.SvgImage")));
-            this.cancelButton.Location = new System.Drawing.Point(466, 466);
-            this.cancelButton.Name = "cancelButton";
-            this.mainTablePanel.SetRow(this.cancelButton, 3);
-            this.cancelButton.Size = new System.Drawing.Size(174, 44);
-            this.cancelButton.TabIndex = 3;
-            this.cancelButton.Text = "Cancel";
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            cancelButton.Appearance.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            cancelButton.Appearance.Options.UseFont = true;
+            mainTablePanel.SetColumn(cancelButton, 4);
+            cancelButton.Dock = DockStyle.Fill;
+            cancelButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("cancelButton.ImageOptions.SvgImage");
+            cancelButton.Location = new Point(738, 785);
+            cancelButton.Margin = new Padding(4);
+            cancelButton.Name = "cancelButton";
+            mainTablePanel.SetRow(cancelButton, 3);
+            cancelButton.Size = new Size(248, 57);
+            cancelButton.TabIndex = 3;
+            cancelButton.Text = "Cancel";
+            cancelButton.Click += cancelButton_Click;
             // 
-            // mailButton
+            // loggingButton
             // 
-            this.mailButton.Appearance.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.mailButton.Appearance.Options.UseFont = true;
-            this.mainTablePanel.SetColumn(this.mailButton, 2);
-            this.mailButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mailButton.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("mailButton.ImageOptions.SvgImage")));
-            this.mailButton.Location = new System.Drawing.Point(188, 466);
-            this.mailButton.Name = "mailButton";
-            this.mainTablePanel.SetRow(this.mailButton, 3);
-            this.mailButton.Size = new System.Drawing.Size(174, 44);
-            this.mailButton.TabIndex = 2;
-            this.mailButton.Text = "Mail";
+            loggingButton.Appearance.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            loggingButton.Appearance.Options.UseFont = true;
+            mainTablePanel.SetColumn(loggingButton, 2);
+            loggingButton.Dock = DockStyle.Fill;
+            loggingButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("loggingButton.ImageOptions.SvgImage");
+            loggingButton.Location = new Point(268, 785);
+            loggingButton.Margin = new Padding(4);
+            loggingButton.Name = "loggingButton";
+            mainTablePanel.SetRow(loggingButton, 3);
+            loggingButton.Size = new Size(248, 57);
+            loggingButton.TabIndex = 2;
+            loggingButton.Text = "Logging";
+            loggingButton.Click += loggingButton_Click;
             // 
             // copyButton
             // 
-            this.copyButton.Appearance.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.copyButton.Appearance.Options.UseFont = true;
-            this.mainTablePanel.SetColumn(this.copyButton, 0);
-            this.mainTablePanel.SetColumnSpan(this.copyButton, 2);
-            this.copyButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.copyButton.ImageOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("copyButton.ImageOptions.SvgImage")));
-            this.copyButton.Location = new System.Drawing.Point(8, 466);
-            this.copyButton.Name = "copyButton";
-            this.mainTablePanel.SetRow(this.copyButton, 3);
-            this.copyButton.Size = new System.Drawing.Size(174, 44);
-            this.copyButton.TabIndex = 1;
-            this.copyButton.Text = "Copy";
-            this.copyButton.Click += new System.EventHandler(this.copyButton_Click);
+            copyButton.Appearance.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            copyButton.Appearance.Options.UseFont = true;
+            mainTablePanel.SetColumn(copyButton, 0);
+            mainTablePanel.SetColumnSpan(copyButton, 2);
+            copyButton.Dock = DockStyle.Fill;
+            copyButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("copyButton.ImageOptions.SvgImage");
+            copyButton.Location = new Point(12, 785);
+            copyButton.Margin = new Padding(4);
+            copyButton.Name = "copyButton";
+            mainTablePanel.SetRow(copyButton, 3);
+            copyButton.Size = new Size(248, 57);
+            copyButton.TabIndex = 1;
+            copyButton.Text = "Copy";
+            copyButton.Click += copyButton_Click;
             // 
             // bugMemoEdit
             // 
-            this.mainTablePanel.SetColumn(this.bugMemoEdit, 0);
-            this.mainTablePanel.SetColumnSpan(this.bugMemoEdit, 5);
-            this.bugMemoEdit.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bugMemoEdit.Location = new System.Drawing.Point(8, 136);
-            this.bugMemoEdit.Name = "bugMemoEdit";
-            this.bugMemoEdit.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.bugMemoEdit.Properties.Appearance.Options.UseFont = true;
-            this.mainTablePanel.SetRow(this.bugMemoEdit, 2);
-            this.bugMemoEdit.Size = new System.Drawing.Size(632, 324);
-            this.bugMemoEdit.TabIndex = 0;
+            mainTablePanel.SetColumn(bugMemoEdit, 0);
+            mainTablePanel.SetColumnSpan(bugMemoEdit, 5);
+            bugMemoEdit.Dock = DockStyle.Fill;
+            bugMemoEdit.Location = new Point(12, 181);
+            bugMemoEdit.Margin = new Padding(4);
+            bugMemoEdit.Name = "bugMemoEdit";
+            bugMemoEdit.Properties.Appearance.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            bugMemoEdit.Properties.Appearance.Options.UseFont = true;
+            mainTablePanel.SetRow(bugMemoEdit, 2);
+            bugMemoEdit.Size = new Size(974, 596);
+            bugMemoEdit.TabIndex = 0;
             // 
             // ExceptionForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(650, 550);
-            this.Controls.Add(this.directXFormContainerControl1);
-            this.DoubleBuffered = true;
-            this.IconOptions.SvgImage = ((DevExpress.Utils.Svg.SvgImage)(resources.GetObject("ExceptionForm.IconOptions.SvgImage")));
-            this.Name = "ExceptionForm";
-            this.Padding = new System.Windows.Forms.Padding(5);
-            this.Text = "Woops!";
-            this.directXFormContainerControl1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.mainTablePanel)).EndInit();
-            this.mainTablePanel.ResumeLayout(false);
-            this.mainTablePanel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.bugSVGImage)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bugMemoEdit.Properties)).EndInit();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(9F, 19F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ChildControls.Add(directXFormContainerControl1);
+            ClientSize = new Size(1000, 900);
+            DoubleBuffered = true;
+            IconOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExceptionForm.IconOptions.SvgImage");
+            Margin = new Padding(4);
+            Name = "ExceptionForm";
+            Padding = new Padding(8, 7, 8, 7);
+            Text = "Woops!";
+            directXFormContainerControl1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)mainTablePanel).EndInit();
+            mainTablePanel.ResumeLayout(false);
+            mainTablePanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)bugSVGImage).EndInit();
+            ((System.ComponentModel.ISupportInitialize)bugMemoEdit.Properties).EndInit();
+            ResumeLayout(false);
         }
 
         #endregion
@@ -213,7 +214,7 @@
         private DevExpress.XtraEditors.DirectXFormContainerControl directXFormContainerControl1;
         private DevExpress.Utils.Layout.TablePanel mainTablePanel;
         private DevExpress.XtraEditors.SimpleButton cancelButton;
-        private DevExpress.XtraEditors.SimpleButton mailButton;
+        private DevExpress.XtraEditors.SimpleButton loggingButton;
         private DevExpress.XtraEditors.SimpleButton copyButton;
         private DevExpress.XtraEditors.MemoEdit bugMemoEdit;
         private DevExpress.XtraEditors.LabelControl bugIntroLabel;

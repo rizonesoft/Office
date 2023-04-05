@@ -1,40 +1,36 @@
-﻿using DevExpress.XtraBars;
-using System.Collections.Generic;
-using System.IO;
-
-namespace Rizonesoft.Office
+﻿namespace Rizonesoft.Office
 {
-    public class MruList
+    using DevExpress.XtraBars;
+    using System.Collections.Generic;
+    using System.IO;
+
+    public sealed class MruList
     {
 
-        private string SaveMRUPath;
-        private string MruSection;
-        private int iFiles;
-        private List<FileInfo> fileInfos;
-
-        private PopupMenu mruMenu;
-        private BarButtonItem[] mruBtnItems;
+        private readonly string saveMruPath;
+        //private string mruSection;
+        private readonly int iFiles;
+        private readonly List<FileInfo> fileInfos;
+        private readonly BarButtonItem[] mruBtnItems;
 
         public delegate void FileSelectedEventHandler(string fileName);
-        public event FileSelectedEventHandler FileSelected;
+        public event FileSelectedEventHandler? FileSelected;
 
 
-        public MruList(string mruKey, PopupMenu popMenu, int numFiles, string saveMRUPath)
+        public MruList(string mruKey, BarLinksHolder popMenu, int numFiles, string saveMruPath)
         {
-
-            MruSection = mruKey;
-            mruMenu = popMenu;
+            //mruSection = mruKey;
             iFiles = numFiles;
-            SaveMRUPath = saveMRUPath;
+            this.saveMruPath = saveMruPath;
             fileInfos = new List<FileInfo>();
 
             mruBtnItems = new BarButtonItem[iFiles + 1];
-            for (int i = 0; i < iFiles; i++)
+            for (var i = 0; i < iFiles; i++)
             {
                 mruBtnItems[i] = new BarButtonItem();
                 mruBtnItems[i].ImageOptions.ImageUri.Uri = "richedit/columnsone";
                 mruBtnItems[i].Visibility = BarItemVisibility.Never;
-                mruMenu.ItemLinks.Add(mruBtnItems[i]); 
+                popMenu.ItemLinks.Add(mruBtnItems[i]);
             }
 
             LoadFiles();
@@ -44,12 +40,9 @@ namespace Rizonesoft.Office
         private void LoadFiles()
         {
 
-            for (int i = 0; i < iFiles; i++)
+            for (var i = 0; i < iFiles; i++)
             {
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                string fileName = Settings.Settings.GetSetting(SaveMRUPath, "FilePath" + i.ToString(), "");
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-
+                var fileName = Settings.Settings.GetSetting(saveMruPath, "FilePath" + i.ToString(), "");
                 if (string.IsNullOrWhiteSpace(fileName))
                 {
                     continue;
@@ -60,22 +53,22 @@ namespace Rizonesoft.Office
 
         private void SaveFiles()
         {
-            for (int i = 0; i < iFiles; i++)
+            for (var i = 0; i < iFiles; i++)
             {
-                Settings.Settings.DeleteSetting(SaveMRUPath, "FilePath" + i.ToString());
+                Settings.Settings.DeleteSetting(saveMruPath, "FilePath" + i.ToString());
             }
 
-            int index = 0;
-            foreach (FileInfo fileInfo in fileInfos)
+            var index = 0;
+            foreach (var fileInfo in fileInfos)
             {
-                Settings.Settings.SaveSetting(SaveMRUPath, "FilePath" + index.ToString(), fileInfo.FullName);
+                Settings.Settings.SaveSetting(saveMruPath, "FilePath" + index.ToString(), fileInfo.FullName);
                 index++;
             }
         }
 
         private void RemoveFileInfo(string fileName)
         {
-            for (int i = fileInfos.Count - 1; i >= 0; i--)
+            for (var i = fileInfos.Count - 1; i >= 0; i--)
             {
                 if (fileInfos[i].FullName == fileName)
                     fileInfos.RemoveAt(i);
@@ -103,15 +96,15 @@ namespace Rizonesoft.Office
 
         private void ShowFiles()
         {
-            for (int i = 0; i < fileInfos.Count; i++)
+            for (var i = 0; i < fileInfos.Count; i++)
             {
-                mruBtnItems[i].Caption = string.Format("&{0} {1}", i + 1, fileInfos[i].Name);
+                mruBtnItems[i].Caption = $@"&{i + 1} {fileInfos[i].Name}";
                 mruBtnItems[i].Visibility = BarItemVisibility.Always;
                 mruBtnItems[i].Tag = fileInfos[i];
                 mruBtnItems[i].ItemClick -= MruFile_ItemClick;
-                mruBtnItems[i].ItemClick += new DevExpress.XtraBars.ItemClickEventHandler(MruFile_ItemClick);
+                mruBtnItems[i].ItemClick += MruFile_ItemClick;
             }
-            for (int i = fileInfos.Count; i < iFiles; i++)
+            for (var i = fileInfos.Count; i < iFiles; i++)
             {
                 mruBtnItems[i].Visibility = BarItemVisibility.Never;
                 mruBtnItems[i].ItemClick -= MruFile_ItemClick;
@@ -120,24 +113,18 @@ namespace Rizonesoft.Office
 
         private void MruFile_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (FileSelected != null)
+            if (FileSelected == null) return;
+            if (e.Item != null)
             {
-                if (e.Item != null)
+                if (e.Item is not BarButtonItem mruBtnItem) return;
+                if (mruBtnItem.Tag is FileInfo fileInfo)
                 {
-                    if (e.Item is BarButtonItem mruBtnItem)
-                    {
-                        if (mruBtnItem.Tag is FileInfo fileInfo)
-                        {
-                            FileSelected(fileInfo.FullName);
-                        }
-                    }
+                    FileSelected(fileInfo.FullName);
                 }
-                else
-                {
-                    throw new NullReferenceException("DevExpress.XtraBars.ItemClickEventArgs (e) is null.");
-                }
-                
-                
+            }
+            else
+            {
+                throw new NullReferenceException("DevExpress.XtraBars.ItemClickEventArgs (e) is null.");
             }
         }
 

@@ -3,27 +3,58 @@
     using DevExpress.XtraBars.Ribbon;
     using DevExpress.XtraEditors;
     using DevExpress.XtraSplashScreen;
-    using Rizonesoft.Office.Interprocess;
-    using Rizonesoft.Office.Reader.Utilities;
+    using Interprocess;
+    using LicensingEx;
+    using MessagesEx;
     using Rizonesoft.Office.Utilities;
     using System;
-    using System.ComponentModel;
     using System.IO;
     using System.Linq;
     using System.Windows.Forms;
+    using Utilities;
 
-    public partial class MainForm : RibbonForm
+    internal sealed partial class MainForm : RibbonForm
     {
+        // private bool IsFloating;
+        // private bool IsLicensed;
+        private static MruList _mruList;
         private CopyData copyData;
-        private static MruList mruList;
-        internal int viewerIndex;
-        internal bool IsFloating;
-        internal bool isLicensed;
-        internal BackgroundWorker updateWorker;
+        private int viewerIndex;
 
-        #region Properties
+        protected override bool SupportAdvancedTitlePainting => true;
 
-        ViewerForm CurrentViewer
+        public MainForm(string fileName)
+        {
+            // WindowsFormsSettings.UseDXDialogs = DevExpress.Utils.DefaultBoolean.True;
+            var sUpdateDismissed = Settings.Settings.GetSetting($"Rizonesoft\\{RizonesoftEx.ProductName}\\General",
+                "UpdateMessage", "True");
+            var isUpdateDismiss = RizonesoftEx.StringToBoolean(sUpdateDismissed ?? "False");
+
+            SetSkins();
+            SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.WS_SET_STATUS_LABEL, "Initializing");
+            CreateProgramDirectories();
+            OnShowMdiChildCaptionInParentTitle();
+            InitializeComponent();
+            RizonesoftEx.IsLicensed = LicenseCheck.IsLicensed();
+            RizonesoftEx.IsBetaVersion = true;
+
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.WS_SET_STATUS_LABEL,
+                string.IsNullOrEmpty(fileName) ? "Creating Document" : "Loading Document");
+            CreateNewViewer(fileName);
+
+            Text = $@"{StcReader.ProductName} {RizonesoftEx.ProductVersionMajor}";
+            Initialize();
+            // mCreateNewViewer(StcReader.WelcomePDFPath);
+            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.WS_SET_STATUS_LABEL, $"Completed - Loading {StcReader.ProductName}");
+
+            if (isUpdateDismiss)
+            {
+                OfficeUpdate.CheckForUpdates();
+            }
+        }
+
+        private ViewerForm CurrentViewer
         {
             get
             {
@@ -40,117 +71,43 @@
             }
         }
 
-        #endregion Properties
-
-        public MainForm(string fileName)
+        private static void AddFileToMruList(string fileName)
         {
-            SetSkins();
-            SplashScreenManager.ShowForm(this, typeof(SplashScreenForm), true, true, false);
-            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, "Initializing");
-            OnShowMdiChildCaptionInParentTitle();
-            CreateProgramDirectories();
-            InitializeComponent();
-            base.Text = $"{StcReader.ProductName} {RizonesoftEx.ProductVersionMajor}";
-            Initialize();
-            CreateNewViewer(StcReader.WelcomePDFPath);
-            SplashScreenManager.Default.SendCommand(SplashScreenForm.SplashScreenCommand.SetStatusLabel, $"Completed - Loading {StcReader.ProductName}");
-        }
-
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            
-        }
-
-        #region Overrides
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            SaveRestoreRibbon(false);
-            SplashScreenManager.CloseForm(false);
-        }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            base.OnClosed(e);
-            SaveRestoreRibbon(true);
-            SaveSettings();
-            SaveSkins();
-        }
-
-        #endregion Overrides
-
-        #region Initialize
-
-        private void Initialize()
-        {
-            copyData = new CopyData();
-            copyData.AssignHandle(Handle);
-            copyData.Channels.Add("PDFChannel");
-            copyData.DataReceived += new DataReceivedEventHandler(CopyData_DataReceived);
-        }
-
-        private void CopyData_DataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e.ChannelName.Equals("PDFChannel"))
+            if (string.IsNullOrEmpty(fileName)) return;
+            try
             {
-                string fileName = (string)e.Data;
-                CreateNewViewer(fileName);
-                AddFileToMRUList(fileName);
+                _mruList.AddFile(fileName);
+            }
+            catch (Exception ex)
+            {
+                _mruList.RemoveFile(fileName);
+                Logging.Logger.Error(ex, "Unable to add filename to MRU list.");
             }
         }
 
-        public static void AddFileToMRUList(string fileName)
+        private void CreateNewViewer(string fileName)
         {
             if (!string.IsNullOrEmpty(fileName))
             {
-                try
+                foreach (var openForm in MdiChildren.Cast<ViewerForm>())
                 {
-                    mruList.AddFile(fileName);
-                }
-                catch (IOException ioEx)
-                {
-                    mruList.RemoveFile(fileName);
-                    Logging.logger.Error(ioEx, "Unable to add filename to MRU list.");
-                }
-            }
-        }
-
-        private void MruList_FileSelected(string fileName)
-        {
-            // OpenFile(fileName);
-        }
-
-        #endregion Initialize
-
-        #region Viewer Processing
-
-        public void CreateNewViewer(string fileName)
-        {
-
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                foreach (ViewerForm openForm in MdiChildren.Cast<ViewerForm>())
-                {
-                    if (string.Compare(openForm.FileName, fileName, true) == 0)
-                    {
-                        openForm.Activate();
-                        return;
-                    }
+                    if (string.Compare(openForm.FileName, fileName, StringComparison.OrdinalIgnoreCase) != 0) continue;
+                    openForm.Activate();
+                    return;
                 }
             }
             else
             {
                 viewerIndex++;
             }
-             
+
             ViewerForm newViewer = new();
             newViewer.OpenFile(fileName, viewerIndex);
             newViewer.MdiParent = this;
             newViewer.Show();
         }
 
-        public void OpenFile(string fileName)
+        private void OpenFile(string fileName)
         {
             CreateNewViewer(fileName);
         }
@@ -160,111 +117,20 @@
             OpenFileFolder(string.Empty);
         }
 
-        private void OpenFileFolder(string sIniDir)
+        protected override void OnClosed(EventArgs e)
         {
-            OpenFileDialog openFileDlg = new OpenFileDialog();
-
-            if (sIniDir != string.Empty)
-            {
-                openFileDlg.InitialDirectory = sIniDir;
-            }
-
-            openFileDlg.Filter = "All Files (*.*)|*.*|" +
-                "All Supported Files (*.docx; *.docm; *.dotx; *.dotm; *.doc; *.dot; *.odt; *.rtf; *.htm; *.html; *.mht; *.eml; *.epub; *.xml; *.txt)|*.docx;*.docm;*.dotx;*.dotm;*.doc;*.dot;*.odt;*.rtf;*.htm;*.html;*.mht;*.eml;*.epub;*.xml;*.txt|" +
-                "Word 2007 Document (*.docx)|*.docx|" +
-                "Word Macro-Enabled Document (*.docm)|*.docm|" +
-                "Word Template (*.dotx)|*.dotx|" +
-                "Word Macro-Enabled Template (*.dotm)|*.dotm|" +
-                "Microsoft Word Document (*.doc)|*.doc|" +
-                "Word 97-2003 Template (*.dot)|*.dot|" +
-                "OpenDocument Text Document (*.odt)|*.odt|" +
-                "Rich Text Format (*.rtf)|*.rtf|" +
-                "HyperText Markup Language Format (*.htm; *.html)|*.htm;*.html|" +
-                "Web Archive, single file (*.mht)|*.mht|" +
-                "Email Message (*.eml)|*.eml|" +
-                "Electronic Publication (*.epub)|*.epub|" +
-                "Word XML Document (*.xml)|*.xml|" +
-                "Text Files (*.txt)|*.txt";
-            openFileDlg.FilterIndex = 3;
-            openFileDlg.Title = "Select a Document";
-
-            DialogResult dlgResult = openFileDlg.ShowDialog();
-
-            // Show the dialog and get result.
-            if (dlgResult == DialogResult.OK)
-            {
-                string fileName = openFileDlg.FileName;
-                OpenFile(fileName);
-                // AddFileToMRUList(fileName);
-            }
+            base.OnClosed(e);
+            SaveRibbon();
+            SaveSettings();
+            SaveSkins();
         }
 
-        #endregion Viewer Processing
-
-        #region Merging
-
-        private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
+        protected override void OnLoad(EventArgs e)
         {
-            RibbonControl parentRibbon = sender as RibbonControl;
-            RibbonControl childRibbon = e.MergedChild;
-            if ((parentRibbon.StatusBar != null) && (childRibbon.StatusBar != null))
-            {
-                parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
-            }
+            base.OnLoad(e);
+            RestoreRibbon();
+            SplashScreenManager.CloseForm(false);
         }
-
-        #endregion Merging
-
-        #region Settings
-
-        private void LoadSettings()
-        {
-            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty), this);
-
-        }
-
-        private void SaveSettings()
-        {
-            Settings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
-
-        }
-
-        private static void SetSkins()
-        {
-            string sSkin = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Skin", "Office 2019 Colorful");
-            string sPalette = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Palette", "Fire Brick");
-            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
-
-        }
-
-        private static void SaveSkins()
-        {
-            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
-            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
-        }
-
-        private bool SaveRestoreRibbon(bool SaveRibbon)
-        {
-            if (mainRibbonControl != null)
-            {
-                switch (SaveRibbon)
-                {
-                    case true:
-                        mainRibbonControl.Toolbar.SaveLayoutToRegistry(StcReader.StaticRegInterfacePath);
-                        return true;
-                    case false:
-                        mainRibbonControl.Toolbar.RestoreLayoutFromRegistry(StcReader.StaticRegInterfacePath);
-                        return true;
-                }
-            }
-
-            return false;
-
-        }
-
-        #endregion Settings
-
-        #region Configurations
 
         private static void CreateProgramDirectories()
         {
@@ -274,11 +140,138 @@
             }
         }
 
+        private static void SaveSkins()
+        {
+            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Skin", WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName);
+            Settings.Settings.SaveSetting(StcReader.CurrentRegInterfacePath, "Palette", WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName);
+        }
 
+        private static void SetSkins()
+        {
+            var sSkin = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Skin", "WXI");
+            var sPalette = Settings.Settings.GetSetting(StcReader.CurrentRegInterfacePath, "Palette", "Freshness");
+            WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
+        }
 
+        private void CopyData_DataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.ChannelName.Equals("PDFChannel"))
+            {
+                string fileName = (string)e.Data;
+                CreateNewViewer(fileName);
+                AddFileToMruList(fileName);
+            }
+        }
 
-        #endregion Configurations
+        private void Initialize()
+        {
+            copyData = new CopyData();
+            copyData.AssignHandle(Handle);
+            copyData.Channels?.Add("PDFChannel");
+            copyData.DataReceived += new DataReceivedEventHandler(CopyData_DataReceived);
+        }
 
-        
+        private void LoadSettings()
+        {
+            RizonesoftEx.GeometryFromString(Settings.Settings.GetSetting(StcReader.CurrentRegGeneralPath, "Geometry", string.Empty) ?? string.Empty, this);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadSettings();
+
+            mainRibbonControl.ForceInitialize();
+            _mruList = new MruList("MRU", mruPopupMenu, 10, StcReader.CurrentRegMruPath);
+            _mruList.FileSelected += MruList_FileSelected;
+            // CheckLicense();
+        }
+
+        private void MainRibbonControl_Merge(object sender, RibbonMergeEventArgs e)
+        {
+            var parentRibbon = sender as RibbonControl;
+            var childRibbon = e.MergedChild;
+            if (parentRibbon?.StatusBar != null && childRibbon.StatusBar != null)
+            {
+                parentRibbon.StatusBar.MergeStatusBar(childRibbon.StatusBar);
+            }
+        }
+
+        private void MruList_FileSelected(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return;
+            if (File.Exists(fileName))
+            {
+                OpenFile(fileName);
+            }
+            else
+            {
+                if (XtraMessageBox.Show(
+                        $"Could not find \"{fileName}\"! It is gone. " +
+                        "It vanished. It is no more, or maybe you moved it? " +
+                        "Not sure what is going on here, but I know that entry does not belong on the \"Most Recently Used Documents\" list.\n\nWould you like me to remove it?",
+                        @"Could not find that document.",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Exclamation) ==
+                    DialogResult.Yes)
+                {
+                    _mruList.RemoveFile(fileName);
+                }
+            };
+        }
+
+        private void OpenFileFolder(string sIniDir)
+        {
+
+            var openFileDlg = new OpenFileDialog
+            {
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Multiselect = false,
+                SupportMultiDottedExtensions = true,
+                ValidateNames = true,
+                RestoreDirectory = true,
+                AddExtension = true,
+                DefaultExt = "pdf",
+                FileName = sIniDir,
+                ShowHelp = true
+            };
+
+            if (sIniDir != string.Empty)
+            {
+                openFileDlg.InitialDirectory = sIniDir;
+            }
+
+            openFileDlg.Filter = "PDF Document (*.pdf)|*.pdf";
+            openFileDlg.FilterIndex = 1;
+            openFileDlg.Title = "Select a Document";
+
+            var dlgResult = openFileDlg.ShowDialog();
+
+            // Show the dialog and get result.
+            if (dlgResult != DialogResult.OK) return;
+            var fileName = openFileDlg.FileName;
+            OpenFile(fileName);
+            AddFileToMruList(fileName);
+        }
+
+        private void RestoreRibbon()
+        {
+            mainRibbonControl?.Toolbar.RestoreLayoutFromRegistry(StcReader.StaticRegInterfacePath);
+        }
+
+        private void SaveRibbon()
+        {
+            mainRibbonControl?.Toolbar.SaveLayoutToRegistry(StcReader.StaticRegInterfacePath);
+        }
+
+        private void SaveSettings()
+        {
+            Settings.Settings.SaveSetting(StcReader.CurrentRegGeneralPath, "Geometry", RizonesoftEx.GeometryToString(this));
+        }
+
+        private void barOpenItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            OpenFile();
+        }
     }
 }
