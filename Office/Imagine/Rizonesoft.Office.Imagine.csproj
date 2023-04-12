@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <OutputType>WinExe</OutputType>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <AssemblyName>Imagine</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
+	  <Version>2023.3.673</Version>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+	  <PublishReadyToRun>true</PublishReadyToRun>
+	  <PublishSingleFile>true</PublishSingleFile>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyVersion>2023.4.8.1</AssemblyVersion>
+	  <FileVersion>2023.4.8.1</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5.0" />
+  </ItemGroup>
+
+</Project>

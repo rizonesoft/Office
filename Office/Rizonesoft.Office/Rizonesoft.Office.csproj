@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Rizonesoft.Office</RootNamespace>
-    <Version>2023.3.302</Version>
+    <Version>2023.4.351</Version>
     <Company>Rizonesoft</Company>
     <Product>Rizonesoft Office</Product>
 	<PublishReadyToRun>true</PublishReadyToRun>
@@ -16,8 +16,9 @@
 	<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
-	<AssemblyVersion>2023.3.31.283</AssemblyVersion>
-	<FileVersion>2023.3.31.283</FileVersion>
+	<AssemblyVersion>2023.4.9.288</AssemblyVersion>
+	<FileVersion>2023.4.9.288</FileVersion>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -57,6 +58,7 @@
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog" Version="5.1.2" />
   </ItemGroup>
 

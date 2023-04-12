@@ -7,7 +7,9 @@
 
     public static class RizonesoftEx
     {
-        private const int CURRENT_BETA_VERSION = 1;
+        // Utility class with extension methods and helper functions
+        private const int CurrentBetaVersion = 1;
+
         public const string CurrentUserReg = "HKEY_CURRENT_USER\\Software";
         public const string ProductName = "Office";
         internal const string LicenseRegPath = $"{CurrentUserReg}\\Rizonesoft\\{ProductName}\\General";
@@ -20,7 +22,7 @@
                                 |(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'"".,<>?«»“”‘’]))", RegexOptions.IgnoreCase);
 
         public static bool AutoSpellCheck { get; set; }
-        public static string BetaVersionString => IsBetaVersion ? $"Beta {CURRENT_BETA_VERSION}" : string.Empty;
+        public static string BetaVersionString => IsBetaVersion ? $"Beta {CurrentBetaVersion}" : string.Empty;
         public static bool IsBetaVersion { get; set; }
         public static bool IsLicensed { get; set; }
 

@@ -9,7 +9,7 @@
     <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
     <BaseOutputPath>..\Bin</BaseOutputPath>
     <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
-    <Version>2023.3.652</Version>
+    <Version>2023.4.727</Version>
     <PackageIcon>Verbum-128.png</PackageIcon>
     <UseWPF>False</UseWPF>
     <ApplicationIcon>Verbum.ico</ApplicationIcon>
@@ -20,8 +20,8 @@
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	<PlatformTarget>x64</PlatformTarget>
-	<AssemblyVersion>2023.3.29.662</AssemblyVersion>
-	<FileVersion>2023.3.29.662</FileVersion>
+	<AssemblyVersion>2023.4.9.666</AssemblyVersion>
+	<FileVersion>2023.4.9.666</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -67,6 +67,7 @@
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="22.2.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>

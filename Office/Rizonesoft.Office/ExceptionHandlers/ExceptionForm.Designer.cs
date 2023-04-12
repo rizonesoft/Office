@@ -48,10 +48,10 @@
             // directXFormContainerControl1
             // 
             directXFormContainerControl1.Controls.Add(mainTablePanel);
-            directXFormContainerControl1.Location = new Point(1, 46);
+            directXFormContainerControl1.Location = new Point(1, 49);
             directXFormContainerControl1.Margin = new Padding(4);
             directXFormContainerControl1.Name = "directXFormContainerControl1";
-            directXFormContainerControl1.Size = new Size(998, 853);
+            directXFormContainerControl1.Size = new Size(998, 850);
             directXFormContainerControl1.TabIndex = 0;
             // 
             // mainTablePanel
@@ -70,7 +70,7 @@
             mainTablePanel.Name = "mainTablePanel";
             mainTablePanel.Padding = new Padding(8, 7, 8, 7);
             mainTablePanel.Rows.AddRange(new DevExpress.Utils.Layout.TablePanelRow[] { new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 50F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 120F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 1000F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 65F) });
-            mainTablePanel.Size = new Size(998, 853);
+            mainTablePanel.Size = new Size(998, 850);
             mainTablePanel.TabIndex = 0;
             // 
             // bugIntroLabel
@@ -132,7 +132,7 @@
             mainTablePanel.SetColumn(cancelButton, 4);
             cancelButton.Dock = DockStyle.Fill;
             cancelButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("cancelButton.ImageOptions.SvgImage");
-            cancelButton.Location = new Point(738, 785);
+            cancelButton.Location = new Point(738, 782);
             cancelButton.Margin = new Padding(4);
             cancelButton.Name = "cancelButton";
             mainTablePanel.SetRow(cancelButton, 3);
@@ -148,7 +148,7 @@
             mainTablePanel.SetColumn(loggingButton, 2);
             loggingButton.Dock = DockStyle.Fill;
             loggingButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("loggingButton.ImageOptions.SvgImage");
-            loggingButton.Location = new Point(268, 785);
+            loggingButton.Location = new Point(268, 782);
             loggingButton.Margin = new Padding(4);
             loggingButton.Name = "loggingButton";
             mainTablePanel.SetRow(loggingButton, 3);
@@ -165,7 +165,7 @@
             mainTablePanel.SetColumnSpan(copyButton, 2);
             copyButton.Dock = DockStyle.Fill;
             copyButton.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("copyButton.ImageOptions.SvgImage");
-            copyButton.Location = new Point(12, 785);
+            copyButton.Location = new Point(12, 782);
             copyButton.Margin = new Padding(4);
             copyButton.Name = "copyButton";
             mainTablePanel.SetRow(copyButton, 3);
@@ -185,7 +185,7 @@
             bugMemoEdit.Properties.Appearance.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             bugMemoEdit.Properties.Appearance.Options.UseFont = true;
             mainTablePanel.SetRow(bugMemoEdit, 2);
-            bugMemoEdit.Size = new Size(974, 596);
+            bugMemoEdit.Size = new Size(974, 593);
             bugMemoEdit.TabIndex = 0;
             // 
             // ExceptionForm

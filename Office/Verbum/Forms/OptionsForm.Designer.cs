@@ -40,11 +40,6 @@
             tablePanel3 = new DevExpress.Utils.Layout.TablePanel();
             navigationPane1 = new DevExpress.XtraBars.Navigation.NavigationPane();
             generalNavPage = new DevExpress.XtraBars.Navigation.NavigationPage();
-            interfaceNavPage = new DevExpress.XtraBars.Navigation.NavigationPage();
-            groupControl4 = new DevExpress.XtraEditors.GroupControl();
-            radioButton3 = new System.Windows.Forms.RadioButton();
-            radioButton2 = new System.Windows.Forms.RadioButton();
-            radioButton1 = new System.Windows.Forms.RadioButton();
             navigationPage1 = new DevExpress.XtraBars.Navigation.NavigationPage();
             ((System.ComponentModel.ISupportInitialize)groupControl1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)tablePanel2).BeginInit();
@@ -57,9 +52,6 @@
             tablePanel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)navigationPane1).BeginInit();
             navigationPane1.SuspendLayout();
-            interfaceNavPage.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)groupControl4).BeginInit();
-            groupControl4.SuspendLayout();
             SuspendLayout();
             // 
             // groupControl1
@@ -129,7 +121,7 @@
             // 
             tablePanel3.SetColumn(simpleButton1, 1);
             simpleButton1.Dock = System.Windows.Forms.DockStyle.Fill;
-            simpleButton1.Location = new System.Drawing.Point(788, 860);
+            simpleButton1.Location = new System.Drawing.Point(788, 845);
             simpleButton1.Margin = new System.Windows.Forms.Padding(5);
             simpleButton1.Name = "simpleButton1";
             tablePanel3.SetRow(simpleButton1, 1);
@@ -141,7 +133,7 @@
             // 
             tablePanel3.SetColumn(simpleButton2, 2);
             simpleButton2.Dock = System.Windows.Forms.DockStyle.Fill;
-            simpleButton2.Location = new System.Drawing.Point(988, 860);
+            simpleButton2.Location = new System.Drawing.Point(988, 845);
             simpleButton2.Margin = new System.Windows.Forms.Padding(5);
             simpleButton2.Name = "simpleButton2";
             tablePanel3.SetRow(simpleButton2, 1);
@@ -161,7 +153,7 @@
             tablePanel3.Name = "tablePanel3";
             tablePanel3.Padding = new System.Windows.Forms.Padding(5);
             tablePanel3.Rows.AddRange(new DevExpress.Utils.Layout.TablePanelRow[] { new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Relative, 511F), new DevExpress.Utils.Layout.TablePanelRow(DevExpress.Utils.Layout.TablePanelEntityStyle.Absolute, 60F) });
-            tablePanel3.Size = new System.Drawing.Size(1188, 920);
+            tablePanel3.Size = new System.Drawing.Size(1188, 905);
             tablePanel3.TabIndex = 1;
             // 
             // navigationPane1
@@ -170,7 +162,6 @@
             tablePanel3.SetColumn(navigationPane1, 0);
             tablePanel3.SetColumnSpan(navigationPane1, 3);
             navigationPane1.Controls.Add(generalNavPage);
-            navigationPane1.Controls.Add(interfaceNavPage);
             navigationPane1.Controls.Add(navigationPage1);
             navigationPane1.Dock = System.Windows.Forms.DockStyle.Fill;
             navigationPane1.Location = new System.Drawing.Point(8, 7);
@@ -178,11 +169,11 @@
             navigationPane1.Name = "navigationPane1";
             navigationPane1.PageProperties.ShowCollapseButton = false;
             navigationPane1.PageProperties.ShowExpandButton = false;
-            navigationPane1.Pages.AddRange(new DevExpress.XtraBars.Navigation.NavigationPageBase[] { generalNavPage, interfaceNavPage, navigationPage1 });
-            navigationPane1.RegularSize = new System.Drawing.Size(1172, 846);
+            navigationPane1.Pages.AddRange(new DevExpress.XtraBars.Navigation.NavigationPageBase[] { generalNavPage, navigationPage1 });
+            navigationPane1.RegularSize = new System.Drawing.Size(1172, 831);
             tablePanel3.SetRow(navigationPane1, 0);
-            navigationPane1.SelectedPage = interfaceNavPage;
-            navigationPane1.Size = new System.Drawing.Size(1172, 846);
+            navigationPane1.SelectedPage = generalNavPage;
+            navigationPane1.Size = new System.Drawing.Size(1172, 831);
             navigationPane1.TabIndex = 0;
             navigationPane1.Click += navigationPane1_Click;
             // 
@@ -193,75 +184,20 @@
             generalNavPage.Caption = "General";
             generalNavPage.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             generalNavPage.Name = "generalNavPage";
-            generalNavPage.Size = new System.Drawing.Size(987, 766);
-            // 
-            // interfaceNavPage
-            // 
-            interfaceNavPage.Caption = "Interface";
-            interfaceNavPage.Controls.Add(groupControl4);
-            interfaceNavPage.Margin = new System.Windows.Forms.Padding(4);
-            interfaceNavPage.Name = "interfaceNavPage";
-            interfaceNavPage.Size = new System.Drawing.Size(987, 757);
-            // 
-            // groupControl4
-            // 
-            groupControl4.Controls.Add(radioButton3);
-            groupControl4.Controls.Add(radioButton2);
-            groupControl4.Controls.Add(radioButton1);
-            groupControl4.Dock = System.Windows.Forms.DockStyle.Top;
-            groupControl4.Location = new System.Drawing.Point(0, 0);
-            groupControl4.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            groupControl4.Name = "groupControl4";
-            groupControl4.Padding = new System.Windows.Forms.Padding(7);
-            groupControl4.Size = new System.Drawing.Size(987, 187);
-            groupControl4.TabIndex = 1;
-            groupControl4.Text = "Ribbon Options";
-            // 
-            // radioButton3
-            // 
-            radioButton3.Dock = System.Windows.Forms.DockStyle.Top;
-            radioButton3.Location = new System.Drawing.Point(9, 110);
-            radioButton3.Name = "radioButton3";
-            radioButton3.Size = new System.Drawing.Size(969, 30);
-            radioButton3.TabIndex = 5;
-            radioButton3.TabStop = true;
-            radioButton3.Text = "Less space between commands. Compact.";
-            radioButton3.UseVisualStyleBackColor = true;
-            // 
-            // radioButton2
-            // 
-            radioButton2.Dock = System.Windows.Forms.DockStyle.Top;
-            radioButton2.Location = new System.Drawing.Point(9, 80);
-            radioButton2.Name = "radioButton2";
-            radioButton2.Size = new System.Drawing.Size(969, 30);
-            radioButton2.TabIndex = 4;
-            radioButton2.TabStop = true;
-            radioButton2.Text = "More space between commands. Optimized for use with touch.";
-            radioButton2.UseVisualStyleBackColor = true;
-            // 
-            // radioButton1
-            // 
-            radioButton1.Dock = System.Windows.Forms.DockStyle.Top;
-            radioButton1.Location = new System.Drawing.Point(9, 50);
-            radioButton1.Name = "radioButton1";
-            radioButton1.Size = new System.Drawing.Size(969, 30);
-            radioButton1.TabIndex = 3;
-            radioButton1.TabStop = true;
-            radioButton1.Text = "Standard ribbon and commands. Optimized for use with a mouse.";
-            radioButton1.UseVisualStyleBackColor = true;
+            generalNavPage.Size = new System.Drawing.Size(987, 742);
             // 
             // navigationPage1
             // 
             navigationPage1.Caption = "Language";
             navigationPage1.Name = "navigationPage1";
-            navigationPage1.Size = new System.Drawing.Size(1172, 855);
+            navigationPage1.Size = new System.Drawing.Size(987, 754);
             // 
             // OptionsForm
             // 
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(10F, 20F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1198, 935);
+            ClientSize = new System.Drawing.Size(1198, 920);
             Controls.Add(tablePanel3);
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             Name = "OptionsForm";
@@ -278,9 +214,6 @@
             tablePanel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)navigationPane1).EndInit();
             navigationPane1.ResumeLayout(false);
-            interfaceNavPage.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)groupControl4).EndInit();
-            groupControl4.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -297,11 +230,6 @@
         private DevExpress.XtraEditors.SimpleButton simpleButton1;
         private DevExpress.XtraBars.Navigation.NavigationPane navigationPane1;
         private DevExpress.XtraBars.Navigation.NavigationPage generalNavPage;
-        private DevExpress.XtraBars.Navigation.NavigationPage interfaceNavPage;
-        private DevExpress.XtraEditors.GroupControl groupControl4;
-        private System.Windows.Forms.RadioButton radioButton3;
-        private System.Windows.Forms.RadioButton radioButton2;
-        private System.Windows.Forms.RadioButton radioButton1;
         private DevExpress.XtraBars.Navigation.NavigationPage navigationPage1;
     }
 }

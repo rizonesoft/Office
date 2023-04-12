@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors>Derick Payne</Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Nerve</AssemblyName>
+	  <AssemblyProduct>Nerve</AssemblyProduct>
+	  <RootNamespace>Rizonesoft.Office.Nerve</RootNamespace>
+	  <ApplicationIcon></ApplicationIcon>
+	  <FileVersion>2023.4.10.107</FileVersion>
+	  <AssemblyVersion>2023.4.10.107</AssemblyVersion>
+	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+	  <LangVersion>latest</LangVersion>
+	  <Nullable>enable</Nullable>
+	  <Optimize>True</Optimize>
+	  <UseWPF>False</UseWPF>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <!--<PublishTrimmed>True</PublishTrimmed>-->
+	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
+	  <AssemblyCopyright>Copyright © 2023 Rizonetech. All rights reserved.</AssemblyCopyright>
+	  <AssemblyTrademark>Rizonesoft</AssemblyTrademark>
+	  <AssemblyCulture>en-US</AssemblyCulture>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CefSharp.WinForms.NETCore" Version="111.2.70" />
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5.0" />
+  </ItemGroup>
+
+</Project>

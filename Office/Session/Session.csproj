@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors>Derick Payne</Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Session</AssemblyName>
+	  <AssemblyProduct>Session</AssemblyProduct>
+	  <RootNamespace>Rizonesoft.Office.Session</RootNamespace>
+	  <ApplicationIcon></ApplicationIcon>
+	  <FileVersion>2023.4.9.71</FileVersion>
+	  <AssemblyVersion>2023.4.9.71</AssemblyVersion>
+	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+	  <LangVersion>latest</LangVersion>
+	  <Nullable>enable</Nullable>
+	  <Optimize>True</Optimize>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <UseWPF>False</UseWPF>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <PublishReadyToRun>True</PublishReadyToRun>
+	  <PublishSingleFile>True</PublishSingleFile>
+	  <!--<PublishTrimmed>True</PublishTrimmed>-->
+	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
+	  <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
+	  <EmbedInteropTypes>True</EmbedInteropTypes>
+	  <AssemblyCopyright>Copyright © 2023 Rizonetech. All rights reserved.</AssemblyCopyright>
+	  <AssemblyTrademark>Rizonesoft</AssemblyTrademark>
+	  <AssemblyCulture>en-US</AssemblyCulture>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <ShouldCreateLogs>True</ShouldCreateLogs>
+    <AdvancedSettingsExpanded>True</AdvancedSettingsExpanded>
+    <UpdateAssemblyVersion>False</UpdateAssemblyVersion>
+    <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
+    <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
+    <UpdatePackageVersion>False</UpdatePackageVersion>
+    <AssemblyInfoVersionType>SettingsVersion</AssemblyInfoVersionType>
+    <InheritWinAppVersionFrom>None</InheritWinAppVersionFrom>
+    <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="22.2.5.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.4" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.117" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+</Project>

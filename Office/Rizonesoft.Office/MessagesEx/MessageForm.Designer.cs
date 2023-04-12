@@ -38,17 +38,19 @@
             // 
             // directXFormContainerControl1
             // 
-            directXFormContainerControl1.Location = new Point(1, 31);
+            directXFormContainerControl1.Location = new Point(1, 49);
+            directXFormContainerControl1.Margin = new Padding(4, 4, 4, 4);
             directXFormContainerControl1.Name = "directXFormContainerControl1";
-            directXFormContainerControl1.Size = new Size(134, 68);
+            directXFormContainerControl1.Size = new Size(202, 96);
             directXFormContainerControl1.TabIndex = 0;
             // 
             // messageAlertControl
             // 
             messageAlertControl.AllowHtmlText = true;
             messageAlertControl.HtmlImages = updateSVGImageCollection;
-            messageAlertControl.HtmlTemplate.Styles = resources.GetString("updateAlertControl.HtmlTemplate.Styles");
-            messageAlertControl.HtmlTemplate.Template = resources.GetString("updateAlertControl.HtmlTemplate.Template");
+            messageAlertControl.HtmlTemplate.Styles = resources.GetString("messageAlertControl.HtmlTemplate.Styles");
+            messageAlertControl.HtmlTemplate.Template = resources.GetString("messageAlertControl.HtmlTemplate.Template");
+            messageAlertControl.ShowCloseButton = false;
             messageAlertControl.FormClosing += MessageAlertControl_FormClosing;
             // 
             // updateSVGImageCollection
@@ -60,11 +62,12 @@
             // 
             // MessageForm
             // 
-            AutoScaleDimensions = new SizeF(6F, 13F);
+            AutoScaleDimensions = new SizeF(9F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
             ChildControls.Add(directXFormContainerControl1);
-            ClientSize = new Size(136, 100);
+            ClientSize = new Size(204, 146);
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            Margin = new Padding(4, 4, 4, 4);
             MaximizeBox = false;
             Name = "MessageForm";
             Text = "Update Form";

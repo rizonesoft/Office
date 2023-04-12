@@ -26,6 +26,13 @@
     using System.Windows.Forms;
     using System.Drawing.Printing;
     using System.Windows.Controls.Ribbon;
+    using System.Collections.Generic;
+    using DevExpress.XtraGauges.Core.Customization;
+    using DevExpress.XtraRichEdit.Menu;
+    using Newtonsoft.Json;
+    using System.Net.Http;
+    using DevExpress.Utils.Menu;
+    using System.Threading.Tasks;
 
     internal sealed partial class DocForm : RibbonForm
     {
@@ -54,8 +61,11 @@
             exportImagePopupMenuItem.ItemClick += ExportBarButton_ItemClick;
             exportHTMLPopupMenuItem.ItemClick += ExportBarButton_ItemClick;
             exportMHTPopupMenuItem.ItemClick += ExportBarButton_ItemClick;
+
         }
 
+        
+        
         public DocForm(string fileName) : this()
         {
             ChildRichEditControl.LoadDocument(fileName);
@@ -553,7 +563,7 @@
                 var picToolsCat = DocRibbon.MergeOwner.PageCategories["Picture Tools"];
                 var headToolsCat = DocRibbon.MergeOwner.PageCategories["Header & Footer Tools"];
 
-                
+
                 if (ChildRichEditControl.IsSelectionInTable())
                 {
                     if (tableToolsCat != null) tableToolsCat.Visible = true;
@@ -577,6 +587,7 @@
             {
                 Logging.Logger.Error(ex.Message);
             }
+
         }
 
         private void MainRichEditControl_StartHeaderFooterEditing(object sender, HeaderFooterEditingEventArgs e)
@@ -715,5 +726,7 @@
         {
             ChildRichEditControl.ActiveView.ZoomFactor = 1;
         }
+
+        
     }
 }
