@@ -1,0 +1,41 @@
+-------------------------------------------
+Rizonesoft Office Freeware License by Rizonetech (Pty) Ltd
+-------------------------------------------
+
+End-User License Agreement (EULA) for Rizonesoft Office
+
+IMPORTANT: PLEASE READ THIS LICENSE CAREFULLY BEFORE USING THIS SOFTWARE.
+
+1. LICENSE AGREEMENT
+
+By installing and using Rizonesoft Office ("the Software"), distributed by Rizonetech (Pty) Ltd, you agree to be bound by the terms of this license agreement. If you do not agree to these terms, you may not use or distribute the Software, and you should uninstall the Software immediately.
+
+2. FREELY DISTRIBUTABLE
+
+You are hereby licensed to make as many copies of the Software as you wish and distribute the Software to anyone provided that all files are intact. You must distribute the install form of the Software (you must distribute the INSTALL file, not the files resulting from an installation). You are not allowed to sell the Software.
+
+3. PROPRIETARY RIGHTS
+
+All title, ownership rights, and intellectual property rights in and to the Software shall remain with Rizonetech (Pty) Ltd. The Software is protected by copyright and other intellectual property laws and by international treaties.
+
+4. DISCLAIMER OF WARRANTY
+
+The Software is provided "AS IS", without warranty of any kind, including, but not limited to, any implied warranty of merchantability, fitness for a particular purpose or non-infringement. Rizonetech (Pty) Ltd does not warrant that the operation of the Software will be uninterrupted or error-free, or that defects in the Software will be corrected. No oral or written statement by Rizonetech (Pty) Ltd or by a representative of Rizonetech (Pty) Ltd shall create a warranty or increase the scope of this warranty.
+
+5. LIMITATION OF LIABILITY
+
+Under no circumstances and under no legal theory, tort, contract, or otherwise, shall Rizonetech (Pty) Ltd be liable to you or any other person for any indirect, special, incidental, or consequential damages of any character including, without limitation, damages for lost profits, loss of goodwill, work stoppage, accuracy of results, computer failure or malfunction, or damages resulting from your use of the Software.
+
+6. TERMINATION
+
+The license will terminate automatically if you fail to comply with the limitations described herein. On termination, you must destroy all copies of the Software.
+
+7. MISCELLANEOUS
+
+This Agreement constitutes the entire agreement between you and Rizonetech (Pty) Ltd concerning the Software.
+
+For more information about our products and services, please visit: https://www.rizonesoft.com.
+
+-------------------------------------------
+
+Thank you for using Rizonesoft Office.

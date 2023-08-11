@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="128px" height="128px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 127.88 127.88"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil2 {fill:#6D2B2C}
+    .fil0 {fill:url(#id0)}
+    .fil1 {fill:url(#id1);fill-rule:nonzero}
+   ]]>
+  </style>
+  <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="63.94" y1="127.88" x2="63.94" y2="0">
+   <stop offset="0" style="stop-opacity:1; stop-color:#AF3437"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#EA6B51"/>
+  </linearGradient>
+  <linearGradient id="id1" gradientUnits="userSpaceOnUse" x1="63.94" y1="95.22" x2="63.94" y2="32.66">
+   <stop offset="0" style="stop-opacity:1; stop-color:#F9D0CC"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#FEFEFE"/>
+  </linearGradient>
+ </defs>
+ <g id="Layer_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <rect class="fil0" width="127.88" height="127.88" rx="16.58" ry="17.05"/>
+  <path class="fil1" d="M51.93 79.19c-2.58,0 -5.15,-0.08 -7.57,-0.24l0 -30.02c2.42,-0.16 4.99,-0.24 7.57,-0.24 18.56,0 30.81,4.69 30.81,15.25 0,10.56 -12.25,15.25 -30.81,15.25zm-26.28 14.85c8.81,0.71 16.84,1.18 23.94,1.18 37.43,0 52.64,-13.45 52.64,-31.28 0,-17.83 -15.21,-31.28 -52.64,-31.28 -7.1,0 -15.13,0.47 -23.94,1.17l0 60.21z"/>
+  <g>
+   <path id="_1" class="fil2" d="M51.93 79.19c-2.58,0 -5.15,-0.08 -7.57,-0.24l0 -30.02c2.42,-0.16 4.99,-0.24 7.57,-0.24 18.56,0 30.81,4.69 30.81,15.25 0,10.56 -12.25,15.25 -30.81,15.25zm-26.28 14.85c8.81,0.71 16.84,1.18 23.94,1.18 37.43,0 52.64,-13.45 52.64,-31.28 0,-17.83 -15.21,-31.28 -52.64,-31.28 -7.1,0 -15.13,0.47 -23.94,1.17l0 60.21zm22.43 -15.34c1.24,0.04 2.53,0.06 3.85,0.06 9.54,0 17.39,-1.24 22.72,-3.88 4.89,-2.42 7.66,-6.03 7.66,-10.94 0,-4.92 -2.77,-8.52 -7.66,-10.94 -5.33,-2.64 -13.18,-3.88 -22.72,-3.88 -1.32,0 -2.61,0.02 -3.85,0.05 -1.11,0.04 -2.21,0.09 -3.29,0.16l0 29.22c1.08,0.07 2.18,0.12 3.29,0.15zm-9.84 16.62c-4.02,-0.21 -8.23,-0.5 -12.63,-0.85l-0.39 -0.03 0 -0.4 0 -60.21 0 -0.39 0.39 -0.03c4.4,-0.35 8.61,-0.64 12.63,-0.85 4.02,-0.21 7.81,-0.33 11.35,-0.33 17.78,0 30.58,3.03 39.15,8.12 9.63,5.72 13.92,14.04 13.92,23.59 0,9.55 -4.29,17.86 -13.92,23.59 -8.57,5.09 -21.37,8.11 -39.15,8.11 -3.54,0 -7.33,-0.11 -11.35,-0.32z"/>
+  </g>
+ </g>
+</svg>

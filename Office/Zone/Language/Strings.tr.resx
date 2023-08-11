@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>Masaüstü Kısayolunu Kaldır</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>Masaüstü Kısayolu Oluştur</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>Kelime İşlemci ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>Gelişmiş metin araçları ve özelliklerle belge oluşturun, düzenleyin ve biçimlendirin.</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>Elektronik tablolar ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>Sağlam formüller kullanarak verileri analiz edin, hesaplamalar yapın ve grafikler oluşturun.</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>Diyagramlar ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>Akış şemaları, zihin haritaları ve diyagramlar kullanarak karmaşık fikirleri tasarlayın ve görselleştirin.</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>Veri Görselleştirici ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>İnteraktif grafikler, grafikler ve görselleştirmeler kullanarak verileri temsil edin ve yorumlayın.</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>Zamanlama ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>Özelleştirilebilir görünümler ve hatırlatmalarla randevuları, etkinlikleri ve son tarihleri yönetin.</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>Görevler ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>Önceliklendirme, son tarihler ve ilerleme takibi ile kişisel veya profesyonel görevleri oluşturun, düzenleyin ve izleyin.</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>Proje Yöneticisi ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>Görevleri koordine edin, ilerlemeyi izleyin ve ekip üyeleriyle verimli bir şekilde işbirliği yapın.</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>Kapsamlı bir araç setiyle PDF belgelerini görüntüleyin, değiştirin, ek açıklama ekleyin ve imzalayın.</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>Fotoğrafları kurtar ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>İletişim ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>Garantiler ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>Randevular ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>Zaman ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>Kopya Oluştur ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>Dosya Yöneticisi ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>Harita Görüntüleyici ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>Varlık İzleme ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>Web Tarayıcı ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>Satış Noktası ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>AI Sohbet ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AI Tarayıcı ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>Zaman Takibi ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>Tarama ve OCR ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>Metinden Sese ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>Faturalandırma ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>Fotoğraf Düzenleme ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>E-posta Pazarlama ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>Temizleyici ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>Hızlı erişim ve sorunsuz iletişim deneyimi için tasarlanmış akıllı e-posta istemcisi.</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>Garanti ve onarım yönetimini adanmış, düzenli bir sistemle basitleştirin.</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>Randevularınızı planlayın ve takviminizi kullanıcı dostu platformumuzla düzenleyin.</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>Zamanı, zamanlayıcı ve alarm yönetimi programıyla tek pakette yönetin.</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>Etkili kopyalama aracıyla fiziksel belge kopyalarını çoğaltın ve saklayın.</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>Dijital dosya ve dizinlerinizi verimli bir şekilde düzenleyin, erişin ve yönetin.</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>Detaylı haritalarla konumları keşfedin, rotalar planlayın ve coğrafi verileri keşfedin.</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>Geliştirilmiş envanter yönetimi ve mali kontrol için doğru varlık takibi.</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>Geliştirilmiş hız ve performansla web sitelerine güvenli bir şekilde erişin ve keşfedin.</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>Özellikle zengin CRM yazılımımızla satışları ve müşteri ilişkilerini artırın.</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>İleri düzey POS sistemimizle perakende işinizi kolayca yönetin.</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>Optimize edilmiş arama, içerik keşfi ve kişiselleştirme için yapay zekayı kullanın.</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>İş saatlerini izleyin ve sezgisel zaman takip çözümümüzle optimize edin.</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>Çok yönlü bir tarama çözümü kullanarak belgeleri dijitalleştirin, saklayın ve paylaşın.</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>Silinen görüntüleri aracımızla kolayca geri yükleyerek kaybolan anıları geri getirin.</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>Bilgisayarınızı, etkili temizleyicimizle sorunsuz çalışır durumda tutun.</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>Yazılı metni, gerçekçi sesler ve özelleştirilebilir ayarlarla konuşulan kelimelere dönüştürün.</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>Faturalandırma ve tahsilat süreçlerini kullanımı kolay finansal aracımızla basitleştirin.</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>Fotoğrafçılar için mükemmel, kapsamlı resim görüntüleyici ve düzenleyici.</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>Hedeflenen e-posta pazarlama kampanyaları ile kitleyi büyütün ve etkileşimi artırın.</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>Doğal dil işleme özellikli yapay zeka destekli asistan.</value>
+	</data>
+</root>

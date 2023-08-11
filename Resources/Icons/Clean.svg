@@ -1,0 +1,66 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.895 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M56.4, 3.9A2.9 2.9 0 0 0 52.2, 3.9L24.6, 31.5L28.8, 35.7L56.4, 8.1A2.9 2.9 0 0 0 56.4, 3.9z" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M46.4, 45.3C44.3, 44.5 43.2, 43.2 43, 41.4A1 1 0 0 0 41, 41.4C40.8, 43.2 39.7, 44.5 37.5, 45.3A1.1 1.1 0 0 0 37.5, 47.2C39.7, 48 40.8, 49.3 41, 51.1A1 1 0 0 0 43, 51.1C43.2, 49.3 44.3, 48 46.4, 47.2A1 1 0 0 0 46.4, 45.3z" fill="#1177D7" class="Blue" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M50, 51L49, 51A3 3 0 0 0 49, 57L51, 57L51, 55L49, 55A1 1 0 0 1 49, 53L50, 53A3 3 0 0 1 50, 59L37, 59L37, 61L50, 61A5 5 0 0 0 50, 51z" fill="#1177D7" class="Blue" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M39, 54L43, 54L43, 56L39, 56z" fill="#1177D7" class="Blue" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M33, 50L37, 50L37, 52L33, 52z" fill="#1177D7" class="Blue" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M28.6, 48.2L30.2, 44.2A5.1 5.1 0 0 0 29.1, 38.8L21.5, 31.2A5.1 5.1 0 0 0 16.1, 30.1L12.1, 31.7z" fill="#727272" class="Black" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-1.4488, -1.4481)">
+    <g transform="matrix(0.0603, 0, 0, 0.0603, 0, 0)">
+      <g transform="matrix(8, 0, 0, 8, 0, 0)">
+        <g id="Layer_3">
+          <path d="M35.3, 55.8C34.5, 55.8 32, 55.7 31.1, 54.5A10.6 10.6 0 0 1 29.4, 51.9L10.1, 32.6C3.8, 35.8 3, 41.4 3, 45.4L3, 45.7A27.8 27.8 0 0 0 5.8, 51.7A1 1 0 0 0 7.6, 51.4C8.5, 47.9 9.5, 45.9 11.5, 44.3C9.8, 47.8 8.6, 52.7 10.1, 56.2C10.2, 56.4 10.2, 56.5 10.4, 56.6C13.2, 59 15.9, 61 21.1, 61A1 1 0 0 0 22.2, 59.9A15.3 15.3 0 0 1 22.4, 55.3A8.1 8.1 0 0 0 26.4, 60.9L26.9, 60.9C31.1, 60.9 33.9, 59.8 36.1, 57.4A1 1 0 0 0 35.3, 55.8z" fill="#FFB115" class="Yellow" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

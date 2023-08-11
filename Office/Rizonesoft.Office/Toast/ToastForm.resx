@@ -1,0 +1,200 @@
+﻿<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <metadata name="alertToast.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="alertToast.HtmlTemplate.Styles" xml:space="preserve">
+    <value>.container{
+    padding: 6px 14px 20px 14px;
+} 
+.popup{
+	width: 362px;
+	height: auto;
+	padding: 4px;
+	border-radius: 4px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.25);
+    border: 1px solid @WindowText/0.2;
+    display: flex;
+    flex-direction: column;
+    font-family: "Segoe UI";
+    text-align: center;
+    justify-content: space-around;
+    background-color: @Control;
+	color: @ControlText;
+	font-size: 10pt;
+}
+.header{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	font-family: 'Segoe UI Semibold';
+}
+.header-caption{
+	padding: 10px 10px 0px 10px;
+	display: flex;
+	flex-direction: row;
+}
+.header-caption-icon{
+	width: 28px;
+	height: 28px;
+}
+.header-caption-text{
+	padding-left: 10px;
+}
+.header-buttons{
+	display: flex;
+	flex-direction: row;
+	padding: 5px 2px 0px 0px;
+}
+.header-button{
+	padding: 5px;
+	border-radius: 2px;
+	align-self: center;
+}
+.header-button:hover{
+	background-color: @HotTrackedColor/0.9;
+}
+.header-button:active{
+	background-color: @HotTrackedColor/0.6;
+}
+.close-button{
+	width: 18px;
+	height: 18px;
+}
+.message{
+	display: flex;
+	flex-direction: row;
+	overflow-wrap: break-word;
+}
+.message-text-container{
+	text-align: left;
+	padding: 10px;
+}
+.message-image-container{
+	align-self: center;
+	padding: 9px;
+}
+.message-image{
+	width: 54px;
+	height: 54px;
+}
+.message-caption{
+	font-size: 10.5pt;
+	font-family: 'Segoe UI Semibold';
+}
+.message-text{
+}
+.buttons{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+.button{
+	margin: 9px;
+	padding: 8px;
+	width: 100%;
+	border-radius: 4px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,0.25);
+    background-color: @Window;
+    color: @WindowText;
+    font-size: 10.5pt;
+    font-family: 'Segoe UI Semibold';
+    border: 1px solid @WindowText/0.1;
+    
+}
+.button:hover{
+	background-color: @HotTrackedColor/0.9;
+	color: @HotTrackedForeColor;
+	border: 1px solid @HotTrackedForeColor/0.2;
+}
+.button:active{
+	background-color: @HotTrackedColor/0.6;
+}</value>
+  </data>
+  <data name="alertToast.HtmlTemplate.Template" xml:space="preserve">
+    <value>&lt;div class="container"&gt;
+    &lt;div class="popup"&gt;
+    	&lt;div class="header"&gt;
+    		&lt;div class="header-caption"&gt;
+    			&lt;img src="${HeaderIcon}" class="header-caption-icon" /&gt;
+    			&lt;div class="header-caption-text"&gt;${HeaderCaption}&lt;/div&gt;
+    		&lt;/div&gt;
+    		&lt;div class="header-buttons"&gt;
+    			&lt;div id="closeButton" class="header-button"&gt;
+    				&lt;img src="${CloseButtonIcon}" class="close-button" /&gt;
+    			&lt;/div&gt;
+    		&lt;/div&gt;
+    	&lt;/div&gt;
+    	&lt;div class="message"&gt;
+    		&lt;div class="message-image-container"&gt;
+	    		&lt;img src="${MessageIcon}" class="message-image" /&gt;
+    		&lt;/div&gt;
+    		&lt;div class="message-text-container"&gt;
+    			&lt;div class="message-text"&gt;${Message}&lt;/div&gt;
+    		&lt;/div&gt;
+    	&lt;/div&gt;
+    	&lt;div class="buttons"&gt;
+    		&lt;div id="Button1" class="button"&gt;${Button1Caption}&lt;/div&gt;
+    		&lt;div id="Button2" class="button"&gt;${Button2Caption}&lt;/div&gt;
+    	&lt;/div&gt;
+	&lt;/div&gt;
+&lt;/div&gt;</value>
+  </data>
+</root>

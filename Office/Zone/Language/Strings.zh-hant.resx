@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>刪除桌面快捷方式</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>創建桌面快捷方式</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>文字處理器 ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>使用高級文本工具和功能創建、編輯和格式化文檔。</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>檔案管理器 ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>使用強大的公式分析數據、進行計算和創建圖表。</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>圖表 ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>使用流程圖、思維導圖和圖表設計和可視化複雜的想法。</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>數據可視化工具 ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>使用交互式圖表、圖形和可視化表示和解釋數據。</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>調度 ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>使用可自定義的視圖和提醒管理預約、事件和截止日期。</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>任務 ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>使用優先級、截止日期和進度跟踪創建、組織和跟踪個人或專業任務。</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>項目經理 ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>協調任務，跟踪進度，並與團隊成員高效合作。</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>使用全面的工具集查看、修改、註釋和簽署PDF文檔。</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>恢復照片 ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>通訊 ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>保修 ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>預約 ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>時間 ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>建立副本 ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>地圖檢視器 ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>地圖檢視器 ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>資產追踪 ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>網頁瀏覽器 ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>銷售點 ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>AI 聊天 ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AI 瀏覽器 ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>時間追踪 ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>掃描和 OCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>清潔器 ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>文字轉語音 ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>開發票 ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>編輯照片 ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>電子郵件行銷 ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>為快速訪問和無縫溝通體驗而設計的智能電子郵件客戶端。</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>通過專用、有組織的系統簡化保修和維修管理。</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>使用我們的用戶友好平台安排預約並整理日曆。</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>使用一體化的時間、計時器和鬧鐘管理程序掌握您的時間。</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>使用高效複印工具複製並存儲物理文件副本。</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>高效組織、訪問和管理您的數字文件和目錄。</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>使用詳細地圖發現位置、規劃路線並探索地理數據。</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>準確的資產跟踪，以改善庫存管理和財務控制。</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>安全地訪問和瀏覽網站，速度和性能得到提升。</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>使用我們功能豐富的CRM軟件提升銷售和客戶關係。</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>使用我們先進的POS系統輕鬆管理零售業務。</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>利用人工智能進行優化搜索、內容發現和個性化。</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>使用我們直觀的時間跟踪解決方案監控和優化工作時間。</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>使用多功能掃描解決方案數字化、存儲和共享文檔。</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>使用我們的工具輕鬆恢復已刪除的圖像以找回丟失的回憶。</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>使用我們高效的清理器保持計算機順暢運行。</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>將書面文本轉換為帶有逼真語音和可自定義設置的口語詞彙。</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>使用我們易於使用的財務工具簡化開票和結算流程。</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>全面的圖像查看器和編輯器，非常適合攝影師。</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>針對性的電子郵件營銷活動，以擴大受眾群體並推動參與度。</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>配備自然語言處理功能的AI驅動助手。</value>
+	</data>
+</root>

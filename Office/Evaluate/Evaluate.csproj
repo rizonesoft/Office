@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors></Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Evaluate</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Evaluate</RootNamespace>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <Platforms>x64;x86</Platforms>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+	  <AssemblyVersion>2023.8.11.76</AssemblyVersion>
+	  <FileVersion>2023.8.11.76</FileVersion>
+	  <ApplicationIcon>Evaluate.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Evaluate.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Language\Dialogs.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Language\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Language\Dialogs.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Dialogs.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

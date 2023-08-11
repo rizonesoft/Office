@@ -1,0 +1,23 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-2, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Assistance">
+      <path d="M24, 16C24, 17.5 23.6, 18.9 22.9, 20.1L27.2, 24.4C29, 22 30, 19.1 30, 16C30, 12.9 29, 10 27.2, 7.6L22.9, 11.9C23.6, 13.1 24, 14.5 24, 16z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Assistance">
+      <path d="M8, 16C8, 14.5 8.4, 13.1 9.1, 11.9L4.8, 7.6C3, 10 2, 12.9 2, 16C2, 19.1 3, 22 4.8, 24.4L9.1, 20.1C8.4, 18.9 8, 17.5 8, 16z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Assistance">
+      <path d="M11.9, 9.1C13.1, 8.4 14.5, 8 16, 8C17.5, 8 18.9, 8.4 20.1, 9.1L24.4, 4.8C22, 3 19.1, 2 16, 2C12.9, 2 10, 3 7.6, 4.8L11.9, 9.1z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Assistance">
+      <path d="M20.1, 22.9C18.9, 23.6 17.5, 24 16, 24C14.5, 24 13.1, 23.6 11.9, 22.9L7.6, 27.2C10, 29 12.9, 30 16, 30C19.1, 30 22, 29 24.4, 27.2L20.1, 22.9z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

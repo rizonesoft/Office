@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>デスクトップショートカットを削除</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>デスクトップショートカットを作成</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>ワードプロセッサー ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>高度なテキストツールと機能を使用して、ドキュメントを作成、編集、および整形します。</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>スプレッドシート ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>ロバストな数式を使用してデータを分析し、計算を実行し、グラフを作成します。</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>ダイアグラム ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>フローチャート、マインドマップ、ダイアグラムを使用して、複雑なアイデアをデザインおよび視覚化します。</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>データビジュアライザー ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>インタラクティブなチャート、グラフ、および視覚化を使用してデータを表現および解釈します。</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>スケジューリング ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>カスタマイズ可能なビューとリマインダーで予定、イベント、期限を管理します。</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>タスク ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>優先順位付け、期限、進捗状況の追跡を使用して、個人または専門的なタスクを作成、整理、および追跡します。</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>プロジェクトマネージャー ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>タスクを調整し、進捗状況を追跡し、チームメンバーと効率的に協力します。</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>包括的なツールセットを使用して、PDFドキュメントを表示、変更、注釈付け、および署名します。</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>写真を回復する ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>コミュニケーション ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>保証 ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>アポイントメント ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>時間 ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>コピーを作成する ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>ファイルマネージャー ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>マップビューアー ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>アセットトラッキング ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>ウェブブラウザー ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>ポイントオブセール ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>AIチャット ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AIブラウザー ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>タイムトラッキング ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>スキャンとOCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>クリーナー ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>テキストtoスピーチ ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>請求書作成 ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>写真編集 ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>メールマーケティング ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>クイックアクセスとシームレスなコミュニケーション体験のために設計されたスマートなメールクライアント。</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>専用の整理されたシステムで、保証および修理管理を簡素化します。</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>当社のユーザーフレンドリーなプラットフォームで予定をスケジュールし、カレンダーを整理します。</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>オールインワンの時間、タイマー、アラーム管理プログラムで時間をマスターしましょう。</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>効率的なコピーツールを使用して、物理文書の複製を作成し保存します。</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>デジタルファイルとディレクトリを効率的に整理し、アクセスし、管理します。</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>詳細な地図を使用して、場所を見つけたり、ルートを計画したり、地理データを調べましょう。</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>在庫管理と財務管理の改善のための正確な資産追跡。</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>高速化およびパフォーマンス向上を実現しながら、安全にウェブサイトにアクセスして閲覧します。</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>機能豊富なCRMソフトウェアで販売と顧客関係を向上させます。</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>当社の高度なPOSシステムで小売ビジネスを簡単に管理します。</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>人工知能を活用して最適化された検索、コンテンツの発見、パーソナライゼーションを実現。</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>直感的なタイムトラッキングソリューションを使って、労働時間を監視し最適化します。</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>多機能なスキャニングソリューションを使用して、文書をデジタル化し保存および共有します。</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>当社のツールを使って削除された画像を簡単に復元することで失われた思い出を取り戻します。</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>効率的なクリーナーでコンピューターをスムーズに動作させましょう。</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>リアルな音声とカスタマイズ可能な設定で、書かれたテキストを話し言葉に変換します。</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>使いやすい金融ツールで請求書発行と請求処理を効率化しましょう。</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>写真家に最適な包括的な画像ビューアーおよびエディター。</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>ターゲット指向のメールマーケティングキャンペーンで視聴者を増やし、エンゲージメントを促進します。</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>自然言語処理を備えたAIパワードアシスタント。</value>
+	</data>
+</root>

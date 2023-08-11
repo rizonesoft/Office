@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Тёмный режим</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Светлый режим</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Настройки</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Настройки</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Восстановить ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Завершить</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Ведение журнала</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Главная</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Сбегите от душегубной офисной жизни и окунитесь в Ризон! Щелкните, чтобы телепортироваться в сумасшедший дом магии программного обеспечения Rizonesoft, где волшебники носят плащи, усыпанные кодами, и бросают цифровой конфетти.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Узнать больше&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Обновление языка</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Мы обновили наши языковые настройки и внедрили немного лингвистической магии в ваш опыт использования Rizonesoft Office. Чтобы наши остроумные словесные игры и саркастические нотки не потерялись при переводе, просим вас любезно перезапустить все открытые программы.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>В процессе сохранения наших лингвистических данных мы столкнулись с непредвиденной ошибкой в матрице. Чтобы разгадать эту загадку, мы предлагаем окунуться в сокровищницу информации файла журнала. С вашей помощью мы исправим аномалию и оптимизируем наш код для бесшовной производительности!</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Непредвиденная ошибка!</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Наши языковые данные взяли совершенно неожиданный отпуск, оставив нас во временном состоянии разговорного лимбо.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Обнаружена ошибка!</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Узнать больше</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Закрыть</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Мы столкнулись с сбоем в матрице, когда наш поиск загрузки конфигурации программы столкнулся с препятствием. Не волнуйтесь, мы добросовестно записали эту шаловливую аномалию для потомства.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Сбой в матрице!</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Общий</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Продвинутый</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Месяц</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Минута</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Бесконечность</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Час</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>День</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Ограничение файла</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Ограничение файла журнала</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Установка лимита на количество файлов журнала помогает поддерживать наш цифровой мир в отличном состоянии. Этот надежный инструмент гарантирует, что мы избежим надвигающегося наводнения файлов журнала, поддерживая равновесие в постоянно текущей реке данных.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Скользящий интервал</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Интервал перемотки журнала</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>Скользящий интервал, верный хранитель времени, регулирует ритм появления новых файлов журнала. Выбрав настройку "День", вы наделяете усердного маэстро файлов журнала возможностью составлять новую симфонию каждый день - неукоснительно, как и пунктуальное появление вашей утренней чашки кофе.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Открыть каталог Serilog</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Необработанное исключение</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Отправляйтесь, благородный пользователь, в царство файлов журналов, где откровения и цифровая мудрость ждут вашего проницательного взгляда.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Открыть Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Очистить Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Очистить каталог Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Настало время напрячь свои цифровые мышцы и удалить журналы из каталога Serilog. Но обратите внимание на это дружественное напоминание: с такой силой идет бремя ответственности.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>О нет!</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>Возник маленький икот, поскольку неуловимый путь к каталогу журналов играет в цифровые прятки.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>Момент цифрового рассчёта!</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Локализация</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Подождите и обдумайте свои действия, прежде чем нажимать кнопку «удалить» в этих файлах журнала. Помните, что удаление, подобно цифровой черной дыре, является точкой невозврата; как только они исчезнут, они будут потеряны в пустоте навсегда.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Текущий код языка</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Текущий язык</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Выберите язык</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Выберите язык из списка справа и надейтесь, что наши разработчики выполнили свою работу. Если вашего предпочитаемого языка нет, не беспокойтесь, в ближайшем будущем мы расширим наши языковые горизонты, чтобы охватить его.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Загрузка чего-то потрясающего</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Настройки</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Поддержка</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>O</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Внести вклад</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Отладка</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Обнаружить</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Регистрация</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Обновить</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Лицензия активирована!</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Неожиданная ошибка</value>
+	</data>
+</root>

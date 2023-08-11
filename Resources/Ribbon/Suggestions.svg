@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-8 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-8, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Idea">
+      <path d="M13, 24L19, 24C19.6, 24 20, 23.5 20, 23C20, 22.5 19.6, 22 19, 22L13, 22C12.4, 22 12, 22.5 12, 23C12, 23.5 12.4, 24 13, 24z" fill="#727272" class="Black" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-8, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Idea">
+      <path d="M19, 26L13, 26C12.4, 26 12, 26.5 12, 27C12, 27.5 12.4, 28 13, 28L14, 28C14, 29.1 14.9, 30 16, 30C17.1, 30 18, 29.1 18, 28L19, 28C19.6, 28 20, 27.5 20, 27C20, 26.5 19.6, 26 19, 26z" fill="#727272" class="Black" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-8, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Idea">
+      <path d="M16, 2C11.6, 2 8, 5.6 8, 10C8, 15 12, 16 12, 20C14, 20 18, 20 20, 20C20, 16 24, 15 24, 10C24, 5.6 20.4, 2 16, 2z" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+</svg>

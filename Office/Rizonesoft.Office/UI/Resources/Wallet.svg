@@ -1,0 +1,13 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-2, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Wallet">
+      <path d="M20, 22C16.6, 22 13.9, 19.2 14, 15.8C14.1, 12.5 17, 10 20.3, 10L28, 10C28, 10 28, 10 28, 10L28, 6L28, 5C28, 4.4 27.5, 4 27, 4L3, 4C2.5, 4 2, 4.5 2, 5L2, 27C2, 27.6 2.5, 28 3, 28L27, 28C27.6, 28 28, 27.5 28, 27L28, 22C28, 22 28, 22 28, 22L20, 22z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Wallet">
+      <path d="M29, 12L29, 12L20, 12C17.7, 12 15.8, 14 16, 16.4C16.2, 18.5 18.1, 20 20.2, 20L29, 20L29, 20C29.5, 20 30, 19.5 30, 19L30, 13C30, 12.5 29.5, 12 29, 12zM20, 18C18.9, 18 18, 17.1 18, 16C18, 14.9 18.9, 14 20, 14C21.1, 14 22, 14.9 22, 16C22, 17.1 21.1, 18 20, 18z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

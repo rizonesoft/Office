@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>暗黑模式</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>亮色模式</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>设置</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>设置</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>恢复 ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>终止</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>记录</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} 主页</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>逃离令人窒息的办公室生活，纵身一跃进入 Rizone！ 点击传送到 Rizonesoft 软件魔法的疯人院，那里的巫师们穿着满载代码的披风，撒下数字彩纸。</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;了解更多&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>语言刷新</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>我们已更新我们的语言设置，并为您的 Rizonesoft Office 体验注入了一些语言魔法。为确保我们机智的文字游戏和讽刺的语调不会在翻译中丢失，我们恳请您重新启动任何打开的程序。</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>在存储我们的语言数据过程中，我们在矩阵中遇到了意外的故障。为了解决这个难题，我们建议深入查看日志文件中的信息宝库。在您的帮助下，我们将纠正异常并优化代码以实现无缝性能！</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>意外故障！</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>我们的语言数据意外地休假，使我们陷入了暂时的交谈僵局。</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>检测到故障！</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>了解更多</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>关闭</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>当我们的程序配置加载任务遇到障碍时，我们在矩阵中遇到了一个故障。别担心，我们已经认真记录了这个恶作剧的异常现象，以供后人参考。</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>矩阵出现故障！</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>一般</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>高级</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>月份</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>分钟</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>无限</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>小时</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>天</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>文件限制</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>日志文件限制</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>建立日志文件计数可使我们的数字领域保持最佳状态。这一可靠的措施确保我们避免了即将到来的日志文件洪水，保持数据源源不断流动中的平衡。</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>滚动间隔</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>日志滚动间隔</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>的交响乐。每天都能如约而至的早晨一杯咖啡一样，必定会成功。滚动间隔是一位忠实的时间守护者，主宰着新日志文件诞生的节奏。选择“天”设置，您将授权勤奋的日志文件大师每天谱写新的交响乐。</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>打开 Serilog 目录</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>未处理的异常</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>踏上征程吧，高贵的用户，进入日志文件的领域，在那里启示和数字智慧等待着你敏锐的目光。</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>打开 Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>清理 Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>清理 Serilog 目录</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>是时候展示您的数字实力，从 Serilog 目录中清除日志了。但请注意这个友好的提醒 - 拥有如此强大的力量，也伴随着责任的重担。</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>哦，不！</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>一个小问题出现了，因为难以捉摸的日志目录路径正在玩数字捉迷藏游戏。</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>数字清算的时刻！</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>本地化</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>在点击这些日志文件上的“删除”按钮之前，请收起您的马匹并谨慎思考。请记住，就像数字黑洞一样，删除是一个无法回头的点；一旦消失，它们将永远失落在虚空中。</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>当前语言代码</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value> 当前语言</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>选择语言</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>从右侧列表中选择一种语言，并祈祷我们的开发人员已经完成了他们的工作。如果您喜欢的语言缺失，请不要担心，我们将在不久的将来扩大我们的语言范围，以包括它。</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>正在加载一些很棒的东西</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>选项</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>支持</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>关于</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>贡献</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value> 调试</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>发现</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>注册</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value> 更新</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>许可证已激活！</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>意外的错误</value>
+	</data>
+</root>

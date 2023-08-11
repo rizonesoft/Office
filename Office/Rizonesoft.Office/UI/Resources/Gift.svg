@@ -1,0 +1,28 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Gift">
+      <path d="M5, 10C4.4, 10 4, 10.5 4, 11L4, 14L14, 14L14, 10C13.3, 10 12.6, 10 12, 10L5, 10z" fill="#1177D7" class="Blue" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Gift">
+      <path d="M18, 30L25, 30C25.6, 30 26, 29.5 26, 29L26, 16L18, 16L18, 30z" fill="#1177D7" class="Blue" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Gift">
+      <path d="M6, 29C6, 29.5 6.4, 30 7, 30L14, 30L14, 16L6, 16L6, 29z" fill="#1177D7" class="Blue" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Gift">
+      <path d="M27, 10L20, 10C19.4, 10 18.7, 10 18, 10L18, 14L28, 14L28, 11C28, 10.5 27.6, 10 27, 10z" fill="#1177D7" class="Blue" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Gift">
+      <path d="M20, 2C17.8, 2 16, 3.8 16, 6C16, 3.8 14.2, 2 12, 2C9.8, 2 8, 3.8 8, 6C8, 8.2 9.8, 10 12, 10C12.6, 10 13.3, 10 14, 10C15.1, 10 16, 10 16, 10C16, 10 16.9, 10 18, 10C18.7, 10 19.4, 10 20, 10C22.2, 10 24, 8.2 24, 6C24, 3.8 22.2, 2 20, 2zM14, 8L12, 8C10.9, 8 10, 7.1 10, 6C10, 4.9 10.9, 4 12, 4C13.1, 4 14, 4.9 14, 6L14, 8zM20, 8L18, 8L18, 6C18, 4.9 18.9, 4 20, 4C21.1, 4 22, 4.9 22, 6C22, 7.1 21.1, 8 20, 8z" fill="#1177D7" class="Blue" />
+    </g>
+  </g>
+</svg>

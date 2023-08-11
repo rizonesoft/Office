@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Favorites_1_">
+      <path d="M28, 11C28, 7.1 25.1, 4 21.5, 4C19.1, 4 17.1, 5.4 16, 7.4C14.9, 5.4 12.8, 4 10.5, 4C6.9, 4 4, 7.1 4, 11C4, 11 4, 11.2 4, 11.2C4, 16.1 8.1, 20.2 14.3, 26.3L16, 28L17.7, 26.3C23.9, 20.2 28, 16.1 28, 11.2C28, 11.2 28, 11 28, 11z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

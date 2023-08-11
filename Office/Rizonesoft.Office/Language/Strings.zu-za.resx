@@ -1,0 +1,197 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Imodi yokungabi kwakhe</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Imodi yokukhanya kwakhe</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Izilungiselelo</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Izilungiselelo</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Buyisela ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Qeda</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Ukubhalisa</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Ikhaya</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Qeda ukuphila kwesikole esisusa umphefumulo futhi ngaqonde phansi kwesigodlo se-Rizone! Chofoza ukuze uzungeze endlini yobuthakathaka bezinhlelo zokusebenza ze-Rizonesoft, lapho amahlambi amathikithi angafihliki futhi ahlabele ithebhisa lezinto zezwe.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Funda kakhulu&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Ukuvuselela ulimi</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Sibuyekezile ukubeka kwethu kwezilimi futhi sajikisa umlingiswa wokulingiswa kwezilimi ekwenzekeni kwakho kwe-Rizonesoft Office. Ukuqinisekisa ukuthi ukudlala kwethu kwamagama okuhlekisayo nokugxila okukhulumile akulahlekiswa kwihambo, sibonga uma uvala futhi izinhlelo ezivuliwe.</value>
+	</data>
+	<data name="Language_DropDown_Error" xml:space="preserve">
+		<value>Njengoba besakha imenyu yokukhetha ephikisayo, igremlin yedijithali yaqonda ukungena emphakathini ngaphandle kwemvite. Kodwa ungakhathazeki, ngoba ifayela lethu le-log elifanelekile likhombisa ingilazi yomhlahlandlela wokuhlolwa ukuthi ngubani ozimeleyo ngale mithwalo.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>Ekuqedeni kokugcina ulwazi lwethu lolimi, sifumanise ukuntuleka okungalindelekile kwematrikhisi. Ukuze siphendule le ngxoxo, siqhakambisa ukuchitha isikhathi kwifayela le-log elinemininingwane. Ngosizo lwakho, sizolungisa uchuku futhi siphucule ikhodi yethu ukuze sifinyelele isebenzisekiso esiqinile!</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Ukuntuleka okungalindelekile!</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Ulwazi lwethu lolimi lwathatha isikhathi esingalindelekile sokuphumula, sishiywa esimweni sesikhathi sonyaka sokukhuluma.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Ukuntuleka kufunyanwe!</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Funda okwengeziwe</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Lahla</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Siphuthukele emzalwanyweni wamatulisi lapho ukulayisha okulungiselelwe kwezinhlelo zethu kwakunabantu. Ungakhathazeki, sibhalile ngokucophelela lokhu okungalungile kwezakhiwo.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Ukugcwala emzalwanyeni!</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Ngokuvamile</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Okweqile</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Inyanga</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Umzuzu</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Ngaphakathi</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Ihora</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Usuku</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Umkhawulo wefayela</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Umkhawulo wemifanekiso yelogi</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Ukumisa ukuhlola kwezifayela zelogi kuyasisiza ukugcina indawo yethu yedijithali ephakeme. Lokhu kuncike kuhle kakhulu kuzivikela ukuthi asiphili ngokuphazima amafayela we-logi, silondoloze ubunye phakathi kwemfula engapheliyo yamaphuzu.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Umklamo Ongakhululeki</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Umlungu Wokuhamba Kwelogi</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>Umklamo ongakhululeki, okhokhelwayo wamahora, uyabhala ingoma yezingqimba zezincwadi zemilayezo ezintsha. Ngokukhetha ukumisa 'Usuku', unika umhlobisi wezincwadi zemilayezo amandla okudala i-symphony entsha ngalinye ilanga - ngaphandle kokugwetshelwa, njengokufika kwakho kwesikhumulo sasekuseni.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Vula Ucingo Lwe-Serilog</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Ukungalawuleki Okungaphathwa</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Hamba phambili, umsebenzisi onobuntu, kulemikhaya yamafayela okubhalwa, lapho amazwana nezazi zokubhala zilindela ukubukwa kwakho okuhle.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Vula Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Hlanza Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Hlanza Ucingo Lwe-Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Iminyaka isesifikile yokusetshenziswa kwamandla akho edijithali futhi ukucoca amalohgasi kucingweni lwe-Serilog. Kodwa qaphele le mikhumbi eyalulekayo - ngezindlela eziningi kubhekene nokubhekana nokubhatala.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Oh hayi!</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>Kutholakala ukuthi kukhona ukuhlukumeza okuncane, ngoba indlela yokufihla kwefayela yamalohgasi iya dlala umdlalo wokufihla nokuthola kwezintambo zedijithali.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>Isikhathi sokuhlola kwezintambo zedijithali!</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Ukuqoshelwa</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Qina izikhali zakho bese ucinga ngokucophelela ngaphambi kokucindezela ukuthi 'susela' kulezi fayela zelogi. Khumbula ukuthi, njengendawo emnyama yedijithali, ukususa kuyiphiwe le ndawo yokubuya emuva; uma sekuphelile, kuyaphela kuze kube phakade.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Ikhowudi yelimi lwamanje</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Ulimi lwamanje:</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Khetha ulimi:</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Khetha ulimi kusuka ohlwini elikudaluhlangothi lwakho, bese ugcizelela amanxeba akho ukuthi abavikeli bethu benze umsebenzi wabo. Uma ulimi lwakho oluthandayo alukho, ungaqabali, ngoba sizokwanda izindlela zethu zokuxoxa ukulandelana kwalo esikhathini esingakude.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Iyalayisha okuthakazelisayo</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Izinketho</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Ukusekela</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>Mayelana</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Kuncitsha</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Ukulungisa iziphutha</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Ukuthola</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Ukubhalisa</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Ukuvuselela</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Layisensi isebenzise!</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Iphutha elingalindelwe</value>
+	</data>
+</root>

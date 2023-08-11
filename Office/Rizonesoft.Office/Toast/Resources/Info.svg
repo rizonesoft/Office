@@ -1,0 +1,28 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.0025 -2.0025 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Icons" transform="translate(-0.4853, -0.4871)">
+    <g transform="matrix(0.0566, 0, 0, 0.0566, 0, 0)">
+      <g transform="matrix(8.5333, 0, 0, 8.5333, 0, 0)">
+        <path d="M59, 30A29.008 29.008 0 0 1 16.44, 55.64A33.559 33.559 0 0 1 7.42, 58.96A1.651 1.651 0 0 1 5.53, 56.73A36.552 36.552 0 0 0 7.71, 48.56A29 29 0 1 1 59, 30z" fill="#1177D7" class="Blue" />
+      </g>
+    </g>
+  </g>
+  <g id="Icons" transform="translate(-0.4853, -0.4871)">
+    <g transform="matrix(0.0566, 0, 0, 0.0566, 0, 0)">
+      <g transform="matrix(8.5333, 0, 0, 8.5333, 0, 0)">
+        <g fill="#fff">
+          <path d="M35.215, 44.405L36.315, 44.772A1 1 0 0 1 36.999, 45.721L36.999, 47A1 1 0 0 1 35.999, 48L24, 48A1 1 0 0 1 23, 47L23, 45.721A1 1 0 0 1 23.684, 44.772L24.769, 44.41A1.8 1.8 0 0 0 26, 42.7L26, 28.3A1.8 1.8 0 0 0 24.769, 26.592L23.684, 26.23A1 1 0 0 1 23, 25.279L23, 24A1 1 0 0 1 24, 23L33, 23A1 1 0 0 1 34, 24L34, 42.72A1.776 1.776 0 0 0 35.215, 44.405z" fill="#fff" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="Icons" transform="translate(-0.4853, -0.4871)">
+    <g transform="matrix(0.0566, 0, 0, 0.0566, 0, 0)">
+      <g transform="matrix(8.5333, 0, 0, 8.5333, 0, 0)">
+        <g fill="#fff">
+          <circle cx="30" cy="14" r="4" fill="#fff" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -4)" style="enable-background:new 0 0 32 32">
+    <g id="DeleteCircled">
+      <path d="M16, 4C9.4, 4 4, 9.4 4, 16C4, 22.6 9.4, 28 16, 28C22.6, 28 28, 22.6 28, 16C28, 9.4 22.6, 4 16, 4zM23.1, 20.2L20.3, 23L16, 18.8L11.8, 23L9, 20.2L13.2, 16L9, 11.8L11.8, 9L16, 13.2L20.2, 9L23, 11.8L18.8, 16L23.1, 20.2z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

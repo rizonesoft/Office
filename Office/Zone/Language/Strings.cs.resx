@@ -1,0 +1,185 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>Odstranit zástupce na ploše</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>Vytvořit zástupce na ploše</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>Textový procesor ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>Vytvářejte, upravujte a formátujte dokumenty s pokročilými textovými nástroji a funkcemi.</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>Tabulky ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>Analyzujte data, provádějte výpočty a vytvářejte grafy pomocí robustních vzorců.</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>Diagramy ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>Navrhujte a vizualizujte složité myšlenky pomocí tokových diagramů, myšlenkových map a diagramů.</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>Vizualizátor dat ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>Zobrazujte a interpretujte data pomocí interaktivních grafů, grafů a vizualizací.</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>Plánování ({0}</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>Spravujte schůzky, události a termíny s přizpůsobitelnými zobrazeními a připomínkami.</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>Úkoly ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>Vytvářejte, organizujte a sledujte osobní nebo profesionální úkoly s prioritizací, termíny a sledováním průběhu.</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>Projektový manažer ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>Koordinujte úkoly, sledujte pokrok a spolupracujte s členy týmu efektivně.</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>Prohlížejte, upravujte, komentujte a podepisujte PDF dokumenty s komplexní sadou nástrojů.</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>Obnovit fotky ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>Komunikace ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>Záruky ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>Schůzky ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>Čas ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>Vytvořit kopii ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>Správce souborů ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>Prohlížeč map ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>Sledování majetku ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>Webový prohlížeč ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>Pokladna ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AI prohlížeč ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>Sledování času ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>Skenování a OCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>Čistič ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>Text na řeč ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>Fakturace ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>Úprava fotografií ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>E-mailový marketing ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>Chytrý e-mailový klient navržený pro rychlý přístup a plynulý komunikační zážitek.</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>Zjednodušte záruční a opravárenský management pomocí specializovaného, organizovaného systému.</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>Naplánujte schůzky a organizujte svůj kalendář pomocí naší uživatelsky přívětivé platformy.</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>Zvládněte svůj čas pomocí univerzálního programu pro správu času, časovače a budíků.</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>Duplikujte a ukládejte fyzické kopie dokumentů pomocí efektivního kopírovacího nástroje.</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>Efektivně organizujte, přistupujte a spravujte své digitální soubory a adresáře.</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>Objevujte místa, plánujte trasy a zkoumejte geografická data s detailními mapami.</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>Přesné sledování majetku pro zlepšení správy zásob a finanční kontroly.</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>Přistupujte a prozkoumávejte webové stránky bezpečně s vylepšenou rychlostí a výkonem.</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>Zvyšte prodej a vztahy se zákazníky pomocí našeho funkčně bohatého CRM softwaru.</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>Spravujte svůj maloobchodní podnikání bez námahy s naším pokročilým pokladním systémem.</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>Využijte umělou inteligenci pro optimalizované vyhledávání, objevování obsahu a personalizaci.</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>Sledujte a optimalizujte pracovní hodiny pomocí našeho intuitivního řešení pro sledování času.</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>Digitalizujte, ukládejte a sdílejte dokumenty pomocí univerzálního skenovacího řešení.</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>Získejte zpět ztracené vzpomínky snadným obnovením smazaných obrázků pomocí našeho nástroje.</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>Hou u rekenaar vlot aan die gang met ons doeltreffende skoonmaker.</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>Převeďte psaný text na mluvená slova s realistickými hlasy a přizpůsobitelnými nastaveními.</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>Zjednodušte procesy fakturace a vyúčtování pomocí našeho snadno použitelného finančního nástroje.</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>Komplexní prohlížeč a editor obrázků, ideální pro fotografy.</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>Cílené e-mailové marketingové kampaně pro zvětšení vašeho publika a zvýšení angažovanosti.</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>AI poháněný asistent se zpracováním přirozeného jazyka.</value>
+	</data>
+</root>

@@ -1,0 +1,11 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -2 32 32" xmlns="http://www.w3.org/2000/svg">
+  <g transform="matrix(0.0547, 0, 0, 0.0547, 0, 0)">
+    <g id="Layer_2">
+      <g id="close">
+        <circle cx="256" cy="256" r="256" fill="#D11C1C" fill-opacity="1" id="background" class="Red" />
+        <path d="M348.6, 391A42.13 42.13 0 0 1 318.6, 378.58L256, 316L193.4, 378.61A42.41 42.41 0 1 1 133.4, 318.61L196, 256L133.39, 193.4A42.41 42.41 0 0 1 193.39, 133.4L256, 196L318.6, 133.39A42.41 42.41 0 1 1 378.6, 193.39L316, 256L378.61, 318.6A42.41 42.41 0 0 1 348.61, 391z" fill="#FFFFFF" fill-opacity="1" class="White" />
+      </g>
+    </g>
+  </g>
+</svg>

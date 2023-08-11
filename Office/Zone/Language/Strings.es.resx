@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>Eliminar acceso directo del escritorio</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>Crear acceso directo en el escritorio</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>Procesador de textos ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>Cree, edite y formatee documentos con herramientas de texto avanzadas y funciones.</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>Hojas de cálculo ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>Analice datos, realice cálculos y cree gráficos utilizando fórmulas sólidas.</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>Diagramas ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>Diseñe y visualice ideas complejas con diagramas de flujo, mapas mentales y diagramas.</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>Visualizador de datos ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>Represente e interprete datos utilizando gráficos, gráficas y visualizaciones interactivas.</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>Programación ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>Gestione citas, eventos y plazos con vistas y recordatorios personalizables.</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>Tareas ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>Cree, organice y realice seguimiento de tareas personales o profesionales con priorización, plazos y seguimiento del progreso.</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>Gerente de proyecto ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>Coordinar tareas, realizar seguimiento del progreso y colaborar eficientemente con los miembros del equipo.</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>Vea, modifique, anote y firme documentos PDF con un conjunto completo de herramientas.</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>Recuperar fotos ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>Comunicación ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>Garantías ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>Citas ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>Tiempo ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>Crear una copia ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>Administrador de archivos ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>Visor de mapas ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>Seguimiento de activos ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>Navegador web ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>Punto de venta ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>Chat de IA ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>Navegador de IA ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>Seguimiento de tiempo ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>Escaneo y OCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>Limpiador ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>Texto a voz ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>Facturación ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>Editar fotos ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>Marketing por correo electrónico ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>Cliente de correo electrónico inteligente diseñado para un acceso rápido y una experiencia de comunicación fluida.</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>Simplifique la gestión de garantías y reparaciones con un sistema dedicado y organizado.</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>Programe citas y organice su calendario con nuestra plataforma fácil de usar.</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>Domina tu tiempo con un programa integral de gestión de tiempo, temporizadores y alarmas.</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>Duplique y almacene copias físicas de documentos con una herramienta de copiado eficiente.</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>Organice, acceda y gestione de manera eficiente sus archivos y directorios digitales.</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>Descubra ubicaciones, planifique rutas y explore datos geográficos con mapas detallados.</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>Seguimiento preciso de activos para mejorar la gestión de inventario y el control financiero.</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>Acceda y explore sitios web de manera segura con mayor velocidad y rendimiento.</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>Impulse las ventas y las relaciones con los clientes con nuestro software CRM lleno de funciones.</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>Gestione su negocio minorista sin esfuerzo con nuestro avanzado sistema de punto de venta.</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>Utilice la inteligencia artificial para una búsqueda optimizada, descubrimiento de contenido y personalización.</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>Supervise y optimice las horas de trabajo con nuestra solución de seguimiento del tiempo intuitiva.</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>Digitalice, almacene y comparta documentos utilizando una solución de escaneo versátil.</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>Recupere recuerdos perdidos restaurando fácilmente imágenes eliminadas con nuestra herramienta.</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>Mantén tu ordenador funcionando sin problemas con nuestro limpiador eficiente.</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>Convierta texto escrito en palabras habladas con voces realistas y configuraciones personalizables.</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>Agilice los procesos de facturación y cobro con nuestra herramienta financiera fácil de usar.</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>Visor y editor de imágenes completo, perfecto para fotógrafos.</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>Campañas de marketing por correo electrónico dirigidas para aumentar su audiencia e impulsar la participación.</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>Asistente impulsado por IA con procesamiento de lenguaje natural.</value>
+	</data>
+</root>

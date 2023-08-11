@@ -1,0 +1,48 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="0" y="14" width="6" height="2" rx="0" ry="0" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="3.5" y="22.5" width="6" height="2" rx="0" ry="0" fill="#FFB115" class="Yellow" transform="matrix(0.7071, -0.7071, 0.7071, 0.7071, -14.6985, 11.4853)" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="5.5" y="3.5" width="2" height="6" rx="0" ry="0" fill="#FFB115" class="Yellow" transform="matrix(0.7071, -0.7071, 0.7071, 0.7071, -2.6985, 6.5147)" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="14" y="0" width="2" height="6" rx="0" ry="0" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="20.5" y="5.5" width="6" height="2" rx="0" ry="0" fill="#FFB115" class="Yellow" transform="matrix(0.7071, -0.7071, 0.7071, 0.7071, 2.2721, 18.5147)" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="22.5" y="20.5" width="2" height="6" rx="0" ry="0" fill="#FFB115" class="Yellow" transform="matrix(0.7071, -0.7071, 0.7071, 0.7071, -9.7279, 23.4853)" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="14" y="24" width="2" height="6" rx="0" ry="0" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <rect x="24" y="14" width="6" height="2" rx="0" ry="0" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(0, 0)" style="enable-background:new 0 0 32 32">
+    <g id="Sunny">
+      <circle cx="15" cy="15" r="7" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+</svg>

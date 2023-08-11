@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors></Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Imagine</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Imagine</RootNamespace>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <Platforms>x64;x86</Platforms>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+	  <AssemblyVersion>2023.8.11.55</AssemblyVersion>
+	  <FileVersion>2023.8.11.55</FileVersion>
+	  <ApplicationIcon>Imagine.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Imagine.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+</Project>

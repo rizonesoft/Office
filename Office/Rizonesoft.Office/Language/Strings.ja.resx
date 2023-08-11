@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>ダークモード</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>ライトモード</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>設定</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>設定</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>復元 ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>終了</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>ロギング</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} ホーム</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>魂を吸い取るオフィスライフから逃れて、リゾーンに飛び込みましょう！ リゾーンソフトのソフトウェア魔術の狂気の家にテレポートするには、ここをクリックしてください。 そこでは、ウィザードがコードで満たされたケープを身につけ、デジタルコンフェッティを投げます。</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;詳細を見る&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>言語の更新</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>言語設定を更新し、 Rizonesoft Office のご利用体験に言語の魔法を少し注入しました。機知に富んだ言葉遊びや皮肉なニュアンスが翻訳で失われないように、開いているプログラムを再起動していただくようお願い申し上げます。</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>言語データを保存する途中で、マトリックスに予期しない不具合が発生しました。この謎を解明するために、ログファイルの情報の宝庫を探ることをお勧めします。あなたの助けを借りて、私たちはこの異常を修正し、コードをシームレスなパフォーマンスのために最適化します！</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>予期しない不具合！</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>言語データが非常に予期しない休暇を取り、一時的に会話の状態に置かれてしまいました。</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value> グリッチ検出！</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>詳細はこちら</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>閉じる</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>プログラムの設定の読み込みクエストが障害にぶつかったとき、マトリックス内のグリッチに遭遇しました。心配いりません、このいたずらな異常を丹念に記録しました。</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>マトリックスのグリッチ！</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>一般</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>上級</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>月</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>分</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>無限</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>時間</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>日</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>ファイル制限</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>ログファイルの制限</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>ログファイルのヘッドカウントを確立することで、デジタル領域を最適な状態に保ちます。この信頼性のある対策は、ログファイルの迫りくる洪水を回避し、データの絶え間ない流れの中でバランスを維持することを保証します。</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>ローリングインターバル</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>ログローリング間隔</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>シンフォニーの力。間違いなく、朝のコーヒーカップの時間通りの到着のように。ローリング間隔は、新しいログファイルの誕生のリズムをオーケストレートする忠実な時間管理者です。 '日'の設定を選択することで、熱心なログファイルのマエストロに、毎日新しいシンフォニーを作曲する力を与えます。</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Serilogディレクトリを開く</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>未処理の例外</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>高貴なユーザーの皆さん、ログファイルの世界へと進みましょう。そこでは啓示とデジタルの知恵があなたの鋭い視線を待っています。</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Serilogを開く</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Serilogをクリーンにする</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Serilogディレクトリをクリーンにする</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Serilogディレクトリからログを削除して、デジタルの筋力を発揮する時が来ました。しかし、この友好的なリマインダーに注意してください。力があれば、その分責任も伴います。</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>ああ、いや！</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>わずかなしゃっくりが現れました。それは、捉えどころのないログディレクトリのパスがデジタルなかくれんぼをしているからです。</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>デジタルの決算の瞬間！</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>ローカリゼーション</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>これらのログファイルで「削除」ボタンを押す前に、しっかりと慎重に考えてください。デジタルブラックホールのように、削除は戻れないポイントであり、一度消えると、永遠に虚空に失われます。</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>現在の言語コード</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>現在の言語</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>言語を選択</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>右側のリストから言語を選択し、開発者が彼らの仕事をしたことを願ってください。もし好みの言語が欠けている場合は、心配しないでください。近い将来、言語の範囲を広げる予定です。</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>素晴らしいものをロード中</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>オプション</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>サポート</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>約</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>貢献する</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>デバッグする</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>発見する</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>登録</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>更新する</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>ライセンスが有効になりました！</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>予期せぬエラー</value>
+	</data>
+</root>

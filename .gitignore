@@ -10,9 +10,6 @@
 *.userosscache
 *.sln.docstates
 
-
-Rizonesoft-Office-Install.exe
-
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -399,3 +396,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+
+Install/Setup Files

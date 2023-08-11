@@ -1,0 +1,221 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors></Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Verbum</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Verbum</RootNamespace>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <Platforms>x64;x86</Platforms>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+	  <AssemblyVersion>2023.8.11.369</AssemblyVersion>
+	  <FileVersion>2023.8.11.369</FileVersion>
+	  <ApplicationIcon>Verbum.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Verbum.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Language\Dialogs.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Language\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Language\Dialogs.af.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.cs.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.de.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.es.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.fr.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.it.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.ja.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.ko.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.pl.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.pt-br.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Dialogs.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.ru.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.tr.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.zh-hans.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.zh-hant.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Dialogs.zu-za.resx">
+      <DependentUpon>Dialogs.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.af.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.cs.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.de.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.es.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.fr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.it.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ja.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ko.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pl.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pt-br.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ru.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.tr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hans.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hant.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zu-za.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Dictionaries\af_ZA\af_ZA.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\af_ZA\af_ZA.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\af_ZA\dict.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\af_ZA\hyph_af_ZA.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\af_ZA\LICENSE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\af_ZA\README.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\affDescription.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\changelog.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\dict.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\en_US.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\en_US.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\lgpl-3.0.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\license.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\package-description.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\README.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\en_US\README_en_US.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Noun\data.noun">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Noun\index.noun">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

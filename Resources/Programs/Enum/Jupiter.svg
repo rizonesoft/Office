@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="64px" height="64px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 63.94 63.94"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil2 {fill:#300B48}
+    .fil0 {fill:url(#id0)}
+    .fil1 {fill:url(#id1);fill-rule:nonzero}
+   ]]>
+  </style>
+  <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="31.97" y1="63.94" x2="31.97" y2="0">
+   <stop offset="0" style="stop-opacity:1; stop-color:#1E5FA3"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#733F8F"/>
+  </linearGradient>
+  <linearGradient id="id1" gradientUnits="userSpaceOnUse" x1="31.97" y1="47.12" x2="31.97" y2="16.82">
+   <stop offset="0" style="stop-opacity:1; stop-color:#BDCEE8"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#FEFEFE"/>
+  </linearGradient>
+ </defs>
+ <g id="Layer_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <rect class="fil0" width="63.94" height="63.94" rx="8.29" ry="8.53"/>
+  <path class="fil1" d="M28.95 24.64l9.36 0 0 6.22c0,5.2 -3.4,8.24 -9.91,8.24 -3.63,0 -6.51,-0.93 -8.62,-1.99l-3.51 7.16c2.34,1.33 6.44,2.85 12.52,2.85 11.39,0 18.88,-5.4 18.88,-15.29l0 -15.01 -18.72 0 0 7.82z"/>
+  <g>
+   <path id="_1" class="fil2" d="M28.95 24.64l9.36 0 0 6.22c0,5.2 -3.4,8.24 -9.91,8.24 -3.63,0 -6.51,-0.93 -8.62,-1.99l-3.51 7.16c2.34,1.33 6.44,2.85 12.52,2.85 11.39,0 18.88,-5.4 18.88,-15.29l0 -15.01 -18.72 0 0 7.82zm9.14 0.21l-9.14 0 -0.22 0 0 -0.21 0 -7.82 0 -0.21 0.22 0 18.72 0 0.21 0 0 0.21 0 15.01c0,4.93 -1.84,8.76 -5.08,11.38 -3.34,2.71 -8.17,4.12 -14.01,4.12 -2.66,0 -4.95,-0.29 -6.88,-0.73 -2.51,-0.57 -4.41,-1.39 -5.74,-2.15l-0.17 -0.1 0.08 -0.18 3.51 -7.15 0.1 -0.19 0.19 0.09c1.04,0.52 2.27,1.01 3.69,1.38 1.43,0.36 3.04,0.59 4.83,0.59 3.17,0 5.58,-0.73 7.21,-2.08 1.64,-1.37 2.48,-3.39 2.48,-5.95l0 -6.01z"/>
+  </g>
+ </g>
+</svg>

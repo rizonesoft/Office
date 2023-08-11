@@ -1,0 +1,67 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2.005 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs tag="staticElement_id48259009">
+    <style type="text/css">
+    .fil0 {fill:#002F5C}
+    .fil1 {fill:#003D71}
+    .fil2 {fill:#00ACB6}
+    .fil4 {fill:#68C1C3}
+    .fil5 {fill:#98D1D1}
+    .fil3 {fill:#CAE7E8}
+   </style>
+  </defs>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M8.53, 0.01L38.22, 0.01L38.22, 63.95L8.53, 63.95C3.84, 63.95 0, 60.11 0, 55.42L0, 8.53C0, 3.84 3.84, 0.01 8.53, 0.01z" fill="#1177D7" class="Blue" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M31.97, 0L55.41, 0C60.09, 0 63.93, 3.84 63.93, 8.53L63.93, 55.41C63.93, 60.1 60.09, 63.94 55.41, 63.94L31.97, 63.94L31.97, 0z" fill="#FFFFFF" class="White" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M30.02, 10.46C16.83, 11.45 7.99, 19.48 7.19, 30.11L19.21, 30.11C20, 25.32 24.41, 22.23 30.02, 21.47L30.02, 10.46z" fill="#FFFFFF" class="White" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M58.34, 30.11C57.51, 18.95 47.81, 10.66 33.56, 10.37L33.56, 21.3C40.05, 21.54 45.45, 24.77 46.33, 30.11L58.34, 30.11z" fill="#1177D7" class="Blue" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M30.02, 41.89C24.74, 41.16 20.51, 38.35 19.38, 34.05L7.27, 34.05C8.44, 44.29 17.16, 51.94 30.02, 52.9L30.02, 41.89z" fill="#FFFFFF" class="White" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(-0.0051, -0.0001)" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" fill-rule="evenodd">
+    <g transform="matrix(0.4375, 0, 0, 0.4375, 0, 0)">
+      <g transform="matrix(1.0008, 0, 0, 1.0008, 0.01, 0)">
+        <g id="Layer_x0020_1">
+          <path d="M33.56, 53C47.47, 52.71 57.04, 44.81 58.27, 34.05L46.16, 34.05C44.88, 38.89 39.72, 41.83 33.56, 42.06L33.56, 53z" fill="#1177D7" class="Blue" fill-rule="evenodd" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,402 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<!-- 
+		Microsoft ResX Schema
+
+		Version 1.3
+
+		The primary goals of this format is to allow a simple XML format 
+		that is mostly human readable. The generation and parsing of the 
+		various data types are done through the TypeConverter classes 
+		associated with the data types.
+
+		Example:
+
+		... ado.net/XML headers & schema ...
+		<resheader name="resmimetype">text/microsoft-resx</resheader>
+		<resheader name="version">1.3</resheader>
+		<resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+		<resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+		<data name="Name1">this is my long string</data>
+		<data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+		<data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+			[base64 mime encoded serialized .NET Framework object]
+		</data>
+		<data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+			[base64 mime encoded string representing a byte array form of the .NET Framework object]
+		</data>
+
+		There are any number of "resheader" rows that contain simple 
+		name/value pairs.
+
+		Each data row contains a name, and value. The row also contains a 
+		type or mimetype. Type corresponds to a .NET class that support 
+		text/value conversion through the TypeConverter architecture. 
+		Classes that don't support this are serialized and stored with the 
+		mimetype set.
+
+		The mimetype is used for serialized objects, and tells the 
+		ResXResourceReader how to depersist the object. This is currently not 
+		extensible. For a given mimetype the value must be set accordingly:
+
+		Note - application/x-microsoft.net.object.binary.base64 is the format 
+		that the ResXResourceWriter will generate, however the reader can 
+		read any of the formats listed below.
+
+		mimetype: application/x-microsoft.net.object.binary.base64
+		value   : The object must be serialized with 
+			: System.Serialization.Formatters.Binary.BinaryFormatter
+			: and then encoded with base64 encoding.
+
+		mimetype: application/x-microsoft.net.object.soap.base64
+		value   : The object must be serialized with 
+			: System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+			: and then encoded with base64 encoding.
+
+		mimetype: application/x-microsoft.net.object.bytearray.base64
+		value   : The object must be serialized into a byte array 
+			: using a System.ComponentModel.TypeConverter
+			: and then encoded with base64 encoding.
+	-->
+	
+	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+		<xsd:element name="root" msdata:IsDataSet="true">
+			<xsd:complexType>
+				<xsd:choice maxOccurs="unbounded">
+					<xsd:element name="data">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="resheader">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" />
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+			</xsd:complexType>
+		</xsd:element>
+	</xsd:schema>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Light mode</value>
+	</data>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Dark mode</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+	  <value>Settings</value>
+  </data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+	  <value>General</value>
+  </data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Glitch Detected!</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Recover ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Terminate</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Advanced</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Logging</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Rolling Interval</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>File Limit</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Open Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Clean Serilog</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Minute</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Hour</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Day</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Month</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Infinite</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Log Rolling Interval</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>The rolling interval, a faithful timekeeper, orchestrates the cadence of new log file birth. By choosing the 'Day' setting, you empower a diligent log file maestro to compose a fresh symphony each day – unfailingly, much like the punctual arrival of your morning cup o' joe.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Open Serilog Directory</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Venture forth, noble user, into the realm of log files, where revelations and digital wisdom await your discerning gaze.</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Clean the Serilog Directory</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>The moment has arrived to flex your digital muscles and purge the logs from the Serilog directory. But heed this friendly reminder – with such might comes a burden of accountability.</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Log File Limit</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Imposing a cap on lingering log files keeps our digital abode spick and span. This trusty safeguard ensures we're not engulfed in a tidal wave of log file mayhem, preserving order amidst the ebb and flow of data.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>A wee hiccup has emerged, for the elusive log directory path is playing a game of digital hide-and-seek.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Oh No!</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Hold your horses and ponder with caution before hitting that 'delete' button on these log files. Be mindful that, much like a digital black hole, deletion is a point of no return; once gone, they're lost in the void forever. </value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>A Moment of Digital Reckoning!</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Home</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Escape the soul-sucking office life and dive headfirst into the Rizone! Click to teleport into Rizonesoft's madhouse of software sorcery, where the wizards wear code-laden capes and throw digital confetti.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Learn more&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Language Refresh</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>We've updated our language settings and injected a bit of linguistic wizardry into your Rizonesoft Office experience. To ensure that our witty wordplay and sarcastic undertones don't get lost in translation, we kindly ask you to restart any open programs.</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Dismiss</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Learn more</value>
+	</data>
+	<data name="ExceptionForm_Privacy_Notice" xml:space="preserve">
+		<value>With our unwavering commitment to your privacy, we assure you that your personal information is safe and secure. We do not gather any unnecessary data and uphold stringent measures to protect the integrity of your personal details.</value>
+	</data>
+	<data name="ExceptionForm_Description" xml:space="preserve">
+		<value>Oops! It appears our over-caffeinated developers, in their java-induced frenzy, might have overlooked a minor detail. We get it, this isn't the perfect time for you to be playing detective. But if you can spare a moment from rolling your eyes, your assistance in pinpointing this elusive bug would mean the world to us. </value>
+	</data>
+	<data name="ExceptionForm_Title" xml:space="preserve">
+		<value>Something went wrong!</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Unhandled Exception</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Our language data has taken a most unexpected sabbatical, leaving us in a temporary state of conversational limbo.</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Unanticipated Glitch!</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>In the midst of storing our linguistic data, we've encountered an unanticipated glitch in the matrix. To debug this conundrum, we suggest delving into the log file's trove of information. With your help, we'll rectify the anomaly and optimize our code for seamless performance!</value>
+	</data>
+	<data name="Language_DropDown_Error" xml:space="preserve">
+		<value>While we were busy building the language Drop Down menu, an unexpected issue snuck in uninvited. Rest assured, our dependable log file serves as our detective, equipped with a magnifying glass, ready to uncover the root cause of this disturbance.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Glitch in the Matrix!</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>We've stumbled upon a glitch in the matrix as our program configuration loading quest hit a bump. Worry not, we've diligently jotted down this mischievous anomaly for posterity.</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Localization</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Choose a language from the list on the right, and keep your fingers crossed that our developers did their job. If your favored tongue is amiss, fret not, for we'll soon expand our linguistic horizons to encompass it in the not-too-distant future.</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Select Language:</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Current Language:</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Current Language Code:</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Loading something awesome</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Options</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Settings" xml:space="preserve">
+		<value>Personalize Rizonesoft Office to fit your needs. Because one size does not always fit all.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Language" xml:space="preserve">
+		<value>Embark on a linguistic adventure – Effortlessly switch interface languages and relish the delightful essence each one brings to your digital escapades.</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Support</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Discover</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Update</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Contribute</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Registration</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Debug</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>About</value>
+	</data>
+	<data name="OfficeUpdate_Caption" xml:space="preserve">
+		<value>Unlock new possibilities!</value>
+	</data>
+	<data name="OfficeUpdate_Message" xml:space="preserve">
+		<value>Be the first to explore the new Rizonesoft Office version ({0}). Update available now.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_ToggleMode" xml:space="preserve">
+		<value>Switch between Dark or Light Theme.</value>
+	</data>
+	<data name="OfficeUpdate_Button" xml:space="preserve">
+		<value>Learn more</value>
+	</data>
+	<data name="RibbonButtonSuperTip_HelpDocs" xml:space="preserve">
+		<value>Your guide on how to efficiently use Rizonesoft Office. Find step-by-step instructions, learn about useful features, and discover valuable tips and tricks to optimize your productivity.</value>
+	</data>
+	<data name="RibbonButtonItem_HelpDocs" xml:space="preserve">
+		<value>User's manual</value>
+	</data>
+	<data name="RibbonButtonItem_Support" xml:space="preserve">
+		<value>Support</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Support" xml:space="preserve">
+		<value>Stuck or confused? Click here for expert assistance to guide you through.</value>
+	</data>
+	<data name="RibbonButtonItem_Update" xml:space="preserve">
+		<value>Check for Updates</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Update" xml:space="preserve">
+		<value>Unlock new possibilities! Be the first to explore the new Rizonesoft Office version.</value>
+	</data>
+	<data name="RibbonButtonItem_Suggestions" xml:space="preserve">
+		<value>Suggestion Board</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>License activated!</value>
+	</data>
+	<data name="LicenseForm_NotActivated" xml:space="preserve">
+		<value>License not activated!</value>
+	</data>
+	<data name="LicenseForm_Title" xml:space="preserve">
+		<value>Activation</value>
+	</data>
+	<data name="LicenseForm_DeleteLicense" xml:space="preserve">
+		<value>Delete License</value>
+	</data>
+	<data name="LicenseForm_ThanksLabel" xml:space="preserve">
+		<value>We greatly appreciate your continued support. We are pleased to inform you that all previously disabled features are now permanently enabled. For dedicated support, please don't hesitate to reach out to our team at &lt;a href = "mailto: support@rizonetech.com"&gt;support@rizonetech.com&lt;/a&gt;. We encourage you to recommend the Rizonesoft Office Suite to your colleagues and friends. Thank you for choosing us as your preferred software provider.
+</value>
+	</data>
+	<data name="LicenseForm_PasteButton" xml:space="preserve">
+		<value>Paste</value>
+	</data>
+	<data name="LicenseForm_ActivateButton" xml:space="preserve">
+		<value>Activate</value>
+	</data>
+	<data name="LicenseForm_GetLicenseButton" xml:space="preserve">
+		<value>Get License</value>
+	</data>
+	<data name="LicenseForm_CloseButton" xml:space="preserve">
+		<value>Close</value>
+	</data>
+	<data name="LicenseForm_LicenseValid_Message" xml:space="preserve">
+		<value>Well, look at you with your fancy valid license key! You're all set to enjoy our premium features. Happy exploring!</value>
+	</data>
+	<data name="LicenseForm_LicenseInValid_Message" xml:space="preserve">
+		<value>Oh, this is awkward... That license key doesn't seem to be on the guest list. Are you sure it's not from a cereal box or something? If you think this is a mistake, our support team is ready to sort this out.</value>
+	</data>
+	<data name="LicenseForm_LicenseError_Message" xml:space="preserve">
+		<value>Wow, that's not even in the same neighborhood as a valid license key! If this is a joke, we're definitely missing the punchline. If it's not, our support team is ready to help you find your way.</value>
+	</data>
+	<data name="LicenseForm_LicenseValid_Title" xml:space="preserve">
+		<value>Success!</value>
+	</data>
+	<data name="LicenseForm_LicenseInValid_Title" xml:space="preserve">
+		<value>Oops!</value>
+	</data>
+	<data name="LicenseForm_ThanksLabel_NotRegistered" xml:space="preserve">
+		<value>Welcome to {0} {1} License Activation! Here, you can enter your license key to unlock all the fantastic features of our application. If you've already got a key, pop it into the text box and hit 'Activate'. If your key is valid, you'll be all set to enjoy our premium features. Don't have a license key yet?  &lt;a href="{2}"&gt;Click here&lt;/a&gt; to get one.</value>
+	</data>
+	<data name="RibbonButtonItem_License" xml:space="preserve">
+		<value>License</value>
+	</data>
+	<data name="RibbonButtonSuperTip_License" xml:space="preserve">
+		<value>Manage and allocate your {0} {1} license</value>
+	</data>
+	<data name="RibbonButtonItem_GetLicense" xml:space="preserve">
+		<value>Get License</value>
+	</data>
+	<data name="RibbonButtonSuperTip_GetLicense" xml:space="preserve">
+		<value>Purchase or Acquire a New License</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Suggestions" xml:space="preserve">
+		<value>Unload your brilliant thoughts here</value>
+	</data>
+	<data name="RibbonButtonItem_Donate" xml:space="preserve">
+		<value>Donate</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Donate" xml:space="preserve">
+		<value>Your generous support, big or small, will make a significant impact.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Exception" xml:space="preserve">
+		<value>Press for a deliberate chaos creation</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Unexpected Error</value>
+	</data>
+	<data name="Program_Unexpected_Error_Message" xml:space="preserve">
+		<value>An unexpected error occurred: {0}</value>
+	</data>
+</root>

@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors>Derick Payne</Authors>
+	  <Company>Rizonesoft</Company>
+	  <Copyright>Copyright © 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Version</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Version</RootNamespace>
+	  <ApplicationIcon></ApplicationIcon>
+	  <FileVersion>2023.4.12.4</FileVersion>
+	  <AssemblyVersion>2023.4.12.4</AssemblyVersion>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+</Project>

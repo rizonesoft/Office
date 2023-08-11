@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Donker modus</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Ligte modus</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Instellings</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Algemeen</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Instellings</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Herstel ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Beëindig</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Logboek</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Tuis</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Ontsnap die siel-suigende kantoorlewe en duik kop eerste in die Rizone! Klik om na Rizonesoft se malhuis van sagteware-towery te teleporteer, waar die towenaars kode-belaaide kape dra en digitale konfetti gooi.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Leer meer&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Taalverfrissing</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Ons het ons taalinstellings opgedateer en 'n bietjie taalkundige towerkuns in jou Rizonesoft Office-ervaring ingesluit. Om te verseker dat ons skerp woorde en sarkastiese ondertone nie in die vertaling verlore gaan nie, vra ons vriendelik dat u enige oop programme herbegin.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>In die middel van die stoor van ons taalkundige data, het ons 'n onverwagte fout in die matriks raakgeloop. Om hierdie raaisel te ontrafel, stel ons voor om in die lêer se skat van inligting te delf. Met jou hulp sal ons die afwyking regstel en ons kode optimaliseer vir naatlose werkverrigting!</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Onvoorsiene fout!</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Ons taaldata het 'n hoogs onverwagte sabbatsverlof geneem en ons in 'n tydelike toestand van geselskaplike limbo gelaat.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Fout opgespoor!</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Leer meer</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Verwerp</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Ons het op 'n fout in die matriks afgekom toe ons programkonfigurasie-laai-avontuur 'n knop getref het. Moenie bekommerd wees nie, ons het hierdie ondeunde anomalie nougeset aangeteken vir later.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Fout in die Matriks!</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Gevorderd</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Maand</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Minuut</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Oneindig</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Uur</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Dag</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Lêergrens</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Loglêerlimiet</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Deur 'n loglêerhoofdtelling te bepaal, hou ons ons digitale wêreld in topvorm. Hierdie betroubare maatstaf verseker dat ons 'n naderende vloed van loglêers vermy en balans handhaaf te midde van die immer vloeiende rivier van data.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Rolinterval</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Logrolinterval</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>Die rolinterval, 'n getroue tydbewaarder, orkestreer die tempo van nuwe loglêer-geboorte. Deur die 'Dag' instelling te kies, bemagtig jy 'n ywerige loglêermeester om elke dag 'n vars simfonie te komponeer - sonder versuim, soos die stiptelike aankoms van jou oggendkoppie koffie.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Maak Serilog-gids oop</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Onbehandelde Uitsondering</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Gaan voort, edele gebruiker, na die rijk van loglêers, waar openbarings en digitale wysheid wag op u deursigtige blik.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Maak Serilog oop</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Maak Serilog skoon</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Maak die Serilog-gids skoon</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Die oomblik het aangebreek om jou digitale spiere te buig en die logs van die Serilog-gids te verwyder. Maar let op hierdie vriendelike herinnering - met soveel krag kom 'n las van verantwoordelikheid.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Ag nee!</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>'n Klein hik het na vore gekom, want die ongrypbare log-gids pad speel 'n spel van digitale wegkruip-en-soek.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>'n Oomblik van digitale afrekening!</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Lokalisasie</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Hou jou perde vas en dink versigtig na voordat jy daardie 'verwyder' knoppie op hierdie log-lêers druk. Wees bewus daarvan dat, soos 'n digitale swart gat, skrapping 'n punt van geen terugkeer is; eens weg, is hulle vir ewig in die leemte verlore.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Huidige Taalkode:</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Huidige Taal:</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Kies Taal:</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Kies 'n taal uit die lys aan die regterkant en hou jou vingers gekruis dat ons ontwikkelaars hul werk gedoen het. As jou gunstelingtaal vermis is, moenie bekommerd wees nie, want ons sal binnekort ons taalhorisonne uitbrei om dit in die nie-te-verre toekoms in te sluit.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Laai iets fantasties</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Opsies</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Ondersteuning</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>Oor</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Bydra</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Ontfouteer</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Ontdek</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Registrasie</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Opdateer</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Lisensie geaktiveer!</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Onverwagte Fout</value>
+	</data>
+</root>

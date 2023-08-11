@@ -1,0 +1,173 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors></Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Zone</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Zone</RootNamespace>
+	  <ApplicationIcon>Zone.ico</ApplicationIcon>
+	  <FileVersion>2023.8.11.1747</FileVersion>
+	  <AssemblyVersion>2023.8.11.1747</AssemblyVersion>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <Platforms>x64;x86</Platforms>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Widgets\**" />
+    <EmbeddedResource Remove="Widgets\**" />
+    <None Remove="Widgets\**" />
+    <Page Remove="Widgets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Zone.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Language\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Language\Strings.af.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.cs.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.de.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.es.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.fr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.it.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ja.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ko.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pl.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pt-br.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ru.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.tr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hans.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hant.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zu-za.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.af.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.cs.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.de.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.fr.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.it.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.ja.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.ko.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.pl.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.pt-br.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.ru.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.tr.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.zh-hans.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.zh-hant.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.zu-za.resx">
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+</Project>

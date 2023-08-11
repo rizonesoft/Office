@@ -1,0 +1,50 @@
+Zone      : Office application manager
+
+==================================================
+Programs (8)
+==================================================
+Verbum    : Document Processor
+Evaluate  : Spreadsheets
+Flow      : Diagrams
+Imagine   : Data Visualization / Report Designer
+Action    : Email and Scheduling
+Session   : Calander / Planning
+Komplete  : Tasks
+Mission   : Project management
+
+==================================================
+Accessories (4)
+==================================================
+Qapture   : Scanning and OCR / Document Copy
+Duplicare : Copying (Scanner / Printer)
+Scholar   : PDF Reader / Editor
+Xhibit    : Image Viewer and editor
+
+==================================================
+Explore (5)
+==================================================
+** Jupiter   : Web Browser
+Nerve     : AI Browser
+Globe     : World Maps
+Mia       : AI Chat
+Voice     : Text to Speech
+
+==================================================
+Business (8)
+==================================================
+Wealth    : Invoicing and billing
+Merchant  : Point of Sale (Retail)
+Booking   : Appointment scheduling
+Lead      : CRM software
+Yield     : Email marketing
+Have      : Asset tracking 
+Assure    : Warranty and repair management
+Operate   : Time tracking
+
+==================================================
+Utilities (4)
+==================================================
+Soap      : Computer file cleaner
+Repo      : File / Image recovery
+Filer     : File Explorer
+Clock	  : Time, timer, alarm

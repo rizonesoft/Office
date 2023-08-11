@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-2, -2)" style="enable-background:new 0 0 32 32">
+    <g id="WarningCircled1">
+      <path d="M16, 2C8.3, 2 2, 8.3 2, 16C2, 23.7 8.3, 30 16, 30C23.7, 30 30, 23.7 30, 16C30, 8.3 23.7, 2 16, 2zM16, 24C14.9, 24 14, 23.1 14, 22C14, 20.9 14.9, 20 16, 20C17.1, 20 18, 20.9 18, 22C18, 23.1 17.1, 24 16, 24zM18, 18L14, 18L14, 8L18, 8L18, 18z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

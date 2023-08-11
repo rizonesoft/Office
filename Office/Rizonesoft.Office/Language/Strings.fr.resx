@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Mode sombre</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Mode clair</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Paramètres</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Paramètres</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Récupérer ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Mettre fin</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Journalisation</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Accueil</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Échappez à la vie de bureau qui vous pompe l'âme et plongez tête baissée dans la Rizone ! Cliquez pour vous téléporter dans la maison de fous de la sorcellerie logicielle de Rizonesoft, où les sorciers portent des capes chargées de code et jettent des confettis numériques.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;En savoir plus&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Rafraîchissement de la langue</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Nous avons mis à jour nos paramètres de langue et avons injecté un peu de magie linguistique dans votre expérience Rizonesoft Office. Pour nous assurer que nos jeux de mots spirituels et nos sous-entendus sarcastiques ne se perdent pas dans la traduction, nous vous demandons gentiment de redémarrer tous les programmes ouverts.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>Au milieu du stockage de nos données linguistiques, nous avons rencontré un problème inattendu dans la matrice. Pour résoudre cette énigme, nous suggérons de plonger dans le trésor d'informations du fichier journal. Avec votre aide, nous rectifierons l'anomalie et optimiserons notre code pour une performance sans faille !</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Erreur imprévue !</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Nos données linguistiques ont pris un congé sabbatique des plus inattendus, nous laissant dans un état temporaire de limbes conversationnelles.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Erreur détectée !</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>En savoir plus</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Fermer</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Nous avons rencontré un bug dans la matrice lorsque notre quête de chargement de la configuration de notre programme a rencontré un obstacle. Ne vous inquiétez pas, nous avons soigneusement noté cette anomalie malicieuse pour la postérité.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Anomalie dans la Matrice !</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Général</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Avancé</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Mois</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Infini</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Minute</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Heure</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Jour</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Limite de fichier</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Limite de fichier journal</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Établir un décompte des fichiers journaux permet de maintenir notre domaine numérique en parfait état. Cette mesure fiable garantit que nous évitons une déferlante imminente de fichiers journaux, maintenant ainsi un équilibre au milieu de la rivière toujours fluide des données.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Intervalle roulant</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Intervalle de roulement du journal</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>L'intervalle roulant, fidèle gardien du temps, orchestre le rythme de la création de nouveaux fichiers journaux. En choisissant le réglage 'Jour', vous donnez le pouvoir à un maestro assidu des fichiers journaux de composer une nouvelle symphonie chaque jour, infailliblement, tout comme l'arrivée ponctuelle de votre tasse de café du matin.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Ouvrir le répertoire Serilog</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Exception non gérée</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Avancez, noble utilisateur, dans le royaume des fichiers journaux, où les révélations et la sagesse numérique attendent votre regard perspicace.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Ouvrir Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Nettoyer Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Nettoyer le répertoire Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Le moment est venu de mettre à profit vos muscles numériques et de purger les journaux du répertoire Serilog. Mais prenez garde à ce gentil rappel – avec une telle puissance vient un fardeau de responsabilité.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Oh non !</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>Un petit hoquet est apparu, car le chemin d'accès insaisissable du répertoire des logs joue à cache-cache numérique.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>Un moment de jugement numérique !</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Localisation</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Retenez vos chevaux et réfléchissez avec précaution avant d'appuyer sur ce bouton 'supprimer' sur ces fichiers journaux. Gardez à l'esprit que, tout comme un trou noir numérique, la suppression est un point de non-retour ; une fois disparus, ils sont perdus dans le vide pour toujours.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Code de langue actuel:</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Langue actuelle:</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Sélectionnez la langue:</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Choisissez une langue dans la liste à droite et croisez les doigts pour que nos développeurs aient fait leur travail. Si votre langue préférée manque, ne vous inquiétez pas, car nous élargirons bientôt nos horizons linguistiques pour l'inclure dans un avenir pas trop lointain.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Chargement de quelque chose de génial</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Options</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Support</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value> À propos</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Contribuer</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Déboguer</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Découvrir</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Inscription</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Mettre à jour</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Licence activée !</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Erreur inattendue</value>
+	</data>
+</root>

@@ -1,0 +1,17 @@
+Czech (cs)
+German (de)
+Spanish (es)
+French (fr)
+Italian (it)
+Japanese (ja)
+Korean (ko)
+Polish (pl)
+Portuguese (Brazil) (pt-BR)
+Russian (ru)
+Turkish (tr)
+Chinese (Simplified) (zh_Hans)
+Chinese (Traditional) (zh_Hant)
+Afrikaans (af)
+Zulu (South Africa) (zu_ZA)
+
+Translate "Settings" into Afrikaans (af) Czech (cs), German (de), Spanish (es), French (fr), Italian (it), Japanese (ja), Korean (ko), Polish (pl), Portuguese (Brazil) (pt-BR), Russian (ru), Turkish (tr), Chinese (Simplified) (zh_Hans), Chinese (Traditional) (zh_Hant), and Zulu (South Africa) (zu_ZA). This is for a software program's language resources.

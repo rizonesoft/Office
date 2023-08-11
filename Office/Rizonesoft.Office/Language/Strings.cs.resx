@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Tmavý režim</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Světlý režim</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Nastavení</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Nastavení</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Obnovit ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Ukončit</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Záznam</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Domů</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Unikněte vysávání duše kancelářským životem a vrhněte se do Rizone! Klikněte pro teleportaci do blázince softwarové magie Rizonesoft, kde čarodějové nosí pláště nabité kódy a házejí digitální konfety.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Zjistěte více&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Obnovení jazyka</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Aktualizovali jsme naše jazykové nastavení a do vašeho zážitku s Rizonesoft Office jsme vstříkli trochu jazykové magie. Aby se naše vtipné slovní hříčky a sarkastické podtóny neztratily v překladu, prosíme laskavě o restartování otevřených programů.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>Uprostřed ukládání našich jazykových dat jsme narazili na neočekávanou chybu v matici. Pro odhalení této záhady navrhujeme ponořit se do pokladu informací v protokolovém souboru. S vaší pomocí napravíme anomálii a optimalizujeme náš kód pro plynulý výkon!</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Neočekávaná chyba!</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Naše jazyková data si vzala velmi neočekávané volno, čímž nás dočasně zanechala ve stavu konverzačního limba.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Detekována chyba!</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Dozvědět se více</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Zavřít</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Narazili jsme na chybu v matici, když se náš úkol načítání konfigurace programu potýkal s problémem. Nebojte se, pečlivě jsme si tuto zlomyslnou anomálii zaznamenali pro budoucnost.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Chyba v matici!</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Obecný</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>Pokročilý</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Měsíc</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Minuta</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Nekonečno</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Hodina</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Den</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Limit souboru</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Limit protokolového souboru</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Stanovením počtu protokolových souborů udržujeme naše digitální prostředí ve skvělém stavu. Toto důvěryhodné opatření zajišťuje, že se vyhneme blížící se záplavě protokolových souborů a udržujeme rovnováhu v neustále proudící řece dat.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Pohyblivý interval</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Interval válcování protokolu</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>Pohyblivý interval, věrný časoměřič, řídí rytmus vzniku nových protokolových souborů. Zvolením nastavení 'Den' pověřujete pilného maestra protokolových souborů, aby každý den složil čerstvou symfonii - neomylně, stejně jako příchod vaší ranní šálky kávy.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Otevřít adresář Serilog</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>Nezpracovaná výjimka</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Vydávejte se, ušlechtilý uživateli, do říše logovacích souborů, kde vás čekají zjevení a digitální moudrost vašeho průzračného pohledu.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Otevřít Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Vyčistit Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Vyčistit adresář Serilog</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Nastal čas, abyste napnuli své digitální svaly a vyčistili protokoly z adresáře Serilog. Ale pozor na tuto přátelskou připomínku – s takovou silou přichází zátěž odpovědnosti.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Ach ne!</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>Objevil se malý škytavka, protože tajemná cesta k adresáři protokolu hraje hru digitální schovávané.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>Okamžik digitálního vyrovnání!</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Lokalizace</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Zadržte koně a přemýšlejte opatrně, než stisknete tlačítko 'smazat' na těchto souborech protokolu. Mějte na paměti, že smazání je podobné digitální černé díře, a jakmile zmizí, navždy se ztratí ve vakuu.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Aktuální jazykový kód:</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Aktuální jazyk:</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Vyberte jazyk:</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Vyberte jazyk ze seznamu vpravo a přečte si prsty, že naši vývojáři udělali svou práci. Pokud vašemu oblíbenému jazyku něco chybí, nebojte se, brzy rozšíříme naše jazykové obzory, abychom jej zahrnuli v nedaleké budoucnosti.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Načítání něčeho úžasného</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Možnosti</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Podpora</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>O</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Přispět</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Ladění chyb</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Objevit</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Registrace</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Aktualizovat</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Licence aktivována!</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Neočekávaná chyba</value>
+	</data>
+</root>

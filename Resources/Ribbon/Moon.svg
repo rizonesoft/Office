@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Moon">
+      <path d="M20, 20C15.6, 20 12, 16.4 12, 12C12, 8.2 14.7, 5 18.2, 4.2C17.5, 4.1 16.8, 4 16, 4C9.4, 4 4, 9.4 4, 16C4, 22.6 9.4, 28 16, 28C22.6, 28 28, 22.6 28, 16C28, 15.2 27.9, 14.5 27.8, 13.8C27, 17.3 23.8, 20 20, 20z" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+</svg>

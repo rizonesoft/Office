@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-2 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-2, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Store">
+      <rect x="24" y="16" width="2" height="12" rx="0" ry="0" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Store">
+      <polygon points="16,22 8,22 8,16 6,16 6,22 6,28 8,28 16,28 18,28 18,22 18,16 16,16  " fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+  <g id="Layer_1" transform="translate(-2, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Store">
+      <path d="M26, 4L6, 4L2, 8L2, 10L2, 10.5C2, 12.4 3.6, 14 5.5, 14C7.4, 14 9, 12.4 9, 10.5C9, 12.4 10.6, 14 12.5, 14C14.4, 14 16, 12.4 16, 10.5C16, 12.4 17.6, 14 19.5, 14C21.4, 14 23, 12.4 23, 10.5C23, 12.4 24.6, 14 26.5, 14C28.4, 14 30, 12.4 30, 10.5L30, 10L30, 8L26, 4z" fill="#D11C1C" class="Red" />
+    </g>
+  </g>
+</svg>

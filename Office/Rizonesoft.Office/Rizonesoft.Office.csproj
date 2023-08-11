@@ -1,0 +1,437 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors>Derick Payne</Authors>
+	  <Company>Rizonesoft</Company>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+      <BaseOutputPath>..\Bin\</BaseOutputPath>
+	  <RootNamespace>Rizonesoft.Office</RootNamespace>
+	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+	  <PlatformTarget>x64</PlatformTarget>
+	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
+	  <AssemblyVersion>2023.8.11.1498</AssemblyVersion>
+      <FileVersion>2023.8.11.1498</FileVersion>
+      <Platforms>x64;x86</Platforms>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ErrorHandling\Resources\Assistance.svg" />
+    <None Remove="ErrorHandling\Resources\Bell.svg" />
+    <None Remove="ErrorHandling\Resources\Bookmark.svg" />
+    <None Remove="ErrorHandling\Resources\Error.svg" />
+    <None Remove="ErrorHandling\Resources\Fingerprint.svg" />
+    <None Remove="ErrorHandling\Resources\Flag.svg" />
+    <None Remove="ErrorHandling\Resources\Heart.svg" />
+    <None Remove="ErrorHandling\Resources\Idea.svg" />
+    <None Remove="ErrorHandling\Resources\Info.svg" />
+    <None Remove="ErrorHandling\Resources\Question.svg" />
+    <None Remove="ErrorHandling\Resources\Remove.svg" />
+    <None Remove="ErrorHandling\Resources\Security.svg" />
+    <None Remove="ErrorHandling\Resources\Warning.svg" />
+    <None Remove="ErrorHandling\Resources\WarningError.svg" />
+    <None Remove="ErrorHandling\Resources\World.svg" />
+    <None Remove="Licensing\lDatabase.lic" />
+    <None Remove="Localization\Resources\af.svg" />
+    <None Remove="Localization\Resources\cs.svg" />
+    <None Remove="Localization\Resources\de.svg" />
+    <None Remove="Localization\Resources\en.svg" />
+    <None Remove="Localization\Resources\es.svg" />
+    <None Remove="Localization\Resources\fr.svg" />
+    <None Remove="Localization\Resources\it.svg" />
+    <None Remove="Localization\Resources\ja.svg" />
+    <None Remove="Localization\Resources\ko.svg" />
+    <None Remove="Localization\Resources\pl.svg" />
+    <None Remove="Localization\Resources\pt-BR.svg" />
+    <None Remove="Localization\Resources\ru.svg" />
+    <None Remove="Localization\Resources\tr.svg" />
+    <None Remove="Localization\Resources\zh-Hans.svg" />
+    <None Remove="Localization\Resources\zh-Hant.svg" />
+    <None Remove="Localization\Resources\zu-ZA.svg" />
+    <None Remove="Programs\Action.svg" />
+    <None Remove="Programs\Booking.svg" />
+    <None Remove="Programs\Duplicare.svg" />
+    <None Remove="Programs\Evaluate.svg" />
+    <None Remove="Programs\Filer.svg" />
+    <None Remove="Programs\Flow.svg" />
+    <None Remove="Programs\Globe.svg" />
+    <None Remove="Programs\Imagine.svg" />
+    <None Remove="Programs\Jupiter.svg" />
+    <None Remove="Programs\Komplete.svg" />
+    <None Remove="Programs\Mia.svg" />
+    <None Remove="Programs\Mission.svg" />
+    <None Remove="Programs\Nerve.svg" />
+    <None Remove="Programs\Qapture.svg" />
+    <None Remove="Programs\Resources\Action.svg" />
+    <None Remove="Programs\Resources\Assure.svg" />
+    <None Remove="Programs\Resources\Booking.svg" />
+    <None Remove="Programs\Resources\Clock.svg" />
+    <None Remove="Programs\Resources\Duplicare.svg" />
+    <None Remove="Programs\Resources\Evaluate.svg" />
+    <None Remove="Programs\Resources\Filer.svg" />
+    <None Remove="Programs\Resources\Flow.svg" />
+    <None Remove="Programs\Resources\Globe.svg" />
+    <None Remove="Programs\Resources\Have.svg" />
+    <None Remove="Programs\Resources\Imagine.svg" />
+    <None Remove="Programs\Resources\Jupiter.svg" />
+    <None Remove="Programs\Resources\Komplete.svg" />
+    <None Remove="Programs\Resources\Lead.svg" />
+    <None Remove="Programs\Resources\Merchant.svg" />
+    <None Remove="Programs\Resources\Mia.svg" />
+    <None Remove="Programs\Resources\Mission.svg" />
+    <None Remove="Programs\Resources\Nerve.svg" />
+    <None Remove="Programs\Resources\Operate.svg" />
+    <None Remove="Programs\Resources\Qapture.svg" />
+    <None Remove="Programs\Resources\Repo.svg" />
+    <None Remove="Programs\Resources\Scholar.svg" />
+    <None Remove="Programs\Resources\Session.svg" />
+    <None Remove="Programs\Resources\Soap.svg" />
+    <None Remove="Programs\Resources\Verbum.svg" />
+    <None Remove="Programs\Resources\Voice.svg" />
+    <None Remove="Programs\Resources\Wealth.svg" />
+    <None Remove="Programs\Resources\Xhibit.svg" />
+    <None Remove="Programs\Resources\Yield.svg" />
+    <None Remove="Programs\Resources\Zone.svg" />
+    <None Remove="Programs\Scholar.svg" />
+    <None Remove="Programs\Session.svg" />
+    <None Remove="Programs\Verbum.svg" />
+    <None Remove="Programs\Voice.svg" />
+    <None Remove="Programs\Wealth.svg" />
+    <None Remove="Programs\Zone.svg" />
+    <None Remove="Toast\Resources\Close.svg" />
+    <None Remove="Toast\Resources\Debugging.svg" />
+    <None Remove="Toast\Resources\Error.svg" />
+    <None Remove="Toast\Resources\Globe.svg" />
+    <None Remove="Toast\Resources\Info.svg" />
+    <None Remove="Toast\Resources\Notification.svg" />
+    <None Remove="Toast\Resources\Skull.svg" />
+    <None Remove="Toast\Resources\Warning.svg" />
+    <None Remove="UI\Resources\About.svg" />
+    <None Remove="UI\Resources\Donate.svg" />
+    <None Remove="UI\Resources\Exception.svg" />
+    <None Remove="UI\Resources\Gift.svg" />
+    <None Remove="UI\Resources\Globe.svg" />
+    <None Remove="UI\Resources\Help.svg" />
+    <None Remove="UI\Resources\Key.svg" />
+    <None Remove="UI\Resources\Lock.svg" />
+    <None Remove="UI\Resources\Package.svg" />
+    <None Remove="UI\Resources\Security.svg" />
+    <None Remove="UI\Resources\Settings.svg" />
+    <None Remove="UI\Resources\Store.svg" />
+    <None Remove="UI\Resources\Suggestions.svg" />
+    <None Remove="UI\Resources\Support.svg" />
+    <None Remove="UI\Resources\Unlock.svg" />
+    <None Remove="UI\Resources\Update.svg" />
+    <None Remove="UI\Resources\Wallet.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ErrorHandling\Resources\Assistance.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Bell.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Bookmark.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Error.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Fingerprint.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Flag.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Heart.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Idea.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Info.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Question.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Remove.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Security.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\Warning.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\WarningError.svg" />
+    <EmbeddedResource Include="ErrorHandling\Resources\World.svg" />
+    <EmbeddedResource Include="Licensing\lDatabase.lic" />
+    <EmbeddedResource Include="Localization\Resources\af.svg" />
+    <EmbeddedResource Include="Localization\Resources\cs.svg" />
+    <EmbeddedResource Include="Localization\Resources\de.svg" />
+    <EmbeddedResource Include="Localization\Resources\en.svg" />
+    <EmbeddedResource Include="Localization\Resources\es.svg" />
+    <EmbeddedResource Include="Localization\Resources\fr.svg" />
+    <EmbeddedResource Include="Localization\Resources\it.svg" />
+    <EmbeddedResource Include="Localization\Resources\ja.svg" />
+    <EmbeddedResource Include="Localization\Resources\ko.svg" />
+    <EmbeddedResource Include="Localization\Resources\pl.svg" />
+    <EmbeddedResource Include="Localization\Resources\pt-BR.svg" />
+    <EmbeddedResource Include="Localization\Resources\ru.svg" />
+    <EmbeddedResource Include="Localization\Resources\tr.svg" />
+    <EmbeddedResource Include="Localization\Resources\zh-Hans.svg" />
+    <EmbeddedResource Include="Localization\Resources\zh-Hant.svg" />
+    <EmbeddedResource Include="Localization\Resources\zu-ZA.svg" />
+    <EmbeddedResource Include="Programs\Resources\Action.svg" />
+    <EmbeddedResource Include="Programs\Resources\Assure.svg" />
+    <EmbeddedResource Include="Programs\Resources\Booking.svg" />
+    <EmbeddedResource Include="Programs\Resources\Clock.svg" />
+    <EmbeddedResource Include="Programs\Resources\Duplicare.svg" />
+    <EmbeddedResource Include="Programs\Resources\Evaluate.svg" />
+    <EmbeddedResource Include="Programs\Resources\Filer.svg" />
+    <EmbeddedResource Include="Programs\Resources\Flow.svg" />
+    <EmbeddedResource Include="Programs\Resources\Globe.svg" />
+    <EmbeddedResource Include="Programs\Resources\Have.svg" />
+    <EmbeddedResource Include="Programs\Resources\Imagine.svg" />
+    <EmbeddedResource Include="Programs\Resources\Jupiter.svg" />
+    <EmbeddedResource Include="Programs\Resources\Komplete.svg" />
+    <EmbeddedResource Include="Programs\Resources\Lead.svg" />
+    <EmbeddedResource Include="Programs\Resources\Merchant.svg" />
+    <EmbeddedResource Include="Programs\Resources\Mia.svg" />
+    <EmbeddedResource Include="Programs\Resources\Mission.svg" />
+    <EmbeddedResource Include="Programs\Resources\Nerve.svg" />
+    <EmbeddedResource Include="Programs\Resources\Operate.svg" />
+    <EmbeddedResource Include="Programs\Resources\Qapture.svg" />
+    <EmbeddedResource Include="Programs\Resources\Repo.svg" />
+    <EmbeddedResource Include="Programs\Resources\Scholar.svg" />
+    <EmbeddedResource Include="Programs\Resources\Session.svg" />
+    <EmbeddedResource Include="Programs\Resources\Soap.svg" />
+    <EmbeddedResource Include="Programs\Resources\Verbum.svg" />
+    <EmbeddedResource Include="Programs\Resources\Voice.svg" />
+    <EmbeddedResource Include="Programs\Resources\Wealth.svg" />
+    <EmbeddedResource Include="Programs\Resources\Xhibit.svg" />
+    <EmbeddedResource Include="Programs\Resources\Yield.svg" />
+    <EmbeddedResource Include="Programs\Resources\Zone.svg" />
+    <EmbeddedResource Include="Toast\Resources\Close.svg" />
+    <EmbeddedResource Include="Toast\Resources\Debugging.svg" />
+    <EmbeddedResource Include="Toast\Resources\Error.svg" />
+    <EmbeddedResource Include="Toast\Resources\Globe.svg" />
+    <EmbeddedResource Include="Toast\Resources\Info.svg" />
+    <EmbeddedResource Include="Toast\Resources\Notification.svg" />
+    <EmbeddedResource Include="Toast\Resources\Skull.svg" />
+    <EmbeddedResource Include="Toast\Resources\Warning.svg" />
+    <EmbeddedResource Include="UI\Resources\About.svg" />
+    <EmbeddedResource Include="UI\Resources\Donate.svg" />
+    <EmbeddedResource Include="UI\Resources\Exception.svg" />
+    <EmbeddedResource Include="UI\Resources\Gift.svg" />
+    <EmbeddedResource Include="UI\Resources\Globe.svg" />
+    <EmbeddedResource Include="UI\Resources\Help.svg" />
+    <EmbeddedResource Include="UI\Resources\Key.svg" />
+    <EmbeddedResource Include="UI\Resources\Lock.svg" />
+    <EmbeddedResource Include="UI\Resources\Moon.svg">
+      <CustomToolNamespace>Rizonesoft.Office.Resources</CustomToolNamespace>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Resources\Package.svg" />
+    <EmbeddedResource Include="UI\Resources\Security.svg" />
+    <EmbeddedResource Include="UI\Resources\Settings.svg" />
+    <EmbeddedResource Include="UI\Resources\Store.svg" />
+    <EmbeddedResource Include="UI\Resources\Suggestions.svg" />
+    <EmbeddedResource Include="UI\Resources\Sun.svg">
+      <CustomToolNamespace>Rizonesoft.Office.Resources</CustomToolNamespace>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Resources\Support.svg" />
+    <EmbeddedResource Include="UI\Resources\Unlock.svg" />
+    <EmbeddedResource Include="UI\Resources\Update.svg" />
+    <EmbeddedResource Include="UI\Resources\Wallet.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Enrichers.AssemblyName" Version="1.0.9" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+    <PackageReference Include="Serilog.Enrichers.Memory" Version="1.0.4" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Language\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Language\Strings.af.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.cs.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.de.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.es.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.fr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.it.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ja.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ko.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pl.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.pt-br.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.ru.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.tr.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hans.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zh-hant.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Language\Strings.zu-za.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Documentation\Demo.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Office Unleashed.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-example_PDF_1MB.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-example_PDF_500_kB.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_100kB.doc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_100kB.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_100kB.odt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_100kB.rtf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_150kB.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_1MB.doc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_1MB.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_1MB.odt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_1MB.rtf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_300kB.rtf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_500kB.doc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_500kB.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_500kB.odt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file-sample_500kB.rtf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_ODS_10.ods">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_ODS_100.ods">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_ODS_1000.ods">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_ODS_5000.ods">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLSX_10.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLSX_100.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLSX_1000.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLSX_50.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLSX_5000.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLS_10.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLS_100.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLS_1000.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLS_50.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documentation\Samples\file_example_XLS_5000.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y /E /I &quot;$(SolutionDir)Rizonesoft.Office\Language\af&quot; &quot;$(TargetDir)af&quot;&#xD;&#xA;xcopy /Y /E /I &quot;$(SolutionDir)Rizonesoft.Office\Language\cs&quot; &quot;$(TargetDir)cs&quot;" />
+  </Target>
+
+</Project>

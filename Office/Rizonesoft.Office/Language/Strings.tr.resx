@@ -1,0 +1,194 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ThemeManager_Button_Dark_mode" xml:space="preserve">
+		<value>Karanlık mod</value>
+	</data>
+	<data name="ThemeManager_Button_Light_mode" xml:space="preserve">
+		<value>Aydınlık mod</value>
+	</data>
+	<data name="RibbonButtonItem_Settings" xml:space="preserve">
+		<value>Ayarlar</value>
+	</data>
+	<data name="SettingsForm_Title" xml:space="preserve">
+		<value>Ayarlar</value>
+	</data>
+	<data name="ExceptionForm_Button_Recover" xml:space="preserve">
+		<value>Kurtar ({0})</value>
+	</data>
+	<data name="ExceptionForm_Button_Terminate" xml:space="preserve">
+		<value>Sonlandır</value>
+	</data>
+	<data name="SettingsForm_Accordion_Logging" xml:space="preserve">
+		<value>Günlük</value>
+	</data>
+	<data name="RibbonButtonItem_Home" xml:space="preserve">
+		<value>{0} Ana Sayfa</value>
+	</data>
+	<data name="RibbonButtonSuperTip_Home" xml:space="preserve">
+		<value>Ruh emici ofis hayatından kaçın ve Rizone'a dalın! Rizonesoft'un yazılım büyücülüğü deli evine ışınlanmak için tıklayın; burada büyücüler kod dolu pelerinler giyer ve dijital konfeti atarlar.</value>
+	</data>
+	<data name="RibbonButtonSuperTip_LearnMore" xml:space="preserve">
+		<value>&lt;a href="{0}"&gt;Daha fazla bilgi&lt;/a&gt;</value>
+	</data>
+	<data name="Toast_LanguageChanged_Header" xml:space="preserve">
+		<value>Dil Yenileme</value>
+	</data>
+	<data name="Toast_LanguageChanged" xml:space="preserve">
+		<value>Dil ayarlarımızı güncelledik ve Rizonesoft Office deneyiminize biraz dil sihri enjekte ettik. Esprili sözcük oyunlarımızın ve alaycı tonların çeviri sırasında kaybolmamasını sağlamak için, açık programların hepsini yeniden başlatmanızı rica ediyoruz.</value>
+	</data>
+	<data name="Language_CultureInfo_Error" xml:space="preserve">
+		<value>Dil verilerimizi saklarken, matriste beklenmedik bir hata ile karşılaştık. Bu muammayı çözmek için, günlük dosyasındaki bilgi hazinesine dalmayı öneriyoruz. Yardımınızla, anormalliği düzeltecek ve kodumuzu sorunsuz bir performans için optimize edeceğiz!</value>
+	</data>
+	<data name="Language_CultureInfo_ErrorCaption" xml:space="preserve">
+		<value>Beklenmedik hata!</value>
+	</data>
+	<data name="LoadLanguages_Error" xml:space="preserve">
+		<value>Dil verilerimiz son derece beklenmedik bir izin aldı ve bizi geçici olarak konuşma limbo durumunda bıraktı.</value>
+	</data>
+	<data name="MessageBox_Error_Title" xml:space="preserve">
+		<value>Hata tespit edildi!</value>
+	</data>
+	<data name="Toast_Button_LearnMore" xml:space="preserve">
+		<value>Daha fazla öğren</value>
+	</data>
+	<data name="Toast_Button_Dismiss" xml:space="preserve">
+		<value>Kapat</value>
+	</data>
+	<data name="Toast_AppDataPathError" xml:space="preserve">
+		<value>Program yapılandırması yükleme görevimiz bir engelle karşılaştığında, matristeki bir hatayla karşılaştık. Endişelenmeyin, bu yaramaz anomalimizi dikkatlice not ettik ve gelecek nesiller için sakladık.</value>
+	</data>
+	<data name="Toast_AppDataPathError_Header" xml:space="preserve">
+		<value>Matristeki Hata!</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_General" xml:space="preserve">
+		<value>Genel</value>
+	</data>
+	<data name="SettingsForm_TabNavPage_Advanced" xml:space="preserve">
+		<value>İleri</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Month" xml:space="preserve">
+		<value>Ay</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Minute" xml:space="preserve">
+		<value>Dakika</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Infinite" xml:space="preserve">
+		<value>Sonsuz</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Hour" xml:space="preserve">
+		<value>Saat</value>
+	</data>
+	<data name="SettingsForm_LogInterval_Day" xml:space="preserve">
+		<value>Gün</value>
+	</data>
+	<data name="SettingsForm_Label_File_Limit" xml:space="preserve">
+		<value>Dosya Sınırı</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTipTitle" xml:space="preserve">
+		<value>Günlük Dosya Sınırı</value>
+	</data>
+	<data name="SettingsForm_LogFileLimit_ToolTip" xml:space="preserve">
+		<value>Günlük dosya sayısını belirlemek, dijital alanımızı mükemmel durumda tutar. Bu güvenilir önlem, günlük dosyalarının yaklaşan selinden kaçınmamızı sağlar ve sürekli akan veri nehrinde dengeyi korur.</value>
+	</data>
+	<data name="SettingsForm_Group_Rolling_Interval" xml:space="preserve">
+		<value>Kayan Aralık</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTipTitle" xml:space="preserve">
+		<value>Günlük Kaydırma Aralığı</value>
+	</data>
+	<data name="SettingsForm_Group_RollingInterval_ToolTip" xml:space="preserve">
+		<value>Kayan aralık, sadık bir zaman ölçer olarak, yeni günlük dosya doğumlarının temposunu yönetir. 'Gün' ayarını seçerek, çalışkan bir günlük dosya maestrosuna her gün taze bir senfoni besteleme gücü verirsiniz - başarısız olmadan, sabah kahve fincanınızın zamanında gelmesi gibi.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTipTitle" xml:space="preserve">
+		<value>Serilog Dizini Aç</value>
+	</data>
+	<data name="RibbonButtonItem_Exception" xml:space="preserve">
+		<value>İşlenmemiş İstisna</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog_ToolTip" xml:space="preserve">
+		<value>Asil kullanıcı, günlük dosyalarının dünyasına ilerle, vahiyler ve dijital bilgelik, keskin bakışınızı bekliyor.</value>
+	</data>
+	<data name="SettingsForm_Button_OpenLog" xml:space="preserve">
+		<value>Serilog Aç</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog" xml:space="preserve">
+		<value>Serilog Temizle</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTipTitle" xml:space="preserve">
+		<value>Serilog Dizini Temizle</value>
+	</data>
+	<data name="SettingsForm_Button_CleanLog_TootlTip" xml:space="preserve">
+		<value>Serilog dizininden günlükleri temizleme ve dijital kaslarınızı kullanma zamanı geldi. Ancak bu dostça hatırlatıcıya dikkat edin - bu güçle birlikte sorumluluk yükü de gelir.</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessageTitle" xml:space="preserve">
+		<value>Oh hayır!</value>
+	</data>
+	<data name="SettingsForm_BtnOpenLog_ErrorMessage" xml:space="preserve">
+		<value>Kaçamak log dizini yolu dijital saklambaç oyunu oynuyor gibi göründüğü için küçük bir hıçkırık ortaya çıktı.</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_MessageTitle" xml:space="preserve">
+		<value>Dijital Hesaplaşma Anı!</value>
+	</data>
+	<data name="SettingsForm_Accordion_Localization" xml:space="preserve">
+		<value>Yerelleştirme</value>
+	</data>
+	<data name="SettingsForm_BtnCleanLog_Confirm_Message" xml:space="preserve">
+		<value>Bu günlük dosyalarında 'sil' düğmesine basmadan önce atlarınızı tutun ve dikkatle düşünün. Silme işleminin, dijital bir kara delik gibi, geri dönülemez bir nokta olduğunu unutmayın; bir kere gittiklerinde, sonsuza kadar boşlukta kaybolurlar.</value>
+	</data>
+	<data name="SettingsForm_lblCurrCultLabel" xml:space="preserve">
+		<value>Mevcut Dil Kodu:</value>
+	</data>
+	<data name="SettingsForm_lblCurrLangLabel" xml:space="preserve">
+		<value>Mevcut Dil:</value>
+	</data>
+	<data name="SettingsForm_lblSelectLanguage" xml:space="preserve">
+		<value>Dil Seç:</value>
+	</data>
+	<data name="SettingsForm_lblLocalDescription" xml:space="preserve">
+		<value>Sağdaki listeden bir dil seçin ve geliştiricilerimizin işlerini yaptıklarını umarak parmaklarınızı çaprazlayın. Tercih ettiğiniz dil eksikse, endişelenmeyin, yakın gelecekte dil yelpazemizi genişleterek onu kapsayacağız.</value>
+	</data>
+	<data name="SplashScreen_FooterRight" xml:space="preserve">
+		<value>Harika bir şey yükleniyor</value>
+	</data>
+	<data name="RibbonGroup_Options" xml:space="preserve">
+		<value>Seçenekler</value>
+	</data>
+	<data name="RibbonPageSupport" xml:space="preserve">
+		<value>Destek</value>
+	</data>
+	<data name="RibbonPageSupport_About" xml:space="preserve">
+		<value>Hakkında</value>
+	</data>
+	<data name="RibbonPageSupport_Contribute" xml:space="preserve">
+		<value>Katkıda bulunmak</value>
+	</data>
+	<data name="RibbonPageSupport_Debug" xml:space="preserve">
+		<value>Hata ayıklama</value>
+	</data>
+	<data name="RibbonPageSupport_Discover" xml:space="preserve">
+		<value>Keşfetmek</value>
+	</data>
+	<data name="RibbonPageSupport_Registration" xml:space="preserve">
+		<value>Kayıt</value>
+	</data>
+	<data name="RibbonPageSupport_Update" xml:space="preserve">
+		<value>Güncelleme</value>
+	</data>
+	<data name="LicenseForm_Activated" xml:space="preserve">
+		<value>Lisans aktif!</value>
+	</data>
+	<data name="Program_Unexpected_Error_Caption" xml:space="preserve">
+		<value>Beklenmeyen Hata</value>
+	</data>
+</root>

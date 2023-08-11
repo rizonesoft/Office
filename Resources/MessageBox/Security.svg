@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -2 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -2)" style="enable-background:new 0 0 32 32">
+    <g id="Security">
+      <path d="M16, 2L4, 8C4, 8 4, 8 4, 14C4, 20 9, 27.7 16, 30C23, 27.7 28, 20 28, 14C28, 8 28, 8 28, 8L16, 2zM14, 22L8, 16L10, 14L14, 18L22, 10L24, 12L14, 22z" fill="#039C23" class="Green" />
+    </g>
+  </g>
+</svg>

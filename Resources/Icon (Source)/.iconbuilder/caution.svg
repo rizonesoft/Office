@@ -1,0 +1,14 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="3.9435 3.5207 32 32" xmlns="http://www.w3.org/2000/svg">
+  <g transform="matrix(0.0779, 0, 0, 0.0779, 0, 0)">
+    <g transform="matrix(4, 0, 0, 4, 0, 0)">
+      <g>
+        <path d="M57.362, 26.54L20.1, 91.075A7.666 7.666 0 0 0 26.739, 102.575L101.257, 102.575A7.666 7.666 0 0 0 107.896, 91.075L70.638, 26.54A7.665 7.665 0 0 0 57.362, 26.54z" fill="#FFB115" fill-opacity="1" class="Yellow" />
+        <g fill="#fcf4d9">
+          <rect x="59.181" y="46.444" width="9.638" height="29.377" rx="4.333" ry="0" fill="#FFFFFF" fill-opacity="1" class="White" />
+          <circle cx="64" cy="87.428" r="4.819" fill="#FFFFFF" fill-opacity="1" class="White" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

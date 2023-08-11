@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>데스크톱 바로 가기 제거</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>데스크톱 바로 가기 생성</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>워드 프로세서 ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>고급 텍스트 도구와 기능을 사용하여 문서를 작성, 편집 및 서식 지정하십시오.</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>스프레드시트 ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>견고한 수식을 사용하여 데이터를 분석하고, 계산을 수행하고, 차트를 만드십시오.</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>다이어그램 ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>플로우차트, 마인드맵, 다이어그램을 사용하여 복잡한 아이디어를 설계하고 시각화하십시오.</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>데이터 시각화 도구 ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>인터랙티브 차트, 그래프 및 시각화를 사용하여 데이터를 나타내고 해석하십시오.</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>스케줄링 ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>사용자 정의 가능한 뷰와 알림을 사용하여 약속, 이벤트 및 마감일을 관리하십시오.</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>작업 ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>우선 순위, 마감일 및 진행 상황 추적을 사용하여 개인 또는 전문 작업을 생성, 정리 및 추적하십시오.</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>프로젝트 관리자 ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>작업을 조정하고 진행 상황을 추적하며 팀원들과 효율적으로 협력하십시오.</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>포괄적인 도구 세트를 사용하여 PDF 문서를 보고, 수정하고, 주석을 달고, 서명하십시오.</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>사진 복구 ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>커뮤니케이션 ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>보증 ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>약속 ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>시간 ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>사본 만들기 ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>파일 관리자 ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>지도 뷰어 ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>자산 추적 ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>웹 브라우저 ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>판매 시점 ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>AI 채팅 ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AI 브라우저 ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>시간 추적 ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>스캔 및 OCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>클리너 ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>텍스트 음성 변환 ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>청구서 발행 ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>사진 편집 ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>이메일 마케팅 ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>빠른 액세스와 원활한 커뮤니케이션 경험을 위해 설계된 스마트 이메일 클라이언트.</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>전용화되고 체계적인 시스템을 사용하여 보증 및 수리 관리를 간소화하십시오.</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>사용자 친화적인 플랫폼을 사용하여 약속을 예약하고 달력을 정리하세요.</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>올인원 시간, 타이머 및 알람 관리 프로그램을 사용하여 시간을 완벽하게 활용하세요.</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>효율적인 복사 도구로 물리 문서 사본을 복제하여 저장하세요.</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>디지털 파일 및 디렉터리를 효율적으로 정리, 접근 및 관리하세요.</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>자세한 지도를 사용하여 위치를 찾아내고, 경로를 계획하고, 지리 데이터를 탐색하세요.</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>개선된 재고 관리 및 재무 관리를 위한 정확한 자산 추적.</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>향상된 속도와 성능으로 웹사이트를 안전하게 접속하고 탐색하세요.</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>기능이 풍부한 CRM 소프트웨어로 매출과 고객 관계를 향상시키세요.</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>고급 POS 시스템으로 소매 비즈니스를 쉽게 관리하세요.</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>인공 지능을 활용한 최적화된 검색, 콘텐츠 발견 및 개인화를 사용하세요.</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>직관적인 시간 추적 솔루션을 사용하여 근무 시간을 모니터링하고 최적화하세요.</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>다용도 스캔 솔루션을 사용하여 문서를 디지털화하고 저장 및 공유하세요.</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>도구를 사용하여 쉽게 삭제된 이미지를 복원하여 잃어버린 추억을 되찾으세요.</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>효율적인 클리너로 컴퓨터를 원활하게 유지하세요.</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>현실적인 목소리와 사용자 정의 설정을 사용하여 작성된 텍스트를 말로 변환하세요.</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>사용하기 쉬운 금융 도구로 송장 및 청구 프로세스를 간소화하세요.</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>포토그래퍼에게 완벽한 종합 이미지 뷰어 및 에디터.</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>대상 지정된 이메일 마케팅 캠페인으로 관심 집단을 확대하고 참여를 촉진하세요.</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>자연어 처리 기능이 있는 AI 구동 도우미.</value>
+	</data>
+</root>

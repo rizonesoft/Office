@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-0.7298 -0.7272 31.9999 32" xmlns="http://www.w3.org/2000/svg">
+  <g transform="matrix(0.0597, 0, 0, 0.0597, 0, 0)">
+    <g transform="matrix(21.3333, 0, 0, 21.3333, 0, 0)">
+      <g id="Layer_2">
+        <circle cx="21.245" cy="15.841" r="1" fill="#727272" fill-opacity="1" class="Black" />
+        <circle cx="19.064" cy="19.062" r="1" fill="#727272" fill-opacity="1" class="Black" />
+        <circle cx="21.997" cy="12.004" r="1" fill="#727272" fill-opacity="1" class="Black" />
+        <circle cx="15.825" cy="21.247" r="1" fill="#727272" fill-opacity="1" class="Black" />
+        <path d="M12, 21A9 9 0 1 1 17.646, 5L16, 5A1 1 0 0 0 16, 7L20, 7A1 1 0 0 0 21, 6L21, 2A1 1 0 0 0 19, 2L19, 3.531A10.995 10.995 0 1 0 12, 23A1 1 0 0 0 12, 21z" fill="#727272" fill-opacity="1" class="Black" />
+        <path d="M15.707, 15.707A1 1 0 0 0 15.707, 14.293L13, 11.586L13, 6A1 1 0 0 0 11, 6L11, 12A1 1 0 0 0 11.293, 12.707L14.293, 15.707A1 1 0 0 0 15.707, 15.707z" fill="#727272" fill-opacity="1" class="Black" />
+      </g>
+    </g>
+  </g>
+</svg>

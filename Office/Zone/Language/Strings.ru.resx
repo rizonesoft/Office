@@ -1,0 +1,188 @@
+﻿<root>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>1.3</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="ProgramCardControl_OnText" xml:space="preserve">
+		<value>Удалить ярлык с рабочего стола</value>
+	</data>
+	<data name="ProgramCardControl_OffText" xml:space="preserve">
+		<value>Создать ярлык на рабочем столе</value>
+	</data>
+	<data name="Office_Verbum_Title" xml:space="preserve">
+		<value>Текстовый процессор ({0})</value>
+	</data>
+	<data name="Office_Verbum_Description" xml:space="preserve">
+		<value>Создавайте, редактируйте и форматируйте документы с помощью продвинутых текстовых инструментов и функций.</value>
+	</data>
+	<data name="Office_Evaluate_Title" xml:space="preserve">
+		<value>Электронные таблицы ({0})</value>
+	</data>
+	<data name="Office_Evaluate_Description" xml:space="preserve">
+		<value>Анализируйте данные, выполняйте расчеты и создавайте диаграммы с использованием надежных формул.</value>
+	</data>
+	<data name="Office_Flow_Title" xml:space="preserve">
+		<value>Диаграммы ({0})</value>
+	</data>
+	<data name="Office_Flow_Description" xml:space="preserve">
+		<value>Проектируйте и визуализируйте сложные идеи с помощью блок-схем, карт мышления и диаграмм.</value>
+	</data>
+	<data name="Office_Imagine_Title" xml:space="preserve">
+		<value>Визуализатор данных ({0})</value>
+	</data>
+	<data name="Office_Imagine_Description" xml:space="preserve">
+		<value>Представляйте и интерпретируйте данные с помощью интерактивных диаграмм, графиков и визуализаций.</value>
+	</data>
+	<data name="Office_Session_Title" xml:space="preserve">
+		<value>Планирование ({0})</value>
+	</data>
+	<data name="Office_Session_Description" xml:space="preserve">
+		<value>Управляйте встречами, мероприятиями и сроками с настраиваемыми представлениями и напоминаниями.</value>
+	</data>
+	<data name="Office_Komplete_Title" xml:space="preserve">
+		<value>Задачи ({0})</value>
+	</data>
+	<data name="Office_Komplete_Description" xml:space="preserve">
+		<value>Создавайте, организовывайте и отслеживайте личные или профессиональные задачи с приоритетами, сроками и контролем выполнения.</value>
+	</data>
+	<data name="Office_Mission_Title" xml:space="preserve">
+		<value>Менеджер проекта ({0})</value>
+	</data>
+	<data name="Office_Mission_Description" xml:space="preserve">
+		<value>Координируйте задачи, отслеживайте прогресс и эффективно сотрудничайте с членами команды.</value>
+	</data>
+	<data name="Office_Scholar_Description" xml:space="preserve">
+		<value>Просматривайте, изменяйте, аннотируйте и подписывайте PDF-документы с помощью комплексного набора инструментов.</value>
+	</data>
+	<data name="Office_Repo_Title" xml:space="preserve">
+		<value>Восстановление фотографий ({0})</value>
+	</data>
+	<data name="Office_Action_Title" xml:space="preserve">
+		<value>Коммуникация ({0})</value>
+	</data>
+	<data name="Office_Assure_Title" xml:space="preserve">
+		<value>Гарантии ({0})</value>
+	</data>
+	<data name="Office_Booking_Title" xml:space="preserve">
+		<value>Встречи ({0})</value>
+	</data>
+	<data name="Office_Clock_Title" xml:space="preserve">
+		<value>Время ({0})</value>
+	</data>
+	<data name="Office_Duplicare_Title" xml:space="preserve">
+		<value>Создать копию ({0})</value>
+	</data>
+	<data name="Office_Filer_Title" xml:space="preserve">
+		<value>Файловый менеджер ({0})</value>
+	</data>
+	<data name="Office_Globe_Title" xml:space="preserve">
+		<value>Просмотрщик карт ({0})</value>
+	</data>
+	<data name="Office_Have_Title" xml:space="preserve">
+		<value>Отслеживание активов ({0})</value>
+	</data>
+	<data name="Office_Jupiter_Title" xml:space="preserve">
+		<value>Веб-браузер ({0})</value>
+	</data>
+	<data name="Office_Merchant_Title" xml:space="preserve">
+		<value>Точка продаж ({0})</value>
+	</data>
+	<data name="Office_Mia_Title" xml:space="preserve">
+		<value>AI-чат ({0})</value>
+	</data>
+	<data name="Office_Nerve_Title" xml:space="preserve">
+		<value>AI-браузер ({0})</value>
+	</data>
+	<data name="Office_Operate_Title" xml:space="preserve">
+		<value>Учет времени ({0})</value>
+	</data>
+	<data name="Office_Qapture_Title" xml:space="preserve">
+		<value>Сканирование и OCR ({0})</value>
+	</data>
+	<data name="Office_Soap_Title" xml:space="preserve">
+		<value>Очиститель ({0})</value>
+	</data>
+	<data name="Office_Voice_Title" xml:space="preserve">
+		<value>Текст в речь ({0})</value>
+	</data>
+	<data name="Office_Wealth_Title" xml:space="preserve">
+		<value>Выставление счетов ({0})</value>
+	</data>
+	<data name="Office_Xhibit_Title" xml:space="preserve">
+		<value>Редактирование фотографий ({0})</value>
+	</data>
+	<data name="Office_Yield_Title" xml:space="preserve">
+		<value>Email-маркетинг ({0})</value>
+	</data>
+	<data name="Office_Action_Description" xml:space="preserve">
+		<value>Умный почтовый клиент, разработанный для быстрого доступа и бесшовного коммуникационного опыта.</value>
+	</data>
+	<data name="Office_Assure_Description" xml:space="preserve">
+		<value>Упростите управление гарантией и ремонтом с помощью специализированной, организованной системы.</value>
+	</data>
+	<data name="Office_Booking_Description" xml:space="preserve">
+		<value>Запланируйте встречи и организуйте свой календарь с помощью нашей удобной платформы.</value>
+	</data>
+	<data name="Office_Clock_Description" xml:space="preserve">
+		<value>Освойте свое время с помощью универсальной программы управления временем, таймерами и будильниками.</value>
+	</data>
+	<data name="Office_Duplicare_Description" xml:space="preserve">
+		<value>Дублируйте и храните физические копии документов с помощью эффективного инструмента копирования.</value>
+	</data>
+	<data name="Office_Filer_Description" xml:space="preserve">
+		<value>Эффективно организовывайте, получайте доступ и управляйте своими цифровыми файлами и каталогами.</value>
+	</data>
+	<data name="Office_Globe_Description" xml:space="preserve">
+		<value>Открывайте местоположения, планируйте маршруты и изучайте географические данные с помощью подробных карт.</value>
+	</data>
+	<data name="Office_Have_Description" xml:space="preserve">
+		<value>Точное отслеживание активов для улучшения управления запасами и финансового контроля.</value>
+	</data>
+	<data name="Office_Jupiter_Description" xml:space="preserve">
+		<value>Безопасный доступ и изучение сайтов с улучшенной скоростью и производительностью.</value>
+	</data>
+	<data name="Office_Lead_Description" xml:space="preserve">
+		<value>Увеличивайте продажи и отношения с клиентами с помощью нашего функционального CRM-программного обеспечения.</value>
+	</data>
+	<data name="Office_Merchant_Description" xml:space="preserve">
+		<value>Управляйте своим розничным бизнесом без усилий с нашей передовой POS-системой.</value>
+	</data>
+	<data name="Office_Nerve_Description" xml:space="preserve">
+		<value>Используйте искусственный интеллект для оптимизации поиска, обнаружения контента и персонализации.</value>
+	</data>
+	<data name="Office_Operate_Description" xml:space="preserve">
+		<value>Отслеживайте и оптимизируйте рабочие часы с помощью нашего интуитивного решения для контроля времени.</value>
+	</data>
+	<data name="Office_Qapture_Description" xml:space="preserve">
+		<value>Цифровой, храните и делитесь документами с помощью универсального сканирующего решения.</value>
+	</data>
+	<data name="Office_Repo_Description" xml:space="preserve">
+		<value>Восстановите потерянные воспоминания, легко восстанавливая удаленные изображения с помощью нашего инструмента.</value>
+	</data>
+	<data name="Office_Soap_Description" xml:space="preserve">
+		<value>Держите ваш компьютер в исправности с нашим эффективным очистителем.</value>
+	</data>
+	<data name="Office_Voice_Description" xml:space="preserve">
+		<value>Преобразуйте письменный текст в произнесенные слова с реалистичными голосами и настраиваемыми параметрами.</value>
+	</data>
+	<data name="Office_Wealth_Description" xml:space="preserve">
+		<value>Оптимизируйте процессы выставления счетов и расчетов с помощью нашего простого в использовании финансового инструмента.</value>
+	</data>
+	<data name="Office_Xhibit_Description" xml:space="preserve">
+		<value>Обширный просмотрщик и редактор изображений, идеально подходит для фотографов.</value>
+	</data>
+	<data name="Office_Yield_Description" xml:space="preserve">
+		<value>Целевые кампании по электронной почте для расширения аудитории и повышения вовлеченности.</value>
+	</data>
+	<data name="Office_Mia_Description" xml:space="preserve">
+		<value>Помощник на базе искусственного интеллекта с обработкой естественного языка.</value>
+	</data>
+</root>

@@ -1,0 +1,8 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Layer_1" transform="translate(-4, -4)" style="enable-background:new 0 0 32 32">
+    <g id="Unlock">
+      <path d="M22, 4C18.7, 4 16, 6.7 16, 10L16, 12L5, 12C4.4, 12 4, 12.5 4, 13L4, 27C4, 27.5 4.4, 28 5, 28L23, 28C23.6, 28 24, 27.5 24, 27L24, 13C24, 12.5 23.6, 12 23, 12L18, 12L18, 10C18, 7.8 19.8, 6 22, 6C24.2, 6 26, 7.8 26, 10L26, 12L28, 12L28, 10C28, 6.7 25.3, 4 22, 4zM16, 24L12, 24L13.4, 19.9C12.6, 19.6 12, 18.9 12, 18C12, 16.9 12.9, 16 14, 16C15.1, 16 16, 16.9 16, 18C16, 18.9 15.4, 19.6 14.6, 19.9L16, 24z" fill="#FFB115" class="Yellow" />
+    </g>
+  </g>
+</svg>
