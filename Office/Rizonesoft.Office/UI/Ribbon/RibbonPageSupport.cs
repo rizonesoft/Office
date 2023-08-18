@@ -1,10 +1,10 @@
 ﻿using System.IO;
+using DevExpress.Utils;
 using DevExpress.XtraBars;
 using DevExpress.XtraBars.Ribbon;
 using Rizonesoft.Office.ErrorHandling;
 using Rizonesoft.Office.Framework;
 using Rizonesoft.Office.Language;
-using Rizonesoft.Office.Licensing;
 using Rizonesoft.Office.Localization;
 using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Settings;
@@ -28,13 +28,11 @@ namespace Rizonesoft.Office.UI.Ribbon
         private readonly RibbonPageGroup ribGroupDiscover;
         private readonly RibbonPageGroup ribGroupUpdate;
         private readonly RibbonPageGroup ribGroupContribute;
-        private readonly RibbonPageGroup ribGroupLicense;
         private readonly RibbonPageGroup ribGroupDebug;
         private readonly RibbonPageGroup ribGroupAbout;
         private readonly BarButtonItem barItemHome;
         private readonly BarButtonItem barItemHelpDocs;
         private readonly BarButtonItem barItemSupport;
-        private readonly BarButtonItem barItemRegistration;
         private readonly BarButtonItem barItemUpdate;
 
         /// <summary>
@@ -58,7 +56,6 @@ namespace Rizonesoft.Office.UI.Ribbon
             ribGroupDiscover = new RibbonPageGroup(Strings.RibbonPageSupport_Discover);
             ribGroupUpdate = new RibbonPageGroup(Strings.RibbonPageSupport_Update);
             ribGroupContribute = new RibbonPageGroup(Strings.RibbonPageSupport_Contribute);
-            ribGroupLicense = new RibbonPageGroup(Strings.RibbonPageSupport_Registration);
             ribGroupDebug = new RibbonPageGroup(Strings.RibbonPageSupport_Debug);
             ribGroupAbout = new RibbonPageGroup(Strings.RibbonPageSupport_About);
 
@@ -66,38 +63,38 @@ namespace Rizonesoft.Office.UI.Ribbon
             SuperTipHelper.CreateSuperTooltip(barItemHome, Strings.RibbonButtonSuperTip_Home, LinkManager.ButtonHomeSuperTip);
             barItemHelpDocs = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_HelpDocs, "Help.svg", BarItemHelpDocs_Click);
             SuperTipHelper.CreateSuperTooltip(barItemHelpDocs, Strings.RibbonButtonSuperTip_HelpDocs, LinkManager.ButtonHelpDocsSuperTip);
-            barItemSupport = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Support, "Support.svg", BarItemSupport_Click);
+            barItemSupport = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Support, "Exception.svg", BarItemSupport_Click);
             SuperTipHelper.CreateSuperTooltip(barItemSupport, Strings.RibbonButtonSuperTip_Support, LinkManager.ButtonSupportSuperTip);
             barItemUpdate = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Update, "Update.svg", BarItemUpdate_Click);
             SuperTipHelper.CreateSuperTooltip(barItemUpdate, Strings.RibbonButtonSuperTip_Update, LinkManager.ButtonUpdateSuperTip);
-            var barItemLicense = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_License, "Key.svg", BarItemLicense_Click);
-            SuperTipHelper.CreateSuperTooltip(barItemLicense, string.Format(Strings.RibbonButtonSuperTip_License, ProgramConfiguration.CompanyName, ProgramConfiguration.ProgramName), LinkManager.ButtonLicenseeSuperTip);
-            barItemRegistration = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_GetLicense, "Gift.svg", BarItemRegistration_Click);
-            SuperTipHelper.CreateSuperTooltip(barItemRegistration, Strings.RibbonButtonSuperTip_GetLicense, LinkManager.ButtonGetLicenseSuperTip);
+            // var barItemLicense = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_License, "Key.svg", BarItemLicense_Click);
+            // SuperTipHelper.CreateSuperTooltip(barItemLicense, string.Format(Strings.RibbonButtonSuperTip_License, ProgramConfiguration.CompanyName, ProgramConfiguration.ProgramName), LinkManager.ButtonLicenseeSuperTip);
+            // barItemRegistration = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_GetLicense, "Gift.svg", BarItemRegistration_Click);
+            // SuperTipHelper.CreateSuperTooltip(barItemRegistration, Strings.RibbonButtonSuperTip_GetLicense, LinkManager.ButtonGetLicenseSuperTip);
             var barItemSuggestions = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Suggestions, "Suggestions.svg", BarItemSuggestions_Click);
             SuperTipHelper.CreateSuperTooltip(barItemSuggestions, Strings.RibbonButtonSuperTip_Suggestions, LinkManager.ButtonSuggestionsSuperTip);
-            var barItemDonate = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Donate, "Donate.svg", BarItemDonate_Click);
+            var barItemSponsor = CreateButtonItem(ribbonControl, "Sponsor", "Donate.svg", BarItemSponsor_Click);
+            SuperTipHelper.CreateSuperTooltip(barItemSponsor, "Sponsor", LinkManager.ButtonSponsorSuperTip);
+            var barItemDonate = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Donate, "PayPal.svg", BarItemDonate_Click);
             SuperTipHelper.CreateSuperTooltip(barItemDonate, Strings.RibbonButtonSuperTip_Donate, LinkManager.ButtonDonateSuperTip);
-            var barItemException = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Exception, "Exception.svg", BarButtonItem_ItemClick);
+            var barItemException = CreateButtonItem(ribbonControl, Strings.RibbonButtonItem_Exception, "Scull.svg", BarButtonItem_ItemClick);
             SuperTipHelper.CreateSuperTooltip(barItemException, Strings.RibbonButtonSuperTip_Exception, LinkManager.ButtonExceptionSuperTip);
             var barItemAbout = CreateButtonItem(ribbonControl, "About", "About.svg", BarItemAbout_Click);
 
             ribGroupDiscover.ItemLinks.AddRange(barItemHome, barItemHelpDocs, barItemSupport);
             ribGroupUpdate.ItemLinks.Add(barItemUpdate);
-            ribGroupContribute.ItemLinks.AddRange(barItemSuggestions, barItemDonate);
-            ribGroupLicense.ItemLinks.AddRange(barItemLicense, barItemRegistration);
+            ribGroupContribute.ItemLinks.AddRange(barItemSuggestions, barItemSponsor, barItemDonate);
             ribGroupDebug.ItemLinks.Add(barItemException);
             ribGroupAbout.ItemLinks.Add(barItemAbout);
 
-            ribPageSupport.Groups.AddRange(new[] { ribGroupDiscover, ribGroupUpdate, ribGroupLicense, ribGroupContribute, ribGroupDebug, ribGroupAbout });
+            ribPageSupport.Groups.AddRange(new[] { ribGroupDiscover, ribGroupUpdate, ribGroupContribute, ribGroupDebug, ribGroupAbout });
             ribbonControl.Pages.Add(ribPageSupport);
             ribbonControl.PageHeaderItemLinks.Add(barItemSuggestions);
 
+            barItemSponsor.Links[0].BeginGroup = true;
+
             LanguageManager.LanguageChanged += UpdateLanguage;
             _ = CheckForUpdates(true);
-            LicenseHelper.LicenseKeyUpdated += OnLicenseKeyUpdated;
-            LicenseHelper.SetLicenseCode(GlobalSettings.LicenseCode);
-            ConfigureLicense();
         }
 
         /// <summary>
@@ -148,7 +145,6 @@ namespace Rizonesoft.Office.UI.Ribbon
         {
             var item = new BarButtonItem(ribbonControl.Manager, caption)
             {
-
                 Id = ribbonControl.Manager.GetNewItemId()
             };
             item.ImageOptions.SvgImage =
@@ -186,31 +182,9 @@ namespace Rizonesoft.Office.UI.Ribbon
             FileLauncher.OpenLinkInBrowser(LinkManager.SuggestionsButton);
         }
 
-        private void BarItemLicense_Click(object sender, ItemClickEventArgs e)
+        private static void BarItemSponsor_Click(object sender, ItemClickEventArgs e)
         {
-            try
-            {
-                if (LicenseForm.CheckInstance == null)
-                {
-                    if (LicenseForm.CreateInstance.ShowDialog() != DialogResult.OK) return;
-                    ConfigureLicense();
-                }
-                else
-                {
-                    // These two lines make sure the state is normal (not min or max) and give it focus.
-                    LicenseForm.CreateInstance.WindowState = FormWindowState.Normal;
-                    LicenseForm.CreateInstance.Focus();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private static void BarItemRegistration_Click(object sender, ItemClickEventArgs e)
-        {
-            FileLauncher.OpenLinkInBrowser(LinkManager.RegistrationButton);
+            FileLauncher.OpenLinkInBrowser(LinkManager.SponsorButton);
         }
 
         private static void BarItemDonate_Click(object sender, ItemClickEventArgs e)
@@ -245,12 +219,6 @@ namespace Rizonesoft.Office.UI.Ribbon
             }
         }
 
-        private async void ConfigureLicense()        
-        {
-            var isLicensed = await LicenseHelper.CheckLicenseAsync();
-            barItemRegistration.Visibility = isLicensed ? BarItemVisibility.Never : BarItemVisibility.Always;
-        }
-
         /// <summary>
         /// Updates the language of the RibbonPageSupport.
         /// </summary>
@@ -260,7 +228,6 @@ namespace Rizonesoft.Office.UI.Ribbon
             ribGroupDiscover.Text = Strings.RibbonPageSupport_Discover;
             ribGroupUpdate.Text = Strings.RibbonPageSupport_Update;
             ribGroupContribute.Text = Strings.RibbonPageSupport_Contribute;
-            ribGroupLicense.Text = Strings.RibbonPageSupport_Registration;
             ribGroupDebug.Text = Strings.RibbonPageSupport_Debug;
             ribGroupAbout.Text = Strings.RibbonPageSupport_About;
 
@@ -273,11 +240,6 @@ namespace Rizonesoft.Office.UI.Ribbon
             barItemUpdate.Caption = Strings.RibbonButtonItem_Update;
             SuperTipHelper.UpdateSuperTipTextAndFooter(barItemUpdate, Strings.RibbonButtonSuperTip_Update, LinkManager.ButtonUpdateSuperTip);
 
-        }
-
-        private void OnLicenseKeyUpdated()
-        {
-            ConfigureLicense();
         }
 
     }

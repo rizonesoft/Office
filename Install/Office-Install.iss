@@ -25,12 +25,7 @@
   #error Update your Inno Setup version (6.2.2 or newer)
 #endif
 
-#define Arch="x64"
-#IfnDef Arch
-  #error Please set any of the above: #define Arch=(...)
-#EndIf
-
-#define RLSdir "..\Office\Bin\"+Arch+"\Release\"
+#define RLSdir "..\Office\Bin\Release\"
 
 #ifnexist RLSdir + "Rizonesoft.Office.dll"
   #pragma error "Compile Rizonesoft Office "+Arch+" first"
@@ -64,7 +59,7 @@ UninstallDisplayName={#app_name} {#app_version}{#VRSN}
 DefaultDirName={commonpf}\{#app_publisher}\Office
 LicenseFile="License.txt"
 OutputDir=.\Packages
-OutputBaseFilename={#app_name}-{#app_version}{#StringChange(VRSN, " ", "-")}-{#Arch}-Install
+OutputBaseFilename={#app_name}-{#app_version}{#StringChange(VRSN, " ", "-")}-Install
 WizardStyle=modern
 Compression=lzma2/normal
 InternalCompressLevel=normal
@@ -78,14 +73,8 @@ DisableWelcomePage=no
 AllowCancelDuringInstall=yes
 UsedUserAreasWarning=no
 MinVersion=0,6.1.7601
-#If Arch == "x86"
-ArchitecturesAllowed=x86 x64 arm64
-ArchitecturesInstallIn64BitMode=
-#EndIf
-#If Arch == "x64"
 ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
-#EndIf
 CloseApplications=true
 SetupMutex={#app_name}_setup_mutex_{#GUID},Global\{#app_name}_setup_mutex_{#GUID}
 UpdateUninstallLogAppName=yes
@@ -101,11 +90,11 @@ Name: es; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Files]
 // Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Check: Dependency_IsX64; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\Office\Bin\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#app_publisher}\{#app_name}"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"
-Name: "{commondesktop}\{#app_name}"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"; Tasks: desktopicons
+Name: "{group}\{#app_publisher}\Scholar"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"
+Name: "{commondesktop}\Scholar"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"; Tasks: desktopicons
 Name: "{group}\{#app_publisher}\Verbum"; Filename: "{app}\Verbum.exe"; Comment: "Launch Verbum"
 Name: "{commondesktop}\Verbum"; Filename: "{app}\Verbum.exe"; Comment: "Launch Verbum"; Tasks: desktopicons
 Name: "{group}\{#app_publisher}\Evaluate"; Filename: "{app}\Evaluate.exe"; Comment: "Launch Evaluate"

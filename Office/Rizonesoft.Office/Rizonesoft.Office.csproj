@@ -1,27 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
+	<PropertyGroup>
 	  <Authors>Derick Payne</Authors>
 	  <Company>Rizonesoft</Company>
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
-	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
+	  <TargetFramework>net7.0-windows10.0.22621.0</TargetFramework>
 	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
       <ImplicitUsings>enable</ImplicitUsings>
       <Nullable>enable</Nullable>
 	  <LangVersion>latest</LangVersion>
 	  <Optimize>true</Optimize>
 	  <UseWindowsForms>true</UseWindowsForms>
-	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
       <BaseOutputPath>..\Bin\</BaseOutputPath>
 	  <RootNamespace>Rizonesoft.Office</RootNamespace>
 	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
-	  <PlatformTarget>x64</PlatformTarget>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>  
+		<Platforms>AnyCPU;x64;x86;</Platforms>  
 	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
-	  <AssemblyVersion>2023.8.11.1498</AssemblyVersion>
-      <FileVersion>2023.8.11.1498</FileVersion>
-      <Platforms>x64;x86</Platforms>
+	  <AssemblyVersion>2023.8.14.1555</AssemblyVersion>
+      <FileVersion>2023.8.14.1555</FileVersion>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -33,11 +32,19 @@
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 
@@ -57,7 +64,6 @@
     <None Remove="ErrorHandling\Resources\Warning.svg" />
     <None Remove="ErrorHandling\Resources\WarningError.svg" />
     <None Remove="ErrorHandling\Resources\World.svg" />
-    <None Remove="Licensing\lDatabase.lic" />
     <None Remove="Localization\Resources\af.svg" />
     <None Remove="Localization\Resources\cs.svg" />
     <None Remove="Localization\Resources\de.svg" />
@@ -136,11 +142,14 @@
     <None Remove="UI\Resources\Donate.svg" />
     <None Remove="UI\Resources\Exception.svg" />
     <None Remove="UI\Resources\Gift.svg" />
+    <None Remove="UI\Resources\GitHub.svg" />
     <None Remove="UI\Resources\Globe.svg" />
     <None Remove="UI\Resources\Help.svg" />
     <None Remove="UI\Resources\Key.svg" />
     <None Remove="UI\Resources\Lock.svg" />
     <None Remove="UI\Resources\Package.svg" />
+    <None Remove="UI\Resources\PayPal.svg" />
+    <None Remove="UI\Resources\Scull.svg" />
     <None Remove="UI\Resources\Security.svg" />
     <None Remove="UI\Resources\Settings.svg" />
     <None Remove="UI\Resources\Store.svg" />
@@ -167,7 +176,6 @@
     <EmbeddedResource Include="ErrorHandling\Resources\Warning.svg" />
     <EmbeddedResource Include="ErrorHandling\Resources\WarningError.svg" />
     <EmbeddedResource Include="ErrorHandling\Resources\World.svg" />
-    <EmbeddedResource Include="Licensing\lDatabase.lic" />
     <EmbeddedResource Include="Localization\Resources\af.svg" />
     <EmbeddedResource Include="Localization\Resources\cs.svg" />
     <EmbeddedResource Include="Localization\Resources\de.svg" />
@@ -226,6 +234,7 @@
     <EmbeddedResource Include="UI\Resources\Donate.svg" />
     <EmbeddedResource Include="UI\Resources\Exception.svg" />
     <EmbeddedResource Include="UI\Resources\Gift.svg" />
+    <EmbeddedResource Include="UI\Resources\GitHub.svg" />
     <EmbeddedResource Include="UI\Resources\Globe.svg" />
     <EmbeddedResource Include="UI\Resources\Help.svg" />
     <EmbeddedResource Include="UI\Resources\Key.svg" />
@@ -234,6 +243,8 @@
       <CustomToolNamespace>Rizonesoft.Office.Resources</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Resources\Package.svg" />
+    <EmbeddedResource Include="UI\Resources\PayPal.svg" />
+    <EmbeddedResource Include="UI\Resources\Scull.svg" />
     <EmbeddedResource Include="UI\Resources\Security.svg" />
     <EmbeddedResource Include="UI\Resources\Settings.svg" />
     <EmbeddedResource Include="UI\Resources\Store.svg" />

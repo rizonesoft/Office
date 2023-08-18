@@ -1,28 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-	  <Authors></Authors>
-	  <Company>Rizonesoft</Company>
-	  <TargetFramework>net7.0-windows10.0.17763.0</TargetFramework>
-	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-	  <OutputType>WinExe</OutputType>
-	  <BaseOutputPath>..\Bin</BaseOutputPath>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Authors></Authors>
+		<Company>Rizonesoft</Company>
+		<TargetFramework>net7.0-windows10.0.22621.0</TargetFramework>
+		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+		<OutputType>WinExe</OutputType>
+		<BaseOutputPath>..\Bin</BaseOutputPath>
 	  <AssemblyName>Evaluate</AssemblyName>
 	  <RootNamespace>Rizonesoft.Office.Evaluate</RootNamespace>
-	  <LangVersion>latest</LangVersion>
-	  <Optimize>true</Optimize>
-	  <UseWindowsForms>true</UseWindowsForms>
-	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
-	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-	  <PlatformTarget>x64</PlatformTarget>
-	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
-	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
-	  <Platforms>x64;x86</Platforms>
-	  <UseWPF>False</UseWPF>
-	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.8.11.76</AssemblyVersion>
-	  <FileVersion>2023.8.11.76</FileVersion>
+		<LangVersion>latest</LangVersion>
+		<Optimize>true</Optimize>
+		<UseWindowsForms>true</UseWindowsForms>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>  
+		<Platforms>AnyCPU;x64;x86;</Platforms>  
+		<PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+		<Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+		<UseWPF>False</UseWPF>
+		<IsPublishable>False</IsPublishable>
+	  <AssemblyVersion>2023.8.14.138</AssemblyVersion>
+	  <FileVersion>2023.8.14.138</FileVersion>
 	  <ApplicationIcon>Evaluate.ico</ApplicationIcon>
   </PropertyGroup>
 

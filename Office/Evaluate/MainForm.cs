@@ -3,7 +3,6 @@ using Rizonesoft.Office.Localization;
 using Rizonesoft.Office.UI;
 using Rizonesoft.Office.UI.Forms;
 using System.Windows.Forms;
-using Rizonesoft.Office.Licensing;
 using Rizonesoft.Office.UI.Ribbon;
 using System;
 using System.Drawing;
@@ -17,13 +16,14 @@ using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Settings;
 using System.Threading.Tasks;
 using DevExpress.Utils;
+using DevExpress.XtraBars.Ribbon;
 using DevExpress.XtraTabbedMdi;
 
 
 
 namespace Rizonesoft.Office.Evaluate
 {
-    public partial class MainForm : RibbonFormBase
+    public partial class MainForm : RibbonForm
     {
 
         private readonly CopyData copyData;
@@ -88,15 +88,13 @@ namespace Rizonesoft.Office.Evaluate
 
             InitializeComponent();
             Opacity = 0;
-            AfterInitializeComponents();
+            // AfterInitializeComponents();
 
             InitializeRibbon();
             UpdateUi(false);
             LanguageManager.LanguageChanged += LanguageManager_LanguageChanged;
-            LicenseHelper.LicenseKeyUpdated += OnLicenseKeyUpdated;
 
             ControlConfig.SetDefaultMdiManagerConfig(CoreMdiManager, this);
-            _ = InitializeLicenseAsync();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -130,18 +128,6 @@ namespace Rizonesoft.Office.Evaluate
             _extensionsSvgImages.Add("exporttocsv", "image://svgimages/export/exporttocsv.svg");
             _extensionsSvgImages.Add("exporttotxt", "image://svgimages/export/exporttotxt.svg");
             _extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
-        }
-
-        private static async Task InitializeLicenseAsync()
-        {
-            try
-            {
-                IsLicensed = await LicenseHelper.CheckLicenseAsync();
-            }
-            catch (Exception ex)
-            {
-                Serilogger.LogMessage(LogLevel.Error, "An error occurred while checking the license.", ex);
-            }
         }
 
         private void MruList_FileSelected(string fileName)

@@ -1,5 +1,4 @@
-﻿using Rizonesoft.Office.Licensing;
-using Rizonesoft.Office.Framework;
+﻿using Rizonesoft.Office.Framework;
 using Rizonesoft.Office.UI;
 using Rizonesoft.Office.UI.Forms;
 using Rizonesoft.Office.UI.Ribbon;
@@ -81,11 +80,9 @@ namespace Rizonesoft.Office.Verbum
             InitializeRibbon();
             UpdateUi(false);
             LanguageManager.LanguageChanged += LanguageManager_LanguageChanged;
-            LicenseHelper.LicenseKeyUpdated += OnLicenseKeyUpdated;
 
             ControlConfig.SetDefaultMdiManagerConfig(CoreMdiManager, this);
             CreateNewDocument(fileName);
-            _ = InitializeLicenseAsync();
 
             try
             {
@@ -109,18 +106,6 @@ namespace Rizonesoft.Office.Verbum
             var now = DateTime.Now;
             var timeString = now.ToString("HH:mm");
             Invoke(new Action(() => TimeStatusButton.Caption = timeString));
-        }
-
-        private static async Task InitializeLicenseAsync()
-        {
-            try
-            {
-                IsLicensed = await LicenseHelper.CheckLicenseAsync();
-            }
-            catch (Exception ex)
-            {
-                Serilogger.LogMessage(LogLevel.Error, "An error occurred while checking the license.", ex);
-            }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

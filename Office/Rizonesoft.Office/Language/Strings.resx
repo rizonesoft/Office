@@ -309,10 +309,10 @@
 		<value>User's manual</value>
 	</data>
 	<data name="RibbonButtonItem_Support" xml:space="preserve">
-		<value>Support</value>
+		<value>Report a Bug</value>
 	</data>
 	<data name="RibbonButtonSuperTip_Support" xml:space="preserve">
-		<value>Stuck or confused? Click here for expert assistance to guide you through.</value>
+		<value>Found a bug? Let us know so that we can do better</value>
 	</data>
 	<data name="RibbonButtonItem_Update" xml:space="preserve">
 		<value>Check for Updates</value>

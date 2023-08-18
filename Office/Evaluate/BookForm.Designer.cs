@@ -951,6 +951,7 @@
             ChildSpreadsheetControl.Location = new System.Drawing.Point(0, 261);
             ChildSpreadsheetControl.MenuManager = ribbon;
             ChildSpreadsheetControl.Name = "ChildSpreadsheetControl";
+            ChildSpreadsheetControl.Options.Behavior.UseSkinColors = false;
             ChildSpreadsheetControl.Size = new System.Drawing.Size(1013, 317);
             ChildSpreadsheetControl.TabIndex = 2;
             ChildSpreadsheetControl.DocumentSaved += ChildSpreadsheetControl_DocumentSaved;
@@ -4956,6 +4957,7 @@
             Controls.Add(spreadsheetFormulaBar1);
             Controls.Add(ribbonStatusBar);
             Controls.Add(ribbon);
+            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             Name = "BookForm";
             Ribbon = ribbon;
             StatusBar = ribbonStatusBar;

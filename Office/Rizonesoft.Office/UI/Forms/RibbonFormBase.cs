@@ -5,7 +5,6 @@ using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Utilities;
 using System.Globalization;
 using Rizonesoft.Office.ErrorHandling;
-using Rizonesoft.Office.Licensing;
 
 namespace Rizonesoft.Office.UI.Forms;
 
@@ -25,7 +24,6 @@ public class RibbonFormBase : RibbonForm
         IconOptions.ShowIcon = false;
         LanguageManager.LanguageChanged += LanguageManager_LanguageChanged;
         ToolTipController.DefaultController.HyperlinkClick += DefaultController_HyperlinkClick;
-        LicenseHelper.LicenseKeyUpdated += OnLicenseKeyUpdated;
         UpdateLanguage();
     }
 
@@ -49,24 +47,6 @@ public class RibbonFormBase : RibbonForm
         catch (CultureNotFoundException ex)
         {
             Serilogger.LogMessage(LogLevel.Error, "Unable to update the language.", ex);
-        }
-    }
-
-    private void OnLicenseKeyUpdated()
-    {
-        ConfigureLicense();
-    }
-
-    private async void ConfigureLicense()
-    {
-        var isLicensed = await LicenseHelper.CheckLicenseAsync();
-        if (isLicensed)
-        {
-            Text += "";
-        }
-        else
-        {
-            Text += "";
         }
     }
 
