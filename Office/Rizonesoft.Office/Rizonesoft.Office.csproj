@@ -19,8 +19,8 @@
 		<Platforms>AnyCPU;x64;x86;</Platforms>  
 	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
-	  <AssemblyVersion>2023.8.14.1555</AssemblyVersion>
-      <FileVersion>2023.8.14.1555</FileVersion>
+	  <AssemblyVersion>2023.8.18.1556</AssemblyVersion>
+      <FileVersion>2023.8.18.1556</FileVersion>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
