@@ -26,6 +26,7 @@ public static class ProgramColorManager
             OfficeProgram.Globe => Color.FromArgb(255, 11, 113, 179),
             OfficeProgram.Have => Color.FromArgb(255, 226, 51, 56),
             OfficeProgram.Imagine => Color.FromArgb(255, 123, 182, 76),
+            OfficeProgram.ImagineBI => Color.FromArgb(255, 123, 182, 76),
             OfficeProgram.Komplete => Color.FromArgb(255, 13, 171, 182),
             OfficeProgram.Lead => Color.FromArgb(255, 159, 53, 125),
             OfficeProgram.Merchant => Color.FromArgb(255, 10, 173, 182),

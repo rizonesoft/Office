@@ -68,9 +68,8 @@ public partial class SettingsForm : FormBase
     /// <summary>
     /// Loads the settings for the form asynchronously.
     /// </summary>
-    private async Task SettingsForm_LoadAsync(CancellationToken cancellationToken = default)
+    private async Task SettingsForm_LoadAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
         // Always directly read from the registry
         radGroupInterval.SelectedIndex = RollingIntervalToRadioIndex(GlobalSettings.LogRollingInterval);
         SpinLoggingFileLimit.Value = GlobalSettings.LogFileLimit;
@@ -79,9 +78,8 @@ public partial class SettingsForm : FormBase
     /// <summary>
     /// Saves the settings for the form asynchronously.
     /// </summary>
-    private async Task SaveSettingsAsync(CancellationToken cancellationToken = default)
+    private async Task SaveSettingsAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
         // Update the properties directly. This will save the changes to the registry.
         GlobalSettings.LogRollingInterval = RadioIndexToRollingInterval(radGroupInterval.SelectedIndex);
         GlobalSettings.LogFileLimit = Convert.ToInt32(SpinLoggingFileLimit.Value);

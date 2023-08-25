@@ -41,6 +41,9 @@
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem9 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem10 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem11 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
+            DevExpress.Utils.SuperToolTip superToolTip1 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem1 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem1 = new DevExpress.Utils.ToolTipItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItemGroup spreadsheetCommandGalleryItemGroup1 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItemGroup();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem12 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem13 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
@@ -269,8 +272,6 @@
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem191 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem192 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
             DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem spreadsheetCommandGalleryItem193 = new DevExpress.XtraSpreadsheet.UI.SpreadsheetCommandGalleryItem();
-            DevExpress.Utils.SuperToolTip superToolTip1 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipItem toolTipItem1 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip2 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipItem toolTipItem2 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip3 = new DevExpress.Utils.SuperToolTip();
@@ -285,6 +286,8 @@
             DevExpress.Utils.ToolTipItem toolTipItem7 = new DevExpress.Utils.ToolTipItem();
             DevExpress.Utils.SuperToolTip superToolTip8 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipItem toolTipItem8 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.Utils.SuperToolTip superToolTip9 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipItem toolTipItem9 = new DevExpress.Utils.ToolTipItem();
             DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
             repositoryItemProgressBar1 = new DevExpress.XtraEditors.Repository.RepositoryItemProgressBar();
             ribbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
@@ -947,11 +950,13 @@
             // 
             // ChildSpreadsheetControl
             // 
+            ChildSpreadsheetControl.AccessibleRole = System.Windows.Forms.AccessibleRole.None;
             ChildSpreadsheetControl.Dock = System.Windows.Forms.DockStyle.Fill;
             ChildSpreadsheetControl.Location = new System.Drawing.Point(0, 261);
             ChildSpreadsheetControl.MenuManager = ribbon;
             ChildSpreadsheetControl.Name = "ChildSpreadsheetControl";
             ChildSpreadsheetControl.Options.Behavior.UseSkinColors = false;
+            ChildSpreadsheetControl.Options.Culture = new System.Globalization.CultureInfo("en-US");
             ChildSpreadsheetControl.Size = new System.Drawing.Size(1013, 317);
             ChildSpreadsheetControl.TabIndex = 2;
             ChildSpreadsheetControl.DocumentSaved += ChildSpreadsheetControl_DocumentSaved;
@@ -1388,9 +1393,15 @@
             // 
             // spreadsheetCommandBarButtonItem36
             // 
+            spreadsheetCommandBarButtonItem36.Caption = "R English (South Africa)";
             spreadsheetCommandBarButtonItem36.CommandName = "FormatNumberAccountingDefault";
             spreadsheetCommandBarButtonItem36.Id = 68;
             spreadsheetCommandBarButtonItem36.Name = "spreadsheetCommandBarButtonItem36";
+            toolTipTitleItem1.Text = "R English (South Africa)";
+            toolTipItem1.Text = "This will change the format of the cell to Accounting with a 'R' as currency symbol.";
+            superToolTip1.Items.Add(toolTipTitleItem1);
+            superToolTip1.Items.Add(toolTipItem1);
+            spreadsheetCommandBarButtonItem36.SuperTip = superToolTip1;
             // 
             // spreadsheetCommandBarButtonItem37
             // 
@@ -3844,9 +3855,9 @@
             averageInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             averageInfoStaticItem1.Id = 345;
             averageInfoStaticItem1.Name = "averageInfoStaticItem1";
-            toolTipItem1.Text = "Average of selected cells";
-            superToolTip1.Items.Add(toolTipItem1);
-            averageInfoStaticItem1.SuperTip = superToolTip1;
+            toolTipItem2.Text = "Average of selected cells";
+            superToolTip2.Items.Add(toolTipItem2);
+            averageInfoStaticItem1.SuperTip = superToolTip2;
             averageInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // countInfoStaticItem1
@@ -3854,9 +3865,9 @@
             countInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             countInfoStaticItem1.Id = 346;
             countInfoStaticItem1.Name = "countInfoStaticItem1";
-            toolTipItem2.Text = "Number of selected cells that contain data";
-            superToolTip2.Items.Add(toolTipItem2);
-            countInfoStaticItem1.SuperTip = superToolTip2;
+            toolTipItem3.Text = "Number of selected cells that contain data";
+            superToolTip3.Items.Add(toolTipItem3);
+            countInfoStaticItem1.SuperTip = superToolTip3;
             countInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // numericalCountInfoStaticItem1
@@ -3864,9 +3875,9 @@
             numericalCountInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             numericalCountInfoStaticItem1.Id = 347;
             numericalCountInfoStaticItem1.Name = "numericalCountInfoStaticItem1";
-            toolTipItem3.Text = "Number of selected cells that contain numerical data";
-            superToolTip3.Items.Add(toolTipItem3);
-            numericalCountInfoStaticItem1.SuperTip = superToolTip3;
+            toolTipItem4.Text = "Number of selected cells that contain numerical data";
+            superToolTip4.Items.Add(toolTipItem4);
+            numericalCountInfoStaticItem1.SuperTip = superToolTip4;
             numericalCountInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // minInfoStaticItem1
@@ -3874,9 +3885,9 @@
             minInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             minInfoStaticItem1.Id = 348;
             minInfoStaticItem1.Name = "minInfoStaticItem1";
-            toolTipItem4.Text = "Minimum value in selection";
-            superToolTip4.Items.Add(toolTipItem4);
-            minInfoStaticItem1.SuperTip = superToolTip4;
+            toolTipItem5.Text = "Minimum value in selection";
+            superToolTip5.Items.Add(toolTipItem5);
+            minInfoStaticItem1.SuperTip = superToolTip5;
             minInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // maxInfoStaticItem1
@@ -3884,9 +3895,9 @@
             maxInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             maxInfoStaticItem1.Id = 349;
             maxInfoStaticItem1.Name = "maxInfoStaticItem1";
-            toolTipItem5.Text = "Maximum value in selection";
-            superToolTip5.Items.Add(toolTipItem5);
-            maxInfoStaticItem1.SuperTip = superToolTip5;
+            toolTipItem6.Text = "Maximum value in selection";
+            superToolTip6.Items.Add(toolTipItem6);
+            maxInfoStaticItem1.SuperTip = superToolTip6;
             maxInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // sumInfoStaticItem1
@@ -3894,9 +3905,9 @@
             sumInfoStaticItem1.Alignment = DevExpress.XtraBars.BarItemLinkAlignment.Right;
             sumInfoStaticItem1.Id = 350;
             sumInfoStaticItem1.Name = "sumInfoStaticItem1";
-            toolTipItem6.Text = "Sum of selected cells";
-            superToolTip6.Items.Add(toolTipItem6);
-            sumInfoStaticItem1.SuperTip = superToolTip6;
+            toolTipItem7.Text = "Sum of selected cells";
+            superToolTip7.Items.Add(toolTipItem7);
+            sumInfoStaticItem1.SuperTip = superToolTip7;
             sumInfoStaticItem1.Visibility = DevExpress.XtraBars.BarItemVisibility.Never;
             // 
             // zoomEditItem1
@@ -3905,9 +3916,9 @@
             zoomEditItem1.Edit = repositoryItemZoomTrackBar1;
             zoomEditItem1.Id = 351;
             zoomEditItem1.Name = "zoomEditItem1";
-            toolTipItem7.Text = "Zoom";
-            superToolTip7.Items.Add(toolTipItem7);
-            zoomEditItem1.SuperTip = superToolTip7;
+            toolTipItem8.Text = "Zoom";
+            superToolTip8.Items.Add(toolTipItem8);
+            zoomEditItem1.SuperTip = superToolTip8;
             // 
             // repositoryItemZoomTrackBar1
             // 
@@ -3930,9 +3941,9 @@
             showZoomButtonItem1.ItemAppearance.Pressed.Options.UseTextOptions = true;
             showZoomButtonItem1.Name = "showZoomButtonItem1";
             showZoomButtonItem1.SmallWithTextWidth = 45;
-            toolTipItem8.Text = "Zoom level. Click to open the Zoom dialog box.";
-            superToolTip8.Items.Add(toolTipItem8);
-            showZoomButtonItem1.SuperTip = superToolTip8;
+            toolTipItem9.Text = "Zoom level. Click to open the Zoom dialog box.";
+            superToolTip9.Items.Add(toolTipItem9);
+            showZoomButtonItem1.SuperTip = superToolTip9;
             // 
             // chartToolsRibbonPageCategory1
             // 
@@ -4949,6 +4960,7 @@
             // 
             // BookForm
             // 
+            Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(1013, 615);

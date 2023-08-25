@@ -29,9 +29,6 @@ namespace Rizonesoft.Office.Utilities
         public static readonly string MessageToastSupport = "https://www.rizonesoft.com";
         public static readonly string LanguageToastLearn = "https://www.rizonesoft.com";
         public static readonly string UpdateToastDownload = "https://www.rizonesoft.com";
-
-        // License Form Hyperlinks
-        public static readonly string LicenseFormGetLicense = "https://www.rizonesoft.com";
  
     }
 }

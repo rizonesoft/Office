@@ -35,9 +35,8 @@ public static class OfficeSettings
     /// </summary>
     /// <typeparam name="T">The type of the settings data.</typeparam>
     /// <param name="scope">The scope of the settings.</param>
-    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation, containing the loaded settings data.</returns>
-    public static async Task<T> LoadSettingsAsync<T>(SettingScope scope, CancellationToken cancellationToken = default) where T : ISettingsData, new()
+    public static async Task<T> LoadSettingsAsync<T>(SettingScope scope) where T : ISettingsData, new()
     {
         var settingsFilePath = GetSettingsFilePath(scope);
 
@@ -51,7 +50,7 @@ public static class OfficeSettings
         {
             if (File.Exists(settingsFilePath))
             {
-                var jsonString = await File.ReadAllTextAsync(settingsFilePath, cancellationToken).ConfigureAwait(false);
+                var jsonString = await File.ReadAllTextAsync(settingsFilePath).ConfigureAwait(false);
                 settings = JsonSerializer.Deserialize<T>(jsonString) ?? settings;
             }
             else
@@ -74,15 +73,14 @@ public static class OfficeSettings
     /// <typeparam name="T">The type of the settings data.</typeparam>
     /// <param name="settings">The settings data to save.</param>
     /// <param name="scope">The scope of the settings.</param>
-    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public static async Task SaveSettingsAsync<T>(T settings, SettingScope scope, CancellationToken cancellationToken = default) where T : ISettingsData
+    public static async Task SaveSettingsAsync<T>(T settings, SettingScope scope) where T : ISettingsData
     {
         var settingsFilePath = GetSettingsFilePath(scope);
         try
         {
             var jsonString = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(settingsFilePath, jsonString, cancellationToken).ConfigureAwait(false);
+            await File.WriteAllTextAsync(settingsFilePath, jsonString).ConfigureAwait(false);
 
             SettingsCache[settingsFilePath] = settings;
         }

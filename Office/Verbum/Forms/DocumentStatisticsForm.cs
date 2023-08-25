@@ -11,7 +11,6 @@ namespace Rizonesoft.Office.Verbum.Forms
     public partial class DocumentStatisticsForm : DevExpress.XtraEditors.XtraForm
     {
         private readonly SubDocument _subDocument;
-        private CancellationTokenSource _cancellationTokenSource;
 
         public DocumentStatisticsForm(SubDocument document, bool includeTextboxes)
         {
@@ -23,15 +22,13 @@ namespace Rizonesoft.Office.Verbum.Forms
 
         private void CalculateStatistics()
         {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource = new CancellationTokenSource();
 
             try
             {
                 var iterator = new DocumentIterator(_subDocument, true);
                 var visitor = new StaticsticsVisitor(IncludeTextboxes);
 
-                while (iterator.MoveNext() && !_cancellationTokenSource.IsCancellationRequested)
+                while (iterator.MoveNext())
                 {
                     iterator.Current?.Accept(visitor);
                 }
@@ -62,7 +59,6 @@ namespace Rizonesoft.Office.Verbum.Forms
 
         private void BtnClose_Click(object sender, EventArgs e)
         {
-            _cancellationTokenSource?.Cancel();
             Close();
         }
 

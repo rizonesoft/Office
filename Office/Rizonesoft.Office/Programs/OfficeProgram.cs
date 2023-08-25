@@ -61,6 +61,11 @@ public enum OfficeProgram
     Imagine,
 
     /// <summary>
+    /// Represents the Imagine BI application.
+    /// </summary>
+    ImagineBI,
+
+    /// <summary>
     /// Represents the Komplete application.
     /// </summary>
     Komplete,

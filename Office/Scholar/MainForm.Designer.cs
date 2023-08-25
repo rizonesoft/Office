@@ -63,7 +63,7 @@
             ribbonMain.QuickToolbarItemLinks.Add(OpenBarItem);
             ribbonMain.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
             ribbonMain.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            ribbonMain.Size = new System.Drawing.Size(1529, 201);
+            ribbonMain.Size = new System.Drawing.Size(981, 201);
             // 
             // OpenBarItem
             // 
@@ -130,7 +130,7 @@
             panelControl1.Dock = System.Windows.Forms.DockStyle.Top;
             panelControl1.Location = new System.Drawing.Point(0, 201);
             panelControl1.Name = "panelControl1";
-            panelControl1.Size = new System.Drawing.Size(1529, 11);
+            panelControl1.Size = new System.Drawing.Size(981, 11);
             panelControl1.TabIndex = 2;
             // 
             // MainForm
@@ -140,7 +140,7 @@
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1529, 1071);
+            ClientSize = new System.Drawing.Size(981, 1071);
             Controls.Add(panelControl1);
             Controls.Add(ribbonMain);
             Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);

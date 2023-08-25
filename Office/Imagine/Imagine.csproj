@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.8.14.83</AssemblyVersion>
-	  <FileVersion>2023.8.14.83</FileVersion>
+	  <AssemblyVersion>2023.8.25.106</AssemblyVersion>
+	  <FileVersion>2023.8.25.106</FileVersion>
 	  <ApplicationIcon>Imagine.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -30,7 +30,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DevExpress.Utils" Version="23.1.4" />
     <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.10" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.6" />
+    <PackageReference Include="System.Runtime.Serialization.Schema" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>

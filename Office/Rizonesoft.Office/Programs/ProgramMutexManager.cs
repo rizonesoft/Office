@@ -18,6 +18,7 @@ public static class ProgramMutexManager
         { OfficeProgram.Globe, "3700106A50A64603A9CA25CAEAA19A9F" },
         { OfficeProgram.Have, "F37843D460A04A1EB012F2432471C87F" },
         { OfficeProgram.Imagine, "78B50D37F2314ECF986138D40696D570" },
+        { OfficeProgram.ImagineBI, "9094A3D4FD6F43F8B304B5B946E6BA28" },
         { OfficeProgram.Komplete, "1485337B2B8046D5A5E5C40E0037E970" },
         { OfficeProgram.Lead, "26D26202BE914979B677C3D6E13BC9EC" },
         { OfficeProgram.Merchant, "56E22746A2E64334A2CA094DD40625E9" },

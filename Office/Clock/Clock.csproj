@@ -21,8 +21,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.8.14.108</AssemblyVersion>
-	  <FileVersion>2023.8.14.108</FileVersion>
+	  <AssemblyVersion>2023.8.25.112</AssemblyVersion>
+	  <FileVersion>2023.8.25.112</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

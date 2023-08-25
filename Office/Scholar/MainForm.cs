@@ -22,7 +22,7 @@ namespace Rizonesoft.Office.Scholar;
 /// <summary>
 /// Represents the main form of the Scholar application.
 /// </summary>
-public sealed partial class MainForm : RibbonFormBase
+public sealed partial class MainForm : RibbonForm
 {
     private readonly CopyData copyData;
     private int viewerIndex;
@@ -76,7 +76,7 @@ public sealed partial class MainForm : RibbonFormBase
         copyData.DataReceived += CopyData_DataReceived;
 
         InitializeComponent();
-        AfterInitializeComponents();
+        // AfterInitializeComponents();
 
         InitializeRibbon();
         UpdateUi();

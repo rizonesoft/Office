@@ -23,13 +23,13 @@ internal static class ExceptionHandler
         }
 
         var timestamp = DateTime.UtcNow;
-        var windowsVersion = WinVersion.GetWindowsVersionString();
+        // var windowsVersion = WinVersion.GetWindowsVersionString();
         var appDomain = AppDomain.CurrentDomain.FriendlyName;
         var appVersion = ProgramConfiguration.Version?.fullVersion ?? "Unknown";
 
         var sReport = new StringBuilder();
         sReport.AppendLine($"Timestamp: {timestamp}");
-        sReport.AppendLine($"Windows Version: {windowsVersion}");
+        // sReport.AppendLine($"Windows Version: {windowsVersion}");
         sReport.AppendLine($"Domain: {appDomain}");
         sReport.AppendLine($"Program Version: {appVersion}");
         sReport.AppendLine($"Exception: {ex.GetType()}");

@@ -23,7 +23,7 @@ namespace Rizonesoft.Office.Zone;
 
 public sealed partial class MainForm : RibbonFormBase
 {
-    private const int ProgramCardControlCount = 29;
+    private const int ProgramCardControlCount = 33;
     private readonly LayoutControlItem[] _layoutControlItems;
     private readonly Dictionary<OfficeProgram, ProgramCardControl> _programCardControlMapping;
     private readonly ProgramCardControl[] _programCardControls;
@@ -206,6 +206,7 @@ public sealed partial class MainForm : RibbonFormBase
         ConfigureProgramCardControl(_programCardControls[5], OfficeProgram.Session);
         ConfigureProgramCardControl(_programCardControls[6], OfficeProgram.Komplete);
         ConfigureProgramCardControl(_programCardControls[7], OfficeProgram.Mission);
+
         // Accessories
         ConfigureProgramCardControl(_programCardControls[8], OfficeProgram.Qapture);
         ConfigureProgramCardControl(_programCardControls[9], OfficeProgram.Duplicare);
@@ -225,11 +226,12 @@ public sealed partial class MainForm : RibbonFormBase
         ConfigureProgramCardControl(_programCardControls[21], OfficeProgram.Have);
         ConfigureProgramCardControl(_programCardControls[22], OfficeProgram.Assure);
         ConfigureProgramCardControl(_programCardControls[23], OfficeProgram.Operate);
+        ConfigureProgramCardControl(_programCardControls[24], OfficeProgram.ImagineBI);
         // Utilities
-        ConfigureProgramCardControl(_programCardControls[24], OfficeProgram.Soap);
-        ConfigureProgramCardControl(_programCardControls[25], OfficeProgram.Repo);
-        ConfigureProgramCardControl(_programCardControls[26], OfficeProgram.Filer);
-        ConfigureProgramCardControl(_programCardControls[27], OfficeProgram.Clock);
+        ConfigureProgramCardControl(_programCardControls[28], OfficeProgram.Soap);
+        ConfigureProgramCardControl(_programCardControls[29], OfficeProgram.Repo);
+        ConfigureProgramCardControl(_programCardControls[30], OfficeProgram.Filer);
+        ConfigureProgramCardControl(_programCardControls[31], OfficeProgram.Clock);
 
         ribGroupOptions.Text = Strings.RibbonGroup_Options;
         if (ShowOverlay) overlayManager.DisposeOverlay();
@@ -255,9 +257,10 @@ public sealed partial class MainForm : RibbonFormBase
                 officeProgram);
         programCardControl.OffText = Strings.ProgramCardControl_OffText;
         programCardControl.OnText = Strings.ProgramCardControl_OnText;
-
         _programCardControlMapping.Add(officeProgram, programCardControl);
+
     }
+
 
     private void ProgramCardControl_ProgramCardClicked(OfficeProgram officeProgram)
     {
@@ -272,8 +275,8 @@ public sealed partial class MainForm : RibbonFormBase
         AddControlsToLayout(lacPrograms, 2, _layoutControlItems.Take(8).ToArray());
         AddControlsToLayout(lacAccessories, 1, _layoutControlItems.Skip(8).Take(4).ToArray());
         AddControlsToLayout(lacExplore, 1, _layoutControlItems.Skip(12).Take(4).ToArray());
-        AddControlsToLayout(lacBusiness, 2, _layoutControlItems.Skip(16).Take(8).ToArray());
-        AddControlsToLayout(lacUtilities, 1, _layoutControlItems.Skip(24).Take(4).ToArray());
+        AddControlsToLayout(lacBusiness, 3, _layoutControlItems.Skip(16).Take(12).ToArray());
+        AddControlsToLayout(lacUtilities, 1, _layoutControlItems.Skip(28).Take(4).ToArray());
     }
 
     private static void AddControlsToLayout(LayoutControl layoutControl, int numRows,

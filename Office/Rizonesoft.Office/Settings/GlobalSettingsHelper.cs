@@ -9,38 +9,23 @@ public static class GlobalSettingsHelper
     private static int? _logFileLimitCache;
     private const OfficeSettings.SettingScope Scope = OfficeSettings.SettingScope.Global;
 
-    public static async Task SetLicenseCodeAsync(string? licenseCode, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        await UpdateAndSaveSettingsAsync(settings => settings.LicenseCode = licenseCode, cancellationToken).ConfigureAwait(false);
-    }
-
-    public static async Task<string?> GetLicenseCodeAsync(CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
-        return settings.LicenseCode;
-    }
-
     /// <summary>
     /// Sets the dark mode setting.
     /// </summary>
     /// <param name="isDarkMode">Whether dark mode should be enabled.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public static async Task SetDarkModeAsync(bool isDarkMode, CancellationToken cancellationToken = default)
+    public static async Task SetDarkModeAsync(bool isDarkMode)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        await UpdateAndSaveSettingsAsync(settings => settings.IsDarkMode = isDarkMode, cancellationToken).ConfigureAwait(false);
+        await UpdateAndSaveSettingsAsync(settings => settings.IsDarkMode = isDarkMode).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets the dark mode setting.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains whether dark mode is enabled.</returns>
-    public static async Task<bool> GetDarkModeAsync(CancellationToken cancellationToken = default)
+    public static async Task<bool> GetDarkModeAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
+        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope).ConfigureAwait(false);
         return settings.IsDarkMode;
     }
 
@@ -49,20 +34,18 @@ public static class GlobalSettingsHelper
     /// </summary>
     /// <param name="languageCode">The language code to set.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public static async Task SetLanguageCodeAsync(string? languageCode, CancellationToken cancellationToken = default)
+    public static async Task SetLanguageCodeAsync(string? languageCode)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        await UpdateAndSaveSettingsAsync(settings => settings.LanguageCode = languageCode, cancellationToken).ConfigureAwait(false);
+        await UpdateAndSaveSettingsAsync(settings => settings.LanguageCode = languageCode).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets the language code setting.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the language code.</returns>
-    public static async Task<string?> GetLanguageCodeAsync(CancellationToken cancellationToken = default)
+    public static async Task<string?> GetLanguageCodeAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
+        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope).ConfigureAwait(false);
         return settings.LanguageCode;
     }
 
@@ -71,10 +54,9 @@ public static class GlobalSettingsHelper
     /// </summary>
     /// <param name="logRollingInterval">The log rolling interval to set.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public static async Task SetLogRollingIntervalAsync(int logRollingInterval, CancellationToken cancellationToken = default)
+    public static async Task SetLogRollingIntervalAsync(int logRollingInterval)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        await UpdateAndSaveSettingsAsync(settings => settings.LogRollingInterval = logRollingInterval, cancellationToken).ConfigureAwait(false);
+        await UpdateAndSaveSettingsAsync(settings => settings.LogRollingInterval = logRollingInterval).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -99,15 +81,14 @@ public static class GlobalSettingsHelper
     /// Gets the log rolling interval setting.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the log rolling interval.</returns>
-    public static async Task<int> GetLogRollingIntervalAsync(CancellationToken cancellationToken = default)
+    public static async Task<int> GetLogRollingIntervalAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
         if (_logRollingIntervalCache.HasValue)
         {
             return _logRollingIntervalCache.Value;
         }
 
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
+        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope).ConfigureAwait(false);
         _logRollingIntervalCache = settings.LogRollingInterval;
         return _logRollingIntervalCache.Value;
     }
@@ -116,15 +97,14 @@ public static class GlobalSettingsHelper
     /// Gets the log file limit setting.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the log file limit.</returns>
-    public static async Task<int> GetLogFileLimitAsync(CancellationToken cancellationToken = default)
+    public static async Task<int> GetLogFileLimitAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
         if (_logFileLimitCache.HasValue)
         {
             return _logFileLimitCache.Value;
         }
 
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
+        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope).ConfigureAwait(false);
         _logFileLimitCache = settings.LogFileLimit;
         return _logFileLimitCache.Value;
     }
@@ -134,11 +114,10 @@ public static class GlobalSettingsHelper
     /// </summary>
     /// <param name="updateAction">The action to update the settings.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    private static async Task UpdateAndSaveSettingsAsync(Action<GlobalSettingsData> updateAction, CancellationToken cancellationToken = default)
+    private static async Task UpdateAndSaveSettingsAsync(Action<GlobalSettingsData> updateAction)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope, cancellationToken).ConfigureAwait(false);
+        var settings = await OfficeSettings.LoadSettingsAsync<GlobalSettingsData>(Scope).ConfigureAwait(false);
         updateAction(settings);
-        await OfficeSettings.SaveSettingsAsync(settings, Scope, cancellationToken).ConfigureAwait(false);
+        await OfficeSettings.SaveSettingsAsync(settings, Scope).ConfigureAwait(false);
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
+using DevExpress.XtraReports.Security;
+using DevExpress.XtraReports.UI;
 using Rizonesoft.Office.Framework;
 using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Settings;
@@ -47,6 +49,8 @@ namespace Rizonesoft.Office.Imagine
             AfterInitializeComponents();
             InitializeRibbon();
 
+            // ScriptPermissionManager.GlobalInstance = new ScriptPermissionManager(ExecutionMode.Unrestricted);
+
             copyData = new CopyData();
             copyData.AssignHandle(Handle);
             copyData.Channels?.Add(CopyChannelName);
@@ -72,14 +76,13 @@ namespace Rizonesoft.Office.Imagine
         {
             SplashScreenHelper.CloseSplashScreen();
             Opacity = 1;
-            // reportDesigner1.OpenReport(new XtraReport());
         }
 
         private void SaveSettings()
         {
             CommonSettings.Geometry = FormGeometry.GeometryToString(this);
             ribbonControl1.Toolbar.SaveLayoutToRegistry($"{ProgramConfiguration.RegistryPath}\\Interface");
-            if (commandBarItem2.Down == false && ribbonControl1.SelectedPage != pageRibbonSupport.SupportPage) 
+            if (commandBarItem2.Down == false && ribbonControl1.SelectedPage != pageRibbonSupport.SupportPage)
             {
                 xrDesignDockManager1.SaveLayoutToRegistry($"{ProgramConfiguration.RegistryPath}\\Docking");
             }

@@ -33,7 +33,7 @@ public class RibbonFormBase : RibbonForm
     public void AfterInitializeComponents()
     {
         AppearanceObject.DefaultFont = new Font("Segoe UI", 8.25F);
-        Text = $@"{ProgramConfiguration.ProgramName} {ProgramConfiguration.Version?.major}";
+        Text = $@"{ProgramConfiguration.ProgramName} {ProgramConfiguration.Version?.major} {EnvironmentManager.Get("BETA_STRING")}";
     }
 
     private static void UpdateLanguage()

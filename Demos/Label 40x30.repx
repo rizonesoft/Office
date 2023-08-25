@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XtraReportsLayoutSerializer SerializerVersion="23.1.4.0" Ref="0" ControlType="DevExpress.XtraReports.UI.XtraReport, DevExpress.XtraReports.v23.1, Version=23.1.4.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a" Name="Report1" Landscape="true" Margins="7.874016, 7.874016, 7.874016, 7.874016" PaperKind="Custom" PageWidth="157" PageHeight="117" Version="23.1" Font="Arial, 9.75pt">
+  <Bands>
+    <Item1 Ref="1" ControlType="TopMarginBand" Name="TopMargin" HeightF="7.874016" />
+    <Item2 Ref="2" ControlType="DetailBand" Name="Detail" FillEmptySpace="true" PageBreak="AfterBand" HeightF="121.00004" KeepTogether="true">
+      <MultiColumn Ref="3" Layout="AcrossThenDown" />
+      <Controls>
+        <Item1 Ref="4" ControlType="XRBarCode" Name="barCode1" Module="1.15" SizeF="141.25195,48.958332" LocationFloat="0,56.00001" Padding="10,10,0,0,96">
+          <Symbology Ref="5" Name="EAN13" />
+          <ExpressionBindings>
+            <Item1 Ref="6" EventName="BeforePrint" PropertyName="Text" Expression="[Barcode]" />
+          </ExpressionBindings>
+        </Item1>
+        <Item2 Ref="7" ControlType="XRLabel" Name="label2" Multiline="true" Text="label2" SizeF="141.25195,22.999998" LocationFloat="0,32.999992" Padding="2,2,0,0,96">
+          <ExpressionBindings>
+            <Item1 Ref="8" EventName="BeforePrint" PropertyName="Text" Expression="[Description]" />
+          </ExpressionBindings>
+        </Item2>
+        <Item3 Ref="9" ControlType="XRLabel" Name="label1" Multiline="true" Text="label1" SizeF="141.25195,23" LocationFloat="0,9.999974" Padding="2,2,0,0,96">
+          <ExpressionBindings>
+            <Item1 Ref="10" EventName="BeforePrint" PropertyName="Text" Expression="[Name]" />
+          </ExpressionBindings>
+        </Item3>
+      </Controls>
+    </Item2>
+    <Item3 Ref="11" ControlType="BottomMarginBand" Name="BottomMargin" HeightF="7.874016" />
+  </Bands>
+  <ComponentStorage>
+    <Item1 Ref="12" ObjectType="DevExpress.DataAccess.Excel.ExcelDataSource,DevExpress.DataAccess.v23.1" Name="excelDataSource1" Base64="PEV4Y2VsRGF0YVNvdXJjZSBOYW1lPSJleGNlbERhdGFTb3VyY2UxIiBGaWxlTmFtZT0iQzpcVXNlcnNcRGVyaWNrUGF5bmVcRGVza3RvcFxVbnRpdGxlZCAxLnhsc3giPjxPcHRpb25zIFR5cGU9IkRldkV4cHJlc3MuRGF0YUFjY2Vzcy5FeGNlbC5FeGNlbFNvdXJjZU9wdGlvbnMiIFNraXBFbXB0eVJvd3M9InRydWUiIFVzZUZpcnN0Um93QXNIZWFkZXI9InRydWUiIFNraXBIaWRkZW5Db2x1bW5zPSJ0cnVlIiBTa2lwSGlkZGVuUm93cz0idHJ1ZSI+PEltcG9ydFNldHRpbmdzIFR5cGU9IkRldkV4cHJlc3MuRGF0YUFjY2Vzcy5FeGNlbC5FeGNlbFdvcmtzaGVldFNldHRpbmdzIiBXb3Jrc2hlZXROYW1lPSJTaGVldDEiIC8+PC9PcHRpb25zPjxTY2hlbWE+PEZpZWxkSW5mbyBOYW1lPSJOYW1lIiBPcmlnaW5hbE5hbWU9Ik5hbWUiIFR5cGU9IlN5c3RlbS5TdHJpbmciIFNlbGVjdGVkPSJ0cnVlIiAvPjxGaWVsZEluZm8gTmFtZT0iRGVzY3JpcHRpb24iIE9yaWdpbmFsTmFtZT0iRGVzY3JpcHRpb24iIFR5cGU9IlN5c3RlbS5TdHJpbmciIFNlbGVjdGVkPSJ0cnVlIiAvPjxGaWVsZEluZm8gTmFtZT0iQmFyY29kZSIgT3JpZ2luYWxOYW1lPSJCYXJjb2RlIiBUeXBlPSJTeXN0ZW0uRG91YmxlIiBTZWxlY3RlZD0idHJ1ZSIgLz48L1NjaGVtYT48UmVzdWx0U2NoZW1hPjxWaWV3PjxGaWVsZCBOYW1lPSJOYW1lIiBUeXBlPSJTdHJpbmciIC8+PEZpZWxkIE5hbWU9IkRlc2NyaXB0aW9uIiBUeXBlPSJTdHJpbmciIC8+PEZpZWxkIE5hbWU9IkJhcmNvZGUiIFR5cGU9IkRvdWJsZSIgLz48L1ZpZXc+PC9SZXN1bHRTY2hlbWE+PC9FeGNlbERhdGFTb3VyY2U+" />
+  </ComponentStorage>
+</XtraReportsLayoutSerializer>

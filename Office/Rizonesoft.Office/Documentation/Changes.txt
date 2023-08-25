@@ -1,0 +1,20 @@
+﻿==================================================
+RIZONESOFT OFFICE CHANGES
+==================================================
+
+--------------------------------------------------
+Version %{VERSION} (%{MONTH} %{DAY}, %{YEAR})
+--------------------------------------------------
+
+GENERAL:
+
+- Added Syncfusion API Key to Environment Manager.
+- Added Environment Manager.
+- Added Beta version numbering to title bar.
+- Added this changelog.
+
+IMAGINE:
+
+- 
+
+==================================================

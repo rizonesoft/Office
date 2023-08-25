@@ -19,8 +19,8 @@
 		<Platforms>AnyCPU;x64;x86;</Platforms>  
 	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
-	  <AssemblyVersion>2023.8.18.1556</AssemblyVersion>
-      <FileVersion>2023.8.18.1556</FileVersion>
+	  <AssemblyVersion>2023.8.25.1596</AssemblyVersion>
+      <FileVersion>2023.8.25.1596</FileVersion>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -49,6 +49,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Environment.xml" />
     <None Remove="ErrorHandling\Resources\Assistance.svg" />
     <None Remove="ErrorHandling\Resources\Bell.svg" />
     <None Remove="ErrorHandling\Resources\Bookmark.svg" />
@@ -105,6 +106,7 @@
     <None Remove="Programs\Resources\Globe.svg" />
     <None Remove="Programs\Resources\Have.svg" />
     <None Remove="Programs\Resources\Imagine.svg" />
+    <None Remove="Programs\Resources\ImagineBI.svg" />
     <None Remove="Programs\Resources\Jupiter.svg" />
     <None Remove="Programs\Resources\Komplete.svg" />
     <None Remove="Programs\Resources\Lead.svg" />
@@ -161,6 +163,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Environment.xml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="ErrorHandling\Resources\Assistance.svg" />
     <EmbeddedResource Include="ErrorHandling\Resources\Bell.svg" />
     <EmbeddedResource Include="ErrorHandling\Resources\Bookmark.svg" />
@@ -202,6 +207,7 @@
     <EmbeddedResource Include="Programs\Resources\Flow.svg" />
     <EmbeddedResource Include="Programs\Resources\Globe.svg" />
     <EmbeddedResource Include="Programs\Resources\Have.svg" />
+    <EmbeddedResource Include="Programs\Resources\ImagineBI.svg" />
     <EmbeddedResource Include="Programs\Resources\Imagine.svg" />
     <EmbeddedResource Include="Programs\Resources\Jupiter.svg" />
     <EmbeddedResource Include="Programs\Resources\Komplete.svg" />
@@ -260,8 +266,6 @@
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Serilog" Version="2.12.0" />
     <PackageReference Include="Serilog.Enrichers.AssemblyName" Version="1.0.9" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
@@ -270,7 +274,6 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
   </ItemGroup>
 
   <ItemGroup>
@@ -442,7 +445,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y /E /I &quot;$(SolutionDir)Rizonesoft.Office\Language\af&quot; &quot;$(TargetDir)af&quot;&#xD;&#xA;xcopy /Y /E /I &quot;$(SolutionDir)Rizonesoft.Office\Language\cs&quot; &quot;$(TargetDir)cs&quot;" />
+    
   </Target>
 
 </Project>

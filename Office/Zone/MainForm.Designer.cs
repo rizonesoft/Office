@@ -70,12 +70,13 @@ namespace Rizonesoft.Office.Zone
             DevExpress.XtraLayout.ColumnDefinition columnDefinition8 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.RowDefinition rowDefinition3 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.XtraLayout.RowDefinition rowDefinition4 = new DevExpress.XtraLayout.RowDefinition();
+            DevExpress.XtraLayout.RowDefinition rowDefinition5 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition9 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition10 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition11 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition12 = new DevExpress.XtraLayout.ColumnDefinition();
-            DevExpress.XtraLayout.RowDefinition rowDefinition5 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.XtraLayout.RowDefinition rowDefinition6 = new DevExpress.XtraLayout.RowDefinition();
+            DevExpress.XtraLayout.RowDefinition rowDefinition7 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.Utils.SuperToolTip superToolTip10 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipTitleItem toolTipTitleItem10 = new DevExpress.Utils.ToolTipTitleItem();
             DevExpress.Utils.ToolTipItem toolTipItem10 = new DevExpress.Utils.ToolTipItem();
@@ -83,8 +84,8 @@ namespace Rizonesoft.Office.Zone
             DevExpress.XtraLayout.ColumnDefinition columnDefinition14 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition15 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition16 = new DevExpress.XtraLayout.ColumnDefinition();
-            DevExpress.XtraLayout.RowDefinition rowDefinition7 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.XtraLayout.RowDefinition rowDefinition8 = new DevExpress.XtraLayout.RowDefinition();
+            DevExpress.XtraLayout.RowDefinition rowDefinition9 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.Utils.SuperToolTip superToolTip11 = new DevExpress.Utils.SuperToolTip();
             DevExpress.Utils.ToolTipTitleItem toolTipTitleItem11 = new DevExpress.Utils.ToolTipTitleItem();
             DevExpress.Utils.ToolTipItem toolTipItem11 = new DevExpress.Utils.ToolTipItem();
@@ -92,8 +93,9 @@ namespace Rizonesoft.Office.Zone
             DevExpress.XtraLayout.ColumnDefinition columnDefinition18 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition19 = new DevExpress.XtraLayout.ColumnDefinition();
             DevExpress.XtraLayout.ColumnDefinition columnDefinition20 = new DevExpress.XtraLayout.ColumnDefinition();
-            DevExpress.XtraLayout.RowDefinition rowDefinition9 = new DevExpress.XtraLayout.RowDefinition();
             DevExpress.XtraLayout.RowDefinition rowDefinition10 = new DevExpress.XtraLayout.RowDefinition();
+            DevExpress.XtraLayout.RowDefinition rowDefinition11 = new DevExpress.XtraLayout.RowDefinition();
+            DevExpress.XtraLayout.RowDefinition rowDefinition12 = new DevExpress.XtraLayout.RowDefinition();
             ribbonMain = new DevExpress.XtraBars.Ribbon.RibbonControl();
             barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
             bbItemSettings = new DevExpress.XtraBars.BarButtonItem();
@@ -541,7 +543,7 @@ namespace Rizonesoft.Office.Zone
             tabNavBusiness.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("tabNavBusiness.ImageOptions.SvgImage");
             tabNavBusiness.ImageOptions.SvgImageSize = new System.Drawing.Size(20, 20);
             tabNavBusiness.Name = "tabNavBusiness";
-            tabNavBusiness.Size = new System.Drawing.Size(1479, 644);
+            tabNavBusiness.Size = new System.Drawing.Size(1479, 763);
             toolTipTitleItem9.Text = "Business";
             toolTipItem9.Text = "Description";
             superToolTip9.Items.Add(toolTipTitleItem9);
@@ -555,7 +557,7 @@ namespace Rizonesoft.Office.Zone
             lacBusiness.Name = "lacBusiness";
             lacBusiness.OptionsCustomizationForm.DesignTimeCustomizationFormPositionAndSize = new System.Drawing.Rectangle(1071, 909, 975, 600);
             lacBusiness.Root = layoutControlGroup3;
-            lacBusiness.Size = new System.Drawing.Size(1479, 644);
+            lacBusiness.Size = new System.Drawing.Size(1479, 763);
             lacBusiness.TabIndex = 2;
             // 
             // layoutControlGroup3
@@ -575,12 +577,14 @@ namespace Rizonesoft.Office.Zone
             columnDefinition8.SizeType = System.Windows.Forms.SizeType.AutoSize;
             columnDefinition8.Width = 364D;
             layoutControlGroup3.OptionsTableLayoutGroup.ColumnDefinitions.AddRange(new DevExpress.XtraLayout.ColumnDefinition[] { columnDefinition5, columnDefinition6, columnDefinition7, columnDefinition8 });
-            rowDefinition3.Height = 50D;
+            rowDefinition3.Height = 33D;
             rowDefinition3.SizeType = System.Windows.Forms.SizeType.Percent;
-            rowDefinition4.Height = 50D;
+            rowDefinition4.Height = 33D;
             rowDefinition4.SizeType = System.Windows.Forms.SizeType.Percent;
-            layoutControlGroup3.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition3, rowDefinition4 });
-            layoutControlGroup3.Size = new System.Drawing.Size(1479, 644);
+            rowDefinition5.Height = 33D;
+            rowDefinition5.SizeType = System.Windows.Forms.SizeType.Percent;
+            layoutControlGroup3.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition3, rowDefinition4, rowDefinition5 });
+            layoutControlGroup3.Size = new System.Drawing.Size(1479, 763);
             layoutControlGroup3.TextVisible = false;
             // 
             // tabNavExplore
@@ -619,11 +623,11 @@ namespace Rizonesoft.Office.Zone
             columnDefinition12.SizeType = System.Windows.Forms.SizeType.AutoSize;
             columnDefinition12.Width = 364D;
             layoutControlGroup2.OptionsTableLayoutGroup.ColumnDefinitions.AddRange(new DevExpress.XtraLayout.ColumnDefinition[] { columnDefinition9, columnDefinition10, columnDefinition11, columnDefinition12 });
-            rowDefinition5.Height = 50D;
-            rowDefinition5.SizeType = System.Windows.Forms.SizeType.Percent;
             rowDefinition6.Height = 50D;
             rowDefinition6.SizeType = System.Windows.Forms.SizeType.Percent;
-            layoutControlGroup2.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition5, rowDefinition6 });
+            rowDefinition7.Height = 50D;
+            rowDefinition7.SizeType = System.Windows.Forms.SizeType.Percent;
+            layoutControlGroup2.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition6, rowDefinition7 });
             layoutControlGroup2.Size = new System.Drawing.Size(1479, 644);
             layoutControlGroup2.TextVisible = false;
             // 
@@ -636,7 +640,7 @@ namespace Rizonesoft.Office.Zone
             tabNavAccess.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("tabNavAccess.ImageOptions.SvgImage");
             tabNavAccess.ImageOptions.SvgImageSize = new System.Drawing.Size(20, 20);
             tabNavAccess.Name = "tabNavAccess";
-            tabNavAccess.Size = new System.Drawing.Size(1479, 644);
+            tabNavAccess.Size = new System.Drawing.Size(1479, 763);
             toolTipTitleItem10.Text = "Accessories";
             toolTipItem10.Text = "Description";
             superToolTip10.Items.Add(toolTipTitleItem10);
@@ -650,7 +654,7 @@ namespace Rizonesoft.Office.Zone
             lacAccessories.Name = "lacAccessories";
             lacAccessories.OptionsCustomizationForm.DesignTimeCustomizationFormPositionAndSize = new System.Drawing.Rectangle(1071, 909, 975, 600);
             lacAccessories.Root = layoutControlGroup1;
-            lacAccessories.Size = new System.Drawing.Size(1479, 644);
+            lacAccessories.Size = new System.Drawing.Size(1479, 763);
             lacAccessories.TabIndex = 2;
             // 
             // layoutControlGroup1
@@ -670,12 +674,12 @@ namespace Rizonesoft.Office.Zone
             columnDefinition16.SizeType = System.Windows.Forms.SizeType.AutoSize;
             columnDefinition16.Width = 364D;
             layoutControlGroup1.OptionsTableLayoutGroup.ColumnDefinitions.AddRange(new DevExpress.XtraLayout.ColumnDefinition[] { columnDefinition13, columnDefinition14, columnDefinition15, columnDefinition16 });
-            rowDefinition7.Height = 50D;
-            rowDefinition7.SizeType = System.Windows.Forms.SizeType.Percent;
             rowDefinition8.Height = 50D;
             rowDefinition8.SizeType = System.Windows.Forms.SizeType.Percent;
-            layoutControlGroup1.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition7, rowDefinition8 });
-            layoutControlGroup1.Size = new System.Drawing.Size(1479, 644);
+            rowDefinition9.Height = 50D;
+            rowDefinition9.SizeType = System.Windows.Forms.SizeType.Percent;
+            layoutControlGroup1.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition8, rowDefinition9 });
+            layoutControlGroup1.Size = new System.Drawing.Size(1479, 763);
             layoutControlGroup1.TextVisible = false;
             // 
             // tabNavPrograms
@@ -724,11 +728,13 @@ namespace Rizonesoft.Office.Zone
             columnDefinition20.SizeType = System.Windows.Forms.SizeType.AutoSize;
             columnDefinition20.Width = 364D;
             Root.OptionsTableLayoutGroup.ColumnDefinitions.AddRange(new DevExpress.XtraLayout.ColumnDefinition[] { columnDefinition17, columnDefinition18, columnDefinition19, columnDefinition20 });
-            rowDefinition9.Height = 50D;
-            rowDefinition9.SizeType = System.Windows.Forms.SizeType.Percent;
-            rowDefinition10.Height = 50D;
+            rowDefinition10.Height = 33D;
             rowDefinition10.SizeType = System.Windows.Forms.SizeType.Percent;
-            Root.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition9, rowDefinition10 });
+            rowDefinition11.Height = 33D;
+            rowDefinition11.SizeType = System.Windows.Forms.SizeType.Percent;
+            rowDefinition12.Height = 33D;
+            rowDefinition12.SizeType = System.Windows.Forms.SizeType.Percent;
+            Root.OptionsTableLayoutGroup.RowDefinitions.AddRange(new DevExpress.XtraLayout.RowDefinition[] { rowDefinition10, rowDefinition11, rowDefinition12 });
             Root.Size = new System.Drawing.Size(1479, 763);
             Root.TextVisible = false;
             // 
