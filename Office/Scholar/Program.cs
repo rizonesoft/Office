@@ -38,7 +38,7 @@ internal static class Program
         {
             try
             {
-                const string syncfusionLicenseKey = "MjYwNjE2NkAzMjMyMmUzMDJlMzBrNWRVcWxEZnNoc0VieHdma2QrQjhVbFY4VGV1eDZXMkdyVHBINkQ3VFNVPQ==";
+                var syncfusionLicenseKey = EnvironmentManager.Get("SYNCFUSION_API");
                 SyncfusionLicenseProvider.RegisterLicense(syncfusionLicenseKey);
 
                 // Configure the application

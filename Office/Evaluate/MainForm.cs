@@ -14,16 +14,14 @@ using System.IO;
 using Rizonesoft.Office.Evaluate.Language;
 using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Settings;
-using System.Threading.Tasks;
 using DevExpress.Utils;
-using DevExpress.XtraBars.Ribbon;
 using DevExpress.XtraTabbedMdi;
 
 
 
 namespace Rizonesoft.Office.Evaluate
 {
-    public partial class MainForm : RibbonForm
+    public partial class MainForm : RibbonFormBase
     {
 
         private readonly CopyData copyData;
@@ -32,8 +30,8 @@ namespace Rizonesoft.Office.Evaluate
         public static bool IsLicensed { get; private set; }
 
         private const string CopyChannelName = "BookChannel";
-        private readonly SvgImageCollection _extensionsSvgImages;
-        private readonly string _initialFileName;
+        private readonly SvgImageCollection extensionsSvgImages;
+        private readonly string initialFileName;
 
         #region Properties
 
@@ -76,19 +74,19 @@ namespace Rizonesoft.Office.Evaluate
         public MainForm(string fileName)
         {
             SplashScreenHelper.ShowSplashScreen(this);
-            _initialFileName = fileName;
+            initialFileName = fileName;
 
             copyData = new CopyData();
             copyData.AssignHandle(Handle);
             copyData.Channels?.Add(CopyChannelName);
             copyData.DataReceived += CopyData_DataReceived;
 
-            _extensionsSvgImages = new SvgImageCollection();
+            extensionsSvgImages = new SvgImageCollection();
             InitializeSvgImages();
 
             InitializeComponent();
             Opacity = 0;
-            // AfterInitializeComponents();
+            AfterInitializeComponents();
 
             InitializeRibbon();
             UpdateUi(false);
@@ -123,11 +121,11 @@ namespace Rizonesoft.Office.Evaluate
 
         private void InitializeSvgImages()
         {
-            _extensionsSvgImages.Add("exporttoxls", "image://svgimages/export/exporttoxls.svg");
-            _extensionsSvgImages.Add("exporttoxlsx", "image://svgimages/export/exporttoxlsx.svg");
-            _extensionsSvgImages.Add("exporttocsv", "image://svgimages/export/exporttocsv.svg");
-            _extensionsSvgImages.Add("exporttotxt", "image://svgimages/export/exporttotxt.svg");
-            _extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
+            extensionsSvgImages.Add("exporttoxls", "image://svgimages/export/exporttoxls.svg");
+            extensionsSvgImages.Add("exporttoxlsx", "image://svgimages/export/exporttoxlsx.svg");
+            extensionsSvgImages.Add("exporttocsv", "image://svgimages/export/exporttocsv.svg");
+            extensionsSvgImages.Add("exporttotxt", "image://svgimages/export/exporttotxt.svg");
+            extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
         }
 
         private void MruList_FileSelected(string fileName)
@@ -158,7 +156,7 @@ namespace Rizonesoft.Office.Evaluate
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            CreateNewDocument(_initialFileName);
+            CreateNewDocument(initialFileName);
             SplashScreenHelper.CloseSplashScreen();
             Opacity = 1;
         }
@@ -298,11 +296,11 @@ namespace Rizonesoft.Office.Evaluate
             if (!string.IsNullOrWhiteSpace(extension))
             {
                 var svgImage = ImageResourceLoader.GetIconForExtension(extension);
-                tabPage.ImageOptions.SvgImage = _extensionsSvgImages[svgImage];
+                tabPage.ImageOptions.SvgImage = extensionsSvgImages[svgImage];
             }
             else
             {
-                tabPage.ImageOptions.SvgImage = _extensionsSvgImages["new"];
+                tabPage.ImageOptions.SvgImage = extensionsSvgImages["new"];
             }
 
             tabPage.ImageOptions.SvgImageSize = new Size(24, 24);

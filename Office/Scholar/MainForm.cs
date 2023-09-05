@@ -1,33 +1,34 @@
-﻿using Rizonesoft.Office.Framework;
+﻿using DevExpress.Utils;
+using Rizonesoft.Office.Ecosystem;
+using Rizonesoft.Office.ErrorHandling;
+using Rizonesoft.Office.Framework;
+using Rizonesoft.Office.Programs;
+using Rizonesoft.Office.Scholar.Language;
+using Rizonesoft.Office.Settings;
 using Rizonesoft.Office.UI;
-using Rizonesoft.Office.UI.Forms;
 using Rizonesoft.Office.UI.Ribbon;
 using Rizonesoft.Office.Utilities;
+using Syncfusion.Pdf;
+using Syncfusion.Pdf.Parsing;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using DevExpress.XtraBars.Ribbon;
-using Rizonesoft.Office.Scholar.Language;
-using Rizonesoft.Office.Ecosystem;
-using Rizonesoft.Office.Programs;
-using Rizonesoft.Office.ErrorHandling;
-using Rizonesoft.Office.Settings;
-
-using Syncfusion.Pdf;
-using Syncfusion.Pdf.Parsing;
+using Rizonesoft.Office.UI.Forms;
 
 namespace Rizonesoft.Office.Scholar;
 
 /// <summary>
 /// Represents the main form of the Scholar application.
 /// </summary>
-public sealed partial class MainForm : RibbonForm
+public sealed partial class MainForm : RibbonFormBase
 {
     private readonly CopyData copyData;
     private int viewerIndex;
     private static MruList _mruList;
-    // private static bool _isLicensed;
+    private readonly SvgImageCollection extensionsSvgImages;
 
 
     private DocForm CurrentDocument
@@ -75,8 +76,11 @@ public sealed partial class MainForm : RibbonForm
         copyData.Channels?.Add("DocChannel");
         copyData.DataReceived += CopyData_DataReceived;
 
+        extensionsSvgImages = new SvgImageCollection();
+        InitializeSvgImages();
+
         InitializeComponent();
-        // AfterInitializeComponents();
+        AfterInitializeComponents();
 
         InitializeRibbon();
         UpdateUi();
@@ -107,6 +111,12 @@ public sealed partial class MainForm : RibbonForm
         {
             Serilogger.LogMessage(LogLevel.Warning, "The file could not be found.", ioEx);
         }
+    }
+
+    private void InitializeSvgImages()
+    {
+        extensionsSvgImages.Add("exporttopdf", "image://svgimages/export/exporttopdf.svg");
+        extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
     }
 
     private void CreateNewViewer(string fileName)
@@ -266,4 +276,43 @@ public sealed partial class MainForm : RibbonForm
             }
         }
     }
+
+    private void MainMdiManager_PageAdded(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)
+    {
+        if (e.Page.MdiChild is DocForm docForm)
+        {
+            docForm.FileNameChanged += DocForm_FileNameChanged;
+        }
+    }
+
+    private void DocForm_FileNameChanged(object sender, EventArgs e)
+    {
+        if (sender is DocForm childDocForm)
+        {
+            UpdateTabImageForBookForm(childDocForm);
+        }
+    }
+
+    private void UpdateTabImageForBookForm(DocForm childDocForm)
+    {
+        if (childDocForm == null) return;
+
+        var fileName = childDocForm.FileName;
+        var extension = Path.GetExtension(fileName);
+        var tabPage = mainMdiManager.Pages[childDocForm];
+
+        if (tabPage == null) return;
+        if (!string.IsNullOrWhiteSpace(extension))
+        {
+            var svgImage = ImageResourceLoader.GetIconForExtension(extension);
+            tabPage.ImageOptions.SvgImage = extensionsSvgImages[svgImage];
+        }
+        else
+        {
+            tabPage.ImageOptions.SvgImage = extensionsSvgImages["new"];
+        }
+
+        tabPage.ImageOptions.SvgImageSize = new Size(24, 24);
+    }
+
 }

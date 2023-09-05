@@ -9,8 +9,8 @@
 	  <AssemblyName>Zone</AssemblyName>
 	  <RootNamespace>Rizonesoft.Office.Zone</RootNamespace>
 	  <ApplicationIcon>Zone.ico</ApplicationIcon>
-	  <FileVersion>2023.8.25.1816</FileVersion>
-	  <AssemblyVersion>2023.8.25.1816</AssemblyVersion>
+	  <FileVersion>2023.9.5.1824</FileVersion>
+	  <AssemblyVersion>2023.9.5.1824</AssemblyVersion>
 	  <LangVersion>latest</LangVersion>
 	  <Optimize>true</Optimize>
 	  <UseWindowsForms>true</UseWindowsForms>
@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.1" />
   </ItemGroup>

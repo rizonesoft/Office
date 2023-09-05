@@ -123,6 +123,7 @@
             // mainMdiManager
             // 
             mainMdiManager.MdiParent = null;
+            mainMdiManager.PageAdded += MainMdiManager_PageAdded;
             // 
             // panelControl1
             // 

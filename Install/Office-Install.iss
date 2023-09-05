@@ -6,17 +6,12 @@
 ; Inno Setup: https://jrsoftware.org/isinfo.php
 
 ; Preprocessor related stuff
-#define public Dependency_Path_NetCoreCheck "dependencies\"
-#include "CodeDependencies.iss"
+// #define public Dependency_Path_NetCoreCheck "dependencies\"
+// #include "CodeDependencies.iss"
 
 #define GUID="F0085D50-A268-4FEA-A287-4F949C5C26FD"
 
-// if you compile a "beta, rc or rc2" version, then comment/un-comment the appropriate setting:
-;#define VRSN=" beta"
-;#define VRSN=" rc"
-;#define VRSN=" rc2"
-// but, if not a "beta, rc or rc2" version, then comment above settings and un-comment below setting :)
-#define VRSN=" Alpha 2"
+#define VRSN=" Alpha 3"
 #IfnDef VRSN
   #error Please set any of the above: #define VRSN(...)
 #EndIf
@@ -61,21 +56,19 @@ LicenseFile="License.txt"
 OutputDir=.\Packages
 OutputBaseFilename={#app_name}-{#app_version}{#StringChange(VRSN, " ", "-")}-Install
 WizardStyle=modern
-Compression=lzma2/normal
-InternalCompressLevel=normal
-SolidCompression=no
+Compression=lzma
+SolidCompression=yes
+InternalCompressLevel=max
 EnableDirDoesntExistWarning=no
 AllowNoIcons=yes
 ShowTasksTreeLines=yes
 DisableProgramGroupPage=yes
-DisableReadyPage=yes
-DisableWelcomePage=no
 AllowCancelDuringInstall=yes
 UsedUserAreasWarning=no
 MinVersion=0,6.1.7601
 ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
-CloseApplications=true
+CloseApplications=no
 SetupMutex={#app_name}_setup_mutex_{#GUID},Global\{#app_name}_setup_mutex_{#GUID}
 UpdateUninstallLogAppName=yes
 AppendDefaultDirName=no
@@ -83,14 +76,10 @@ PrivilegesRequired=admin
 
 [Languages]
 Name: en; MessagesFile: "compiler:Default.isl"
-Name: fr; MessagesFile: "compiler:Languages\French.isl"
-Name: it; MessagesFile: "compiler:Languages\Italian.isl"
-Name: de; MessagesFile: "compiler:Languages\German.isl"
-Name: es; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Files]
 // Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Check: Dependency_IsX64; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\Office\Bin\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#app_publisher}\Scholar"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"

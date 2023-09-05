@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.8.25.500</AssemblyVersion>
-	  <FileVersion>2023.8.25.500</FileVersion>
+	  <AssemblyVersion>2023.9.5.517</AssemblyVersion>
+	  <FileVersion>2023.9.5.517</FileVersion>
 	  <ApplicationIcon>Scholar.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -30,9 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
-    <PackageReference Include="Syncfusion.Licensing" Version="22.2.9" />
-    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="22.2.9" />
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
+    <PackageReference Include="Syncfusion.Licensing" Version="22.2.10" />
+    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="22.2.10" />
     <PackageReference Include="System.Runtime.Serialization.Schema" Version="7.0.0" />
   </ItemGroup>
 

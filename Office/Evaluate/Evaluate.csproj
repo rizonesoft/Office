@@ -20,8 +20,8 @@
 		<Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 		<UseWPF>False</UseWPF>
 		<IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.8.25.157</AssemblyVersion>
-	  <FileVersion>2023.8.25.157</FileVersion>
+	  <AssemblyVersion>2023.9.5.169</AssemblyVersion>
+	  <FileVersion>2023.9.5.169</FileVersion>
 	  <ApplicationIcon>Evaluate.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="23.1.4" />
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
   </ItemGroup>
 
   <ItemGroup>

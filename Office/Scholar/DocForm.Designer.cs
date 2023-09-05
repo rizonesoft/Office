@@ -394,6 +394,7 @@
             // ChildPDFViewer
             // 
             ChildPDFViewer.AutoSize = true;
+            ChildPDFViewer.DefaultDocumentDirectory = "C:\\Users\\DerickPayne\\Documents";
             ChildPDFViewer.Dock = System.Windows.Forms.DockStyle.Fill;
             ChildPDFViewer.Location = new System.Drawing.Point(0, 201);
             ChildPDFViewer.Margin = new System.Windows.Forms.Padding(3, 22, 3, 3);

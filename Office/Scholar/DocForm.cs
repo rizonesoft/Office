@@ -1,15 +1,31 @@
-﻿using System.IO;
-using DevExpress.XtraBars.Ribbon;
-using DevExpress.XtraEditors.ButtonPanel;
+﻿using DevExpress.XtraBars.Ribbon;
 using Rizonesoft.Office.Scholar.Language;
 using Rizonesoft.Office.Settings.ProgramSettings;
 using Rizonesoft.Office.UI;
+using System;
 
 namespace Rizonesoft.Office.Scholar
 {
     public partial class DocForm : RibbonForm
     {
-        public string FileName { get; internal set; }
+        public event EventHandler FileNameChanged;
+        private string _fileName;
+
+        public string FileName
+        {
+            get => _fileName;
+            private set
+            {
+                if (_fileName == value) return;
+                _fileName = value;
+                OnFileNameChanged();
+            }
+        }
+
+        protected virtual void OnFileNameChanged()
+        {
+            FileNameChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         public DocForm()
         {

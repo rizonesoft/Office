@@ -3,11 +3,12 @@ RIZONESOFT OFFICE CHANGES
 ==================================================
 
 --------------------------------------------------
-Version %{VERSION} (%{MONTH} %{DAY}, %{YEAR})
+Version 2023.8.26.1600 Alpha 3 (August 26, 2023)
 --------------------------------------------------
 
 GENERAL:
 
+- Updated Syncfusion to version 22.2.10.
 - Added Syncfusion API Key to Environment Manager.
 - Added Environment Manager.
 - Added Beta version numbering to title bar.
@@ -15,6 +16,7 @@ GENERAL:
 
 IMAGINE:
 
-- 
+- Added more database connection options in the Imagine connection wizard.
+- Added SQLite database connector for Imagine.
 
 ==================================================
