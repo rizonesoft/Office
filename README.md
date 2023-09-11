@@ -3,10 +3,7 @@
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/rizonesoft?label=Sponsor&logo=GitHub)](https://github.com/sponsors/rizonesoft)
 
 # Rizonesoft Office
-[Rizonesoft Office](https://www.rizonesoft.com/downloads/rizonesoft-office/) is a state-of-the-art office suite designed to elevate your productivity levels. This suite equips you with an extensive array of tools to craft, modify, and control a diverse set of documents. Dive deeper into its remarkable features at: https://www.rizonesoft.com/downloads/rizonesoft-office/
-
-## Verbum: Word Processor
-Verbum is a versatile tool that allows you to create and edit documents with ease. It offers a wide range of formatting options, including font styles, sizes, colors, and paragraph settings. You can also insert images, tables, and hyperlinks to enhance the visual appeal and interactivity of your documents.
+[Rizonesoft Office](https://www.rizonesoft.com/downloads/rizonesoft-office/) is more than just a software project; it embodies our passion and commitment to the business community. Recognizing the challenges many businesses, especially startups, face, we have made it open-source. Our primary motivation is to provide enterprises with the opportunity to flourish without being burdened by the often prohibitive costs of software tools. I founded Rizonesoft Office with the vision of equipping businesses with the essential tools that I wish I had during my early entrepreneurial journey.
 
 ![Image](https://www.rizonesoft.com/wp-content/uploads/2023/07/verbum-screenshot-1024x706.png.webp)
 
