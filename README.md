@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/badge/Download-blue)]()
+[![Download](https://img.shields.io/badge/Download-green)](https://www.rizonesoft.com/downloads/rizonesoft-office/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?hosted_button_id=5FK4H8N8Y7Z7S)
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/rizonesoft?label=Sponsor&logo=GitHub)](https://github.com/sponsors/rizonesoft)
