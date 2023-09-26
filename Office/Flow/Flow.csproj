@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <Authors></Authors>
+	  <Company>Rizonesoft</Company>
+	  <TargetFramework>net7.0-windows10.0.22621.0</TargetFramework>
+	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	  <OutputType>WinExe</OutputType>
+	  <BaseOutputPath>..\Bin</BaseOutputPath>
+	  <AssemblyName>Flow</AssemblyName>
+	  <RootNamespace>Rizonesoft.Office.Flow</RootNamespace>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>true</Optimize>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <PlatformTarget>AnyCPU</PlatformTarget>
+	  <RuntimeIdentifier>win10-x64</RuntimeIdentifier>  
+	  <Platforms>AnyCPU;x64;x86;</Platforms>  
+	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
+	  <UseWPF>False</UseWPF>
+	  <IsPublishable>False</IsPublishable>
+	  <AssemblyVersion>2023.9.26.19</AssemblyVersion>
+	  <FileVersion>2023.9.26.19</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+</Project>

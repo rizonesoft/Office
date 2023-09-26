@@ -5,6 +5,7 @@ using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Utilities;
 using System.Globalization;
 using Rizonesoft.Office.ErrorHandling;
+using Rizonesoft.Office.Update;
 
 namespace Rizonesoft.Office.UI.Forms;
 
@@ -60,17 +61,28 @@ public class RibbonFormBase : RibbonForm
         FileLauncher.OpenLinkInBrowser(e.Link);
     }
 
+    private void InitializeComponent()
+    {
+
+    }
+
+    private void UpdateTimer_Tick(object sender, EventArgs e)
+    {
+    }
+
+    
+
     /// <summary>
     /// Disposes the resources used by the RibbonFormBase.
     /// </summary>
     // protected override void Dispose(bool disposing)
     // {
-        // if (disposing)
-        // {
-            // LanguageManager.LanguageChanged -= LanguageManager_LanguageChanged;
-            // LicenseHelper.LicenseKeyUpdated -= OnLicenseKeyUpdated;
-            // ToolTipController.DefaultController.HyperlinkClick -= DefaultController_HyperlinkClick;
-        // }
-        // base.Dispose(disposing);
+    // if (disposing)
+    // {
+    // LanguageManager.LanguageChanged -= LanguageManager_LanguageChanged;
+    // LicenseHelper.LicenseKeyUpdated -= OnLicenseKeyUpdated;
+    // ToolTipController.DefaultController.HyperlinkClick -= DefaultController_HyperlinkClick;
+    // }
+    // base.Dispose(disposing);
     // }
 }

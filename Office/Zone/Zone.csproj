@@ -9,8 +9,8 @@
 	  <AssemblyName>Zone</AssemblyName>
 	  <RootNamespace>Rizonesoft.Office.Zone</RootNamespace>
 	  <ApplicationIcon>Zone.ico</ApplicationIcon>
-	  <FileVersion>2023.9.5.1824</FileVersion>
-	  <AssemblyVersion>2023.9.5.1824</AssemblyVersion>
+	  <FileVersion>2023.9.26.1835</FileVersion>
+	  <AssemblyVersion>2023.9.26.1835</AssemblyVersion>
 	  <LangVersion>latest</LangVersion>
 	  <Optimize>true</Optimize>
 	  <UseWindowsForms>true</UseWindowsForms>

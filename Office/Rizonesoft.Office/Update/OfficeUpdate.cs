@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using DevExpress.XtraBars.Ribbon;
 using Rizonesoft.Office.ErrorHandling;
 using Rizonesoft.Office.Language;
+using Rizonesoft.Office.Toast;
 using Rizonesoft.Office.Utilities;
 
 namespace Rizonesoft.Office.Update;
@@ -13,8 +14,8 @@ namespace Rizonesoft.Office.Update;
 /// </summary>
 public static class OfficeUpdate
 {
-    private const string UpdateXmlUrl = "https://www.rizonesoft.com/update/office.xml";
-    private const string DefaultDownloadUrl = "https://www.rizonesoft.com/downloads/office/";
+    private const string UpdateXmlUrl = "https://cdn2.rizonesoft.com/update/office.xml";
+    private const string DefaultDownloadUrl = "https://www.rizonesoft.com/downloads/rizonesoft-office/update/";
     private static bool _messageShown;
     private static readonly HttpClient HttpClient = new();
 
@@ -71,6 +72,7 @@ public static class OfficeUpdate
     /// <param name="downloadUrl">The download URL for the new version.</param>
     private static void ShowMessage(RibbonControl ribbonControl, IFormattable newVersion, string downloadUrl)
     {
+
         var args = new RibbonMessageArgs
         {
             Caption = Strings.OfficeUpdate_Caption,
@@ -108,8 +110,6 @@ public static class OfficeUpdate
         }
         _messageShown = false;
     }
-
-
 
     private static void Args_Showing(object? sender, RibbonMessageShowingArgs e)
     {

@@ -4,13 +4,16 @@ using Rizonesoft.Office.Localization;
 using Rizonesoft.Office.UI.Forms;
 using Rizonesoft.Office.Utilities;
 using System.Globalization;
+using DevExpress.LookAndFeel;
+using DevExpress.XtraEditors;
+using DevExpress.XtraBars.Helpers;
 
 namespace Rizonesoft.Office.Settings;
 
 /// <summary>
 /// The SettingsForm class represents the form for managing Rizonesoft Office settings.
 /// </summary>
-public partial class SettingsForm : FormBase
+public partial class SettingsForm : DevExpress.XtraBars.Ribbon.RibbonForm
 {
 
     /// <summary>
@@ -19,11 +22,31 @@ public partial class SettingsForm : FormBase
     public SettingsForm()
     {
         InitializeComponent();
+
         Load += async (_, _) => await SettingsForm_LoadAsync().ConfigureAwait(false);
         SpinLoggingFileLimit.Properties.IsFloatValue = false;
         InitializeLanguageList();
         LanguageManager.LanguageChanged += LanguageManager_LanguageChanged;
+        UserLookAndFeel.Default.StyleChanged += UserLookAndFeel_StyleChanged;
         UpdateLanguage();
+
+        AccentColorsCheckItem.Checked = GlobalSettings.TrackWindowsAccentColor;
+
+    }
+
+    private void UserLookAndFeel_StyleChanged(object? sender, EventArgs e)
+    {
+        GlobalSettings.SkinName = WindowsFormsSettings.DefaultLookAndFeel.ActiveSkinName;
+        GlobalSettings.Palette = WindowsFormsSettings.DefaultLookAndFeel.ActiveSvgPaletteName;
+
+    }
+
+    private void AccentColorsCheckItem_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+    {
+        GlobalSettings.TrackWindowsAccentColor = AccentColorsCheckItem.Checked;
+        WindowsFormsSettings.TrackWindowsAccentColor = AccentColorsCheckItem.Checked ?
+        DevExpress.Utils.DefaultBoolean.True :
+        DevExpress.Utils.DefaultBoolean.Default;
     }
 
     /// <summary>
@@ -91,10 +114,8 @@ public partial class SettingsForm : FormBase
     private void UpdateLanguage()
     {
         Text = Strings.SettingsForm_Title;
-        tabNavGeneral.Caption = Strings.SettingsForm_TabNavPage_General;
-        tabNavAdvanced.Caption = Strings.SettingsForm_TabNavPage_Advanced;
-        accElementLogging.Text = Strings.SettingsForm_Accordion_Logging;
-        accElementLanguage.Text = Strings.SettingsForm_Accordion_Localization;
+        GeneralNavPage.Caption = Strings.SettingsForm_TabNavPage_General;
+        AdvancedNavPage.Caption = Strings.SettingsForm_TabNavPage_Advanced;
         lblLocalDescription.Text = Strings.SettingsForm_lblLocalDescription;
         lblSelectLanguage.Text = Strings.SettingsForm_lblSelectLanguage;
         lblCurrLangLabel.Text = Strings.SettingsForm_lblCurrLangLabel;
@@ -102,7 +123,7 @@ public partial class SettingsForm : FormBase
         groupRollingInterval.Text = Strings.SettingsForm_Group_Rolling_Interval;
         radGroupInterval.ToolTipTitle = Strings.SettingsForm_Group_RollingInterval_ToolTipTitle;
         radGroupInterval.ToolTip = Strings.SettingsForm_Group_RollingInterval_ToolTip;
-        lblLoggingFileLimit.Text = Strings.SettingsForm_Label_File_Limit;
+        FileLimitLayoutItem.Text = Strings.SettingsForm_Label_File_Limit;
         BtnOpenLog.Text = Strings.SettingsForm_Button_OpenLog;
         BtnOpenLog.ToolTipTitle = Strings.SettingsForm_Button_OpenLog_ToolTipTitle;
         BtnOpenLog.ToolTip = Strings.SettingsForm_Button_OpenLog_ToolTip;
@@ -186,4 +207,11 @@ public partial class SettingsForm : FormBase
     {
         LogFileManager.CleanLogDirectory();
     }
+
+    private void tabPaneMain_Click(object sender, EventArgs e)
+    {
+
+    }
+
+
 }

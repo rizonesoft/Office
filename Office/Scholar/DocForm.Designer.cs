@@ -70,8 +70,15 @@
             pdfStickyNoteBarItem1 = new DevExpress.XtraPdfViewer.Bars.PdfStickyNoteBarItem();
             RotateLeftBarButten = new DevExpress.XtraBars.BarButtonItem();
             RotateRightBarButton = new DevExpress.XtraBars.BarButtonItem();
+            ExportDOCXItem = new DevExpress.XtraBars.BarButtonItem();
+            ExportXLSXItem = new DevExpress.XtraBars.BarButtonItem();
+            ExportImageItem = new DevExpress.XtraBars.BarButtonItem();
+            ExportHTMLItem = new DevExpress.XtraBars.BarButtonItem();
+            ExportXMLItem = new DevExpress.XtraBars.BarButtonItem();
+            ExportTextItem = new DevExpress.XtraBars.BarButtonItem();
             HomeRibbonPage = new DevExpress.XtraPdfViewer.Bars.PdfRibbonPage();
             pdfFileRibbonPageGroup1 = new DevExpress.XtraPdfViewer.Bars.PdfFileRibbonPageGroup();
+            ConvertPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             pdfFindRibbonPageGroup1 = new DevExpress.XtraPdfViewer.Bars.PdfFindRibbonPageGroup();
             pdfNavigationRibbonPageGroup1 = new DevExpress.XtraPdfViewer.Bars.PdfNavigationRibbonPageGroup();
             TransformRibPageGroup = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
@@ -94,16 +101,16 @@
             ribbon.AllowCustomization = true;
             ribbon.EmptyAreaImageOptions.ImagePadding = new System.Windows.Forms.Padding(30, 33, 30, 33);
             ribbon.ExpandCollapseItem.Id = 0;
-            ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbon.ExpandCollapseItem, pdfFileOpenBarItem1, pdfFileSaveAsBarItem1, pdfFilePrintBarItem1, pdfFindTextBarItem1, pdfPreviousPageBarItem1, pdfNextPageBarItem1, pdfSetPageNumberBarItem1, pdfZoomOutBarItem1, pdfZoomInBarItem1, pdfExactZoomListBarSubItem1, pdfZoom10CheckItem1, pdfZoom25CheckItem1, pdfZoom50CheckItem1, pdfZoom75CheckItem1, pdfZoom100CheckItem1, pdfZoom125CheckItem1, pdfZoom150CheckItem1, pdfZoom200CheckItem1, pdfZoom400CheckItem1, pdfZoom500CheckItem1, pdfSetActualSizeZoomModeCheckItem1, pdfSetPageLevelZoomModeCheckItem1, pdfSetFitWidthZoomModeCheckItem1, pdfSetFitVisibleZoomModeCheckItem1, pdfExportFormDataBarItem1, pdfImportFormDataBarItem1, pdfTextHighlightBarItem1, pdfTextStrikethroughBarItem1, pdfTextUnderlineBarItem1, pdfStickyNoteBarItem1, RotateLeftBarButten, RotateRightBarButton });
+            ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbon.ExpandCollapseItem, pdfFileOpenBarItem1, pdfFileSaveAsBarItem1, pdfFilePrintBarItem1, pdfFindTextBarItem1, pdfPreviousPageBarItem1, pdfNextPageBarItem1, pdfSetPageNumberBarItem1, pdfZoomOutBarItem1, pdfZoomInBarItem1, pdfExactZoomListBarSubItem1, pdfZoom10CheckItem1, pdfZoom25CheckItem1, pdfZoom50CheckItem1, pdfZoom75CheckItem1, pdfZoom100CheckItem1, pdfZoom125CheckItem1, pdfZoom150CheckItem1, pdfZoom200CheckItem1, pdfZoom400CheckItem1, pdfZoom500CheckItem1, pdfSetActualSizeZoomModeCheckItem1, pdfSetPageLevelZoomModeCheckItem1, pdfSetFitWidthZoomModeCheckItem1, pdfSetFitVisibleZoomModeCheckItem1, pdfExportFormDataBarItem1, pdfImportFormDataBarItem1, pdfTextHighlightBarItem1, pdfTextStrikethroughBarItem1, pdfTextUnderlineBarItem1, pdfStickyNoteBarItem1, RotateLeftBarButten, RotateRightBarButton, ExportXLSXItem, ExportTextItem, ExportXMLItem, ExportHTMLItem, ExportImageItem, ExportDOCXItem });
             ribbon.Location = new System.Drawing.Point(0, 0);
             ribbon.Margin = new System.Windows.Forms.Padding(3, 3, 3, 11);
-            ribbon.MaxItemId = 33;
+            ribbon.MaxItemId = 43;
             ribbon.Name = "ribbon";
             ribbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { HomeRibbonPage, pdfFormDataRibbonPage1, pdfCommentRibbonPage1 });
             ribbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemPageNumberEdit1 });
             ribbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
             ribbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            ribbon.Size = new System.Drawing.Size(1310, 201);
+            ribbon.Size = new System.Drawing.Size(1133, 158);
             ribbon.StatusBar = ribbonStatusBar;
             // 
             // pdfFileOpenBarItem1
@@ -300,9 +307,63 @@
             RotateRightBarButton.Name = "RotateRightBarButton";
             RotateRightBarButton.ItemClick += RotateRightBarButton_ItemClick;
             // 
+            // ExportDOCXItem
+            // 
+            ExportDOCXItem.Caption = "Export to DOCX";
+            ExportDOCXItem.Description = "Microsoft Word Document";
+            ExportDOCXItem.Id = 40;
+            ExportDOCXItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportDOCXItem.ImageOptions.SvgImage");
+            ExportDOCXItem.Name = "ExportDOCXItem";
+            ExportDOCXItem.Tag = "DOCX";
+            // 
+            // ExportXLSXItem
+            // 
+            ExportXLSXItem.Caption = "Export to XLS";
+            ExportXLSXItem.Description = "Microsoft Excel Document";
+            ExportXLSXItem.Id = 35;
+            ExportXLSXItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportXLSXItem.ImageOptions.SvgImage");
+            ExportXLSXItem.Name = "ExportXLSXItem";
+            ExportXLSXItem.Tag = "XLS";
+            // 
+            // ExportImageItem
+            // 
+            ExportImageItem.Caption = "Export to Image";
+            ExportImageItem.Description = "JPEG, PNG, TIFF, BMP, GIF";
+            ExportImageItem.Id = 39;
+            ExportImageItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportImageItem.ImageOptions.SvgImage");
+            ExportImageItem.Name = "ExportImageItem";
+            ExportImageItem.Tag = "Image";
+            // 
+            // ExportHTMLItem
+            // 
+            ExportHTMLItem.Caption = "Export to HTML";
+            ExportHTMLItem.Description = "HyperText Markup Language (Webpage)";
+            ExportHTMLItem.Id = 38;
+            ExportHTMLItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportHTMLItem.ImageOptions.SvgImage");
+            ExportHTMLItem.Name = "ExportHTMLItem";
+            ExportHTMLItem.Tag = "HTML";
+            // 
+            // ExportXMLItem
+            // 
+            ExportXMLItem.Caption = "Export to XML";
+            ExportXMLItem.Description = "Extensible Markup Language";
+            ExportXMLItem.Id = 37;
+            ExportXMLItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportXMLItem.ImageOptions.SvgImage");
+            ExportXMLItem.Name = "ExportXMLItem";
+            ExportXMLItem.Tag = "XML";
+            // 
+            // ExportTextItem
+            // 
+            ExportTextItem.Caption = "Export to Text";
+            ExportTextItem.Description = "Plain Text";
+            ExportTextItem.Id = 36;
+            ExportTextItem.ImageOptions.SvgImage = (DevExpress.Utils.Svg.SvgImage)resources.GetObject("ExportTextItem.ImageOptions.SvgImage");
+            ExportTextItem.Name = "ExportTextItem";
+            ExportTextItem.Tag = "TXT";
+            // 
             // HomeRibbonPage
             // 
-            HomeRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pdfFileRibbonPageGroup1, pdfFindRibbonPageGroup1, pdfNavigationRibbonPageGroup1, TransformRibPageGroup, pdfZoomRibbonPageGroup1 });
+            HomeRibbonPage.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pdfFileRibbonPageGroup1, ConvertPageGroup, pdfFindRibbonPageGroup1, pdfNavigationRibbonPageGroup1, TransformRibPageGroup, pdfZoomRibbonPageGroup1 });
             HomeRibbonPage.MergeOrder = 1;
             HomeRibbonPage.Name = "HomeRibbonPage";
             HomeRibbonPage.Text = "Home";
@@ -316,12 +377,18 @@
             pdfFileRibbonPageGroup1.MergeOrder = 0;
             pdfFileRibbonPageGroup1.Name = "pdfFileRibbonPageGroup1";
             // 
+            // ConvertPageGroup
+            // 
+            ConvertPageGroup.MergeOrder = 1;
+            ConvertPageGroup.Name = "ConvertPageGroup";
+            ConvertPageGroup.Text = "Convert";
+            // 
             // pdfFindRibbonPageGroup1
             // 
             pdfFindRibbonPageGroup1.AllowTextClipping = false;
             pdfFindRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
             pdfFindRibbonPageGroup1.ItemLinks.Add(pdfFindTextBarItem1);
-            pdfFindRibbonPageGroup1.MergeOrder = 1;
+            pdfFindRibbonPageGroup1.MergeOrder = 2;
             pdfFindRibbonPageGroup1.Name = "pdfFindRibbonPageGroup1";
             // 
             // pdfNavigationRibbonPageGroup1
@@ -330,14 +397,14 @@
             pdfNavigationRibbonPageGroup1.ItemLinks.Add(pdfPreviousPageBarItem1);
             pdfNavigationRibbonPageGroup1.ItemLinks.Add(pdfNextPageBarItem1);
             pdfNavigationRibbonPageGroup1.ItemLinks.Add(pdfSetPageNumberBarItem1);
-            pdfNavigationRibbonPageGroup1.MergeOrder = 2;
+            pdfNavigationRibbonPageGroup1.MergeOrder = 3;
             pdfNavigationRibbonPageGroup1.Name = "pdfNavigationRibbonPageGroup1";
             // 
             // TransformRibPageGroup
             // 
             TransformRibPageGroup.ItemLinks.Add(RotateLeftBarButten);
             TransformRibPageGroup.ItemLinks.Add(RotateRightBarButton);
-            TransformRibPageGroup.MergeOrder = 3;
+            TransformRibPageGroup.MergeOrder = 4;
             TransformRibPageGroup.Name = "TransformRibPageGroup";
             TransformRibPageGroup.Text = "Transform";
             // 
@@ -347,13 +414,13 @@
             pdfZoomRibbonPageGroup1.ItemLinks.Add(pdfZoomOutBarItem1);
             pdfZoomRibbonPageGroup1.ItemLinks.Add(pdfZoomInBarItem1);
             pdfZoomRibbonPageGroup1.ItemLinks.Add(pdfExactZoomListBarSubItem1);
-            pdfZoomRibbonPageGroup1.MergeOrder = 4;
+            pdfZoomRibbonPageGroup1.MergeOrder = 5;
             pdfZoomRibbonPageGroup1.Name = "pdfZoomRibbonPageGroup1";
             // 
             // pdfFormDataRibbonPage1
             // 
             pdfFormDataRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pdfFormDataBarPageGroup1 });
-            pdfFormDataRibbonPage1.MergeOrder = 2;
+            pdfFormDataRibbonPage1.MergeOrder = 4;
             pdfFormDataRibbonPage1.Name = "pdfFormDataRibbonPage1";
             pdfFormDataRibbonPage1.Visible = false;
             // 
@@ -367,7 +434,7 @@
             // pdfCommentRibbonPage1
             // 
             pdfCommentRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { pdfTextCommentPageGroup1, pdfNoteCommentPageGroup1 });
-            pdfCommentRibbonPage1.MergeOrder = 3;
+            pdfCommentRibbonPage1.MergeOrder = 5;
             pdfCommentRibbonPage1.Name = "pdfCommentRibbonPage1";
             // 
             // pdfTextCommentPageGroup1
@@ -386,21 +453,21 @@
             // 
             // ribbonStatusBar
             // 
-            ribbonStatusBar.Location = new System.Drawing.Point(0, 995);
+            ribbonStatusBar.Location = new System.Drawing.Point(0, 655);
             ribbonStatusBar.Name = "ribbonStatusBar";
             ribbonStatusBar.Ribbon = ribbon;
-            ribbonStatusBar.Size = new System.Drawing.Size(1310, 37);
+            ribbonStatusBar.Size = new System.Drawing.Size(1133, 24);
             // 
             // ChildPDFViewer
             // 
             ChildPDFViewer.AutoSize = true;
             ChildPDFViewer.DefaultDocumentDirectory = "C:\\Users\\DerickPayne\\Documents";
             ChildPDFViewer.Dock = System.Windows.Forms.DockStyle.Fill;
-            ChildPDFViewer.Location = new System.Drawing.Point(0, 201);
+            ChildPDFViewer.Location = new System.Drawing.Point(0, 158);
             ChildPDFViewer.Margin = new System.Windows.Forms.Padding(3, 22, 3, 3);
             ChildPDFViewer.MenuManager = ribbon;
             ChildPDFViewer.Name = "ChildPDFViewer";
-            ChildPDFViewer.Size = new System.Drawing.Size(1310, 794);
+            ChildPDFViewer.Size = new System.Drawing.Size(1133, 497);
             ChildPDFViewer.TabIndex = 2;
             ChildPDFViewer.ZoomMode = DevExpress.XtraPdfViewer.PdfZoomMode.FitToWidth;
             // 
@@ -443,7 +510,7 @@
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1310, 1032);
+            ClientSize = new System.Drawing.Size(1133, 679);
             Controls.Add(ChildPDFViewer);
             Controls.Add(ribbonStatusBar);
             Controls.Add(ribbon);
@@ -511,5 +578,12 @@
         private DevExpress.XtraBars.BarButtonItem RotateLeftBarButten;
         private DevExpress.XtraBars.BarButtonItem RotateRightBarButton;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup TransformRibPageGroup;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup ConvertPageGroup;
+        private DevExpress.XtraBars.BarButtonItem ExportXLSXItem;
+        private DevExpress.XtraBars.BarButtonItem ExportTextItem;
+        private DevExpress.XtraBars.BarButtonItem ExportXMLItem;
+        private DevExpress.XtraBars.BarButtonItem ExportHTMLItem;
+        private DevExpress.XtraBars.BarButtonItem ExportImageItem;
+        private DevExpress.XtraBars.BarButtonItem ExportDOCXItem;
     }
 }

@@ -12,7 +12,7 @@ namespace Rizonesoft.Office.Utilities
         public static readonly string DonateButton = "https://www.paypal.com/donate/?hosted_button_id=5FK4H8N8Y7Z7S";
 
         // SuperTip Hyperlinks
-        public static readonly string ButtonModeSuperTip = "https://www.rizonesoft.com";
+        public static readonly string? ButtonModeSuperTip = "https://www.rizonesoft.com";
         public static readonly string ButtonSettingsSuperTip = "https://www.rizonesoft.com";
         public static readonly string ButtonLanguageSuperTip = "https://www.rizonesoft.com";
         public static readonly string ButtonHomeSuperTip = "https://www.rizonesoft.com";
@@ -29,6 +29,8 @@ namespace Rizonesoft.Office.Utilities
         public static readonly string MessageToastSupport = "https://www.rizonesoft.com";
         public static readonly string LanguageToastLearn = "https://www.rizonesoft.com";
         public static readonly string UpdateToastDownload = "https://www.rizonesoft.com";
- 
+
+        // Sponsor Hyperlinks
+        public static readonly string Sautinsoft = "https://sautinsoft.com";
     }
 }

@@ -8,6 +8,8 @@ using Rizonesoft.Office.Language;
 using Rizonesoft.Office.Localization;
 using Rizonesoft.Office.Programs;
 using Rizonesoft.Office.Settings;
+using Rizonesoft.Office.Toast;
+using Rizonesoft.Office.UI.About;
 using Rizonesoft.Office.Update;
 using Rizonesoft.Office.Utilities;
 using RibbonControl = DevExpress.XtraBars.Ribbon.RibbonControl;
@@ -197,9 +199,10 @@ namespace Rizonesoft.Office.UI.Ribbon
             throw new NotImplementedException($"Test Exception");
         }
 
-        private void BarItemAbout_Click(object sender, ItemClickEventArgs e)
+        private static void BarItemAbout_Click(object sender, ItemClickEventArgs e)
         {
-            // Implement the action for this event
+            using var aboutForm = new AboutForm();
+            aboutForm.ShowDialog();
         }
 
         private async Task CheckForUpdates(bool delay = false)
@@ -208,7 +211,7 @@ namespace Rizonesoft.Office.UI.Ribbon
             {
                 if (delay)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(20));  // delay for 20 seconds
+                    await Task.Delay(TimeSpan.FromSeconds(10));  // delay for 10 seconds
                 }
 
                 await OfficeUpdate.GetOfficeUpdateAsync(RibbonControl);

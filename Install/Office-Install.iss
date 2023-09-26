@@ -9,36 +9,17 @@
 // #define public Dependency_Path_NetCoreCheck "dependencies\"
 // #include "CodeDependencies.iss"
 
-#define GUID="F0085D50-A268-4FEA-A287-4F949C5C26FD"
-
-#define VRSN=" Alpha 3"
-#IfnDef VRSN
-  #error Please set any of the above: #define VRSN(...)
-#EndIf
-
-#if VER < EncodeVer(6,2,2)
-  #error Update your Inno Setup version (6.2.2 or newer)
-#endif
-
-#define RLSdir "..\Office\Bin\Release\"
-
-#ifnexist RLSdir + "Rizonesoft.Office.dll"
-  #pragma error "Compile Rizonesoft Office "+Arch+" first"
-#endif
-
+#define GUID="F0085D50-B268-5FEB-B289-5F999C5C26FD"
 #define app_name "Office"
 #define app_publisher "Rizonesoft"
-
-#if VER < 0x06020000
-  #define app_version GetFileVersion(RLSdir + "Rizonesoft.Office.dll")
-#Else
-  #define app_version GetVersionNumbersString(RLSdir + "Rizonesoft.Office.dll")
-#EndIf
+#define RLSdir "..\Office\Bin\Release\"
+#define app_version GetVersionNumbersString(RLSdir + "Rizonesoft.Office.dll")
+#define VRSN=" Alpha 5"
 #define app_copyright "Copyright © 2008-" + GetDateTimeString("yyyy", "", "") + " Rizonesoft"
 #define quick_launch "{userappdata}\Microsoft\Internet Explorer\Quick Launch"
 
 [Setup]
-AppId={#app_name}
+AppId={#GUID}
 AppName={#app_publisher} {#app_name}{#VRSN}
 AppVersion={#app_version}{#VRSN}
 AppVerName={#app_name} {#app_version}
@@ -65,7 +46,7 @@ ShowTasksTreeLines=yes
 DisableProgramGroupPage=yes
 AllowCancelDuringInstall=yes
 UsedUserAreasWarning=no
-MinVersion=0,6.1.7601
+MinVersion=10.0.17763
 ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
 CloseApplications=no
@@ -78,8 +59,7 @@ PrivilegesRequired=admin
 Name: en; MessagesFile: "compiler:Default.isl"
 
 [Files]
-// Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Check: Dependency_IsX64; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\Office\Bin\x64\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\Office\Bin\Release\*"; DestDir: "{app}\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#app_publisher}\Scholar"; Filename: "{app}\Scholar.exe"; Comment: "Launch Scholar"
@@ -110,3 +90,54 @@ Root: HKCR; Subkey: "Applications\Scholar.exe\SupportedTypes"; ValueType: string
 Name: "desktopicons"; Description: "Create Desktop Shortcuts"; GroupDescription: "Desktop Shortcuts"
 
 [Code]
+
+[Code]
+
+function InitializeSetup: Boolean;
+var
+  UninstallString: string;
+  ErrorCode: Integer;
+  UserResponse: Integer;
+  AppIds: array of string;
+  i: Integer;
+begin
+  // Define the AppIds to look for
+  SetArrayLength(AppIds, 2);
+  AppIds[0] := 'Office_is1';
+  AppIds[1] := '{#GUID}_is1';
+
+  // Loop through each AppId and check for installations
+  for i := 0 to GetArrayLength(AppIds) - 1 do
+  begin
+    if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + AppIds[i], 'UninstallString', UninstallString) then
+    begin
+      // Inform the user about the uninstallation
+      UserResponse := MsgBox('We have detected a previous version of Rizonesoft Office ' + 
+                             '. To ensure optimal performance and a seamless upgrade experience, ' + 
+                             'it is recommended to uninstall the older version before proceeding. ' + 
+                             'Would you like to continue with the uninstallation?', mbConfirmation, MB_YESNO);
+      
+      // If the user agrees to proceed
+      if UserResponse = IDYES then
+      begin
+        // Execute the Uninstall string
+        if not ShellExec('', UninstallString, '/NORESTART', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode) then
+        begin
+          MsgBox('Uninstallation failed with error code: ' + IntToStr(ErrorCode), mbError, MB_OK);
+        end
+        else
+        begin
+          Log('Execution successful.');
+        end;
+      end
+      else
+      begin
+        MsgBox('Installation cannot proceed without uninstalling the previous version. We promise not to delete any of your data.', mbError, MB_OK);
+        Result := False;  // Stop the installation
+        Exit;
+      end;
+    end;
+  end;
+
+  Result := True;  // Continue with the installation
+end;

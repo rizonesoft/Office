@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.5.113</AssemblyVersion>
-	  <FileVersion>2023.9.5.113</FileVersion>
+	  <AssemblyVersion>2023.9.26.130</AssemblyVersion>
+	  <FileVersion>2023.9.26.130</FileVersion>
 	  <ApplicationIcon>Imagine.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -39,6 +39,21 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rizonesoft.Office\Rizonesoft.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

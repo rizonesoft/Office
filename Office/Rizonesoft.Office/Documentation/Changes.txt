@@ -3,6 +3,41 @@ RIZONESOFT OFFICE CHANGES
 ==================================================
 
 --------------------------------------------------
+Version 2023.9.5.1616 Alpha 4 (September 5, 2023)
+--------------------------------------------------
+
+GENERAL:
+
+- NEW: Added Flow Diagram Program.
+- NEW: Introduced themes.
+
+VERBUM:
+
+- 
+
+SCHOLAR:
+
+- NEW: Export to Docx (Word).
+- NEW: Export to Xls (Excel).
+- NEW: Export to Image, HTML, XML, and Text.
+- NEW: OCR (Optical Character Recognition) on PDF export.
+
+- FIX: Arranged Ribbon pages correctly.
+
+- UPDATE: Updated Syncfusion to version 23.1.36.
+
+--------------------------------------------------
+Version 2023.9.5.1616 Alpha 4 (September 5, 2023)
+--------------------------------------------------
+
+GENERAL:
+
+- Added Translations (af, cs, de, es, fr, it, ja, ko, nl, pl, pt, ru, sv, tr, zh-CN, zh-TW)
+- General Bug Fixes and Improvements.
+
+
+
+--------------------------------------------------
 Version 2023.8.26.1600 Alpha 3 (August 26, 2023)
 --------------------------------------------------
 

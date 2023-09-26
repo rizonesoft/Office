@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.5.517</AssemblyVersion>
-	  <FileVersion>2023.9.5.517</FileVersion>
+	  <AssemblyVersion>2023.9.26.836</AssemblyVersion>
+	  <FileVersion>2023.9.26.836</FileVersion>
 	  <ApplicationIcon>Scholar.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -31,9 +31,11 @@
 
   <ItemGroup>
     <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
-    <PackageReference Include="Syncfusion.Licensing" Version="22.2.10" />
-    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="22.2.10" />
+    <PackageReference Include="sautinsoft.pdffocus" Version="2023.5.10" />
+    <PackageReference Include="Syncfusion.Licensing" Version="23.1.36" />
+    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="23.1.36" />
     <PackageReference Include="System.Runtime.Serialization.Schema" Version="7.0.0" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,10 +43,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Language\Dialogs.Designer.cs">
+    <Compile Update="Language\Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>Dialogs.resx</DependentUpon>
+      <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -54,14 +56,53 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Language\Dialogs.resx">
+    <EmbeddedResource Update="Language\Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Dialogs.Designer.cs</LastGenOutput>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tesdata\eng.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="tesdata\pdf.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="tesdata\rus.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="tesdata\vie.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="C:\Users\DerickPayne\.nuget\packages\tesseract\5.2.0\build\\..\x64\leptonica-1.82.0.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="C:\Users\DerickPayne\.nuget\packages\tesseract\5.2.0\build\\..\x64\tesseract50.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="C:\Users\DerickPayne\.nuget\packages\tesseract\5.2.0\build\\..\x86\leptonica-1.82.0.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="C:\Users\DerickPayne\.nuget\packages\tesseract\5.2.0\build\\..\x86\tesseract50.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

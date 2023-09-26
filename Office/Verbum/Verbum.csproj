@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.5.409</AssemblyVersion>
-	  <FileVersion>2023.9.5.409</FileVersion>
+	  <AssemblyVersion>2023.9.26.495</AssemblyVersion>
+	  <FileVersion>2023.9.26.495</FileVersion>
 	  <ApplicationIcon>Verbum.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -177,6 +177,27 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Dictionaries\af_ZA\README.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\an_ES\an_ES.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\an_ES\an_ES.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\an_ES\LICENSES-en.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\be_BY\be_BY.aff">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\be_BY\be_BY.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\be_BY\hyph_be_BY.dic">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dictionaries\be_BY\README_be_BY.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Dictionaries\en_US\affDescription.txt">

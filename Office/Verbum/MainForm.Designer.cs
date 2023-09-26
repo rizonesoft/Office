@@ -75,10 +75,12 @@
             MainRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { MainRibbon.ExpandCollapseItem, NewBarBtn, OpenDropdownBtn, CloseSaveBarItem, MdiChildrenListItem, TimeStatusButton, CloseBtn, CloseSaveBtn });
             MainRibbon.Location = new System.Drawing.Point(0, 0);
             MainRibbon.Margin = new System.Windows.Forms.Padding(2);
-            MainRibbon.MaxItemId = 10;
+            MainRibbon.MaxItemId = 18;
             MainRibbon.MdiMergeStyle = DevExpress.XtraBars.Ribbon.RibbonMdiMergeStyle.Always;
             MainRibbon.Name = "MainRibbon";
             MainRibbon.OptionsMenuMinWidth = 220;
+            MainRibbon.OptionsTouch.ShowTouchUISelectorInQAT = true;
+            MainRibbon.OptionsTouch.ShowTouchUISelectorVisibilityItemInQATMenu = true;
             MainRibbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { TableToolsRibbonCat });
             MainRibbon.PageHeaderItemLinks.Add(MdiChildrenListItem);
             MainRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { FileRibbonPage });
@@ -87,7 +89,7 @@
             MainRibbon.QuickToolbarItemLinks.Add(CloseSaveBarItem);
             MainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
             MainRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            MainRibbon.Size = new System.Drawing.Size(983, 201);
+            MainRibbon.Size = new System.Drawing.Size(983, 203);
             MainRibbon.StatusBar = ribbonStatusBar;
             MainRibbon.Merge += MainRibbon_Merge;
             // 
@@ -222,7 +224,7 @@
             // 
             topSpacerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            topSpacerPanel.Location = new System.Drawing.Point(0, 201);
+            topSpacerPanel.Location = new System.Drawing.Point(0, 203);
             topSpacerPanel.Name = "topSpacerPanel";
             topSpacerPanel.Size = new System.Drawing.Size(983, 10);
             topSpacerPanel.TabIndex = 4;
@@ -240,12 +242,14 @@
             // 
             // MainForm
             // 
+            Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(983, 619);
             Controls.Add(topSpacerPanel);
             Controls.Add(ribbonStatusBar);
             Controls.Add(MainRibbon);
+            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             IsMdiContainer = true;
             Margin = new System.Windows.Forms.Padding(2);

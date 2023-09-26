@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Windows;
 using DevExpress.XtraBars;
 using DevExpress.XtraBars.Ribbon;
 using Rizonesoft.Office.Language;
@@ -17,11 +18,10 @@ namespace Rizonesoft.Office.UI.Ribbon
     public class RibbonGroupOptions
     {
         private readonly RibbonPageGroup _groupOptions;
-        private BarButtonItem _barItemMode;
+        
         private BarButtonItem _barItemSettings;
         private BarButtonItem _barItemLanguage;
         private PopupMenu _popupLanguageMenu;
-        private ToggleModeButton _toggleModeButton;
 
         /// <summary>
         /// Gets or sets a value indicating whether the language dropdown is visible.
@@ -59,27 +59,11 @@ namespace Rizonesoft.Office.UI.Ribbon
         /// <param name="ownerRibbon">The RibbonControl to which this group belongs.</param>
         private void InitializeRibbonControls(RibbonForm ownerRibbonForm, RibbonControl ownerRibbon)
         {
-            var initialCaption = GlobalSettings.IsDarkMode ? Strings.ThemeManager_Button_Light_mode : Strings.ThemeManager_Button_Dark_mode;
-            _barItemMode = CreateBarButtonItem(ownerRibbon.Manager, initialCaption, RibbonItemStyles.All);
-
             _barItemSettings = CreateBarButtonItem(ownerRibbon.Manager, Strings.RibbonButtonItem_Settings, RibbonItemStyles.All);
             _barItemLanguage = CreateLanguageBarButtonItem(ownerRibbon.Manager);
 
             _groupOptions.Text = Strings.RibbonGroup_Options;
-
-            if (!GlobalSettings.TrackWindowsAppMode)
-            {
-                _toggleModeButton = new ToggleModeButton(ownerRibbonForm);
-                _toggleModeButton.Initialize(_barItemMode);
-                _toggleModeButton.ApplyThemeMode(_barItemMode, ownerRibbonForm);
-                ownerRibbon.CaptionBarItemLinks.Add(_barItemMode);
-
-                _groupOptions.ItemLinks.AddRange(_barItemMode, _barItemSettings, _barItemLanguage);
-            }
-            else
-            {
-                _groupOptions.ItemLinks.AddRange(_barItemSettings, _barItemLanguage);
-            }
+            _groupOptions.ItemLinks.AddRange(_barItemSettings, _barItemLanguage);
 
             ButtonItemBase.Create<ButtonItemSettings>(_barItemSettings);
             InitializeSuperTooltips();
@@ -128,12 +112,8 @@ namespace Rizonesoft.Office.UI.Ribbon
         /// </summary>
         private void InitializeSuperTooltips()
         {
-            SuperTipHelper.CreateSuperTooltip(_barItemMode,
-                Strings.RibbonButtonSuperTip_ToggleMode, LinkManager.ButtonModeSuperTip);
-            SuperTipHelper.CreateSuperTooltip(_barItemSettings,
-                Strings.RibbonButtonSuperTip_Settings, LinkManager.ButtonSettingsSuperTip);
-            SuperTipHelper.CreateSuperTooltip(_barItemLanguage,
-                Strings.RibbonButtonSuperTip_Language, LinkManager.ButtonLanguageSuperTip);
+            SuperTipHelper.CreateSuperTooltip(_barItemSettings, Strings.RibbonButtonSuperTip_Settings, LinkManager.ButtonSettingsSuperTip);
+            SuperTipHelper.CreateSuperTooltip(_barItemLanguage, Strings.RibbonButtonSuperTip_Language, LinkManager.ButtonLanguageSuperTip);
         }
 
         /// <summary>
@@ -146,8 +126,6 @@ namespace Rizonesoft.Office.UI.Ribbon
             {
                 ToastHelper.CreateLanguageToast(_barItemLanguage.ImageOptions.SvgImage);
             }
-
-            _toggleModeButton?.UpdateToggleModeButton(_barItemMode);
             _groupOptions.Text = Strings.RibbonGroup_Options;
         }
     }

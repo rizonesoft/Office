@@ -5,7 +5,7 @@ using System.Threading;
 using System.Windows.Forms;
 using Rizonesoft.Office.Framework;
 using Rizonesoft.Office.Programs;
-
+using SautinSoft;
 using Syncfusion.Licensing;
 
 namespace Rizonesoft.Office.Scholar;
@@ -38,14 +38,14 @@ internal static class Program
         {
             try
             {
-                var syncfusionLicenseKey = EnvironmentManager.Get("SYNCFUSION_API");
-                SyncfusionLicenseProvider.RegisterLicense(syncfusionLicenseKey);
+                SyncfusionLicenseProvider.RegisterLicense(EnvironmentManager.Get("SYNCFUSION_API"));
+                PdfFocus.SetLicense(EnvironmentManager.Get("SAUTINSOFT_PDFF_API"));
 
                 // Configure the application
                 ProgramConfiguration.Configure(OfficeProgram.Scholar);
 
                 var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                var defaultPath = Path.Combine(baseDirectory, "Documentation", "Samples", "file-sample_150kB.pdf");
+                var defaultPath = Path.Combine(baseDirectory, "Documentation", "Scholar", "Welcome.pdf");
 
                 // Check if the file exists
                 if (!File.Exists(defaultPath))

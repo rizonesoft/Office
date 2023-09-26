@@ -29,26 +29,26 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling1 = new DevExpress.XtraSpellChecker.OptionsSpelling();
-            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup1 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
-            DevExpress.Utils.SuperToolTip superToolTip1 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem1 = new DevExpress.Utils.ToolTipTitleItem();
-            DevExpress.Utils.ToolTipItem toolTipItem1 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.Utils.SuperToolTip superToolTip2 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem2 = new DevExpress.Utils.ToolTipTitleItem();
-            DevExpress.Utils.ToolTipItem toolTipItem2 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.Utils.SuperToolTip superToolTip3 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem3 = new DevExpress.Utils.ToolTipTitleItem();
-            DevExpress.Utils.ToolTipItem toolTipItem3 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.Utils.SuperToolTip superToolTip4 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem4 = new DevExpress.Utils.ToolTipTitleItem();
-            DevExpress.Utils.ToolTipItem toolTipItem4 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.Utils.SuperToolTip superToolTip5 = new DevExpress.Utils.SuperToolTip();
-            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem5 = new DevExpress.Utils.ToolTipTitleItem();
-            DevExpress.Utils.ToolTipItem toolTipItem5 = new DevExpress.Utils.ToolTipItem();
-            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup2 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
+            DevExpress.XtraSpellChecker.OptionsSpelling optionsSpelling2 = new DevExpress.XtraSpellChecker.OptionsSpelling();
+            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup3 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
+            DevExpress.Utils.SuperToolTip superToolTip6 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem6 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem6 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.Utils.SuperToolTip superToolTip7 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem7 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem7 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.Utils.SuperToolTip superToolTip8 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem8 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem8 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.Utils.SuperToolTip superToolTip9 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem9 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem9 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.Utils.SuperToolTip superToolTip10 = new DevExpress.Utils.SuperToolTip();
+            DevExpress.Utils.ToolTipTitleItem toolTipTitleItem10 = new DevExpress.Utils.ToolTipTitleItem();
+            DevExpress.Utils.ToolTipItem toolTipItem10 = new DevExpress.Utils.ToolTipItem();
+            DevExpress.XtraBars.Ribbon.GalleryItemGroup galleryItemGroup4 = new DevExpress.XtraBars.Ribbon.GalleryItemGroup();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DocForm));
-            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation1 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
+            DevExpress.XtraBars.Ribbon.ReduceOperation reduceOperation2 = new DevExpress.XtraBars.Ribbon.ReduceOperation();
             ChildRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
             undoItem1 = new DevExpress.XtraRichEdit.UI.UndoItem();
             redoItem1 = new DevExpress.XtraRichEdit.UI.RedoItem();
@@ -70,7 +70,7 @@
             repositoryItemFontEditRichEdit1 = new DevExpress.XtraRichEdit.UI.RepositoryItemFontEditRichEdit();
             changeFontSizeItem1 = new DevExpress.XtraRichEdit.UI.ChangeFontSizeItem();
             repositoryItemRichEditFontSizeEdit1 = new DevExpress.XtraRichEdit.Design.RepositoryItemRichEditFontSizeEdit();
-            ChildRichEditControl = new DevExpress.XtraRichEdit.RichEditControl();
+            childRichEditControl = new DevExpress.XtraRichEdit.RichEditControl();
             CoreSpellChecker = new DevExpress.XtraSpellChecker.SpellChecker(components);
             fontSizeIncreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeIncreaseItem();
             fontSizeDecreaseItem1 = new DevExpress.XtraRichEdit.UI.FontSizeDecreaseItem();
@@ -472,7 +472,7 @@
             ChildRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { repositoryItemFontEditRichEdit1, repositoryItemRichEditFontSizeEdit1, displayForReviewModeComboBox1, repositoryItemBorderLineStyle1, repositoryItemBorderLineWeight1, repositoryItemFloatingObjectOutlineWeight1, repositoryItemZoomTrackBar1 });
             ChildRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
             ChildRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            ChildRibbon.Size = new System.Drawing.Size(1140, 158);
+            ChildRibbon.Size = new System.Drawing.Size(1140, 203);
             ChildRibbon.StatusBar = ChildStatusBar;
             // 
             // undoItem1
@@ -593,26 +593,26 @@
             // 
             repositoryItemRichEditFontSizeEdit1.AutoHeight = false;
             repositoryItemRichEditFontSizeEdit1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-            repositoryItemRichEditFontSizeEdit1.Control = ChildRichEditControl;
+            repositoryItemRichEditFontSizeEdit1.Control = childRichEditControl;
             repositoryItemRichEditFontSizeEdit1.Name = "repositoryItemRichEditFontSizeEdit1";
             // 
-            // ChildRichEditControl
+            // childRichEditControl
             // 
-            ChildRichEditControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            ChildRichEditControl.Location = new System.Drawing.Point(0, 158);
-            ChildRichEditControl.Margin = new System.Windows.Forms.Padding(2);
-            ChildRichEditControl.MenuManager = ChildRibbon;
-            ChildRichEditControl.Name = "ChildRichEditControl";
-            ChildRichEditControl.Options.DocumentSaveOptions.CurrentFormat = DevExpress.XtraRichEdit.DocumentFormat.OpenXml;
-            ChildRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
-            ChildRichEditControl.Size = new System.Drawing.Size(1140, 548);
-            ChildRichEditControl.SpellChecker = CoreSpellChecker;
-            CoreSpellChecker.SetSpellCheckerOptions(ChildRichEditControl, optionsSpelling1);
-            ChildRichEditControl.TabIndex = 1;
-            ChildRichEditControl.SelectionChanged += ChildRichEditControl_SelectionChanged;
-            ChildRichEditControl.ZoomChanged += ChildRichEditControl_ZoomChanged;
-            ChildRichEditControl.InvalidFormatException += ChildRichEditControl_InvalidFormatException;
-            ChildRichEditControl.VisiblePagesChanged += ChildRichEditControl_VisiblePagesChanged;
+            childRichEditControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            childRichEditControl.Location = new System.Drawing.Point(0, 203);
+            childRichEditControl.Margin = new System.Windows.Forms.Padding(2);
+            childRichEditControl.MenuManager = ChildRibbon;
+            childRichEditControl.Name = "childRichEditControl";
+            childRichEditControl.Options.DocumentSaveOptions.CurrentFormat = DevExpress.XtraRichEdit.DocumentFormat.OpenXml;
+            childRichEditControl.Options.SpellChecker.AutoDetectDocumentCulture = false;
+            childRichEditControl.Size = new System.Drawing.Size(1140, 503);
+            childRichEditControl.SpellChecker = CoreSpellChecker;
+            CoreSpellChecker.SetSpellCheckerOptions(childRichEditControl, optionsSpelling2);
+            childRichEditControl.TabIndex = 1;
+            childRichEditControl.SelectionChanged += ChildRichEditControl_SelectionChanged;
+            childRichEditControl.ZoomChanged += ChildRichEditControl_ZoomChanged;
+            childRichEditControl.InvalidFormatException += ChildRichEditControl_InvalidFormatException;
+            childRichEditControl.VisiblePagesChanged += ChildRichEditControl_VisiblePagesChanged;
             // 
             // CoreSpellChecker
             // 
@@ -958,7 +958,7 @@
             // 
             // 
             galleryChangeStyleItem1.Gallery.ColumnCount = 10;
-            galleryChangeStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup1 });
+            galleryChangeStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup3 });
             galleryChangeStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 47);
             galleryChangeStyleItem1.Id = 77;
             galleryChangeStyleItem1.Name = "galleryChangeStyleItem1";
@@ -1354,11 +1354,11 @@
             // 
             // navigationNotesItem1
             // 
-            toolTipTitleItem1.Text = "Next Footnote";
-            toolTipItem1.Text = "Jump to next footnote";
-            superToolTip1.Items.Add(toolTipTitleItem1);
-            superToolTip1.Items.Add(toolTipItem1);
-            navigationNotesItem1.DropDownSuperTip = superToolTip1;
+            toolTipTitleItem6.Text = "Next Footnote";
+            toolTipItem6.Text = "Jump to next footnote";
+            superToolTip6.Items.Add(toolTipTitleItem6);
+            superToolTip6.Items.Add(toolTipItem6);
+            navigationNotesItem1.DropDownSuperTip = superToolTip6;
             navigationNotesItem1.Id = 152;
             navigationNotesItem1.Name = "navigationNotesItem1";
             // 
@@ -1450,11 +1450,11 @@
             // 
             // toggleTrackChangesBarItem1
             // 
-            toolTipTitleItem2.Text = "Track Changes";
-            toolTipItem2.Text = "Keep track of changes made to this document.";
-            superToolTip2.Items.Add(toolTipTitleItem2);
-            superToolTip2.Items.Add(toolTipItem2);
-            toggleTrackChangesBarItem1.DropDownSuperTip = superToolTip2;
+            toolTipTitleItem7.Text = "Track Changes";
+            toolTipItem7.Text = "Keep track of changes made to this document.";
+            superToolTip7.Items.Add(toolTipTitleItem7);
+            superToolTip7.Items.Add(toolTipItem7);
+            toggleTrackChangesBarItem1.DropDownSuperTip = superToolTip7;
             toggleTrackChangesBarItem1.Id = 170;
             toggleTrackChangesBarItem1.Name = "toggleTrackChangesBarItem1";
             // 
@@ -1474,11 +1474,11 @@
             // showMarkupSubItem1
             // 
             showMarkupSubItem1.ActAsDropDown = true;
-            toolTipTitleItem3.Text = "Show Markup";
-            toolTipItem3.Text = "Choose what types of markup to show in your document.";
-            superToolTip3.Items.Add(toolTipTitleItem3);
-            superToolTip3.Items.Add(toolTipItem3);
-            showMarkupSubItem1.DropDownSuperTip = superToolTip3;
+            toolTipTitleItem8.Text = "Show Markup";
+            toolTipItem8.Text = "Choose what types of markup to show in your document.";
+            superToolTip8.Items.Add(toolTipTitleItem8);
+            superToolTip8.Items.Add(toolTipItem8);
+            showMarkupSubItem1.DropDownSuperTip = superToolTip8;
             showMarkupSubItem1.Id = 172;
             showMarkupSubItem1.Name = "showMarkupSubItem1";
             showMarkupSubItem1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.SmallWithText;
@@ -1490,21 +1490,21 @@
             // 
             // acceptAndMoveToNextSubItem1
             // 
-            toolTipTitleItem4.Text = "Accept";
-            toolTipItem4.Text = "Click for additional options, such as accepting all the changes at once.";
-            superToolTip4.Items.Add(toolTipTitleItem4);
-            superToolTip4.Items.Add(toolTipItem4);
-            acceptAndMoveToNextSubItem1.DropDownSuperTip = superToolTip4;
+            toolTipTitleItem9.Text = "Accept";
+            toolTipItem9.Text = "Click for additional options, such as accepting all the changes at once.";
+            superToolTip9.Items.Add(toolTipTitleItem9);
+            superToolTip9.Items.Add(toolTipItem9);
+            acceptAndMoveToNextSubItem1.DropDownSuperTip = superToolTip9;
             acceptAndMoveToNextSubItem1.Id = 174;
             acceptAndMoveToNextSubItem1.Name = "acceptAndMoveToNextSubItem1";
             // 
             // rejectAndMoveToNextSubItem1
             // 
-            toolTipTitleItem5.Text = "Reject";
-            toolTipItem5.Text = "Click for additional options, such as rejecting all the changes at once.";
-            superToolTip5.Items.Add(toolTipTitleItem5);
-            superToolTip5.Items.Add(toolTipItem5);
-            rejectAndMoveToNextSubItem1.DropDownSuperTip = superToolTip5;
+            toolTipTitleItem10.Text = "Reject";
+            toolTipItem10.Text = "Click for additional options, such as rejecting all the changes at once.";
+            superToolTip10.Items.Add(toolTipTitleItem10);
+            superToolTip10.Items.Add(toolTipItem10);
+            rejectAndMoveToNextSubItem1.DropDownSuperTip = superToolTip10;
             rejectAndMoveToNextSubItem1.Id = 175;
             rejectAndMoveToNextSubItem1.Name = "rejectAndMoveToNextSubItem1";
             // 
@@ -1637,7 +1637,7 @@
             // 
             // 
             galleryChangeTableStyleItem1.Gallery.ColumnCount = 3;
-            galleryChangeTableStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup2 });
+            galleryChangeTableStyleItem1.Gallery.Groups.AddRange(new DevExpress.XtraBars.Ribbon.GalleryItemGroup[] { galleryItemGroup4 });
             galleryChangeTableStyleItem1.Gallery.ImageSize = new System.Drawing.Size(65, 47);
             galleryChangeTableStyleItem1.Id = 199;
             galleryChangeTableStyleItem1.ModifyItemLink = null;
@@ -1656,7 +1656,7 @@
             // 
             repositoryItemBorderLineStyle1.AutoHeight = false;
             repositoryItemBorderLineStyle1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-            repositoryItemBorderLineStyle1.Control = ChildRichEditControl;
+            repositoryItemBorderLineStyle1.Control = childRichEditControl;
             repositoryItemBorderLineStyle1.Name = "repositoryItemBorderLineStyle1";
             // 
             // changeTableBorderLineWeightItem1
@@ -1671,7 +1671,7 @@
             // 
             repositoryItemBorderLineWeight1.AutoHeight = false;
             repositoryItemBorderLineWeight1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-            repositoryItemBorderLineWeight1.Control = ChildRichEditControl;
+            repositoryItemBorderLineWeight1.Control = childRichEditControl;
             repositoryItemBorderLineWeight1.Name = "repositoryItemBorderLineWeight1";
             // 
             // changeTableBorderColorItem1
@@ -2044,7 +2044,7 @@
             // 
             repositoryItemFloatingObjectOutlineWeight1.AutoHeight = false;
             repositoryItemFloatingObjectOutlineWeight1.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-            repositoryItemFloatingObjectOutlineWeight1.Control = ChildRichEditControl;
+            repositoryItemFloatingObjectOutlineWeight1.Control = childRichEditControl;
             repositoryItemFloatingObjectOutlineWeight1.Name = "repositoryItemFloatingObjectOutlineWeight1";
             // 
             // changeFloatingObjectTextWrapTypeItem1
@@ -2362,7 +2362,7 @@
             // 
             headerFooterToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.FromArgb(38, 176, 35);
             headerFooterToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
-            headerFooterToolsRibbonPageCategory1.Control = ChildRichEditControl;
+            headerFooterToolsRibbonPageCategory1.Control = childRichEditControl;
             headerFooterToolsRibbonPageCategory1.Name = "headerFooterToolsRibbonPageCategory1";
             headerFooterToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { headerFooterToolsDesignRibbonPage1 });
             // 
@@ -2399,7 +2399,7 @@
             // 
             TableToolsChildRibbonPageCat.Appearance.BackColor = System.Drawing.Color.FromArgb(252, 233, 20);
             TableToolsChildRibbonPageCat.Appearance.Options.UseBackColor = true;
-            TableToolsChildRibbonPageCat.Control = ChildRichEditControl;
+            TableToolsChildRibbonPageCat.Control = childRichEditControl;
             TableToolsChildRibbonPageCat.Name = "TableToolsChildRibbonPageCat";
             TableToolsChildRibbonPageCat.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { TableDesignChildRibbonPage, tableLayoutRibbonPage1 });
             // 
@@ -2517,7 +2517,7 @@
             // 
             floatingPictureToolsRibbonPageCategory1.Appearance.BackColor = System.Drawing.Color.FromArgb(201, 0, 119);
             floatingPictureToolsRibbonPageCategory1.Appearance.Options.UseBackColor = true;
-            floatingPictureToolsRibbonPageCategory1.Control = ChildRichEditControl;
+            floatingPictureToolsRibbonPageCategory1.Control = childRichEditControl;
             floatingPictureToolsRibbonPageCategory1.Name = "floatingPictureToolsRibbonPageCategory1";
             floatingPictureToolsRibbonPageCategory1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { floatingPictureToolsFormatPage1 });
             // 
@@ -2587,12 +2587,12 @@
             homeRibbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { clipboardRibbonPageGroup1, fontRibbonPageGroup1, paragraphRibbonPageGroup1, stylesRibbonPageGroup1, editingRibbonPageGroup1 });
             homeRibbonPage1.MergeOrder = 2;
             homeRibbonPage1.Name = "homeRibbonPage1";
-            reduceOperation1.Behavior = DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable;
-            reduceOperation1.GroupName = null;
-            reduceOperation1.ItemLinkIndex = 0;
-            reduceOperation1.ItemLinksCount = 0;
-            reduceOperation1.Operation = DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery;
-            homeRibbonPage1.ReduceOperations.Add(reduceOperation1);
+            reduceOperation2.Behavior = DevExpress.XtraBars.Ribbon.ReduceOperationBehavior.UntilAvailable;
+            reduceOperation2.GroupName = null;
+            reduceOperation2.ItemLinkIndex = 0;
+            reduceOperation2.ItemLinksCount = 0;
+            reduceOperation2.Operation = DevExpress.XtraBars.Ribbon.ReduceOperationType.Gallery;
+            homeRibbonPage1.ReduceOperations.Add(reduceOperation2);
             // 
             // clipboardRibbonPageGroup1
             // 
@@ -2826,6 +2826,7 @@
             documentViewsRibbonPageGroup1.ItemLinks.Add(switchToSimpleViewItem1, "L");
             documentViewsRibbonPageGroup1.ItemLinks.Add(switchToDraftViewItem1, "E");
             documentViewsRibbonPageGroup1.ItemLinks.Add(switchToPrintLayoutViewItem1, "P");
+            documentViewsRibbonPageGroup1.MergeOrder = 1;
             documentViewsRibbonPageGroup1.Name = "documentViewsRibbonPageGroup1";
             // 
             // showRibbonPageGroup1
@@ -2833,6 +2834,7 @@
             showRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
             showRibbonPageGroup1.ItemLinks.Add(toggleShowHorizontalRulerItem1);
             showRibbonPageGroup1.ItemLinks.Add(toggleShowVerticalRulerItem1);
+            showRibbonPageGroup1.MergeOrder = 2;
             showRibbonPageGroup1.Name = "showRibbonPageGroup1";
             // 
             // zoomRibbonPageGroup1
@@ -2840,6 +2842,7 @@
             zoomRibbonPageGroup1.CaptionButtonVisible = DevExpress.Utils.DefaultBoolean.False;
             zoomRibbonPageGroup1.ItemLinks.Add(zoomOutItem1);
             zoomRibbonPageGroup1.ItemLinks.Add(zoomInItem1);
+            zoomRibbonPageGroup1.MergeOrder = 3;
             zoomRibbonPageGroup1.Name = "zoomRibbonPageGroup1";
             // 
             // ChildStatusBar
@@ -2854,10 +2857,10 @@
             ChildStatusBar.ItemLinks.Add(CurrLineStatusItem, true);
             ChildStatusBar.ItemLinks.Add(ColumnStatusItem, true);
             ChildStatusBar.ItemLinks.Add(LanguageStatusBtn, true);
-            ChildStatusBar.Location = new System.Drawing.Point(0, 682);
+            ChildStatusBar.Location = new System.Drawing.Point(0, 669);
             ChildStatusBar.Name = "ChildStatusBar";
             ChildStatusBar.Ribbon = ChildRibbon;
-            ChildStatusBar.Size = new System.Drawing.Size(1140, 24);
+            ChildStatusBar.Size = new System.Drawing.Size(1140, 37);
             // 
             // richEditBarController1
             // 
@@ -3153,7 +3156,7 @@
             richEditBarController1.BarItems.Add(floatingObjectSendToBackItem1);
             richEditBarController1.BarItems.Add(floatingObjectSendBehindTextItem1);
             richEditBarController1.BarItems.Add(floatingObjectSendBackwardSubItem1);
-            richEditBarController1.Control = ChildRichEditControl;
+            richEditBarController1.Control = childRichEditControl;
             // 
             // dockManager1
             // 
@@ -3193,7 +3196,7 @@
             richEditCommentControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             richEditCommentControl1.Name = "richEditCommentControl1";
             richEditCommentControl1.ReadOnly = false;
-            richEditCommentControl1.RichEditControl = ChildRichEditControl;
+            richEditCommentControl1.RichEditControl = childRichEditControl;
             richEditCommentControl1.Size = new System.Drawing.Size(245, 464);
             richEditCommentControl1.TabIndex = 0;
             // 
@@ -3207,8 +3210,9 @@
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(1140, 706);
             Controls.Add(ChildStatusBar);
-            Controls.Add(ChildRichEditControl);
+            Controls.Add(childRichEditControl);
             Controls.Add(ChildRibbon);
+            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             Name = "DocForm";
             Ribbon = ChildRibbon;
             StatusBar = ChildStatusBar;
@@ -3256,7 +3260,7 @@
         private DevExpress.XtraRichEdit.UI.RepositoryItemFontEditRichEdit repositoryItemFontEditRichEdit1;
         private DevExpress.XtraRichEdit.UI.ChangeFontSizeItem changeFontSizeItem1;
         private DevExpress.XtraRichEdit.Design.RepositoryItemRichEditFontSizeEdit repositoryItemRichEditFontSizeEdit1;
-        private DevExpress.XtraRichEdit.RichEditControl ChildRichEditControl;
+        private DevExpress.XtraRichEdit.RichEditControl childRichEditControl;
         private DevExpress.XtraRichEdit.UI.FontSizeIncreaseItem fontSizeIncreaseItem1;
         private DevExpress.XtraRichEdit.UI.FontSizeDecreaseItem fontSizeDecreaseItem1;
         private DevExpress.XtraBars.BarButtonGroup barButtonGroup2;

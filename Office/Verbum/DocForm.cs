@@ -91,11 +91,11 @@ public partial class DocForm : RibbonForm
         InitializeComponent();
         UpdateUi();
 
-        new RichEditExceptionHandler(ChildRichEditControl).Install();
+        new RichEditExceptionHandler(childRichEditControl).Install();
         new SpellCheckerExceptionHandler(CoreSpellChecker).Install();
-        var commandFactory = new CustomCommandService(ChildRichEditControl,
-            ChildRichEditControl.GetService<IRichEditCommandFactoryService>());
-        ChildRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
+        var commandFactory = new CustomCommandService(childRichEditControl,
+            childRichEditControl.GetService<IRichEditCommandFactoryService>());
+        childRichEditControl.ReplaceService<IRichEditCommandFactoryService>(commandFactory);
         ExportBarButton.DefaultDropDownLink = ExportPopupMenu.ItemLinks[0];
         SetupEventHandlers();
         PopulateExportActions();
@@ -103,10 +103,10 @@ public partial class DocForm : RibbonForm
 
     private void SetupEventHandlers()
     {
-        ChildRichEditControl.DocumentLayout.DocumentFormatted += OnDocumentLayoutDocumentFormatted;
-        ChildRichEditControl.Options.DocumentSaveOptions.Changed += OnDocumentSaveOptionsChanged;
-        ChildRichEditControl.ContentChanged += OnChildRichEditControlContentChanged;
-        ChildRichEditControl.DocumentLoaded += OnChildRichEditControlDocumentLoaded;
+        childRichEditControl.DocumentLayout.DocumentFormatted += OnDocumentLayoutDocumentFormatted;
+        childRichEditControl.Options.DocumentSaveOptions.Changed += OnDocumentSaveOptionsChanged;
+        childRichEditControl.ContentChanged += OnChildRichEditControlContentChanged;
+        childRichEditControl.DocumentLoaded += OnChildRichEditControlDocumentLoaded;
 
         AttachExportHandlers(ExportPDFPopupItem, ExportEPUBPopupItem, ExportImagePopupItem, ExportHTMLPopupItem, ExportMHTPopupItem);
     }
@@ -138,9 +138,9 @@ public partial class DocForm : RibbonForm
         try
         {
             _ = LoadSpellingOptions();
-            if (ChildRichEditControl == null) return;
-            SetViewType(ChildRichEditControl.ActiveViewType);
-            ChildRichEditControl.Focus();
+            if (childRichEditControl == null) return;
+            SetViewType(childRichEditControl.ActiveViewType);
+            childRichEditControl.Focus();
         }
         catch (Exception ex)
         {
@@ -170,7 +170,7 @@ public partial class DocForm : RibbonForm
             LanguageStatusBtn.Caption = CoreSpellChecker.Culture.EnglishName;
             AutoSpellingCheckItem.Checked = VerbumSettings.AutoSpellCheck;
 
-            await Task.Run(() => LoadHyphenationDictionaries(ChildRichEditControl.Document)).ConfigureAwait(false);
+            await Task.Run(() => LoadHyphenationDictionaries(childRichEditControl.Document)).ConfigureAwait(false);
 
         }
         catch (Exception ex)
@@ -178,7 +178,7 @@ public partial class DocForm : RibbonForm
             Serilogger.LogMessage(LogLevel.Error, "An error occurred while loading spelling options!", ex);
         }
 
-        ChildRichEditControl.Modified = false;
+        childRichEditControl.Modified = false;
     }
 
     private void LoadHyphenationDictionaries(Document document)
@@ -242,7 +242,7 @@ public partial class DocForm : RibbonForm
     private void AddHyphenationDictionary(string hyphPath, CultureInfo hyphCulture)
     {
         OpenOfficeHyphenationDictionary hyphenationDictionary = new(hyphPath, hyphCulture);
-        ChildRichEditControl.HyphenationDictionaries.Add(hyphenationDictionary);
+        childRichEditControl.HyphenationDictionaries.Add(hyphenationDictionary);
     }
 
     private void InitializeSvgImages()
@@ -330,7 +330,7 @@ public partial class DocForm : RibbonForm
             PdfACompatibility = PdfACompatibility.None
         };
 
-        ChildRichEditControl.ExportToPdf(fileName, pdfOptions);
+        childRichEditControl.ExportToPdf(fileName, pdfOptions);
         FileLauncher.OpenPdfInDefaultViewer(fileName);
     }
 
@@ -343,7 +343,7 @@ public partial class DocForm : RibbonForm
     {
         try
         {
-            ChildRichEditControl.SaveDocument(fileName, format);
+            childRichEditControl.SaveDocument(fileName, format);
         }
         catch (Exception ex)
         {
@@ -361,7 +361,7 @@ public partial class DocForm : RibbonForm
     {
         var pcl = new PrintableComponentLinkBase(new PrintingSystemBase())
         {
-            Component = ((IRichEditControl)ChildRichEditControl).InnerControl,
+            Component = ((IRichEditControl)childRichEditControl).InnerControl,
         };
         pcl.CreateDocument(false);
 
@@ -389,8 +389,8 @@ public partial class DocForm : RibbonForm
     private void OnDocumentSaveOptionsChanged(object sender, BaseOptionChangedEventArgs e)
     {
         if (e.Name != nameof(DocumentSaveOptions.CurrentFileName)) return;
-        ChildDocHelper.SetDocumentCaption(ChildRichEditControl.Options.DocumentSaveOptions.CurrentFileName, this);
-        FileName = ChildRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
+        ChildDocHelper.SetDocumentCaption(childRichEditControl.Options.DocumentSaveOptions.CurrentFileName, this);
+        FileName = childRichEditControl.Options.DocumentSaveOptions.CurrentFileName;
     }
 
     private void OnChildRichEditControlContentChanged(object sender, EventArgs e)
@@ -400,19 +400,19 @@ public partial class DocForm : RibbonForm
 
     private void OnChildRichEditControlDocumentLoaded(object sender, EventArgs e)
     {
-        ChildDocHelper.SetDocumentCaption(ChildRichEditControl.Options.DocumentSaveOptions.CurrentFileName, this);
+        ChildDocHelper.SetDocumentCaption(childRichEditControl.Options.DocumentSaveOptions.CurrentFileName, this);
     }
 
     private void OnDocumentLayoutDocumentFormatted(object sender, EventArgs e)
     {
-        _pageCount = ChildRichEditControl.DocumentLayout.GetPageCount();
+        _pageCount = childRichEditControl.DocumentLayout.GetPageCount();
         OnPagesInfoChanged();
     }
 
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        _ = ChildRichEditControl.ActiveView.ZoomFactor;
+        _ = childRichEditControl.ActiveView.ZoomFactor;
     }
 
     /// <summary>
@@ -428,11 +428,11 @@ public partial class DocForm : RibbonForm
             switch (Path.GetExtension(fileName))
             {
                 case "eml":
-                    ChildRichEditControl.LoadDocument(fileName, DocumentFormat.Mht);
+                    childRichEditControl.LoadDocument(fileName, DocumentFormat.Mht);
                     break;
 
                 default:
-                    ChildRichEditControl.LoadDocument(fileName);
+                    childRichEditControl.LoadDocument(fileName);
                     break;
             }
 
@@ -441,7 +441,7 @@ public partial class DocForm : RibbonForm
         }
 
         Text = FileName = $"Document {docIndex}";
-        ChildRichEditControl.Options.DocumentSaveOptions.DefaultFileName = $"Untitled {docIndex}";
+        childRichEditControl.Options.DocumentSaveOptions.DefaultFileName = $"Untitled {docIndex}";
     }
 
     /// <summary>
@@ -449,7 +449,7 @@ public partial class DocForm : RibbonForm
     /// </summary>
     public void SaveFile()
     {
-        ChildRichEditControl.SaveDocument();
+        childRichEditControl.SaveDocument();
     }
 
     private void UpdateUi()
@@ -469,7 +469,7 @@ public partial class DocForm : RibbonForm
 
     private void CalculateDocumentStatistics()
     {
-        DocumentIterator iterator = new(ChildRichEditControl.Document, true);
+        DocumentIterator iterator = new(childRichEditControl.Document, true);
         StaticsticsVisitor visitor = new(IncludeTextBoxes);
         while (iterator.MoveNext()) iterator.Current?.Accept(visitor);
 
@@ -486,21 +486,21 @@ public partial class DocForm : RibbonForm
     /// </summary>
     private void ChildRichEditControl_SelectionChanged(object sender, EventArgs e)
     {
-        if (!ChildRichEditControl.DocumentLayout.IsDocumentFormattingCompleted) return;
+        if (!childRichEditControl.DocumentLayout.IsDocumentFormattingCompleted) return;
 
-        var element = ChildRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(ChildRichEditControl.Document.CaretPosition);
+        var element = childRichEditControl.DocumentLayout.GetElement<RangedLayoutElement>(childRichEditControl.Document.CaretPosition);
         if (element is not null)
         {
-            currentPage = ChildRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
+            currentPage = childRichEditControl.DocumentLayout.GetPageIndex(element) + 1;
             OnPagesInfoChanged();
         }
 
-        CustomLayoutVisitor visitor = new(ChildRichEditControl.Document);
+        CustomLayoutVisitor visitor = new(childRichEditControl.Document);
 
-        for (var i = 0; i < ChildRichEditControl.DocumentLayout.GetPageCount(); i++)
+        for (var i = 0; i < childRichEditControl.DocumentLayout.GetPageCount(); i++)
         {
             visitor.Reset();
-            var page = ChildRichEditControl.DocumentLayout.GetPage(i);
+            var page = childRichEditControl.DocumentLayout.GetPage(i);
             visitor.Visit(page);
 
             if (visitor.IsFound) break;
@@ -511,7 +511,7 @@ public partial class DocForm : RibbonForm
         CurrLineStatusItem.Caption = $@"line {visitor.RowIndex}";
         ColumnStatusItem.Caption = $@"Column {visitor.ColIndex}";
 
-        if (!ChildRichEditControl.IsSelectionInTable()) return;
+        if (!childRichEditControl.IsSelectionInTable()) return;
 
         var tableToolsCat = ChildRibbon.MergeOwner.PageCategories.GetCategoryByName(TableToolsRibbonCatName);
         if (tableToolsCat is not null) tableToolsCat.Visible = true;
@@ -531,7 +531,7 @@ public partial class DocForm : RibbonForm
 
     private void ChildRichEditControl_VisiblePagesChanged(object sender, EventArgs e)
     {
-        currentPage = ChildRichEditControl.ActiveView.GetVisiblePageLayoutInfos()[0].PageIndex + 1;
+        currentPage = childRichEditControl.ActiveView.GetVisiblePageLayoutInfos()[0].PageIndex + 1;
     }
 
     private void AutoSpellingCheckItem_CheckedChanged(object sender, ItemClickEventArgs e)
@@ -555,7 +555,7 @@ public partial class DocForm : RibbonForm
 
     private void ZoomResetStatusItem_ItemClick(object sender, ItemClickEventArgs e)
     {
-        ChildRichEditControl.ActiveView.ZoomFactor = 1;
+        childRichEditControl.ActiveView.ZoomFactor = 1;
     }
 
 
@@ -563,7 +563,7 @@ public partial class DocForm : RibbonForm
     {
         try
         {
-            var spellOptions = CoreSpellChecker.GetSpellCheckerOptions(ChildRichEditControl);
+            var spellOptions = CoreSpellChecker.GetSpellCheckerOptions(childRichEditControl);
             CoreSpellChecker.OptionsSpelling.CombineOptions(spellOptions);
 
             using var spellOptionsForm = new SpellingOptionsForm(CoreSpellChecker);
@@ -590,8 +590,8 @@ public partial class DocForm : RibbonForm
                 spellOptions.EndUpdate();
             }
 
-            CoreSpellChecker.SetSpellCheckerOptions(ChildRichEditControl, spellOptions);
-            CoreSpellChecker.OptionsSpelling.CombineOptions(CoreSpellChecker.GetSpellCheckerOptions(ChildRichEditControl));
+            CoreSpellChecker.SetSpellCheckerOptions(childRichEditControl, spellOptions);
+            CoreSpellChecker.OptionsSpelling.CombineOptions(CoreSpellChecker.GetSpellCheckerOptions(childRichEditControl));
             if (ProgramConfiguration.AppDataPath != null)
                 CoreSpellChecker.SaveToXML(Path.Combine(ProgramConfiguration.AppDataPath, SpellingOptionsXml));
 
@@ -615,7 +615,7 @@ public partial class DocForm : RibbonForm
     private bool TrySaveDocument()
     {
         // If the document hasn't been modified, there's nothing to save.
-        if (!ChildRichEditControl.Modified)
+        if (!childRichEditControl.Modified)
         {
             return true;
         }
@@ -636,9 +636,9 @@ public partial class DocForm : RibbonForm
 
                 case DialogResult.Yes:
                     // The user wants to save changes. Try to save the document.
-                    ChildRichEditControl.SaveDocument();
+                    childRichEditControl.SaveDocument();
                     // After successfully saving, mark the document as unmodified.
-                    ChildRichEditControl.Modified = false;
+                    childRichEditControl.Modified = false;
                     break;
             }
         }
@@ -675,9 +675,9 @@ public partial class DocForm : RibbonForm
 
             isZoomChanging = true;
 
-            if (ChildRichEditControl?.ActiveView != null)
+            if (childRichEditControl?.ActiveView != null)
             {
-                ChildRichEditControl.ActiveView.ZoomFactor = zoomValue / 100f;
+                childRichEditControl.ActiveView.ZoomFactor = zoomValue / 100f;
             }
 
             if (ZoomStatusItem != null)
@@ -698,7 +698,7 @@ public partial class DocForm : RibbonForm
     private void ChildRichEditControl_ZoomChanged(object sender, EventArgs e)
     {
         if (isZoomChanging) return;
-        var zoomValue = (int)Math.Round(ChildRichEditControl.ActiveView.ZoomFactor * 100);
+        var zoomValue = (int)Math.Round(childRichEditControl.ActiveView.ZoomFactor * 100);
         isZoomChanging = true;
 
         try
@@ -718,7 +718,7 @@ public partial class DocForm : RibbonForm
 
     private void SetViewType(RichEditViewType viewType)
     {
-        ChildRichEditControl.ActiveViewType = viewType;
+        childRichEditControl.ActiveViewType = viewType;
         SimpleViewStatusItem.Down = viewType == RichEditViewType.Simple;
         PrintLayoutStatusItem.Down = viewType == RichEditViewType.PrintLayout;
         DraftViewStatusItem.Down = viewType == RichEditViewType.Draft;
@@ -728,7 +728,7 @@ public partial class DocForm : RibbonForm
     {
         try
         {
-            if (ChildRichEditControl == null) return;
+            if (childRichEditControl == null) return;
             if (e.Item is BarButtonItem { Down: true } clickedItem)
             {
                 SetViewType(clickedItem switch
@@ -736,7 +736,7 @@ public partial class DocForm : RibbonForm
                     _ when clickedItem == SimpleViewStatusItem => RichEditViewType.Simple,
                     _ when clickedItem == PrintLayoutStatusItem => RichEditViewType.PrintLayout,
                     _ when clickedItem == DraftViewStatusItem => RichEditViewType.Draft,
-                    _ => ChildRichEditControl.ActiveViewType
+                    _ => childRichEditControl.ActiveViewType
                 });
             }
         }
@@ -760,7 +760,7 @@ public partial class DocForm : RibbonForm
 
     private void DocStatsStatusBtnItem_ItemClick(object sender, ItemClickEventArgs e)
     {
-        using DocumentStatisticsForm docStatsForm = new(ChildRichEditControl.Document, IncludeTextBoxes);
+        using DocumentStatisticsForm docStatsForm = new(childRichEditControl.Document, IncludeTextBoxes);
         docStatsForm.LookAndFeel.ParentLookAndFeel = LookAndFeel;
         docStatsForm.ShowDialog();
         IncludeTextBoxes = docStatsForm.IncludeTextboxes;

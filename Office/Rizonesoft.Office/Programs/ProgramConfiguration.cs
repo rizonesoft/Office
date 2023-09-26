@@ -42,22 +42,26 @@ public static class ProgramConfiguration
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.SetHighDpiMode(GetOptimalHighDpiMode());
-        if (GlobalSettings.TrackWindowsAppMode) WindowsFormsSettings.TrackWindowsAppMode = DevExpress.Utils.DefaultBoolean.True;
-        if (GlobalSettings.TrackWindowsAccentColor) WindowsFormsSettings.TrackWindowsAccentColor = DevExpress.Utils.DefaultBoolean.True;
+
+        var sSkin = GlobalSettings.SkinName;
+        var sPalette = GlobalSettings.Palette;
+        WindowsFormsSettings.DefaultLookAndFeel.SetSkinStyle(sSkin, sPalette);
+        WindowsFormsSettings.TrackWindowsAccentColor = GlobalSettings.TrackWindowsAccentColor ?
+            DevExpress.Utils.DefaultBoolean.True :
+            DevExpress.Utils.DefaultBoolean.False;
+        
         XtraMessageBox.SmartTextWrap = true;
 
         var languageCode = Task.Run(LanguageManager.GetLanguageCodeAsync).Result;
         LanguageManager.SetCultureInfo(languageCode);
-        LoadSettings();
-
         InitializeSettings(programName.ToString());
+        LoadSettings();
         EnsureAppDataPathExists();
     }
 
     private static void LoadSettings()
     {
-        // string licenseMessage = LicenseHelper.IsLicensed ? "The provided license key is valid." : "The provided license key is not valid.";
-        // MessageBox.Show(LicenseHelper.LicenseCode + ": " + licenseMessage);
+        
     }
 
     private static void InitializeSettings(string programName)
