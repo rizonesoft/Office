@@ -47,6 +47,7 @@
             // 
             // mainRibbon
             // 
+            mainRibbon.AllowCustomization = true;
             mainRibbon.ExpandCollapseItem.Id = 0;
             mainRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { mainRibbon.ExpandCollapseItem, OpenDropdownBtn, NewBarBtn });
             mainRibbon.Location = new System.Drawing.Point(0, 0);
@@ -57,7 +58,8 @@
             mainRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { FileRibbonPage });
             mainRibbon.QuickToolbarItemLinks.Add(NewBarBtn);
             mainRibbon.QuickToolbarItemLinks.Add(OpenDropdownBtn);
-            mainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
+            mainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
+            mainRibbon.SearchItemPosition = DevExpress.XtraBars.Ribbon.SearchItemPosition.Caption;
             mainRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
             mainRibbon.Size = new System.Drawing.Size(1164, 203);
             // 
@@ -128,12 +130,11 @@
             ClientSize = new System.Drawing.Size(1164, 674);
             Controls.Add(topSpacerPanel);
             Controls.Add(mainRibbon);
-            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             IsMdiContainer = true;
             Name = "MainForm";
             Ribbon = mainRibbon;
-            Text = "Form1";
+            Text = "Evaluate";
             Load += MainForm_Load;
             Shown += MainForm_Shown;
             ((System.ComponentModel.ISupportInitialize)mainRibbon).EndInit();

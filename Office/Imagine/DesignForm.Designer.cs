@@ -656,7 +656,7 @@
             DevExpress.XtraReports.UserDesigner.XRDesignPanelListener xrDesignPanelListener7 = new DevExpress.XtraReports.UserDesigner.XRDesignPanelListener();
             DevExpress.XtraReports.UserDesigner.XRDesignPanelListener xrDesignPanelListener8 = new DevExpress.XtraReports.UserDesigner.XRDesignPanelListener();
             xrDesignRibbonController1 = new DevExpress.XtraReports.UserDesigner.XRDesignRibbonController(components);
-            ribbonControl1 = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            mainRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
             applicationMenu1 = new DevExpress.XtraBars.Ribbon.ApplicationMenu(components);
             commandBarItem6 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
             commandBarItem9 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
@@ -664,6 +664,7 @@
             commandBarItem8 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
             commandBarItem127 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
             commandBarItem128 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
+            barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
             commandBarItem1 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
             commandBarItem2 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
             commandBarItem3 = new DevExpress.XtraReports.UserDesigner.CommandBarItem();
@@ -994,9 +995,8 @@
             repositoryItemRibbonSearchEdit1 = new DevExpress.XtraBars.Ribbon.Internal.RepositoryItemRibbonSearchEdit();
             ribbonReportDesigner1 = new DevExpress.XtraReports.UserDesigner.Native.RibbonReportDesigner();
             reportDesigner1 = new DevExpress.XtraReports.UserDesigner.XRDesignMdiController(components);
-            barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
             ((System.ComponentModel.ISupportInitialize)xrDesignRibbonController1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)ribbonControl1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mainRibbon).BeginInit();
             ((System.ComponentModel.ISupportInitialize)applicationMenu1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)recentlyUsedItemsComboBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)designRepositoryItemComboBox1).BeginInit();
@@ -1023,33 +1023,34 @@
             // 
             // xrDesignRibbonController1
             // 
-            xrDesignRibbonController1.RibbonControl = ribbonControl1;
+            xrDesignRibbonController1.RibbonControl = mainRibbon;
             xrDesignRibbonController1.RibbonStatusBar = ribbonStatusBar1;
             xrDesignRibbonController1.XRDesignDockManager = xrDesignDockManager1;
             // 
-            // ribbonControl1
+            // mainRibbon
             // 
-            ribbonControl1.ApplicationButtonDropDownControl = applicationMenu1;
-            ribbonControl1.AutoHideEmptyItems = true;
-            ribbonControl1.AutoSizeItems = true;
-            ribbonControl1.ExpandCollapseItem.Id = 0;
-            ribbonControl1.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbonControl1.ExpandCollapseItem, commandBarItem1, commandBarItem2, commandBarItem3, commandBarItem4, commandBarItem5, commandBarItem6, commandBarItem7, commandBarItem8, commandBarItem9, commandBarItem10, commandBarItem11, commandBarItem12, commandBarItem13, commandBarItem14, commandBarItem15, commandBarItem16, barEditItem1, barEditItem2, barDockPanelsListItem1, commandBarItem17, commandBarItem18, commandBarItem19, commandColorBarItem1, commandColorBarItem2, commandBarItem20, commandBarItem21, commandBarItem22, commandBarItem23, commandBarItem24, commandBarItem25, commandBarItem26, commandBarItem27, commandBarItem28, commandBarItem29, commandBarItem30, commandBarItem31, commandBarItem32, commandBarItem33, commandBarItem34, commandBarItem35, commandBarItem36, commandBarItem37, commandColorBarItem3, commandBarItem38, commandBarItem39, commandBarItem40, commandBarItem41, commandBarItem42, commandBarItem43, commandBarItem44, commandBarItem45, commandBarItem46, commandBarItem47, commandBarItem48, commandBarItem49, commandBarItem50, commandBarItem51, commandBarItem52, commandBarItem53, commandBarItem54, commandBarItem55, commandBarItem56, commandBarItem57, commandBarItem58, commandBarItem59, commandBarItem60, commandBarItem61, commandBarCheckItem1, commandBarCheckItem2, commandBarItem62, commandBarItem63, commandBarItem64, commandBarItem65, commandColorBarItem4, commandBarItem66, commandBarItem67, commandBarItem68, commandBarItem69, commandBarItem70, commandBarItem71, commandBarItem72, commandBarEditItem1, commandBarCheckItem3, commandBarItem73, commandBarItem74, commandBarItem75, commandBarItem76, commandGalleryBarItem1, commandGalleryBarItem2, commandGalleryBarItem3, commandGalleryBarItem4, commandGalleryBarItem5, commandGalleryBarItem6, commandBarEditItem2, commandBarEditItem3, commandBarEditItem4, commandBarEditItem5, commandBarEditItem6, commandBarEditItem7, commandBarEditItem8, commandBarItem77, commandBarItem78, commandBarItem79, commandBarItem80, commandBarItem81, commandBarItem82, commandBarItem83, commandBarItem84, commandBarItem85, commandBarItem86, commandBarItem87, commandBarItem88, commandBarItem89, commandBarItem90, commandBarItem91, commandBarItem92, commandBarItem93, commandBarItem94, commandBarItem95, commandBarItem96, commandBarItem97, commandBarItem98, commandBarItem99, commandBarItem100, commandBarItem101, commandBarItem102, commandBarItem103, commandBarItem104, commandBarItem105, commandBarItem106, commandBarItem107, commandBarItem108, commandBarItem109, commandBarItem110, commandBarItem111, commandBarItem112, commandBarItem113, commandBarItem114, commandBarItem115, commandBarItem116, commandBarItem117, commandBarItem118, commandBarItem119, commandBarItem120, commandBarItem121, commandBarItem122, commandBarCheckItem4, commandBarCheckItem5, commandBarCheckItem6, commandBarCheckItem7, commandBarCheckItem8, commandBarCheckItem9, commandBarItem123, commandBarItem124, commandBarItem125, commandBarItem126, commandBarItem127, commandBarItem128, xrDesignBarButtonGroup1, xrDesignBarButtonGroup2, xrDesignBarButtonGroup3, xrDesignBarButtonGroup4, xrDesignBarButtonGroup5, xrDesignBarButtonGroup6, xrDesignBarButtonGroup7, xrDesignBarButtonGroup8, xrDesignBarButtonGroup9, xrDesignBarButtonGroup10, xrDesignBarButtonGroup11, xrDesignBarButtonGroup12, xrDesignBarButtonGroup13, xrDesignBarButtonGroup14, printPreviewBarItem1, printPreviewBarItem2, printPreviewBarItem3, printPreviewBarItem4, printPreviewBarItem5, printPreviewBarItem7, printPreviewBarItem8, printPreviewBarItem9, printPreviewBarItem11, printPreviewBarItem12, printPreviewBarItem13, printPreviewBarItem14, printPreviewBarItem15, printPreviewBarItem16, printPreviewBarItem17, printPreviewBarItem18, printPreviewBarItem19, printPreviewBarItem20, printPreviewBarItem21, printPreviewBarItem22, printPreviewBarItem23, printPreviewBarItem24, printPreviewBarItem25, printPreviewBarItem26, printPreviewBarItem27, printPreviewBarItem28, printPreviewBarItem29, printPreviewBarItem30, printPreviewBarItem31, printPreviewBarItem32, printPreviewBarItem33, printPreviewBarItem34, printPreviewBarItem35, printPreviewBarItem36, printPreviewBarItem37, printPreviewBarItem38, printPreviewBarItem39, printPreviewBarItem40, printPreviewBarItem41, printPreviewBarItem42, printPreviewBarItem43, printPreviewBarItem44, printPreviewBarItem45, printPreviewBarItem46, printPreviewBarItem47, printPreviewBarItem48, printPreviewBarItem49, printPreviewBarItem50, printPreviewBarItem51, printPreviewStaticItem1, progressBarEditItem1, printPreviewBarItem52, commandBarItem129, printPreviewStaticItem2, zoomTrackBarEditItem1, barWorkspaceMenuItem1, barButtonItem1 });
-            ribbonControl1.Location = new System.Drawing.Point(0, 0);
-            ribbonControl1.MaxItemId = 226;
-            ribbonControl1.Name = "ribbonControl1";
-            ribbonControl1.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { ribbonPageCategory1, ribbonPageCategory2, ribbonPageCategory3, ribbonPageCategory4, ribbonPageCategory5, ribbonPageCategory6, ribbonPageCategory7, ribbonPageCategory8, ribbonPageCategory9 });
-            ribbonControl1.PageHeaderItemLinks.Add(commandBarItem1);
-            ribbonControl1.PageHeaderItemLinks.Add(commandBarItem2);
-            ribbonControl1.PageHeaderItemLinks.Add(commandBarItem3);
-            ribbonControl1.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { ribbonPage1, ribbonPage2, ribbonPage3, ribbonPage4, ribbonPage16, ribbonPage5, ribbonPage15 });
-            ribbonControl1.QuickToolbarItemLinks.Add(commandBarItem4);
-            ribbonControl1.QuickToolbarItemLinks.Add(commandBarItem5);
-            ribbonControl1.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { recentlyUsedItemsComboBox1, designRepositoryItemComboBox1, repositoryItemLookUpEdit1, repositoryItemSpinEdit1, repositoryItemSpinEdit2, repositoryItemSpinEdit3, repositoryItemSpinEdit4, repositoryItemImageComboBox1, repositoryItemLookUpEdit2, repositoryItemComboBox1, repositoryItemProgressBar1, repositoryItemZoomTrackBar1 });
-            ribbonControl1.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
-            ribbonControl1.ShowItemCaptionsInPageHeader = true;
-            ribbonControl1.Size = new System.Drawing.Size(1125, 203);
-            ribbonControl1.StatusBar = ribbonStatusBar1;
-            ribbonControl1.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
+            mainRibbon.ApplicationButtonDropDownControl = applicationMenu1;
+            mainRibbon.AutoHideEmptyItems = true;
+            mainRibbon.AutoSizeItems = true;
+            mainRibbon.ExpandCollapseItem.Id = 0;
+            mainRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { mainRibbon.ExpandCollapseItem, commandBarItem1, commandBarItem2, commandBarItem3, commandBarItem4, commandBarItem5, commandBarItem6, commandBarItem7, commandBarItem8, commandBarItem9, commandBarItem10, commandBarItem11, commandBarItem12, commandBarItem13, commandBarItem14, commandBarItem15, commandBarItem16, barEditItem1, barEditItem2, barDockPanelsListItem1, commandBarItem17, commandBarItem18, commandBarItem19, commandColorBarItem1, commandColorBarItem2, commandBarItem20, commandBarItem21, commandBarItem22, commandBarItem23, commandBarItem24, commandBarItem25, commandBarItem26, commandBarItem27, commandBarItem28, commandBarItem29, commandBarItem30, commandBarItem31, commandBarItem32, commandBarItem33, commandBarItem34, commandBarItem35, commandBarItem36, commandBarItem37, commandColorBarItem3, commandBarItem38, commandBarItem39, commandBarItem40, commandBarItem41, commandBarItem42, commandBarItem43, commandBarItem44, commandBarItem45, commandBarItem46, commandBarItem47, commandBarItem48, commandBarItem49, commandBarItem50, commandBarItem51, commandBarItem52, commandBarItem53, commandBarItem54, commandBarItem55, commandBarItem56, commandBarItem57, commandBarItem58, commandBarItem59, commandBarItem60, commandBarItem61, commandBarCheckItem1, commandBarCheckItem2, commandBarItem62, commandBarItem63, commandBarItem64, commandBarItem65, commandColorBarItem4, commandBarItem66, commandBarItem67, commandBarItem68, commandBarItem69, commandBarItem70, commandBarItem71, commandBarItem72, commandBarEditItem1, commandBarCheckItem3, commandBarItem73, commandBarItem74, commandBarItem75, commandBarItem76, commandGalleryBarItem1, commandGalleryBarItem2, commandGalleryBarItem3, commandGalleryBarItem4, commandGalleryBarItem5, commandGalleryBarItem6, commandBarEditItem2, commandBarEditItem3, commandBarEditItem4, commandBarEditItem5, commandBarEditItem6, commandBarEditItem7, commandBarEditItem8, commandBarItem77, commandBarItem78, commandBarItem79, commandBarItem80, commandBarItem81, commandBarItem82, commandBarItem83, commandBarItem84, commandBarItem85, commandBarItem86, commandBarItem87, commandBarItem88, commandBarItem89, commandBarItem90, commandBarItem91, commandBarItem92, commandBarItem93, commandBarItem94, commandBarItem95, commandBarItem96, commandBarItem97, commandBarItem98, commandBarItem99, commandBarItem100, commandBarItem101, commandBarItem102, commandBarItem103, commandBarItem104, commandBarItem105, commandBarItem106, commandBarItem107, commandBarItem108, commandBarItem109, commandBarItem110, commandBarItem111, commandBarItem112, commandBarItem113, commandBarItem114, commandBarItem115, commandBarItem116, commandBarItem117, commandBarItem118, commandBarItem119, commandBarItem120, commandBarItem121, commandBarItem122, commandBarCheckItem4, commandBarCheckItem5, commandBarCheckItem6, commandBarCheckItem7, commandBarCheckItem8, commandBarCheckItem9, commandBarItem123, commandBarItem124, commandBarItem125, commandBarItem126, commandBarItem127, commandBarItem128, xrDesignBarButtonGroup1, xrDesignBarButtonGroup2, xrDesignBarButtonGroup3, xrDesignBarButtonGroup4, xrDesignBarButtonGroup5, xrDesignBarButtonGroup6, xrDesignBarButtonGroup7, xrDesignBarButtonGroup8, xrDesignBarButtonGroup9, xrDesignBarButtonGroup10, xrDesignBarButtonGroup11, xrDesignBarButtonGroup12, xrDesignBarButtonGroup13, xrDesignBarButtonGroup14, printPreviewBarItem1, printPreviewBarItem2, printPreviewBarItem3, printPreviewBarItem4, printPreviewBarItem5, printPreviewBarItem7, printPreviewBarItem8, printPreviewBarItem9, printPreviewBarItem11, printPreviewBarItem12, printPreviewBarItem13, printPreviewBarItem14, printPreviewBarItem15, printPreviewBarItem16, printPreviewBarItem17, printPreviewBarItem18, printPreviewBarItem19, printPreviewBarItem20, printPreviewBarItem21, printPreviewBarItem22, printPreviewBarItem23, printPreviewBarItem24, printPreviewBarItem25, printPreviewBarItem26, printPreviewBarItem27, printPreviewBarItem28, printPreviewBarItem29, printPreviewBarItem30, printPreviewBarItem31, printPreviewBarItem32, printPreviewBarItem33, printPreviewBarItem34, printPreviewBarItem35, printPreviewBarItem36, printPreviewBarItem37, printPreviewBarItem38, printPreviewBarItem39, printPreviewBarItem40, printPreviewBarItem41, printPreviewBarItem42, printPreviewBarItem43, printPreviewBarItem44, printPreviewBarItem45, printPreviewBarItem46, printPreviewBarItem47, printPreviewBarItem48, printPreviewBarItem49, printPreviewBarItem50, printPreviewBarItem51, printPreviewStaticItem1, progressBarEditItem1, printPreviewBarItem52, commandBarItem129, printPreviewStaticItem2, zoomTrackBarEditItem1, barWorkspaceMenuItem1, barButtonItem1 });
+            mainRibbon.Location = new System.Drawing.Point(0, 0);
+            mainRibbon.MaxItemId = 226;
+            mainRibbon.Name = "mainRibbon";
+            mainRibbon.PageCategories.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageCategory[] { ribbonPageCategory1, ribbonPageCategory2, ribbonPageCategory3, ribbonPageCategory4, ribbonPageCategory5, ribbonPageCategory6, ribbonPageCategory7, ribbonPageCategory8, ribbonPageCategory9 });
+            mainRibbon.PageHeaderItemLinks.Add(commandBarItem1);
+            mainRibbon.PageHeaderItemLinks.Add(commandBarItem2);
+            mainRibbon.PageHeaderItemLinks.Add(commandBarItem3);
+            mainRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { ribbonPage1, ribbonPage2, ribbonPage3, ribbonPage4, ribbonPage16, ribbonPage5, ribbonPage15 });
+            mainRibbon.QuickToolbarItemLinks.Add(commandBarItem4);
+            mainRibbon.QuickToolbarItemLinks.Add(commandBarItem5);
+            mainRibbon.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { recentlyUsedItemsComboBox1, designRepositoryItemComboBox1, repositoryItemLookUpEdit1, repositoryItemSpinEdit1, repositoryItemSpinEdit2, repositoryItemSpinEdit3, repositoryItemSpinEdit4, repositoryItemImageComboBox1, repositoryItemLookUpEdit2, repositoryItemComboBox1, repositoryItemProgressBar1, repositoryItemZoomTrackBar1 });
+            mainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
+            mainRibbon.SearchItemPosition = DevExpress.XtraBars.Ribbon.SearchItemPosition.Caption;
+            mainRibbon.ShowItemCaptionsInPageHeader = true;
+            mainRibbon.Size = new System.Drawing.Size(998, 203);
+            mainRibbon.StatusBar = ribbonStatusBar1;
+            mainRibbon.TransparentEditorsMode = DevExpress.Utils.DefaultBoolean.True;
             // 
             // applicationMenu1
             // 
@@ -1062,7 +1063,7 @@
             applicationMenu1.ItemLinks.Add(barButtonItem1);
             applicationMenu1.MenuDrawMode = DevExpress.XtraBars.MenuDrawMode.LargeImagesText;
             applicationMenu1.Name = "applicationMenu1";
-            applicationMenu1.Ribbon = ribbonControl1;
+            applicationMenu1.Ribbon = mainRibbon;
             // 
             // commandBarItem6
             // 
@@ -1164,6 +1165,12 @@
             superToolTip6.Items.Add(toolTipItem6);
             superToolTip6.MaxWidth = 210;
             commandBarItem128.SuperTip = superToolTip6;
+            // 
+            // barButtonItem1
+            // 
+            barButtonItem1.Caption = "barButtonItem1";
+            barButtonItem1.Id = 225;
+            barButtonItem1.Name = "barButtonItem1";
             // 
             // commandBarItem1
             // 
@@ -5729,10 +5736,10 @@
             ribbonStatusBar1.ItemLinks.Add(commandBarItem129);
             ribbonStatusBar1.ItemLinks.Add(printPreviewStaticItem2, true);
             ribbonStatusBar1.ItemLinks.Add(zoomTrackBarEditItem1);
-            ribbonStatusBar1.Location = new System.Drawing.Point(0, 625);
+            ribbonStatusBar1.Location = new System.Drawing.Point(0, 652);
             ribbonStatusBar1.Name = "ribbonStatusBar1";
-            ribbonStatusBar1.Ribbon = ribbonControl1;
-            ribbonStatusBar1.Size = new System.Drawing.Size(1125, 37);
+            ribbonStatusBar1.Ribbon = mainRibbon;
+            ribbonStatusBar1.Size = new System.Drawing.Size(998, 37);
             // 
             // repositoryItemRibbonSearchEdit1
             // 
@@ -5750,6 +5757,7 @@
             reportDesigner1.ContainerControl = null;
             reportDesigner1.DataSourceWizardSettings.SqlWizardSettings.EnableCustomSql = true;
             reportDesigner1.DataSourceWizardSettings.SqlWizardSettings.QueryBuilderLight = true;
+            reportDesigner1.DataSourceWizardSettings.UseMergedConnectionTypePage = false;
             reportDesigner1.DefaultReportSettings.Margins = new DevExpress.Drawing.DXMargins(254F, 254F, 254F, 254F);
             reportDesigner1.DefaultReportSettings.PaperKind = DevExpress.Drawing.Printing.DXPaperKind.A4;
             reportDesigner1.DefaultReportSettings.ReportUnit = DevExpress.XtraReports.UI.ReportUnit.TenthsOfAMillimeter;
@@ -5764,30 +5772,24 @@
             reportDesigner1.DesignPanelListeners.AddRange(new DevExpress.XtraReports.UserDesigner.XRDesignPanelListener[] { xrDesignPanelListener1, xrDesignPanelListener2, xrDesignPanelListener3, xrDesignPanelListener4, xrDesignPanelListener5, xrDesignPanelListener6, xrDesignPanelListener7, xrDesignPanelListener8 });
             reportDesigner1.Form = this;
             // 
-            // barButtonItem1
-            // 
-            barButtonItem1.Caption = "barButtonItem1";
-            barButtonItem1.Id = 225;
-            barButtonItem1.Name = "barButtonItem1";
-            // 
             // DesignForm
             // 
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1125, 662);
+            ClientSize = new System.Drawing.Size(998, 689);
             Controls.Add(ribbonStatusBar1);
-            Controls.Add(ribbonControl1);
+            Controls.Add(mainRibbon);
             Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             Name = "DesignForm";
-            Ribbon = ribbonControl1;
+            Ribbon = mainRibbon;
             StatusBar = ribbonStatusBar1;
-            Text = "Form1";
+            Text = "Imagine";
             Load += DesignForm_Load;
             Shown += DesignForm_Shown;
             ((System.ComponentModel.ISupportInitialize)xrDesignRibbonController1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)ribbonControl1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)mainRibbon).EndInit();
             ((System.ComponentModel.ISupportInitialize)applicationMenu1).EndInit();
             ((System.ComponentModel.ISupportInitialize)recentlyUsedItemsComboBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)designRepositoryItemComboBox1).EndInit();
@@ -5819,7 +5821,7 @@
         private DevExpress.XtraReports.UserDesigner.Native.RibbonReportDesigner ribbonReportDesigner1;
         private DevExpress.XtraReports.UserDesigner.XRDesignMdiController reportDesigner1;
         private DevExpress.XtraReports.UserDesigner.XRDesignRibbonController xrDesignRibbonController1;
-        private DevExpress.XtraBars.Ribbon.RibbonControl ribbonControl1;
+        private DevExpress.XtraBars.Ribbon.RibbonControl mainRibbon;
         private DevExpress.XtraBars.Ribbon.ApplicationMenu applicationMenu1;
         private DevExpress.XtraReports.UserDesigner.CommandBarItem commandBarItem6;
         private DevExpress.XtraReports.UserDesigner.CommandBarItem commandBarItem9;

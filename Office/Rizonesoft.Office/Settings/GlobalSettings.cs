@@ -9,7 +9,7 @@
         private const int DefaultLogRollingInterval = 3;
         private const int DefaultLogFileLimit = 10;
         private const string DefaultSkinName = "WXI";
-        private const string DefaultPalette = "Darkness";
+        private const string DefaultPalette = "Clearness";
         private const bool DefaultTrackWindowsAppMode = false;
         private const bool DefaultTrackWindowsAccentColor = false;
         

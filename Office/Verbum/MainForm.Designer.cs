@@ -87,9 +87,9 @@
             MainRibbon.QuickToolbarItemLinks.Add(NewBarBtn);
             MainRibbon.QuickToolbarItemLinks.Add(OpenDropdownBtn);
             MainRibbon.QuickToolbarItemLinks.Add(CloseSaveBarItem);
-            MainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
+            MainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
             MainRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            MainRibbon.Size = new System.Drawing.Size(983, 203);
+            MainRibbon.Size = new System.Drawing.Size(898, 203);
             MainRibbon.StatusBar = ribbonStatusBar;
             MainRibbon.Merge += MainRibbon_Merge;
             // 
@@ -208,15 +208,16 @@
             // ribbonStatusBar
             // 
             ribbonStatusBar.ItemLinks.Add(TimeStatusButton, true);
-            ribbonStatusBar.Location = new System.Drawing.Point(0, 582);
+            ribbonStatusBar.Location = new System.Drawing.Point(0, 612);
             ribbonStatusBar.Margin = new System.Windows.Forms.Padding(2);
             ribbonStatusBar.Name = "ribbonStatusBar";
             ribbonStatusBar.Ribbon = MainRibbon;
-            ribbonStatusBar.Size = new System.Drawing.Size(983, 37);
+            ribbonStatusBar.Size = new System.Drawing.Size(898, 37);
             // 
             // CoreMdiManager
             // 
             CoreMdiManager.MdiParent = this;
+            CoreMdiManager.UseFormIconAsPageImage = DevExpress.Utils.DefaultBoolean.False;
             CoreMdiManager.PageAdded += CoreMdiManager_PageAdded;
             CoreMdiManager.PageRemoved += CoreMdiManager_PageRemoved;
             // 
@@ -226,7 +227,7 @@
             topSpacerPanel.Dock = System.Windows.Forms.DockStyle.Top;
             topSpacerPanel.Location = new System.Drawing.Point(0, 203);
             topSpacerPanel.Name = "topSpacerPanel";
-            topSpacerPanel.Size = new System.Drawing.Size(983, 10);
+            topSpacerPanel.Size = new System.Drawing.Size(898, 10);
             topSpacerPanel.TabIndex = 4;
             // 
             // repositoryItemRibbonSearchEdit1
@@ -245,11 +246,10 @@
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(983, 619);
+            ClientSize = new System.Drawing.Size(898, 649);
             Controls.Add(topSpacerPanel);
             Controls.Add(ribbonStatusBar);
             Controls.Add(MainRibbon);
-            Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             IconOptions.ShowIcon = false;
             IsMdiContainer = true;
             Margin = new System.Windows.Forms.Padding(2);

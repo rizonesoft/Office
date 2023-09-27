@@ -57,8 +57,9 @@ namespace Rizonesoft.Office.Imagine
             copyData.DataReceived += CopyData_DataReceived;
 
             FormGeometry.GeometryFromString(CommonSettings.Geometry, this);
-            ribbonControl1.Toolbar.RestoreLayoutFromRegistry($"{ProgramConfiguration.RegistryPath}\\Interface");
+            mainRibbon.Toolbar.RestoreLayoutFromRegistry($"{ProgramConfiguration.RegistryPath}\\Interface");
             xrDesignDockManager1.RestoreLayoutFromRegistry($"{ProgramConfiguration.RegistryPath}\\Docking");
+            DevExpress.XtraReports.Configuration.Settings.Default.StorageOptions.RootDirectory = CommonSettings.InitialOpenDir;
         }
 
         private void InitializeRibbon()
@@ -68,7 +69,7 @@ namespace Rizonesoft.Office.Imagine
             //{
             //IsLanguageDropdownVisible = false
             //};
-            pageRibbonSupport = new RibbonPageSupport(ribbonControl1);
+            pageRibbonSupport = new RibbonPageSupport(mainRibbon);
 
         }
 
@@ -81,8 +82,8 @@ namespace Rizonesoft.Office.Imagine
         private void SaveSettings()
         {
             CommonSettings.Geometry = FormGeometry.GeometryToString(this);
-            ribbonControl1.Toolbar.SaveLayoutToRegistry($"{ProgramConfiguration.RegistryPath}\\Interface");
-            if (commandBarItem2.Down == false && ribbonControl1.SelectedPage != pageRibbonSupport.SupportPage)
+            mainRibbon.Toolbar.SaveLayoutToRegistry($"{ProgramConfiguration.RegistryPath}\\Interface");
+            if (commandBarItem2.Down == false && mainRibbon.SelectedPage != pageRibbonSupport.SupportPage)
             {
                 xrDesignDockManager1.SaveLayoutToRegistry($"{ProgramConfiguration.RegistryPath}\\Docking");
             }

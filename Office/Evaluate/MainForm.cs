@@ -202,19 +202,15 @@ namespace Rizonesoft.Office.Evaluate
                 RestoreDirectory = true,
                 AddExtension = true,
                 DefaultExt = "xlsx",
-                FileName = initialDirectory,
+                InitialDirectory = CommonSettings.InitialOpenDir
 
             };
-
-            if (initialDirectory != string.Empty)
-            {
-                openFileDlg.InitialDirectory = initialDirectory;
-            }
 
             if (openFileDlg.ShowDialog() != DialogResult.OK) return;
 
             var fileName = openFileDlg.FileName;
             AddFileToMruList(fileName);
+            CommonSettings.InitialOpenDir = Path.GetDirectoryName(fileName) ?? CommonSettings.DefaultInitialDirectory;
             OpenFile(fileName);
 
         }

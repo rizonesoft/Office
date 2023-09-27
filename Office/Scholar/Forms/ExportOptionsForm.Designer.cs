@@ -346,7 +346,7 @@
             panelControl4.Controls.Add(labelPdfFocusVersion);
             panelControl4.Controls.Add(SponsorSvgBox);
             panelControl4.Dock = System.Windows.Forms.DockStyle.Bottom;
-            panelControl4.Location = new System.Drawing.Point(0, 504);
+            panelControl4.Location = new System.Drawing.Point(0, 500);
             panelControl4.Name = "panelControl4";
             panelControl4.Padding = new System.Windows.Forms.Padding(0, 0, 20, 0);
             panelControl4.Size = new System.Drawing.Size(528, 50);
@@ -1414,10 +1414,10 @@
             ExportNavigationPane.Name = "ExportNavigationPane";
             ExportNavigationPane.PageProperties.ShowMode = DevExpress.XtraBars.Navigation.ItemShowMode.Image;
             ExportNavigationPane.Pages.AddRange(new DevExpress.XtraBars.Navigation.NavigationPageBase[] { ExportGeneralPane, ExportDocxPane, ExportXlsPane, ExportImgPane, ExportHtmlPane, ExportXmlPane });
-            ExportNavigationPane.RegularSize = new System.Drawing.Size(528, 504);
+            ExportNavigationPane.RegularSize = new System.Drawing.Size(528, 500);
             ExportNavigationPane.SelectedPage = ExportGeneralPane;
             ExportNavigationPane.ShowToolTips = DevExpress.Utils.DefaultBoolean.True;
-            ExportNavigationPane.Size = new System.Drawing.Size(528, 504);
+            ExportNavigationPane.Size = new System.Drawing.Size(528, 500);
             ExportNavigationPane.TabIndex = 7;
             ExportNavigationPane.Text = "Export to Xls";
             ExportNavigationPane.TransitionType = DevExpress.Utils.Animation.Transitions.Push;
@@ -1431,7 +1431,7 @@
             ExportGeneralPane.Name = "ExportGeneralPane";
             ExportGeneralPane.Properties.ShowCollapseButton = DevExpress.Utils.DefaultBoolean.False;
             ExportGeneralPane.Properties.ShowExpandButton = DevExpress.Utils.DefaultBoolean.False;
-            ExportGeneralPane.Size = new System.Drawing.Size(425, 445);
+            ExportGeneralPane.Size = new System.Drawing.Size(425, 441);
             // 
             // panelControl18
             // 
@@ -1685,7 +1685,7 @@
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(528, 554);
+            ClientSize = new System.Drawing.Size(528, 550);
             Controls.Add(ExportNavigationPane);
             Controls.Add(panelControl4);
             Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);

@@ -4,6 +4,7 @@ using Rizonesoft.Office.UI.Forms;
 using Rizonesoft.Office.UI.Ribbon;
 using Rizonesoft.Office.Utilities;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -19,11 +20,14 @@ using DevExpress.XtraBars.Ribbon;
 using DevExpress.XtraEditors;
 using DevExpress.XtraSpellChecker;
 using Rizonesoft.Office.Verbum.Classes;
+using DevExpress.Utils;
 
 namespace Rizonesoft.Office.Verbum
 {
     public partial class MainForm : RibbonFormBase
     {
+        private readonly SvgImageCollection extensionsSvgImages;
+
         private readonly CopyData copyData;
         // private bool isFloating;
         private int documentIndex;
@@ -74,6 +78,9 @@ namespace Rizonesoft.Office.Verbum
             copyData.Channels?.Add("DocChannel");
             copyData.DataReceived += CopyData_DataReceived;
 
+            extensionsSvgImages = new SvgImageCollection();
+            InitializeSvgImages();
+
             InitializeComponent();
             AfterInitializeComponents();
 
@@ -99,6 +106,20 @@ namespace Rizonesoft.Office.Verbum
 
             timer = new ThreadTimer(TimerOnTick, 1000);
             timer.Start();
+        }
+
+        private void InitializeSvgImages()
+        {
+            extensionsSvgImages.Add("exporttodoc", "image://svgimages/export/exporttodoc.svg");
+            extensionsSvgImages.Add("exporttodocx", "image://svgimages/export/exporttodocx.svg");
+            extensionsSvgImages.Add("exporttortf", "image://svgimages/export/exporttortf.svg");
+            extensionsSvgImages.Add("exporttoodt", "image://svgimages/export/exporttoodt.svg");
+            extensionsSvgImages.Add("exporttotxt", "image://svgimages/export/exporttotxt.svg");
+            extensionsSvgImages.Add("exporttohtml", "image://svgimages/export/exporttohtml.svg");
+            extensionsSvgImages.Add("exporttomht", "image://svgimages/export/exporttomht.svg");
+            extensionsSvgImages.Add("exporttodocx", "image://svgimages/export/exporttoxml.svg");
+            extensionsSvgImages.Add("exporttodoc", "image://svgimages/export/exporttoepub.svg");
+            extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
         }
 
         private void TimerOnTick()
@@ -186,9 +207,10 @@ namespace Rizonesoft.Office.Verbum
                 MdiParent = this,
                 // FileName = fileName
             };
-            newDocForm.OpenFile(fileName, documentIndex);
-            newDocForm.Show();
 
+            newDocForm.Show();
+            newDocForm.OpenFile(fileName, documentIndex);
+            UpdateTabImageForDocForm(newDocForm);
         }
 
         private void OpenFile(string fileName)
@@ -204,7 +226,7 @@ namespace Rizonesoft.Office.Verbum
             var openFileDlg = new OpenFileDialog
             {
                 Filter = Dialogs.OpenFileFolder_Filter,
-                FilterIndex = 1,
+                FilterIndex = 3,
                 Title = Dialogs.OpenFileFolder_Title,
                 CheckFileExists = true,
                 CheckPathExists = true,
@@ -212,16 +234,9 @@ namespace Rizonesoft.Office.Verbum
                 SupportMultiDottedExtensions = true,
                 ValidateNames = true,
                 RestoreDirectory = true,
-                AddExtension = true,
-                DefaultExt = "docx",
-                FileName = initialDirectory,
+                InitialDirectory = CommonSettings.InitialOpenDir
 
             };
-
-            if (initialDirectory != string.Empty)
-            {
-                openFileDlg.InitialDirectory = initialDirectory;
-            }
 
             var dlgResult = openFileDlg.ShowDialog();
 
@@ -229,6 +244,7 @@ namespace Rizonesoft.Office.Verbum
             if (dlgResult != DialogResult.OK) return;
             var fileName = openFileDlg.FileName;
             AddFileToMruList(fileName);
+            CommonSettings.InitialOpenDir = Path.GetDirectoryName(fileName) ?? CommonSettings.DefaultInitialDirectory;
             OpenFile(fileName);
 
         }
@@ -368,7 +384,44 @@ namespace Rizonesoft.Office.Verbum
         {
             if (sender is not DevExpress.XtraTabbedMdi.XtraTabbedMdiManager)
                 throw new ArgumentNullException(nameof(sender));
+
+            if (e.Page.MdiChild is DocForm docForm)
+            {
+                docForm.FileNameChanged += DocForm_FileNameChanged;
+            }
+
             UpdateMainFormState();
+
+        }
+
+        private void DocForm_FileNameChanged(object sender, EventArgs e)
+        {
+            if (sender is DocForm childDocForm)
+            {
+                UpdateTabImageForDocForm(childDocForm);
+            }
+        }
+
+        private void UpdateTabImageForDocForm(DocForm childDocForm)
+        {
+            if (childDocForm == null) return;
+
+            var fileName = childDocForm.FileName;
+            var extension = Path.GetExtension(fileName);
+            var tabPage = CoreMdiManager.Pages[childDocForm];
+
+            if (tabPage == null) return;
+            if (!string.IsNullOrWhiteSpace(extension))
+            {
+                var svgImage = ImageResourceLoader.GetIconForExtension(extension);
+                tabPage.ImageOptions.SvgImage = extensionsSvgImages[svgImage];
+            }
+            else
+            {
+                tabPage.ImageOptions.SvgImage = extensionsSvgImages["new"];
+            }
+
+            tabPage.ImageOptions.SvgImageSize = new Size(24, 24);
         }
 
         private void CoreMdiManager_PageRemoved(object sender, DevExpress.XtraTabbedMdi.MdiTabPageEventArgs e)

@@ -20,8 +20,8 @@
 		<Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 		<UseWPF>False</UseWPF>
 		<IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.26.182</AssemblyVersion>
-	  <FileVersion>2023.9.26.182</FileVersion>
+	  <AssemblyVersion>2023.9.27.188</AssemblyVersion>
+	  <FileVersion>2023.9.27.188</FileVersion>
 	  <ApplicationIcon>Evaluate.ico</ApplicationIcon>
   </PropertyGroup>
 

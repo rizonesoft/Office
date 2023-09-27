@@ -3,17 +3,20 @@ RIZONESOFT OFFICE CHANGES
 ==================================================
 
 --------------------------------------------------
-Version 2023.9.5.1616 Alpha 4 (September 5, 2023)
+Version 2023.9.27.1794 Alpha 5 (September 27, 2023)
 --------------------------------------------------
 
 GENERAL:
 
-- NEW: Added Flow Diagram Program.
 - NEW: Introduced themes.
+- NEW: Enhanced settings dialog.
+- NEW: About dialogs.
+- NEW: Initial Open, Save, and Export directories are now remembered.
 
-VERBUM:
+- UPDATE: Updated Syncfusion to version 23.1.36.
 
-- 
+- INSTALLER: Installer minimum requirements now Windows 10.
+- INSTALLER: Installer now removes old versions.
 
 SCHOLAR:
 

@@ -20,8 +20,8 @@
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.26.836</AssemblyVersion>
-	  <FileVersion>2023.9.26.836</FileVersion>
+	  <AssemblyVersion>2023.9.27.860</AssemblyVersion>
+	  <FileVersion>2023.9.27.860</FileVersion>
 	  <ApplicationIcon>Scholar.ico</ApplicationIcon>
   </PropertyGroup>
 

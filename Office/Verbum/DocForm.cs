@@ -36,18 +36,32 @@ namespace Rizonesoft.Office.Verbum;
 /// </summary>
 public partial class DocForm : RibbonForm
 {
+    public event EventHandler FileNameChanged;
+    
     private bool _includeTextBoxes;
     private int currentPage = 1;
     private bool isZoomChanging;
     private int _pageCount = 1;
 
 
-    /// <summary>
-    ///     Gets the filename of the document
-    /// </summary>
-    public string FileName { get; private set; }
+    private string _fileName;
 
-    private readonly SvgImageCollection _extensionsSvgImages;
+    public string FileName
+    {
+        get => _fileName;
+        private set
+        {
+            if (_fileName == value) return;
+            _fileName = value;
+            OnFileNameChanged();
+        }
+    }
+
+    protected virtual void OnFileNameChanged()
+    {
+        FileNameChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private const string HyphenationFilePrefix = "hyph";
     private const string SpellingOptionsXml = "Spelling.conf";
     private const string TableToolsRibbonCatName = "TableToolsRibbonCat";
@@ -74,20 +88,6 @@ public partial class DocForm : RibbonForm
     public DocForm(string fileName)
     {
         FileName = fileName;
-        _extensionsSvgImages = new SvgImageCollection();
-        InitializeSvgImages();
-
-        var extension = Path.GetExtension(fileName);
-        if (!string.IsNullOrWhiteSpace(extension))
-        {
-            var svgImage = ImageResourceLoader.GetIconForExtension(extension);
-            IconOptions.SvgImage = _extensionsSvgImages[svgImage];
-        }
-        else
-        {
-            IconOptions.SvgImage = _extensionsSvgImages["new"];
-        }
-
         InitializeComponent();
         UpdateUi();
 
@@ -243,20 +243,6 @@ public partial class DocForm : RibbonForm
     {
         OpenOfficeHyphenationDictionary hyphenationDictionary = new(hyphPath, hyphCulture);
         childRichEditControl.HyphenationDictionaries.Add(hyphenationDictionary);
-    }
-
-    private void InitializeSvgImages()
-    {
-        _extensionsSvgImages.Add("exporttodoc", "image://svgimages/export/exporttodoc.svg");
-        _extensionsSvgImages.Add("exporttodocx", "image://svgimages/export/exporttodocx.svg");
-        _extensionsSvgImages.Add("exporttortf", "image://svgimages/export/exporttortf.svg");
-        _extensionsSvgImages.Add("exporttoodt", "image://svgimages/export/exporttoodt.svg");
-        _extensionsSvgImages.Add("exporttotxt", "image://svgimages/export/exporttotxt.svg");
-        _extensionsSvgImages.Add("exporttohtml", "image://svgimages/export/exporttohtml.svg");
-        _extensionsSvgImages.Add("exporttomht", "image://svgimages/export/exporttomht.svg");
-        _extensionsSvgImages.Add("exporttodocx", "image://svgimages/export/exporttoxml.svg");
-        _extensionsSvgImages.Add("exporttodoc", "image://svgimages/export/exporttoepub.svg");
-        _extensionsSvgImages.Add("new", "image://svgimages/actions/new.svg");
     }
 
     #region Export

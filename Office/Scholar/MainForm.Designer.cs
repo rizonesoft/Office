@@ -77,7 +77,7 @@
             ribbonMain.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
             ribbonMain.SearchItemPosition = DevExpress.XtraBars.Ribbon.SearchItemPosition.Caption;
             ribbonMain.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            ribbonMain.Size = new System.Drawing.Size(981, 158);
+            ribbonMain.Size = new System.Drawing.Size(898, 201);
             // 
             // OpenBarItem
             // 
@@ -253,9 +253,9 @@
             // 
             panelControl1.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             panelControl1.Dock = System.Windows.Forms.DockStyle.Top;
-            panelControl1.Location = new System.Drawing.Point(0, 158);
+            panelControl1.Location = new System.Drawing.Point(0, 201);
             panelControl1.Name = "panelControl1";
-            panelControl1.Size = new System.Drawing.Size(981, 11);
+            panelControl1.Size = new System.Drawing.Size(898, 11);
             panelControl1.TabIndex = 2;
             // 
             // MainForm
@@ -265,7 +265,7 @@
             Appearance.Options.UseFont = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(981, 1071);
+            ClientSize = new System.Drawing.Size(898, 599);
             Controls.Add(panelControl1);
             Controls.Add(ribbonMain);
             Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);

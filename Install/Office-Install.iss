@@ -6,8 +6,8 @@
 ; Inno Setup: https://jrsoftware.org/isinfo.php
 
 ; Preprocessor related stuff
-// #define public Dependency_Path_NetCoreCheck "dependencies\"
-// #include "CodeDependencies.iss"
+#define public Dependency_Path_NetCoreCheck "dependencies\"
+#include "CodeDependencies.iss"
 
 #define GUID="F0085D50-B268-5FEB-B289-5F999C5C26FD"
 #define app_name "Office"
@@ -101,6 +101,8 @@ var
   AppIds: array of string;
   i: Integer;
 begin
+  Dependency_AddDotNet70;
+
   // Define the AppIds to look for
   SetArrayLength(AppIds, 2);
   AppIds[0] := 'Office_is1';

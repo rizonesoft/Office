@@ -19,8 +19,8 @@
 		<Platforms>AnyCPU;x64;x86;</Platforms>  
 	  <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
-	  <AssemblyVersion>2023.9.26.1768</AssemblyVersion>
-      <FileVersion>2023.9.26.1768</FileVersion>
+	  <AssemblyVersion>2023.9.27.1794</AssemblyVersion>
+      <FileVersion>2023.9.27.1794</FileVersion>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -347,6 +347,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Documentation\Changes.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documentation\Demo.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

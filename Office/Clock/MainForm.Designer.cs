@@ -30,7 +30,7 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            ribbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
+            mainRibbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
             ClockButton = new DevExpress.XtraBars.BarButtonItem();
             TimerButton = new DevExpress.XtraBars.BarButtonItem();
             StopwatchButton = new DevExpress.XtraBars.BarButtonItem();
@@ -58,7 +58,7 @@
             AlarmPage = new DevExpress.XtraBars.Navigation.NavigationPage();
             FocusPage = new DevExpress.XtraBars.Navigation.NavigationPage();
             ClockTimer = new System.Windows.Forms.Timer(components);
-            ((System.ComponentModel.ISupportInitialize)ribbon).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)mainRibbon).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MainNavigationFrame).BeginInit();
             MainNavigationFrame.SuspendLayout();
             ClockPage.SuspendLayout();
@@ -71,19 +71,19 @@
             ((System.ComponentModel.ISupportInitialize)MinutesSpinEdit.Properties).BeginInit();
             SuspendLayout();
             // 
-            // ribbon
+            // mainRibbon
             // 
-            ribbon.ExpandCollapseItem.Id = 0;
-            ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbon.ExpandCollapseItem, ClockButton, TimerButton, StopwatchButton, AlarmButton, FocusButton, DateStatusItem, TimeStatusItem });
-            ribbon.Location = new System.Drawing.Point(0, 0);
-            ribbon.MaxItemId = 8;
-            ribbon.Name = "ribbon";
-            ribbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { HomeRibbonPage });
-            ribbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office365;
-            ribbon.SearchItemPosition = DevExpress.XtraBars.Ribbon.SearchItemPosition.None;
-            ribbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
-            ribbon.Size = new System.Drawing.Size(498, 201);
-            ribbon.StatusBar = ribbonStatusBar;
+            mainRibbon.ExpandCollapseItem.Id = 0;
+            mainRibbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { mainRibbon.ExpandCollapseItem, ClockButton, TimerButton, StopwatchButton, AlarmButton, FocusButton, DateStatusItem, TimeStatusItem });
+            mainRibbon.Location = new System.Drawing.Point(0, 0);
+            mainRibbon.MaxItemId = 8;
+            mainRibbon.Name = "mainRibbon";
+            mainRibbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { HomeRibbonPage });
+            mainRibbon.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonControlStyle.Office2019;
+            mainRibbon.SearchItemPosition = DevExpress.XtraBars.Ribbon.SearchItemPosition.None;
+            mainRibbon.ShowApplicationButton = DevExpress.Utils.DefaultBoolean.False;
+            mainRibbon.Size = new System.Drawing.Size(498, 201);
+            mainRibbon.StatusBar = ribbonStatusBar;
             // 
             // ClockButton
             // 
@@ -166,7 +166,7 @@
             ribbonStatusBar.ItemLinks.Add(TimeStatusItem);
             ribbonStatusBar.Location = new System.Drawing.Point(0, 507);
             ribbonStatusBar.Name = "ribbonStatusBar";
-            ribbonStatusBar.Ribbon = ribbon;
+            ribbonStatusBar.Ribbon = mainRibbon;
             ribbonStatusBar.Size = new System.Drawing.Size(498, 37);
             // 
             // MainNavigationFrame
@@ -257,7 +257,7 @@
             tablePanel2.SetColumn(progressBarControl1, 1);
             tablePanel2.SetColumnSpan(progressBarControl1, 5);
             progressBarControl1.Location = new System.Drawing.Point(57, 18);
-            progressBarControl1.MenuManager = ribbon;
+            progressBarControl1.MenuManager = mainRibbon;
             progressBarControl1.Name = "progressBarControl1";
             tablePanel2.SetRow(progressBarControl1, 0);
             progressBarControl1.Size = new System.Drawing.Size(374, 10);
@@ -316,7 +316,7 @@
             tablePanel2.SetColumn(MinutesSpinEdit, 1);
             MinutesSpinEdit.EditValue = new decimal(new int[] { 10, 0, 0, 0 });
             MinutesSpinEdit.Location = new System.Drawing.Point(57, 187);
-            MinutesSpinEdit.MenuManager = ribbon;
+            MinutesSpinEdit.MenuManager = mainRibbon;
             MinutesSpinEdit.Name = "MinutesSpinEdit";
             MinutesSpinEdit.Properties.AllowNullInput = DevExpress.Utils.DefaultBoolean.False;
             MinutesSpinEdit.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -377,13 +377,13 @@
             ClientSize = new System.Drawing.Size(498, 544);
             Controls.Add(MainNavigationFrame);
             Controls.Add(ribbonStatusBar);
-            Controls.Add(ribbon);
+            Controls.Add(mainRibbon);
             IconOptions.ShowIcon = false;
             Name = "MainForm";
-            Ribbon = ribbon;
+            Ribbon = mainRibbon;
             StatusBar = ribbonStatusBar;
-            Text = "MainForm";
-            ((System.ComponentModel.ISupportInitialize)ribbon).EndInit();
+            Text = "Clock";
+            ((System.ComponentModel.ISupportInitialize)mainRibbon).EndInit();
             ((System.ComponentModel.ISupportInitialize)MainNavigationFrame).EndInit();
             MainNavigationFrame.ResumeLayout(false);
             ClockPage.ResumeLayout(false);
@@ -402,7 +402,7 @@
 
         #endregion
 
-        private DevExpress.XtraBars.Ribbon.RibbonControl ribbon;
+        private DevExpress.XtraBars.Ribbon.RibbonControl mainRibbon;
         private DevExpress.XtraBars.Ribbon.RibbonPage HomeRibbonPage;
         private DevExpress.XtraBars.Ribbon.RibbonPageGroup ComminRibPageGroup;
         private DevExpress.XtraBars.Ribbon.RibbonStatusBar ribbonStatusBar;
