@@ -38,11 +38,11 @@ namespace Rizonesoft.Office.UI.About
         /// <summary>
         /// 
         /// </summary>
-        public sealed override string Text
-        {
-            get => base.Text;
-            set => base.Text = value;
-        }
+        //public sealed override string Text
+        //{
+            //get => base.Text;
+           // set => base.Text = value;
+        //}
 
         private void OkButton_Click(object sender, EventArgs e)
         {

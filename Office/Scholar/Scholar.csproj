@@ -2,7 +2,7 @@
 	<PropertyGroup>
 	  <Authors></Authors>
 	  <Company>Rizonesoft</Company>
-	  <TargetFramework>net7.0-windows10.0.22621.0</TargetFramework>
+	  <TargetFramework>net9.0-windows10.0.17763.0</TargetFramework>
 	  <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	  <OutputType>WinExe</OutputType>
 	  <BaseOutputPath>..\Bin</BaseOutputPath>
@@ -14,14 +14,14 @@
 	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>  
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>  
 		<Platforms>AnyCPU;x64;x86;</Platforms>  
-	  <PackageProjectUrl>https://www.rizonesoft.com</PackageProjectUrl>
+	  <PackageProjectUrl>https://rizonesoft.com</PackageProjectUrl>
 	  <Copyright>Copyright (c) 2023 Rizonetech Pty Ltd. All rights reserved.</Copyright>
 	  <UseWPF>False</UseWPF>
 	  <IsPublishable>False</IsPublishable>
-	  <AssemblyVersion>2023.9.27.860</AssemblyVersion>
-	  <FileVersion>2023.9.27.860</FileVersion>
+	  <AssemblyVersion>2024.12.18.866</AssemblyVersion>
+	  <FileVersion>2024.12.18.866</FileVersion>
 	  <ApplicationIcon>Scholar.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -30,11 +30,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevExpress.Win.Design" Version="23.1.5" />
+    <PackageReference Include="DevExpress.Win.Design" Version="24.2.3" />
     <PackageReference Include="sautinsoft.pdffocus" Version="2023.5.10" />
-    <PackageReference Include="Syncfusion.Licensing" Version="23.1.36" />
-    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="23.1.36" />
-    <PackageReference Include="System.Runtime.Serialization.Schema" Version="7.0.0" />
+    <PackageReference Include="Syncfusion.Licensing" Version="28.1.35" />
+    <PackageReference Include="Syncfusion.Pdf.WinForms" Version="28.1.35" />
+    <PackageReference Include="System.Runtime.Serialization.Schema" Version="9.0.0" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 

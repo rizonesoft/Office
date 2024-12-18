@@ -381,7 +381,7 @@ public sealed partial class MainForm : RibbonFormBase
             if (ocrBarCheckItem.Down)
             {
                 pdfFocus.OCROptions.Mode = PdfFocus.COCROptions.eOCRMode.AllImages;
-                pdfFocus.OCROptions.Method += OCR.PerformOCRTesseract;
+                // pdfFocus.OCROptions.Method += OCR.PerformOCRTesseract;
             }
 
             pdfFocus.OpenPdf(Path.GetFullPath(CurrentDocument.FileName));
@@ -481,17 +481,17 @@ public sealed partial class MainForm : RibbonFormBase
         pdfFocus.ImageOptions.Dpi = 300;
         pdfFocus.ImageOptions.ImageFormat = Path.GetExtension(fileName) switch
         {
-            ".jpg" or ".jpeg" => ImageFormat.Jpeg,
-            ".png" => ImageFormat.Png,
-            ".gif" => ImageFormat.Gif,
-            ".bmp" => ImageFormat.Bmp,
-            ".tiff" => ImageFormat.Tiff,
-            ".emf" => ImageFormat.Emf,
-            ".wmf" => ImageFormat.Wmf,
-            _ => throw new NotSupportedException($"Unsupported image format: {Path.GetExtension(fileName)}")
+            // ".jpg" or ".jpeg" => ImageFormat.Jpeg,
+            // ".png" => ImageFormat.Png,
+            // ".gif" => ImageFormat.Gif,
+            // ".bmp" => ImageFormat.Bmp,
+            // ".tiff" => ImageFormat.Tiff,
+            // ".emf" => ImageFormat.Emf,
+            // ".wmf" => ImageFormat.Wmf,
+            // _ => throw new NotSupportedException($"Unsupported image format: {Path.GetExtension(fileName)}")
         };
 
-        if (pdfFocus.ToImage(fileName, 1) == 0) FileLauncher.ExecuteProcess(fileName);
+        // if (pdfFocus.ToImage(fileName, 1) == 0) FileLauncher.ExecuteProcess(fileName);
     }
 
     private static void ExportToHtml(PdfFocus pdfFocus, string fileName)
