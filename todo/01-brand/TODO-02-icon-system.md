@@ -48,7 +48,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 The brief fixes grid, keylines, corner radius, palette and the motif before any icon is drawn, so six icons drawn on different days still read as one family. It also writes down the distinctness rules that keep the family clear of Microsoft's look.
 
-Motif decision, 2026-10-20: interlocking tiles. Each app icon is one tile with its own outline and a single glyph (Write: pen nib; Grid: cells; Stage: spotlight; Flow: linked nodes; Plan: stepped bars; Mail: envelope fold), and the six tiles lock together into the suite mark.
+Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five renderings of pentomino tiles). Five unrelated concepts are under review: folded paper, orbit discs, Bauhaus blocks, isometric objects and die-cut stickers. The concept sheet is the private artifact https://claude.ai/artifact/UFcUNAwH9LCsf57YfCesUS.
 
 **Phase:** 1
 **Needs:** none
@@ -60,7 +60,7 @@ Motif decision, 2026-10-20: interlocking tiles. Each app icon is one tile with i
 
 - [ ] Define the master grid in `docs/brand/icon-language.md`: 256 unit canvas, keyline shapes, safe area and corner radius. Done when: the numbers are stated and a keyline SVG `design/icons/keylines.svg` exists. Cheaper substitute: "consistent rounded squares" with no numbers.
 - [ ] Define the per-app palette in `docs/brand/icon-language.md` with hex values and a contrast check against white and `#1f1f1f` backgrounds. Done when: each app colour reaches at least 3:1 against both backgrounds. Cheaper substitute: reusing Microsoft's blue, green, orange, teal and purple app colours one for one.
-- [ ] Describe the interlocking-tile motif recorded in this section in `docs/brand/icon-language.md`: each tile's outline, how the six outlines assemble into the suite mark, and each app's glyph. Done when: the six tile outlines tile the suite mark with no gaps or overlaps and each app has one sentence naming its glyph. Cheaper substitute: six identical squares, which loses the interlock.
+- [ ] Record the owner's chosen concept from the review in this section in `docs/brand/icon-language.md`: the concept, how the suite logo is built, and each app's object or glyph. Done when: the concept and date are recorded and each of the six apps has one sentence naming its glyph. Cheaper substitute: a letter on a tile.
 - [ ] Write the Distinctness rules in `docs/brand/icon-language.md`: no single letter as the main glyph, no tile overlapping a document card, no Fluent gradients copied, no Microsoft artwork in any form. Done when: the rules are a numbered list the §7 review can tick. Cheaper substitute: "make it look different".
 - [ ] Commit: `brand: add icon design language`
 
