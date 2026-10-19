@@ -8,13 +8,16 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 3 | Checklist items: 20
+Sections: 6 | Checklist items: 35
 
 | Status | Reference  | Deliverable                     | Needs | Items |
 | ------ | ---------- | ------------------------------- | ----- | ----- |
 | [ ]    | D00 T01 §1 | Design Document Checker         | none  | 7     |
 | [ ]    | D00 T01 §2 | Image Asset Checker             | none  | 6     |
 | [ ]    | D00 T01 §3 | Continuous Integration Workflow | none  | 7     |
+| [ ]    | D00 T02 §1 | SPDX Headers and Checker        | none  | 6     |
+| [ ]    | D00 T02 §2 | Third-Party Notices File        | none  | 5     |
+| [ ]    | D00 T02 §5 | Contributing Guide              | none  | 4     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -44,32 +47,32 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 32 | Checklist items: 188
+Sections: 32 | Checklist items: 196
 
 | Status | Reference   | Deliverable                                               | Needs                                 | Items |
 | ------ | ----------- | --------------------------------------------------------- | ------------------------------------- | ----- |
 | [ ]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
-| [ ]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host, owner-decision  | 5     |
-| [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 8     |
+| [ ]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                  | 5     |
+| [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 9     |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §9  | PowerPoint Ribbon and Contextual Tabs Inventory           | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §9  | PowerPoint Ribbon and Contextual Tabs Inventory           | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §10 | PowerPoint Backstage, Views, Panes and Dialogs Inventory  | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §11 | Visio Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §11 | Visio Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §12 | Visio Backstage, Shapes Pane and Dialogs Inventory        | office, windows-host, display-session | 5     |
-| [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session | 6     |
 | [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session | 6     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report                                 | none                                  | 6     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes                                  | none                                  | 6     |
-| [ ]    | D02 T02 §2  | Command Glyph Library Decision                            | owner-decision                        | 5     |
+| [ ]    | D02 T02 §2  | Command Glyph Library Decision                            | none                                  | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter                                      | none                                  | 6     |
-| [ ]    | D02 T02 §4  | Ribbon Component Chapter                                  | office, windows-host, display-session | 7     |
+| [ ]    | D02 T02 §4  | Ribbon Component Chapter                                  | office, windows-host, display-session | 8     |
 | [ ]    | D02 T02 §5  | Backstage Chapter                                         | none                                  | 6     |
 | [ ]    | D02 T02 §6  | Status Bar and Zoom Chapter                               | none                                  | 4     |
 | [ ]    | D02 T02 §7  | Word Surface Chapter                                      | none                                  | 5     |
@@ -85,30 +88,32 @@ Sections: 32 | Checklist items: 188
 
 Sections: 13 | Checklist items: 63
 
-| Status | Reference   | Deliverable                                       | Needs          | Items |
-| ------ | ----------- | ------------------------------------------------- | -------------- | ----- |
-| [ ]    | D03 T01 §1  | Platform Targets Decision                         | none           | 4     |
-| [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype    | none           | 6     |
-| [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision        | none           | 5     |
-| [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision            | none           | 5     |
-| [ ]    | D03 T01 §5  | File Format Strategy Decision                     | none           | 5     |
-| [ ]    | D03 T01 §6  | Spreadsheet Calculation Engine Decision           | none           | 5     |
-| [ ]    | D03 T01 §7  | Mail, Calendar and Contacts Protocol Decision     | none           | 5     |
-| [ ]    | D03 T01 §8  | Storage, AutoSave and Co-Authoring Decision       | owner-decision | 4     |
-| [ ]    | D03 T01 §9  | Extensibility and Macro Decision                  | none           | 4     |
-| [ ]    | D03 T01 §10 | Font Strategy Decision                            | none           | 4     |
-| [ ]    | D03 T01 §11 | Product Licence and Dependency Policy             | owner-decision | 4     |
-| [ ]    | D03 T01 §12 | Foundation Plan                                   | none           | 6     |
-| [ ]    | D03 T01 §13 | Implementation TODO Domains for Platform and Apps | none           | 6     |
+| Status | Reference   | Deliverable                                    | Needs | Items |
+| ------ | ----------- | ---------------------------------------------- | ----- | ----- |
+| [ ]    | D03 T01 §1  | Platform Targets Decision                      | none  | 4     |
+| [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype | none  | 6     |
+| [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision     | none  | 5     |
+| [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision         | none  | 5     |
+| [ ]    | D03 T01 §5  | File Format Strategy Decision                  | none  | 5     |
+| [ ]    | D03 T01 §6  | Spreadsheet Calculation Engine Decision        | none  | 5     |
+| [ ]    | D03 T01 §7  | Mail, Calendar and Contacts Protocol Decision  | none  | 5     |
+| [ ]    | D03 T01 §8  | Storage, AutoSave and Co-Authoring Decision    | none  | 4     |
+| [ ]    | D03 T01 §9  | Extensibility and Macro Decision               | none  | 4     |
+| [ ]    | D03 T01 §10 | Font Strategy Decision                         | none  | 4     |
+| [ ]    | D03 T01 §11 | Product Licence and Dependency Policy          | none  | 4     |
+| [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 6     |
+| [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 6     |
 
 ### Phase 99: Manual, operator only
 
-Sections: 1 | Checklist items: 3
+Sections: 3 | Checklist items: 12
 
-| Status | Reference  | Deliverable                            | Needs                       | Items |
-| ------ | ---------- | -------------------------------------- | --------------------------- | ----- |
-| [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision | third-party, owner-decision | 3     |
+| Status | Reference  | Deliverable                                  | Needs                       | Items |
+| ------ | ---------- | -------------------------------------------- | --------------------------- | ----- |
+| [ ]    | D00 T02 §3 | Contributor Agreement Text                   | third-party, owner-decision | 5     |
+| [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
+| [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 0/68 verified sections, 3 ready to run now.
+Progress: 0/73 verified sections, 7 ready to run now.
 
-Checklist: 0/367 items completed (includes Commit items).
+Checklist: 0/399 items completed (includes Commit items).

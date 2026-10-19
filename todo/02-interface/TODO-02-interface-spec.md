@@ -76,20 +76,20 @@ Tokens are the single source for every colour, size and font the interface uses,
 
 ## 2. Command Glyph Library Decision
 
-The ribbon needs roughly two thousand small command glyphs across six apps. Drawing all of them is costly; adopting an open set is fast but must still look like the suite, not like Microsoft. Fluent UI System Icons are MIT-licensed but are Microsoft's own look; Lucide, Phosphor and Tabler are neutral. The recommended path is a neutral open set as the base, with original glyphs drawn for gaps.
+The ribbon needs roughly two thousand small command glyphs across six apps. Decision, 2026-10-20 (owner): Fluent UI System Icons (MIT, https://github.com/microsoft/fluentui-system-icons), the closest set to Office and compatible with the product's GPL-3.0-or-later licence; original glyphs are drawn in the same style only where the set has no match.
 
 **Phase:** 2
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
-1. Compare the candidate sets against the inventory command list. Done when: `docs/specs/YYYY-MM-DD-command-glyphs-design.md` (dated when written) records coverage per set.
-2. Record the owner's choice and remove the Need. Done when: the decision and date are in the document and in this section.
+1. Map every inventory command to a Fluent UI System Icons glyph in `docs/specs/YYYY-MM-DD-command-glyphs-design.md` (dated when written). Done when: every `control` record has a glyph or is listed as a gap.
+2. Pin the set's version and record the notice. Done when: the version is pinned and the notice exists.
 
-- [ ] Count how many inventory `control` records each candidate set covers by name match in `docs/specs/YYYY-MM-DD-command-glyphs-design.md`. Done when: a coverage percentage per set is recorded. Cheaper substitute: choosing the set with the most icons overall.
-- [ ] Record licence terms, attribution duties and stroke style per set in the same document. Done when: each set lists licence, attribution text and stroke width. Cheaper substitute: "all open source".
-- [ ] Record the owner's chosen base set and the rule for drawing gaps in the document under `## Decision`, then remove `owner-decision` from this section. Done when: the decision names the set, the version and the date. Cheaper substitute: mixing sets ad hoc per app.
+- [ ] Map each inventory `control` record to a Fluent UI System Icons glyph name and size (16, 20, 24 or 32) in `docs/specs/YYYY-MM-DD-command-glyphs-design.md`. Done when: the coverage percentage and the gap list are recorded. Cheaper substitute: picking glyphs per control while coding, which drifts between apps.
+- [ ] Record the regular versus filled usage rule and the colour treatment for glyphs on the ribbon in the same document. Done when: both rules cite the Ribbon chapter's states. Cheaper substitute: mixing regular and filled glyphs at random.
+- [ ] Record the 2026-10-20 decision, the pinned version and the rule for drawing gap glyphs in the document under `## Decision`. Done when: the decision names the set, the version and the date. Cheaper substitute: mixing sets ad hoc per app.
 - [ ] Add the chosen set's licence text to `THIRD-PARTY-NOTICES.md`. Done when: the notice names the set, version and licence. Cheaper substitute: a link instead of the licence text.
 - [ ] Commit: `spec: record command glyph library decision`
 
@@ -134,6 +134,7 @@ The ribbon is the hardest shared component: control types and sizes, groups and 
 - [ ] Measure the Word Home tab group collapse order at 1920, 1366, 1024 and 800 pixel widths with `scripts/capture-ui.py` and record it in the Ribbon chapter. Done when: each width lists each group's state (large, medium, small, collapsed). Cheaper substitute: an assumed right-to-left collapse.
 - [ ] Specify the general scaling algorithm (per-group scale policies and priority) that reproduces the measured order. Done when: applying the algorithm by hand to the Excel Home tab matches a measurement at 1024 pixels. Cheaper substitute: horizontal scrolling of the ribbon.
 - [ ] Specify contextual tab sets (colour band, label above the tab, activation on selection) and KeyTips (Alt layers, badge placement, sequences). Done when: both cite inventory ids. Cheaper substitute: contextual commands in a floating toolbar.
+- [ ] Specify the Simplified Ribbon (single row, overflow menu, which commands each tab keeps) and Office's switch between Classic and Simplified, per the D02 T01 §2 decision. Done when: every app tab cites both its `ribbon.json` and `ribbon-simplified.json` records. Cheaper substitute: Classic only, with Simplified left for later.
 - [ ] Specify the command model behind controls: command id, enabled and checked state, undo unit, and Quick Access Toolbar pinning. Done when: Undo and Redo specify their split-button history list. Cheaper substitute: controls that call handlers directly with no shared command state.
 - [ ] Commit: `spec: add ribbon component chapter`
 

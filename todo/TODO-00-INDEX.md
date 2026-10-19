@@ -7,6 +7,7 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 | TODO | Scope |
 | ---- | ----- |
 | `00-workspace/TODO-01-design-doc-tooling.md` | Checkers and CI |
+| `00-workspace/TODO-02-licensing-and-contributions.md` | Licensing and contributions |
 | `01-brand/TODO-01-suite-naming.md` | Suite and app names |
 | `01-brand/TODO-02-icon-system.md` | Icon family |
 | `01-brand/TODO-03-github-graphics.md` | GitHub graphics |

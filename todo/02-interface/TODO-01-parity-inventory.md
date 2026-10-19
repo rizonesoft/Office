@@ -10,7 +10,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 
 > **Goal:** "Feature by feature, in the same place" becomes measurable. A machine-readable inventory in `design/inventory/` lists every visible element of the six reference Microsoft 365 apps (tabs, groups, commands in order, control type and size, contextual tabs, Backstage pages, panes, status bar items, views, dialogs reachable from the ribbon, and keyboard shortcuts) with its position captured through UI Automation at a fixed window size. Every later interface and application section cites inventory ids, and the coverage report shows how much of the inventory the suite implements.
 
-> **Current state:** Measured 2026-10-19. No inventory, schema or capture tool exists; `design/` is absent. The operator's Windows 11 Pro host may have Microsoft 365 installed; Visio and Project are separately licensed and their availability is unconfirmed. Classic Outlook and the new Outlook for Windows coexist, and the Simplified Ribbon is optional in Word, Excel and PowerPoint, so the reference configuration needs an owner decision (§2).
+> **Current state:** Measured 2026-10-19. No inventory, schema or capture tool exists; `design/` is absent. The operator's Windows 11 Pro host may have Microsoft 365 installed; Visio and Project are installed on the operator's host (owner, 2026-10-20). The owner decided on 2026-10-20 to inventory both the Classic and the Simplified Ribbon from the start, and to use classic Outlook as the Mail reference (§2).
 
 ## Inputs
 
@@ -80,20 +80,20 @@ Every inventoried element is one JSON record with a stable dotted id (`word.home
 
 ## 2. Reference Build and Capture Configuration
 
-Positions only mean something against one fixed configuration. This section records the exact reference: product versions, update channel, display settings and the two owner choices that change the layout (Classic versus Simplified Ribbon; classic Outlook versus the new Outlook for Windows). Recommended defaults: Classic Ribbon, because it shows every command, and classic Outlook, because it carries the full feature set; the owner may choose otherwise.
+Positions only mean something against one fixed configuration. This section records the exact reference: product versions, update channel, display settings and the two owner choices that change the layout (Classic versus Simplified Ribbon; classic Outlook versus the new Outlook for Windows). Decision, 2026-10-20 (owner): both the Classic and the Simplified Ribbon are inventoried and built from the start, with Office's switch between them; the Outlook reference is classic Outlook; Visio and Project are installed on the operator's host.
 
 **Phase:** 2
-**Needs:** office, windows-host, owner-decision
+**Needs:** office, windows-host
 **Surface:** no
 
 **Build order:**
 
-1. Record the owner's two layout choices in this section as `Decision: <ribbon>, <outlook>, <date>`. Done when: the Need `owner-decision` is removed.
+1. Confirm the decision line in this section matches `## Layout choices`. Done when: both name the same choices.
 2. Write `design/inventory/REFERENCE.md`. Done when: the design-doc checker passes with the required headings.
 
 - [ ] Record the version and build of each app from File, Account, About into `design/inventory/REFERENCE.md` under `## Builds`. Done when: six rows carry version, build and channel. Cheaper substitute: "latest Microsoft 365".
 - [ ] Record the capture profile in `design/inventory/REFERENCE.md` under `## Capture profile`: display 1920x1080 at 100 percent scaling, window maximised, Office theme `White`, language `en-US`, ribbon always shown. Done when: the profile has an id that `captureProfile` fields reference. Cheaper substitute: capturing at whatever resolution the host uses.
-- [ ] Record the Classic or Simplified Ribbon choice and the classic or new Outlook choice in `design/inventory/REFERENCE.md` under `## Layout choices`. Done when: both choices carry the owner's date. Cheaper substitute: capturing both layouts and choosing later, which doubles every section.
+- [ ] Record the 2026-10-20 layout choices (Classic and Simplified Ribbon both, classic Outlook) in `design/inventory/REFERENCE.md` under `## Layout choices`, with the steps that switch each reference app between the two ribbons. Done when: both choices carry the owner's date and the switch steps. Cheaper substitute: capturing one ribbon layout and inferring the other.
 - [ ] Record which apps are unlicensed on the host and how they will be licensed (trial or subscription) in `design/inventory/REFERENCE.md` under `## Licensing`. Done when: Visio and Project each show `installed` or a dated plan. Cheaper substitute: inventorying Visio and Project from web screenshots.
 - [ ] Commit: `inventory: record reference build and capture profile`
 
@@ -118,6 +118,7 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 - [ ] Add `--tab <name>` and `--all-tabs` in `scripts/capture-ui.py` that select tabs through the UIA `SelectionItem` pattern. Done when: `--all-tabs` captures every tab listed in the app's ribbon. Cheaper substitute: simulating mouse clicks at fixed coordinates.
 - [ ] Add `--keytips` in `scripts/capture-ui.py` that presses Alt and records KeyTip labels per control. Done when: Word Home Bold records keytip `1`. Cheaper substitute: typing KeyTips from memory.
 - [ ] Add a merge mode in `scripts/capture-ui.py` that updates `bounds` and `order` in an existing file without overwriting hand-written `behaviour` and `source`. Done when: re-running on an annotated file keeps the annotations. Cheaper substitute: regenerating files and losing annotations.
+- [ ] Add `--layout classic|simplified` in `scripts/capture-ui.py`, writing `ribbon.json` or `ribbon-simplified.json`. Done when: the same tab captured in both layouts produces two files that pass the checker. Cheaper substitute: deriving the Simplified layout from the Classic capture.
 - [ ] Write files atomically (temporary file then replace) in `scripts/capture-ui.py`. Done when: killing the process mid-write leaves the previous file intact. Cheaper substitute: writing in place.
 - [ ] Commit: `inventory: add UI Automation capture tool`
 
@@ -165,6 +166,7 @@ Every built-in Word tab (File, Home, Insert, Draw, Design, Layout, References, M
 - [ ] Capture every drop-down and split-button menu one level deep (for example Paste options, Line and Paragraph Spacing, Borders) as child `control` records. Done when: the Borders menu lists every border command in order. Cheaper substitute: recording the top-level button only.
 - [ ] Capture galleries (Styles, Themes, Text Effects, Shape Styles) with their default first items and the gallery's expand behaviour. Done when: each gallery record names its expand control. Cheaper substitute: treating galleries as buttons.
 - [ ] Add `behaviour` and `source` to every Word ribbon control from Microsoft Support pages. Done when: `python scripts/check-inventory.py design/inventory/word/ribbon.json` reports no missing source. Cheaper substitute: copying the control label into `behaviour`.
+- [ ] Capture every Word tab in the Simplified Ribbon into `design/inventory/word/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Word ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word/ribbon.json` exits 0 and the file holds at least 11 `tab` and 10 `contextualTab` records.
@@ -210,6 +212,7 @@ Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data,
 - [ ] Capture the Formulas tab function library menus (Financial, Logical, Text, Date and Time, Lookup and Reference, Math and Trig, More Functions) with every function in order. Done when: each category lists its functions. Cheaper substitute: category names only, which hides the function surface.
 - [ ] Capture drop-down menus one level deep (Conditional Formatting, Format, Sort and Filter, Insert, Delete) as child `control` records. Done when: Conditional Formatting lists its rule families in order. Cheaper substitute: top-level buttons only.
 - [ ] Add `behaviour` and `source` to every Excel ribbon control. Done when: the checker reports no missing source. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Capture every Excel tab in the Simplified Ribbon into `design/inventory/excel/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Excel ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel/ribbon.json` exits 0 and the file holds at least 11 `tab` and 12 `contextualTab` records.
@@ -254,6 +257,7 @@ Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, An
 - [ ] Capture each contextual tab as `contextualTab` records. Done when: the eleven contextual tabs named in this section exist. Cheaper substitute: names without groups.
 - [ ] Capture the Transitions and Animations galleries with every effect in order and its Effect Options menu. Done when: each effect lists its options. Cheaper substitute: gallery records without effects.
 - [ ] Add `behaviour` and `source` to every PowerPoint ribbon control. Done when: the checker reports no missing source. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Capture every PowerPoint tab in the Simplified Ribbon into `design/inventory/powerpoint/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture PowerPoint ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/powerpoint/ribbon.json` exits 0 and the file holds at least 12 `tab` and 11 `contextualTab` records.
@@ -298,6 +302,7 @@ Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Revie
 - [ ] Capture each contextual tab as `contextualTab` records with triggers. Done when: every contextual tab observed has groups. Cheaper substitute: names only.
 - [ ] Capture the Home tab Tools group (Pointer, Connector, Text, drawing tools) and the Design tab Themes, Variants and Layouts galleries. Done when: each tool and gallery item has a record. Cheaper substitute: top-level buttons only.
 - [ ] Add `behaviour` and `source` to every Visio ribbon control. Done when: the checker reports no missing source. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Record in `design/inventory/REFERENCE.md` whether the reference Visio build offers the Simplified Ribbon; if it does, capture it into `design/inventory/visio/ribbon-simplified.json` with `--layout simplified`. Done when: the reference file states the finding and any capture passes the checker. Cheaper substitute: assuming Visio has the same ribbon modes as Word.
 - [ ] Commit: `inventory: capture Visio ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/visio/ribbon.json` exits 0 and the file holds at least 9 `tab` records.
@@ -340,6 +345,7 @@ Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, p
 - [ ] Capture the Format contextual tab once per active view (Gantt, Timeline, Task Usage, Resource Sheet, Network Diagram, Calendar) as distinct `contextualTab` records. Done when: each variant records its triggering view. Cheaper substitute: one Format tab record.
 - [ ] Capture the Report tab report gallery and the Report Design contextual tabs with a fixture report open. Done when: every built-in report name has a record. Cheaper substitute: report categories only.
 - [ ] Add `behaviour` and `source` to every Project ribbon control. Done when: the checker reports no missing source. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Record in `design/inventory/REFERENCE.md` whether the reference Project build offers the Simplified Ribbon; if it does, capture it into `design/inventory/project/ribbon-simplified.json` with `--layout simplified`. Done when: the reference file states the finding and any capture passes the checker. Cheaper substitute: assuming Project has the same ribbon modes as Word.
 - [ ] Commit: `inventory: capture Project ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/project/ribbon.json` exits 0 and the file holds at least 7 `tab` records.
@@ -384,6 +390,7 @@ Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item win
 - [ ] Capture the new message window tabs (Message, Insert, Options, Draw, Format Text, Review, Help) under `outlook.compose.*`. Done when: each tab has groups. Cheaper substitute: the Message tab only.
 - [ ] Capture the read message, appointment, meeting request, contact and task window ribbons under their own id prefixes. Done when: five item window types each have tabs. Cheaper substitute: one generic item window.
 - [ ] Add `behaviour` and `source` to every Outlook ribbon control. Done when: the checker reports no missing source. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Capture every Outlook tab in the Simplified Ribbon into `design/inventory/outlook/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Outlook module and item window ribbons`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/outlook/ribbon.json` exits 0 and the file has records under `outlook.mail`, `outlook.calendar`, `outlook.people`, `outlook.tasks` and `outlook.compose`.

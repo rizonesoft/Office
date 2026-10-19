@@ -20,6 +20,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 - Global rule: specs go to `docs/specs/YYYY-MM-DD-<topic>-design.md` and plans to `docs/plans/YYYY-MM-DD-<feature>.md`, dated on the day they are written.
 - -> XREF: D02 T02 §4 -- the shell framework must render the ribbon component chapter, including its scaling rules
 - -> XREF: D02 T01 §18 -- application TODO sections cite inventory ids so the coverage report can count implemented elements
+- -> XREF: D00 T02 §2 -- the dependency licence policy decided in §11 is enforced through the third-party notices file
 
 ## Outcome
 
@@ -47,11 +48,11 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 10 | §10 | Font strategy decision | §3 | [ ] |
 | 11 | §11 | Product licence and dependency policy | -- | [ ] |
 | 12 | §12 | Foundation plan | §4, §7, §8, §9, §10, §11 | [ ] |
-| 13 | §13 | Implementation TODO domains for platform and apps | §12, D02 T01 §18, D02 T02 §14 | [ ] |
+| 13 | §13 | Platform and app TODO domains | §12, D02 T01 §18, D02 T02 §14 | [ ] |
 
 ## 1. Platform Targets Decision
 
-Everything downstream depends on where the suite runs. Microsoft 365 ships native Windows and macOS apps, web apps and mobile apps; matching the Windows desktop first is the default implied by the inventory's reference build. Decision, 2026-10-20 (owner): Windows, macOS and Linux desktop, enabled by the C++ and Qt 6 choice in §2. Web and mobile are out of scope until the owner adds them.
+Everything downstream depends on where the suite runs. Microsoft 365 ships native Windows and macOS apps, web apps and mobile apps; matching the Windows desktop first is the default implied by the inventory's reference build. Decision, 2026-10-20 (owner): Windows, macOS and Linux desktop, enabled by the C++ and Qt 6 choice in §2. Windows ships first; macOS and Linux follow from the same code, and CI builds all three from the start. Web and mobile are out of scope until the owner adds them.
 
 **Phase:** 3
 **Needs:** none
@@ -192,10 +193,10 @@ The Outlook counterpart must talk to real mailboxes: IMAP and SMTP for any provi
 
 ## 8. Storage, AutoSave and Co-Authoring Decision
 
-The title bar's AutoSave toggle and the Share button imply cloud storage and real-time co-authoring. This record decides local-first storage, AutoSave semantics, version history, the cloud backend (own service, WebDAV, OneDrive and SharePoint through Graph, other providers), and the merge model (CRDT such as Yjs or Automerge, or operational transform).
+The title bar's AutoSave toggle and the Share button imply cloud storage and real-time co-authoring. This record decides local-first storage, AutoSave semantics, version history, the cloud backend (own service, WebDAV, OneDrive and SharePoint through Graph, other providers), and the merge model (CRDT such as Yjs or Automerge, or operational transform). Decision, 2026-10-20 (owner): the first release works on local and network files with AutoSave and recovery; OneDrive and SharePoint through Microsoft Graph, and real-time co-authoring, come in a later milestone. No Rizonesoft cloud service is planned.
 
 **Phase:** 3
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
@@ -204,7 +205,7 @@ The title bar's AutoSave toggle and the Share button imply cloud storage and rea
 
 - [ ] Specify local save semantics: atomic write, crash recovery files, AutoRecover interval and Document Recovery pane. Done when: each has a named mechanism. Cheaper substitute: overwrite in place.
 - [ ] Compare CRDT and OT for each app's document model from §5. Done when: each app has a chosen merge model and its conflict cases. Cheaper substitute: last writer wins.
-- [ ] Record which cloud backends the first release supports and whether the project runs its own service, as an owner decision under `## Decision`, then remove `owner-decision`. Done when: backends and date are recorded. Cheaper substitute: assuming a hosted service with no owner or budget.
+- [ ] Record the 2026-10-20 decision (local first; OneDrive and SharePoint plus co-authoring later; no own service) under `## Decision`, with the milestone that adds the cloud. Done when: the milestone and date are recorded. Cheaper substitute: designing the local model without the later merge model in mind.
 - [ ] Commit: `arch: record storage and co-authoring decision`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/specs/<dated>-storage-collab-design.md --require Decision` exits 0.
@@ -249,10 +250,10 @@ Documents name Calibri, Cambria, Aptos, Arial, Times New Roman and others. Micro
 
 ## 11. Product Licence and Dependency Policy
 
-The product's own licence decides which dependencies are allowed: a permissive or copyleft open-source licence, or proprietary. The dependency policy then lists allowed and refused licences and the notice process.
+The product's own licence decides which dependencies are allowed: a permissive or copyleft open-source licence, or proprietary. The dependency policy then lists allowed and refused licences and the notice process. Decision, 2026-10-20 (owner): GPL-3.0-or-later, matching Qt's open-source edition, with a contributor licence agreement so Rizonesoft can still offer a commercial edition. `LICENSE` and the `README.md` notice landed the same day; enforcement is D00 T02.
 
 **Phase:** 3
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
@@ -260,7 +261,7 @@ The product's own licence decides which dependencies are allowed: a permissive o
 1. Write `docs/specs/YYYY-MM-DD-licensing-design.md` with the owner's choice. Done when: the record passes the checker with Decision.
 
 - [ ] Compare licence options (MIT or Apache 2.0, MPL 2.0, GPL or AGPL, proprietary) with their effect on dependencies such as Qt 6 (LGPLv3 with dynamic linking, or a commercial Qt licence), MPXJ (LGPL) and LibreOffice components (MPL). Done when: each option lists allowed dependency licences. Cheaper substitute: choosing a licence without checking dependencies.
-- [ ] Record the owner's product licence under `## Decision`, then remove `owner-decision`. Done when: the decision and date are recorded and `LICENSE` exists at the repository root. Cheaper substitute: no `LICENSE` file.
+- [ ] Record the 2026-10-20 decision (GPL-3.0-or-later, contributor agreement) under `## Decision`. Done when: the decision and date are recorded and `LICENSE` holds the GPLv3 text. Cheaper substitute: a licence named only in README.
 - [ ] Write the dependency policy (allowed licences, refused licences, notice file process) in the record. Done when: the policy names `THIRD-PARTY-NOTICES.md` as the notice file. Cheaper substitute: case-by-case review with no written rule.
 - [ ] Commit: `arch: record product licence and dependency policy`
 
@@ -287,7 +288,7 @@ The foundation plan joins the decisions into one architecture: component diagram
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/plans/<dated>-foundation-plan.md --require Architecture --require "Repository layout" --require Toolchain --require Milestones` exits 0.
 
-## 13. Implementation TODO Domains for Platform and Apps
+## 13. Platform and App TODO Domains
 
 The plan becomes executable work: new domains for the shared platform and each app, authored with the `create-todo` skill, with sections sized one inventory group at a time so every inventoried element has an owning section.
 
