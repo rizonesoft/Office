@@ -1,8 +1,15 @@
 {
-  "title": "Implementation plan",
-  "acceptance": null,
+  "title": "Office 2028 implementation plan",
+  "acceptance": "Every element in design/inventory works in its app at its inventoried position, and OOXML files round-trip.",
   "phases": {
     "0": "Repository and tooling",
+    "1": "Brand, icons and GitHub graphics",
+    "2": "Interface inventory and specification",
+    "3": "Architecture and tech stack",
+    "4": "Shared platform",
+    "5": "Applications",
+    "6": "Interoperability and fidelity",
+    "7": "Release",
     "99": "Manual, operator only"
   }
 }
