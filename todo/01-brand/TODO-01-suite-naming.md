@@ -94,6 +94,8 @@ The 2026-10-19 brainstorm produced four concepts, each mapping one name to every
 
 The owner picks the concept, can swap individual app names, and the choice is recorded once in `docs/brand/NAMES.md`. Every other file reads names from there. Remove the `owner-decision` Need when the choice is recorded in this section as `Decision: <concept>, <date>`.
 
+Partial decision, 2026-10-20: the app names are Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook). The suite name that prefixes them is still open. Bare app names are generic words that cannot be registered alone, and "Flow" was Microsoft's own product name until 2019 (now Power Automate), so the suite prefix carries the trademark protection.
+
 **Phase:** 1
 **Needs:** owner-decision
 **Surface:** no
