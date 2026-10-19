@@ -22,12 +22,34 @@ MAX_ROW = 100
 OPEN_FENCE = re.compile(r"^ {0,3}(?P<run>`{3,}|~{3,})(?P<info>.*)$")
 HEADING = re.compile(r"^ {0,3}#{1,6}\s+(.*?)(?:\s+#+)?\s*$")  # a closing # run counts only after whitespace
 TABLE_DELIMITER = re.compile(r"^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$")
+# Lines that start another block and so end a table (GFM): heading, fence, quote, thematic break, list item.
+BLOCK_START = re.compile(r"^ {0,3}(#{1,6}(\s|$)|`{3,}|~{3,}|>|([-*_])(\s*\3){2,}\s*$|[-+*]\s|\d{1,9}[.)]\s)")
+LINE_END = re.compile(r"\r\n|\r|\n")
+
+
+def md_lines(text):
+    """Split on Markdown line endings only; U+2028 and other Unicode separators stay inside a line."""
+    lines = LINE_END.split(text)
+    return lines[:-1] if lines and lines[-1] == "" else lines
+
+
+def indent_columns(line):
+    """Leading indentation in columns, with tabs advancing to the next multiple of 4 (CommonMark)."""
+    col = 0
+    for ch in line:
+        if ch == " ":
+            col += 1
+        elif ch == "\t":
+            col += 4 - col % 4
+        else:
+            break
+    return col
 
 
 def lines_with_fences(text):
     """Return [(line number, line, inside fenced code)] and the line number of a fence left open (or None)."""
     out, fence, opened_at = [], None, None
-    for number, line in enumerate(text.splitlines(), 1):
+    for number, line in enumerate(md_lines(text), 1):
         if fence is None:
             m = OPEN_FENCE.match(line)
             if m and not (m["run"][0] == "`" and "`" in m["info"]):
@@ -37,9 +59,8 @@ def lines_with_fences(text):
             out.append((number, line, False))
         else:
             out.append((number, line, True))
-            stripped = line.strip()
-            indent = len(line) - len(line.lstrip(" "))
-            if indent <= 3 and stripped and set(stripped) == {fence[0]} and len(stripped) >= len(fence):
+            stripped = line.strip(" \t")
+            if indent_columns(line) <= 3 and stripped and set(stripped) == {fence[0]} and len(stripped) >= len(fence):
                 fence, opened_at = None, None
     return out, opened_at
 
@@ -66,7 +87,7 @@ def unclosed_fence(text):
 
 
 def placeholders(text):
-    return [f"line {n}: placeholder {m.group(0)!r}" for n, line in enumerate(text.splitlines(), 1)
+    return [f"line {n}: placeholder {m.group(0)!r}" for n, line in enumerate(md_lines(text), 1)
             for m in PLACEHOLDERS.finditer(line)]
 
 
@@ -86,14 +107,14 @@ def table_rows(text):
             continue
         rows.update({lines[i - 1][0], n})
         for m, body, body_fenced in lines[i + 1:]:
-            if body_fenced or not body.strip():
+            if body_fenced or not body.strip() or BLOCK_START.match(body):
                 break
             rows.add(m)
     return rows
 
 
 def wide_rows(text):
-    by_number = dict(enumerate(text.splitlines(), 1))
+    by_number = dict(enumerate(md_lines(text), 1))
     return [f"line {n}: table row is {len(by_number[n])} characters (max {MAX_ROW})"
             for n in sorted(table_rows(text)) if len(by_number[n]) > MAX_ROW]
 

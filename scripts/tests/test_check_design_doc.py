@@ -11,7 +11,7 @@ spec = importlib.util.spec_from_file_location("check_design_doc", SCRIPTS / "che
 cdd = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cdd)
 
-EM, EN = "\u2014", "\u2013"
+EM, EN = chr(0x2014), chr(0x2013)
 GOOD = f"""# Naming brief
 
 ## Exclusions
@@ -89,6 +89,18 @@ class Fences(unittest.TestCase):
         self.assertNotIn("line 6:", out)
 
 
+    def test_unicode_line_separator_is_not_a_line_break(self):
+        # U+2028 is content in Markdown, so the backticks after it do not open a fence and the dash is prose.
+        code, out = run(f"# T\n\nordinary{chr(0x2028)}```\nprose {EM} dash\n```\n")
+        self.assertEqual(code, 1)
+        self.assertIn("line 4: em dash", out)
+
+    def test_tab_indented_backticks_do_not_close_a_fence(self):
+        # A leading tab reaches column 4, so the second line is content and the fence closes on line 6.
+        code, out = run(f"# T\n\n```\n\t```\nquoted {EM} dash\n```\n")
+        self.assertEqual(code, 0, out)
+
+
 class Placeholders(unittest.TestCase):
     def test_each_placeholder_reported_with_line(self):
         code, out = run("# T\n\nCHANGEME here\n\nstill tbd\n\nTODO: x\n\nLorem ipsum dolor\n")
@@ -129,6 +141,9 @@ class WideRows(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("line 5:", out)
         self.assertNotIn("line 7:", out)  # prose after the blank line is not a row
+
+    def test_heading_after_table_ends_the_table(self):
+        self.assertEqual(run("# T\n\nA | B\n--- | ---\n## " + "x" * 101 + "\n")[0], 0)
 
 
 class Unreadable(unittest.TestCase):
