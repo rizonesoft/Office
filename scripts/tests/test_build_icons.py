@@ -9,6 +9,8 @@ import unittest
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
 import icon_design as d
+import filetype_design as ft
+import brand_design as bd
 
 spec = importlib.util.spec_from_file_location("build_icons", SCRIPTS / "build-icons.py")
 build_icons = importlib.util.module_from_spec(spec)
@@ -66,9 +68,45 @@ class Packers(unittest.TestCase):
         self.assertTrue(any("write.ico" in p and "sizes" in p for p in problems))
 
 
+class FileTypes(unittest.TestCase):
+    def test_badge_uses_large_drawing_only_from_40_px(self):
+        # The badge is 68/128 of a large file icon: 40 px at 75.3 px, 32 px at 60.2 px.
+        self.assertEqual([ft.variant_for(p) for p in (16, 31, 32, 47, 48, 60, 61, 75, 76, 256)],
+                         ["sm", "sm", "md", "md", "lg-badge-sm", "lg-badge-sm", "lg-badge-md", "lg-badge-md", "lg", "lg"])
+
+    def test_variant_embeds_matching_app_drawing(self):
+        self.assertIn("write-md-", ft.filetype_svg("docx", "lg-badge-md"))
+        self.assertIn("write-sm-", ft.filetype_svg("docx", "lg-badge-sm"))
+        self.assertIn("write-lg-", ft.filetype_svg("docx", "lg"))
+
+    def test_labels_are_outlined_and_types_marked(self):
+        docm = ft.filetype_svg("docm", "lg")
+        self.assertNotIn("<text", docm)
+        self.assertIn("#f59f0b", docm)  # macro mark
+        self.assertIn("stroke-dasharray", ft.filetype_svg("dotx", "lg"))
+        self.assertNotIn("#f59f0b", ft.filetype_svg("docx", "lg"))
+
+    def test_verify_refuses_live_text(self):
+        problems = build_icons.verify({"design/icons/files/x-lg.svg": b'<svg><text>DOCX</text></svg>'})
+        self.assertTrue(any("live text" in p for p in problems))
+
+
+class Brand(unittest.TestCase):
+    def test_wordmark_and_lockups_are_outlined_whole_unit_canvases(self):
+        for text in [bd.wordmark_svg("light"), bd.lockup_svg(d.SUITE, "dark"), bd.lockup_svg("grid", "light")]:
+            self.assertNotIn("<text", text)
+            width = text.split('viewBox="0 0 ', 1)[1].split()[0]
+            self.assertTrue(width.isdigit(), width)
+
+    def test_kerning_is_applied(self):
+        from text_outline import Outliner
+        o = Outliner()
+        self.assertNotAlmostEqual(o.path("AV", 40, 700)[1], o.path("A", 40, 700)[1] + o.path("V", 40, 700)[1], places=2)
+
+
 class GlassPane(unittest.TestCase):
     def pane_pixel(self, icon, background):
-        data = build_icons.render(d.icon_svg(icon, "lg"), 128, background)
+        data = build_icons.render(d.icon_svg(icon, "lg"), 128, background=background)
         return Image.open(io.BytesIO(data)).convert("RGB").getpixel((100, 96))
 
     def test_large_pane_looks_the_same_on_any_background(self):

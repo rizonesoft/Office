@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""Build every Rizonesoft Office icon asset from scripts/lib/icon_design.py.
+"""Build every Rizonesoft Office icon and brand asset from the design modules in scripts/lib/.
 
-    python scripts/build-icons.py           # write design/icons/ masters and assets/icons/ outputs, then verify
+    python scripts/build-icons.py           # write design/icons/ masters and assets/ outputs, then verify
     python scripts/build-icons.py --check   # rebuild in memory and fail if any committed file differs or is missing
 
 Outputs:
-    design/icons/apps/<app>-<tier>.svg, design/icons/suite/rizonesoft-office-<tier>.svg   SVG masters (lg, md, sm)
-    assets/icons/png/<icon>/<icon>-<px>.png       16 to 1024, each size drawn with its tier
-    assets/icons/windows/<icon>.ico               16, 20, 24, 32, 40, 48, 64, 96, 128, 256 (PNG-compressed entries)
-    assets/icons/macos/<icon>.icns                16 to 1024 including @2x slots
-    assets/icons/linux/hicolor/...                freedesktop hicolor PNGs plus scalable SVG, named by app id
-    assets/icons/web/                             favicon.ico, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png
-    assets/icons/palette.json                     app colours for the interface
+    design/icons/apps/<app>-<tier>.svg, design/icons/suite/rizonesoft-office-<tier>.svg   app and suite SVG masters
+    design/icons/files/<ext>-<variant>.svg      file-type SVG masters (lg, lg-badge-md, lg-badge-sm, md, sm)
+    assets/icons/png/<icon>/<icon>-<px>.png     app and suite PNGs 16 to 1024, each size drawn with its tier
+    assets/icons/windows/<icon>.ico             16, 20, 24, 32, 40, 48, 64, 96, 128, 256 (PNG-compressed entries)
+    assets/icons/macos/<icon>.icns              16 to 1024 including @2x slots
+    assets/icons/files/{png,windows,macos}/     the same for the 26 document file types (PNG up to 512)
+    assets/icons/linux/hicolor/...              apps/ by app id and mimetypes/ by MIME type, plus scalable SVGs
+    assets/icons/web/                           favicon.ico, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png
+    assets/icons/palette.json                   app colours for the interface
+    assets/brand/{svg,png}/                     wordmark and suite and app lockups, light and dark
 
-Requires the resvg_py rasteriser (pip install resvg_py) and Pillow (verification only).
+Requires the packages pinned in scripts/requirements.txt: resvg_py (rasteriser), uharfbuzz and fontTools (text
+outlines), Pillow (verification).
 """
 import argparse
 import io
@@ -27,16 +31,20 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import icon_design as d
+import filetype_design as ft
+import brand_design as bd
 
 PNG_SIZES = (16, 20, 24, 32, 40, 48, 64, 96, 128, 256, 512, 1024)
+FILE_PNG_SIZES = PNG_SIZES[:-1]
 ICO_SIZES = (16, 20, 24, 32, 40, 48, 64, 96, 128, 256)
 HICOLOR_SIZES = (16, 22, 24, 32, 48, 64, 128, 256, 512)
-# ICNS slot type -> (pixel size, displayed size that picks the tier). @2x slots draw the tier of their point size.
+# ICNS slot type -> (pixel size, displayed size that picks the drawing). @2x slots draw for their point size.
 ICNS_SLOTS = (("icp4", 16, 16), ("ic11", 32, 16), ("icp5", 32, 32), ("ic12", 64, 32), ("icp6", 64, 64),
               ("ic07", 128, 128), ("ic13", 256, 128), ("ic08", 256, 256), ("ic14", 512, 256),
               ("ic09", 512, 512), ("ic10", 1024, 512))
-MANAGED = (Path("design/icons/apps"), Path("design/icons/suite"), Path("assets/icons/png"), Path("assets/icons/windows"),
-           Path("assets/icons/macos"), Path("assets/icons/linux"), Path("assets/icons/web"))
+MANAGED = (Path("design/icons/apps"), Path("design/icons/suite"), Path("design/icons/files"), Path("assets/icons/png"),
+           Path("assets/icons/windows"), Path("assets/icons/macos"), Path("assets/icons/files"),
+           Path("assets/icons/linux"), Path("assets/icons/web"), Path("assets/brand"))
 LINUX_ID = {d.SUITE: "com.rizonesoft.Office", **{k: f"com.rizonesoft.{v[0]}" for k, v in d.APPS.items()}}
 
 
@@ -48,17 +56,18 @@ def rasteriser():
     try:
         import resvg_py
     except ImportError:
-        raise SetupRequired("resvg_py is not installed; run: python -m pip install resvg_py") from None
+        raise SetupRequired("resvg_py is not installed; run: python -m pip install -r scripts/requirements.txt") from None
     return resvg_py
 
 
-def render(svg, px, background=None):
-    kwargs = {"svg_string": svg, "width": px, "height": px}
+def render(svg, width, height=None, background=None):
+    height = height or width
+    kwargs = {"svg_string": svg, "width": width, "height": height}
     if background:
         kwargs["background"] = background
     data = bytes(rasteriser().svg_to_bytes(**kwargs))
-    if data[:8] != b"\x89PNG\r\n\x1a\n" or png_size(data) != (px, px):
-        raise RuntimeError(f"rasteriser returned a bad PNG for {px} px")
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or png_size(data) != (width, height):
+        raise RuntimeError(f"rasteriser returned a bad PNG for {width}x{height}")
     return data
 
 
@@ -92,35 +101,74 @@ def icons():
 def build():
     """Return {relative path: bytes} for every output. Pure apart from the rasteriser."""
     out = {}
-    svg = {(i, t): d.icon_svg(i, t) for i in icons() for t in d.TIERS}
-    for (icon, tier), text in svg.items():
-        folder = "suite" if icon == d.SUITE else "apps"
-        out[f"design/icons/{folder}/{icon}-{tier}.svg"] = text.encode("utf-8")
     cache = {}
 
-    def raster(icon, px, shown=None, background=None):
-        key = (icon, px, shown, background)
+    def raster(svg_for, px, shown=None, background=None):
+        """svg_for(displayed px) -> svg text; rendered at px pixels."""
+        text = svg_for(shown or px)
+        key = (text, px, background)
         if key not in cache:
-            cache[key] = render(svg[(icon, d.tier_for(shown or px))], px, background)
+            cache[key] = render(text, px, background=background)
         return cache[key]
 
+    # App and suite icons.
+    svg = {(i, t): d.icon_svg(i, t) for i in icons() for t in d.TIERS}
+    for (icon, tier), text in svg.items():
+        out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = text.encode("utf-8")
     for icon in icons():
+        draw = lambda shown, icon=icon: svg[(icon, d.tier_for(shown))]
         for px in PNG_SIZES:
-            out[f"assets/icons/png/{icon}/{icon}-{px}.png"] = raster(icon, px)
-        out[f"assets/icons/windows/{icon}.ico"] = pack_ico([(px, raster(icon, px)) for px in ICO_SIZES])
-        out[f"assets/icons/macos/{icon}.icns"] = pack_icns([(k, raster(icon, px, shown)) for k, px, shown in ICNS_SLOTS])
+            out[f"assets/icons/png/{icon}/{icon}-{px}.png"] = raster(draw, px)
+        out[f"assets/icons/windows/{icon}.ico"] = pack_ico([(px, raster(draw, px)) for px in ICO_SIZES])
+        out[f"assets/icons/macos/{icon}.icns"] = pack_icns([(k, raster(draw, px, shown)) for k, px, shown in ICNS_SLOTS])
         for px in HICOLOR_SIZES:
-            out[f"assets/icons/linux/hicolor/{px}x{px}/apps/{LINUX_ID[icon]}.png"] = raster(icon, px)
+            out[f"assets/icons/linux/hicolor/{px}x{px}/apps/{LINUX_ID[icon]}.png"] = raster(draw, px)
         out[f"assets/icons/linux/hicolor/scalable/apps/{LINUX_ID[icon]}.svg"] = svg[(icon, "lg")].encode("utf-8")
-    s = d.SUITE
-    out["assets/icons/web/favicon.ico"] = pack_ico([(px, raster(s, px)) for px in (16, 32, 48)])
-    out["assets/icons/web/favicon.svg"] = svg[(s, "sm")].encode("utf-8")
-    out["assets/icons/web/apple-touch-icon.png"] = raster(s, 180, background="#ffffff")
-    out["assets/icons/web/icon-192.png"] = raster(s, 192)
-    out["assets/icons/web/icon-512.png"] = raster(s, 512)
+    suite = lambda shown: svg[(d.SUITE, d.tier_for(shown))]
+    out["assets/icons/web/favicon.ico"] = pack_ico([(px, raster(suite, px)) for px in (16, 32, 48)])
+    out["assets/icons/web/favicon.svg"] = svg[(d.SUITE, "sm")].encode("utf-8")
+    out["assets/icons/web/apple-touch-icon.png"] = raster(suite, 180, background="#ffffff")
+    out["assets/icons/web/icon-192.png"] = raster(suite, 192)
+    out["assets/icons/web/icon-512.png"] = raster(suite, 512)
+
+    # Document file types.
+    linux_mimes = set()
+    for ext, (key, kind, mime) in ft.TYPES.items():
+        fsvg = {v: ft.filetype_svg(ext, v) for v in ft.VARIANTS}
+        for v, text in fsvg.items():
+            out[f"design/icons/files/{ext}-{v}.svg"] = text.encode("utf-8")
+        draw = lambda shown, fsvg=fsvg: fsvg[ft.variant_for(shown)]
+        for px in FILE_PNG_SIZES:
+            out[f"assets/icons/files/png/{ext}/{ext}-{px}.png"] = raster(draw, px)
+        out[f"assets/icons/files/windows/{ext}.ico"] = pack_ico([(px, raster(draw, px)) for px in ICO_SIZES])
+        out[f"assets/icons/files/macos/{ext}.icns"] = pack_icns([(k, raster(draw, px, shown)) for k, px, shown in ICNS_SLOTS])
+        name = mime.replace("/", "-")
+        if name in linux_mimes:  # a template that shares its document's MIME type (mpt) uses that icon on Linux
+            continue
+        linux_mimes.add(name)
+        for px in HICOLOR_SIZES:
+            out[f"assets/icons/linux/hicolor/{px}x{px}/mimetypes/{name}.png"] = raster(draw, px)
+        out[f"assets/icons/linux/hicolor/scalable/mimetypes/{name}.svg"] = fsvg["lg"].encode("utf-8")
+
+    # Wordmark and lockups.
+    brand = {}
+    for theme in bd.THEMES:
+        brand[f"rizonesoft-office-wordmark-{theme}"] = bd.wordmark_svg(theme)
+        for icon in icons():
+            name = "rizonesoft-office" if icon == d.SUITE else f"rizonesoft-{icon}"
+            brand[f"{name}-lockup-{theme}"] = bd.lockup_svg(icon, theme)
+    for name, text in brand.items():
+        out[f"assets/brand/svg/{name}.svg"] = text.encode("utf-8")
+        vb = text.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split()
+        w, h = float(vb[0]), float(vb[1])
+        for scale in (1, 2):
+            height = round(h * scale)
+            out[f"assets/brand/png/{name}-{height}.png"] = render(text, round(w * scale), height)
+
     palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": v[2][1], "light": v[2][0],
                             "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},
-               "suite": {"name": "Rizonesoft Office", "tint": d.SUITE_TINT, "linuxId": LINUX_ID[d.SUITE]}}
+               "suite": {"name": "Rizonesoft Office", "tint": d.SUITE_TINT, "linuxId": LINUX_ID[d.SUITE]},
+               "fileTypes": {ext: {"app": k, "mime": m} for ext, (k, _, m) in ft.TYPES.items()}}
     out["assets/icons/palette.json"] = (json.dumps(palette, indent=2) + "\n").encode("utf-8")
     return out
 
@@ -134,11 +182,16 @@ def verify(files):
             if rel.endswith(".png"):
                 img = Image.open(io.BytesIO(data))
                 img.load()
-                want = int(Path(rel).stem.rsplit("-", 1)[-1]) if "/png/" in rel else None
-                if "/hicolor/" in rel:
-                    want = int(rel.split("/hicolor/")[1].split("x")[0])
-                if want and img.size != (want, want):
-                    problems.append(f"{rel}: {img.size} is not {want}x{want}")
+                if "/brand/" in rel:
+                    want_h = int(Path(rel).stem.rsplit("-", 1)[-1])
+                    if img.height != want_h:
+                        problems.append(f"{rel}: height {img.height} is not {want_h}")
+                else:
+                    want = int(Path(rel).stem.rsplit("-", 1)[-1]) if "/png/" in rel else None
+                    if "/hicolor/" in rel:
+                        want = int(rel.split("/hicolor/")[1].split("x")[0])
+                    if want and img.size != (want, want):
+                        problems.append(f"{rel}: {img.size} is not {want}x{want}")
                 if img.mode != "RGBA":
                     problems.append(f"{rel}: mode {img.mode}, want RGBA")
                 elif not rel.endswith("apple-touch-icon.png") and img.getchannel("A").getextrema()[1] == 0:
@@ -151,14 +204,14 @@ def verify(files):
             elif rel.endswith(".icns"):
                 img = Image.open(io.BytesIO(data))
                 img.load()
-                if img.size != (1024, 1024) and img.size != (512, 512):
+                if img.size not in ((1024, 1024), (512, 512)):
                     problems.append(f"{rel}: largest image {img.size}")
                 if struct.unpack(">I", data[4:8])[0] != len(data):
                     problems.append(f"{rel}: header length mismatch")
             elif rel.endswith(".svg"):
                 text = data.decode("utf-8")
-                if "<image" in text or "<script" in text or "href=\"http" in text:
-                    problems.append(f"{rel}: forbidden content")
+                if "<image" in text or "<script" in text or "href=\"http" in text or "<text" in text:
+                    problems.append(f"{rel}: forbidden content (raster, script, remote link or live text)")
         except Exception as exc:  # a decoder failure is a finding, not a crash
             problems.append(f"{rel}: unreadable ({exc})")
     return problems
@@ -183,7 +236,7 @@ def existing_managed(root):
     for folder in MANAGED:
         base = root / folder
         if base.exists():
-            found |= {p.relative_to(root).as_posix() for p in base.rglob("*") if p.is_file()}
+            found |= {p.relative_to(root).as_posix() for p in base.rglob("*") if p.is_file() and p.name != "README.md"}
     return found
 
 

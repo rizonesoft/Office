@@ -83,12 +83,12 @@ Sections: 32 | Checklist items: 188
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 13 | Checklist items: 62
+Sections: 13 | Checklist items: 63
 
 | Status | Reference   | Deliverable                                       | Needs          | Items |
 | ------ | ----------- | ------------------------------------------------- | -------------- | ----- |
-| [ ]    | D03 T01 §1  | Platform Targets Decision                         | owner-decision | 4     |
-| [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype    | owner-decision | 5     |
+| [ ]    | D03 T01 §1  | Platform Targets Decision                         | none           | 4     |
+| [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype    | none           | 6     |
 | [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision        | none           | 5     |
 | [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision            | none           | 5     |
 | [ ]    | D03 T01 §5  | File Format Strategy Decision                     | none           | 5     |
@@ -109,6 +109,6 @@ Sections: 1 | Checklist items: 3
 | ------ | ---------- | -------------------------------------- | --------------------------- | ----- |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision | third-party, owner-decision | 3     |
 
-Progress: 0/68 verified sections, 2 ready to run now.
+Progress: 0/68 verified sections, 3 ready to run now.
 
-Checklist: 0/366 items completed (includes Commit items).
+Checklist: 0/367 items completed (includes Commit items).

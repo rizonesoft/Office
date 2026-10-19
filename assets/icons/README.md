@@ -60,6 +60,28 @@ On high-density displays the drawing follows the displayed size: the macOS 16 pt
 
 The colours follow the category convention office suites share (documents blue, spreadsheets green, presentations orange) and are not Microsoft's values. No icon uses a letter, which is what makes Microsoft's icons recognisably theirs.
 
-## Not yet made
+## Document file types
 
-Document file-type icons (`.docx`, `.xlsx` and the rest) and the wordmark are still to be designed: todo/01-brand/TODO-02-icon-system.md sections 2 and 5.
+26 types, in the Office composition: a white page with a folded corner, a content hint in the app colour, an extension tag, and the app's glass icon over the lower-left edge.
+
+| App | Types |
+| --- | ----- |
+| Write | `docx`, `docm`, `dotx`, `doc`, `rtf`, `odt` |
+| Grid | `xlsx`, `xlsm`, `xltx`, `xls`, `csv`, `ods` |
+| Stage | `pptx`, `pptm`, `potx`, `ppt`, `odp` |
+| Flow | `vsdx`, `vsdm`, `vstx` |
+| Plan | `mpp`, `mpt` |
+| Mail | `eml`, `msg`, `ics`, `vcf` |
+
+Templates have a dashed page, macro-enabled files an amber mark, CSV and RTF a plain grey hint, calendars and contacts their own hint. The extension tag and macro mark appear from 48 px. The app badge uses the app icon drawing for its own displayed size: the large drawing from 40 px, the 32 px drawing from 32 px, the 16 px drawing below that.
+
+| Folder | Contents |
+| ------ | -------- |
+| `files/png/<ext>/` | `<ext>-<px>.png` at 16 to 512 |
+| `files/windows/` | `<ext>.ico` with 16 to 256 |
+| `files/macos/` | `<ext>.icns` for `CFBundleDocumentTypes` |
+| `linux/hicolor/<size>/mimetypes/` | One icon per MIME type, named like `application-msword.png`; `mpt` shares `mpp`'s MIME type |
+
+`palette.json` maps every extension to its app and MIME type. The SVG masters are `design/icons/files/<ext>-<variant>.svg`.
+
+The wordmark and lockups are in `assets/brand/`.

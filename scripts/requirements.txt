@@ -1,2 +1,4 @@
+fonttools==4.66.0
 Pillow==12.3.0
 resvg_py==0.5.0
+uharfbuzz==0.56.3

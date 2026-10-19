@@ -47,5 +47,111 @@
     "name": "Rizonesoft Office",
     "tint": "#7c8db5",
     "linuxId": "com.rizonesoft.Office"
+  },
+  "fileTypes": {
+    "docx": {
+      "app": "write",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    },
+    "docm": {
+      "app": "write",
+      "mime": "application/vnd.ms-word.document.macroEnabled.12"
+    },
+    "dotx": {
+      "app": "write",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+    },
+    "doc": {
+      "app": "write",
+      "mime": "application/msword"
+    },
+    "rtf": {
+      "app": "write",
+      "mime": "application/rtf"
+    },
+    "odt": {
+      "app": "write",
+      "mime": "application/vnd.oasis.opendocument.text"
+    },
+    "xlsx": {
+      "app": "grid",
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    },
+    "xlsm": {
+      "app": "grid",
+      "mime": "application/vnd.ms-excel.sheet.macroEnabled.12"
+    },
+    "xltx": {
+      "app": "grid",
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.template"
+    },
+    "xls": {
+      "app": "grid",
+      "mime": "application/vnd.ms-excel"
+    },
+    "csv": {
+      "app": "grid",
+      "mime": "text/csv"
+    },
+    "ods": {
+      "app": "grid",
+      "mime": "application/vnd.oasis.opendocument.spreadsheet"
+    },
+    "pptx": {
+      "app": "stage",
+      "mime": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    },
+    "pptm": {
+      "app": "stage",
+      "mime": "application/vnd.ms-powerpoint.presentation.macroEnabled.12"
+    },
+    "potx": {
+      "app": "stage",
+      "mime": "application/vnd.openxmlformats-officedocument.presentationml.template"
+    },
+    "ppt": {
+      "app": "stage",
+      "mime": "application/vnd.ms-powerpoint"
+    },
+    "odp": {
+      "app": "stage",
+      "mime": "application/vnd.oasis.opendocument.presentation"
+    },
+    "vsdx": {
+      "app": "flow",
+      "mime": "application/vnd.ms-visio.drawing.main+xml"
+    },
+    "vsdm": {
+      "app": "flow",
+      "mime": "application/vnd.ms-visio.drawing.macroEnabled.main+xml"
+    },
+    "vstx": {
+      "app": "flow",
+      "mime": "application/vnd.ms-visio.template.main+xml"
+    },
+    "mpp": {
+      "app": "plan",
+      "mime": "application/vnd.ms-project"
+    },
+    "mpt": {
+      "app": "plan",
+      "mime": "application/vnd.ms-project"
+    },
+    "eml": {
+      "app": "mail",
+      "mime": "message/rfc822"
+    },
+    "msg": {
+      "app": "mail",
+      "mime": "application/vnd.ms-outlook"
+    },
+    "ics": {
+      "app": "mail",
+      "mime": "text/calendar"
+    },
+    "vcf": {
+      "app": "mail",
+      "mime": "text/vcard"
+    }
   }
 }

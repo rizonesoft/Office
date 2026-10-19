@@ -10,7 +10,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 > **Goal:** The suite has an original icon family: a suite mark and wordmark, six app icons, small-size variants, and document file-type icons, all as SVG masters with a reproducible export to PNG, ICO and ICNS. No icon reuses Microsoft's composition (a letter tile overlapping a document or grid card), Microsoft's artwork, or the Fluent app-icon style, and the owner signs off a side-by-side distinctness review.
 
-> **Current state:** Measured 2026-10-20. The owner-approved Glass design is generated in code, not hand-drawn: `scripts/lib/icon_design.py` produces the `lg`, `md` and `sm` SVG masters for the suite and six apps, and `scripts/build-icons.py` writes them to `design/icons/apps/` and `design/icons/suite/` and renders 195 verified files into `assets/icons/` (PNG 16 to 1024, ICO, ICNS, Linux hicolor, web favicons, `palette.json`), with `--check` for drift and tests in `scripts/tests/test_build_icons.py`. The rasteriser is the `resvg_py` binding pinned in `scripts/requirements.txt`, not the `resvg` CLI. Still missing: the brief `docs/brand/icon-language.md` (§1), the wordmark (§2), file-type icons (§5), the distinctness review (§7), and stamps for the shipped work. `scripts/check-image-asset.py` (D00 T01 §2) does not exist; `build-icons.py` verifies its own outputs with Pillow.
+> **Current state:** Measured 2026-10-20. The owner-approved designs are generated in code, not hand-drawn. `scripts/lib/icon_design.py` draws the suite and app icons (`lg`, `md`, `sm`), `scripts/lib/filetype_design.py` the 26 document file types (Labelled direction), and `scripts/lib/brand_design.py` the wordmark and lockups in Plus Jakarta Sans, outlined through `scripts/lib/text_outline.py` (HarfBuzz shaping, font in `design/fonts/plus-jakarta-sans/` with its OFL). `scripts/build-icons.py` writes SVG masters to `design/icons/` and 961 verified files to `assets/icons/` and `assets/brand/` (PNG, ICO, ICNS, Linux hicolor apps and mimetypes, web favicons, lockups, `palette.json`), with `--check` for drift and tests in `scripts/tests/test_build_icons.py`. The rasteriser is the `resvg_py` binding pinned in `scripts/requirements.txt`, not the `resvg` CLI. Still missing: the brief `docs/brand/icon-language.md` (§1), the monochrome suite mark (§2), the distinctness review (§7), and stamps for the shipped work. `scripts/check-image-asset.py` (D00 T01 §2) does not exist; `build-icons.py` verifies its own outputs with Pillow.
 
 ## Inputs
 
@@ -68,7 +68,7 @@ Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five 
 
 ## 2. Suite Mark and Wordmark Masters
 
-The suite mark appears on the splash screen, the Backstage account page, the website and GitHub graphics. The wordmark uses an open-licensed typeface whose licence permits logo use (SIL OFL 1.1 or equivalent), converted to outlines.
+The suite mark appears on the splash screen, the Backstage account page, the website and GitHub graphics. The wordmark uses an open-licensed typeface whose licence permits logo use (SIL OFL 1.1 or equivalent), converted to outlines. Decision, 2026-10-20 (owner): Plus Jakarta Sans, "Rizonesoft" in weight 700 and the product name in weight 400 in a quieter colour; lockups pair it with the suite or app icon, in light and dark versions.
 
 **Phase:** 1
 **Needs:** none
@@ -132,7 +132,7 @@ Detail that reads at 256 pixels turns to mud at 16. Each app gets hand-simplifie
 
 ## 5. Document File-Type Icons
 
-File Explorer, Finder and the Backstage recent list show file-type icons. Each type gets the owning app's glyph on a document shape distinct from Microsoft's file icons.
+File Explorer, Finder and the Backstage recent list show file-type icons. Decision, 2026-10-20 (owner): the Office composition in the "Labelled" direction. A white page with a folded corner, a content hint in the app colour, an extension tag from 48 px, and the app's glass icon over the lower-left edge; templates dashed, macro files with an amber mark, CSV and RTF in plain grey. The badge uses the app icon drawing for its own displayed size: the large drawing only from 40 px, below that the 32 px drawing, below 32 px the 16 px drawing.
 
 **Phase:** 1
 **Needs:** none
