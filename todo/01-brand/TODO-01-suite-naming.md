@@ -165,7 +165,7 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 1. Update `AGENTS.md` and create `README.md` with the product name from `docs/brand/NAMES.md`. Done when: `rg -n "Office 2028" README.md AGENTS.md` returns only the codename note.
 
 - [ ] Replace the first paragraph placeholder in `AGENTS.md` with what the project is, using the suite name from `docs/brand/NAMES.md`. Done when: `AGENTS.md` names the suite and its six apps. Cheaper substitute: leaving the Conclave-SDK adaptation note in place.
-- [ ] Update `README.md` (created 2026-10-20 with the licence notice) so the suite name, one line per app with its Microsoft counterpart, and the codename note match `docs/brand/NAMES.md`. Done when: `python scripts/check-design-doc.py README.md --require` with the suite name exits 0. Cheaper substitute: a README that only says "Office clone".
+- [ ] Update `README.md` (created 2026-10-20 with the licence notice) so the suite name, one line per app with its Microsoft counterpart, and the codename note match `docs/brand/NAMES.md`. Done when: `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses). Cheaper substitute: a README that only says "Office clone".
 - [ ] Update `todo/plan.json` `title` to the suite name. Done when: `python scripts/todo-graph.py plan --sync` writes the new title into `todo/implementation-plan.md`. Cheaper substitute: editing the generated plan by hand.
 - [ ] Commit: `brand: apply suite and app names`
 

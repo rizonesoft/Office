@@ -117,7 +117,7 @@ The README shows the banner and lineup with `<picture>` so they match the visito
 - [ ] Add a CI status badge for `.github/workflows/ci.yml` to `README.md`. Done when: the badge renders the current run state. Cheaper substitute: a static "passing" badge.
 - [ ] Commit: `docs: present suite branding in README`
 
-**Test checkpoint:** `python scripts/check-design-doc.py README.md --require` with the suite name exits 0, and `(Select-String -Path README.md -Pattern "prefers-color-scheme").Count` is at least 2.
+**Test checkpoint:** `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses), and `(Select-String -Path README.md -Pattern "prefers-color-scheme").Count` is at least 2.
 
 ## 5. Upload Social Preview and Avatar
 
