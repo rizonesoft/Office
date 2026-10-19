@@ -40,6 +40,8 @@ title: "TODO-01 -- Design Document Tooling"
 
 ## 1. Design Document Checker
 
+> **Started:** 2026-10-19T23:51:21Z
+
 Every design deliverable in domains 01 to 03 is a Markdown document whose Test checkpoint calls this checker. It refuses a document that lacks a required heading, still carries placeholder text (`CHANGEME`, `TBD`, `TODO:`, `lorem ipsum`), contains U+2014 or U+2013 outside fenced code, or has a table row over 100 characters. Standard library only, so it runs on any host with Python 3.11 or later.
 
 **Phase:** 0
@@ -51,13 +53,13 @@ Every design deliverable in domains 01 to 03 is a Markdown document whose Test c
 1. Write `scripts/check-design-doc.py` with a path argument and repeatable `--require`. Done when: it exits 0 on a conforming fixture and 1 on every refusal fixture, printing the reason.
 2. Write `scripts/tests/test_check_design_doc.py`. Done when: the suite passes and fails when any rule is disabled.
 
-- [ ] Create the argparse CLI in `scripts/check-design-doc.py` taking one path and repeatable `--require "<heading text>"`. Done when: `python scripts/check-design-doc.py --help` lists both. Cheaper substitute: an inline shell grep per Test checkpoint that cannot be unit tested.
-- [ ] Add `missing_headings()` in `scripts/check-design-doc.py` matching `#`-prefixed heading lines exactly. Done when: a fixture lacking `## Constraints` run with `--require "Constraints"` exits 1 printing `missing heading: Constraints`. Cheaper substitute: a substring match that a word inside a paragraph satisfies.
-- [ ] Add `placeholders()` in `scripts/check-design-doc.py` for `CHANGEME`, `TBD`, `TODO:` and `lorem ipsum`, case-insensitive. Done when: each token in a fixture is reported with its line number. Cheaper substitute: checking only the first match and stopping.
-- [ ] Add `dashes()` in `scripts/check-design-doc.py` reporting U+2014 and U+2013 outside fenced code blocks (source: `AGENTS.md` working rules). Done when: a fixture with an em dash in prose fails and the same dash inside a code fence passes. Cheaper substitute: scanning code fences too, which breaks quoted byte-exact content.
-- [ ] Add `wide_rows()` in `scripts/check-design-doc.py` refusing `|` table rows longer than 100 characters (source: `AGENTS.md`). Done when: a 101-character row fails and a 100-character row passes. Cheaper substitute: measuring bytes instead of characters, which miscounts `§`.
-- [ ] Write `scripts/tests/test_check_design_doc.py` with one conforming fixture and one fixture per rule. Done when: `python -m unittest discover -s scripts/tests -p "test_check_design_doc.py"` passes, and fails when any rule function is replaced by `return []`.
-- [ ] Commit: `tooling: add design document checker`
+- [x] Create the argparse CLI in `scripts/check-design-doc.py` taking one path and repeatable `--require "<heading text>"`. Done when: `python scripts/check-design-doc.py --help` lists both. Cheaper substitute: an inline shell grep per Test checkpoint that cannot be unit tested.
+- [x] Add `missing_headings()` in `scripts/check-design-doc.py` matching `#`-prefixed heading lines whose text equals the required words or starts with them at a word boundary, ignoring case. **Corrected 2026-10-20:** said "exactly"; later checkpoints require `Status bar` of a "Status bar and zoom" chapter and `F6` of an "F6 region cycling" heading, so an exact match would fail correct documents. Done when: a fixture lacking `## Constraints` run with `--require "Constraints"` exits 1 printing `missing heading: Constraints`. Cheaper substitute: a substring match that a word inside a paragraph satisfies.
+- [x] Add `placeholders()` in `scripts/check-design-doc.py` for `CHANGEME`, `TBD`, `TODO:` and `lorem ipsum`, case-insensitive. Done when: each token in a fixture is reported with its line number. Cheaper substitute: checking only the first match and stopping.
+- [x] Add `dashes()` in `scripts/check-design-doc.py` reporting U+2014 and U+2013 outside fenced code blocks (source: `AGENTS.md` working rules). Done when: a fixture with an em dash in prose fails and the same dash inside a code fence passes. Cheaper substitute: scanning code fences too, which breaks quoted byte-exact content.
+- [x] Add `wide_rows()` in `scripts/check-design-doc.py` refusing `|` table rows longer than 100 characters (source: `AGENTS.md`). Done when: a 101-character row fails and a 100-character row passes. Cheaper substitute: measuring bytes instead of characters, which miscounts `§`.
+- [x] Write `scripts/tests/test_check_design_doc.py` with one conforming fixture and one fixture per rule. Done when: `python -m unittest discover -s scripts/tests -p "test_check_design_doc.py"` passes, and fails when any rule function is replaced by `return []`.
+- [x] Commit: `tooling: add design document checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_design_doc.py"` reports at least 5 tests run and `OK`.
 
