@@ -10,13 +10,15 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 
 > **Goal:** "Feature by feature, in the same place" becomes measurable. A machine-readable inventory in `design/inventory/` lists every visible element of the six reference Microsoft 365 apps (tabs, groups, commands in order, control type and size, contextual tabs, Backstage pages, panes, status bar items, views, dialogs reachable from the ribbon, and keyboard shortcuts) with its position captured through UI Automation at a fixed window size. Every later interface and application section cites inventory ids, and the coverage report shows how much of the inventory the suite implements.
 
-> **Current state:** Measured 2026-10-19. No inventory, schema or capture tool exists; `design/` is absent. The operator's Windows 11 Pro host may have Microsoft 365 installed; Visio and Project are installed on the operator's host (owner, 2026-10-20). The owner decided on 2026-10-20 to inventory both the Classic and the Simplified Ribbon from the start, and to use classic Outlook as the Mail reference (§2).
+> **Current state:** Measured 2026-10-20. No inventory, schema or capture tool exists. The operator's Windows 11 Pro host has Microsoft 365 Apps build 16.0.20430.20182, Current Channel, x64, licensed as O365BusinessRetail, ProjectProRetail and VisioProRetail, with Word, Excel, PowerPoint, Visio, Project and Outlook all installed; the operator also uses Word interactively, so captures must never touch windows they did not open. No UI Automation Python package is installed yet. Microsoft publishes every control identifier per app at https://github.com/OfficeDev/office-fluent-ui-command-identifiers (MIT, last updated 2024-03-18), used as the completeness baseline (§19). The owner decided on 2026-10-20 to inventory both the Classic and the Simplified Ribbon from the start, and to use classic Outlook as the Mail reference (§2).
 
 ## Inputs
 
 - A licensed Microsoft 365 Apps install on the operator's Windows host (Word, Excel, PowerPoint, Outlook) plus Visio Plan 2 and Project Plan 3 or Project Professional: the capture source.
 - Microsoft Support and Microsoft Learn pages for each command, Backstage page and shortcut list (for example "Keyboard shortcuts in Word"): the behaviour source cited per element.
-- Windows UI Automation (UIA) tree: names, control types, automation ids and bounding rectangles of ribbon elements.
+- Windows UI Automation (UIA) tree: names, control types, automation ids, ScreenTip text and bounding rectangles of ribbon elements.
+- Office Fluent UI control identifier lists (`<app>controls.xlsx`, Microsoft 365 Current Channel, MIT): every tab, group and control with its `idMso` and type, including controls not shown by default. The completeness baseline that the live capture is checked against.
+- Word's built-in `ListCommands` command (through COM, `Application.ListCommands(True)`): every Word command with its keyboard assignment, including commands with no ribbon button.
 - Legal boundary: the inventory records names, positions and behaviour as text and numbers only. It never commits Microsoft icons, screenshots or artwork; screenshots stay in `R:\scratch`.
 - -> XREF: D02 T02 §3 -- the shell layout spec is measured from the shell chrome inventory in §4
 - -> XREF: D03 T01 §13 -- application TODO domains are authored from this inventory, one section per inventory group
@@ -39,20 +41,22 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 2 | §2 | Reference build and capture configuration | -- | [ ] |
 | 3 | §3 | UI Automation capture tool | §1, §2 | [ ] |
 | 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
-| 5 | §5 | Word ribbon and contextual tabs inventory | §3 | [ ] |
+| 5 | §5 | Word ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 6 | §6 | Word Backstage, panes, status bar and dialogs inventory | §5 | [ ] |
-| 7 | §7 | Excel ribbon and contextual tabs inventory | §3 | [ ] |
+| 7 | §7 | Excel ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 8 | §8 | Excel Backstage, formula bar, panes and dialogs inventory | §7 | [ ] |
-| 9 | §9 | PowerPoint ribbon and contextual tabs inventory | §3 | [ ] |
+| 9 | §9 | PowerPoint ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 10 | §10 | PowerPoint Backstage, views, panes and dialogs inventory | §9 | [ ] |
-| 11 | §11 | Visio ribbon and contextual tabs inventory | §3 | [ ] |
+| 11 | §11 | Visio ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 12 | §12 | Visio Backstage, shapes pane and dialogs inventory | §11 | [ ] |
-| 13 | §13 | Project ribbon and contextual tabs inventory | §3 | [ ] |
+| 13 | §13 | Project ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 14 | §14 | Project views, Backstage, panes and dialogs inventory | §13 | [ ] |
-| 15 | §15 | Outlook module and item window ribbons inventory | §3 | [ ] |
+| 15 | §15 | Outlook module and item window ribbons inventory | §3, §19 | [ ] |
 | 16 | §16 | Outlook modules, panes, views and dialogs inventory | §15 | [ ] |
-| 17 | §17 | Keyboard shortcut inventory for six apps | §1 | [ ] |
-| 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17 | [ ] |
+| 17 | §17 | Keyboard shortcut inventory for six apps | §1, §20 | [ ] |
+| 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
+| 19 | §19 | Microsoft control identifier baseline import | §1 | [ ] |
+| 20 | §20 | Word command catalogue from ListCommands | §1, §2 | [ ] |
 
 ## 1. Inventory Schema and Checker
 
@@ -70,7 +74,7 @@ Every inventoried element is one JSON record with a stable dotted id (`word.home
 - [ ] Define the element record in `design/inventory/schema.json`: `id`, `app`, `kind` (tab, contextualTab, group, control, backstagePage, pane, statusItem, view, dialog, shortcut), `label`, `parent`, `order`. Done when: the schema validates a hand-written example record. Cheaper substitute: free-text Markdown tables that no script can read.
 - [ ] Add control fields to `design/inventory/schema.json`: `controlType` (button, splitButton, dropdown, gallery, comboBox, checkBox, toggleButton, spinner, dialogLauncher, menu, colorPicker, editBox), `size` (large, medium, small), `keytip`, `shortcut`. Done when: a split button example validates and an unknown `controlType` fails. Cheaper substitute: a single `type` string with no enumeration.
 - [ ] Add position fields to `design/inventory/schema.json`: `bounds` (`x`, `y`, `width`, `height` in pixels at 100 percent scaling, relative to the window client area) and `captureProfile`. Done when: a record without `captureProfile` but with `bounds` fails. Cheaper substitute: positions described in words.
-- [ ] Add behaviour fields to `design/inventory/schema.json`: `behaviour` (one sentence), `source` (URL), `capturedFrom` (build string from §2). Done when: a control record without `source` fails. Cheaper substitute: behaviour from memory with no citation.
+- [ ] Add behaviour fields to `design/inventory/schema.json`: `behaviour` (one sentence), `screentip` (captured title and description), `idMso` (Microsoft control identifier where one exists), `source` (URL), `capturedFrom` (build string from §2). Done when: a control record without `source` fails. Cheaper substitute: behaviour from memory with no citation.
 - [ ] Write `scripts/check-inventory.py` validating every `design/inventory/**/*.json` file against the schema with a standard library validator for the subset used. Done when: `python scripts/check-inventory.py` exits 0 on the example and 1 on each refusal fixture. Cheaper substitute: adding a third-party dependency for one script.
 - [ ] Add duplicate-id and orphan-parent checks to `scripts/check-inventory.py`. Done when: a record whose `parent` names no record fails with `orphan`. Cheaper substitute: checking ids within one file only.
 - [ ] Write `scripts/tests/test_check_inventory.py` covering each rule. Done when: `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes and fails when any rule is disabled.
@@ -112,10 +116,13 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 1. Write `scripts/capture-ui.py` using `uiautomation` or `pywinauto` (UIA backend), installed per AGENTS.md tool rules. Done when: it dumps the Home tab of Word to JSON records that pass `scripts/check-inventory.py`.
 2. Add tab switching and contextual tab triggering. Done when: one run captures every built-in tab of the open app.
 
+- [ ] Add `--launch` in `scripts/capture-ui.py` that starts the reference app in a new window on a blank document from `R:\scratch\fixtures\` and records that window's handle, and refuse to act on any window the tool did not open. Done when: with the operator's own Word document open, a capture run leaves that document's window, selection and contents untouched. Cheaper substitute: attaching to the first Word window found, which can type into the operator's work.
 - [ ] Add window discovery to `scripts/capture-ui.py` by process name (`WINWORD.EXE`, `EXCEL.EXE`, `POWERPNT.EXE`, `VISIO.EXE`, `WINPROJ.EXE`, `OUTLOOK.EXE` or `olk.exe`). Done when: `--app word` finds the Word window or exits 2 naming the missing process. Cheaper substitute: a hardcoded window title.
 - [ ] Add a UIA walker in `scripts/capture-ui.py` that emits tab, group and control records with `label`, `controlType`, `order` and `bounds` relative to the client area. Done when: the Word Home tab output passes `python scripts/check-inventory.py`. Cheaper substitute: capturing screen coordinates that change with window position.
 - [ ] Map UIA control types and ribbon patterns to schema `controlType` values in `scripts/capture-ui.py` (`SplitButton`, `MenuItem`, gallery `List`). Done when: Paste is captured as `splitButton` and Styles as `gallery`. Cheaper substitute: recording every control as `button`.
 - [ ] Add `--tab <name>` and `--all-tabs` in `scripts/capture-ui.py` that select tabs through the UIA `SelectionItem` pattern. Done when: `--all-tabs` captures every tab listed in the app's ribbon. Cheaper substitute: simulating mouse clicks at fixed coordinates.
+- [ ] Record each control's ScreenTip title and description from the UIA `Name`, `HelpText` and `FullDescription` properties in `scripts/capture-ui.py` as `screentip` fields. Done when: Word Home Bold records its ScreenTip text. Cheaper substitute: leaving `behaviour` empty until someone writes it by hand.
+- [ ] Add `--expand` in `scripts/capture-ui.py` that opens every drop-down, split-button menu and gallery on a tab, records its items in order, and closes it with Escape. Done when: the Word Home Paste menu and Styles gallery items are captured without a click left open. Cheaper substitute: top-level controls only.
 - [ ] Add `--keytips` in `scripts/capture-ui.py` that presses Alt and records KeyTip labels per control. Done when: Word Home Bold records keytip `1`. Cheaper substitute: typing KeyTips from memory.
 - [ ] Add a merge mode in `scripts/capture-ui.py` that updates `bounds` and `order` in an existing file without overwriting hand-written `behaviour` and `source`. Done when: re-running on an annotated file keeps the annotations. Cheaper substitute: regenerating files and losing annotations.
 - [ ] Add `--layout classic|simplified` in `scripts/capture-ui.py`, writing `ribbon.json` or `ribbon-simplified.json`. Done when: the same tab captured in both layouts produces two files that pass the checker. Cheaper substitute: deriving the Simplified layout from the Classic capture.
@@ -189,6 +196,7 @@ Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, P
 - [ ] Capture task panes into `design/inventory/word/panes.json` with docking side, default width and the command that opens each. Done when: the seven panes named in this section exist. Cheaper substitute: panes without their opening command.
 - [ ] Capture the status bar items and the Customize Status Bar menu into `design/inventory/word/statusbar.json`. Done when: every menu item has `order` and default on or off state. Cheaper substitute: only the items visible by default.
 - [ ] Capture each dialog reachable from a Word dialog launcher or Backstage into `design/inventory/word/dialogs.json` with tabs and control labels. Done when: Font, Paragraph, Page Setup, Find and Replace, Insert Table, Symbol, Index, Table of Contents, Bookmark and Mail Merge Recipients exist at minimum. Cheaper substitute: dialog titles without controls.
+- [ ] Capture the Word right-click context menus (text, table, picture, shape, header and footer, hyperlink, spelling error, tracked change, comment) and the mini toolbar into `design/inventory/word/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture Word Backstage, panes, status bar and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word` exits 0 and `design/inventory/word/dialogs.json` holds at least 10 `dialog` records.
@@ -235,6 +243,7 @@ Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context 
 - [ ] Capture task panes into `design/inventory/excel/panes.json` with the command that opens each. Done when: the five panes named in this section exist. Cheaper substitute: panes without their opening command.
 - [ ] Capture the status bar aggregates and Customize Status Bar menu into `design/inventory/excel/statusbar.json`. Done when: Average, Count, Numerical Count, Minimum, Maximum and Sum each record default state. Cheaper substitute: Sum only.
 - [ ] Capture each dialog named in this section into `design/inventory/excel/dialogs.json` with tabs and controls. Done when: the eleven dialogs exist. Cheaper substitute: titles without controls.
+- [ ] Capture the Excel right-click context menus (cell, row header, column header, sheet tab, table, PivotTable, chart, picture, shape) and the mini toolbar into `design/inventory/excel/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture Excel Backstage, formula bar, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel` exits 0 and `design/inventory/excel/dialogs.json` holds at least 11 `dialog` records.
@@ -280,6 +289,7 @@ PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, 
 - [ ] Capture Backstage pages and PowerPoint Options into `design/inventory/powerpoint/backstage.json`. Done when: each Options category lists its settings. Cheaper substitute: category names only.
 - [ ] Capture the status bar and its customise menu into `design/inventory/powerpoint/statusbar.json`. Done when: Notes, Comments, view buttons and zoom slider have records. Cheaper substitute: zoom only.
 - [ ] Capture dialogs (Font, Paragraph, Header and Footer, Slide Size, Set Up Slide Show, Insert Hyperlink, Format Background pane forms) into `design/inventory/powerpoint/dialogs.json`. Done when: each has tabs and controls. Cheaper substitute: titles only.
+- [ ] Capture the PowerPoint right-click context menus (slide canvas, slide thumbnail, text box, placeholder, table, picture, shape, chart, notes) and the mini toolbar into `design/inventory/powerpoint/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture PowerPoint views, Backstage, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/powerpoint` exits 0 and `design/inventory/powerpoint/panes.json` holds at least 10 `view` records.
@@ -324,6 +334,7 @@ Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick 
 - [ ] Capture the More Shapes category tree and the stencil names it lists into `design/inventory/visio/panes.json`. Done when: every category lists its stencils. Cheaper substitute: the top-level categories only.
 - [ ] Capture the New page template categories and template names into `design/inventory/visio/backstage.json`. Done when: every template category lists its templates. Cheaper substitute: the first category only.
 - [ ] Capture Visio Options, status bar and the dialogs named in this section into their files. Done when: each dialog lists tabs and controls. Cheaper substitute: titles only.
+- [ ] Capture the Visio right-click context menus (drawing page, shape, connector, container, page tab, stencil, shape in the Shapes pane) and the mini toolbar into `design/inventory/visio/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture Visio panes, Backstage and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/visio` exits 0 and `design/inventory/visio/dialogs.json` holds at least 5 `dialog` records.
@@ -368,6 +379,7 @@ Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usa
 - [ ] Capture Backstage pages and Project Options with every setting into `design/inventory/project/backstage.json`. Done when: Schedule and Calculation categories list every setting. Cheaper substitute: category names only.
 - [ ] Capture the status bar (new task mode, view shortcuts, zoom) into `design/inventory/project/statusbar.json`. Done when: each item has `bounds`. Cheaper substitute: zoom only.
 - [ ] Capture the dialogs named in this section with every tab and control into `design/inventory/project/dialogs.json`. Done when: Task Information lists General, Predecessors, Resources, Advanced, Notes and Custom Fields tabs. Cheaper substitute: titles only.
+- [ ] Capture the Project right-click context menus (task row, resource row, column header, Gantt bar, timeline, timescale) and the mini toolbar into `design/inventory/project/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture Project views, Backstage, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/project` exits 0 and `design/inventory/project/panes.json` holds at least 13 `view` records.
@@ -413,6 +425,7 @@ Outlook's layout beyond the ribbon: navigation bar, folder pane, message list wi
 - [ ] Capture the calendar views and their regions (date navigator, calendar list, time grid) as `view` records. Done when: the five calendar views named in this section exist. Cheaper substitute: Month view only.
 - [ ] Capture Backstage pages and Outlook Options categories into `design/inventory/outlook/backstage.json`. Done when: each Options category lists its settings. Cheaper substitute: category names only.
 - [ ] Capture the dialogs named in this section into `design/inventory/outlook/dialogs.json`. Done when: Rules and Alerts lists its rule wizard steps. Cheaper substitute: titles only.
+- [ ] Capture the Outlook right-click context menus (message in the list, folder, calendar item, calendar grid, contact, task, attachment) and the mini toolbar into `design/inventory/outlook/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
 - [ ] Commit: `inventory: capture Outlook modules, panes, views and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/outlook` exits 0 and `design/inventory/outlook/panes.json` holds at least 5 calendar `view` records.
@@ -452,6 +465,7 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 
 1. Write `scripts/inventory-report.py`. Done when: it prints counts per app and kind and writes `design/inventory/COVERAGE.md`.
 
+- [ ] Add a baseline comparison to `scripts/inventory-report.py` listing every `idMso` in `design/inventory/<app>/baseline.json` (§19) that is visible in the reference build but missing from the captured inventory. Done when: removing one captured Word control makes the report name its `idMso`. Cheaper substitute: trusting the capture to be complete.
 - [ ] Count records per app and `kind` in `scripts/inventory-report.py`. Done when: `python scripts/inventory-report.py` prints a table with one row per app. Cheaper substitute: a file count.
 - [ ] Add an implemented count in `scripts/inventory-report.py` by scanning `todo/**/*.md` for `[x]` sections that cite inventory ids. Done when: a fixture TODO citing `word.home.font.bold` in a stamped section counts it as implemented. Cheaper substitute: a hand-maintained percentage.
 - [ ] Add `--app`, `--kind` and `--cited-in <file>` filters to `scripts/inventory-report.py`, where `--cited-in` reports the percentage of matching record ids that appear in the file, and `--control-types` reports which `controlType` values the file names. Done when: a fixture spec citing half the Word tabs reports 50 percent for `--app word --kind tab`. Cheaper substitute: a citation count with no denominator.
@@ -460,6 +474,48 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 - [ ] Commit: `inventory: add coverage report`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes and `python scripts/inventory-report.py` exits 0.
+
+## 19. Microsoft Control Identifier Baseline Import
+
+Microsoft publishes, per app, every ribbon tab, group and control with its `idMso` identifier, type and parent, including contextual tabs, hidden commands and every Outlook item window. Importing these lists gives a complete checklist, so the live capture can be proven complete rather than assumed complete. The lists date from 2024-03-18; anything newer in build 16.0.20430.20182 is found by the live capture and recorded as `baselineMissing`.
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Download the Current Channel lists into `R:\scratch\office-ui-ids\` and convert them with `scripts/import-office-ids.py`. Done when: `design/inventory/<app>/baseline.json` exists for all six apps.
+2. Record the source commit and licence. Done when: `design/inventory/REFERENCE.md` names the upstream commit SHA and MIT licence.
+
+- [ ] Download `wordcontrols.xlsx`, `excelcontrols.xlsx`, `powerpointcontrols.xlsx`, `visiocontrols.xlsx`, `projectcontrols.xlsx` and every `outlook*controls.xlsx` from the Current Channel folder at a pinned commit into `R:\scratch\office-ui-ids\<sha>\`. Done when: the files and the commit SHA are recorded. Cheaper substitute: reading the lists from the live website each run, which drifts.
+- [ ] Write `scripts/import-office-ids.py` reading each workbook with `openpyxl` (read-only) and emitting `design/inventory/<app>/baseline.json` with `idMso`, `controlType`, `tab`, `group` and order. Done when: Word's baseline lists the Home tab's Clipboard, Font, Paragraph, Styles and Editing groups in order. Cheaper substitute: copying a few rows by hand.
+- [ ] Merge the Outlook item-window workbooks into `design/inventory/outlook/baseline.json` keyed by window type (explorer, mail compose, mail read, appointment, contact, task and the rest). Done when: every Outlook workbook contributes records under its window type. Cheaper substitute: the explorer workbook only, which misses every item window.
+- [ ] Write the upstream commit SHA, licence and import date to `design/inventory/REFERENCE.md` under `## Baseline` and add the MIT notice to `THIRD-PARTY-NOTICES.md` as a data source. Done when: both files name the SHA. Cheaper substitute: an unpinned link.
+- [ ] Write `scripts/tests/test_import_office_ids.py` with a small fixture workbook. Done when: the suite passes and fails when the group order is not preserved.
+- [ ] Commit: `inventory: import Microsoft control identifier baseline`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_import_office_ids.py"` passes and `python scripts/check-inventory.py design/inventory` exits 0 with six `baseline.json` files present.
+
+## 20. Word Command Catalogue from ListCommands
+
+Word can list every command it has, with the keyboard shortcut assigned to each, through its built-in `ListCommands` command. Run through COM, this captures commands that have no ribbon button and the complete default shortcut map, which the support pages only partly document.
+
+**Phase:** 2
+**Needs:** office, windows-host
+**Surface:** no
+
+**Build order:**
+
+1. Run `scripts/word-commands.py` against a Word instance it starts itself. Done when: `design/inventory/word/commands.json` holds every listed command.
+2. Link commands to ribbon records and shortcuts. Done when: shortcut records in `design/inventory/word/shortcuts.json` reference command records.
+
+- [ ] Write `scripts/word-commands.py` that starts its own hidden Word instance through COM (`win32com.client.DispatchEx("Word.Application")`), calls `ListCommands(True)` on a new document, reads the resulting table, and quits that instance without saving. Done when: the script never attaches to the operator's running Word and leaves no `WINWORD.EXE` it started behind. Cheaper substitute: `GetActiveObject`, which drives the operator's own Word.
+- [ ] Write each row to `design/inventory/word/commands.json` as a `command` record with name, modifiers, key and the menu path Word reports. Done when: the record count equals the table's row count. Cheaper substitute: keeping only commands that have a shortcut.
+- [ ] Link each command to its ribbon control by `idMso` or label where they match, in `scripts/word-commands.py`. Done when: unmatched commands are listed in the run output for review. Cheaper substitute: silent best-effort matching.
+- [ ] Commit: `inventory: capture Word command catalogue`
+
+**Test checkpoint:** `python scripts/check-inventory.py design/inventory/word/commands.json` exits 0 and the file holds at least 1,000 `command` records.
 
 ## Verification
 
