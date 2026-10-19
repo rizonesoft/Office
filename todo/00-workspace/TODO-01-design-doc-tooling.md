@@ -34,7 +34,7 @@ title: "TODO-01 -- Design Document Tooling"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Design document checker | -- | [ ] |
+| 1 | §1 | Design document checker | -- | [x] |
 | 2 | §2 | Image asset checker | -- | [ ] |
 | 3 | §3 | Continuous integration workflow | §1, §2 | [ ] |
 
@@ -62,6 +62,9 @@ Every design deliverable in domains 01 to 03 is a Markdown document whose Test c
 - [x] Commit: `tooling: add design document checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_design_doc.py"` reports at least 5 tests run and `OK`.
+
+> **Verified:** 2026-10-20 | §1 | 69f916e5ce3cd6797d6d5334bfc0b19f06837001
+> **Review:** `docs/reviews/d00-t01-s1.json`
 
 ## 2. Image Asset Checker
 

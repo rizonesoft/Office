@@ -1,0 +1,28 @@
+{
+  "ref": "D00 T01 \u00a71",
+  "title": "Design Document Checker",
+  "implementation_sha": "69f916e5ce3cd6797d6d5334bfc0b19f06837001",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T01-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T01-s1.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_design_doc.py\" -> \"Ran 20 tests ... OK\"",
+    "python scripts/check-design-doc.py README.md --require \"Rizonesoft Office\" -> exit 0",
+    "python scripts/todo-graph.py validate -> \"valid: 75 sections\""
+  ]
+}
