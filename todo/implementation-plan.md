@@ -8,13 +8,13 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 3 | Checklist items: 18
+Sections: 3 | Checklist items: 20
 
 | Status | Reference  | Deliverable                     | Needs | Items |
 | ------ | ---------- | ------------------------------- | ----- | ----- |
 | [ ]    | D00 T01 §1 | Design Document Checker         | none  | 7     |
 | [ ]    | D00 T01 §2 | Image Asset Checker             | none  | 6     |
-| [ ]    | D00 T01 §3 | Continuous Integration Workflow | none  | 5     |
+| [ ]    | D00 T01 §3 | Continuous Integration Workflow | none  | 7     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -111,4 +111,4 @@ Sections: 1 | Checklist items: 3
 
 Progress: 0/68 verified sections, 2 ready to run now.
 
-Checklist: 0/364 items completed (includes Commit items).
+Checklist: 0/366 items completed (includes Commit items).

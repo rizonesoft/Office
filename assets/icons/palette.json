@@ -1,0 +1,51 @@
+{
+  "apps": {
+    "write": {
+      "name": "Rizonesoft Write",
+      "counterpart": "Word",
+      "accent": "#1e4fc2",
+      "light": "#4f8df7",
+      "linuxId": "com.rizonesoft.Write"
+    },
+    "grid": {
+      "name": "Rizonesoft Grid",
+      "counterpart": "Excel",
+      "accent": "#0f7a45",
+      "light": "#34c27a",
+      "linuxId": "com.rizonesoft.Grid"
+    },
+    "stage": {
+      "name": "Rizonesoft Stage",
+      "counterpart": "PowerPoint",
+      "accent": "#d4421b",
+      "light": "#ff8a4c",
+      "linuxId": "com.rizonesoft.Stage"
+    },
+    "flow": {
+      "name": "Rizonesoft Flow",
+      "counterpart": "Visio",
+      "accent": "#5b35c9",
+      "light": "#9b7bf7",
+      "linuxId": "com.rizonesoft.Flow"
+    },
+    "plan": {
+      "name": "Rizonesoft Plan",
+      "counterpart": "Project",
+      "accent": "#0b7f86",
+      "light": "#2dc2b5",
+      "linuxId": "com.rizonesoft.Plan"
+    },
+    "mail": {
+      "name": "Rizonesoft Mail",
+      "counterpart": "Outlook",
+      "accent": "#0b7cc0",
+      "light": "#3cc4f0",
+      "linuxId": "com.rizonesoft.Mail"
+    }
+  },
+  "suite": {
+    "name": "Rizonesoft Office",
+    "tint": "#7c8db5",
+    "linuxId": "com.rizonesoft.Office"
+  }
+}

@@ -10,7 +10,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 > **Goal:** The suite has an original icon family: a suite mark and wordmark, six app icons, small-size variants, and document file-type icons, all as SVG masters with a reproducible export to PNG, ICO and ICNS. No icon reuses Microsoft's composition (a letter tile overlapping a document or grid card), Microsoft's artwork, or the Fluent app-icon style, and the owner signs off a side-by-side distinctness review.
 
-> **Current state:** Measured 2026-10-19. No icon or brand artwork exists: `design/` is absent. Names are not chosen yet; they arrive from D01 T01 §3. `scripts/check-image-asset.py` is planned in D00 T01 §2 and does not exist yet.
+> **Current state:** Measured 2026-10-20. The owner-approved Glass design is generated in code, not hand-drawn: `scripts/lib/icon_design.py` produces the `lg`, `md` and `sm` SVG masters for the suite and six apps, and `scripts/build-icons.py` writes them to `design/icons/apps/` and `design/icons/suite/` and renders 195 verified files into `assets/icons/` (PNG 16 to 1024, ICO, ICNS, Linux hicolor, web favicons, `palette.json`), with `--check` for drift and tests in `scripts/tests/test_build_icons.py`. The rasteriser is the `resvg_py` binding pinned in `scripts/requirements.txt`, not the `resvg` CLI. Still missing: the brief `docs/brand/icon-language.md` (§1), the wordmark (§2), file-type icons (§5), the distinctness review (§7), and stamps for the shipped work. `scripts/check-image-asset.py` (D00 T01 §2) does not exist; `build-icons.py` verifies its own outputs with Pillow.
 
 ## Inputs
 
