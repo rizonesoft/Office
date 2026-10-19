@@ -1,0 +1,4 @@
+interface:
+  display_name: "Groom Plan"
+  short_description: "Reorder and clean the implementation plan."
+  default_prompt: "Reorder and clean the implementation plan."

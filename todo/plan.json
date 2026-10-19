@@ -1,0 +1,8 @@
+{
+  "title": "Implementation plan",
+  "acceptance": null,
+  "phases": {
+    "0": "Repository and tooling",
+    "99": "Manual, operator only"
+  }
+}

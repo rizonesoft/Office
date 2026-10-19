@@ -1,0 +1,4 @@
+interface:
+  display_name: "Process TODO File"
+  short_description: "Process every open section of one TODO leaf."
+  default_prompt: "Process every open section of one TODO leaf."

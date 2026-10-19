@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Tool Safety"
+  short_description: "Apply Conclave capability discovery, and the ask-once rule for work outside the repository."
+  default_prompt: "Apply Conclave local tool safety: discover capabilities, record health, launch safe workflows, and ask the operator once before anything that sends, deletes or changes something outside the repository."

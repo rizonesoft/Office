@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review TODO Section"
+  short_description: "Check a finished section against its items."
+  default_prompt: "Check a finished section against its items."

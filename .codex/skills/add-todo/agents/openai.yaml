@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add TODO"
+  short_description: "Add an item or section to the right TODO leaf."
+  default_prompt: "Add an item or section to the right TODO leaf."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Process TODO Section"
+  short_description: "Take one TODO section end to end."
+  default_prompt: "Take one TODO section end to end."

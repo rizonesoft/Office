@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create TODO"
+  short_description: "Create a new TODO leaf and wire it into the plan."
+  default_prompt: "Create a new TODO leaf and wire it into the plan."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Authoring Skills"
+  short_description: "Create and review Conclave skills without mixing Claude, Codex, kit, and rule locations."
+  default_prompt: "Apply Conclave skill authoring rules: keep Claude and Codex skill files tool-specific, avoid symlinks, update the reusable kit when future projects should inherit changes, and keep Markdown references in skill references or docs."

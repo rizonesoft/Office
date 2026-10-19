@@ -1,0 +1,4 @@
+interface:
+  display_name: "Process Plan"
+  short_description: "Run the implementation plan phase by phase."
+  default_prompt: "Run the implementation plan phase by phase."
