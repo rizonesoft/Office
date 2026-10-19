@@ -1,6 +1,6 @@
 # Generated icon assets are compared byte for byte by scripts/build-icons.py --check, so checkout must not rewrite them.
 design/icons/** text=auto eol=lf
-assets/icons/** text=auto eol=lf
+assets/** text=auto eol=lf
 *.png binary
 *.ico binary
 *.icns binary
