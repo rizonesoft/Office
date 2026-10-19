@@ -48,7 +48,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 The brief fixes grid, keylines, corner radius, palette and the motif before any icon is drawn, so six icons drawn on different days still read as one family. It also writes down the distinctness rules that keep the family clear of Microsoft's look.
 
-Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five renderings of pentomino tiles). Five unrelated concepts are under review: folded paper, orbit discs, Bauhaus blocks, isometric objects and die-cut stickers. The concept sheet is the private artifact https://claude.ai/artifact/UFcUNAwH9LCsf57YfCesUS.
+Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five renderings of pentomino tiles). A second round (folded paper, orbit discs, Bauhaus blocks, isometric objects, die-cut stickers) was also rejected, and the owner asked for a style closer to Microsoft 365. Third round under review: layered cards, glass, folded corner, app tile and Fluent-style objects, using the industry category colours (documents blue, spreadsheets green, presentations orange) and never a letter tile. The concept sheet is the private artifact https://claude.ai/artifact/UFcUNAwH9LCsf57YfCesUS.
 
 **Phase:** 1
 **Needs:** none
