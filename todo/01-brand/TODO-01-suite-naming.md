@@ -8,13 +8,13 @@ title: "TODO-01 -- Suite and App Naming"
 
 # TODO-01 -- Suite and App Naming
 
-> **Goal:** The suite and its six apps (the counterparts of Word, Excel, PowerPoint, Visio, Project and Outlook) have names that use no Microsoft trademark, pass a knockout trademark screen in Nice classes 9 and 42, have their domain, GitHub and package names reserved or confirmed available, are recorded once in `docs/brand/NAMES.md`, and are applied across the repository.
+> **Goal:** The suite and its six apps (the counterparts of Word, Excel, PowerPoint, Visio, Project and Outlook) have names that use no Microsoft trademark (the generic word "Office" appears only behind the Rizonesoft house brand, as competitors do with WPS Office, SoftMaker Office and ONLYOFFICE), pass a knockout trademark screen in Nice classes 9 and 42, have their domain, GitHub and package names reserved or confirmed available, are recorded once in `docs/brand/NAMES.md`, and are applied across the repository.
 
-> **Current state:** Measured 2026-10-19. No brand documents exist (`docs/brand/` is absent). The repository is `rizonesoft/Office-2028`, a working codename that contains the Microsoft trademark "Office"; it must not become a product-facing name. A first brainstorm was held in the Claude Code session on 2026-10-19 and its concepts are seeded in §2.
+> **Current state:** Measured 2026-10-19. No brand documents exist (`docs/brand/` is absent). The repository is `rizonesoft/Office-2028`, a working codename; the year form mirrors Microsoft's own version names (Office 2021, Office 2024) and is not used for the product. A brainstorm was held on 2026-10-19 and the owner decided on 2026-10-20: suite "Rizonesoft Office", apps "Rizonesoft Write", "Rizonesoft Grid", "Rizonesoft Stage", "Rizonesoft Flow", "Rizonesoft Plan" and "Rizonesoft Mail" (§3).
 
 ## Inputs
 
-- Microsoft Trademark and Brand Guidelines: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks (Word, Excel, PowerPoint, Visio, Outlook, Microsoft 365 and Office are registered marks and are excluded from every candidate).
+- Microsoft Trademark and Brand Guidelines: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks (Word, Excel, PowerPoint, Visio, Outlook, Microsoft 365, Microsoft Office and Office 365 are registered marks and are excluded; "Office" is used only inside "Rizonesoft Office", never alone, never with a Microsoft-style version year, and never with Microsoft's logo styling).
 - USPTO trademark search https://tmsearch.uspto.gov, EUIPO eSearch plus, and WIPO Global Brand Database: the registers for the §4 knockout screen.
 - Nice classes 9 (downloadable software) and 42 (software as a service): the classes every candidate is screened in.
 - -> XREF: D00 T01 §1 -- `scripts/check-design-doc.py` verifies every document this file writes
@@ -25,7 +25,7 @@ title: "TODO-01 -- Suite and App Naming"
 
 - `docs/brand/NAMES.md` records the suite name, the six app names, the Microsoft app each one maps to, the file-name and identifier forms (`kebab-case`, `PascalCase`, reverse-DNS bundle id), and the date the owner chose them.
 - `docs/brand/naming-clearance.md` records, per chosen name, the register searches run, live conflicts found, and domain, GitHub and package availability with dates.
-- No product-facing file in the repository uses "Office", "Word", "Excel", "PowerPoint", "Visio", "Project" or "Outlook" as a product name.
+- No product-facing file in the repository uses "Word", "Excel", "PowerPoint", "Visio", "Project" or "Outlook" as a product name, or "Office" other than in "Rizonesoft Office".
 
 **Adjacency:** all=not-applicable (a brand decision record; it creates no user records, settings, documents or permissions)
 
@@ -66,7 +66,7 @@ The brief fixes what a good name must do before anyone argues about taste. It st
 
 ## 2. Collision Screen for the Chosen Names
 
-The owner chose on 2026-10-20, ahead of a longlist: the house brand is Rizonetech and the apps are Write, Grid, Stage, Flow, Plan and Mail, known in full as "Rizonetech Write" and so on (the same model as "Microsoft Word"). This section records the brainstorm concepts as alternatives considered and runs an obvious-collision web search on the chosen names before the register searches in §4. Seed concepts from the 2026-10-19 brainstorm, kept as alternatives:
+The owner chose on 2026-10-20, ahead of a longlist: the suite is Rizonesoft Office and the apps are Write, Grid, Stage, Flow, Plan and Mail, known in full as "Rizonesoft Write" and so on (the same model as "Microsoft Word"). Rizonetech and Tesserac were considered the same day and dropped. This section records the brainstorm concepts as alternatives considered and runs an obvious-collision web search on the chosen names before the register searches in §4. Seed concepts from the 2026-10-19 brainstorm, kept as alternatives:
 
 - Tessera (mosaic tile; every icon is one tile of a shared mosaic): Tessera Write, Tessera Grid, Tessera Stage, Tessera Flow, Tessera Plan, Tessera Mail. Known: Tessera Technologies (semiconductor IP, now Adeia), Tessera Therapeutics.
 - Rizone (house brand of the `rizonesoft` organisation): Rizone Write, Rizone Grid, Rizone Stage, Rizone Flow, Rizone Plan, Rizone Mail. Known: none from memory; the owner already holds the Rizonesoft brand.
@@ -82,28 +82,28 @@ The owner chose on 2026-10-20, ahead of a longlist: the house brand is Rizonetec
 1. Write `docs/brand/naming-candidates.md` with the chosen names and the alternatives considered. Done when: the file has `## Chosen`, `## Alternatives considered` and `## Collisions` headings.
 2. Run the collision web search on each chosen name. Done when: every chosen name has a Collisions row with sources and the search date.
 
-- [ ] Record the chosen names in `docs/brand/naming-candidates.md` under `## Chosen`: Rizonetech, and Write, Grid, Stage, Flow, Plan, Mail with their full "Rizonetech <App>" forms. Done when: seven names appear with their Microsoft counterparts. Cheaper substitute: recording the app names without the house brand.
-- [ ] Copy the four seed concepts from this section into `docs/brand/naming-candidates.md` under `## Alternatives considered`, with the reason each was not chosen. Done when: Tessera, Rizone, Kestrel and Atelier each carry a reason. Cheaper substitute: dropping the alternatives, which loses the fallback list if a chosen name is blocked.
-- [ ] Web-search "Rizonetech" and record live companies, products and domains using it in `docs/brand/naming-candidates.md` under `## Collisions`. Done when: the row names sources or `none found` with the search date. Cheaper substitute: assuming the owner's own brand is clear everywhere.
-- [ ] Web-search the proposed collective name "Tesserac" (raised by the owner 2026-10-20) and record conflicts under `## Collisions`, including how far search engines autocorrect it to "Tesseract" and the Tesseract OCR engine (https://github.com/tesseract-ocr/tesseract, document software in class 9). Done when: the row names sources, the autocorrect result and the search date. Cheaper substitute: an exact-match search only, which hides the near-identical mark.
+- [ ] Record the chosen names in `docs/brand/naming-candidates.md` under `## Chosen`: Rizonesoft Office, and Write, Grid, Stage, Flow, Plan, Mail with their full "Rizonesoft <App>" forms. Done when: seven names appear with their Microsoft counterparts. Cheaper substitute: recording the app names without the house brand.
+- [ ] Copy the four seed concepts from this section into `docs/brand/naming-candidates.md` under `## Alternatives considered`, with the reason each was not chosen. Done when: Tessera, Rizone, Kestrel, Atelier, Rizonetech and Tesserac (one letter from the Tesseract OCR engine; search engines autocorrect it) each carry a reason. Cheaper substitute: dropping the alternatives, which loses the fallback list if a chosen name is blocked.
+- [ ] Web-search "Rizonesoft" and record other companies, products and domains using it in `docs/brand/naming-candidates.md` under `## Collisions`. Done when: the row names sources or `none found` with the search date. Cheaper substitute: assuming the owner's own brand is clear everywhere.
+- [ ] Record precedent for "<house brand> Office" suite names (WPS Office, SoftMaker Office, ONLYOFFICE, Polaris Office, LibreOffice) with their register entries under `## Collisions`. Done when: at least three precedents name a register record or source URL. Cheaper substitute: assuming "Office" is free to use without precedent.
 - [ ] Web-search each app name as a software product (for example "Grid spreadsheet", "Flow diagram app", "Stage presentation app") and record prominent conflicts, including Microsoft Flow (renamed Power Automate in 2019) and Microsoft Planner. Done when: six rows each name sources or `none found` with the date. Cheaper substitute: relying on memory, as the seeds in this section did.
 - [ ] Commit: `brand: record chosen names and collision screen`
 
-**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-candidates.md --require Chosen --require "Alternatives considered" --require Collisions --require Rizonetech` exits 0.
+**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-candidates.md --require Chosen --require "Alternatives considered" --require Collisions --require "Rizonesoft Office"` exits 0.
 
 ## 3. Owner Selection of Suite and App Names
 
 The owner picks the concept, can swap individual app names, and the choice is recorded once in `docs/brand/NAMES.md`. Every other file reads names from there. Remove the `owner-decision` Need when the choice is recorded in this section as `Decision: <concept>, <date>`.
 
-Decision, 2026-10-20: house brand Rizonetech; apps Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook); in-app names are the bare app names and full names are "Rizonetech Write" and so on. The house brand carries the trademark protection, because the bare app names are generic words and "Flow" was Microsoft's product name until 2019. Still open, so `owner-decision` stays: a collective name for the six apps together, used by the installer, the website, §5 domain checks and the §8 repository rename (the default is "Rizonetech" alone).
+Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizonesoft Office"; apps Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook); in-app names are the bare app names and full names are "Rizonesoft Write" and so on. The house brand carries the trademark protection, because the bare app names and "Office" are generic words and "Flow" was Microsoft's product name until 2019.
 
 **Phase:** 1
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
-1. Present the scored shortlist from `docs/brand/naming-candidates.md` to the owner with `AskUserQuestion`. Done when: the owner's choice is recorded in this section.
+1. Confirm the decision line in this section matches `## Chosen` in `docs/brand/naming-candidates.md`. Done when: both name the same suite and six apps.
 2. Write `docs/brand/NAMES.md`. Done when: the design-doc checker passes with the required headings.
 
 - [ ] Record the owner's chosen concept and any per-app swaps in `docs/brand/NAMES.md` under `## Suite` and `## Apps`. Done when: six app rows each name the Microsoft counterpart. Cheaper substitute: recording only the suite name and leaving app names implied.

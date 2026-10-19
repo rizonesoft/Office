@@ -14,7 +14,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 ## Inputs
 
-- `docs/brand/NAMES.md` (from D01 T01 §3): house brand Rizonetech and the app names Write, Grid, Stage, Flow, Plan and Mail (decided 2026-10-20). The names carry no visual motif, so §1 chooses one.
+- `docs/brand/NAMES.md` (from D01 T01 §3): suite Rizonesoft Office and the app names Write, Grid, Stage, Flow, Plan and Mail (decided 2026-10-20). The names carry no visual motif, so §1 chooses one.
 - Microsoft 365 app icons (2019 and 2025 redesigns) as a reference for what to avoid only; never copied, traced or committed. Reference screenshots stay in `R:\scratch`.
 - Platform icon requirements: Windows app icons (ICO with 16, 24, 32, 48, 64, 256), macOS ICNS (16 to 1024 at 1x and 2x), Linux hicolor PNG sizes (16 to 512), and favicon sizes for any web build.
 - -> XREF: D01 T01 §3 -- names and motif come from the recorded naming decision
@@ -58,7 +58,7 @@ The brief fixes grid, keylines, corner radius, palette and the motif before any 
 
 - [ ] Define the master grid in `docs/brand/icon-language.md`: 256 unit canvas, keyline shapes, safe area and corner radius. Done when: the numbers are stated and a keyline SVG `design/icons/keylines.svg` exists. Cheaper substitute: "consistent rounded squares" with no numbers.
 - [ ] Define the per-app palette in `docs/brand/icon-language.md` with hex values and a contrast check against white and `#1f1f1f` backgrounds. Done when: each app colour reaches at least 3:1 against both backgrounds. Cheaper substitute: reusing Microsoft's blue, green, orange, teal and purple app colours one for one.
-- [ ] Choose the family motif with the owner (for example interlocking mosaic tiles, or a shape drawn from the Rizonetech mark) and describe how each app expresses it in `docs/brand/icon-language.md`. Done when: the motif is recorded with the owner's date and each of the six apps has one sentence naming its glyph. Cheaper substitute: a letter on a tile.
+- [ ] Choose the family motif with the owner (for example interlocking mosaic tiles, or a shape drawn from the Rizonesoft mark) and describe how each app expresses it in `docs/brand/icon-language.md`. Done when: the motif is recorded with the owner's date and each of the six apps has one sentence naming its glyph. Cheaper substitute: a letter on a tile.
 - [ ] Write the Distinctness rules in `docs/brand/icon-language.md`: no single letter as the main glyph, no tile overlapping a document card, no Fluent gradients copied, no Microsoft artwork in any form. Done when: the rules are a numbered list the §7 review can tick. Cheaper substitute: "make it look different".
 - [ ] Commit: `brand: add icon design language`
 

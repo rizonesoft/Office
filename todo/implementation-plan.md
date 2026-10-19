@@ -24,7 +24,7 @@ Sections: 19 | Checklist items: 93
 | ------ | ---------- | -------------------------------------------- | -------------- | ----- |
 | [ ]    | D01 T01 §1 | Naming Brief and Constraints                 | none           | 5     |
 | [ ]    | D01 T01 §2 | Collision Screen for the Chosen Names        | none           | 6     |
-| [ ]    | D01 T01 §3 | Owner Selection of Suite and App Names       | owner-decision | 4     |
+| [ ]    | D01 T01 §3 | Owner Selection of Suite and App Names       | none           | 4     |
 | [ ]    | D01 T01 §4 | Knockout Trademark Screen for Chosen Names   | none           | 5     |
 | [ ]    | D01 T01 §5 | Domain, GitHub and Package Name Availability | none           | 4     |
 | [ ]    | D01 T01 §6 | Apply Names Across the Repository            | none           | 4     |
