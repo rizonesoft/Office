@@ -16,7 +16,8 @@ PLACEHOLDERS = re.compile(r"\bCHANGEME\b|\bTBD\b|\bTODO:|\blorem ipsum\b", re.IG
 DASHES = {"—": "em dash", "–": "en dash"}
 MAX_ROW = 100
 FENCE = re.compile(r"^\s*(```|~~~)")
-HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$")
+# A closing run of # counts only after whitespace (CommonMark), so "## C#" keeps its "#".
+HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*?)(?:\s+#+)?\s*$")
 
 
 def prose_lines(text):
@@ -59,8 +60,18 @@ def wide_rows(text):
             for n, line, fenced in prose_lines(text) if not fenced and line.lstrip().startswith("|") and len(line) > MAX_ROW]
 
 
+def unclosed_fence(text):
+    """An unclosed fence would hide every later line from the other rules."""
+    opened = None
+    for number, line, _ in prose_lines(text):
+        if FENCE.match(line):
+            opened = None if opened else number
+    return [f"line {opened}: code fence is never closed"] if opened else []
+
+
 def check(text, required):
-    return missing_headings(text, required) + placeholders(text) + dashes(text) + wide_rows(text)
+    return (missing_headings(text, required) + unclosed_fence(text) + placeholders(text) + dashes(text)
+            + wide_rows(text))
 
 
 def main(argv=None):
@@ -69,6 +80,8 @@ def main(argv=None):
     parser.add_argument("--require", action="append", default=[], metavar="HEADING",
                         help="heading the document must contain (repeatable)")
     args = parser.parse_args(argv)
+    if any(not r.strip() for r in args.require):
+        parser.error("--require needs heading text; an empty value would match every heading")
     try:
         text = args.path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:

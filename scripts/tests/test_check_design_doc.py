@@ -55,6 +55,23 @@ class Headings(unittest.TestCase):
         self.assertEqual(run(GOOD, "Status b")[0], 1)
 
 
+    def test_trailing_hash_kept_unless_after_space(self):
+        self.assertEqual(run("# T\n\n## C#\n", "C#")[0], 0)
+        self.assertEqual(run("# T\n\n## Closing ##\n", "Closing")[0], 0)
+
+    def test_empty_requirement_refused(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+            run(GOOD, "")
+        self.assertEqual(raised.exception.code, 2)
+
+
+class Fences(unittest.TestCase):
+    def test_unclosed_fence_is_reported(self):
+        code, out = run("# T\n\n```\nhidden — dash\n")
+        self.assertEqual(code, 1)
+        self.assertIn("line 3: code fence is never closed", out)
+
+
 class Placeholders(unittest.TestCase):
     def test_each_placeholder_reported_with_line(self):
         code, out = run("# T\n\nCHANGEME here\n\nstill tbd\n\nTODO: x\n\nLorem ipsum dolor\n")
