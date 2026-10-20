@@ -8,16 +8,22 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 6 | Checklist items: 35
+Sections: 12 | Checklist items: 69
 
-| Status | Reference  | Deliverable                     | Needs | Items |
-| ------ | ---------- | ------------------------------- | ----- | ----- |
-| [x]    | D00 T01 §1 | Design Document Checker         | none  | 7     |
-| [ ]    | D00 T01 §2 | Image Asset Checker             | none  | 6     |
-| [ ]    | D00 T01 §3 | Continuous Integration Workflow | none  | 7     |
-| [ ]    | D00 T02 §1 | SPDX Headers and Checker        | none  | 6     |
-| [ ]    | D00 T02 §2 | Third-Party Notices File        | none  | 5     |
-| [ ]    | D00 T02 §5 | Contributing Guide              | none  | 4     |
+| Status | Reference  | Deliverable                                    | Needs                  | Items |
+| ------ | ---------- | ---------------------------------------------- | ---------------------- | ----- |
+| [x]    | D00 T01 §1 | Design Document Checker                        | none                   | 7     |
+| [ ]    | D00 T01 §2 | Image Asset Checker                            | none                   | 6     |
+| [ ]    | D00 T01 §3 | Continuous Integration Workflow                | none                   | 7     |
+| [ ]    | D00 T02 §1 | SPDX Headers and Checker                       | none                   | 6     |
+| [ ]    | D00 T02 §2 | Third-Party Notices File                       | none                   | 5     |
+| [ ]    | D00 T02 §5 | Contributing Guide                             | none                   | 4     |
+| [ ]    | D00 T03 §1 | Automation Runner, Failure Alert and Installer | none                   | 7     |
+| [ ]    | D00 T03 §2 | Run Guard and Stop Hook                        | none                   | 7     |
+| [ ]    | D00 T03 §3 | Keep-Alive Resume Task and Session Observer    | none                   | 6     |
+| [ ]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 5     |
+| [ ]    | D00 T03 §5 | Install the Tasks and Verify on This PC        | windows-host, attended | 5     |
+| [ ]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run       | attended               | 4     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -116,6 +122,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 2/75 verified sections, 8 ready to run now.
+Progress: 2/81 verified sections, 10 ready to run now.
 
-Checklist: 15/419 items completed (includes Commit items).
+Checklist: 15/453 items completed (includes Commit items).

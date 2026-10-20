@@ -6,3 +6,4 @@ Repository tooling that every later domain relies on.
 | ---- | ----- | ------ |
 | `TODO-01-design-doc-tooling.md` | Design-doc and image checkers, CI | active |
 | `TODO-02-licensing-and-contributions.md` | Licence, notices, contributor agreement | active |
+| `TODO-03-automations-and-keep-alive.md` | Scheduled jobs, run guard, keep-alive | active |
