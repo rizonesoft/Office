@@ -86,5 +86,8 @@ foreach ($task in $existing) {
     Write-Host "Removed $($task.TaskName): tasks.json no longer lists it"
   }
 }
-Get-ScheduledTask -TaskPath $folder | Get-ScheduledTaskInfo |
-    Select-Object TaskName, NextRunTime, LastRunTime, LastTaskResult | Format-Table -AutoSize
+# Filtered rather than -TaskPath: the folder does not exist until a task is registered, and -TaskPath on a
+# missing folder is an error, which would fail an install of an empty task list on a clean machine.
+$now = @(Get-ScheduledTask | Where-Object TaskPath -eq $folder)
+if ($now.Count -eq 0) { Write-Host "No tasks registered under $folder" }
+else { $now | Get-ScheduledTaskInfo | Select-Object TaskName, NextRunTime, LastRunTime, LastTaskResult | Format-Table -AutoSize }

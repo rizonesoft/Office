@@ -146,7 +146,11 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
 
 
 def _prune(folder: str) -> None:
-    logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
+    """Keep the newest logs. Optional housekeeping: any failure here is left for the next run."""
+    try:
+        logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
+    except OSError:
+        return
     for old in logs[:-KEEP_LOGS]:
         try:
             os.unlink(os.path.join(folder, old))

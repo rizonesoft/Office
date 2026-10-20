@@ -46,10 +46,28 @@ class Manifest(unittest.TestCase):
                 self.assertEqual(task["command"][0], "python")
                 self.assertTrue((REPO / task["command"][1]).is_file(), task["command"][1])
 
+    @staticmethod
+    def readme_rows(text):
+        """Every table row whose first cell names an office-2028- task, with or without backticks."""
+        rows = {}
+        for line in text.splitlines():
+            cells = [c.strip().strip("`").strip() for c in line.strip().strip("|").split("|")]
+            if line.lstrip().startswith("|") and cells and cells[0].startswith("office-2028-"):
+                rows[cells[0]] = cells
+        return rows
+
     def test_the_readme_lists_exactly_the_manifest(self):
-        rows = [line.split("|")[1].strip().strip("`") for line in (AUTO / "README.md").read_text(encoding="utf-8")
-                .splitlines() if line.startswith("| `office-2028-")]
-        self.assertEqual(sorted(rows), sorted(run.load_tasks(str(AUTO / "tasks.json"))))
+        tasks = run.load_tasks(str(AUTO / "tasks.json"))
+        rows = self.readme_rows((AUTO / "README.md").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(rows), sorted(tasks))
+        for name, task in tasks.items():
+            with self.subTest(name=name):
+                script = task["command"][1] if len(task["command"]) > 1 else task["command"][0]
+                self.assertIn(script, rows[name][2], "the Runs column must name the task's script")
+
+    def test_the_readme_row_check_sees_unformatted_rows(self):
+        rows = self.readme_rows("| office-2028-ghost | Monday | scripts/ghost.py | nonzero |")
+        self.assertIn("office-2028-ghost", rows)
 
     def test_the_installer_reads_the_manifest_and_names_no_task(self):
         text = (AUTO / "install.ps1").read_text(encoding="utf-8")
@@ -458,6 +476,12 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         self.assertEqual(registers[0]["logon"], "Interactive")
         self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-stale"])
 
+    def test_an_empty_manifest_installs_on_a_clean_scheduler(self):
+        result, calls = self.run_installer([], [])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(calls, [])
+        self.assertIn("No tasks registered", result.stdout)
+
     def test_uninstall_removes_only_this_folder_and_dry_run_changes_nothing(self):
         folder = chr(92) + "Office-2028" + chr(92)
         existing = [{"path": folder, "name": "office-2028-keep"}, {"path": chr(92) + "Other" + chr(92), "name": "x"}]
@@ -468,6 +492,52 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         result, calls = self.run_installer([FIXTURE_TASK], existing, "-Uninstall")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-keep"])
+
+class RoundThreeFixes(unittest.TestCase):
+    """Defects the third independent review found, fixed after the review cap (D00 T03 §1)."""
+
+    def test_boolean_counts_are_not_a_successful_send(self):
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        body = json.dumps({"data": {"succeeded": True, "failed": False}}).encode()
+        with self.assertRaises(alert.Refused):
+            alert.send("api-" + "a" * 32, "s", "b", opener=lambda *a, **kw: Response(body))
+
+    def test_an_unlistable_log_folder_cannot_cost_the_outcome(self):
+        real = os.listdir
+
+        def refuse(path="."):
+            if str(path).endswith("office-2028-fixture"):
+                raise PermissionError("denied")
+            return real(path)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.listdir = refuse
+            try:
+                outcome = run.execute("office-2028-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
+            finally:
+                os.listdir = real
+            self.assertEqual(outcome["exit"], 0)
+
+    def test_a_launch_value_error_is_a_failed_run_and_alerted(self):
+        def bad_popen(*a, **kw):
+            raise ValueError("embedded null byte")
+
+        alerts = []
+        with tempfile.TemporaryDirectory() as tmp:
+            auto = Path(tmp) / ".conclave" / "automations"
+            auto.mkdir(parents=True)
+            doc = {"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92), "tasks": [FIXTURE_TASK]}
+            (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
+            with contextlib_redirect():
+                code = run.main(["office-2028-fixture"], root=tmp, popen=bad_popen, alerter=lambda *a: alerts.append(a))
+        self.assertEqual(code, 126)
+        self.assertEqual(len(alerts), 1)
 
 
 if __name__ == "__main__":
