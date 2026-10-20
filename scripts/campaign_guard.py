@@ -965,6 +965,17 @@ def _self_test() -> int:
             kept = json.load(fh)
         check("a-bad-payload-never-rewrites-the-run-state", bad.returncode == 0 and kept.get("stalled") is True
               and kept.get("stalled_at") == "x", f"{bad.returncode} {kept}")
+        errors_dir = os.path.join(root, "build", "claude-campaign-hook-errors")
+        check("a-bad-payload-error-goes-to-the-log", os.path.isdir(errors_dir) and bool(os.listdir(errors_dir)),
+              str(os.listdir(errors_dir) if os.path.isdir(errors_dir) else "no log"))
+        shutil.rmtree(errors_dir, ignore_errors=True)
+        with open(state_path, "w", encoding="utf-8") as fh:
+            json.dump({"fingerprint": "f", "blocks": 0, "trips": 0, "stalled": False, "hook_error": "boom",
+                       "hook_error_at": "2099-01-01T00:00:00Z"}, fh)
+        code, out, _ = run_hook(root, SESSION)
+        kept = _state(root)  # PowerShell 5.1 writes the state file with a byte order mark
+        check("a-normal-stop-keeps-an-unacknowledged-hook-error", isinstance(out, dict) and out.get("decision") == "block"
+              and kept.get("hook_error") == "boom", str(kept))
         os.remove(state_path)
 
         run_path = os.path.join(root, RUN_FILE)

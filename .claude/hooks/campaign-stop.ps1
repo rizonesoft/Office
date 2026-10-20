@@ -74,11 +74,11 @@ function Write-State($path, $state) {
 }
 
 try {
+    $root = $env:CLAUDE_PROJECT_DIR
     $raw = [Console]::In.ReadToEnd()
     if ([string]::IsNullOrWhiteSpace($raw)) { Allow }
     $event = $raw | ConvertFrom-Json
 
-    $root = $env:CLAUDE_PROJECT_DIR
     if (-not $root) { $root = [string]$event.cwd }
     if (-not $root) { Allow }
 
@@ -209,6 +209,11 @@ try {
         $state.fingerprint = [string]$old.fingerprint
         $state.blocks = [int]$old.blocks
         $state.trips = [int]$old.trips
+        # A recorded hook error survives until hook-error --ack clears it; dropping it here would hide it.
+        if ($old.PSObject.Properties.Name -contains 'hook_error') {
+            $state.hook_error = [string]$old.hook_error
+            $state.hook_error_at = [string]$old.hook_error_at
+        }
     }
 
     if ($state.fingerprint -ne $fingerprint) {
@@ -261,20 +266,27 @@ catch {
             # handed over or ended while this hook waited gets the error in
             # a file of its own, never a write into its state (D00 T04
             # section 36 panel round 2).
-            # A payload that never parsed names no session, so this hook cannot know the run is its own: release
-            # the lock and let the error go to the append-only log, never into another session's state. (A
-            # malformed guard with a parsed payload is still recorded in the state file for the heartbeat.)
-            if ($lock2 -and $null -eq $event) { Exit-GuardLock $lock2; $lock2 = $null }
-            if ($lock2 -and $guardPath -and $owner) {
-                $still2 = $null
-                if (Test-Path -LiteralPath $guardPath) {
-                    try { $still2 = Get-Content -LiteralPath $guardPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $still2 = $null }
+            # Ownership is proven under the lock before the state file is written. A payload that never parsed
+            # names no session; otherwise the guard must name this payload's session (and the run the hook read,
+            # when it read one), or exist but be unreadable: a malformed guard's error is still recorded for the
+            # heartbeat, as before. A missing guard or another session's run sends the error to the log instead.
+            if ($lock2) {
+                $mine2 = $false
+                if ($null -ne $event) {
+                    $gp2 = Join-Path $root 'build\claude-campaign-guard.json'
+                    if (Test-Path -LiteralPath $gp2) {
+                        $still2 = $null
+                        try { $still2 = Get-Content -LiteralPath $gp2 -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $still2 = $null }
+                        if (-not ($still2 -and ($still2.PSObject.Properties.Name -contains 'session_id'))) { $mine2 = $true }
+                        else {
+                            $mine2 = ([string]$still2.session_id -eq [string]$event.session_id)
+                            if ($mine2 -and $guard -and ($guard.PSObject.Properties.Name -contains 'run_id')) {
+                                $mine2 = ([string]$still2.run_id -eq [string]$guard.run_id)
+                            }
+                        }
+                    }
                 }
-                $same2 = $still2 -and ([string]$still2.session_id -eq $owner)
-                if ($same2 -and $guard -and ($guard.PSObject.Properties.Name -contains 'run_id')) {
-                    $same2 = ([string]$still2.run_id -eq [string]$guard.run_id)
-                }
-                if (-not $same2) { Exit-GuardLock $lock2; $lock2 = $null }
+                if (-not $mine2) { Exit-GuardLock $lock2; $lock2 = $null }
             }
             if ($lock2) {
                 try {
@@ -286,6 +298,8 @@ catch {
                             $state.fingerprint = [string]$old.fingerprint
                             $state.blocks = [int]$old.blocks
                             $state.trips = [int]$old.trips
+                            $state.stalled = [bool]$old.stalled
+                            if ($old.PSObject.Properties.Name -contains 'stalled_at') { $state.stalled_at = [string]$old.stalled_at }
                         } catch { }
                     }
                     $state.hook_error = $reason
