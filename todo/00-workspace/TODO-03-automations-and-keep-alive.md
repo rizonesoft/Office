@@ -70,6 +70,8 @@ The shared plumbing every scheduled job uses: the task list, a runner that logs 
 
 ## 2. Run Guard and Stop Hook
 
+> **Started:** 2026-10-20T00:40:34Z
+
 The guard file `build/claude-campaign-guard.json` names the session that owns an open run, its phase, run file and heartbeat job. The Stop hook reads it and blocks that session's end of turn while the run is open, with a stall breaker. Ported from Isotone, with the ready count read from this repository's JSON `query ready` output.
 
 **Phase:** 0
@@ -81,15 +83,15 @@ The guard file `build/claude-campaign-guard.json` names the session that owns an
 1. Port `scripts/campaign_guard.py` and adapt its ready count. Done when: `python scripts/campaign_guard.py --self-test` passes.
 2. Port `.claude/hooks/campaign-stop.ps1` and wire it in `.claude/settings.json`. Done when: the guard's self-test drives the hook and passes.
 
-- [ ] Copy `campaign_guard.py` from Isotone to `scripts/campaign_guard.py`, renaming every Isotone mention to Office-2028. Done when: `rg -n -i isotone scripts/campaign_guard.py` returns nothing. Cheaper substitute: a hand-written guard without the lock, generations and pending-cancel record.
-- [ ] Replace `_ready_count` in `scripts/campaign_guard.py` with a reader of the JSON list `todo-graph.py query ready` prints, counting its entries. Done when: a fixture `todo-graph.py` printing a two-entry list reads as 2, and invalid output reads as unknown. Cheaper substitute: keeping the `N runnable now` regex, which never matches here, so plan-done could never be proven.
-- [ ] Update the self-test's fixture `todo-graph.py` writer to print a JSON list of the controlled length. Done when: `python scripts/campaign_guard.py --self-test` passes. Cheaper substitute: skipping the self-test cases that need a ready count.
-- [ ] Copy `campaign-stop.ps1` to `.claude/hooks/campaign-stop.ps1`, reading the next ready ref from the JSON list. Done when: the self-test's hook cases pass. Cheaper substitute: a Stop hook that always blocks, which traps every session.
-- [ ] Create `.claude/settings.json` with the Stop hook entry, using the same `CLAUDE_PROJECT_DIR` launch line as Isotone. Done when: the file parses and names `campaign-stop.ps1`. Cheaper substitute: wiring the hook in user-level settings, which would fire in every repository.
-- [ ] Add `scripts/tests/test_campaign_guard.py` that runs `python scripts/campaign_guard.py --self-test` and asserts exit 0. Done when: `python -m unittest discover -s scripts/tests` includes it and it fails when the self-test fails.
-- [ ] Commit: `automations: add campaign run guard and Stop hook`
+- [x] Copy `campaign_guard.py` from Isotone to `scripts/campaign_guard.py`, renaming every Isotone mention to Office-2028. Done when: `rg -n -i isotone scripts/campaign_guard.py` returns nothing. Cheaper substitute: a hand-written guard without the lock, generations and pending-cancel record.
+- [x] Replace `_ready_count` in `scripts/campaign_guard.py` with a reader of the JSON list `todo-graph.py query ready` prints, counting its entries. Done when: a fixture `todo-graph.py` printing a two-entry list reads as 2, and invalid output reads as unknown. Cheaper substitute: keeping the `N runnable now` regex, which never matches here, so plan-done could never be proven.
+- [x] Update the self-test's fixture `todo-graph.py` writer to print a JSON list of the controlled length. Done when: `python scripts/campaign_guard.py --self-test` passes every case except the 13 `skill-*` cases. **Corrected 2026-10-20:** the self-test also reads the real `process-plan` skill for the guard steps, which land in §4; those cases pass there. Cheaper substitute: skipping the self-test cases that need a ready count.
+- [x] Copy `campaign-stop.ps1` to `.claude/hooks/campaign-stop.ps1`, reading the next ready ref from the JSON list. Done when: the self-test's hook cases pass. Cheaper substitute: a Stop hook that always blocks, which traps every session.
+- [x] Create `.claude/settings.json` with the Stop hook entry, using the same `CLAUDE_PROJECT_DIR` launch line as Isotone. Done when: the file parses and names `campaign-stop.ps1`. Cheaper substitute: wiring the hook in user-level settings, which would fire in every repository.
+- [x] Add `scripts/tests/test_campaign_guard.py` that runs `python scripts/campaign_guard.py --self-test` and fails on any failed case other than the `skill-*` cases until §4 (`SKILL_TEXT_CASES_PENDING`). Done when: `python -m unittest discover -s scripts/tests` includes it and it fails when a non-skill case fails.
+- [x] Commit: `automations: add campaign run guard and Stop hook`
 
-**Test checkpoint:** `python scripts/campaign_guard.py --self-test` exits 0, and `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` passes.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` passes, with `python scripts/campaign_guard.py --self-test` failing only its 13 `skill-*` cases (**Corrected 2026-10-20:** said the self-test exits 0; that is §4's checkpoint).
 
 ## 3. Keep-Alive Resume Task and Session Observer
 
@@ -127,6 +129,7 @@ When the owning session's process is gone and no other Office-2028 session is op
 
 - [ ] Add the run-guard section (reconcile, mint a generation, `CronCreate` with the canonical heartbeat prompt, `acquire`, `observe`) to `.claude/skills/process-plan/SKILL.md`, adapted to Office-2028 names. Done when: the canonical prompt names `Office-2028` and `campaign_guard.py`. Cheaper substitute: a heartbeat with no guard, which cannot tell its owner from a stale job.
 - [ ] Add the section-boundary heartbeat check and the guard-aware stop and park rules to `.claude/skills/process-phase/SKILL.md`. Done when: the skill names `health`, `expiry` and `end --reason`. Cheaper substitute: deleting the guard file by hand at a stop.
+- [ ] Set `SKILL_TEXT_CASES_PENDING = False` in `scripts/tests/test_campaign_guard.py` so the guard self-test must exit 0. Done when: the test fails if any `skill-*` case fails. Cheaper substitute: leaving the staging flag on.
 - [ ] Mirror both skills to `.agents/skills/` and `.codex/skills/` as real files. Done when: a diff of the three copies shows only agent-specific wording. Cheaper substitute: symlinks, which AGENTS.md forbids.
 - [ ] Add the operator rule from the phase 2 run (a go-ahead before every live Office capture, recorded as `- waiting:` and `- go-ahead:` lines that the heartbeat honours) to the canonical prompt. Done when: the prompt names both line forms. Cheaper substitute: relying on memory of the rule across sessions.
 - [ ] Commit: `skills: run plan and phase under the campaign guard`

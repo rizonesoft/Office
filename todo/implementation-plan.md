@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 12 | Checklist items: 69
+Sections: 12 | Checklist items: 70
 
 | Status | Reference  | Deliverable                                    | Needs                  | Items |
 | ------ | ---------- | ---------------------------------------------- | ---------------------- | ----- |
@@ -21,7 +21,7 @@ Sections: 12 | Checklist items: 69
 | [x]    | D00 T03 §1 | Automation Runner, Failure Alert and Installer | none                   | 7     |
 | [ ]    | D00 T03 §2 | Run Guard and Stop Hook                        | none                   | 7     |
 | [ ]    | D00 T03 §3 | Keep-Alive Resume Task and Session Observer    | none                   | 6     |
-| [ ]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 5     |
+| [ ]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 6     |
 | [ ]    | D00 T03 §5 | Install the Tasks and Verify on This PC        | windows-host, attended | 5     |
 | [ ]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run       | attended               | 4     |
 
@@ -125,4 +125,4 @@ Sections: 3 | Checklist items: 12
 
 Progress: 3/82 verified sections, 9 ready to run now.
 
-Checklist: 22/459 items completed (includes Commit items).
+Checklist: 29/460 items completed (includes Commit items).
