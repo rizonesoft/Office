@@ -26,6 +26,12 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "design" / "inventory"
 APPS = ("word", "excel", "powerpoint", "visio", "project")
+# Every Outlook item window the pinned commit publishes; a missing or unknown one stops the import.
+OUTLOOK_WINDOWS = ("addritem", "apptitem", "dlstitem", "explorer", "logitem", "mailitem", "mailread", "mmsedit",
+                   "mmsread", "postitem", "postread", "reportitem", "reqread", "reqsend", "resenditem", "respcounter",
+                   "responseread", "responsesend", "rssitem", "shareitem", "smsedit", "smsread", "taskitem")
+# Compound type spellings and the role each names; any other compound spelling stops the import.
+COMPOUND_TYPES = {"button (dialogBoxLauncher)": "dialogBoxLauncher"}
 HEADER = ("Control Name", "Control Type", "Tab Set", "Tab", "Group/Context Menu Name", "Parent Control",
           "Secondary Parent Control", "Policy ID")
 COLUMNS = ["idMso", "controlType", "placement", "tabSet", "tab", "group", "parent", "secondaryParent", "policyId"]
@@ -59,10 +65,7 @@ def ident(value, where):
 
 def control_type(value, where):
     value = str(value or "").strip()
-    # "button (dialogBoxLauncher)" is a button whose role is the inner identifier.
-    if value.endswith(")") and " (" in value:
-        value = value.split(" (", 1)[1][:-1]
-    result = ident(value, where)
+    result = ident(COMPOUND_TYPES.get(value, value), where)
     if result is None:
         raise Unmappable(f"{where}: no control type")
     return result
@@ -79,7 +82,8 @@ def read_rows(path):
         extra = [h for h in header[len(HEADER):] if h is not None and h != "Column1"]
         if extra:
             raise Unmappable(f"{path.name}: unmapped columns {extra}")
-        return [r for r in rows if r and any(v is not None for v in r[:len(HEADER)])]
+        # A row is kept when any cell holds a value, so a value only in an extra column reaches the refusal below.
+        return [r for r in rows if r and any(v is not None for v in r)]
     finally:
         wb.close()
 
@@ -100,8 +104,8 @@ def convert(path):
         if placement == "quickAccessToolbar" and tab == QAT_TAB:
             tab = None
         policy = r[7]
-        if policy is not None and not (isinstance(policy, int) and not isinstance(policy, bool)):
-            raise Unmappable(f"{where}: policy id {policy!r} is not an integer")
+        if policy is not None and not (isinstance(policy, int) and not isinstance(policy, bool) and policy >= 0):
+            raise Unmappable(f"{where}: policy id {policy!r} is not a non-negative integer")
         if len(r) > len(HEADER) and any(v is not None for v in r[len(HEADER):]):
             raise Unmappable(f"{where}: a value beyond the known columns")
         rows.append([ident(r[0], where), control_type(r[1], where), placement, ident(tab_set, where),
@@ -128,12 +132,15 @@ def build(source):
         if not path.is_file():
             raise FileNotFoundError(path)
         out[app] = render(commit, COLUMNS, convert(path))
-    outlook = sorted(source.glob("outlook*controls.xlsx"))
-    if not outlook:
-        raise FileNotFoundError(source / "outlook*controls.xlsx")
+    found = {p.name[len("outlook"):-len("controls.xlsx")] for p in source.glob("outlook*controls.xlsx")}
+    unknown = sorted(found - set(OUTLOOK_WINDOWS))
+    if unknown:
+        raise Unmappable(f"{source}: unknown Outlook windows {unknown}; add them to OUTLOOK_WINDOWS")
     merged = []
-    for path in outlook:
-        window = path.name[len("outlook"):-len("controls.xlsx")]
+    for window in OUTLOOK_WINDOWS:
+        path = source / f"outlook{window}controls.xlsx"
+        if not path.is_file():
+            raise FileNotFoundError(path)
         merged += [[window] + row for row in convert(path)]
     out["outlook"] = render(commit, ["window"] + COLUMNS, merged)
     return out
@@ -143,13 +150,13 @@ def write_atomic(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(text)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(text.encode("utf-8"))
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
-    if path.read_text(encoding="utf-8") != text:
+    if path.read_bytes() != text.encode("utf-8"):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
@@ -169,8 +176,8 @@ def main(argv=None, inventory=INVENTORY):
     stale = []
     for app, text in files.items():
         path = Path(inventory) / app / "baseline.json"
-        current = path.read_text(encoding="utf-8") if path.is_file() else None
-        if current == text:
+        current = path.read_bytes() if path.is_file() else None  # bytes: a CRLF checkout is stale
+        if current == text.encode("utf-8"):
             continue
         if args.check:
             stale.append(str(path))

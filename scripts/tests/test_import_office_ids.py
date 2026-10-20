@@ -51,8 +51,8 @@ class Import(unittest.TestCase):
         self.inv = Path(self.tmp.name) / "inventory"
         for app in imp.APPS:
             workbook(self.src / f"{app}controls.xlsx", WORD)
-        workbook(self.src / "outlookexplorercontrols.xlsx", WORD[:3])
-        workbook(self.src / "outlookmailitemcontrols.xlsx", WORD[3:5])
+        for window in imp.OUTLOOK_WINDOWS:
+            workbook(self.src / f"outlook{window}controls.xlsx", WORD[3:5] if window == "mailitem" else WORD[:1])
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -97,7 +97,24 @@ class Import(unittest.TestCase):
         self.run_main()
         rows, data = self.baseline("outlook")
         self.assertEqual(data["columns"][0], "window")
-        self.assertEqual([r["window"] for r in rows], ["explorer"] * 3 + ["mailitem"] * 2)
+        expected = [w for w in imp.OUTLOOK_WINDOWS for _ in range(2 if w == "mailitem" else 1)]
+        self.assertEqual([r["window"] for r in rows], expected)
+
+    def test_outlook_window_set_must_match_the_manifest(self):
+        (self.src / "outlooktaskitemcontrols.xlsx").unlink()
+        self.assertEqual(self.run_main()[0], 2)
+        workbook(self.src / "outlooktaskitemcontrols.xlsx", WORD[:1])
+        for extra in ("outlookmail-readcontrols.xlsx", "outlookcontrols.xlsx"):
+            workbook(self.src / extra, WORD[:1])
+            self.assertEqual(self.run_main()[0], 1, extra)
+            (self.src / extra).unlink()
+        self.assertEqual(self.run_main()[0], 0)
+
+    def test_check_compares_bytes(self):
+        self.run_main()
+        path = self.inv / "word" / "baseline.json"
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        self.assertEqual(self.run_main("--check")[0], 1)
 
     def test_written_baselines_pass_the_inventory_checker(self):
         self.run_main()
@@ -115,11 +132,23 @@ class Import(unittest.TestCase):
                     ("Has space", "button", "None (Core Tab)", "TabHome", None, None, None, 1),
                     ("X", "button", "None (Core Tab)", "TabHome", "see https://example.com", None, None, 1),
                     ("X", "button", "None (Core Tab)", "TabHome", None, None, None, "12"),
+                    ("X", "button", "None (Core Tab)", "TabHome", None, None, None, -1),
+                    ("X", "unexpected prose (button)", "None (Core Tab)", "TabHome", None, None, None, 1),
                     ("X", None, "None (Core Tab)", "TabHome", None, None, None, 1)):
             workbook(self.src / "wordcontrols.xlsx", WORD + [bad])
             code, out = self.run_main()
             self.assertEqual(code, 1, (bad, out))
             self.assertFalse((self.inv / "word" / "baseline.json").exists(), bad)
+
+    def test_a_value_only_in_the_extra_column_stops_the_import(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(HEADER)
+        for r in WORD:
+            ws.append(list(r) + [None])
+        ws.append([None] * len(imp.HEADER) + ["stray"])
+        wb.save(self.src / "wordcontrols.xlsx")
+        self.assertEqual(self.run_main()[0], 1)
 
     def test_unexpected_columns_stop_the_import(self):
         workbook(self.src / "wordcontrols.xlsx", WORD, header=HEADER[:-1] + ["Description"])
