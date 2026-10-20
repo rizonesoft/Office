@@ -219,6 +219,9 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
     except FileExistsError:
         current = read_guard(root) or {}
         owner = str(current.get("session_id", ""))
+        if owner == session and str(current.get("runner", "claude")) != runner and not handover:
+            raise GuardError(f"the guard is live for the {current.get('runner', 'claude')} run of session {owner}; "
+                             f"refusing to take it as {runner} without an operator handover (--handover REASON)")
         if owner != session:
             if not handover:
                 raise GuardError(f"the guard is live for session {owner or '<none>'}; "
@@ -1229,6 +1232,15 @@ def _self_test() -> int:
         except GuardError as exc:
             check("a-claude-session-cannot-take-another-runners-guard", "without an operator handover" in str(exc),
                   str(exc))
+        try:
+            acquire(root, "codex-run", 0, RUN_FILE, "job-1")
+            check("the-same-session-id-under-another-runner-is-refused", False, "a claude acquire took the codex run")
+        except GuardError as exc:
+            check("the-same-session-id-under-another-runner-is-refused", "codex run of session" in str(exc), str(exc))
+        msg = acquire(root, "codex-run", 1, "docs/phase-runs/2099-01-01-phase-1.md", NO_JOB, runner="codex")
+        check("another-runner-re-points-its-own-guard", "re-pointed" in msg and read_guard(root)["phase"] == 1
+              and read_guard(root)["runner"] == "codex", msg)
+        acquire(root, "codex-run", 0, RUN_FILE, NO_JOB, runner="codex")
         code, out, _ = run_hook(root, SESSION)
         check("the-hook-never-blocks-for-another-runner", code == 0 and out is None, str(out))
         msg = end(root, "codex-run", "operator-stop")
