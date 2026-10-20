@@ -303,6 +303,12 @@ class Checker(unittest.TestCase):
     def test_the_repository_records_its_baseline_source(self):
         self.assertTrue((ci.INVENTORY / ci.SOURCES).is_file())
 
+    def test_the_reference_documents_the_baseline_commit(self):
+        commit = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))["commit"]
+        text = (ci.INVENTORY / "REFERENCE.md").read_text(encoding="utf-8")
+        self.assertIn("## Baseline", text)
+        self.assertIn(commit, text[text.index("## Baseline"):])
+
     def test_baseline_rows_are_not_inventory_records(self):
         rec = {"id": "word.home", "app": "word", "kind": "tab", "label": "Home"}
         (self.inv / "word" / "ribbon.json").write_text(json.dumps([rec]), encoding="utf-8")
