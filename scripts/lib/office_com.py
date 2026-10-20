@@ -44,28 +44,34 @@ def same_build(reported, reference):
     return 2 <= len(have) <= len(want) and have == want[:len(have)]
 
 
+def is_executable(image_path, exe):
+    """Whether a process image path names exactly this executable, compared case-insensitively."""
+    return image_path.replace("\\", "/").rsplit("/", 1)[-1].upper() == exe.upper()
+
+
 class OwnProcess:
-    """The process behind one Word instance's window, held by handle so its id cannot be reused under us."""
+    """The process behind one app instance's window, held by handle so its id cannot be reused under us, and
+    checked to be the executable the caller expects."""
 
     SYNCHRONIZE, QUERY_LIMITED = 0x00100000, 0x1000
 
-    def __init__(self, hwnd):
+    def __init__(self, hwnd, exe="WINWORD.EXE"):
         import ctypes
         from ctypes import wintypes
         self.k32, user32 = ctypes.windll.kernel32, ctypes.windll.user32
         pid = wintypes.DWORD()
         if not user32.GetWindowThreadProcessId(wintypes.HWND(int(hwnd)), ctypes.byref(pid)) or not pid.value:
-            raise Refused("the Word instance's window has no process")
+            raise Refused(f"the {exe} instance's window has no process")
         self.pid = pid.value
         self.handle = self.k32.OpenProcess(self.SYNCHRONIZE | self.QUERY_LIMITED, False, self.pid)
         if not self.handle:
-            raise Refused(f"cannot open the Word instance's process {self.pid}")
+            raise Refused(f"cannot open the {exe} instance's process {self.pid}")
         size = wintypes.DWORD(32768)
         buf = ctypes.create_unicode_buffer(size.value)
         if not self.k32.QueryFullProcessImageNameW(self.handle, 0, buf, ctypes.byref(size)) \
-                or not buf.value.upper().endswith("WINWORD.EXE"):
+                or not is_executable(buf.value, exe):
             self.close()
-            raise Refused(f"process {self.pid} behind the instance's window is not Word")
+            raise Refused(f"process {self.pid} behind the instance's window is not {exe}")
 
     def exited(self, seconds):
         return self.k32.WaitForSingleObject(self.handle, int(seconds * 1000)) == 0  # WAIT_OBJECT_0
@@ -94,10 +100,13 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def publish(files, write=None, rename=os.replace):
-    """Write every file or none. All new content is written to temporary files first, so a full disk fails before
-    anything changes; the originals are then renamed aside and the new files renamed in, and any failure from there
-    renames the originals back. Renames need no free space, so the rollback cannot fail the way the writes did."""
+def publish(files, write=None, rename=os.replace, link=os.link):
+    """Write every file or none, as far as a running process can promise. All new content is written to temporary
+    files first, so a full disk fails before anything changes. Each original is then kept as a hard link (no data
+    written, no moment without the file) and each new file replaces its destination in one atomic rename, so every
+    destination always holds either its old or its new content, even if the process is killed. A failure that the
+    process survives renames the kept originals back. With two or more files, a kill between their renames leaves
+    some new and some old; rerunning the producing script repairs that."""
     write = write or (lambda path, data: path.write_bytes(data))
     staged, aside, placed = {}, {}, []
     try:
@@ -112,7 +121,7 @@ def publish(files, write=None, rename=os.replace):
         for path in files:
             if path.is_file():
                 aside[path] = path.with_name(path.name + f".{os.getpid()}.old")
-                rename(path, aside[path])
+                link(path, aside[path])  # a second name for the original: the destination never goes missing
             rename(staged[path], path)
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)

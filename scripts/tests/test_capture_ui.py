@@ -74,7 +74,13 @@ class Walk(unittest.TestCase):
         self.assertEqual(by["Font"]["controlType"], "comboBox")  # its Edit and Open parts are not controls
         self.assertNotIn("Open", by)
         self.assertEqual([r["label"] for r in recs if r["kind"] == "group"], ["Clipboard", "Font", "Styles"])
-        self.assertEqual(ctx.skipped, ["group 'Adobe Acrobat' on 'Home': no control the baseline knows, an add-in"])
+        self.assertEqual(ctx.skipped, ["group 'Adobe Acrobat' on 'Home': no control the baseline knows, so its "
+                                       "provenance is unverified"])
+        aside = {r["label"]: r for r in ctx.unverified}
+        self.assertEqual((aside["Adobe Acrobat"]["kind"], aside["Create PDF"]["uiaId"], aside["Create PDF"]["baselineMissing"]),
+                         ("group", "AcrobatCreate", True))
+        self.assertNotIn("Create PDF", by)
+        self.assertEqual((by["Bold"]["uiaId"], by["Paste"].get("uiaId")), ("Bold", None))
         self.assertEqual({r["source"] for r in recs}, {f"uia:{BUILD}"})
         self.assertFalse(any("bounds" in r for r in recs))
 
@@ -85,10 +91,22 @@ class Walk(unittest.TestCase):
         self.assertEqual((by["Paste"]["size"], by["Bold"]["size"]), ("large", "small"))
         self.assertTrue(all(r.get("captureProfile") == "fhd-100" for r in recs if "bounds" in r))
 
-    def test_an_add_in_tab_is_skipped(self):
+    def test_a_tab_without_an_identifier_is_set_aside_with_its_groups(self):
         ctx = cu.Context("word", BUILD, IDS)
-        self.assertEqual(cu.walk_tab(E("TabItem", "Acrobat"), 9, E("Pane"), ctx), [])
+        lower = E("Pane", kids=[E("Group", "Acrobat", kids=[E("Group", "Create", kids=[E("Button", "Bold", "Bold")])])])
+        self.assertEqual(cu.walk_tab(E("TabItem", "Acrobat"), 9, lower, ctx), [])
         self.assertIn("no identifier", ctx.skipped[0])
+        self.assertEqual([(r["kind"], r["baselineMissing"]) for r in ctx.unverified],
+                         [("tab", True), ("group", True), ("control", True)])
+
+    def test_unverified_records_pass_the_checker(self):
+        recs, ctx = self.records()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "inventory" / "word" / "unverified.json"  # its groups hang off the main capture's tab
+            path.parent.mkdir(parents=True)
+            (path.parent / "ribbon.json").write_text(cu.render(recs), encoding="utf-8")
+            path.write_text(cu.render(ctx.unverified), encoding="utf-8")
+            self.assertEqual(ci.check([str(path)], inventory=path.parent.parent), [])
 
     def test_records_pass_the_inventory_checker(self):
         for origin in (None, (0, 0)):
@@ -110,6 +128,9 @@ class Walk(unittest.TestCase):
         ids = cu.Ids()
         self.assertEqual([ids.make("word.home", x) for x in ("Font", "Font...", "Font 2")],
                          ["word.home.font", "word.home.font-2", "word.home.font-2-2"])
+        ids = cu.Ids()
+        self.assertEqual([ids.make("word.home.font", "Font", "Font"), ids.make("word.home.font", "Font...", "FontDialog")],
+                         ["word.home.font.font", "word.home.font.font-fontdialog"])
 
 
 class Merge(unittest.TestCase):
@@ -125,6 +146,17 @@ class Merge(unittest.TestCase):
         self.assertEqual((bold["behaviour"], bold["source"], bold["order"], bold["bounds"]["x"]), ("Ours.", "uia:1.2.3.4", 5, 9))
         self.assertIn("word.home.gone", out)
         self.assertIn("word.home.font.italic", out)
+
+    def test_annotations_follow_the_control_not_the_encounter_order(self):
+        old = [{"id": "word.v.g.x", "parent": "word.v.g", "uiaId": "First", "label": "X", "behaviour": "About First."},
+               {"id": "word.v.g.x-2", "parent": "word.v.g", "uiaId": "Second", "label": "X", "behaviour": "About Second."}]
+        # A later build lists the two the other way round, so the ids a fresh capture hands out are swapped.
+        new = [{"id": "word.v.g.x", "parent": "word.v.g", "uiaId": "Second", "label": "X", "order": 0},
+               {"id": "word.v.g.x-2", "parent": "word.v.g", "uiaId": "First", "label": "X", "order": 1}]
+        out = cu.merge(old, new)
+        self.assertEqual({r["uiaId"]: (r["behaviour"], r["order"]) for r in out},
+                         {"First": ("About First.", 1), "Second": ("About Second.", 0)})
+        self.assertEqual(len(out), 2)
 
 
 class Profile(unittest.TestCase):
@@ -142,7 +174,8 @@ class Profile(unittest.TestCase):
                  (self.GOOD, self.MONITOR, 1036, 120, [(255, 255, 255)], "language"),
                  (self.GOOD, self.MONITOR, 1033, 20, [(255, 255, 255)], "ribbon"),
                  (self.GOOD, self.MONITOR, 1033, 120, [(43, 87, 154)], "theme"),
-                 (self.GOOD, self.MONITOR, 1033, 120, [], "theme")]
+                 (self.GOOD, self.MONITOR, 1033, 120, [], "theme"),
+                 (self.GOOD, self.MONITOR, 1033, 120, [(255, 255, 255), None], "theme")]
         for state, monitor, lang, height, pixels, word in cases:
             problems = cu.profile_problems(state, monitor, lang, height, pixels)
             self.assertTrue(any(word in p for p in problems), (word, problems))
@@ -192,7 +225,70 @@ class Popups(unittest.TestCase):
                                          cu.Context("word", BUILD, set()))[0]["controlType"], "galleryItem")
 
 
+class FakeApp:
+    def __init__(self, count):
+        self.count, self.quit, self.made = count, False, []
+        app = self
+
+        class Docs:
+            @property
+            def Count(self):
+                return app.count
+
+            def Add(self):
+                app.count += 1
+                doc = Doc()
+                app.made.append(doc)
+                return doc
+
+        class Doc:
+            closed = False
+
+            def Close(self, SaveChanges=None):
+                self.closed = True
+                app.count -= 1
+
+        self.Presentations = self.Documents = Docs()
+        self.Visible = False
+
+    def Quit(self, SaveChanges=None):
+        self.quit = True
+
+
 class Launch(unittest.TestCase):
+    def launched(self, app, key="powerpoint"):
+        real = cu.Launched.running, cu.Win, cu.OwnProcess
+        cu.Launched.running = staticmethod(lambda exe: False)
+        cu.Win = lambda: type("W", (), {"top": lambda self, h: h})()
+        cu.OwnProcess = lambda hwnd, exe: type("P", (), {"pid": 1, "exited": lambda self, s: True,
+                                                         "close": lambda self: None})()
+        app.HWND = 5
+        app.ActiveWindow = type("AW", (), {"Hwnd": 5})()
+        try:
+            return cu.Launched(key, dispatch=lambda progid: app)
+        finally:
+            cu.Launched.running, cu.Win, cu.OwnProcess = real
+
+    def test_an_instance_that_already_holds_documents_is_never_used_or_closed(self):
+        app = FakeApp(count=1)
+        with self.assertRaises(cu.Unsafe):
+            self.launched(app)
+        self.assertEqual((app.count, app.quit, app.made), (1, False, []))
+
+    def test_only_the_tools_own_document_is_closed_and_a_shared_instance_is_left_running(self):
+        app = FakeApp(count=0)
+        launched = self.launched(app)
+        app.count += 1  # the operator opens a presentation in the instance while the capture runs
+        with self.assertRaises(cu.Refused):
+            launched.close()
+        self.assertEqual((app.made[0].closed, app.quit, app.count), (True, False, 1))
+        quiet = FakeApp(count=0)
+        self.launched(quiet).close()
+        self.assertTrue(quiet.quit)
+
+    def test_core_tabs_come_from_the_baseline(self):
+        self.assertIn("TabHome", cu.baseline_core_tabs("word"))
+
     def test_outlook_is_never_started(self):
         with self.assertRaises(cu.Unsafe):
             cu.Launched("outlook")
@@ -232,6 +328,23 @@ class Writes(unittest.TestCase):
             code = cu.main(["--app", "visio", "--tab", "Home", "--out", str(Path(tmp) / "v.json")], launcher=missing)
         self.assertEqual(code, 2)
         self.assertIn("VISIO.EXE could not be started", err.getvalue())
+
+    def test_the_destination_never_goes_missing_during_a_replace(self):
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ribbon.json"
+            path.write_text("[]" + chr(10), encoding="utf-8")
+            seen = []
+
+            def watching_rename(src, dst):
+                seen.append(path.exists())
+                os.replace(src, dst)
+                seen.append(path.exists())
+
+            cu.publish({path: cu.render([{"id": "word.home"}])}, rename=watching_rename)
+            self.assertEqual(seen, [True, True])
+            self.assertIn("word.home", path.read_text(encoding="utf-8"))
+            self.assertEqual([p.name for p in Path(tmp).iterdir()], ["ribbon.json"])
 
     def test_an_interrupted_write_leaves_the_previous_file(self):
         with tempfile.TemporaryDirectory() as tmp:

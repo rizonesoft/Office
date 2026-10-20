@@ -110,6 +110,13 @@ class Records(unittest.TestCase):
             with self.assertRaises(wc.Refused):
                 wc.records([row], BUILD, set())
 
+    def test_the_process_must_be_exactly_the_expected_executable(self):
+        office = "C:" + chr(92) + "Program Files" + chr(92) + "Microsoft Office" + chr(92) + "root" + chr(92) + "Office16" + chr(92)
+        self.assertTrue(wc.office_com.is_executable(office + "WINWORD.EXE", "WINWORD.EXE"))
+        self.assertTrue(wc.office_com.is_executable(office + "EXCEL.EXE", "excel.exe"))
+        self.assertFalse(wc.office_com.is_executable(office + "NOTWINWORD.EXE", "WINWORD.EXE"))
+        self.assertFalse(wc.office_com.is_executable(office + "EXCEL.EXE", "WINWORD.EXE"))
+
     def test_build_components_must_match(self):
         self.assertTrue(wc.same_build("16.0.20430", BUILD))
         self.assertTrue(wc.same_build(BUILD, BUILD))

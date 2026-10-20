@@ -25,6 +25,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import office_com  # noqa: E402,F401  (tests reach the shared helpers through it)
 from office_com import (REFERENCE, OwnProcess, Refused, baseline_identifiers, installed_build,  # noqa: E402,F401
                         own_process, publish, reference_build, same_build, write_atomic)
 

@@ -241,6 +241,19 @@
             }
           ]
         },
+        "uiaId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "the UI Automation id the capture read, kept even when the baseline does not list it",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
+            }
+          ]
+        },
         "source": {
           "type": "string",
           "pattern": "^((uia|listcommands):[0-9]+(\\.[0-9]+){3}|baseline:[0-9a-f]{7,40})$",

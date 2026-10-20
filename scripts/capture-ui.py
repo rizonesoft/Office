@@ -13,9 +13,12 @@ window is placed on a display that matches capture profile fhd-100 (design/inven
 every profile value is checked, and `bounds` and `size` are recorded only when all of them hold.
 
 Records carry facts only: a control's name (its label, without control characters), control type, UI Automation id (as `idMso` when the app's
-baseline lists it), KeyTip, order and, under the profile, bounds relative to the client area. ScreenTip text (the
-UI Automation help text and full description) is never read. Tabs without an identifier and groups with no control
-the baseline knows are add-ins, not Office, and are skipped and listed.
+baseline lists it, and always as `uiaId`), KeyTip, order and, under the profile, bounds relative to the client
+area. ScreenTip text (the UI Automation help text and full description) is never read. A tab without an identifier,
+or a group with no control the baseline knows, may be an add-in or may be new in this build: it is not written to
+the inventory but to build/capture-ui/<app>-unverified.json, marked `baselineMissing`, and listed for review. The run
+reports which of the baseline's core tabs the window did not show, and that File (Backstage) is not a ribbon tab.
+Combo box lists (fonts, sizes) are system and document data, so they are not expanded; the run counts them.
 Exit 0 written; 1 when a capture step fails (a menu that will not close, an unknown tab, an existing file without
 --merge); 2 when the app cannot be launched safely or the requested layout does not exist in this build.
 """
@@ -32,6 +35,7 @@ from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish
 
 PROFILE = "fhd-100"
 PROFILE_SIZE, PROFILE_DPI, UI_LANGUAGE = (1920, 1080), 96, 1033  # en-US
+UNVERIFIED = INVENTORY.parents[1] / "build" / "capture-ui"
 LARGE_HEIGHT = 40  # pixels at 100 percent: large ribbon controls are about 66, small ones about 22
 
 
@@ -69,13 +73,17 @@ def keytip(access_key):
 
 
 class Ids:
-    """Ids unique within one capture: a parent id plus the label's slug, with -2, -3 for repeats."""
+    """Ids unique within one capture: a parent id plus the label's slug; a repeated label is told apart by its UI
+    Automation id, and only an element with neither a free label nor an id of its own gets -2, -3."""
 
     def __init__(self):
         self.taken = set()
 
-    def make(self, parent, label):
-        base, n = f"{parent}.{slug(label)}", 1
+    def make(self, parent, label, discriminator=""):
+        base = f"{parent}.{slug(label)}"
+        if base in self.taken and discriminator:
+            base = f"{base}-{slug(discriminator)}"
+        n = 1
         while (f"{base}-{n}" if n > 1 else base) in self.taken:
             n += 1
         final = f"{base}-{n}" if n > 1 else base
@@ -87,7 +95,8 @@ class Context:
     def __init__(self, app, build, identifiers, origin=None):
         self.app, self.build, self.identifiers = app, build, identifiers
         self.origin = origin  # client-area origin on screen, only when the capture profile holds
-        self.ids, self.skipped = Ids(), []
+        self.ids, self.skipped, self.unverified, self.notes = Ids(), [], [], []
+        self.elements = {}  # record id -> the element it was read from, for expansion
 
     def base(self, rid, kind, label, order, element, parent=None, **extra):
         rec = {"id": rid, "app": self.app, "kind": kind, "label": label}
@@ -95,6 +104,9 @@ class Context:
             rec["parent"] = parent
         rec["order"] = order
         rec.update({k: v for k, v in extra.items() if v is not None})
+        if element.automation_id:
+            rec["uiaId"] = element.automation_id
+        self.elements[rid] = element
         tip = keytip(element.access_key)
         if tip:
             rec["keytip"] = tip
@@ -141,27 +153,35 @@ def controls_of(group):
 
 
 def walk_tab(tab, order, lower, ctx, contextual=False):
-    """Records for one selected tab: the tab, its groups and their controls."""
-    if not tab.automation_id:
-        ctx.skipped.append(f"tab {tab.name!r}: no identifier, an add-in")
-        return []
-    tab_id = ctx.ids.make(ctx.app, tab.name)
-    records = [ctx.base(tab_id, "contextualTab" if contextual else "tab", tab.name, order, tab,
-                        idMso=tab.automation_id if tab.automation_id in ctx.identifiers else None)]
+    """Records for one selected tab: the tab, its groups and their controls. Content the baseline cannot vouch for
+    (a tab without an identifier, a group with no known control) goes to ctx.unverified, marked baselineMissing."""
+    tab_unverified = not tab.automation_id
+    tab_id = ctx.ids.make(ctx.app, tab.name, tab.automation_id)
+    tab_rec = ctx.base(tab_id, "contextualTab" if contextual else "tab", tab.name, order, tab,
+                       idMso=tab.automation_id if tab.automation_id in ctx.identifiers else None,
+                       baselineMissing=True if tab_unverified else None)
+    records, aside = ([], [tab_rec]) if tab_unverified else ([tab_rec], [])
+    if tab_unverified:
+        ctx.skipped.append(f"tab {tab.name!r}: no identifier, so its provenance is unverified")
     containers = [c for c in lower.children() if c.control_type == "Group"]
     groups = [g for c in containers for g in c.children() if g.control_type == "Group"]
     for g_order, group in enumerate(groups):
         members = [(el, frame) for el, frame in controls_of(group) if control_type(el)]
         ids = [identifier(el, ctx.identifiers) for el, _ in members]
-        if members and not any(ids):
-            ctx.skipped.append(f"group {group.name!r} on {tab.name!r}: no control the baseline knows, an add-in")
-            continue
+        unverified = tab_unverified or (members and not any(ids))
+        if unverified and not tab_unverified:
+            ctx.skipped.append(f"group {group.name!r} on {tab.name!r}: no control the baseline knows, so its "
+                               "provenance is unverified")
+        target = aside if unverified else records
         group_id = ctx.ids.make(tab_id, group.name)
-        records.append(ctx.base(group_id, "group", group.name, g_order, group, parent=tab_id))
+        target.append(ctx.base(group_id, "group", group.name, g_order, group, parent=tab_id,
+                               baselineMissing=True if unverified else None))
         for c_order, ((el, frame), idmso) in enumerate(zip(members, ids)):
             label = el.name or frame or el.automation_id or "control"
-            records.append(ctx.base(ctx.ids.make(group_id, label), "control", label, c_order, el, parent=group_id,
-                                    controlType=control_type(el), idMso=idmso))
+            target.append(ctx.base(ctx.ids.make(group_id, label, el.automation_id), "control", label, c_order, el,
+                                   parent=group_id, controlType=control_type(el), idMso=idmso,
+                                   baselineMissing=True if unverified else None))
+    ctx.unverified += aside
     return records
 
 
@@ -171,7 +191,8 @@ def expand_items(control_rec, element, popup_items, ctx):
     for order, item in enumerate(popup_items):
         if not item.name:
             continue
-        out.append(ctx.base(ctx.ids.make(control_rec["id"], item.name), "menuItem", item.name, order, item,
+        out.append(ctx.base(ctx.ids.make(control_rec["id"], item.name, item.automation_id), "menuItem", item.name,
+                            order, item,
                             parent=control_rec["id"], controlType="galleryItem" if item.control_type == "ListItem"
                             else TYPES.get(item.control_type, "button"),
                             idMso=item.automation_id if item.automation_id in ctx.identifiers else None))
@@ -183,17 +204,23 @@ def merge(existing, captured):
     existing record (behaviour, source and anything written by hand) is kept, and records not captured stay."""
     refreshed = ("bounds", "order", "captureProfile", "size")
     by_id = {r["id"]: r for r in captured}
+    by_uia = {(r.get("parent"), r["uiaId"]): r for r in captured if r.get("uiaId")}
     out, seen = [], set()
     for rec in existing:
-        new = by_id.get(rec.get("id"))
+        new = by_uia.get((rec.get("parent"), rec.get("uiaId"))) if rec.get("uiaId") else None
+        if new is None:
+            new = by_id.get(rec.get("id"))
+            if new is not None and new.get("uiaId") and rec.get("uiaId") and new["uiaId"] != rec["uiaId"]:
+                new = None  # the same id now names a different control: never move annotations across
         if new is None:
             out.append(rec)
             continue
         kept = {k: v for k, v in rec.items() if k not in refreshed}
         kept.update({k: new[k] for k in refreshed if k in new})
         out.append(kept)
-        seen.add(rec["id"])
-    out += [r for r in captured if r["id"] not in seen]
+        seen.add(new["id"])
+    taken = {r.get("id") for r in out}
+    out += [r for r in captured if r["id"] not in seen and r["id"] not in taken]
     return out
 
 
@@ -346,6 +373,8 @@ class Win:
             value = self.gdi32.GetPixel(dc, x, y)
         finally:
             self.user32.ReleaseDC(0, dc)
+        if value == 0xFFFFFFFF or value < 0:  # CLR_INVALID: no colour was read
+            return None
         return value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF
 
     def raise_(self, hwnd, topmost):
@@ -396,7 +425,7 @@ def profile_problems(state, monitor, language, ribbon_height, title_pixels):
         problems.append(f"the Office display language is {language}, not en-US ({UI_LANGUAGE})")
     if ribbon_height < 60:
         problems.append("the ribbon is not always shown")
-    if not title_pixels or any(min(p) < 235 for p in title_pixels):
+    if not title_pixels or any(p is None or min(p) < 235 for p in title_pixels):
         problems.append("the Office theme is not White (the title bar is not white)")
     return problems
 
@@ -415,12 +444,17 @@ class Launched:
             raise Unsafe(f"{exe} is running and allows one instance only, so the tool would drive the operator's "
                          f"own window; close {exe} first")
         self.app = (dispatch or (win32com.client.DispatchEx if separate else win32com.client.Dispatch))(progid)
-        self.proc = None
+        self.proc, self.created, self.owned = None, [], False
+        if self.open_documents():
+            # Dispatch handed back an instance that already holds documents: someone else's. Touch nothing.
+            self.app = None
+            raise Unsafe(f"{exe} already holds documents, so it is not an instance this tool started")
+        self.owned = True
         try:
             self.app.Visible = True
-            self.document = self.new_document()
+            self.created.append(self.new_document())
             self.hwnd = Win().top(self.window_handle())
-            self.proc = OwnProcess(self.hwnd)
+            self.proc = OwnProcess(self.hwnd, exe)
         except Exception:
             self.close()
             raise
@@ -431,6 +465,14 @@ class Launched:
         out = subprocess.run(["tasklist", "/FI", f"IMAGENAME eq {exe}", "/FO", "CSV", "/NH"], capture_output=True,
                              text=True, check=True).stdout
         return any(line.upper().startswith(f'"{exe.upper()}"') for line in out.splitlines())
+
+    def documents(self):
+        return {"word": lambda: self.app.Documents, "excel": lambda: self.app.Workbooks,
+                "powerpoint": lambda: self.app.Presentations, "visio": lambda: self.app.Documents,
+                "project": lambda: self.app.Projects}[self.key]()
+
+    def open_documents(self):
+        return int(self.documents().Count)
 
     def new_document(self):
         return {"word": lambda: self.app.Documents.Add(), "excel": lambda: self.app.Workbooks.Add(),
@@ -449,25 +491,32 @@ class Launched:
             return None
 
     def close(self, wait=60.0):
-        """Quit without saving and confirm the process this tool started has exited."""
+        """Close only the documents this tool created, without saving; quit only an instance this tool started that
+        holds nothing else; and confirm its process has exited."""
+        if not self.owned:
+            return
+        others = 0
         try:
-            if self.key == "word":
-                for doc in list(self.app.Documents):
+            for doc in self.created:
+                if self.key == "word":
                     doc.Close(SaveChanges=0)
-            elif self.key == "excel":
-                for book in list(self.app.Workbooks):
-                    book.Close(SaveChanges=False)
-            elif self.key == "powerpoint":
-                for pres in list(self.app.Presentations):
-                    pres.Saved = True
-                    pres.Close()
+                elif self.key == "excel":
+                    doc.Close(SaveChanges=False)
+                else:
+                    doc.Saved = True
+                    doc.Close()
+            others = self.open_documents()
         finally:
             try:
-                self.app.Quit() if self.key != "word" else self.app.Quit(SaveChanges=0)
+                if not others:
+                    self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()
             finally:
-                gone = self.proc is None or self.proc.exited(wait)
+                gone = self.proc is None or (not others and self.proc.exited(wait))
                 if self.proc is not None:
                     self.proc.close()
+        if others:
+            raise Refused(f"the {self.exe} instance holds {others} document(s) this tool did not create, so it was "
+                          "left running")
         if not gone:
             raise Refused(f"the {self.exe} instance this tool started did not exit")
 
@@ -547,6 +596,10 @@ def capture(args, launched, uia, win):
     unknown = [w for w in wanted if w not in names]
     if unknown:
         raise Refused(f"no tab named {unknown}; this window's tabs are {names}")
+    core = baseline_core_tabs(args.app)
+    shown = {t.automation_id for t in tab_elements if t.automation_id}
+    ctx.notes.append(f"baseline core tabs not shown in this window: {sorted(core - shown) or 'none'}")
+    ctx.notes.append("File (Backstage) is not a ribbon tab; its pages are captured by the app's Backstage section")
     records = []
     for order, tab in enumerate(tab_elements):
         if tab.name not in wanted:
@@ -559,7 +612,7 @@ def capture(args, launched, uia, win):
         if args.expand:
             tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
         records += tab_records
-    return records, problems, ctx.skipped
+    return records, problems, ctx
 
 
 def first_group_name(root):
@@ -569,23 +622,19 @@ def first_group_name(root):
 
 
 def expand_all(records, lower, ctx, launched, uia, win):
-    """Open every menu, split-button menu and gallery once, record its items, and close it again."""
-    by_label = {}
-    for el in descendants(lower):
-        by_label.setdefault((el.name, el.automation_id), el)
-    out = []
+    """Open every control that can expand (by its own pattern) once, record its items, and close it again."""
+    out, combos = [], 0
     for rec in records:
         out.append(rec)
-        if rec.get("kind") != "control" or rec.get("controlType") not in ("menu", "gallery", "splitButton"):
-            continue
-        element = next((el for (name, aid), el in by_label.items()
-                        if rec.get("idMso") and aid in (rec["idMso"], rec["idMso"] + "_Dropdown")), None)
-        element = element or by_label.get((rec["label"], ""))
-        if element is None:
+        element = ctx.elements.get(rec["id"])
+        if rec.get("kind") != "control" or element is None:
             continue
         target = next((p for p in element.children() if p.automation_id.endswith("_Dropdown")), element) \
             if element.control_type == "SplitButton" else element
         if target.expand_state() is None:
+            continue
+        if rec.get("controlType") == "comboBox":
+            combos += 1  # fonts, sizes: the machine's and the document's data, not the app's interface
             continue
         before = win.popups(launched.proc.pid)
         target.expand()
@@ -596,6 +645,8 @@ def expand_all(records, lower, ctx, launched, uia, win):
                         or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,
                         rec["label"])
         out += expand_items(rec, target, items, ctx)
+    if combos:
+        ctx.notes.append(f"{combos} combo box list(s) on this tab not expanded (system or document data)")
     return out
 
 
@@ -612,6 +663,13 @@ def close_popup(target, still_open, label, attempts=3):
         time.sleep(0.4)
         target.collapse()
     raise Refused(f"{label!r} did not close after being opened")
+
+
+def baseline_core_tabs(app):
+    data = json.loads((INVENTORY / app / "baseline.json").read_text(encoding="utf-8"))
+    c = data["columns"]
+    return {r[c.index("idMso")] for r in data["rows"]
+            if r[c.index("controlType")] == "tab" and r[c.index("placement")] == "coreTab" and r[c.index("idMso")]}
 
 
 def baseline_ids(app):
@@ -645,7 +703,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         print(f"capture-ui: {APPS[args.app][1]} could not be started ({type(exc).__name__}: {exc})", file=sys.stderr)
         return 2
     try:
-        records, problems, skipped = capture(args, launched, (uia_factory or Uia)(), (win_factory or Win)())
+        records, problems, ctx = capture(args, launched, (uia_factory or Uia)(), (win_factory or Win)())
     except Unsafe as exc:
         print(f"capture-ui: {exc}", file=sys.stderr)
         launched.close()
@@ -660,9 +718,14 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     launched.close()
     if args.merge and out.exists():
         records = merge(json.loads(out.read_text(encoding="utf-8")), records)
-    publish({out: render(records)})
-    for line in skipped:
-        print(f"skipped {line}")
+    files = {out: render(records)}
+    if ctx.unverified:
+        files[UNVERIFIED / f"{args.app}-unverified.json"] = render(ctx.unverified)
+    publish(files)
+    for line in ctx.skipped + ctx.notes:
+        print(line)
+    if ctx.unverified:
+        print(f"{len(ctx.unverified)} unverified records in {UNVERIFIED / (args.app + '-unverified.json')}")
     print(f"{out}: {len(records)} records" + ("; bounds recorded under " + PROFILE if not problems else
                                                "; no bounds: " + "; ".join(problems)))
     return 0
