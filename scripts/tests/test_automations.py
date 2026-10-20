@@ -255,7 +255,7 @@ class RoundOneFixes(unittest.TestCase):
 
     def test_validate_mode_exits_1_on_a_bad_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.manifest(tmp, [FIXTURE_TASK], folder="\Other\\")
+            self.manifest(tmp, [FIXTURE_TASK], folder=chr(92) + "Other" + chr(92))
             with contextlib_redirect():
                 self.assertEqual(run.main(["--validate"], root=tmp), 1)
             self.manifest(tmp, [FIXTURE_TASK])
@@ -299,7 +299,7 @@ class RoundOneFixes(unittest.TestCase):
 
 
 # Task Scheduler and its installer exist only on Windows with PowerShell 7; elsewhere there is nothing to install.
-@unittest.skipUnless(shutil_which("pwsh"), "PowerShell 7 is needed to run the installer")
+@unittest.skipUnless(os.name == "nt" and shutil_which("pwsh"), "Windows with PowerShell 7 is needed to run the installer")
 class InstallerDryRun(unittest.TestCase):
     def fixture(self, tmp, tasks, folder=None):
         auto = Path(tmp) / ".conclave" / "automations"
@@ -332,6 +332,142 @@ class InstallerDryRun(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertNotIn("would register", result.stdout)
             self.assertIn("nothing changed", result.stdout)
+
+
+
+class RoundTwoFixes(unittest.TestCase):
+    """Defects the second independent review found (D00 T03 §1)."""
+
+    def load(self, doc):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tasks.json"
+            path.write_text(json.dumps(doc), encoding="utf-8")
+            return run.load_tasks(str(path))
+
+    def base(self, **over):
+        return {"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92), "tasks": [FIXTURE_TASK], **over}
+
+    def test_malformed_types_are_task_errors_not_crashes(self):
+        bad_docs = [self.base(schema_version=True), self.base(schema_version=1.0), self.base(tasks=[None]),
+                    self.base(tasks=[{**FIXTURE_TASK, "name": 123}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "trigger": None}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "description": ""}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "name": "office-2028-fixture" + chr(10)}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "command": ["python", "a" + chr(0)]}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "trigger": {"weekly": "Monday", "at": 7}}]), []]
+        for doc in bad_docs:
+            with self.subTest(doc=str(doc)[:60]), self.assertRaises(run.TaskError):
+                self.load(doc)
+
+    def test_send_needs_exactly_one_success_and_zero_failures(self):
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        for data in ({"succeeded": 2, "failed": 0}, {"succeeded": 1, "failed": -1}, {"succeeded": "1", "failed": 0}):
+            body = json.dumps({"data": data}).encode()
+            with self.subTest(data=data), self.assertRaises(alert.Refused):
+                alert.send("api-" + "a" * 32, "s", "b", opener=lambda *a, **kw: Response(body))
+
+    def test_a_pruning_failure_cannot_cost_the_outcome(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder.mkdir(parents=True)
+            for i in range(run.KEEP_LOGS + 2):
+                (folder / f"20000101T0000{i:02d}.000000Z-1.log").write_text("old", encoding="utf-8")
+            real = os.unlink
+
+            def locked(path, *a, **kw):
+                if str(path).endswith(".log"):
+                    raise PermissionError("in use")
+                return real(path, *a, **kw)
+
+            os.unlink = locked
+            try:
+                outcome = run.execute("office-2028-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
+            finally:
+                os.unlink = real
+            self.assertTrue((folder / "last.json").exists())
+            self.assertEqual(outcome["exit"], 0)
+
+    def test_a_timeout_whose_kill_fails_is_still_alerted(self):
+        class Hung:
+            pid = 1
+
+            def __init__(self, *a, **kw):
+                pass
+
+            def wait(self, timeout=None):
+                raise subprocess.TimeoutExpired("x", timeout)
+
+        def broken_killer(proc):
+            raise OSError("taskkill failed")
+
+        alerts = []
+        with tempfile.TemporaryDirectory() as tmp:
+            auto = Path(tmp) / ".conclave" / "automations"
+            auto.mkdir(parents=True)
+            (auto / "tasks.json").write_text(json.dumps(self.base()), encoding="utf-8")
+            with contextlib_redirect():
+                code = run.main(["office-2028-fixture"], root=tmp, popen=Hung, killer=broken_killer,
+                                alerter=lambda *a: alerts.append(a))
+        self.assertEqual(code, 124)
+        self.assertEqual(len(alerts), 1)
+
+
+@unittest.skipUnless(os.name == "nt" and shutil_which("pwsh"), "Windows with PowerShell 7 is needed to run the installer")
+class InstallerWithFakeScheduler(unittest.TestCase):
+    """The real install.ps1 against stand-ins for the ScheduledTasks commands: registers and removes nothing real."""
+
+    HARNESS = Path(__file__).resolve().parent / "fixtures" / "fake-scheduler.ps1"
+
+    def run_installer(self, tasks, existing, *args):
+        with tempfile.TemporaryDirectory() as tmp:
+            auto = Path(tmp) / ".conclave" / "automations"
+            auto.mkdir(parents=True)
+            for name in ("install.ps1", "run.py", "alert.py"):
+                (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
+            folder = chr(92) + "Office-2028" + chr(92)
+            (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": folder, "tasks": tasks}),
+                                             encoding="utf-8")
+            (Path(tmp) / "existing.json").write_text(json.dumps(existing), encoding="utf-8")
+            log = Path(tmp) / "calls.log"
+            env = {**os.environ, "FAKE_EXISTING": str(Path(tmp) / "existing.json"), "FAKE_LOG": str(log),
+                   "FAKE_SCRIPT": str(auto / "install.ps1")}
+            result = subprocess.run(["pwsh", "-NoProfile", "-File", str(self.HARNESS), *args],
+                                    capture_output=True, text=True, timeout=120, env=env)
+            calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()] if log.exists() else []
+            return result, calls
+
+    def test_install_registers_each_task_with_one_repeating_trigger_and_removes_stale_ones(self):
+        keep = {**FIXTURE_TASK, "name": "office-2028-keep",
+                "trigger": {"at_logon_delay_minutes": 3, "every_minutes": 60}}
+        folder = chr(92) + "Office-2028" + chr(92)
+        existing = [{"path": folder, "name": "office-2028-keep"}, {"path": folder, "name": "office-2028-stale"},
+                    {"path": chr(92) + "Other" + chr(92), "name": "someone-else"}]
+        result, calls = self.run_installer([keep], existing)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        registers = [c for c in calls if c["op"] == "register"]
+        self.assertEqual([c["name"] for c in registers], ["office-2028-keep"])
+        triggers = registers[0]["triggers"]
+        self.assertEqual(sum(1 for t in triggers if t["Repeat"]), 1, triggers)
+        self.assertTrue(any(t["AtLogOn"] and t["Delay"] == "PT3M" for t in triggers), triggers)
+        self.assertEqual(registers[0]["logon"], "Interactive")
+        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-stale"])
+
+    def test_uninstall_removes_only_this_folder_and_dry_run_changes_nothing(self):
+        folder = chr(92) + "Office-2028" + chr(92)
+        existing = [{"path": folder, "name": "office-2028-keep"}, {"path": chr(92) + "Other" + chr(92), "name": "x"}]
+        result, calls = self.run_installer([FIXTURE_TASK], existing, "-Uninstall", "-DryRun")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(calls, [])
+        self.assertIn("would remove " + folder + "office-2028-keep", result.stdout)
+        result, calls = self.run_installer([FIXTURE_TASK], existing, "-Uninstall")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-keep"])
 
 
 if __name__ == "__main__":

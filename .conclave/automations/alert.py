@@ -79,7 +79,7 @@ def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen) -
         "Content-Type": "application/json", "Accept": "application/json", "X-Smtp2go-Api-Key": api_key})
     with opener(request, timeout=60) as response:
         data = json.loads(response.read().decode() or "{}").get("data", {})
-    if int(data.get("succeeded", 0)) < 1 or int(data.get("failed", 0)) > 0:
+    if data.get("succeeded") != 1 or data.get("failed") != 0:  # exactly one sent, none failed
         raise Refused(f"SMTP2GO refused the send: {data.get('failures') or data.get('error') or data}")
     return data.get("email_id", "")
 

@@ -36,29 +36,38 @@ class TaskError(ValueError):
 
 
 def load_tasks(path: str) -> dict[str, dict]:
-    """The tasks in tasks.json by name, refused unless every entry is well formed."""
+    """The tasks in tasks.json by name, refused unless every entry is well formed (types checked before use)."""
     with open(path, encoding="utf-8") as fh:
         doc = json.load(fh)
-    if doc.get("schema_version") != 1 or doc.get("folder") != "\\Office-2028\\" or not isinstance(doc.get("tasks"), list):
+    if (not isinstance(doc, dict) or type(doc.get("schema_version")) is not int or doc["schema_version"] != 1
+            or doc.get("folder") != "\\Office-2028\\" or not isinstance(doc.get("tasks"), list)):
         raise TaskError("tasks.json needs schema_version 1, folder \\Office-2028\\, and a tasks list")
     out: dict[str, dict] = {}
     for task in doc["tasks"]:
-        name = task.get("name", "")
-        if not NAME.match(name) or name in out:
+        if not isinstance(task, dict):
+            raise TaskError(f"every task must be an object, not {task!r}")
+        name = task.get("name")
+        if not isinstance(name, str) or not NAME.fullmatch(name) or name in out:
             raise TaskError(f"task name {name!r} must be a unique office-2028-* name")
         if set(task) != {"name", "description", "command", "trigger", "timeout_minutes"}:
             raise TaskError(f"{name}: needs exactly name, description, command, trigger, timeout_minutes")
+        if not isinstance(task["description"], str) or not task["description"].strip():
+            raise TaskError(f"{name}: description must be non-empty text")
         command = task["command"]
-        if not isinstance(command, list) or not command or not all(isinstance(c, str) and c for c in command):
-            raise TaskError(f"{name}: command must be a non-empty list of strings")
+        if (not isinstance(command, list) or not command
+                or not all(isinstance(c, str) and c and chr(0) not in c for c in command)):
+            raise TaskError(f"{name}: command must be a non-empty list of strings without NUL")
         if not _whole(task["timeout_minutes"]):
             raise TaskError(f"{name}: timeout_minutes must be a positive whole number")
         trigger = task["trigger"]
+        if not isinstance(trigger, dict):
+            raise TaskError(f"{name}: trigger must be an object")
         if set(trigger) == {"at_logon_delay_minutes", "every_minutes"}:
             if not all(_whole(trigger[k]) for k in trigger):
                 raise TaskError(f"{name}: a logon trigger needs positive whole minutes")
         elif set(trigger) == {"weekly", "at"}:
-            if trigger["weekly"] not in DAYS or not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", trigger["at"]):
+            if (trigger["weekly"] not in DAYS or not isinstance(trigger["at"], str)
+                    or not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", trigger["at"])):
                 raise TaskError(f"{name}: a weekly trigger needs a day name and an HH:MM time")
         else:
             raise TaskError(f"{name}: trigger must be at-logon-and-every or weekly-at")
@@ -109,7 +118,7 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
         try:
             proc = popen(resolve(task["command"]), cwd=root, stdout=out, stderr=subprocess.STDOUT,
                          stdin=subprocess.DEVNULL, env=env, creationflags=NO_WINDOW if os.name == "nt" else 0)
-        except OSError as error:  # the command never started: a failed run like any other, so it is alerted
+        except (OSError, ValueError) as error:  # never started: a failed run like any other, so it is alerted
             out.write(f"run.py: could not start {task['command'][0]}: {error}\n".encode("utf-8"))
             proc = None
             outcome["exit"] = 126
@@ -124,9 +133,6 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
                     out.write(f"run.py: could not stop the timed-out process: {error}\n".encode("utf-8"))
                     outcome["cleanup_failed"] = True
     outcome["finished"] = _utc()
-    logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
-    for old in logs[:-KEEP_LOGS]:
-        os.unlink(os.path.join(folder, old))
     fd, tmp = tempfile.mkstemp(dir=folder, prefix="last.json.", suffix=".tmp")  # unique per run
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -135,7 +141,17 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
+    _prune(folder)  # after the outcome is safe, and never fatal: a locked old log must not cost the alert
     return outcome
+
+
+def _prune(folder: str) -> None:
+    logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
+    for old in logs[:-KEEP_LOGS]:
+        try:
+            os.unlink(os.path.join(folder, old))
+        except OSError:
+            pass  # in use or already gone; the next run tries again
 
 
 def _alert_module():
