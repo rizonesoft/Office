@@ -525,6 +525,8 @@ Word can list every command it has, with the keyboard shortcut assigned to each,
 
 ## 21. Microsoft-Free Inventory Model
 
+> **Started:** 2026-10-20T02:16:35Z
+
 The owner ruled on 2026-10-20 that the repository holds no Microsoft text and no Microsoft links: the inventory keeps facts only (control names, positions, types, ids, shortcuts), and every behaviour sentence is written in our own words. Section 1 (stamped) shipped a `screentip` field for captured ScreenTip prose, web URLs as behaviour sources, and a `--require-behaviour` gate that demanded a web source. This section replaces those three; §1's checklist stays as its stamped record.
 
 **Phase:** 2
@@ -536,14 +538,14 @@ The owner ruled on 2026-10-20 that the repository holds no Microsoft text and no
 1. Change `design/inventory/schema.json` so records cannot hold ScreenTip prose or URLs. Done when: the schema refuses both.
 2. Change `scripts/check-inventory.py` to refuse links in any field and to gate behaviour without a source rule. Done when: the tests in the checklist pass and fail on the old behaviour.
 
-- [ ] Remove the `screentip` property from `design/inventory/schema.json`. Done when: a record carrying `screentip` fails with `unknown field screentip`. Cheaper substitute: keeping the field and promising not to fill it.
-- [ ] Restrict `source` in `design/inventory/schema.json` to capture provenance: `uia:<build>`, `baseline:<commit>` or `listcommands:<build>`. Done when: an `https://` source fails the pattern and `uia:16.0.20430.20182` passes. Cheaper substitute: a description that discourages links while the pattern still allows them.
-- [ ] Add `links()` in `scripts/check-inventory.py` refusing any string value in a record that contains `http://`, `https://` or `www.`. Done when: a behaviour sentence containing a URL fails with `link`. Cheaper substitute: checking only the `source` field.
-- [ ] Change `--require-behaviour` in `scripts/check-inventory.py` to require a non-blank behaviour sentence on every control, with no web-source rule. Done when: a control with a behaviour sentence and a `uia:` source passes, and one without behaviour fails. Cheaper substitute: leaving the web-source rule, which would force the links this rule forbids.
-- [ ] Update `scripts/tests/test_check_inventory.py`: fixtures use `uia:` sources only, add cases for a `screentip` field, an `https` source, a URL inside `behaviour`, and the new behaviour gate. Done when: the suite passes and each new case fails when its rule is disabled.
+- [x] Remove the `screentip` property from `design/inventory/schema.json`. Done when: a record carrying `screentip` fails with `unknown field screentip`. Cheaper substitute: keeping the field and promising not to fill it.
+- [x] Restrict `source` in `design/inventory/schema.json` to capture provenance: `uia:<build>`, `baseline:<commit>` or `listcommands:<build>`. Done when: an `https://` source fails the pattern and `uia:16.0.20430.20182` passes. Cheaper substitute: a description that discourages links while the pattern still allows them.
+- [x] Add `links()` in `scripts/check-inventory.py` refusing any string value in a record that contains `http://`, `https://` or `www.`. Done when: a behaviour sentence containing a URL fails with `link`. Cheaper substitute: checking only the `source` field.
+- [x] Change `--require-behaviour` in `scripts/check-inventory.py` to require a non-blank behaviour sentence on every control, with no web-source rule. Done when: a control with a behaviour sentence and a `uia:` source passes, and one without behaviour fails. Cheaper substitute: leaving the web-source rule, which would force the links this rule forbids.
+- [x] Update `scripts/tests/test_check_inventory.py`: fixtures use `uia:` sources only, add cases for a `screentip` field, an `https` source, a URL inside `behaviour`, and the new behaviour gate. Done when: the suite passes and each new case fails when its rule is disabled.
 - [ ] Commit: `inventory: keep Microsoft text and links out of the inventory model`
 
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes, and `rg -n -i "https?://|microsoft\.com|screentip" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py` finds nothing except the `links()` rule's own pattern.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes, and `rg -n -i "https?://|microsoft\.com|screentip" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py` finds nothing except the refusal fixtures in `scripts/tests/test_check_inventory.py` and the schema's `$schema` line. **Corrected 2026-10-20:** said nothing except the `links()` pattern; the checklist's own refusal cases must hold a `screentip` field and `https` values, and `$schema` is the JSON Schema standard's required dialect identifier, not a reference link (the `$id` became a `urn:`). The `links()` pattern `https?://` does not match its own search.
 
 ## Verification
 
