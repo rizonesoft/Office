@@ -25,6 +25,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -67,6 +70,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -77,6 +83,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -123,6 +132,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -133,6 +145,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -143,6 +158,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -151,6 +169,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -188,6 +209,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -199,6 +223,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -208,6 +235,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -218,6 +248,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -228,6 +261,9 @@
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
             }
           ]
         },
@@ -284,6 +320,13 @@
       "not": {
         "pattern": "[Hh][Tt][Tt][Pp][Ss]?://|[Ww][Ww][Ww]\\.",
         "description": "link"
+      }
+    },
+    "noControl": {
+      "description": "No C0 control character: a label is text someone can read.",
+      "not": {
+        "pattern": "[\\u0000-\\u001F]",
+        "description": "control character"
       }
     }
   }

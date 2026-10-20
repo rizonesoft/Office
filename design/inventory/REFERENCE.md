@@ -21,9 +21,9 @@ The channel is the update channel id `492350f6-3a01-4f97-b9c0-c7c6ddf67d60`, whi
 
 Profile `fhd-100`: display 1920 by 1080 pixels at 100 percent scaling, window maximised, Office theme White, Office display language en-US, ribbon set to Always show Ribbon. `captureProfile` fields name this id, and `bounds` are pixels at this profile relative to the window client area.
 
-Confirmed on the host on 2026-10-20: Office's display language is en-us and Word's ribbon is set to Always show Ribbon. Not matching the profile: the primary display is 2560 by 1440 at 150 percent (system DPI 144). Not yet confirmed: the second display (1920 by 1080) runs at 100 percent, and the Office theme is White (the stored theme value is 7, whose name is not confirmed). Windows' regional format is en-ZA, which the profile does not constrain.
+Confirmed on the host on 2026-10-20, read by a DPI-aware process: the primary display is 3840 by 2160 at 150 percent (system DPI 144) and does not match; the second display is 1920 by 1080 at 100 percent (96 DPI) and matches, so captures run there; Office's display language is en-us; Word's ribbon is set to Always show Ribbon; the Office theme is White, read from the capture window's title bar, which is white (the stored theme value is 7). Windows' regional format is en-ZA, which the profile does not constrain. **Corrected 2026-10-20:** an earlier read without DPI awareness gave the primary display as 2560 by 1440 and left the second display's scaling and the theme unconfirmed.
 
-Requirement for the capture tool (D02 T01 §3): check every profile value before a capture and refuse to record bounds when one differs. Until §3 proves that check, no record carries `bounds`.
+The capture tool (`scripts/capture-ui.py`, D02 T01 §3) places its own window on the matching display, maximises it, checks every profile value (display size and DPI, the window on that display and maximised, display language, ribbon shown, theme by the title bar's colour) and records `bounds` and `size` only when all of them hold.
 
 ## Layout choices
 

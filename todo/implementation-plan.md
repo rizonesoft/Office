@@ -53,7 +53,7 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 35 | Checklist items: 223
+Sections: 35 | Checklist items: 225
 
 | Status | Reference   | Deliverable                                               | Needs                                                 | Items |
 | ------ | ----------- | --------------------------------------------------------- | ----------------------------------------------------- | ----- |
@@ -63,7 +63,7 @@ Sections: 35 | Checklist items: 223
 | [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session                 | 12    |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session                 | 7     |
 | [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                                  | 6     |
-| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session                 | 9     |
+| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session                 | 10    |
 | [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session                 | 7     |
 | [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session                 | 8     |
 | [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session                 | 7     |
@@ -73,7 +73,7 @@ Sections: 35 | Checklist items: 223
 | [ ]    | D02 T01 §12 | Visio Backstage, Shapes Pane and Dialogs Inventory        | office, windows-host, display-session, owner-decision | 6     |
 | [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session                 | 6     |
 | [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session                 | 7     |
+| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session                 | 8     |
 | [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session                 | 7     |
 | [x]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                                  | 4     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                                  | 8     |
@@ -125,4 +125,4 @@ Sections: 3 | Checklist items: 12
 
 Progress: 12/82 verified sections, 8 ready to run now.
 
-Checklist: 71/461 items completed (includes Commit items).
+Checklist: 82/463 items completed (includes Commit items).

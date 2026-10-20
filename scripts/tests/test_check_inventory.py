@@ -129,6 +129,12 @@ class Inventory(unittest.TestCase):
         missing = [k for k in strings if {"$ref": "#/$defs/noLink"} not in props[k].get("allOf", [])]
         self.assertEqual(missing, [])
 
+    def test_a_control_character_in_any_string_is_refused(self):
+        schema = ci.load(ci.SCHEMA)
+        problems = ci.validate([dict(BOLD, label="Number Format: " + chr(1) + ".a.")], schema, schema)
+        self.assertTrue(any(".label: control character" in p for p in problems), problems)
+        self.assertEqual(ci.validate([dict(BOLD, label=chr(0xB6) + " Normal")], schema, schema), [])
+
     def test_the_schema_alone_refuses_a_link(self):
         schema = ci.load(ci.SCHEMA)
         for field, value in (("behaviour", "See HTTPS://example.com/help"), ("label", "www.example.com"),
