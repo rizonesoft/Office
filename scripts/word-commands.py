@@ -4,7 +4,8 @@
     python scripts/word-commands.py            # writes design/inventory/word/commands.json and shortcuts.json
 
 Word is driven through COM in a hidden instance this script starts itself (DispatchEx), never the operator's own
-Word, and that instance is quit without saving and confirmed gone. The instance must be uncustomised (no key bindings
+Word. Its process is taken from that instance's own window and held open by handle, so no other Word can be
+mistaken for it; it is quit without saving, and the run fails unless that process has exited. The instance must be uncustomised (no key bindings
 in its Normal template, no add-ins), or the map would not be Word's default, so a customised instance stops the run.
 ListCommands lists one row per command entry: its name as Word shows it, and the modifiers and key of one shortcut.
 Names repeat, either for a second shortcut or for a different command sharing the name, and the table cannot tell
@@ -20,10 +21,8 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess
 import sys
 import tempfile
-import time
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "design" / "inventory" / "word"
@@ -65,6 +64,9 @@ def records(table, build, identifiers):
             raise Refused(f"row {order + 2} has no command name")
         if bool(modifiers) and not key:
             raise Refused(f"row {order + 2} ({name}) has modifiers but no key")
+        if split_chord(modifiers + key) != (modifiers, key):
+            # The chord is stored whole (the schema's `shortcut`); it must split back into the row's own values.
+            raise Refused(f"row {order + 2} ({name}): {modifiers!r} {key!r} would not split back unambiguously")
         base, n = slug(name), 1
         while (f"{base}-{n}" if n > 1 else base) in taken:  # a natural "Foo 2" never meets a second "Foo"
             n += 1
@@ -86,6 +88,18 @@ def records(table, build, identifiers):
                               "kind": "shortcut", "label": name, "shortcut": modifiers + key, "target": cid,
                               "source": source, "capturedFrom": build})
     return commands, shortcuts, unmatched
+
+
+MODIFIERS = ("Ctrl+", "Alt+", "Shift+")
+
+
+def split_chord(chord):
+    """A chord's modifiers (a run of Ctrl+, Alt+ and Shift+) and its key, which may itself hold a plus (Num +)."""
+    mods = ""
+    while any(chord.startswith(m) and len(chord) > len(m) for m in MODIFIERS):
+        m = next(m for m in MODIFIERS if chord.startswith(m))
+        mods, chord = mods + m, chord[len(m):]
+    return mods, chord
 
 
 def baseline_identifiers(path=WORD / "baseline.json"):
@@ -117,27 +131,56 @@ def same_build(reported, reference):
     return 2 <= len(have) <= len(want) and have == want[:len(have)]
 
 
-def word_pids():
-    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq WINWORD.EXE", "/FO", "CSV", "/NH"],
-                         capture_output=True, text=True, check=False).stdout
-    return {int(line.split('","')[1]) for line in out.splitlines() if line.startswith('"WINWORD')}
+class OwnProcess:
+    """The process behind one Word instance's window, held by handle so its id cannot be reused under us."""
+
+    SYNCHRONIZE, QUERY_LIMITED = 0x00100000, 0x1000
+
+    def __init__(self, hwnd):
+        import ctypes
+        from ctypes import wintypes
+        self.k32, user32 = ctypes.windll.kernel32, ctypes.windll.user32
+        pid = wintypes.DWORD()
+        if not user32.GetWindowThreadProcessId(wintypes.HWND(int(hwnd)), ctypes.byref(pid)) or not pid.value:
+            raise Refused("the Word instance's window has no process")
+        self.pid = pid.value
+        self.handle = self.k32.OpenProcess(self.SYNCHRONIZE | self.QUERY_LIMITED, False, self.pid)
+        if not self.handle:
+            raise Refused(f"cannot open the Word instance's process {self.pid}")
+        size = wintypes.DWORD(32768)
+        buf = ctypes.create_unicode_buffer(size.value)
+        if not self.k32.QueryFullProcessImageNameW(self.handle, 0, buf, ctypes.byref(size)) \
+                or not buf.value.upper().endswith("WINWORD.EXE"):
+            self.close()
+            raise Refused(f"process {self.pid} behind the instance's window is not Word")
+
+    def exited(self, seconds):
+        return self.k32.WaitForSingleObject(self.handle, int(seconds * 1000)) == 0  # WAIT_OBJECT_0
+
+    def close(self):
+        if self.handle:
+            self.k32.CloseHandle(self.handle)
+            self.handle = None
 
 
-def list_commands(dispatch=None, pids=word_pids, wait=60.0, sleep=time.sleep):
-    """Start a hidden Word of our own, list its commands, quit it, and confirm it is gone."""
+def own_process(app):
+    return OwnProcess(app.ActiveWindow.Hwnd)
+
+
+def list_commands(dispatch=None, owner=own_process, wait=60.0):
+    """Start a hidden Word of our own, list its commands, quit it, and confirm its process has exited."""
     if dispatch is None:
         import win32com.client
         dispatch = win32com.client.DispatchEx
-    before = pids()
     app = dispatch("Word.Application")
-    mine, left = set(), set()
+    proc = None
     try:  # from here on the instance is ours to quit, whatever fails
-        mine = pids() - before
         app.Visible = False
+        app.Documents.Add()  # the instance's first window, whose process is the one to watch
+        proc = owner(app)
         if app.KeyBindings.Count or app.AddIns.Count:
             raise Refused(f"this Word is customised ({app.KeyBindings.Count} key bindings, {app.AddIns.Count} "
                           "add-ins), so its map is not Word's default")
-        app.Documents.Add()
         app.ListCommands(True)
         table = app.ActiveDocument.Tables(1)
         result = parse_table(table.Range.Text, table.Rows.Count, table.Columns.Count), str(app.Build)
@@ -147,15 +190,17 @@ def list_commands(dispatch=None, pids=word_pids, wait=60.0, sleep=time.sleep):
                 doc.Close(SaveChanges=0)
         finally:
             app.Quit(SaveChanges=0)
-            deadline = time.monotonic() + wait
-            while pids() & mine and time.monotonic() < deadline:
-                sleep(1)
-            left = pids() & mine
-            if left:
-                print(f"word-commands: the Word instance it started is still running (pid {sorted(left)})",
-                      file=sys.stderr)
-    if left:  # the contract is no leftover process, so a capture that leaves one is not a success
-        raise Refused(f"the Word instance it started (pid {sorted(left)}) did not exit")
+            gone = proc is not None and proc.exited(wait)
+            if proc is not None:
+                if not gone:
+                    print(f"word-commands: the Word instance it started is still running (pid {proc.pid})",
+                          file=sys.stderr)
+                proc.close()
+    # The contract is no leftover process: one still running, or one never identified, is not a success.
+    if proc is None:
+        raise Refused("the Word instance's process was never identified, so its exit cannot be confirmed")
+    if not gone:
+        raise Refused(f"the Word instance it started (pid {proc.pid}) did not exit")
     return result
 
 
@@ -174,19 +219,21 @@ def write_atomic(path, text):
 
 
 def publish(files):
-    """Write every file or none: each goes to a temporary file first, and a failed replace restores the rest."""
+    """Write every file or none. A failure at any point, including a read-back after a file was replaced, restores
+    every file that differs from what it held before."""
     previous = {path: path.read_bytes() if path.is_file() else None for path in files}
-    done = []
     try:
         for path, text in files.items():
             write_atomic(path, text)
-            done.append(path)
     except Exception:
-        for path in done:
-            if previous[path] is None:
+        for path, before in previous.items():
+            now = path.read_bytes() if path.is_file() else None
+            if now == before:
+                continue
+            if before is None:
                 path.unlink()
             else:
-                write_atomic(path, previous[path].decode("utf-8"))
+                write_atomic(path, before.decode("utf-8"))
         raise
 
 
@@ -219,7 +266,11 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
     if not same_build(word_build, expected):
         print(f"word-commands: Word reports build {word_build}, not the reference {expected}", file=sys.stderr)
         return 1
-    commands, shortcuts, unmatched = records(table, expected, baseline_identifiers(Path(out) / "baseline.json"))
+    try:
+        commands, shortcuts, unmatched = records(table, expected, baseline_identifiers(Path(out) / "baseline.json"))
+    except Refused as exc:
+        print(f"word-commands: {exc}", file=sys.stderr)
+        return 1
     publish({Path(out) / "commands.json": render(commands), Path(out) / "shortcuts.json": render(shortcuts)})
     write_atomic(Path(unmatched_path), "\n".join(unmatched) + "\n")  # a review list, outside the inventory
     print(f"{len(table)} rows: {len(commands)} command records ({len(commands) - len(unmatched)} with an idMso), "

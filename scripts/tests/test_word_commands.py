@@ -97,6 +97,15 @@ class Records(unittest.TestCase):
         self.assertEqual(commands[0]["shortcut"], "Ctrl+F")
         self.assertNotIn("shortcut", commands[1])
 
+    def test_every_chord_splits_back_into_its_modifiers_and_key(self):
+        rows = [["Bold", "Ctrl+Shift+", "B"], ["Help", "", "F1"], ["Zoom In", "Alt+Ctrl+", "Num +"], ["Plus", "Ctrl+", "+"]]
+        commands, _, _ = wc.records(rows, BUILD, set())
+        for rec, row in zip(commands, rows):
+            self.assertEqual(wc.split_chord(rec["shortcut"]), (row[1], row[2]))
+        for row in (["Odd", "Ctrl", "B"], ["Twice", "Ctrl+", "Shift+B"]):
+            with self.assertRaises(wc.Refused):
+                wc.records([row], BUILD, set())
+
     def test_build_components_must_match(self):
         self.assertTrue(wc.same_build("16.0.20430", BUILD))
         self.assertTrue(wc.same_build(BUILD, BUILD))
@@ -122,57 +131,53 @@ class Records(unittest.TestCase):
                 wc.records([row], BUILD, set())
 
 
+class Proc:
+    def __init__(self, exits=True):
+        self.pid, self.exits, self.closed, self.waited = 222, exits, False, None
+
+    def exited(self, seconds):
+        self.waited = seconds
+        return self.exits
+
+    def close(self):
+        self.closed = True
+
+
 class Instance(unittest.TestCase):
-    def pids(self, live):
-        return lambda: set(live)
+    def test_its_own_instance_is_watched_through_its_own_window_and_gone_after(self):
+        fake, proc, seen = Fake(), Proc(), []
 
-    def test_only_its_own_instance_is_used_and_it_is_gone_after(self):
-        live = {111}  # the operator's Word
-        fake = Fake()
+        def owner(app):
+            seen.append(app)
+            return proc
 
-        def dispatch(prog):
-            self.assertEqual(prog, "Word.Application")
-            live.add(222)
-            return fake
-
-        sleeps = []
-
-        def sleep(_):
-            sleeps.append(1)
-            live.discard(222)  # the instance exits a moment after Quit
-
-        table, build = wc.list_commands(dispatch=dispatch, pids=self.pids(live), sleep=sleep)
+        table, build = wc.list_commands(dispatch=lambda prog: fake, owner=owner, wait=5)
+        self.assertEqual(seen, [fake])  # the process comes from the dispatched instance, not a process list
         self.assertEqual(len(table), len(TABLE) - 1)
-        self.assertTrue(fake.quit)
-        self.assertEqual(fake.closed, 2)
-        self.assertEqual(live, {111})
-        self.assertEqual(build, "16.0.20430")
+        self.assertTrue(fake.quit and proc.closed)
+        self.assertEqual((fake.closed, proc.waited, build), (2, 5, "16.0.20430"))
 
     def test_a_customised_instance_is_refused_and_still_quit(self):
         for fake in (Fake(bindings=3), Fake(addins=1)):
+            proc = Proc()
             with self.assertRaises(wc.Refused):
-                wc.list_commands(dispatch=lambda prog, f=fake: f, pids=lambda: set(), sleep=lambda _: None)
-            self.assertTrue(fake.quit)
+                wc.list_commands(dispatch=lambda prog, f=fake: f, owner=lambda app: proc)
+            self.assertTrue(fake.quit and proc.closed)
 
     def test_a_lingering_instance_fails_the_run(self):
-        live = {111}
         err = io.StringIO()
         with contextlib.redirect_stderr(err), self.assertRaises(wc.Refused):
-            wc.list_commands(dispatch=lambda prog: (live.add(222), Fake())[1], pids=self.pids(live),
-                             wait=0, sleep=lambda _: None)
-        self.assertIn("still running (pid [222])", err.getvalue())
+            wc.list_commands(dispatch=lambda prog: Fake(), owner=lambda app: Proc(exits=False))
+        self.assertIn("still running (pid 222)", err.getvalue())
 
-    def test_a_failure_right_after_start_still_quits_the_instance(self):
-        fake, calls = Fake(), []
+    def test_an_unidentified_process_fails_closed_and_still_quits(self):
+        fake = Fake()
 
-        def pids():
-            calls.append(1)
-            if len(calls) == 2:
-                raise OSError("tasklist failed")
-            return set()
+        def owner(app):
+            raise wc.Refused("no window")
 
-        with self.assertRaises(OSError):
-            wc.list_commands(dispatch=lambda prog: fake, pids=pids, sleep=lambda _: None)
+        with self.assertRaises(wc.Refused):
+            wc.list_commands(dispatch=lambda prog: fake, owner=owner)
         self.assertTrue(fake.quit)
 
 
@@ -217,13 +222,22 @@ class Main(unittest.TestCase):
                     raise OSError("disk full")
                 real(path, text)
 
-            wc.write_atomic = flaky
-            try:
-                with self.assertRaises(OSError):
-                    wc.publish({a: "new-a", b: "new-b"})
-            finally:
-                wc.write_atomic = real
-            self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("old-a", "old-b"))
+            def after_replace(path, text):
+                calls.append(path)
+                real(path, text)
+                if path == b:
+                    raise OSError("read-back differs")
+
+            for broken in (flaky, after_replace):
+                calls.clear()
+                wc.write_atomic = broken
+                try:
+                    with self.assertRaises(OSError):
+                        wc.publish({a: "new-a", b: "new-b"})
+                finally:
+                    wc.write_atomic = real
+                self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("old-a", "old-b"),
+                                 broken.__name__)
 
     def test_refusals_and_failures_write_nothing(self):
         def refused():
@@ -233,8 +247,9 @@ class Main(unittest.TestCase):
             raise OSError("no Word")
 
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
+        odd = [["Odd", "Ctrl", "B"]]
         for lister, build, want in ((refused, BUILD, 1), (broken, BUILD, 2),
-                                    (lambda: (table, "16.0.19000"), BUILD, 1)):
+                                    (lambda: (table, "16.0.19000"), BUILD, 1), (lambda: (odd, "16.0.20430"), BUILD, 1)):
             code, out, files = self.run_main(lister, build)
             self.assertEqual(code, want, out)
             self.assertEqual(sorted(files), ["baseline.json"])
