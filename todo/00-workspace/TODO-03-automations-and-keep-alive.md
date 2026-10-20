@@ -177,6 +177,8 @@ Registers the tasks in Task Scheduler on the operator's Windows host and proves 
 
 ## 6. Adopt the Guard for the Open Phase 2 Run
 
+> **Started:** 2026-10-20T02:06:37Z
+
 The phase 2 run was opened before the guard existed. This section moves it under the guard: acquire with this session, replace the interim heartbeat with the canonical one, and record the ids in the run file.
 
 **Phase:** 0
@@ -188,9 +190,9 @@ The phase 2 run was opened before the guard existed. This section moves it under
 1. Acquire the guard for `docs/phase-runs/2026-10-20-phase-2.md`. Done when: `build/claude-campaign-guard.json` names this session, phase 2 and the run file.
 2. Replace the interim heartbeat. Done when: `CronList` shows only the canonical job and the guard names its id.
 
-- [ ] Run `python scripts/campaign_guard.py acquire` with this session id, phase 2, the run file and a fresh generation. Done when: `python scripts/campaign_guard.py whoami --session <id>` prints that this session owns the run. Cheaper substitute: writing the guard file by hand.
-- [ ] `CronDelete` the interim heartbeat and `CronCreate` the canonical one from `process-plan`, then re-point the guard to its id. Done when: `python scripts/campaign_guard.py health --session <id> --jobs <id>` reports healthy. Cheaper substitute: keeping the interim prompt, which the guard cannot verify.
-- [ ] Record the guard's run id and the heartbeat job id under Critical events in the run file. Done when: both ids appear with a UTC time. Cheaper substitute: ids only in chat.
+- [x] Run `python scripts/campaign_guard.py acquire` with this session id, phase 2, the run file and a fresh generation. Done when: `python scripts/campaign_guard.py whoami --session <id>` prints that this session owns the run. Cheaper substitute: writing the guard file by hand.
+- [x] Reconcile, then `CronDelete` the interim heartbeat as `reconcile` directs and `CronCreate` the canonical one from `process-plan`, then acquire the guard with its id. **Corrected 2026-10-20:** said delete, create, then re-point; the guard did not exist yet, so `reconcile` names the interim job an orphan and the guard is created with the new job's id. Done when: `python scripts/campaign_guard.py health --session <id> --jobs <id>` reports healthy. Cheaper substitute: keeping the interim prompt, which the guard cannot verify.
+- [x] Record the guard's run id and the heartbeat job id under Critical events in the run file. Done when: both ids appear with a UTC time. Cheaper substitute: ids only in chat.
 - [ ] Commit: `todo: put the phase 2 run under the campaign guard`
 
 **Test checkpoint:** `python scripts/campaign_guard.py whoami --session <this session id>` prints the owner line, and `python scripts/campaign_keepalive.py status` prints `hold`.
