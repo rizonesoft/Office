@@ -1,0 +1,28 @@
+{
+  "ref": "D02 T01 \u00a720",
+  "title": "Word Command Catalogue from ListCommands",
+  "implementation_sha": "c6ee91afdaad1bd44488a196a51b1b75f028a052",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s20.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s20.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s20.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python scripts/check-inventory.py design/inventory/word/commands.json -> exit 0, 2158 command records",
+    "python -m unittest discover -s scripts/tests -p \"test_word_commands.py\" -> \"Ran 17 tests ... OK\"",
+    "python scripts/word-commands.py -> \"2158 rows: 2158 command records (245 with an idMso), 255 shortcut records\", Word pids before and after 70908 only"
+  ]
+}

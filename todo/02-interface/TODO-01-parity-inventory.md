@@ -56,7 +56,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 17 | §17 | Keyboard shortcut inventory for six apps | §1, §20 | [ ] |
 | 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
 | 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [x] |
-| 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [ ] |
+| 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory model | §1 | [x] |
 
 ## 1. Inventory Schema and Checker
@@ -536,9 +536,12 @@ Word can list every command it has, with the keyboard shortcut assigned to each,
 - [x] Write `scripts/word-commands.py` that starts its own hidden Word instance through COM (`win32com.client.DispatchEx("Word.Application")`), calls `ListCommands(True)` on a new document, reads the resulting table, and quits that instance without saving. Done when: the script never attaches to the operator's running Word and leaves no `WINWORD.EXE` it started behind. Cheaper substitute: `GetActiveObject`, which drives the operator's own Word.
 - [x] Write each row to `design/inventory/word/commands.json` as a `command` record with name, modifiers, key and the menu path Word reports. Done when: the record count equals the table's row count. **Corrected 2026-10-20:** Word build 20430's table has three columns (name, modifiers, key) and no menu column, and a name can repeat for a second shortcut or for a different command, which the table cannot tell apart; so each row is one `command` record (repeats get `-2`, `-3`) and each keyed row also one `shortcut` record in `shortcuts.json`. The schema stores a key chord whole as `shortcut`, so a keyed command record carries `shortcut` (modifiers then key, as Word lists them), and `scripts/word-commands.py` refuses any row whose chord would not split back into that row's modifiers (a run of `Ctrl+`, `Alt+`, `Shift+`) and key, so both values are kept exactly. Cheaper substitute: keeping only commands that have a shortcut.
 - [x] Link each command to its ribbon control by `idMso` or label where they match, in `scripts/word-commands.py`. Done when: unmatched commands are listed in the run output for review. **Corrected 2026-10-20:** matched by `idMso` against `design/inventory/word/baseline.json` (no Word ribbon records exist yet); the run prints the counts and writes the unmatched names to `build/word-commands-unmatched.txt`; label matching against captured ribbon controls moves to the Word ribbon capture. -> XREF: D02 T01 §5 Cheaper substitute: silent best-effort matching.
-- [ ] Commit: `inventory: capture Word command catalogue`
+- [x] Commit: `inventory: capture Word command catalogue`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word/commands.json` exits 0 and the file holds at least 1,000 `command` records.
+
+> **Verified:** 2026-10-20 | §20 | c6ee91afdaad1bd44488a196a51b1b75f028a052
+> **Review:** `docs/reviews/d02-t01-s20.json`
 
 ## 21. Microsoft-Free Inventory Model
 

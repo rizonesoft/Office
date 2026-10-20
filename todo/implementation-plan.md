@@ -75,7 +75,7 @@ Sections: 35 | Checklist items: 223
 | [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session                 | 7     |
 | [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session                 | 7     |
 | [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                                  | 4     |
+| [x]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                                  | 4     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report                                 | none                                                  | 7     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes                                  | none                                                  | 6     |
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 11/82 verified sections, 8 ready to run now.
+Progress: 12/82 verified sections, 8 ready to run now.
 
-Checklist: 70/461 items completed (includes Commit items).
+Checklist: 71/461 items completed (includes Commit items).
