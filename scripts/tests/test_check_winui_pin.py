@@ -121,6 +121,30 @@ class Repo(unittest.TestCase):
         self.assertEqual((self.git("branch", "--list", "winui/*"), self.mails), ("", []))
 
 
+class NoConsole(unittest.TestCase):
+    def test_every_process_it_starts_opens_no_console(self):
+        seen = []
+
+        def fake_run(cmd, **kwargs):
+            seen.append((cmd[0], kwargs.get("creationflags")))
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+        real = wp.subprocess.run
+        wp.subprocess.run = fake_run
+        try:
+            wp.git("status")
+            with tempfile.TemporaryDirectory() as tmp:
+                tree = Path(tmp)
+                (tree / "Directory.Packages.props").write_text(PROPS, encoding="utf-8")
+                (tree / "Office.slnx").write_text("<Solution />", encoding="utf-8")
+                wp.checks(tree, "2.4.0", {"2.4.0"}, build=fake_run)
+        finally:
+            wp.subprocess.run = real
+        self.assertEqual([c for c, _ in seen], ["git", "dotnet"])
+        if wp.sys.platform == "win32":
+            self.assertTrue(all(flags == 0x08000000 for _, flags in seen), seen)
+
+
 class RepositoryPin(unittest.TestCase):
     def test_the_repository_pins_one_windows_app_sdk_version(self):
         self.assertRegex(wp.pinned(), r"^\d+\.\d+\.\d+$")

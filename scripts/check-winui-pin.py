@@ -34,6 +34,7 @@ RELEASES = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=100"
 NUGET = f"https://api.nuget.org/v3-flatcontainer/{PACKAGE.lower()}/index.json"
 TAG = re.compile(r"^winui3/release/(\d+)\.(\d+)\.(\d+)$")
 BRANCH = "winui/{version}"
+NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 
 
 class Unreadable(Exception):
@@ -88,7 +89,8 @@ def newer(version, than):
 
 
 def git(*args, cwd=ROOT, check=True):
-    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                            creationflags=NO_WINDOW)
     if check and result.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {(result.stderr or result.stdout).strip()}")
     return result
@@ -106,7 +108,8 @@ def checks(tree, version, nuget_versions, build=subprocess.run):
         problems.append(f"NuGet has no {PACKAGE} {version}")
     solutions = sorted(p for p in tree.rglob("*.sln*") if p.suffix in (".sln", ".slnx") and "build" not in p.parts)
     for solution in solutions:
-        result = build(["dotnet", "build", str(solution), "-c", "Release"], cwd=tree, capture_output=True, text=True)
+        result = build(["dotnet", "build", str(solution), "-c", "Release"], cwd=tree, capture_output=True, text=True,
+                       creationflags=NO_WINDOW)
         if result.returncode != 0:
             problems.append(f"dotnet build {solution.relative_to(tree)} failed: {(result.stdout or '')[-400:]}")
     return problems

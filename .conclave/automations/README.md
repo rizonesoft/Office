@@ -4,10 +4,19 @@ Every scheduled job for Office-2028 lives here: the task list in `tasks.json`, t
 
 ## What runs
 
-| Task | When (local time) | Runs | Fails when |
-| --- | --- | --- | --- |
-| office-2028-claude-keepalive | Logon, hourly | scripts/campaign_keepalive.py resurrect | Below |
-| office-2028-winui-pin | Daily 06:23 | scripts/check-winui-pin.py update | Below |
+| Task | When (local time) | Runs |
+| --- | --- | --- |
+| `office-2028-claude-keepalive` | Logon, hourly | `scripts/campaign_keepalive.py resurrect` |
+| `office-2028-winui-pin` | Daily 06:23 | `scripts/check-winui-pin.py update` |
+| `office-2028-vulnerable-packages` | Monday 07:15 | `scripts/check-vulnerable-packages.py` |
+| `office-2028-dotnet-ga` | Monday 07:30 | `scripts/check-sdk-ga.py` |
+
+Each fails, and so alerts, when:
+
+- `office-2028-claude-keepalive`: a resumed session exits non-zero or runs past 4 hours, three resumes in a row make no progress (reported once), `.conclave/keepalive.toml` names no writer model, or no `claude` is on PATH. No open run, a live owner, or an attended session is a success. It runs from logon, and from install in the current logon.
+- `office-2028-winui-pin`: a newer stable WinUI 3 release cannot be proposed (a check fails, which leaves no branch), or the releases or NuGet cannot be read. A proposal is emailed and is a success.
+- `office-2028-vulnerable-packages`: a NuGet package in the solution, direct or transitive, has a published advisory, or the restore or the report fails. No solution yet (until D03 T01 §12 creates it) is a success.
+- `office-2028-dotnet-ga`: the .NET 11 GA SDK is out while `global.json` still pins a release candidate, so D03 T01 §2 is ready. A newer release candidate is printed, not failed.
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored.
 

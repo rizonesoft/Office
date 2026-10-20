@@ -38,6 +38,10 @@ FIXTURE_TASK = {"name": "office-2028-fixture", "description": "Fixture check", "
                 "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}
 
 
+sdk_ga = load("check_sdk_ga", REPO / "scripts" / "check-sdk-ga.py")
+vulnerable = load("check_vulnerable_packages", REPO / "scripts" / "check-vulnerable-packages.py")
+
+
 class Manifest(unittest.TestCase):
     def test_the_manifest_loads_and_every_command_script_exists(self):
         tasks = run.load_tasks(str(AUTO / "tasks.json"))
@@ -189,7 +193,8 @@ class Runner(unittest.TestCase):
         self.assertIn("Access is denied", tail)
 
     def test_every_nested_launch_opens_no_console(self):
-        for path in (AUTO / "run.py", AUTO / "alert.py"):
+        for path in (AUTO / "run.py", AUTO / "alert.py", REPO / "scripts" / "check-vulnerable-packages.py",
+                     REPO / "scripts" / "check-winui-pin.py", REPO / "scripts" / "campaign_keepalive.py"):
             text = path.read_text(encoding="utf-8")
             calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
             flagged = text.count("creationflags=")
@@ -658,6 +663,75 @@ class LastJsonLocking(unittest.TestCase):
             run._record_alert(tmp, str(folder), gone, {'email_id': 'E2'})
             self.assertEqual(list(folder.glob("*.alert.json")), [])
 
+
+class SdkGa(unittest.TestCase):
+    @staticmethod
+    def feed(*versions):
+        return {"channel-version": "11.0", "releases": [{"sdk": {"version": v}} for v in versions]}
+
+    def test_a_ga_sdk_with_a_prerelease_pin_is_reported(self):
+        code, line = sdk_ga.verdict("11.0.100-rc.1.26425.128", self.feed("11.0.100", "11.0.100-rc.2.1"))
+        self.assertEqual(code, 1)
+        self.assertIn("GA SDK 11.0.100 is out", line)
+
+    def test_no_ga_yet_passes_and_names_a_newer_prerelease(self):
+        code, line = sdk_ga.verdict("11.0.100-rc.1.26425.128", self.feed("11.0.100-rc.2.26504.105"))
+        self.assertEqual(code, 0)
+        self.assertIn("newer prerelease 11.0.100-rc.2.26504.105", line)
+
+    def test_a_ga_pin_passes(self):
+        self.assertEqual(sdk_ga.verdict("11.0.100", self.feed("11.0.101", "11.0.100"))[0], 0)
+
+    def test_an_empty_feed_is_unverified(self):
+        self.assertEqual(sdk_ga.verdict("11.0.100-rc.1", {"releases": []})[0], 2)
+
+    def test_the_sdks_list_is_read_too(self):
+        feed = {"releases": [{"sdk": {"version": "11.0.100-rc.2"}, "sdks": [{"version": "11.0.100"}]}]}
+        self.assertEqual(sdk_ga.sdk_versions(feed), ["11.0.100-rc.2", "11.0.100"])
+
+
+class Vulnerable(unittest.TestCase):
+    CLEAN = {"version": 1, "projects": [{"path": "R:/x/A.csproj"}, {"path": "R:/x/B.csproj", "frameworks": [
+        {"framework": "net11.0", "topLevelPackages": [{"id": "Serilog", "resolvedVersion": "4.4.0"}]}]}]}
+
+    def test_a_clean_report_passes(self):
+        self.assertEqual(vulnerable.verdict(self.CLEAN), (0, "no vulnerable package in 2 project(s)"))
+
+    def test_a_vulnerable_transitive_package_fails(self):
+        report = json.loads(json.dumps(self.CLEAN))
+        report["projects"][1]["frameworks"][0]["transitivePackages"] = [{
+            "id": "System.Text.Json", "resolvedVersion": "8.0.0",
+            "vulnerabilities": [{"severity": "High", "advisoryurl": "https://github.com/advisories/GHSA-x"}]}]
+        code, line = vulnerable.verdict(report)
+        self.assertEqual(code, 1)
+        self.assertIn("B.csproj (net11.0): System.Text.Json 8.0.0 High https://github.com/advisories/GHSA-x "
+                      "(transitive)", line)
+
+    def test_problems_or_no_projects_are_unverified(self):
+        self.assertEqual(vulnerable.verdict({**self.CLEAN, "problems": [{"text": "not restored"}]})[0], 2)
+        self.assertEqual(vulnerable.verdict({"version": 1, "projects": []})[0], 2)
+
+    def test_no_solution_yet_passes_and_says_so(self):
+        out = io.StringIO()
+        real = vulnerable.REPO
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(out):
+            vulnerable.REPO = tmp
+            try:
+                self.assertEqual(vulnerable.main([]), 0)
+            finally:
+                vulnerable.REPO = real
+        self.assertIn("no solution in the repository yet", out.getvalue())
+
+    def test_two_solutions_are_refused(self):
+        real = vulnerable.REPO
+        with tempfile.TemporaryDirectory() as tmp, redirect_stderr(io.StringIO()):
+            for name in ("A.slnx", "B.slnx"):
+                (Path(tmp) / name).write_text("<Solution />", encoding="utf-8")
+            vulnerable.REPO = tmp
+            try:
+                self.assertEqual(vulnerable.main([]), 2)
+            finally:
+                vulnerable.REPO = real
 
 if __name__ == "__main__":
     unittest.main()

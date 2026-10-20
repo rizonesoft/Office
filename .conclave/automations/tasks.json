@@ -28,6 +28,32 @@
         "daily_at": "06:23"
       },
       "timeout_minutes": 30
+    },
+    {
+      "name": "office-2028-vulnerable-packages",
+      "description": "Check no NuGet package in the Office-2028 solution, direct or transitive, has a known vulnerability",
+      "command": [
+        "python",
+        "scripts/check-vulnerable-packages.py"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:15"
+      },
+      "timeout_minutes": 30
+    },
+    {
+      "name": "office-2028-dotnet-ga",
+      "description": "Report when .NET 11 ships its GA SDK while global.json still pins a release candidate",
+      "command": [
+        "python",
+        "scripts/check-sdk-ga.py"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:30"
+      },
+      "timeout_minutes": 5
     }
   ]
 }
