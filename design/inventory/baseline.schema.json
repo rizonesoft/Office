@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rizonesoft:office-2028:design:inventory:baseline-schema",
+  "title": "Control identifier baseline for one app",
+  "description": "Written by scripts/import-office-ids.py from the published workbooks at one pinned commit and checked by scripts/check-inventory.py. Each row lists the columns in order; a row's position is its order in the workbook. Identifiers and positions only: no labels, no descriptions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source",
+    "columns",
+    "rows"
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "pattern": "^baseline:[0-9a-f]{40}$"
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(window|idMso|controlType|placement|tabSet|tab|group|parent|secondaryParent|policyId)$"
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "array"
+      }
+    }
+  },
+  "$defs": {
+    "columns": {
+      "const": [
+        "idMso",
+        "controlType",
+        "placement",
+        "tabSet",
+        "tab",
+        "group",
+        "parent",
+        "secondaryParent",
+        "policyId"
+      ]
+    },
+    "outlookColumns": {
+      "const": [
+        "window",
+        "idMso",
+        "controlType",
+        "placement",
+        "tabSet",
+        "tab",
+        "group",
+        "parent",
+        "secondaryParent",
+        "policyId"
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "placement": {
+      "enum": [
+        "coreTab",
+        "contextMenu",
+        "notInRibbon",
+        "backstage",
+        "quickAccessToolbar",
+        "contextualTab"
+      ]
+    },
+    "policyId": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

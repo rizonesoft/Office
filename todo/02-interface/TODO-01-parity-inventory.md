@@ -483,6 +483,8 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 
 ## 19. Microsoft Control Identifier Baseline Import
 
+> **Started:** 2026-10-20T02:31:07Z
+
 Microsoft publishes, per app, every ribbon tab, group and control with its `idMso` identifier, type and parent, including contextual tabs, hidden commands and every Outlook item window. Importing these lists gives a complete checklist, so the live capture can be proven complete rather than assumed complete. The lists date from 2024-03-18; anything newer in build 16.0.20430.20182 is found by the live capture and recorded as `baselineMissing`.
 
 **Phase:** 2
@@ -494,11 +496,11 @@ Microsoft publishes, per app, every ribbon tab, group and control with its `idMs
 1. Download the Current Channel lists into `R:\scratch\office-ui-ids\` and convert them with `scripts/import-office-ids.py`. Done when: `design/inventory/<app>/baseline.json` exists for all six apps.
 2. Record the source commit and licence. Done when: `design/inventory/REFERENCE.md` names the upstream commit SHA and MIT licence.
 
-- [ ] Download `wordcontrols.xlsx`, `excelcontrols.xlsx`, `powerpointcontrols.xlsx`, `visiocontrols.xlsx`, `projectcontrols.xlsx` and every `outlook*controls.xlsx` from the Current Channel folder at a pinned commit into `R:\scratch\office-ui-ids\<sha>\`. Done when: the files and the commit SHA are recorded. Cheaper substitute: reading the lists from the live website each run, which drifts.
-- [ ] Write `scripts/import-office-ids.py` reading each workbook with `openpyxl` (read-only) and emitting `design/inventory/<app>/baseline.json` with `idMso`, `controlType`, `tab`, `group` and order. Done when: Word's baseline lists the Home tab's Clipboard, Font, Paragraph, Styles and Editing groups in order. Cheaper substitute: copying a few rows by hand.
-- [ ] Merge the Outlook item-window workbooks into `design/inventory/outlook/baseline.json` keyed by window type (explorer, mail compose, mail read, appointment, contact, task and the rest). Done when: every Outlook workbook contributes records under its window type. Cheaper substitute: the explorer workbook only, which misses every item window.
-- [ ] Write the upstream commit SHA, licence and import date to `design/inventory/REFERENCE.md` under `## Baseline` and add the MIT notice to `THIRD-PARTY-NOTICES.md` as a data source. Done when: both files name the SHA. Cheaper substitute: an unpinned link.
-- [ ] Write `scripts/tests/test_import_office_ids.py` with a small fixture workbook. Done when: the suite passes and fails when the group order is not preserved.
+- [x] Download `wordcontrols.xlsx`, `excelcontrols.xlsx`, `powerpointcontrols.xlsx`, `visiocontrols.xlsx`, `projectcontrols.xlsx` and every `outlook*controls.xlsx` from the Current Channel folder at a pinned commit into `R:\scratch\office-ui-ids\<sha>\`. Done when: the files and the commit SHA are recorded. Cheaper substitute: reading the lists from the live website each run, which drifts.
+- [x] Write `scripts/import-office-ids.py` reading each workbook with `openpyxl` (read-only) and emitting `design/inventory/<app>/baseline.json` with `idMso`, `controlType`, `tab`, `group` and order. **Corrected 2026-10-20:** a baseline row has no visible label, so it cannot be an inventory record (which requires `label`); the file is its own format, `{source, columns, rows}` with one row per workbook row (a row's position is its order) plus `placement`, `tabSet`, parents and `policyId`, checked against `design/inventory/baseline.schema.json` by `scripts/check-inventory.py`. Rows the workbooks list without an identifier are kept with a null `idMso`, and the workbooks' "None (...)" wording becomes our own `placement` enum rather than copied text. Done when: Word's baseline lists the Home tab's Clipboard, Font, Paragraph, Styles and Editing groups in order. Cheaper substitute: copying a few rows by hand.
+- [x] Merge the Outlook item-window workbooks into `design/inventory/outlook/baseline.json` keyed by window type (explorer, mail compose, mail read, appointment, contact, task and the rest). Done when: every Outlook workbook contributes records under its window type. Cheaper substitute: the explorer workbook only, which misses every item window.
+- [x] Write the upstream commit SHA, licence and import date to `design/inventory/REFERENCE.md` under `## Baseline` and add the MIT notice to `THIRD-PARTY-NOTICES.md` as a data source. Done when: both files name the SHA. Cheaper substitute: an unpinned link.
+- [x] Write `scripts/tests/test_import_office_ids.py` with a small fixture workbook. Done when: the suite passes and fails when the group order is not preserved.
 - [ ] Commit: `inventory: import Microsoft control identifier baseline`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_import_office_ids.py"` passes and `python scripts/check-inventory.py design/inventory` exits 0 with six `baseline.json` files present.

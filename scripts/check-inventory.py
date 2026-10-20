@@ -9,7 +9,9 @@
 Rules: each file is a JSON array of records valid against the schema; ids are unique across the whole inventory and the
 named files; every parent names an existing record (resolved across all of design/inventory/, so one file can be
 checked alone); no string anywhere in a record holds a link, since the inventory keeps facts and our own words, never
-web pages. With --require-behaviour every control also needs a non-blank behaviour sentence.
+web pages. With --require-behaviour every control also needs a non-blank behaviour sentence. A file named
+baseline.json is the imported control identifier baseline (scripts/import-office-ids.py) and is checked against
+baseline.schema.json instead: its columns, and every cell's type (identifier, placement, policy id or null).
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
 """
 import argparse
@@ -22,6 +24,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "design" / "inventory"
 SCHEMA = INVENTORY / "schema.json"
+BASELINE_SCHEMA = INVENTORY / "baseline.schema.json"
+BASELINE = "baseline.json"
 # Owner rule 2026-10-20: the repository holds no Microsoft text and no Microsoft links, so no record holds a link at all.
 LINK = re.compile(r"https?://|www\.", re.IGNORECASE)
 TARGET_KINDS = ("command", "control")
@@ -149,21 +153,44 @@ def inventory_files(paths):
     for p in paths:
         p = Path(p)
         if p.is_dir():
-            files += sorted(f for f in p.rglob("*.json") if f.resolve() != SCHEMA.resolve())
+            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in (SCHEMA.resolve(), BASELINE_SCHEMA.resolve()))
         else:
             files.append(p)
     return files
 
 
+def check_baseline(f, data, schema):
+    """Problems in one baseline file: its envelope against the baseline schema, then every row's cells."""
+    problems = [f"{f}: {p}" for p in validate(data, schema, schema)]
+    if problems or not isinstance(data, dict):
+        return problems
+    defs = schema["$defs"]
+    expected = defs["outlookColumns"]["const"] if f.parent.name == "outlook" else defs["columns"]["const"]
+    if data["columns"] != expected:
+        return [f"{f}: columns {data['columns']} are not {expected}"]
+    kinds = {"placement": defs["placement"], "policyId": defs["policyId"]}
+    for i, row in enumerate(data["rows"]):
+        if len(row) != len(expected):
+            problems.append(f"{f}: $.rows[{i}]: {len(row)} cells, expected {len(expected)}")
+            continue
+        for name, cell in zip(expected, row):
+            if cell is None and name not in ("controlType", "window"):
+                continue
+            problems += [f"{f}: {p}" for p in validate(cell, kinds.get(name, defs["identifier"]), schema,
+                                                       f"$.rows[{i}].{name}")]
+    return problems
+
+
 def check(paths, require_behaviour=False, inventory=INVENTORY):
     """Return problems for the named files, resolving ids and parents across the whole inventory plus those files."""
     schema = load(SCHEMA)
+    baseline_schema = None
     named = [Path(f) for f in inventory_files(paths)]
     universe = {f.resolve(): f for f in inventory_files([inventory])} if Path(inventory).is_dir() else {}
     universe.update({f.resolve(): f for f in named})
     records = {}
     for resolved, f in universe.items():
-        data = load(f)
+        data = None if f.name == BASELINE else load(f)  # a baseline holds no records
         records[resolved] = data if isinstance(data, list) else []
     problems = []
     seen, kinds = {}, {}
@@ -176,6 +203,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     for resolved in named_resolved:
         f = universe[resolved]
         data = load(f)
+        if f.name == BASELINE:
+            baseline_schema = baseline_schema or load(BASELINE_SCHEMA)
+            problems += check_baseline(f, data, baseline_schema)
+            continue
         schema_problems = validate(data, schema, schema)
         problems += [f"{f}: {p}" for p in schema_problems]
         if not isinstance(data, list):
