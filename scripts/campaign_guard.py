@@ -219,14 +219,15 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
     except FileExistsError:
         current = read_guard(root) or {}
         owner = str(current.get("session_id", ""))
-        if owner == session and str(current.get("runner", "claude")) != runner and not handover:
-            raise GuardError(f"the guard is live for the {current.get('runner', 'claude')} run of session {owner}; "
-                             f"refusing to take it as {runner} without an operator handover (--handover REASON)")
-        if owner != session:
+        owner_runner = str(current.get("runner", "claude"))
+        handed = owner != session or owner_runner != runner
+        if handed:
             if not handover:
-                raise GuardError(f"the guard is live for session {owner or '<none>'}; "
+                who = (f"the {owner_runner} run of session {owner}" if owner == session
+                       else f"session {owner or '<none>'}")
+                raise GuardError(f"the guard is live for {who}; "
                                  f"refusing to take it without an operator handover (--handover REASON)")
-            doc["handover_from"] = owner
+            doc["handover_from"] = owner if owner_runner == runner else f"{owner_runner}:{owner}"
             doc["handover_reason"] = handover
         # The lock is held from the read above through this replace, so no
         # other change can land in between.
@@ -234,8 +235,8 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
         with open(tmp, "wb") as fh:
             fh.write(json.dumps(doc, indent=2).encode("utf-8"))
         os.replace(tmp, guard)
-        what = "handed over" if owner != session else "re-pointed"
-        if owner != session or not same_run:
+        what = "handed over" if handed else "re-pointed"
+        if handed or not same_run:
             try:
                 os.unlink(state_path)
             except FileNotFoundError:
@@ -1237,6 +1238,13 @@ def _self_test() -> int:
             check("the-same-session-id-under-another-runner-is-refused", False, "a claude acquire took the codex run")
         except GuardError as exc:
             check("the-same-session-id-under-another-runner-is-refused", "codex run of session" in str(exc), str(exc))
+        msg = acquire(root, "codex-run", 0, RUN_FILE, "job-1", handover="operator moved the run to Claude")
+        g = read_guard(root)
+        check("a-runner-change-is-recorded-as-a-handover", "handed over" in msg and g["runner"] == "claude"
+              and g.get("handover_from") == "codex:codex-run"
+              and g.get("handover_reason") == "operator moved the run to Claude", msg + " " + json.dumps(g))
+        os.remove(os.path.join(root, "build", "claude-campaign-guard.json"))
+        acquire(root, "codex-run", 0, RUN_FILE, NO_JOB, runner="codex")
         msg = acquire(root, "codex-run", 1, "docs/phase-runs/2099-01-01-phase-1.md", NO_JOB, runner="codex")
         check("another-runner-re-points-its-own-guard", "re-pointed" in msg and read_guard(root)["phase"] == 1
               and read_guard(root)["runner"] == "codex", msg)
