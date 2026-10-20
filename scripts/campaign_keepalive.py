@@ -300,9 +300,14 @@ def record(root: str, session: str, owner: dict, supervised: bool = False, procs
     with _SessionsLock(root):  # read, merge and replace as one step, so concurrent observers lose nothing
         # Keep every process seen for this session (one session can run in several processes); a process leaves
         # the list only once it is proven gone, never to make room.
-        keep = [o for o in owners(_read(path)) if complete(o)
-                and (o.get("pid"), o.get("created")) != (owner.get("pid"), owner.get("created"))
-                and (procs is None or maybe_alive(procs, o))]
+        previous = _read(path)
+        if os.path.exists(path) and previous.get("session") != session:
+            # Unreadable or someone else's: an unknown process may still own it, so keep an unresolved marker.
+            keep = [{"pid": None, "created": None, "unresolved": "an unreadable observation was replaced"}]
+        else:
+            keep = [o for o in owners(previous)
+                    if (o.get("pid"), o.get("created")) != (owner.get("pid"), owner.get("created"))
+                    and (not complete(o) or procs is None or maybe_alive(procs, o))]
         _atomic(path, {"session": session, "owner": owner, "owners": keep + [owner], "seen_at": _now(),
                        "supervised": supervised})
         try:
@@ -328,10 +333,14 @@ def observe(root: str, session: str, procs, start: int | None = None) -> str:
         except ValueError:
             seen = cutoff
         if other not in (session, keep) and seen <= cutoff and not session_maybe_alive(procs, rec):
-            try:
-                os.unlink(os.path.join(_sessions_dir(root), other + ".json"))
-            except FileNotFoundError:
-                pass  # another session's observe pruned it first
+            with _SessionsLock(root):  # re-read under the lock: the session may have recorded itself since
+                fresh = observed(root).get(other)
+                if not fresh or fresh.get("seen_at") != rec.get("seen_at") or session_maybe_alive(procs, fresh):
+                    continue
+                try:
+                    os.unlink(os.path.join(_sessions_dir(root), other + ".json"))
+                except FileNotFoundError:
+                    pass  # another session's observe pruned it first
     return f"observe: session {session} is Claude process {owner['pid']}"
 
 
@@ -490,8 +499,11 @@ def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float,
                       and maybe_alive(procs, o)]
         if not current or str(current.get("session_id", "")) != session:
             ended = "the guard was ended or handed to another session"
-        elif not isinstance(mine, dict) or mine.get("invalid") or not all(complete(o) for o in owners(mine)):
+        elif (not isinstance(mine, dict) or mine.get("invalid") or not owners(mine)
+              or not all(complete(o) for o in owners(mine))):
             ended = f"the observation of session {session} became unreadable, so no other writer can be ruled out"
+        elif unobserved(root):
+            ended = f"a session's observation failed ({unobserved(root)[0]}), so no other writer can be ruled out"
         elif live_other:
             ended = f"the operator resumed session {session} in Claude process {live_other[0]['pid']}"
         else:
@@ -535,14 +547,17 @@ def resurrect(root: str, procs, launcher=_launch, killer=_kill_tree, clock=time.
         state = {"run_id": guard.get("run_id"), "session": session, "launched_at": clock(),
                  "resumes": (state.get("resumes", 0) if state.get("run_id") == guard.get("run_id") else 0) + 1,
                  "stalled": (state.get("stalled", 0) + 1) if same else 0, "fingerprint": fingerprint}
+        action_now, guard_now, why_now = decide(root, procs, clock)
+        if action_now != "launch" or (guard_now or {}).get("run_id") != guard.get("run_id"):
+            return 0, f"held at launch: the situation changed while preparing ({why_now})"
         stamp = _now().replace(":", "")
         log = os.path.join(root, "build", "claude-keepalive", f"{guard.get('run_id')}-{stamp}.log")
         try:
             child = launcher(resume_command(claude, guard, model), root, log)
         except OSError as error:  # nothing started, so nothing is counted against the resume budget
             return 1, f"could not start claude to resume session {session}: {error}"
-        _atomic(state_path, state)
         try:
+            _atomic(state_path, state)  # inside the boundary: a failed write must not leave the child unsupervised
             code, ended = _supervise(root, procs, child, session, clock, sleep, poll, limit, killer)
         except BaseException:
             # Whatever broke the supervision (an unreadable guard, a failed probe, an interrupt), the resumed
@@ -723,6 +738,16 @@ def _self_test() -> int:
         state_after = open(_state_path(root), encoding="utf-8").read() if os.path.exists(_state_path(root)) else None
         check("a launch that cannot start counts no resume", code == 1 and "could not start" in msg
               and state_before == state_after and not launched, msg)
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            json.dump({"session": s_run, "owner": {"pid": 680}, "owners": [{"pid": 680}]}, fh)
+        resumed = procs.add(681, 1, "claude.exe", 777)
+        record(root, s_run, resumed, procs=procs)
+        del procs.procs[681]
+        code, msg = run()
+        check("an unknown earlier owner survives a later observation", code == 0 and "incomplete" in msg
+              and not launched, msg)
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            fh.write(saved)
         conf = os.path.join(root, ".conclave", "keepalive.toml")
         for bad in ("123", '""', '"   "'):
             with open(conf, "w", encoding="utf-8") as fh:
@@ -790,6 +815,36 @@ def _self_test() -> int:
         campaign_guard.acquire(root, s_run, 4, "docs/phase-runs/run.md", "job2")
         os.remove(_state_path(root))
         procs.procs.pop(900, None)
+        for label, mutate, expect in (
+                ("a failed observation during a resume ends it",
+                 lambda: open(_unobserved_flag(root, s_other), "w", encoding="utf-8").write("failed"),
+                 "observation failed"),
+                ("an emptied observation during a resume ends it",
+                 lambda: _atomic(os.path.join(_sessions_dir(root), s_run + ".json"),
+                                 {"session": s_run, "owners": []}),
+                 "became unreadable")):
+            box = {}
+
+            def mid_run(argv, r, log, mutate=mutate, box=box):
+                child = launcher(exits_after=None)(argv, r, log)
+                box["c"] = child
+                return child
+
+            def sleep_then_mutate(_s, mutate=mutate, done=[False]):
+                clock.__setitem__(0, clock[0] + 30)
+                if not done[0]:
+                    mutate()
+                    done[0] = True
+            code, msg = resurrect(root, procs, launcher=mid_run, killer=lambda c: setattr(c, "killed", True),
+                                  clock=lambda: clock[0], sleep=sleep_then_mutate, claude="claude", poll=30)
+            check(label, bool(box.get("c")) and box["c"].killed and expect in msg, msg)
+            for flag in unobserved(root):
+                os.remove(os.path.join(_sessions_dir(root), flag))
+            clock[0] += RELAUNCH_AFTER + 1
+            procs.procs.pop(900, None)
+            record(root, s_run, {"pid": 500, "created": 111, "exe": "claude.exe"})
+            if os.path.exists(_state_path(root)):
+                os.remove(_state_path(root))
 
         def attend_mid_run(argv, r, log):
             child = launcher(exits_after=None)(argv, r, log)
