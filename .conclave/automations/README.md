@@ -42,7 +42,7 @@ python -m unittest discover -s scripts/tests -p "test_automations.py"
 python scripts/campaign_keepalive.py status                    # what the keep-alive would do now
 ```
 
-Installed and verified on the operator's PC (Venom-PC) on 2026-10-20: `office-2028-claude-keepalive` is registered under `\Office-2028\` with a logon trigger (3 minute delay) and an hourly time trigger; `campaign_keepalive.py status` answered `idle: no open campaign run` before the phase 2 run was put under the guard; the alert dry run rendered the task, exit and log tail; and one real alert (a throwaway task exiting 1, sent through the runner with the operator's go-ahead) arrived in `rizonetech@gmail.com` from `website@rizonetech.com` at 01:17:45 UTC.
+Installed and verified on the operator's PC (Venom-PC) on 2026-10-20: `office-2028-claude-keepalive` is registered under `\Office-2028\` with a logon trigger (3 minute delay) and an hourly time trigger, next run 2026-10-20 04:16:56 South Africa Standard Time (UTC+2), last result 267011 (not yet run); `campaign_keepalive.py status` answered `idle: no open campaign run` before the phase 2 run was put under the guard; the alert dry run rendered the task, exit and log tail; and one real alert (a throwaway task exiting 1, sent through the runner with the operator's go-ahead) arrived in `rizonetech@gmail.com` from `website@rizonetech.com` at 01:17:45 UTC. That send predates the runner recording sends in `last.json`; `test_automations.py` (`AlertRecord`) proves every later send records its email id there, and an unsent one its error.
 
 The installer reads `tasks.json` and registers every task it lists; a task under `\Office-2028\` that the file no longer lists is removed.
 

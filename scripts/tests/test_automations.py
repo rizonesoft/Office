@@ -539,6 +539,35 @@ class RoundThreeFixes(unittest.TestCase):
         self.assertEqual(code, 126)
         self.assertEqual(len(alerts), 1)
 
+class AlertRecord(unittest.TestCase):
+    """last.json records whether a failure's alert was sent (D00 T03 §5)."""
+
+    def run_failing(self, alerter):
+        with tempfile.TemporaryDirectory() as tmp:
+            auto = Path(tmp) / ".conclave" / "automations"
+            auto.mkdir(parents=True)
+            task = {**FIXTURE_TASK, "command": ["python", "-c", "import sys; sys.exit(1)"]}
+            (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92),
+                                                         "tasks": [task]}), encoding="utf-8")
+            with contextlib_redirect():
+                code = run.main(["office-2028-fixture"], root=tmp, alerter=alerter)
+            last = json.loads((Path(tmp) / "build" / "automations" / "office-2028-fixture" / "last.json")
+                              .read_text(encoding="utf-8"))
+            return code, last
+
+    def test_a_sent_alert_is_recorded_with_its_id(self):
+        code, last = self.run_failing(lambda *a: "E123")
+        self.assertEqual(code, 1)
+        self.assertEqual(last["alert"]["email_id"], "E123")
+        self.assertIn("sent_at", last["alert"])
+
+    def test_an_unsent_alert_is_recorded_with_its_error(self):
+        def refuse(*a):
+            raise alert.Refused("bad sender")
+        code, last = self.run_failing(refuse)
+        self.assertEqual(code, 3)
+        self.assertIn("bad sender", last["alert"]["error"])
+
 
 if __name__ == "__main__":
     unittest.main()

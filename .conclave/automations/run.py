@@ -133,7 +133,14 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
                     out.write(f"run.py: could not stop the timed-out process: {error}\n".encode("utf-8"))
                     outcome["cleanup_failed"] = True
     outcome["finished"] = _utc()
-    fd, tmp = tempfile.mkstemp(dir=folder, prefix="last.json.", suffix=".tmp")  # unique per run
+    _write_outcome(folder, outcome)
+    _prune(folder)  # after the outcome is safe, and never fatal: a locked old log must not cost the alert
+    return outcome
+
+
+def _write_outcome(folder: str, outcome: dict) -> None:
+    """last.json, replaced atomically through a temporary file unique to this run."""
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix="last.json.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(outcome, fh, indent=2)
@@ -141,8 +148,6 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
-    _prune(folder)  # after the outcome is safe, and never fatal: a locked old log must not cost the alert
-    return outcome
 
 
 def _prune(folder: str) -> None:
@@ -186,12 +191,16 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
     if outcome["exit"] == 0:
         return 0
     alert = _alert_module()
+    folder = os.path.join(root, "build", "automations", argv[0])
     try:
-        (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(os.path.join(root, outcome["log"])))
+        sent = (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(os.path.join(root, outcome["log"])))
     except Exception as error:  # the run already failed; an unsent alert must still show, as exit 3
         with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
             fh.write(f"\nrun.py: alert not sent: {type(error).__name__}: {error}\n")
+        _write_outcome(folder, {**outcome, "alert": {"error": f"{type(error).__name__}: {error}", "at": _utc()}})
         return 3
+    # The outcome records the send, so a failure's alert can be checked without the mailbox.
+    _write_outcome(folder, {**outcome, "alert": {"sent_at": _utc(), "email_id": sent if isinstance(sent, str) else ""}})
     return outcome["exit"]
 
 
