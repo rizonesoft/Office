@@ -107,9 +107,10 @@ try {
     $runId = ""
     if ($guard.PSObject.Properties.Name -contains 'run_id') { $runId = [string]$guard.run_id }
     foreach ($ml in ($text -split "`r?`n")) {
-        if ($ml -match '^(## Closeout\b|PARKED\b)') {
+        # Case-sensitive, exactly as campaign_guard.py reads the same markers for `end`.
+        if ($ml -cmatch '^(## Closeout\b|PARKED\b)') {
             # The id must end the token: run=abc must not match run=abc-old (a stale closeout).
-            if (-not $runId -or $ml -match ('\brun=' + [regex]::Escape($runId) + '(?![\w-])')) { Allow }
+            if (-not $runId -or $ml -cmatch ('\brun=' + [regex]::Escape($runId) + '(?![\w-])')) { Allow }
         }
     }
 
@@ -121,13 +122,30 @@ try {
         # Genuine halt: nothing runnable here. The runner still owes the
         # PARKED line, but blocking cannot produce work that does not exist.
         # Office-2028's todo-graph prints the ready sections as a JSON list.
-        $ready = & python scripts/todo-graph.py query ready 2>$null
+        # Bounded: the hook has 30 seconds in all, so the query gets 20 and a timeout counts as unknown (block).
+        $ready = $null
+        $readyExit = -1
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = 'python'
+        $psi.Arguments = 'scripts/todo-graph.py query ready'
+        $psi.WorkingDirectory = $root
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+        $psi.EnvironmentVariables['PYTHONIOENCODING'] = 'utf-8'
+        $query = [System.Diagnostics.Process]::Start($psi)
+        $outTask = $query.StandardOutput.ReadToEndAsync()
+        $null = $query.StandardError.ReadToEndAsync()
+        if ($query.WaitForExit(20000)) { $ready = $outTask.Result; $readyExit = $query.ExitCode }
+        else { try { $query.Kill() } catch { [Console]::Error.WriteLine("campaign-stop: could not stop the ready query: $_") } }
         $rows = $null
         # Windows PowerShell 5.1 returns a JSON array as one object (an empty one included), so wrapping it in
         # @() would count an empty list as one row; unwrap an array explicitly.
-        if ($LASTEXITCODE -eq 0) {
+        if ($readyExit -eq 0) {
             try {
-                $parsed = ($ready -join "`n") | ConvertFrom-Json
+                $parsed = $ready | ConvertFrom-Json
                 # Only a top-level JSON array is a ready list; null, blank or anything else is unknown, never empty.
                 if ($parsed -is [System.Array]) { $rows = $parsed } else { $rows = $null }
             } catch { $rows = $null }
@@ -268,8 +286,8 @@ catch {
             # section 36 panel round 2).
             # Ownership is proven under the lock before the state file is written. A payload that never parsed
             # names no session; otherwise the guard must name this payload's session (and the run the hook read,
-            # when it read one), or exist but be unreadable: a malformed guard's error is still recorded for the
-            # heartbeat, as before. A missing guard or another session's run sends the error to the log instead.
+            # when it read one). A missing, malformed or foreign guard proves nothing, so the error goes to the
+            # append-only log, which hook-error reads for the heartbeat.
             if ($lock2) {
                 $mine2 = $false
                 if ($null -ne $event) {
@@ -277,8 +295,7 @@ catch {
                     if (Test-Path -LiteralPath $gp2) {
                         $still2 = $null
                         try { $still2 = Get-Content -LiteralPath $gp2 -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $still2 = $null }
-                        if (-not ($still2 -and ($still2.PSObject.Properties.Name -contains 'session_id'))) { $mine2 = $true }
-                        else {
+                        if ($still2 -and ($still2.PSObject.Properties.Name -contains 'session_id')) {
                             $mine2 = ([string]$still2.session_id -eq [string]$event.session_id)
                             if ($mine2 -and $guard -and ($guard.PSObject.Properties.Name -contains 'run_id')) {
                                 $mine2 = ([string]$still2.run_id -eq [string]$guard.run_id)
@@ -312,7 +329,9 @@ catch {
                 $dir = Join-Path $root "build\claude-campaign-hook-errors"
                 [void][System.IO.Directory]::CreateDirectory($dir)
                 $name = "{0:D20}-{1}.txt" -f [DateTime]::UtcNow.Ticks, $PID
-                [System.IO.File]::WriteAllText((Join-Path $dir $name), "$at $reason")
+                $partial = Join-Path $dir ($name + '.partial')
+                [System.IO.File]::WriteAllText($partial, "$at $reason")
+                [System.IO.File]::Move($partial, (Join-Path $dir $name))  # hook-error lists only complete .txt files
             }
         }
     } catch { }

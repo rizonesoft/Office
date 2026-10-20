@@ -47,6 +47,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOOK = os.path.normpath(os.path.join(HERE, "..", ".claude", "hooks", "campaign-stop.ps1"))
@@ -822,7 +823,9 @@ def _workspace(tmpd: str) -> str:
     with open(os.path.join(root, "scripts", "todo-graph.py"), "w", encoding="utf-8") as fh:
         fh.write("import json, os\n"
                  "n = open(os.path.join(os.path.dirname(__file__), 'ready.txt')).read().strip()\n"
-                 "if n == 'null':\n"
+                 "if n == 'slow':\n"
+                 "    import time; time.sleep(25); print('[]')\n"
+                 "elif n == 'null':\n"
                  "    print('null')\n"
                  "else:\n"
                  "    print(json.dumps([{'ref': 'D00 T01 \u00a73', 'title': 'Red CI repaired, not waited on'}] * int(n)))\n")
@@ -948,6 +951,18 @@ def _self_test() -> int:
         code, out, _ = run_hook(root, SESSION)
         check("a-closeout-for-a-longer-run-id-still-blocks", bool(live_run) and isinstance(out, dict)
               and out.get("decision") == "block", f"{live_run} {out}")
+        with open(os.path.join(root, RUN_FILE), "a", encoding="utf-8") as fh:
+            fh.write(f"\n## closeout run={live_run}\n")
+        code, out, _ = run_hook(root, SESSION)
+        check("a-lowercase-closeout-still-blocks-as-end-would-refuse-it",
+              isinstance(out, dict) and out.get("decision") == "block", str(out))
+        _set_ready(root, "slow")
+        started = time.monotonic()
+        code, out, _ = run_hook(root, SESSION)
+        took = time.monotonic() - started
+        check("a-slow-ready-query-blocks-within-the-hook-budget", isinstance(out, dict)
+              and out.get("decision") == "block" and took < 28, f"{took:.1f}s {out}")
+        _set_ready(root, 3)
         check("marker-run-matches-whole-tokens", marker_run("PARKED x run=abcdef-old") is None
               and marker_run("PARKED x run=abcdef reason") == "abcdef")
         with open(os.path.join(root, RUN_FILE), "w", encoding="utf-8") as fh:
@@ -1003,14 +1018,20 @@ def _self_test() -> int:
         check("fail-open-on-a-bad-guard", code == 0 and out is None and "campaign-stop:" in err, f"{code} {out} {err}")
         # D00 T04 §34: the failure is recorded for the heartbeat, then
         # reported through the still-malformed guard, then cleared.
+        # A malformed guard names no owner, so the error goes to the append-only log, never into state.
         st = _state(root)
-        check("a-thrown-error-is-recorded", bool(st.get("hook_error")) and bool(st.get("hook_error_at")), str(st))
-        with open(os.path.join(root, "build", "claude-campaign-state.json"), encoding="utf-8-sig") as fh:
-            saved_state = fh.read()
+        errors_dir = os.path.join(root, "build", "claude-campaign-hook-errors")
+        logged = sorted(n for n in os.listdir(errors_dir)) if os.path.isdir(errors_dir) else []
+        check("a-thrown-error-is-recorded", not st.get("hook_error") and len(logged) == 1
+              and logged[0].endswith(".txt"), f"{st} {logged}")
+        state_file = os.path.join(root, "build", "claude-campaign-state.json")
+        saved_state = None
+        if os.path.exists(state_file):
+            with open(state_file, encoding="utf-8-sig") as fh:
+                saved_state = fh.read()
         line = hook_error(root, SESSION)
         check("hook-error-reports-through-a-malformed-guard",
-              line.startswith("campaign-stop hook failed at ") and "guard file is unreadable" in line
-              and bool(_state(root).get("hook_error")), line)
+              line.startswith("campaign-stop hook failed at ") and "(recorded without the lock)" in line, line)
         # D00 T04 §36: printing clears nothing; only the exact acknowledged
         # line clears the record, so an interrupted heartbeat loses nothing.
         try:
@@ -1018,13 +1039,13 @@ def _self_test() -> int:
             check("hook-error-refuses-a-mismatched-ack", False)
         except GuardError as exc:
             check("hook-error-refuses-a-mismatched-ack",
-                  "does not match" in str(exc) and bool(_state(root).get("hook_error")), str(exc))
+                  "does not match" in str(exc) and bool(os.listdir(errors_dir)), str(exc))
         cleared = hook_error(root, SESSION, ack=line)
         check("hook-error-clears-on-the-exact-ack",
-              cleared.startswith("hook-error: acknowledged and cleared") and "hook_error" not in _state(root),
-              cleared)
-        with open(os.path.join(root, "build", "claude-campaign-state.json"), "w", encoding="utf-8") as fh:
-            fh.write(saved_state)
+              cleared.startswith("hook-error: acknowledged and cleared") and not os.listdir(errors_dir), cleared)
+        if saved_state is not None:
+            with open(state_file, "w", encoding="utf-8") as fh:
+                fh.write(saved_state)
         _guard(root, session="77777777-0000-0000-0000-000000000000")
         with open(os.path.join(root, "build", "claude-campaign-state.json"), "w", encoding="utf-8") as fh:
             json.dump({"hook_error": "boom", "hook_error_at": "2099-01-01T00:00:00Z"}, fh)
