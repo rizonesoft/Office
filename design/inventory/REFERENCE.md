@@ -21,7 +21,9 @@ The channel is the update channel id `492350f6-3a01-4f97-b9c0-c7c6ddf67d60`, whi
 
 Profile `fhd-100`: display 1920 by 1080 pixels at 100 percent scaling, window maximised, Office theme White, Office display language en-US, ribbon set to Always show Ribbon. `captureProfile` fields name this id, and `bounds` are pixels at this profile relative to the window client area.
 
-The host as read on 2026-10-20: the primary display is 2560 by 1440 at 150 percent (system DPI 144) and the second display is 1920 by 1080; Office's display language is en-us; Windows' regional format is en-ZA; Word's ribbon is set to Always show Ribbon. The capture tool (D02 T01 §3) checks every profile value before a capture and refuses to record bounds when one differs, so captures run on a 1920 by 1080 display at 100 percent.
+Confirmed on the host on 2026-10-20: Office's display language is en-us and Word's ribbon is set to Always show Ribbon. Not matching the profile: the primary display is 2560 by 1440 at 150 percent (system DPI 144). Not yet confirmed: the second display (1920 by 1080) runs at 100 percent, and the Office theme is White (the stored theme value is 7, whose name is not confirmed). Windows' regional format is en-ZA, which the profile does not constrain.
+
+Requirement for the capture tool (D02 T01 §3): check every profile value before a capture and refuse to record bounds when one differs. Until §3 proves that check, no record carries `bounds`.
 
 ## Layout choices
 
@@ -29,7 +31,7 @@ Decisions, 2026-10-20 (owner): both the Classic and the Simplified Ribbon are in
 
 What the reference build offers, read 2026-10-20:
 
-- Word: the Ribbon Display Options menu at the right end of the ribbon offers Full-screen mode, Show tabs only, Always show Ribbon and Hide Quick Access Toolbar, and no Classic or Simplified switch. The baseline lists a `SingleLineRibbonToggle` for Word outside the ribbon, so the Word capture (D02 T01 §5) records whether this build exposes it anywhere.
+- Word: the Ribbon Display Options menu at the right end of the ribbon offers Full-screen mode, Show tabs only, Always show Ribbon and Hide Quick Access Toolbar; that menu has no Classic or Simplified switch. Whether the switch exists elsewhere in Word is not yet known. The baseline lists a `SingleLineRibbonToggle` for Word outside the ribbon, so the Word capture (D02 T01 §5) records whether this build exposes it anywhere.
 - Outlook (classic): the baseline lists `SingleLineRibbonToggle` in every item window. The Outlook capture (D02 T01 §15) records where it sits and the steps that switch it; Outlook is not started unattended, because starting it sends whatever waits in the Outbox.
 - Excel, PowerPoint, Visio and Project: the baseline lists no ribbon layout toggle. Each app's capture section records whether the build offers one, as the Visio section already states.
 
@@ -37,30 +39,12 @@ Where a reference app has no Simplified Ribbon, the Simplified layout of our app
 
 ## Licensing
 
-| App | Product on the host | State |
-| --- | ------------------- | ----- |
-| Word, Excel, PowerPoint, Outlook | Microsoft 365 Apps for business | installed |
-| Visio | Visio Professional | installed |
-| Project | Project Professional | installed |
+Read on 2026-10-20 from the Click-to-Run product list and the two licence stores (subscription entries under `LicensingNext`, and the classic licensing service through `OSPP.VBS /dstatus`, printing licence names and states only).
 
-Read from the Click-to-Run product list on 2026-10-20 (`O365BusinessRetail`, `VisioProRetail`, `ProjectProRetail`); the owner confirmed on 2026-10-20 that both Visio and Project are available on this host.
+| App | Product | Installed | Licence found |
+| --- | ------- | --------- | ------------- |
+| Word, Excel, PowerPoint, Outlook | Microsoft 365 Apps for business | yes | subscription |
+| Project | Project Professional | yes | subscription |
+| Visio | Visio Professional | yes | none in either store |
 
-## Baseline
-
-The control identifier baseline is a complete checklist of every tab, group and control each app publishes, so a live capture can be proven complete rather than assumed complete.
-
-| Field | Value |
-| ----- | ----- |
-| Upstream | OfficeDev `office-fluent-ui-command-identifiers` |
-| Folder | `Microsoft 365/Current Channel` |
-| Commit | `b230a0df45036b2d5e8b49ebf368b3f90ada8d63` |
-| Committed | 2024-03-18 |
-| Licence | MIT (notice in `THIRD-PARTY-NOTICES.md`) |
-| Imported | 2026-10-20, by `scripts/import-office-ids.py` |
-| Files | `design/inventory/<app>/baseline.json` for the six apps |
-
-`design/inventory/baseline-sources.json` holds the git blob id of every upstream workbook at the commit; the importer refuses any input that is missing, extra or not byte-identical to upstream, and `check-inventory.py` over the whole inventory requires all six baselines and every Outlook window it lists. Each baseline file records `baseline:<commit>` as its source, the columns, and one row per workbook row in workbook order, so a row's position is its order. Outlook's item-window workbooks merge into one file whose first column is the window, named as the workbook names it: `explorer`, `mailitem` (compose), `mailread`, `apptitem` (appointment), `addritem` (contact), `taskitem`, `dlstitem` (contact group), `logitem` (journal), `postitem`, `postread`, `reportitem`, `reqread`, `reqsend`, `resenditem`, `respcounter`, `responseread`, `responsesend`, `rssitem`, `shareitem`, `smsedit`, `smsread`, `mmsedit` and `mmsread`.
-
-Rows with a null `idMso` are controls the workbooks list without an identifier; they keep their policy id and position. Anything newer than 2024-03-18 in the live build is found by the live capture and recorded on the inventory record as `baselineMissing`.
-
-To refresh: download the six apps' Current Channel workbooks at a new commit into `R:\scratch\office-ui-ids\<full commit>\`, run `python scripts/import-office-ids.py R:/scratch/office-ui-ids/<full commit>`, and update this table and `THIRD-PARTY-NOTICES.md`. `--check` reports whether the committed files match a downloaded commit.
+Visio's licence is unverified, so its capture sections (D02 T01 §11 and §12) wait on the owner (`owner-decision`): confirm how Visio is licensed on this host (subscription, retail key or trial) before it is captured, since an unlicensed Visio may show a reduced interface. The owner said on 2026-10-20 that Visio and Project are both on this host.
