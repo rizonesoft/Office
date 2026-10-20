@@ -172,6 +172,38 @@ def alive(procs, owner: dict | None) -> bool:
     return bool(owner) and owner.get("created") is not None and procs.created(owner.get("pid", 0)) == owner["created"]
 
 
+def complete(owner) -> bool:
+    """An owner record good enough to prove anything: a positive pid and a creation time."""
+    return (isinstance(owner, dict) and isinstance(owner.get("pid"), int) and owner["pid"] > 0
+            and owner.get("created") is not None)
+
+
+def owners(rec: dict | None) -> list:
+    """Every Claude process recorded for a session (older records carry only `owner`)."""
+    if not isinstance(rec, dict):
+        return []
+    listed = rec.get("owners")
+    if isinstance(listed, list):
+        return listed
+    return [rec["owner"]] if "owner" in rec else []
+
+
+def session_alive(procs, rec: dict | None) -> bool:
+    """True unless every recorded process of the session is provably gone. A record that is invalid, empty or
+    incomplete proves nothing, so it counts as alive; raises ProcessUnknown when Windows will not say."""
+    found = owners(rec)
+    if not isinstance(rec, dict) or rec.get("invalid") or not found or not all(complete(o) for o in found):
+        return True
+    return any(alive(procs, o) for o in found)
+
+
+def session_maybe_alive(procs, rec: dict | None) -> bool:
+    try:
+        return session_alive(procs, rec)
+    except ProcessUnknown:
+        return True
+
+
 def maybe_alive(procs, owner: dict | None) -> bool:
     """alive(), with an unreadable process counted as alive: every caller that may launch or keep a second
     writer must assume the worst."""
@@ -224,22 +256,26 @@ def _read(path: str) -> dict:
 
 
 def observed(root: str) -> dict[str, dict]:
-    """session id -> its observation record."""
+    """session id -> its observation record. An unreadable or mismatched record is kept as {"invalid": True},
+    so it holds a launch instead of silently disappearing."""
     out = {}
     folder = _sessions_dir(root)
     for name in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
         if name.endswith(".json") and SESSION_ID.match(name[:-5]):
             rec = _read(os.path.join(folder, name))
-            if rec.get("session") == name[:-5]:
-                out[name[:-5]] = rec
+            out[name[:-5]] = rec if rec.get("session") == name[:-5] else {"invalid": True, "session": name[:-5]}
     return out
 
 
 def record(root: str, session: str, owner: dict, supervised: bool = False) -> None:
     if not SESSION_ID.match(session or ""):
         raise KeepAliveError(f"session {session!r} is not a Claude Code session id")
-    _atomic(os.path.join(_sessions_dir(root), session + ".json"),
-            {"session": session, "owner": owner, "seen_at": _now(), "supervised": supervised})
+    path = os.path.join(_sessions_dir(root), session + ".json")
+    # Keep every process seen for this session (the same session can run in more than one process), newest last.
+    seen = [o for o in owners(_read(path)) if complete(o)
+            and (o.get("pid"), o.get("created")) != (owner.get("pid"), owner.get("created"))]
+    _atomic(path, {"session": session, "owner": owner, "owners": (seen + [owner])[-8:], "seen_at": _now(),
+                   "supervised": supervised})
 
 
 def observe(root: str, session: str, procs, start: int | None = None) -> str:
@@ -258,7 +294,7 @@ def observe(root: str, session: str, procs, start: int | None = None) -> str:
                 tzinfo=datetime.timezone.utc)
         except ValueError:
             seen = cutoff
-        if other not in (session, keep) and seen <= cutoff and not maybe_alive(procs, rec.get("owner")):
+        if other not in (session, keep) and seen <= cutoff and not session_maybe_alive(procs, rec):
             try:
                 os.unlink(os.path.join(_sessions_dir(root), other + ".json"))
             except FileNotFoundError:
@@ -297,20 +333,26 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
     if not rec:
         return "hold", guard, (f"held: session {session} was never observed, so its process cannot be proven gone "
                                "(start the campaign in a session with the SessionStart hook, or run observe in it)")
+    if rec.get("invalid") or not owners(rec) or not all(complete(o) for o in owners(rec)):
+        return "hold", guard, (f"held: the observation of session {session} is unreadable or incomplete, so its "
+                               "process cannot be proven gone (repair or remove build/claude-sessions/" f"{session}.json)")
     try:
-        owner_alive = alive(procs, rec.get("owner"))
+        owner_alive = session_alive(procs, rec)
     except ProcessUnknown as exc:
         return "hold", guard, f"held: cannot tell whether session {session} is alive ({exc})"
     if owner_alive:
         return "hold", guard, f"held: session {session} is alive (Claude process {rec['owner'].get('pid')})"
-    present = [s for s, r in sessions.items() if s != session and maybe_alive(procs, r.get("owner"))]
+    present = [s for s, r in sessions.items() if s != session and session_maybe_alive(procs, r)]
     if present:
         return "hold", guard, f"held: attended, Office-2028 session {present[0]} is alive; one session owns the tree"
     state = _read(_state_path(root))
     if clock() - float(state.get("launched_at", 0)) < RELAUNCH_AFTER:
         return "hold", guard, "held: a resume launched less than 15 minutes ago"
     same_run = state.get("run_id") == guard.get("run_id")
-    if same_run and state.get("stalled", 0) >= STALLED_RESUMES and state.get("fingerprint") == _fingerprint(root, guard):
+    # The first resume stores stalled 0 and each unchanged one adds 1, so STALLED_RESUMES resumes without progress
+    # leave stalled at STALLED_RESUMES - 1: that is the limit, never one resume more.
+    if (same_run and state.get("stalled", 0) >= STALLED_RESUMES - 1
+            and state.get("fingerprint") == _fingerprint(root, guard)):
         if state.get("reported") == state.get("fingerprint"):
             return "hold", guard, "held: still stopped after resumes without progress (reported)"
         return "report", guard, (f"stopped: {STALLED_RESUMES} resumes of run {guard.get('run_id')} moved neither HEAD "
@@ -322,7 +364,10 @@ def writer_model(root: str) -> str:
     import tomllib
     # Office-2028 has no review panel file; the writer model the keep-alive resumes with lives here.
     with open(os.path.join(root, ".conclave", "keepalive.toml"), "rb") as fh:
-        return tomllib.load(fh)["writer"]["model"]
+        model = tomllib.load(fh)["writer"]["model"]
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(f"[writer] model must be a non-empty string, not {model!r}")
+    return model.strip()
 
 
 def resume_command(claude: str, guard: dict, model: str) -> list[str]:
@@ -403,13 +448,14 @@ def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float,
         ended = None
         current = campaign_guard.read_guard(root)
         sessions = observed(root)
-        mine = (sessions.get(session) or {}).get("owner") or {}
+        live_other = [o for o in owners(sessions.get(session)) if complete(o) and o.get("pid") != child.pid
+                      and maybe_alive(procs, o)]
         if not current or str(current.get("session_id", "")) != session:
             ended = "the guard was ended or handed to another session"
-        elif mine.get("pid") not in (None, child.pid) and maybe_alive(procs, mine):
-            ended = f"the operator resumed session {session} in Claude process {mine['pid']}"
+        elif live_other:
+            ended = f"the operator resumed session {session} in Claude process {live_other[0]['pid']}"
         else:
-            others = [s for s, r in sessions.items() if s != session and maybe_alive(procs, r.get("owner"))]
+            others = [s for s, r in sessions.items() if s != session and session_maybe_alive(procs, r)]
             if others:
                 ended = f"Office-2028 session {others[0]} started, and one session owns the tree"
         if not ended and clock() >= deadline:
@@ -579,7 +625,34 @@ def _self_test() -> int:
         check("an attended session holds the launch", code == 0 and "attended" in msg and not launched, msg)
 
         del procs.procs[600]
+        second = procs.add(650, 1, "claude.exe", 333)  # the same session open in a second process
+        record(root, s_run, second)
+        code, msg = run()
+        check("a session alive in a second process is held", code == 0 and "is alive" in msg and not launched, msg)
+        del procs.procs[650]
+        sess_file = os.path.join(_sessions_dir(root), s_run + ".json")
+        saved = open(sess_file, encoding="utf-8").read()
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            json.dump({"session": s_run}, fh)
+        code, msg = run()
+        check("an incomplete observation holds the launch", code == 0 and "incomplete" in msg and not launched, msg)
+        bogus = os.path.join(_sessions_dir(root), s_other + ".json")
+        with open(bogus, "w", encoding="utf-8") as fh:
+            fh.write("{not json")
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            fh.write(saved)
+        code, msg = run()
+        check("an unreadable other observation holds the launch", code == 0 and not launched, msg)
+        os.remove(bogus)
         conf = os.path.join(root, ".conclave", "keepalive.toml")
+        for bad in ("123", '""', '"   "'):
+            with open(conf, "w", encoding="utf-8") as fh:
+                fh.write("[writer]" + chr(10) + "model = " + bad + chr(10))
+            code, msg = run()
+            check(f"an invalid writer model {bad} is a setup refusal", code == 1 and "setup required" in msg
+                  and not launched, msg)
+        with open(conf, "w", encoding="utf-8") as fh:
+            fh.write("[writer]" + chr(10) + 'model = "claude-opus-5-5"' + chr(10))
         os.replace(conf, conf + ".away")
         state_file = os.path.join(root, "build", "claude-keepalive.json")
         before = open(state_file, encoding="utf-8").read() if os.path.exists(state_file) else None
@@ -601,7 +674,7 @@ def _self_test() -> int:
         code, msg = run()
         check("a relaunch within 15 minutes is held", code == 0 and "15 minutes" in msg and len(launched) == 1, msg)
 
-        for _ in range(STALLED_RESUMES):
+        for _ in range(STALLED_RESUMES - 1):  # the first resume above plus these makes STALLED_RESUMES in all
             clock[0] += RELAUNCH_AFTER + 1
             procs.procs.pop(900, None)
             run()
@@ -611,7 +684,7 @@ def _self_test() -> int:
         code, msg = run()
         state = _read(_state_path(root))
         check("three resumes without progress are reported", code == 1 and "moved neither HEAD" in msg
-              and len(launched) == before, f"{msg} {state}")
+              and len(launched) == before == STALLED_RESUMES, f"{len(launched)} launches: {msg} {state}")
         code, msg = run()
         check("a reported stall is held, not re-reported", code == 0 and "(reported)" in msg, msg)
 
