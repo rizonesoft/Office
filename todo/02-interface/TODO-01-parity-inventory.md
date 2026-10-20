@@ -55,7 +55,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 16 | §16 | Outlook modules, panes, views and dialogs inventory | §15 | [ ] |
 | 17 | §17 | Keyboard shortcut inventory for six apps | §1, §20 | [ ] |
 | 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
-| 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [ ] |
+| 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [x] |
 | 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [ ] |
 | 21 | §21 | Microsoft-free inventory model | §1 | [x] |
 
@@ -501,9 +501,12 @@ Microsoft publishes, per app, every ribbon tab, group and control with its `idMs
 - [x] Merge the Outlook item-window workbooks into `design/inventory/outlook/baseline.json` keyed by window type (explorer, mail compose, mail read, appointment, contact, task and the rest). Done when: every Outlook workbook contributes records under its window type. Cheaper substitute: the explorer workbook only, which misses every item window.
 - [x] Write the upstream commit SHA, licence and import date to `design/inventory/REFERENCE.md` under `## Baseline` and add the MIT notice to `THIRD-PARTY-NOTICES.md` as a data source. Done when: both files name the SHA. Cheaper substitute: an unpinned link.
 - [x] Write `scripts/tests/test_import_office_ids.py` with a small fixture workbook. Done when: the suite passes and fails when the group order is not preserved.
-- [ ] Commit: `inventory: import Microsoft control identifier baseline`
+- [x] Commit: `inventory: import Microsoft control identifier baseline`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_import_office_ids.py"` passes and `python scripts/check-inventory.py design/inventory` exits 0 with six `baseline.json` files present.
+
+> **Verified:** 2026-10-20 | §19 | 8193634e3a193aefd853262271a5a2fb2a35893b
+> **Review:** `docs/reviews/d02-t01-s19.json`
 
 ## 20. Word Command Catalogue from ListCommands
 

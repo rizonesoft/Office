@@ -1,0 +1,28 @@
+{
+  "ref": "D02 T01 \u00a719",
+  "title": "Microsoft Control Identifier Baseline Import",
+  "implementation_sha": "8193634e3a193aefd853262271a5a2fb2a35893b",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s19.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_import_office_ids.py\" -> \"Ran 25 tests ... OK\"",
+    "python scripts/check-inventory.py design/inventory -> exit 0 with six baseline.json files",
+    "python scripts/import-office-ids.py R:/scratch/office-ui-ids/b230a0df45036b2d5e8b49ebf368b3f90ada8d63 --check -> exit 0"
+  ]
+}

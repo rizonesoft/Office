@@ -62,7 +62,7 @@ Sections: 35 | Checklist items: 222
 | [x]    | D02 T01 §21 | Microsoft-Free Inventory Model                            | none                                  | 6     |
 | [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 12    |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                  | 6     |
+| [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                  | 6     |
 | [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 8     |
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 9/82 verified sections, 8 ready to run now.
+Progress: 10/82 verified sections, 7 ready to run now.
 
-Checklist: 61/460 items completed (includes Commit items).
+Checklist: 62/460 items completed (includes Commit items).
