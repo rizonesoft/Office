@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/rizonesoft/Office-2028/design/inventory/schema.json",
+  "$id": "urn:rizonesoft:office-2028:design:inventory:schema",
   "title": "Microsoft 365 parity inventory file",
   "description": "One inventory file: a JSON array of element records. Checked by scripts/check-inventory.py.",
   "type": "array",
@@ -154,23 +154,8 @@
         "behaviour": {
           "type": "string",
           "minLength": 1,
-          "description": "one sentence on what the element does",
+          "description": "one sentence in our own words on what the element does; never quoted product text",
           "pattern": "^\\s*\\S"
-        },
-        "screentip": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "title"
-          ],
-          "properties": {
-            "title": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
-            }
-          }
         },
         "idMso": {
           "type": "string",
@@ -178,8 +163,8 @@
         },
         "source": {
           "type": "string",
-          "pattern": "^(https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?([/?#]\\S*)?|(uia|baseline|listcommands):\\S+)$",
-          "description": "Where the record came from: an http or https URL with a lowercase scheme and a DNS name or IPv4 host (citations never need IPv6 literals), or uia:/baseline:/listcommands: followed by the build or commit."
+          "pattern": "^((uia|listcommands):[0-9]+(\\.[0-9]+){3}|baseline:[0-9a-f]{7,40})$",
+          "description": "Capture provenance: uia: or listcommands: followed by the Office build, or baseline: followed by the baseline commit. Records never cite web pages."
         },
         "capturedFrom": {
           "type": "string",

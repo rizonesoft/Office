@@ -8,7 +8,8 @@
 
 Rules: each file is a JSON array of records valid against the schema; ids are unique across the whole inventory and the
 named files; every parent names an existing record (resolved across all of design/inventory/, so one file can be
-checked alone). With --require-behaviour every control also needs a behaviour sentence and a web source.
+checked alone); no string anywhere in a record holds a link, since the inventory keeps facts and our own words, never
+web pages. With --require-behaviour every control also needs a non-blank behaviour sentence.
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
 """
 import argparse
@@ -21,8 +22,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "design" / "inventory"
 SCHEMA = INVENTORY / "schema.json"
-# A web source has a real host: a letter or digit first, so https://?q and https://#f are refused.
-WEB_SOURCE = re.compile(r"^https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?([/?#]\S*)?$")
+# Owner rule 2026-10-20: the repository holds no Microsoft text and no Microsoft links, so no record holds a link at all.
+LINK = re.compile(r"https?://|www\.", re.IGNORECASE)
 TARGET_KINDS = ("command", "control")
 
 
@@ -94,6 +95,17 @@ def validate(value, schema, root, path="$"):
     return problems
 
 
+def links(value, path):
+    """Problems for every string inside a record (nested values included) that holds a link."""
+    if isinstance(value, str):
+        return [f"{path}: link {LINK.search(value).group(0)!r} in a record"] if LINK.search(value) else []
+    if isinstance(value, dict):
+        return [p for key, item in value.items() for p in links(item, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [p for i, item in enumerate(value) for p in links(item, f"{path}[{i}]")]
+    return []
+
+
 def load(path):
     try:
         # Decimal keeps JSON numbers exact: 1.0000000000000001 stays non-integral and -1e-400 stays negative.
@@ -143,6 +155,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if not isinstance(rec, dict):
                 continue
             where = f"{f}[{i}]"
+            problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]")]
             rid = rec.get("id")
             if isinstance(rid, str):
                 if len(seen.get(rid, [])) > 1:
@@ -165,8 +178,6 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if require_behaviour and rec.get("kind") == "control":
                 if not str(rec.get("behaviour", "")).strip():
                     problems.append(f"{where}: control {rid} has no behaviour")
-                if not WEB_SOURCE.match(str(rec.get("source", ""))):
-                    problems.append(f"{where}: control {rid} has no web source for its behaviour")
     return problems
 
 
@@ -174,7 +185,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Validate the parity inventory.")
     parser.add_argument("paths", nargs="*", default=[str(INVENTORY)], help="files or folders (default: design/inventory)")
     parser.add_argument("--require-behaviour", action="store_true",
-                        help="every control must have a behaviour sentence and a web source")
+                        help="every control must have a non-blank behaviour sentence")
     args = parser.parse_args(argv)
     missing = [p for p in args.paths if not Path(p).exists()]
     if missing:

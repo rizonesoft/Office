@@ -17,7 +17,7 @@ GROUP = {"id": "word.home.font", "app": "word", "kind": "group", "label": "Font"
 BOLD = {"id": "word.home.font.bold", "app": "word", "kind": "control", "label": "Bold", "parent": "word.home.font",
         "order": 3, "controlType": "toggleButton", "size": "small", "keytip": "1", "shortcut": "Ctrl+B",
         "bounds": {"x": 168, "y": 112, "width": 24, "height": 22}, "captureProfile": "fhd-100",
-        "screentip": {"title": "Bold (Ctrl+B)", "description": "Make your text bold."}, "idMso": "Bold",
+        "idMso": "Bold",
         "source": "uia:16.0.20430.20182", "capturedFrom": "16.0.20430.20182"}
 PASTE = {"id": "word.home.clipboard.paste", "app": "word", "kind": "control", "label": "Paste", "parent": "word.home",
          "order": 0, "controlType": "splitButton", "size": "large", "source": "uia:16.0.20430.20182"}
@@ -83,14 +83,35 @@ class Inventory(unittest.TestCase):
         menus = self.write("word/menus.json", [BOLD])
         self.assertEqual(self.problems(menus), [])
 
-    def test_require_behaviour_needs_sentence_and_web_source(self):
+    def test_require_behaviour_needs_only_a_sentence(self):
         self.write("word/ribbon.json", [TAB, GROUP, BOLD])
-        problems = self.problems(behaviour=True)
-        self.assertTrue(any("has no behaviour" in p for p in problems))
-        self.assertTrue(any("no web source" in p for p in problems))
-        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Makes the selected text bold.",
-                                                          source="https://support.microsoft.com/x")])
+        self.assertTrue(any("has no behaviour" in p for p in self.problems(behaviour=True)))
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Turns heavy type on or off for the selection.")])
         self.assertEqual(self.problems(behaviour=True), [])
+
+    def test_screentip_field_is_refused(self):
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, screentip={"title": "Bold"})])
+        self.assertTrue(any("unknown field screentip" in p for p in self.problems()))
+
+    def test_web_source_is_refused(self):
+        self.write("word/ribbon.json", [TAB, dict(PASTE, source="https://example.com/paste")])
+        problems = self.problems()
+        self.assertTrue(any("source" in p and "does not match" in p for p in problems), problems)
+        self.assertTrue(any("link" in p for p in problems), problems)
+
+    def test_capture_provenance_sources_pass(self):
+        for good in ("uia:16.0.20430.20182", "listcommands:16.0.20430.20182", "baseline:4f1c2ab"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=good)])
+            self.assertEqual(self.problems(), [], good)
+        for bad in ("uia:latest", "baseline:main", "uia:16.0.20430.20182 extra"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
+            self.assertTrue(any("does not match" in p for p in self.problems()), bad)
+
+    def test_a_link_anywhere_in_a_record_is_refused(self):
+        for rec in (dict(BOLD, behaviour="Makes text bold, see https://example.com/bold."),
+                    dict(BOLD, label="Bold www.example.com"), dict(BOLD, menuPath="HTTP://example.com")):
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertTrue(any(": link " in p for p in self.problems()), rec)
 
     def test_integral_float_is_an_integer(self):
         self.write("word/ribbon.json", [dict(TAB, order=1.0), dict(GROUP, order=1e0)])
@@ -129,18 +150,10 @@ class Inventory(unittest.TestCase):
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, bounds={"x": 1, "y": 2, "width": 3})])
         self.assertTrue(any("missing height" in p for p in self.problems()))
 
-    def test_source_must_carry_a_host_or_a_build(self):
+    def test_source_must_carry_a_build_or_commit(self):
         for bad in ("https://", "uia:", "baseline:", "listcommands:"):
             self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
             self.assertTrue(any("source" in p and "does not match" in p for p in self.problems()), bad)
-
-    def test_web_source_needs_a_host(self):
-        for bad in ("https://?query", "https://#fragment", "https://-bad.example/x"):
-            self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
-            self.assertTrue(any("source" in p and "does not match" in p for p in self.problems()), bad)
-        for good in ("https://support.microsoft.com/x", "https://example.com?q=1", "http://localhost:8080/a"):
-            self.write("word/ribbon.json", [TAB, dict(PASTE, source=good)])
-            self.assertEqual(self.problems(), [], good)
 
     def test_numbers_are_checked_exactly(self):
         (self.inv / "word" / "ribbon.json").write_text(
@@ -167,7 +180,6 @@ class Inventory(unittest.TestCase):
             ".capturedFrom: empty": dict(BOLD, capturedFrom=""),
             ".shortcut: empty": dict(BOLD, shortcut=""),
             ".size: 'huge' is not one of": dict(BOLD, size="huge"),
-            ".screentip: missing title": dict(BOLD, screentip={"description": "x"}),
             ".bounds: unknown field z": dict(BOLD, bounds={"x": 1, "y": 2, "width": 3, "height": 4, "z": 5}),
             ".kind: 'widget' is not one of": dict(BOLD, kind="widget"),
             ".baselineMissing: expected boolean": dict(BOLD, baselineMissing="yes"),
@@ -198,8 +210,7 @@ class Inventory(unittest.TestCase):
         self.assertTrue(any("parent word.home is ambiguous" in p for p in self.problems(other)))
 
     def test_require_behaviour_refuses_blank_sentence(self):
-        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Bold.", source="https://support.microsoft.com/x"),
-                                        dict(PASTE, behaviour=" ", source="https://support.microsoft.com/y")])
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Heavy type."), dict(PASTE, behaviour=" ")])
         problems = self.problems(behaviour=True)
         self.assertTrue(any("behaviour" in p for p in problems))
 
