@@ -120,8 +120,9 @@ def publish(files, write=None, rename=os.replace, link=os.link):
                 raise OSError(f"{tmp}: read-back differs from what was written")
         for path in files:
             if path.is_file():
-                aside[path] = path.with_name(path.name + f".{os.getpid()}.old")
-                link(path, aside[path])  # a second name for the original: the destination never goes missing
+                backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
+                link(path, backup)  # a second name for the original: the destination never goes missing
+                aside[path] = backup  # registered only once it exists, so a rollback restores the original
             rename(staged[path], path)
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)

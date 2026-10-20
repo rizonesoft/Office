@@ -203,24 +203,32 @@ def merge(existing, captured):
     """Captured records refresh `bounds`, `order` and the profile they were taken under; every other field of an
     existing record (behaviour, source and anything written by hand) is kept, and records not captured stay."""
     refreshed = ("bounds", "order", "captureProfile", "size")
-    by_id = {r["id"]: r for r in captured}
-    by_uia = {(r.get("parent"), r["uiaId"]): r for r in captured if r.get("uiaId")}
-    out, seen = [], set()
-    for rec in existing:
-        new = by_uia.get((rec.get("parent"), rec.get("uiaId"))) if rec.get("uiaId") else None
-        if new is None:
-            new = by_id.get(rec.get("id"))
-            if new is not None and new.get("uiaId") and rec.get("uiaId") and new["uiaId"] != rec["uiaId"]:
-                new = None  # the same id now names a different control: never move annotations across
-        if new is None:
-            out.append(rec)
+    keep = {r.get("id"): r for r in existing}
+    mapping, matched, out_by_id = {}, set(), {}
+    for new in captured:  # parents come before their children, so a parent's mapping is known first
+        parent = mapping.get(new.get("parent"), new.get("parent"))
+        old = next((r for r in existing if new.get("uiaId") and r.get("uiaId") == new["uiaId"]
+                    and r.get("parent") == parent and r["id"] not in matched), None)
+        if old is None:
+            same = keep.get(new["id"])
+            if same is not None and same["id"] not in matched and same.get("parent") == parent \
+                    and not (same.get("uiaId") and new.get("uiaId") and same["uiaId"] != new["uiaId"]):
+                old = same  # the same id still names the same control
+        if old is not None:
+            matched.add(old["id"])
+            mapping[new["id"]] = old["id"]
+            kept = {k: v for k, v in old.items() if k not in refreshed}
+            kept.update({k: new[k] for k in refreshed if k in new})
+            out_by_id[old["id"]] = kept
             continue
-        kept = {k: v for k, v in rec.items() if k not in refreshed}
-        kept.update({k: new[k] for k in refreshed if k in new})
-        out.append(kept)
-        seen.add(new["id"])
-    taken = {r.get("id") for r in out}
-    out += [r for r in captured if r["id"] not in seen and r["id"] not in taken]
+        rid, n = new["id"], 1
+        while rid in keep or rid in out_by_id:  # a different control holds this id: give the new one its own
+            n += 1
+            rid = f"{new['id']}-{n}"
+        mapping[new["id"]] = rid
+        out_by_id[rid] = dict(new, id=rid, **({"parent": parent} if parent else {}))
+    out = [out_by_id.get(r["id"], r) for r in existing]
+    out += [r for rid, r in out_by_id.items() if rid not in keep]
     return out
 
 
@@ -377,6 +385,21 @@ class Win:
             return None
         return value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF
 
+    def unlocked(self):
+        """Whether the input desktop is the user's own: a locked or secure desktop does not show the real windows,
+        so pixels read then say nothing about the app."""
+        ct, wt = self.ct, self.wt
+        desk = self.user32.OpenInputDesktop(0, False, 0x0001)  # DESKTOP_READOBJECTS
+        if not desk:
+            return False
+        try:
+            buf = ct.create_unicode_buffer(256)
+            needed = wt.DWORD()
+            ok = self.user32.GetUserObjectInformationW(desk, 2, buf, ct.sizeof(buf), ct.byref(needed))  # UOI_NAME
+            return bool(ok) and buf.value.lower() == "default"
+        finally:
+            self.user32.CloseDesktop(desk)
+
     def raise_(self, hwnd, topmost):
         self.user32.SetWindowPos(hwnd, -1 if topmost else -2, 0, 0, 0, 0, 0x0013)
 
@@ -426,26 +449,40 @@ def profile_problems(state, monitor, language, ribbon_height, title_pixels):
     if ribbon_height < 60:
         problems.append("the ribbon is not always shown")
     if not title_pixels or any(p is None or min(p) < 235 for p in title_pixels):
-        problems.append("the Office theme is not White (the title bar is not white)")
+        problems.append("the Office theme is not White (the title bar is not white, or the screen is locked)")
     return problems
 
 
 class Launched:
     """An app instance this tool started, with its top-level window and its process."""
 
-    def __init__(self, key, dispatch=None):
+    def __init__(self, key, dispatch=None, starter=None, owner=None):
         row, exe, progid, separate = APPS[key]
         self.key, self.row, self.exe = key, row, exe
         if key == "outlook":
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
         import win32com.client
-        if not separate and self.running(exe):
-            raise Unsafe(f"{exe} is running and allows one instance only, so the tool would drive the operator's "
-                         f"own window; close {exe} first")
+        self.proc, self.created, self.owned, self.started = None, [], False, None
+        if not separate:
+            # One instance only: start the process ourselves, then use the app only if its window belongs to that
+            # very process. An instance the operator opened in between (empty or not) is never touched.
+            if self.running(exe):
+                raise Unsafe(f"{exe} is running and allows one instance only, so the tool would drive the operator's "
+                             f"own window; close {exe} first")
+            if key == "project":
+                raise Unsafe("Project shows no window before a project exists, so ownership cannot be proven before "
+                             "the tool creates one; its capture is built in D02 T01 §13")
+            self.started = (starter or start_process)(exe)
         self.app = (dispatch or (win32com.client.DispatchEx if separate else win32com.client.Dispatch))(progid)
-        self.proc, self.created, self.owned = None, [], False
-        if self.open_documents():
+        if self.started is not None:
+            proc = (owner or OwnProcess)(Win().top(self.window_handle()), exe)
+            if proc.pid != self.started:
+                proc.close()
+                self.app = None
+                raise Unsafe(f"the {exe} window belongs to process {proc.pid}, not the one this tool started")
+            self.proc = proc
+        elif self.open_documents():
             # Dispatch handed back an instance that already holds documents: someone else's. Touch nothing.
             self.app = None
             raise Unsafe(f"{exe} already holds documents, so it is not an instance this tool started")
@@ -454,7 +491,8 @@ class Launched:
             self.app.Visible = True
             self.created.append(self.new_document())
             self.hwnd = Win().top(self.window_handle())
-            self.proc = OwnProcess(self.hwnd, exe)
+            if self.proc is None:
+                self.proc = (owner or OwnProcess)(self.hwnd, exe)
         except Exception:
             self.close()
             raise
@@ -495,7 +533,7 @@ class Launched:
         holds nothing else; and confirm its process has exited."""
         if not self.owned:
             return
-        others = 0
+        others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         try:
             for doc in self.created:
                 if self.key == "word":
@@ -506,19 +544,35 @@ class Launched:
                     doc.Saved = True
                     doc.Close()
             others = self.open_documents()
+        except Exception as exc:  # reported below: the instance is left running and the run refuses
+            failure = f"{type(exc).__name__}: {exc}"
         finally:
             try:
-                if not others:
+                if others == 0:
                     self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()
             finally:
-                gone = self.proc is None or (not others and self.proc.exited(wait))
+                gone = self.proc is None or (others == 0 and self.proc.exited(wait))
                 if self.proc is not None:
                     self.proc.close()
         if others:
             raise Refused(f"the {self.exe} instance holds {others} document(s) this tool did not create, so it was "
                           "left running")
+        if others is None:
+            raise Refused(f"the {self.exe} instance's documents could not be closed and counted ({failure}), so it "
+                          "was left running")
         if not gone:
             raise Refused(f"the {self.exe} instance this tool started did not exit")
+
+
+def start_process(exe):
+    """Start one Office program from the installed build's folder and return its process id."""
+    import subprocess
+    import winreg
+    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Office\ClickToRun\Configuration") as key:
+        root = winreg.QueryValueEx(key, "InstallationPath")[0]
+    child = subprocess.Popen([str(Path(root) / "root" / "Office16" / exe)])
+    time.sleep(8)  # the program registers its COM server once it is up
+    return child.pid
 
 
 def wait_for(test, seconds=5.0, step=0.2):
@@ -531,12 +585,12 @@ def wait_for(test, seconds=5.0, step=0.2):
     return test()
 
 
-def popup_items(root):
+def popup_items(root, popup_roots=()):
     """The items of the menu or gallery that just opened, once their count is stable. Office exposes an open menu as
     a Menu element in the app window's own tree (menus nest, so items are taken once each by runtime id)."""
     def read():
         # Word nests an empty Menu shell around the menus that hold the items, so every open Menu is read.
-        menus = [e for e in descendants(root, 30) if e.control_type == "Menu"]
+        menus = [e for e in descendants(root, 30) if e.control_type == "Menu"] + list(popup_roots)
         seen, items = set(), []
         for e in (d for menu in menus for d in descendants(menu, 12)):
             if e.control_type in ITEM_TYPES and e.name and e.runtime_id() not in seen:
@@ -576,16 +630,18 @@ def capture(args, launched, uia, win):
         toggle = find(root, lambda e: e.automation_id == "SingleLineRibbonToggle", depth=20)
         if toggle is None:
             raise Unsafe("this build offers no Simplified Ribbon switch (SingleLineRibbonToggle not found)")
-        raise Unsafe("the Simplified Ribbon switch exists but switching it is not yet captured; record its steps "
-                     "in design/inventory/REFERENCE.md first (D02 T01 §2 Layout choices)")
+        raise Unsafe("the Simplified Ribbon switch exists here, but driving it is built in D02 T01 §15, the first "
+                     "app that offers it; until then no Simplified capture is written")
     state = win.state(launched.hwnd)
     left, top, right, _ = state["window"]
-    win.raise_(launched.hwnd, True)
-    try:
-        time.sleep(0.5)
-        pixels = [win.pixel(left + int((right - left) * f), top + 14) for f in (0.35, 0.45, 0.55, 0.65)]
-    finally:
-        win.raise_(launched.hwnd, False)
+    pixels = []
+    if win.unlocked():  # a locked desktop shows no real window, so its pixels are no evidence of the theme
+        win.raise_(launched.hwnd, True)
+        try:
+            time.sleep(0.5)
+            pixels = [win.pixel(left + int((right - left) * f), top + 14) for f in (0.35, 0.45, 0.55, 0.65)]
+        finally:
+            win.raise_(launched.hwnd, False)
     ribbon_h = lower.rect[3] - lower.rect[1] if lower.rect else 0
     problems = profile_problems(state, monitor, launched.language(), ribbon_h, pixels)
     identifiers = baseline_ids(args.app)
@@ -639,7 +695,11 @@ def expand_all(records, lower, ctx, launched, uia, win):
         before = win.popups(launched.proc.pid)
         target.expand()
         try:
-            items = popup_items(uia.element(launched.hwnd))
+            time.sleep(0.3)
+            opened = [h for h in win.popups(launched.proc.pid) if h not in before]
+            items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened])
+            if not items:
+                ctx.notes.append(f"{rec['label']!r} opened but no item was read from it")
         finally:
             close_popup(target, lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
                         or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,

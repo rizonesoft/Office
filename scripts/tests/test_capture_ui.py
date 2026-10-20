@@ -11,6 +11,13 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("capture_ui", SCRIPTS / "capture-ui.py")
 cu = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cu)
+
+
+def _never_start(exe):
+    raise AssertionError(f"a test tried to start {exe}")
+
+
+cu.start_process = _never_start  # every launch in these tests is injected; a real program must never start
 spec = importlib.util.spec_from_file_location("check_inventory", SCRIPTS / "check-inventory.py")
 ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ci)
@@ -158,6 +165,24 @@ class Merge(unittest.TestCase):
                          {"First": ("About First.", 1), "Second": ("About Second.", 0)})
         self.assertEqual(len(out), 2)
 
+    def test_children_follow_their_parent_through_a_remapped_id(self):
+        old = [{"id": "word.v.g.x", "parent": "word.v.g", "uiaId": "First", "label": "X", "behaviour": "About First."},
+               {"id": "word.v.g.x-2", "parent": "word.v.g", "uiaId": "Second", "label": "X"}]
+        new = [{"id": "word.v.g.x", "parent": "word.v.g", "uiaId": "Second", "label": "X"},
+               {"id": "word.v.g.x.item", "parent": "word.v.g.x", "label": "Item"},
+               {"id": "word.v.g.x-2", "parent": "word.v.g", "uiaId": "First", "label": "X"}]
+        out = {r["id"]: r for r in cu.merge(old, new)}
+        item = next(r for r in out.values() if r["label"] == "Item")
+        self.assertEqual(item["parent"], "word.v.g.x-2")  # Second keeps its own id, and its new item hangs under it
+        self.assertEqual(out["word.v.g.x"]["behaviour"], "About First.")
+
+    def test_a_new_control_on_a_taken_id_is_kept_under_its_own(self):
+        old = [{"id": "word.home.g.x", "parent": "word.home.g", "uiaId": "Old", "label": "X", "behaviour": "Old one."}]
+        new = [{"id": "word.home.g.x", "parent": "word.home.g", "uiaId": "New", "label": "X"}]
+        out = cu.merge(old, new)
+        self.assertEqual(sorted((r["id"], r["uiaId"]) for r in out),
+                         [("word.home.g.x", "Old"), ("word.home.g.x-2", "New")])
+
 
 class Profile(unittest.TestCase):
     GOOD = {"window": (-1928, 1072, 8, 2120), "dpi": 96, "zoomed": True}
@@ -255,25 +280,67 @@ class FakeApp:
         self.quit = True
 
 
+class Proc:
+    def __init__(self, pid):
+        self.pid, self.closed = pid, False
+
+    def exited(self, seconds):
+        return True
+
+    def close(self):
+        self.closed = True
+
+
 class Launch(unittest.TestCase):
-    def launched(self, app, key="powerpoint"):
-        real = cu.Launched.running, cu.Win, cu.OwnProcess
+    def launched(self, app, key="powerpoint", started=7, window_pid=7):
+        real = cu.Launched.running, cu.Win
         cu.Launched.running = staticmethod(lambda exe: False)
         cu.Win = lambda: type("W", (), {"top": lambda self, h: h})()
-        cu.OwnProcess = lambda hwnd, exe: type("P", (), {"pid": 1, "exited": lambda self, s: True,
-                                                         "close": lambda self: None})()
         app.HWND = 5
         app.ActiveWindow = type("AW", (), {"Hwnd": 5})()
         try:
-            return cu.Launched(key, dispatch=lambda progid: app)
+            return cu.Launched(key, dispatch=lambda progid: app, starter=lambda exe: started,
+                               owner=lambda hwnd, exe: Proc(window_pid))
         finally:
-            cu.Launched.running, cu.Win, cu.OwnProcess = real
+            cu.Launched.running, cu.Win = real
 
     def test_an_instance_that_already_holds_documents_is_never_used_or_closed(self):
         app = FakeApp(count=1)
-        with self.assertRaises(cu.Unsafe):
-            self.launched(app)
+        real = cu.Launched.running, cu.Win
+        cu.Launched.running = staticmethod(lambda exe: False)
+        try:
+            with self.assertRaises(cu.Unsafe):
+                cu.Launched("word", dispatch=lambda progid: app, owner=lambda hwnd, exe: Proc(7))
+        finally:
+            cu.Launched.running, cu.Win = real
         self.assertEqual((app.count, app.quit, app.made), (1, False, []))
+
+    def test_an_empty_instance_from_another_process_is_never_used(self):
+        app = FakeApp(count=0)
+        with self.assertRaises(cu.Unsafe):
+            self.launched(app, started=7, window_pid=99)  # the operator's PowerPoint answered the COM call
+        self.assertEqual((app.count, app.quit, app.made), (0, False, []))
+
+    def test_project_is_refused_until_ownership_can_be_proven(self):
+        real = cu.Launched.running
+        cu.Launched.running = staticmethod(lambda exe: False)
+        try:
+            with self.assertRaises(cu.Unsafe):
+                cu.Launched("project", dispatch=lambda progid: self.fail("dispatched"), starter=lambda exe: 7)
+        finally:
+            cu.Launched.running = real
+
+    def test_an_instance_whose_documents_cannot_be_counted_is_left_running(self):
+        app = FakeApp(count=0)
+        launched = self.launched(app)
+
+        def broken():
+            raise OSError("RPC call failed")
+
+        launched.open_documents = broken
+        with self.assertRaises(cu.Refused):
+            launched.close()
+        self.assertFalse(app.quit)
 
     def test_only_the_tools_own_document_is_closed_and_a_shared_instance_is_left_running(self):
         app = FakeApp(count=0)
@@ -328,6 +395,35 @@ class Writes(unittest.TestCase):
             code = cu.main(["--app", "visio", "--tab", "Home", "--out", str(Path(tmp) / "v.json")], launcher=missing)
         self.assertEqual(code, 2)
         self.assertIn("VISIO.EXE could not be started", err.getvalue())
+
+    def test_a_leftover_backup_name_never_replaces_the_original(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ribbon.json"
+            path.write_text("original", encoding="utf-8")
+            for stale in (Path(tmp) / "ribbon.json.1.old",):
+                stale.write_text("stale", encoding="utf-8")
+
+            def link_fails(src, dst):
+                raise OSError("link refused")
+
+            with self.assertRaises(OSError):
+                cu.publish({path: "new"}, link=link_fails)
+            self.assertEqual(path.read_text(encoding="utf-8"), "original")
+
+    def test_a_locked_desktop_is_not_the_users_desktop(self):
+        win = cu.Win.__new__(cu.Win)
+        import ctypes
+        win.ct, win.wt = ctypes, ctypes.wintypes if hasattr(ctypes, "wintypes") else __import__("ctypes.wintypes").wintypes
+        win.user32 = type("U", (), {"OpenInputDesktop": lambda self, *a: 0})()
+        self.assertFalse(win.unlocked())
+
+    def test_a_failed_pixel_read_is_not_white(self):
+        win = cu.Win.__new__(cu.Win)
+        win.user32 = type("U", (), {"GetDC": lambda self, h: 1, "ReleaseDC": lambda self, h, dc: 1})()
+        win.gdi32 = type("G", (), {"GetPixel": lambda self, dc, x, y: 0xFFFFFFFF})()
+        self.assertIsNone(win.pixel(10, 10))
+        win.gdi32 = type("G", (), {"GetPixel": lambda self, dc, x, y: 0x00FFFFFF})()
+        self.assertEqual(win.pixel(10, 10), (255, 255, 255))
 
     def test_the_destination_never_goes_missing_during_a_replace(self):
         import os
