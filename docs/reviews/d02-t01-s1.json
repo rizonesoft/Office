@@ -1,0 +1,28 @@
+{
+  "ref": "D02 T01 \u00a71",
+  "title": "Inventory Schema and Checker",
+  "implementation_sha": "602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s1.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_inventory.py\" -> \"Ran 29 tests ... OK\"",
+    "python scripts/check-inventory.py -> exit 0",
+    "python scripts/todo-graph.py validate -> \"valid: 75 sections\""
+  ]
+}

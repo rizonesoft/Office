@@ -37,7 +37,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Inventory schema and checker | D00 T01 §1 | [ ] |
+| 1 | §1 | Inventory schema and checker | D00 T01 §1 | [x] |
 | 2 | §2 | Reference build and capture configuration | -- | [ ] |
 | 3 | §3 | UI Automation capture tool | §1, §2 | [ ] |
 | 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
@@ -83,6 +83,9 @@ Every inventoried element is one JSON record with a stable dotted id (`word.home
 - [x] Commit: `inventory: add element schema and checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` reports at least 6 tests and `OK`.
+
+> **Verified:** 2026-10-20 | §1 | 602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c
+> **Review:** `docs/reviews/d02-t01-s1.json`
 
 ## 2. Reference Build and Capture Configuration
 

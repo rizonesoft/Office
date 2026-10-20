@@ -51,7 +51,7 @@ Sections: 34 | Checklist items: 216
 
 | Status | Reference   | Deliverable                                               | Needs                                 | Items |
 | ------ | ----------- | --------------------------------------------------------- | ------------------------------------- | ----- |
-| [ ]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
+| [x]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
 | [ ]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                  | 5     |
 | [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 12    |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
@@ -116,6 +116,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 1/75 verified sections, 8 ready to run now.
+Progress: 2/75 verified sections, 8 ready to run now.
 
 Checklist: 15/419 items completed (includes Commit items).
