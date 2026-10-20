@@ -120,6 +120,15 @@ class Inventory(unittest.TestCase):
         problems = self.problems()
         self.assertTrue(any(".extra.items[0]: link" in p for p in problems), problems)
 
+    def test_every_string_field_carries_the_link_rule(self):
+        schema = ci.load(ci.SCHEMA)
+        props = schema["$defs"]["record"]["properties"]
+        strings = [k for k, v in props.items() if v.get("type") == "string"]
+        self.assertIn("behaviour", strings)
+        self.assertNotIn("screentip", props)
+        missing = [k for k in strings if {"$ref": "#/$defs/noLink"} not in props[k].get("allOf", [])]
+        self.assertEqual(missing, [])
+
     def test_the_schema_alone_refuses_a_link(self):
         schema = ci.load(ci.SCHEMA)
         for field, value in (("behaviour", "See HTTPS://example.com/help"), ("label", "www.example.com"),
