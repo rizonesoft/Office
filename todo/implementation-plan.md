@@ -53,12 +53,13 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 34 | Checklist items: 216
+Sections: 35 | Checklist items: 222
 
 | Status | Reference   | Deliverable                                               | Needs                                 | Items |
 | ------ | ----------- | --------------------------------------------------------- | ------------------------------------- | ----- |
 | [x]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
 | [ ]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                  | 5     |
+| [ ]    | D02 T01 §21 | Microsoft-Free Inventory Model                            | none                                  | 6     |
 | [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 12    |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                  | 6     |
@@ -122,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 2/81 verified sections, 10 ready to run now.
+Progress: 2/82 verified sections, 10 ready to run now.
 
-Checklist: 15/453 items completed (includes Commit items).
+Checklist: 15/459 items completed (includes Commit items).

@@ -10,13 +10,13 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 
 > **Goal:** "Feature by feature, in the same place" becomes measurable. A machine-readable inventory in `design/inventory/` lists every visible element of the six reference Microsoft 365 apps (tabs, groups, commands in order, control type and size, contextual tabs, Backstage pages, panes, status bar items, views, dialogs reachable from the ribbon, and keyboard shortcuts) with its position captured through UI Automation at a fixed window size. Every later interface and application section cites inventory ids, and the coverage report shows how much of the inventory the suite implements.
 
-> **Current state:** Measured 2026-10-20. No inventory, schema or capture tool exists. The operator's Windows 11 Pro host has Microsoft 365 Apps build 16.0.20430.20182, Current Channel, x64, licensed as O365BusinessRetail, ProjectProRetail and VisioProRetail, with Word, Excel, PowerPoint, Visio, Project and Outlook all installed; the operator also uses Word interactively, so captures must never touch windows they did not open. No UI Automation Python package is installed yet. Microsoft publishes every control identifier per app at https://github.com/OfficeDev/office-fluent-ui-command-identifiers (MIT, last updated 2024-03-18), used as the completeness baseline (§19). The owner decided on 2026-10-20 to inventory both the Classic and the Simplified Ribbon from the start, and to use classic Outlook as the Mail reference (§2).
+> **Current state:** Measured 2026-10-20. No inventory, schema or capture tool exists. The operator's Windows 11 Pro host has Microsoft 365 Apps build 16.0.20430.20182, Current Channel, x64, licensed as O365BusinessRetail, ProjectProRetail and VisioProRetail, with Word, Excel, PowerPoint, Visio, Project and Outlook all installed; the operator also uses Word interactively, so captures must never touch windows they did not open. No UI Automation Python package is installed yet. Microsoft publishes every control identifier per app in its MIT-licensed Office Fluent UI control identifier lists (last updated 2024-03-18), used as the completeness baseline (§19). **Rule, 2026-10-20 (owner):** the inventory holds facts only (control names, positions, types, ids, shortcuts) with behaviour in our own words; no Microsoft text (ScreenTip descriptions, help prose) and no Microsoft links anywhere in the repository (§21). The owner decided on 2026-10-20 to inventory both the Classic and the Simplified Ribbon from the start, and to use classic Outlook as the Mail reference (§2).
 
 ## Inputs
 
 - A licensed Microsoft 365 Apps install on the operator's Windows host (Word, Excel, PowerPoint, Outlook) plus Visio Plan 2 and Project Plan 3 or Project Professional: the capture source.
-- Microsoft Support and Microsoft Learn pages for each command, Backstage page and shortcut list (for example "Keyboard shortcuts in Word"): the behaviour source cited per element.
-- Windows UI Automation (UIA) tree: names, control types, automation ids, ScreenTip text and bounding rectangles of ribbon elements.
+- The reference apps themselves: each behaviour sentence is written in our own words from using the control. Microsoft's help pages may be read to learn a feature, but none of their text or links is stored (**Corrected 2026-10-20:** said they were the cited source per element).
+- Windows UI Automation (UIA) tree: names, control types, automation ids and bounding rectangles of ribbon elements. ScreenTip descriptions are Microsoft prose and are not recorded (**Corrected 2026-10-20**).
 - Office Fluent UI control identifier lists (`<app>controls.xlsx`, Microsoft 365 Current Channel, MIT): every tab, group and control with its `idMso` and type, including controls not shown by default. The completeness baseline that the live capture is checked against.
 - Word's built-in `ListCommands` command (through COM, `Application.ListCommands(True)`): every Word command with its keyboard assignment, including commands with no ribbon button.
 - Legal boundary: the inventory records names, positions and behaviour as text and numbers only. It never commits Microsoft icons, screenshots or artwork; screenshots stay in `R:\scratch`.
@@ -39,7 +39,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Inventory schema and checker | D00 T01 §1 | [x] |
 | 2 | §2 | Reference build and capture configuration | -- | [ ] |
-| 3 | §3 | UI Automation capture tool | §1, §2 | [ ] |
+| 3 | §3 | UI Automation capture tool | §1, §2, §21 | [ ] |
 | 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
 | 5 | §5 | Word ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 6 | §6 | Word Backstage, panes, status bar and dialogs inventory | §5 | [ ] |
@@ -55,8 +55,9 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 16 | §16 | Outlook modules, panes, views and dialogs inventory | §15 | [ ] |
 | 17 | §17 | Keyboard shortcut inventory for six apps | §1, §20 | [ ] |
 | 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
-| 19 | §19 | Microsoft control identifier baseline import | §1 | [ ] |
-| 20 | §20 | Word command catalogue from ListCommands | §1, §2 | [ ] |
+| 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [ ] |
+| 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [ ] |
+| 21 | §21 | Microsoft-free inventory model | §1 | [ ] |
 
 ## 1. Inventory Schema and Checker
 
@@ -126,7 +127,7 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 - [ ] Add a UIA walker in `scripts/capture-ui.py` that emits tab, group and control records with `label`, `controlType`, `order` and `bounds` relative to the client area. Done when: the Word Home tab output passes `python scripts/check-inventory.py`. Cheaper substitute: capturing screen coordinates that change with window position.
 - [ ] Map UIA control types and ribbon patterns to schema `controlType` values in `scripts/capture-ui.py` (`SplitButton`, `MenuItem`, gallery `List`). Done when: Paste is captured as `splitButton` and Styles as `gallery`. Cheaper substitute: recording every control as `button`.
 - [ ] Add `--tab <name>` and `--all-tabs` in `scripts/capture-ui.py` that select tabs through the UIA `SelectionItem` pattern. Done when: `--all-tabs` captures every tab listed in the app's ribbon. Cheaper substitute: simulating mouse clicks at fixed coordinates.
-- [ ] Record each control's ScreenTip title and description from the UIA `Name`, `HelpText` and `FullDescription` properties in `scripts/capture-ui.py` as `screentip` fields. Done when: Word Home Bold records its ScreenTip text. Cheaper substitute: leaving `behaviour` empty until someone writes it by hand.
+- [ ] Record only each control's name (its label, a functional fact) in `scripts/capture-ui.py`, and drop the UIA `HelpText` and `FullDescription` properties, which carry Microsoft's ScreenTip prose. Done when: a capture of Word Home holds no ScreenTip description and `python scripts/check-inventory.py` passes on it. Cheaper substitute: capturing the descriptions and filtering them out later. **Corrected 2026-10-20:** recorded ScreenTip titles and descriptions.
 - [ ] Add `--expand` in `scripts/capture-ui.py` that opens every drop-down, split-button menu and gallery on a tab, records its items in order, and closes it with Escape. Done when: the Word Home Paste menu and Styles gallery items are captured without a click left open. Cheaper substitute: top-level controls only.
 - [ ] Add `--keytips` in `scripts/capture-ui.py` that presses Alt and records KeyTip labels per control. Done when: Word Home Bold records keytip `1`. Cheaper substitute: typing KeyTips from memory.
 - [ ] Add a merge mode in `scripts/capture-ui.py` that updates `bounds` and `order` in an existing file without overwriting hand-written `behaviour` and `source`. Done when: re-running on an annotated file keeps the annotations. Cheaper substitute: regenerating files and losing annotations.
@@ -177,7 +178,7 @@ Every built-in Word tab (File, Home, Insert, Draw, Design, Layout, References, M
 - [ ] Capture each contextual tab into `design/inventory/word/ribbon.json` as `contextualTab` records with the trigger object in `behaviour`. Done when: all ten contextual tabs named in this section exist. Cheaper substitute: listing contextual tab names without groups.
 - [ ] Capture every drop-down and split-button menu one level deep (for example Paste options, Line and Paragraph Spacing, Borders) as child `control` records. Done when: the Borders menu lists every border command in order. Cheaper substitute: recording the top-level button only.
 - [ ] Capture galleries (Styles, Themes, Text Effects, Shape Styles) with their default first items and the gallery's expand behaviour. Done when: each gallery record names its expand control. Cheaper substitute: treating galleries as buttons.
-- [ ] Add `behaviour` and `source` to every Word ribbon control from Microsoft Support pages. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/word/ribbon.json` exits 0. Cheaper substitute: copying the control label into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every Word ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/word/ribbon.json` exits 0. **Corrected 2026-10-20:** said "from Microsoft Support pages". Cheaper substitute: copying the control label into `behaviour`.
 - [ ] Capture every Word tab in the Simplified Ribbon into `design/inventory/word/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Word ribbon and contextual tabs`
 
@@ -224,7 +225,7 @@ Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data,
 - [ ] Capture each contextual tab into `design/inventory/excel/ribbon.json` as `contextualTab` records. Done when: the twelve contextual tabs named in this section exist. Cheaper substitute: names without groups.
 - [ ] Capture the Formulas tab function library menus (Financial, Logical, Text, Date and Time, Lookup and Reference, Math and Trig, More Functions) with every function in order. Done when: each category lists its functions. Cheaper substitute: category names only, which hides the function surface.
 - [ ] Capture drop-down menus one level deep (Conditional Formatting, Format, Sort and Filter, Insert, Delete) as child `control` records. Done when: Conditional Formatting lists its rule families in order. Cheaper substitute: top-level buttons only.
-- [ ] Add `behaviour` and `source` to every Excel ribbon control. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/excel/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every Excel ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/excel/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Capture every Excel tab in the Simplified Ribbon into `design/inventory/excel/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Excel ribbon and contextual tabs`
 
@@ -270,7 +271,7 @@ Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, An
 - [ ] Create `R:\scratch\fixtures\powerpoint-contextual.pptx` with a shape, picture, table, chart, SmartArt, video, audio and equation. Done when: each object shows its contextual tab. Cheaper substitute: committing the fixture.
 - [ ] Capture each contextual tab as `contextualTab` records. Done when: the eleven contextual tabs named in this section exist. Cheaper substitute: names without groups.
 - [ ] Capture the Transitions and Animations galleries with every effect in order and its Effect Options menu. Done when: each effect lists its options. Cheaper substitute: gallery records without effects.
-- [ ] Add `behaviour` and `source` to every PowerPoint ribbon control. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/powerpoint/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every PowerPoint ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/powerpoint/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Capture every PowerPoint tab in the Simplified Ribbon into `design/inventory/powerpoint/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture PowerPoint ribbon and contextual tabs`
 
@@ -316,7 +317,7 @@ Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Revie
 - [ ] Create `R:\scratch\fixtures\visio-contextual.vsdx` with a container, picture, callout, data graphic and connector. Done when: each object shows its contextual tab. Cheaper substitute: committing the fixture.
 - [ ] Capture each contextual tab as `contextualTab` records with triggers. Done when: every contextual tab observed has groups. Cheaper substitute: names only.
 - [ ] Capture the Home tab Tools group (Pointer, Connector, Text, drawing tools) and the Design tab Themes, Variants and Layouts galleries. Done when: each tool and gallery item has a record. Cheaper substitute: top-level buttons only.
-- [ ] Add `behaviour` and `source` to every Visio ribbon control. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/visio/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every Visio ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/visio/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Record in `design/inventory/REFERENCE.md` whether the reference Visio build offers the Simplified Ribbon; if it does, capture it into `design/inventory/visio/ribbon-simplified.json` with `--layout simplified`. Done when: the reference file states the finding and any capture passes the checker. Cheaper substitute: assuming Visio has the same ribbon modes as Word.
 - [ ] Commit: `inventory: capture Visio ribbon and contextual tabs`
 
@@ -360,7 +361,7 @@ Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, p
 - [ ] Capture all built-in Project tabs into `design/inventory/project/ribbon.json`. Done when: the seven tabs each have groups. Cheaper substitute: Task only.
 - [ ] Capture the Format contextual tab once per active view (Gantt, Timeline, Task Usage, Resource Sheet, Network Diagram, Calendar) as distinct `contextualTab` records. Done when: each variant records its triggering view. Cheaper substitute: one Format tab record.
 - [ ] Capture the Report tab report gallery and the Report Design contextual tabs with a fixture report open. Done when: every built-in report name has a record. Cheaper substitute: report categories only.
-- [ ] Add `behaviour` and `source` to every Project ribbon control. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/project/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every Project ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/project/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Record in `design/inventory/REFERENCE.md` whether the reference Project build offers the Simplified Ribbon; if it does, capture it into `design/inventory/project/ribbon-simplified.json` with `--layout simplified`. Done when: the reference file states the finding and any capture passes the checker. Cheaper substitute: assuming Project has the same ribbon modes as Word.
 - [ ] Commit: `inventory: capture Project ribbon and contextual tabs`
 
@@ -406,7 +407,7 @@ Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item win
 - [ ] Capture the Calendar, People and Tasks module tabs under `outlook.calendar.*`, `outlook.people.*` and `outlook.tasks.*`. Done when: each module has its tabs. Cheaper substitute: assuming modules share the Mail ribbon.
 - [ ] Capture the new message window tabs (Message, Insert, Options, Draw, Format Text, Review, Help) under `outlook.compose.*`. Done when: each tab has groups. Cheaper substitute: the Message tab only.
 - [ ] Capture the read message, appointment, meeting request, contact and task window ribbons under their own id prefixes. Done when: five item window types each have tabs. Cheaper substitute: one generic item window.
-- [ ] Add `behaviour` and `source` to every Outlook ribbon control. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/outlook/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
+- [ ] Write a `behaviour` sentence in our own words for every Outlook ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/outlook/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Capture every Outlook tab in the Simplified Ribbon into `design/inventory/outlook/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons.
 - [ ] Commit: `inventory: capture Outlook module and item window ribbons`
 
@@ -445,7 +446,7 @@ Muscle memory is part of parity. Each app's published shortcut list becomes `sho
 
 **Build order:**
 
-1. Transcribe each Microsoft Support "Keyboard shortcuts in <app>" page into `design/inventory/<app>/shortcuts.json`. Done when: six files pass the checker.
+1. Record each app's default shortcuts as key chords with our own short action names into `design/inventory/<app>/shortcuts.json`; Microsoft's published shortcut lists may be read as a checklist, but none of their text or links is stored (**Corrected 2026-10-20:** said "transcribe"). Done when: six files pass the checker.
 
 - [ ] Transcribe Word shortcuts into `design/inventory/word/shortcuts.json` with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
 - [ ] Transcribe Excel shortcuts into `design/inventory/excel/shortcuts.json`. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
@@ -521,6 +522,28 @@ Word can list every command it has, with the keyboard shortcut assigned to each,
 - [ ] Commit: `inventory: capture Word command catalogue`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word/commands.json` exits 0 and the file holds at least 1,000 `command` records.
+
+## 21. Microsoft-Free Inventory Model
+
+The owner ruled on 2026-10-20 that the repository holds no Microsoft text and no Microsoft links: the inventory keeps facts only (control names, positions, types, ids, shortcuts), and every behaviour sentence is written in our own words. Section 1 (stamped) shipped a `screentip` field for captured ScreenTip prose, web URLs as behaviour sources, and a `--require-behaviour` gate that demanded a web source. This section replaces those three; §1's checklist stays as its stamped record.
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Change `design/inventory/schema.json` so records cannot hold ScreenTip prose or URLs. Done when: the schema refuses both.
+2. Change `scripts/check-inventory.py` to refuse links in any field and to gate behaviour without a source rule. Done when: the tests in the checklist pass and fail on the old behaviour.
+
+- [ ] Remove the `screentip` property from `design/inventory/schema.json`. Done when: a record carrying `screentip` fails with `unknown field screentip`. Cheaper substitute: keeping the field and promising not to fill it.
+- [ ] Restrict `source` in `design/inventory/schema.json` to capture provenance: `uia:<build>`, `baseline:<commit>` or `listcommands:<build>`. Done when: an `https://` source fails the pattern and `uia:16.0.20430.20182` passes. Cheaper substitute: a description that discourages links while the pattern still allows them.
+- [ ] Add `links()` in `scripts/check-inventory.py` refusing any string value in a record that contains `http://`, `https://` or `www.`. Done when: a behaviour sentence containing a URL fails with `link`. Cheaper substitute: checking only the `source` field.
+- [ ] Change `--require-behaviour` in `scripts/check-inventory.py` to require a non-blank behaviour sentence on every control, with no web-source rule. Done when: a control with a behaviour sentence and a `uia:` source passes, and one without behaviour fails. Cheaper substitute: leaving the web-source rule, which would force the links this rule forbids.
+- [ ] Update `scripts/tests/test_check_inventory.py`: fixtures use `uia:` sources only, add cases for a `screentip` field, an `https` source, a URL inside `behaviour`, and the new behaviour gate. Done when: the suite passes and each new case fails when its rule is disabled.
+- [ ] Commit: `inventory: keep Microsoft text and links out of the inventory model`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes, and `rg -n -i "https?://|microsoft\.com|screentip" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py` finds nothing except the `links()` rule's own pattern.
 
 ## Verification
 

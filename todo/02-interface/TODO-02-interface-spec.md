@@ -16,7 +16,7 @@ title: "TODO-02 -- Interface Specification"
 
 - `design/inventory/**` from D02 T01: element ids, order, size and `bounds` at the reference capture profile.
 - `docs/brand/icon-language.md` and `docs/brand/NAMES.md` from D01: palette, motif and names.
-- Fluent UI System Icons (MIT licence, https://github.com/microsoft/fluentui-system-icons), Lucide (ISC), Phosphor (MIT) and Tabler (MIT): candidate command glyph sources for §2.
+- Fluent UI System Icons (MIT licence, published by Microsoft on GitHub), Lucide (ISC), Phosphor (MIT) and Tabler (MIT): candidate command glyph sources for §2.
 - Selawik (SIL OFL 1.1, Microsoft's open fallback metric-compatible with Segoe UI), Inter (OFL) and Noto Sans (OFL): candidate UI fonts for §1. Segoe UI, Aptos and Calibri are Microsoft-licensed and never bundled.
 - WCAG 2.2 level AA: the accessibility bar for §13.
 - -> XREF: D02 T01 §4 -- the shell layout is measured from the shell chrome inventory
@@ -76,7 +76,7 @@ Tokens are the single source for every colour, size and font the interface uses,
 
 ## 2. Command Glyph Library Decision
 
-The ribbon needs roughly two thousand small command glyphs across six apps. Decision, 2026-10-20 (owner): Fluent UI System Icons (MIT, https://github.com/microsoft/fluentui-system-icons), the closest set to Office and compatible with the product's GPL-3.0-or-later licence; original glyphs are drawn in the same style only where the set has no match.
+The ribbon needs roughly two thousand small command glyphs across six apps. Decision, 2026-10-20 (owner): Fluent UI System Icons (MIT, published by Microsoft on GitHub), the closest set to Office and compatible with the product's GPL-3.0-or-later licence; original glyphs are drawn in the same style only where the set has no match.
 
 **Phase:** 2
 **Needs:** none

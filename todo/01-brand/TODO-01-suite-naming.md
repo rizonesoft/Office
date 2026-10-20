@@ -14,7 +14,7 @@ title: "TODO-01 -- Suite and App Naming"
 
 ## Inputs
 
-- Microsoft Trademark and Brand Guidelines: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks (Word, Excel, PowerPoint, Visio, Outlook, Microsoft 365, Microsoft Office and Office 365 are registered marks and are excluded; "Office" is used only inside "Rizonesoft Office", never alone, never with a Microsoft-style version year, and never with Microsoft's logo styling).
+- Microsoft's published Trademark and Brand Guidelines (read, not linked: the repository holds no Microsoft links) (Word, Excel, PowerPoint, Visio, Outlook, Microsoft 365, Microsoft Office and Office 365 are registered marks and are excluded; "Office" is used only inside "Rizonesoft Office", never alone, never with a Microsoft-style version year, and never with Microsoft's logo styling).
 - USPTO trademark search https://tmsearch.uspto.gov, EUIPO eSearch plus, and WIPO Global Brand Database: the registers for the §4 knockout screen.
 - Nice classes 9 (downloadable software) and 42 (software as a service): the classes every candidate is screened in.
 - -> XREF: D00 T01 §1 -- `scripts/check-design-doc.py` verifies every document this file writes

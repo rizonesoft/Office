@@ -76,7 +76,7 @@ GPLv3 for our code does not remove the duties of the components we ship. Qt's LG
 1. Write `THIRD-PARTY-NOTICES.md` with one entry per bundled component. Done when: every component in Current state has an entry with all fields.
 
 - [ ] Add the Plus Jakarta Sans entry (version 2.071, SIL OFL 1.1, https://github.com/tokotype/PlusJakartaSans, reserved font name rules) to `THIRD-PARTY-NOTICES.md`. Done when: the entry names version, licence, source and obligations. Cheaper substitute: a link without the licence text.
-- [ ] Add the Fluent UI System Icons entry (MIT, https://github.com/microsoft/fluentui-system-icons, pinned version) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
+- [ ] Add the Fluent UI System Icons entry (MIT, Microsoft's `fluentui-system-icons` repository, pinned version) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
 - [ ] Add the Qt 6 entry listing each module the product links, its licence (LGPLv3 or GPLv3), and how source is offered. Done when: every module in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Qt is LGPL", which hides GPL-only modules.
 - [ ] Add a "How this file is maintained" note in `THIRD-PARTY-NOTICES.md` naming D03 T01 §11's dependency policy as the gate for new entries. Done when: the note names the policy file. Cheaper substitute: adding entries only at release time.
 - [ ] Commit: `legal: add third-party notices`
