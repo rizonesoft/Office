@@ -1,0 +1,28 @@
+{
+  "ref": "D02 T01 \u00a73",
+  "title": "UI Automation Capture Tool",
+  "implementation_sha": "59a4e067a17b78e10346424b33e1e43db8704b63",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s3.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python scripts/capture-ui.py --app word --tab Home --out R:\\scratch\\word-home.json -> exit 0, 55 records",
+    "python scripts/check-inventory.py R:\\scratch\\word-home.json -> exit 0",
+    "python -m unittest discover -s scripts/tests -p \"test_capture_ui.py\" -> \"Ran 38 tests ... OK\""
+  ]
+}

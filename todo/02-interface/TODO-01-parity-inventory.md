@@ -39,7 +39,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Inventory schema and checker | D00 T01 §1 | [x] |
 | 2 | §2 | Reference build and capture configuration | -- | [x] |
-| 3 | §3 | UI Automation capture tool | §1, §2, §21 | [ ] |
+| 3 | §3 | UI Automation capture tool | §1, §2, §21 | [x] |
 | 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
 | 5 | §5 | Word ribbon and contextual tabs inventory | §3, §19 | [ ] |
 | 6 | §6 | Word Backstage, panes, status bar and dialogs inventory | §5 | [ ] |
@@ -140,9 +140,12 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 - [x] Add a merge mode in `scripts/capture-ui.py` that updates `bounds` and `order` in an existing file without overwriting hand-written `behaviour` and `source`. Done when: re-running on an annotated file keeps the annotations. Cheaper substitute: regenerating files and losing annotations.
 - [x] Add `--layout classic|simplified` in `scripts/capture-ui.py`, writing `ribbon.json` or `ribbon-simplified.json`. Done when: the same tab captured in both layouts produces two files that pass the checker. **Corrected 2026-10-20:** Word build 16.0.20430.20182 has no Classic or Simplified switch, so `--layout simplified` exits 2 naming the missing `SingleLineRibbonToggle`; the switching itself is built where an app offers it. -> XREF: D02 T01 §15 Cheaper substitute: deriving the Simplified layout from the Classic capture.
 - [x] Write files atomically (temporary file then replace) in `scripts/capture-ui.py`. Done when: killing the process mid-write leaves the previous file intact. Cheaper substitute: writing in place.
-- [ ] Commit: `inventory: add UI Automation capture tool`
+- [x] Commit: `inventory: add UI Automation capture tool`
 
 **Test checkpoint:** `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` exits 0 and `python scripts/check-inventory.py R:\scratch\word-home.json` exits 0.
+
+> **Verified:** 2026-10-20 | §3 | 59a4e067a17b78e10346424b33e1e43db8704b63
+> **Review:** `docs/reviews/d02-t01-s3.json`
 
 ## 4. Shared Shell Chrome Inventory
 
