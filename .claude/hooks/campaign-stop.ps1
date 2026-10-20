@@ -108,7 +108,8 @@ try {
     if ($guard.PSObject.Properties.Name -contains 'run_id') { $runId = [string]$guard.run_id }
     foreach ($ml in ($text -split "`r?`n")) {
         if ($ml -match '^(## Closeout\b|PARKED\b)') {
-            if (-not $runId -or $ml -match ('\brun=' + [regex]::Escape($runId) + '\b')) { Allow }
+            # The id must end the token: run=abc must not match run=abc-old (a stale closeout).
+            if (-not $runId -or $ml -match ('\brun=' + [regex]::Escape($runId) + '(?![\w-])')) { Allow }
         }
     }
 
@@ -127,7 +128,8 @@ try {
         if ($LASTEXITCODE -eq 0) {
             try {
                 $parsed = ($ready -join "`n") | ConvertFrom-Json
-                if ($parsed -is [System.Array]) { $rows = $parsed } elseif ($null -eq $parsed) { $rows = @() } else { $rows = @($parsed) }
+                # Only a top-level JSON array is a ready list; null, blank or anything else is unknown, never empty.
+                if ($parsed -is [System.Array]) { $rows = $parsed } else { $rows = $null }
             } catch { $rows = $null }
         }
         if ($null -ne $rows -and $rows.Count -eq 0) { Allow }
@@ -259,6 +261,10 @@ catch {
             # handed over or ended while this hook waited gets the error in
             # a file of its own, never a write into its state (D00 T04
             # section 36 panel round 2).
+            # A payload that never parsed names no session, so this hook cannot know the run is its own: release
+            # the lock and let the error go to the append-only log, never into another session's state. (A
+            # malformed guard with a parsed payload is still recorded in the state file for the heartbeat.)
+            if ($lock2 -and $null -eq $event) { Exit-GuardLock $lock2; $lock2 = $null }
             if ($lock2 -and $guardPath -and $owner) {
                 $still2 = $null
                 if (Test-Path -LiteralPath $guardPath) {

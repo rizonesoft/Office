@@ -22,10 +22,13 @@ class GuardSelfTest(unittest.TestCase):
         self.assertIsNotNone(summary, output[-4000:])
         failures = [line.split()[1] for line in output.splitlines() if line.startswith("FAIL ")]
         self.assertEqual(len(failures), int(summary.group(2)), output[-4000:])
+        self.assertNotIn("Traceback", output, output[-4000:])
         if SKILL_TEXT_CASES_PENDING:
             unexpected = [name for name in failures if not name.startswith("skill-")]
             self.assertEqual(unexpected, [], output[-4000:])
             self.assertGreater(int(summary.group(1)), 100)
+            # The self-test exits 1 exactly when a case failed, so the exit code must agree with the summary.
+            self.assertEqual(result.returncode, 1 if failures else 0, output[-4000:])
         else:
             self.assertEqual(result.returncode, 0, output[-4000:])
 

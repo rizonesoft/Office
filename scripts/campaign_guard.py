@@ -326,7 +326,7 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
 
 
 def marker_run(line: str) -> str | None:
-    m = re.search(r"\brun=([0-9a-f]{6,})\b", line)
+    m = re.search(r"\brun=([0-9a-f]{6,})(?![\w-])", line)  # whole token: run=abc-old is not run=abc
     return m.group(1) if m else None
 
 
@@ -821,8 +821,11 @@ def _workspace(tmpd: str) -> str:
     # the test writes to ready.txt.
     with open(os.path.join(root, "scripts", "todo-graph.py"), "w", encoding="utf-8") as fh:
         fh.write("import json, os\n"
-                 "n = int(open(os.path.join(os.path.dirname(__file__), 'ready.txt')).read().strip())\n"
-                 "print(json.dumps([{'ref': 'D00 T01 \u00a73', 'title': 'Red CI repaired, not waited on'}] * n))\n")
+                 "n = open(os.path.join(os.path.dirname(__file__), 'ready.txt')).read().strip()\n"
+                 "if n == 'null':\n"
+                 "    print('null')\n"
+                 "else:\n"
+                 "    print(json.dumps([{'ref': 'D00 T01 \u00a73', 'title': 'Red CI repaired, not waited on'}] * int(n)))\n")
     _set_ready(root, 3)
     with open(os.path.join(root, RUN_FILE), "w", encoding="utf-8") as fh:
         fh.write("# Phase run: Phase 0\n\n## Sections log\n")
@@ -929,7 +932,40 @@ def _self_test() -> int:
         _set_ready(root, 0)
         code, out, _ = run_hook(root, SESSION)
         check("allow-when-nothing-is-runnable", code == 0 and out is None, str(out))
+        _set_ready(root, "null")
+        code, out, _ = run_hook(root, SESSION)
+        check("unknown-ready-output-still-blocks", isinstance(out, dict) and out.get("decision") == "block", str(out))
         _set_ready(root, 3)
+
+        guard_file = os.path.join(root, "build", "claude-campaign-guard.json")
+        with open(guard_file, encoding="utf-8") as fh:
+            saved_guard = json.load(fh)
+        live_run = "abcdef12"
+        with open(guard_file, "w", encoding="utf-8") as fh:
+            json.dump({**saved_guard, "run_id": live_run}, fh)
+        with open(os.path.join(root, RUN_FILE), "a", encoding="utf-8") as fh:
+            fh.write(f"\n## Closeout run={live_run}-old\n\nan older run\n")
+        code, out, _ = run_hook(root, SESSION)
+        check("a-closeout-for-a-longer-run-id-still-blocks", bool(live_run) and isinstance(out, dict)
+              and out.get("decision") == "block", f"{live_run} {out}")
+        check("marker-run-matches-whole-tokens", marker_run("PARKED x run=abcdef-old") is None
+              and marker_run("PARKED x run=abcdef reason") == "abcdef")
+        with open(os.path.join(root, RUN_FILE), "w", encoding="utf-8") as fh:
+            fh.write("# Phase run: Phase 0\n\n## Sections log\n")
+        with open(guard_file, "w", encoding="utf-8") as fh:
+            json.dump(saved_guard, fh)
+
+        state_path = os.path.join(root, "build", "claude-campaign-state.json")
+        with open(state_path, "w", encoding="utf-8") as fh:
+            json.dump({"fingerprint": "f", "blocks": 2, "trips": 1, "stalled": True, "stalled_at": "x"}, fh)
+        bad = subprocess.run([_powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", HOOK],
+                             input="{not json", capture_output=True, text=True, encoding="utf-8", errors="replace",
+                             env=dict(os.environ, CLAUDE_PROJECT_DIR=root), timeout=120)
+        with open(state_path, encoding="utf-8") as fh:
+            kept = json.load(fh)
+        check("a-bad-payload-never-rewrites-the-run-state", bad.returncode == 0 and kept.get("stalled") is True
+              and kept.get("stalled_at") == "x", f"{bad.returncode} {kept}")
+        os.remove(state_path)
 
         run_path = os.path.join(root, RUN_FILE)
         with open(run_path, "a", encoding="utf-8") as fh:
