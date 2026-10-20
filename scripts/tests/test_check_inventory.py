@@ -134,6 +134,47 @@ class Inventory(unittest.TestCase):
             self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
             self.assertTrue(any("source" in p and "does not match" in p for p in self.problems()), bad)
 
+    def test_web_source_needs_a_host(self):
+        for bad in ("https://?query", "https://#fragment", "https://-bad.example/x"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
+            self.assertTrue(any("source" in p and "does not match" in p for p in self.problems()), bad)
+        for good in ("https://support.microsoft.com/x", "https://example.com?q=1", "http://localhost:8080/a"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=good)])
+            self.assertEqual(self.problems(), [], good)
+
+    def test_numbers_are_checked_exactly(self):
+        (self.inv / "word" / "ribbon.json").write_text(
+            '[{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "order": 1.0000000000000001},'
+            ' {"id": "word.view", "app": "word", "kind": "tab", "label": "View", "order": -1e-400}]', encoding="utf-8")
+        problems = self.problems()
+        self.assertTrue(any("[0].order: expected integer" in p for p in problems), problems)
+        self.assertTrue(any("[1].order: expected integer" in p for p in problems), problems)
+
+    def test_shortcut_target_must_be_a_command_or_control(self):
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold", "shortcut": "Ctrl+B"}
+        self.write("word/ribbon.json", [TAB, GROUP, BOLD])
+        self.write("word/shortcuts.json", [dict(sc, target="word.home")])
+        self.assertTrue(any("is a tab, not a command or control" in p for p in self.problems()))
+        self.write("word/shortcuts.json", [dict(sc, target="word.home.font.bold")])
+        self.assertEqual(self.problems(), [])
+
+    def test_each_independent_constraint_refuses_alone(self):
+        cases = {
+            "captureProfile minLength": dict(BOLD, captureProfile=""),
+            "keytip minLength": dict(BOLD, keytip=""),
+            "idMso minLength": dict(BOLD, idMso=""),
+            "size enum": dict(BOLD, size="huge"),
+            "screentip required title": dict(BOLD, screentip={"description": "x"}),
+            "bounds unknown field": dict(BOLD, bounds={"x": 1, "y": 2, "width": 3, "height": 4, "z": 5}),
+            "app enum": dict(BOLD, id="paint.home.font.bold", app="paint"),
+            "kind enum": dict(BOLD, kind="widget"),
+            "baselineMissing type": dict(BOLD, baselineMissing="yes"),
+            "bounds type": dict(BOLD, bounds=[1, 2, 3, 4]),
+        }
+        for name, rec in cases.items():
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertNotEqual(self.problems(), [], name)
+
     def test_require_behaviour_refuses_blank_sentence(self):
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Bold.", source="https://support.microsoft.com/x"),
                                         dict(PASTE, behaviour=" ", source="https://support.microsoft.com/y")])
@@ -159,6 +200,16 @@ class Inventory(unittest.TestCase):
 
 
 class Cli(unittest.TestCase):
+    def test_validation_failure_exits_1(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "capture.json"
+            path.write_text(json.dumps([dict(TAB, kind="widget")]), encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = ci.main([str(path)])
+        self.assertEqual(code, 1)
+        self.assertIn("kind", out.getvalue())
+
     def test_missing_path_exits_2(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(ci.main(["Z:/no/such/inventory.json"]), 2)

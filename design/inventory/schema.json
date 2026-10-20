@@ -178,7 +178,7 @@
         },
         "source": {
           "type": "string",
-          "pattern": "^(https?://[^\\s/]+\\S*|(uia|baseline|listcommands):\\S+)$",
+          "pattern": "^(https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?([/?#]\\S*)?|(uia|baseline|listcommands):\\S+)$",
           "description": "Where the record came from: a web URL with a host, or uia:/baseline:/listcommands: followed by the build or commit."
         },
         "capturedFrom": {

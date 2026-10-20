@@ -12,6 +12,7 @@ checked alone). With --require-behaviour every control also needs a behaviour se
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
 """
 import argparse
+from decimal import Decimal
 import json
 from pathlib import Path
 import re
@@ -20,6 +21,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "design" / "inventory"
 SCHEMA = INVENTORY / "schema.json"
+# A web source has a real host: a letter or digit first, so https://?q and https://#f are refused.
+WEB_SOURCE = re.compile(r"^https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?([/?#]\S*)?$")
+TARGET_KINDS = ("command", "control")
 
 
 class Unreadable(Exception):
@@ -42,7 +46,7 @@ def type_ok(value, expected):
         "string": isinstance(value, str),
         # JSON Schema counts any number with no fractional part as an integer (1.0 and 1e0 included).
         "integer": (isinstance(value, int) and not isinstance(value, bool))
-                   or (isinstance(value, float) and value.is_integer()),
+                   or (isinstance(value, Decimal) and value.is_finite() and value == value.to_integral_value()),
         "boolean": isinstance(value, bool),
     }[expected]
 
@@ -63,7 +67,7 @@ def validate(value, schema, root, path="$"):
             problems.append(f"{path}: empty")
         if "pattern" in schema and not re.search(schema["pattern"], value):
             problems.append(f"{path}: {value!r} does not match {schema['pattern']}")
-    if isinstance(value, (int, float)) and not isinstance(value, bool) and value < schema.get("minimum", value):
+    if isinstance(value, (int, Decimal)) and not isinstance(value, bool) and value < schema.get("minimum", value):
         problems.append(f"{path}: below {schema['minimum']}")
     if isinstance(value, list) and "items" in schema:
         for i, item in enumerate(value):
@@ -92,7 +96,8 @@ def validate(value, schema, root, path="$"):
 
 def load(path):
     try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        # Decimal keeps JSON numbers exact: 1.0000000000000001 stays non-integral and -1e-400 stays negative.
+        data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal)
     # ValueError covers malformed JSON and integers past the conversion limit; RecursionError covers deep nesting.
     except (OSError, UnicodeDecodeError, ValueError, RecursionError) as exc:
         raise Unreadable(f"{path}: cannot read ({exc})") from None
@@ -121,11 +126,12 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
         data = load(f)
         records[resolved] = data if isinstance(data, list) else []
     problems = []
-    seen = {}
+    seen, kinds = {}, {}
     for resolved, f in universe.items():
         for i, rec in enumerate(records[resolved]):
             if isinstance(rec, dict) and isinstance(rec.get("id"), str):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
+                kinds[rec["id"]] = rec.get("kind")
     named_resolved = [f.resolve() for f in named]
     for resolved in named_resolved:
         f = universe[resolved]
@@ -147,12 +153,15 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if isinstance(parent, str) and parent not in seen:
                 problems.append(f"{where}: orphan, parent {parent} names no record")
             target = rec.get("target")
-            if isinstance(target, str) and target not in seen:
-                problems.append(f"{where}: target {target} names no record")
+            if isinstance(target, str):
+                if target not in kinds:
+                    problems.append(f"{where}: target {target} names no record")
+                elif kinds[target] not in TARGET_KINDS:
+                    problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
             if require_behaviour and rec.get("kind") == "control":
                 if not str(rec.get("behaviour", "")).strip():
                     problems.append(f"{where}: control {rid} has no behaviour")
-                if not re.match(r"^https?://[^\s/]+", str(rec.get("source", ""))):
+                if not WEB_SOURCE.match(str(rec.get("source", ""))):
                     problems.append(f"{where}: control {rid} has no web source for its behaviour")
     return problems
 
