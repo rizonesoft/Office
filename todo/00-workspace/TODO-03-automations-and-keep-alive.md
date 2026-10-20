@@ -2,7 +2,7 @@
 schema_version: 1
 id: automations-and-keep-alive
 domain: 00-workspace
-status: active
+status: done
 title: "TODO-03 -- Automations and Campaign Keep-Alive"
 ---
 
@@ -38,7 +38,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [x] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [x] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
-| 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [ ] |
+| 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
 
 ## 1. Automation Runner, Failure Alert and Installer
 
@@ -193,9 +193,12 @@ The phase 2 run was opened before the guard existed. This section moves it under
 - [x] Run `python scripts/campaign_guard.py acquire` with this session id, phase 2, the run file and a fresh generation. Done when: `python scripts/campaign_guard.py whoami --session <id>` prints that this session owns the run. Cheaper substitute: writing the guard file by hand.
 - [x] Reconcile, then `CronDelete` the interim heartbeat as `reconcile` directs and `CronCreate` the canonical one from `process-plan`, then acquire the guard with its id. **Corrected 2026-10-20:** said delete, create, then re-point; the guard did not exist yet, so `reconcile` names the interim job an orphan and the guard is created with the new job's id. Done when: `python scripts/campaign_guard.py health --session <id> --jobs <id>` reports healthy. Cheaper substitute: keeping the interim prompt, which the guard cannot verify.
 - [x] Record the guard's run id and the heartbeat job id under Critical events in the run file. Done when: both ids appear with a UTC time. Cheaper substitute: ids only in chat.
-- [ ] Commit: `todo: put the phase 2 run under the campaign guard`
+- [x] Commit: `todo: put the phase 2 run under the campaign guard`
 
 **Test checkpoint:** `python scripts/campaign_guard.py whoami --session <this session id>` prints the owner line, and `python scripts/campaign_keepalive.py status` prints `hold`.
+
+> **Verified:** 2026-10-20 | §6 | 4bac442d4ea5ecbbeefe4a5687777c2ce739c845
+> **Review:** `docs/reviews/d00-t03-s6.json`
 
 ## Verification
 

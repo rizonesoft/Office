@@ -23,7 +23,7 @@ Sections: 12 | Checklist items: 70
 | [x]    | D00 T03 §3 | Keep-Alive Resume Task and Session Observer    | none                   | 6     |
 | [x]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 6     |
 | [x]    | D00 T03 §5 | Install the Tasks and Verify on This PC        | windows-host, attended | 5     |
-| [ ]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run       | attended               | 4     |
+| [x]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run       | attended               | 4     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 7/82 verified sections, 9 ready to run now.
+Progress: 8/82 verified sections, 8 ready to run now.
 
-Checklist: 49/460 items completed (includes Commit items).
+Checklist: 50/460 items completed (includes Commit items).

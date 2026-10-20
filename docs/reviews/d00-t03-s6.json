@@ -1,0 +1,28 @@
+{
+  "ref": "D00 T03 \u00a76",
+  "title": "Adopt the Guard for the Open Phase 2 Run",
+  "implementation_sha": "4bac442d4ea5ecbbeefe4a5687777c2ce739c845",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s6.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s6.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s6.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python scripts/campaign_guard.py whoami --session d9458f13-469c-4385-a03f-3afad7939d77 -> \"OWNER run=a2cfd49e316a\"",
+    "python scripts/campaign_guard.py health -> \"health: ok, job 5ad5069d is live\"",
+    "python scripts/campaign_keepalive.py status -> \"held: session d9458f13-469c-4385-a03f-3afad7939d77 is alive (Claude process 29268)\""
+  ]
+}
