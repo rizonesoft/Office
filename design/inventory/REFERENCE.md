@@ -1,6 +1,49 @@
 # Inventory Reference
 
-What the parity inventory is measured against. D02 T01 §2 adds the reference build and capture profiles.
+What the parity inventory is measured against: one fixed build, one capture profile and the owner's layout choices. Positions only mean something against this configuration.
+
+## Builds
+
+Read 2026-10-20 on the operator's host (Windows 11 Pro, Venom-PC) from the Click-to-Run configuration and each program's file version, the values the Account page reports.
+
+| App | Version | Build | Channel | Platform |
+| --- | ------- | ----- | ------- | -------- |
+| Word | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| Excel | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| PowerPoint | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| Visio | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| Project | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| Outlook (classic) | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+
+The channel is the update channel id `492350f6-3a01-4f97-b9c0-c7c6ddf67d60`, which is Current Channel. Every record captured live carries this build in `capturedFrom`, and a capture from any other build is a new reference, recorded here first.
+
+## Capture profile
+
+Profile `fhd-100`: display 1920 by 1080 pixels at 100 percent scaling, window maximised, Office theme White, Office display language en-US, ribbon set to Always show Ribbon. `captureProfile` fields name this id, and `bounds` are pixels at this profile relative to the window client area.
+
+The host as read on 2026-10-20: the primary display is 2560 by 1440 at 150 percent (system DPI 144) and the second display is 1920 by 1080; Office's display language is en-us; Windows' regional format is en-ZA; Word's ribbon is set to Always show Ribbon. The capture tool (D02 T01 §3) checks every profile value before a capture and refuses to record bounds when one differs, so captures run on a 1920 by 1080 display at 100 percent.
+
+## Layout choices
+
+Decisions, 2026-10-20 (owner): both the Classic and the Simplified Ribbon are inventoried and built from the start, with the switch between them; the Outlook reference is classic Outlook, not the new Outlook for Windows.
+
+What the reference build offers, read 2026-10-20:
+
+- Word: the Ribbon Display Options menu at the right end of the ribbon offers Full-screen mode, Show tabs only, Always show Ribbon and Hide Quick Access Toolbar, and no Classic or Simplified switch. The baseline lists a `SingleLineRibbonToggle` for Word outside the ribbon, so the Word capture (D02 T01 §5) records whether this build exposes it anywhere.
+- Outlook (classic): the baseline lists `SingleLineRibbonToggle` in every item window. The Outlook capture (D02 T01 §15) records where it sits and the steps that switch it; Outlook is not started unattended, because starting it sends whatever waits in the Outbox.
+- Excel, PowerPoint, Visio and Project: the baseline lists no ribbon layout toggle. Each app's capture section records whether the build offers one, as the Visio section already states.
+
+Where a reference app has no Simplified Ribbon, the Simplified layout of our app has no capture to match; how it is derived is an owner question, recorded in the phase 2 run file.
+
+## Licensing
+
+| App | Product on the host | State |
+| --- | ------------------- | ----- |
+| Word, Excel, PowerPoint, Outlook | Microsoft 365 Apps for business | installed |
+| Visio | Visio Professional | installed |
+| Project | Project Professional | installed |
+
+Read from the Click-to-Run product list on 2026-10-20 (`O365BusinessRetail`, `VisioProRetail`, `ProjectProRetail`); the owner confirmed on 2026-10-20 that both Visio and Project are available on this host.
 
 ## Baseline
 
