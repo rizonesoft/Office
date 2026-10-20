@@ -159,21 +159,43 @@ class Inventory(unittest.TestCase):
         self.assertEqual(self.problems(), [])
 
     def test_each_independent_constraint_refuses_alone(self):
+        # Each fixture breaks exactly one constraint, and the expected diagnostic names that constraint.
         cases = {
-            "captureProfile minLength": dict(BOLD, captureProfile=""),
-            "keytip minLength": dict(BOLD, keytip=""),
-            "idMso minLength": dict(BOLD, idMso=""),
-            "size enum": dict(BOLD, size="huge"),
-            "screentip required title": dict(BOLD, screentip={"description": "x"}),
-            "bounds unknown field": dict(BOLD, bounds={"x": 1, "y": 2, "width": 3, "height": 4, "z": 5}),
-            "app enum": dict(BOLD, id="paint.home.font.bold", app="paint"),
-            "kind enum": dict(BOLD, kind="widget"),
-            "baselineMissing type": dict(BOLD, baselineMissing="yes"),
-            "bounds type": dict(BOLD, bounds=[1, 2, 3, 4]),
+            ".captureProfile: empty": dict(BOLD, captureProfile=""),
+            ".keytip: empty": dict(BOLD, keytip=""),
+            ".idMso: empty": dict(BOLD, idMso=""),
+            ".capturedFrom: empty": dict(BOLD, capturedFrom=""),
+            ".shortcut: empty": dict(BOLD, shortcut=""),
+            ".size: 'huge' is not one of": dict(BOLD, size="huge"),
+            ".screentip: missing title": dict(BOLD, screentip={"description": "x"}),
+            ".bounds: unknown field z": dict(BOLD, bounds={"x": 1, "y": 2, "width": 3, "height": 4, "z": 5}),
+            ".kind: 'widget' is not one of": dict(BOLD, kind="widget"),
+            ".baselineMissing: expected boolean": dict(BOLD, baselineMissing="yes"),
+            ".bounds: expected object": dict(BOLD, bounds=[1, 2, 3, 4]),
         }
-        for name, rec in cases.items():
+        for expected, rec in cases.items():
             self.write("word/ribbon.json", [TAB, GROUP, rec])
-            self.assertNotEqual(self.problems(), [], name)
+            problems = self.problems()
+            self.assertTrue(any(expected in p for p in problems), (expected, problems))
+        # The app enum is tested on the property alone: a record with an unknown app also breaks the id pattern.
+        schema = ci.load(ci.SCHEMA)
+        app_problems = ci.validate("paint", schema["$defs"]["record"]["properties"]["app"], schema)
+        self.assertTrue(any("'paint' is not one of" in p for p in app_problems), app_problems)
+
+    def test_huge_exponent_exits_2(self):
+        path = self.inv / "word" / "exponent.json"
+        path.write_text('[{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", '
+                        '"order": 1e999999999999999999999999999999999999}]', encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ci.main([str(path)]), 2)
+        self.assertIn("cannot read", err.getvalue())
+
+    def test_reference_to_an_id_defined_twice_elsewhere_is_ambiguous(self):
+        self.write("word/a.json", [TAB])
+        self.write("word/b.json", [TAB])
+        other = self.write("word/c.json", [GROUP])
+        self.assertTrue(any("parent word.home is ambiguous" in p for p in self.problems(other)))
 
     def test_require_behaviour_refuses_blank_sentence(self):
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Bold.", source="https://support.microsoft.com/x"),

@@ -12,7 +12,7 @@ checked alone). With --require-behaviour every control also needs a behaviour se
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
 """
 import argparse
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
 import re
@@ -99,7 +99,7 @@ def load(path):
         # Decimal keeps JSON numbers exact: 1.0000000000000001 stays non-integral and -1e-400 stays negative.
         data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal)
     # ValueError covers malformed JSON and integers past the conversion limit; RecursionError covers deep nesting.
-    except (OSError, UnicodeDecodeError, ValueError, RecursionError) as exc:
+    except (OSError, UnicodeDecodeError, ValueError, RecursionError, InvalidOperation) as exc:
         raise Unreadable(f"{path}: cannot read ({exc})") from None
     return data
 
@@ -152,10 +152,14 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             parent = rec.get("parent")
             if isinstance(parent, str) and parent not in seen:
                 problems.append(f"{where}: orphan, parent {parent} names no record")
+            elif isinstance(parent, str) and len(seen[parent]) > 1:
+                problems.append(f"{where}: parent {parent} is ambiguous, defined at {', '.join(seen[parent])}")
             target = rec.get("target")
             if isinstance(target, str):
                 if target not in kinds:
                     problems.append(f"{where}: target {target} names no record")
+                elif len(seen[target]) > 1:
+                    problems.append(f"{where}: target {target} is ambiguous, defined at {', '.join(seen[target])}")
                 elif kinds[target] not in TARGET_KINDS:
                     problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
             if require_behaviour and rec.get("kind") == "control":
