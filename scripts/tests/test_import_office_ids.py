@@ -134,6 +134,10 @@ class Import(unittest.TestCase):
                     ("X", "button", "None (Core Tab)", "TabHome", None, None, None, "12"),
                     ("X", "button", "None (Core Tab)", "TabHome", None, None, None, -1),
                     ("X", "unexpected prose (button)", "None (Core Tab)", "TabHome", None, None, None, 1),
+                    ("None (Core Tab)", "button", "None (Core Tab)", "TabHome", None, None, None, 1),
+                    ("X", "button", "None (Core Tab)", "TabHome", None, "None (Core Tab)", None, 1),
+                    ("X", "button", "None (Core Tab)", "None (Context Menu)", None, None, None, 1),
+                    ("X", "button", "None (Core Tab)", "TabHome", "=CONCAT(1)", None, None, 1),
                     ("X", None, "None (Core Tab)", "TabHome", None, None, None, 1)):
             workbook(self.src / "wordcontrols.xlsx", WORD + [bad])
             code, out = self.run_main()
@@ -149,6 +153,22 @@ class Import(unittest.TestCase):
         ws.append([None] * len(imp.HEADER) + ["stray"])
         wb.save(self.src / "wordcontrols.xlsx")
         self.assertEqual(self.run_main()[0], 1)
+
+    def test_a_formula_only_in_the_extra_column_stops_the_import(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(HEADER)
+        for r in WORD:
+            ws.append(list(r) + [None])
+        ws.append([None] * len(imp.HEADER) + ['="stray"'])
+        wb.save(self.src / "wordcontrols.xlsx")
+        self.assertEqual(self.run_main()[0], 1)
+
+    def test_a_blank_tab_set_is_no_tab_set(self):
+        workbook(self.src / "wordcontrols.xlsx", WORD + [("Y", "button", " ", None, None, None, None, 3)])
+        self.run_main()
+        rows, _ = self.baseline("word")
+        self.assertEqual([(r["placement"], r["tabSet"]) for r in rows if r["idMso"] == "Y"], [(None, None)])
 
     def test_unexpected_columns_stop_the_import(self):
         workbook(self.src / "wordcontrols.xlsx", WORD, header=HEADER[:-1] + ["Description"])

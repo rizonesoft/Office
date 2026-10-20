@@ -56,11 +56,18 @@ def ident(value, where):
     if value is None or (isinstance(value, str) and not value.strip()):
         return None
     value = str(value).strip()
-    if value in PLACEMENTS:  # the Tab and Group columns repeat the placement in words; the placement field holds it
-        return None
     if not IDENTIFIER.match(value):
         raise Unmappable(f"{where}: {value!r} is not an identifier; map it in import-office-ids.py")
     return value
+
+
+def slot(value, placement, where):
+    """A Tab or Group cell: an identifier, or the row's own placement repeated in words (the placement holds it)."""
+    if isinstance(value, str) and value.strip() in PLACEMENTS:
+        if PLACEMENTS[value.strip()] != placement:
+            raise Unmappable(f"{where}: {value!r} contradicts the row's placement {placement!r}")
+        return None
+    return ident(value, where)
 
 
 def control_type(value, where):
@@ -73,7 +80,7 @@ def control_type(value, where):
 
 def read_rows(path):
     import openpyxl  # read-only, pinned in scripts/requirements.txt
-    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=False)  # a formula reads as its text, then refused
     try:
         rows = wb.worksheets[0].iter_rows(values_only=True)
         header = next(rows, ())
@@ -82,8 +89,14 @@ def read_rows(path):
         extra = [h for h in header[len(HEADER):] if h is not None and h != "Column1"]
         if extra:
             raise Unmappable(f"{path.name}: unmapped columns {extra}")
-        # A row is kept when any cell holds a value, so a value only in an extra column reaches the refusal below.
-        return [r for r in rows if r and any(v is not None for v in r)]
+        kept = []
+        for n, r in enumerate(rows):
+            if any(isinstance(v, str) and v.startswith("=") for v in r or ()):
+                raise Unmappable(f"{path.name} row {n + 2}: a formula; the baseline takes values only")
+            # A row is kept when any cell holds a value, so a value only in an extra column reaches the refusal.
+            if r and any(v is not None for v in r):
+                kept.append(r)
+        return kept
     finally:
         wb.close()
 
@@ -93,6 +106,8 @@ def convert(path):
     for n, r in enumerate(read_rows(path)):
         where = f"{path.name} row {n + 2}"
         tab_set, tab = r[2], r[3]
+        if isinstance(tab_set, str):
+            tab_set = tab_set.strip() or None
         if isinstance(tab_set, str) and tab_set.startswith("None ("):
             if tab_set not in PLACEMENTS:
                 raise Unmappable(f"{where}: placement {tab_set!r} has no mapping")
@@ -109,7 +124,8 @@ def convert(path):
         if len(r) > len(HEADER) and any(v is not None for v in r[len(HEADER):]):
             raise Unmappable(f"{where}: a value beyond the known columns")
         rows.append([ident(r[0], where), control_type(r[1], where), placement, ident(tab_set, where),
-                     ident(tab, where), ident(r[4], where), ident(r[5], where), ident(r[6], where), policy])
+                     slot(tab, placement, where), slot(r[4], placement, where), ident(r[5], where),
+                     ident(r[6], where), policy])
     if not rows:
         raise Unmappable(f"{path.name}: no rows")
     return rows
