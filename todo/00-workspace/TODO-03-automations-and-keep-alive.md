@@ -37,7 +37,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 2 | §2 | Run guard and Stop hook | -- | [x] |
 | 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [x] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [ ] |
-| 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [ ] |
+| 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [ ] |
 
 ## 1. Automation Runner, Failure Alert and Installer
@@ -166,6 +166,9 @@ Registers the tasks in Task Scheduler on the operator's Windows host and proves 
 - [x] Commit: `automations: record install and live verification`
 
 **Test checkpoint:** `Get-ScheduledTask -TaskPath '\Office-2028\' | Select-Object -ExpandProperty TaskName` lists `office-2028-claude-keepalive`, and `python scripts/campaign_keepalive.py status` exits 0.
+
+> **Verified:** 2026-10-20 | §5 | e602dc70fb77384f825e7bb029218428e1c880e4
+> **Review:** `docs/reviews/d00-t03-s5.json`
 
 ## 6. Adopt the Guard for the Open Phase 2 Run
 

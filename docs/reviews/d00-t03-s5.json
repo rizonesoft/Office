@@ -1,0 +1,28 @@
+{
+  "ref": "D00 T03 \u00a75",
+  "title": "Install the Tasks and Verify on This PC",
+  "implementation_sha": "e602dc70fb77384f825e7bb029218428e1c880e4",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s5.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "Get-ScheduledTask -TaskPath \\Office-2028\\ -> office-2028-claude-keepalive (logon PT3M, hourly), next run 04:16:56 SAST",
+    "python scripts/campaign_keepalive.py status -> \"idle: no open campaign run\"",
+    "python -m unittest discover -s scripts/tests -p \"test_automations.py\" -> \"Ran 43 tests ... OK\""
+  ]
+}
