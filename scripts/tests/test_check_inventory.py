@@ -92,11 +92,70 @@ class Inventory(unittest.TestCase):
                                                           source="https://support.microsoft.com/x")])
         self.assertEqual(self.problems(behaviour=True), [])
 
-    def test_unparseable_file_exits_2(self):
+    def test_integral_float_is_an_integer(self):
+        self.write("word/ribbon.json", [dict(TAB, order=1.0), dict(GROUP, order=1e0)])
+        self.assertEqual(self.problems(), [])
+        self.write("word/ribbon.json", [dict(TAB, order=1.5)])
+        self.assertTrue(any("expected integer" in p for p in self.problems()))
+
+    def test_minimum_and_wrong_types_fail(self):
+        self.write("word/ribbon.json", [dict(TAB, order=-1), dict(GROUP, label=7),
+                                        dict(BOLD, bounds={"x": 1, "y": 2, "width": -3, "height": 4})])
+        problems = self.problems()
+        self.assertTrue(any("order: below 0" in p for p in problems))
+        self.assertTrue(any("label: expected string" in p for p in problems))
+        self.assertTrue(any("width: below 0" in p for p in problems))
+
+    def test_blank_and_missing_base_fields_fail(self):
+        rec = {k: v for k, v in TAB.items() if k != "kind"}
+        self.write("word/ribbon.json", [rec, dict(GROUP, label="   ")])
+        problems = self.problems()
+        self.assertTrue(any("missing kind" in p for p in problems))
+        self.assertTrue(any("label" in p and "does not match" in p for p in problems))
+
+    def test_control_without_control_type_fails(self):
+        rec = {k: v for k, v in PASTE.items() if k != "controlType"}
+        self.write("word/ribbon.json", [TAB, rec])
+        self.assertTrue(any("missing controlType" in p for p in self.problems()))
+
+    def test_shortcut_needs_chord_and_existing_target(self):
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold", "target": "word.nope"}
+        self.write("word/shortcuts.json", [sc])
+        problems = self.problems()
+        self.assertTrue(any("missing shortcut" in p for p in problems))
+        self.assertTrue(any("target word.nope names no record" in p for p in problems))
+
+    def test_bounds_member_missing_fails(self):
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, bounds={"x": 1, "y": 2, "width": 3})])
+        self.assertTrue(any("missing height" in p for p in self.problems()))
+
+    def test_source_must_carry_a_host_or_a_build(self):
+        for bad in ("https://", "uia:", "baseline:", "listcommands:"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=bad)])
+            self.assertTrue(any("source" in p and "does not match" in p for p in self.problems()), bad)
+
+    def test_require_behaviour_refuses_blank_sentence(self):
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Bold.", source="https://support.microsoft.com/x"),
+                                        dict(PASTE, behaviour=" ", source="https://support.microsoft.com/y")])
+        problems = self.problems(behaviour=True)
+        self.assertTrue(any("behaviour" in p for p in problems))
+
+    def test_unparseable_file_raises_unreadable(self):
         (self.inv / "word" / "broken.json").write_text("[{", encoding="utf-8")
-        with contextlib.redirect_stderr(io.StringIO()):
-            with self.assertRaises(ci.Unreadable):
-                self.problems()
+        with self.assertRaises(ci.Unreadable):
+            self.problems()
+
+    def test_hostile_files_exit_2_with_a_diagnostic(self):
+        for name, text in (("broken.json", "[{"), ("deep.json", "[" * 100000 + "]" * 100000),
+                           ("huge-int.json", "[" + "9" * 5000 + "]")):
+            path = self.inv / "word" / name
+            path.write_text(text, encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                code = ci.main([str(path)])
+            self.assertEqual(code, 2, name)
+            self.assertIn("cannot read", err.getvalue(), name)
+            path.unlink()
 
 
 class Cli(unittest.TestCase):
