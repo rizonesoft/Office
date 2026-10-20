@@ -174,8 +174,8 @@ def alive(procs, owner: dict | None) -> bool:
 
 def complete(owner) -> bool:
     """An owner record good enough to prove anything: a positive pid and a creation time."""
-    return (isinstance(owner, dict) and isinstance(owner.get("pid"), int) and owner["pid"] > 0
-            and owner.get("created") is not None)
+    pid, created = (owner.get("pid"), owner.get("created")) if isinstance(owner, dict) else (None, None)
+    return (type(pid) is int and pid > 0 and type(created) is int)
 
 
 def owners(rec: dict | None) -> list:
@@ -267,22 +267,55 @@ def observed(root: str) -> dict[str, dict]:
     return out
 
 
-def record(root: str, session: str, owner: dict, supervised: bool = False) -> None:
+class _SessionsLock:
+    """Serialises observation updates: the guard's interprocess lock class on its own lock file."""
+
+    def __init__(self, root: str):
+        self.lock = campaign_guard._Lock(root)
+        self.lock.path = os.path.join(root, "build", "claude-sessions.lock")
+
+    def __enter__(self):
+        os.makedirs(os.path.dirname(self.lock.path), exist_ok=True)
+        return self.lock.__enter__()
+
+    def __exit__(self, *exc):
+        return self.lock.__exit__(*exc)
+
+
+def _unobserved_flag(root: str, session: str) -> str:
+    return os.path.join(_sessions_dir(root), f"unobserved-{session}.flag")
+
+
+def unobserved(root: str) -> list[str]:
+    """Sessions whose observation failed: until each observes successfully, no launch can prove the tree free."""
+    folder = _sessions_dir(root)
+    return sorted(n for n in os.listdir(folder) if n.startswith("unobserved-") and n.endswith(".flag")) \
+        if os.path.isdir(folder) else []
+
+
+def record(root: str, session: str, owner: dict, supervised: bool = False, procs=None) -> None:
     if not SESSION_ID.match(session or ""):
         raise KeepAliveError(f"session {session!r} is not a Claude Code session id")
     path = os.path.join(_sessions_dir(root), session + ".json")
-    # Keep every process seen for this session (the same session can run in more than one process), newest last.
-    seen = [o for o in owners(_read(path)) if complete(o)
-            and (o.get("pid"), o.get("created")) != (owner.get("pid"), owner.get("created"))]
-    _atomic(path, {"session": session, "owner": owner, "owners": (seen + [owner])[-8:], "seen_at": _now(),
-                   "supervised": supervised})
+    with _SessionsLock(root):  # read, merge and replace as one step, so concurrent observers lose nothing
+        # Keep every process seen for this session (one session can run in several processes); a process leaves
+        # the list only once it is proven gone, never to make room.
+        keep = [o for o in owners(_read(path)) if complete(o)
+                and (o.get("pid"), o.get("created")) != (owner.get("pid"), owner.get("created"))
+                and (procs is None or maybe_alive(procs, o))]
+        _atomic(path, {"session": session, "owner": owner, "owners": keep + [owner], "seen_at": _now(),
+                       "supervised": supervised})
+        try:
+            os.unlink(_unobserved_flag(root, session))
+        except FileNotFoundError:
+            pass
 
 
 def observe(root: str, session: str, procs, start: int | None = None) -> str:
     """Record the Claude Code process of `session`, and drop week-old records of exited sessions, except the
     one the open guard names: the keep-alive needs it to prove that session gone."""
     owner = claude_ancestor(procs, start)
-    record(root, session, owner)
+    record(root, session, owner, procs=procs)
     try:
         keep = str((campaign_guard.read_guard(root) or {}).get("session_id", ""))
     except campaign_guard.GuardError:
@@ -329,6 +362,10 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
     if not SESSION_ID.match(session):
         return "report", guard, f"the guard names {session!r}, not a Claude Code session id; repair the guard"
     sessions = observed(root)
+    failed = unobserved(root)
+    if failed:
+        return "hold", guard, (f"held: a session's observation failed ({failed[0]}), so the tree cannot be proven "
+                               "free; it clears when that session observes again, or remove it once it has ended")
     rec = sessions.get(session)
     if not rec:
         return "hold", guard, (f"held: session {session} was never observed, so its process cannot be proven gone "
@@ -439,7 +476,7 @@ def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float,
     # An operator resume that recorded itself between the launch and here must stay visible, or the loop
     # below could never see it: the child takes the record only from a dead owner or from itself.
     if owner and (previous.get("pid") == child.pid or not maybe_alive(procs, previous)):
-        record(root, session, owner, supervised=True)
+        record(root, session, owner, supervised=True, procs=procs)
     deadline = clock() + limit
     while True:
         code = child.poll()
@@ -448,10 +485,13 @@ def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float,
         ended = None
         current = campaign_guard.read_guard(root)
         sessions = observed(root)
-        live_other = [o for o in owners(sessions.get(session)) if complete(o) and o.get("pid") != child.pid
+        mine = sessions.get(session)
+        live_other = [o for o in owners(mine) if complete(o) and o.get("pid") != child.pid
                       and maybe_alive(procs, o)]
         if not current or str(current.get("session_id", "")) != session:
             ended = "the guard was ended or handed to another session"
+        elif not isinstance(mine, dict) or mine.get("invalid") or not all(complete(o) for o in owners(mine)):
+            ended = f"the observation of session {session} became unreadable, so no other writer can be ruled out"
         elif live_other:
             ended = f"the operator resumed session {session} in Claude process {live_other[0]['pid']}"
         else:
@@ -495,10 +535,13 @@ def resurrect(root: str, procs, launcher=_launch, killer=_kill_tree, clock=time.
         state = {"run_id": guard.get("run_id"), "session": session, "launched_at": clock(),
                  "resumes": (state.get("resumes", 0) if state.get("run_id") == guard.get("run_id") else 0) + 1,
                  "stalled": (state.get("stalled", 0) + 1) if same else 0, "fingerprint": fingerprint}
-        _atomic(state_path, state)
         stamp = _now().replace(":", "")
         log = os.path.join(root, "build", "claude-keepalive", f"{guard.get('run_id')}-{stamp}.log")
-        child = launcher(resume_command(claude, guard, model), root, log)
+        try:
+            child = launcher(resume_command(claude, guard, model), root, log)
+        except OSError as error:  # nothing started, so nothing is counted against the resume budget
+            return 1, f"could not start claude to resume session {session}: {error}"
+        _atomic(state_path, state)
         try:
             code, ended = _supervise(root, procs, child, session, clock, sleep, poll, limit, killer)
         except BaseException:
@@ -644,6 +687,42 @@ def _self_test() -> int:
         code, msg = run()
         check("an unreadable other observation holds the launch", code == 0 and not launched, msg)
         os.remove(bogus)
+        with open(sess_file, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        doc["owners"] = [dict(o, created=str(o["created"])) for o in doc["owners"]]
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            json.dump(doc, fh)
+        code, msg = run()
+        check("a text creation time proves nothing and holds", code == 0 and "incomplete" in msg and not launched, msg)
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            fh.write(saved)
+        first = procs.add(660, 1, "claude.exe", 444)
+        record(root, s_run, first, procs=procs)
+        for k in range(9):
+            procs.add(670 + k, 1, "claude.exe", 500 + k)
+            record(root, s_run, procs.procs and {"pid": 670 + k, "created": 500 + k, "exe": "claude.exe"}, procs=procs)
+        for k in range(9):
+            del procs.procs[670 + k]
+        code, msg = run()
+        check("an early live owner survives many later observations", code == 0 and "is alive" in msg
+              and not launched, msg)
+        del procs.procs[660]
+        with open(sess_file, "w", encoding="utf-8") as fh:
+            fh.write(saved)
+        flag = _unobserved_flag(root, s_other)
+        with open(flag, "w", encoding="utf-8") as fh:
+            fh.write("failed" + chr(10))
+        code, msg = run()
+        check("a failed observation holds every launch", code == 0 and "observation failed" in msg and not launched, msg)
+        os.remove(flag)
+        state_before = open(_state_path(root), encoding="utf-8").read() if os.path.exists(_state_path(root)) else None
+
+        def cannot_start(argv, r, log):
+            raise OSError("claude.exe missing")
+        code, msg = run(launcher=cannot_start)
+        state_after = open(_state_path(root), encoding="utf-8").read() if os.path.exists(_state_path(root)) else None
+        check("a launch that cannot start counts no resume", code == 1 and "could not start" in msg
+              and state_before == state_after and not launched, msg)
         conf = os.path.join(root, ".conclave", "keepalive.toml")
         for bad in ("123", '""', '"   "'):
             with open(conf, "w", encoding="utf-8") as fh:
@@ -833,11 +912,21 @@ def main(argv: list[str]) -> int:
         root = opts.pop("root", REPO)
         if argv[0] == "observe":
             hook = "session" not in opts
+            session = ""
             try:
-                print(observe(root, opts.get("session") or _hook_session(), default_processes()))
+                session = opts.get("session") or _hook_session()
+                print(observe(root, session, default_processes()))
             except (KeepAliveError, OSError) as exc:
-                # As the SessionStart hook it fails open: a session must never be blocked from starting.
+                # As the SessionStart hook it fails open: a session must never be blocked from starting. The flag
+                # keeps the gap visible: no launch can prove the tree free until this session observes again.
                 print(f"campaign_keepalive observe: {exc}", file=sys.stderr)
+                if SESSION_ID.match(session or ""):
+                    try:
+                        os.makedirs(_sessions_dir(root), exist_ok=True)
+                        with open(_unobserved_flag(root, session), "w", encoding="utf-8") as fh:
+                            fh.write(f"{_now()} {exc}" + chr(10))
+                    except OSError as flag_error:
+                        print(f"campaign_keepalive observe: could not flag the failure: {flag_error}", file=sys.stderr)
                 return 0 if hook else 1
             return 0
         procs = default_processes()
