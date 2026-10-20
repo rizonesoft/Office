@@ -125,6 +125,8 @@ When the owning session's process is gone and no other Office-2028 session is op
 
 ## 4. Run Skills Create and Check the Guard
 
+> **Started:** 2026-10-20T01:32:06Z
+
 `process-plan` and `process-phase` gain the run-guard steps from Isotone: reconcile and create the heartbeat with its canonical prompt, acquire the guard, observe the session, check heartbeat health and expiry at each section boundary, and end the run through `campaign_guard.py end`. Skills live in three mirrored directories and change together (AGENTS.md).
 
 **Phase:** 0
@@ -135,12 +137,12 @@ When the owning session's process is gone and no other Office-2028 session is op
 
 1. Port the guard sections of Isotone's `process-plan` and `process-phase` into `.claude/skills/`, then mirror them. Done when: the three copies of each skill are identical apart from agent-specific tool names.
 
-- [ ] Add the run-guard section (reconcile, mint a generation, `CronCreate` with the canonical heartbeat prompt, `acquire`, `observe`) to `.claude/skills/process-plan/SKILL.md`, adapted to Office-2028 names. Done when: the canonical prompt names `Office-2028` and `campaign_guard.py`. Cheaper substitute: a heartbeat with no guard, which cannot tell its owner from a stale job.
-- [ ] Add the section-boundary heartbeat check and the guard-aware stop and park rules to `.claude/skills/process-phase/SKILL.md`. Done when: the skill names `health`, `expiry` and `end --reason`. Cheaper substitute: deleting the guard file by hand at a stop.
-- [ ] Set `SKILL_TEXT_CASES_PENDING = False` in `scripts/tests/test_campaign_guard.py` so the guard self-test must exit 0. Done when: the test fails if any `skill-*` case fails. Cheaper substitute: leaving the staging flag on.
-- [ ] Mirror both skills to `.agents/skills/` and `.codex/skills/` as real files. Done when: a diff of the three copies shows only agent-specific wording. Cheaper substitute: symlinks, which AGENTS.md forbids.
-- [ ] Add the operator rule from the phase 2 run (a go-ahead before every live Office capture, recorded as `- waiting:` and `- go-ahead:` lines that the heartbeat honours) to the canonical prompt. Done when: the prompt names both line forms. Cheaper substitute: relying on memory of the rule across sessions.
-- [ ] Commit: `skills: run plan and phase under the campaign guard`
+- [x] Add the run-guard section (reconcile, mint a generation, `CronCreate` with the canonical heartbeat prompt, `acquire`, `observe`) to `.claude/skills/process-plan/SKILL.md`, adapted to Office-2028 names. Done when: the canonical prompt names `Office-2028` and `campaign_guard.py`. Cheaper substitute: a heartbeat with no guard, which cannot tell its owner from a stale job.
+- [x] Add the section-boundary heartbeat check and the guard-aware stop and park rules to `.claude/skills/process-phase/SKILL.md`. Done when: the skill names `health`, `expiry` and `end --reason`. Cheaper substitute: deleting the guard file by hand at a stop.
+- [x] Set `SKILL_TEXT_CASES_PENDING = False` in `scripts/tests/test_campaign_guard.py` so the guard self-test must exit 0. Done when: the test fails if any `skill-*` case fails. Cheaper substitute: leaving the staging flag on.
+- [x] Mirror both skills to `.agents/skills/` and `.codex/skills/` as real files. Done when: the Claude copies carry the full guard text and the `.agents` and `.codex` copies carry the agent-specific rule that a guard means a Claude session owns the tree (the guard, Stop hook and heartbeat are Claude Code features). **Corrected 2026-10-20:** said the copies differ only in agent-specific wording; the guard itself is Claude-only. Cheaper substitute: symlinks, which AGENTS.md forbids.
+- [x] Add the operator rule from the phase 2 run (a go-ahead before every live Office capture, recorded as `- waiting:` and `- go-ahead:` lines that the heartbeat honours) to the canonical prompt. Done when: the prompt names both line forms. Cheaper substitute: relying on memory of the rule across sessions.
+- [x] Commit: `skills: run plan and phase under the campaign guard`
 
 **Test checkpoint:** `python scripts/campaign_guard.py --self-test` exits 0 after the skill change, and `rg -c "campaign_guard.py" .claude/skills/process-plan/SKILL.md .agents/skills/process-plan/SKILL.md .codex/skills/process-plan/SKILL.md` prints a non-zero count for each file.
 

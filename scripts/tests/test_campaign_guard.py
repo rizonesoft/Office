@@ -10,7 +10,7 @@ import sys
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
-SKILL_TEXT_CASES_PENDING = True  # D00 T03 §4 sets this False when the skill text lands
+SKILL_TEXT_CASES_PENDING = False  # D00 T03 §4 landed the skill text: the self-test must exit 0
 
 
 class GuardSelfTest(unittest.TestCase):

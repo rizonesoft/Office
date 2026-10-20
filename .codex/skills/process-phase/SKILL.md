@@ -19,6 +19,8 @@ Completion never buys completion with a bypass: no `--no-verify`, no amend of a 
 
 Check that no other writer holds the tree (`git status`; ask about unfamiliar uncommitted work). Writes are serial: this run is the only writer. Open the run file `docs/phase-runs/<YYYY-MM-DD>-phase-<N>.md` (create `docs/phase-runs/` if absent) and append every finding the moment it is made: the file survives session death where chat scrollback does not.
 
+Run guard: never open or resume a run while `build/claude-campaign-guard.json` exists; a Claude session owns the tree (see the Claude copy of `process-plan`).
+
 ```markdown
 # Phase run: <heading>
 

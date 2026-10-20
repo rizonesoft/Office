@@ -57,6 +57,10 @@ Ready means runnable now in this context: `query ready` already excludes rows wa
 
 If no phase has a ready row, report the leftovers with their blockers and stop. That is a genuine halt.
 
+### Run guard
+
+Campaign runs under the run guard (the Stop hook, the `CronCreate` heartbeat and the `office-2028-claude-keepalive` task) are Claude Code features; see the Claude copy of this skill and `.conclave/automations/README.md`. This agent never starts or resumes a campaign while `build/claude-campaign-guard.json` exists (`python scripts/campaign_guard.py whoami --session <any id>` prints NO GUARD when none does): a guard means a Claude session owns the tree, and two writers must never share it. Without a guard, this agent may run the loop without a heartbeat, and says so in the run file's Critical events.
+
 ## 2. After a phase closeout or park
 
 `process-phase` ends in exactly one of three ways: the phase table is all `[x]` with a written closeout; every leftover is blocked here and it parked (a `PARKED` line and park record in its run file); or the operator paused it. A parked phase is not complete and not a stall. Do not call it either.
