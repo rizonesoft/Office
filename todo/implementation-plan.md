@@ -18,7 +18,7 @@ Sections: 12 | Checklist items: 69
 | [ ]    | D00 T02 §1 | SPDX Headers and Checker                       | none                   | 6     |
 | [ ]    | D00 T02 §2 | Third-Party Notices File                       | none                   | 5     |
 | [ ]    | D00 T02 §5 | Contributing Guide                             | none                   | 4     |
-| [ ]    | D00 T03 §1 | Automation Runner, Failure Alert and Installer | none                   | 7     |
+| [x]    | D00 T03 §1 | Automation Runner, Failure Alert and Installer | none                   | 7     |
 | [ ]    | D00 T03 §2 | Run Guard and Stop Hook                        | none                   | 7     |
 | [ ]    | D00 T03 §3 | Keep-Alive Resume Task and Session Observer    | none                   | 6     |
 | [ ]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 5     |
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 2/82 verified sections, 10 ready to run now.
+Progress: 3/82 verified sections, 9 ready to run now.
 
 Checklist: 22/459 items completed (includes Commit items).

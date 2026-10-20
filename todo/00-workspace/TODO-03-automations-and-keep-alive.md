@@ -33,7 +33,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Automation runner, failure alert and installer | -- | [ ] |
+| 1 | §1 | Automation runner, failure alert and installer | -- | [x] |
 | 2 | §2 | Run guard and Stop hook | -- | [ ] |
 | 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [ ] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [ ] |
@@ -64,6 +64,9 @@ The shared plumbing every scheduled job uses: the task list, a runner that logs 
 - [x] Commit: `automations: add runner, failure alert and installer`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes, and `python .conclave/automations/alert.py --help` exits 0.
+
+> **Verified:** 2026-10-20 | §1 | 9311a2ee357b54860fbbd8e8738c3c354781c777
+> **Review:** `docs/reviews/d00-t03-s1.json`
 
 ## 2. Run Guard and Stop Hook
 
