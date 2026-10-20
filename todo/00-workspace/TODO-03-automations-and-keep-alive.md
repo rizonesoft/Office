@@ -34,7 +34,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Automation runner, failure alert and installer | -- | [x] |
-| 2 | §2 | Run guard and Stop hook | -- | [ ] |
+| 2 | §2 | Run guard and Stop hook | -- | [x] |
 | 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [ ] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [ ] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [ ] |
@@ -92,6 +92,9 @@ The guard file `build/claude-campaign-guard.json` names the session that owns an
 - [x] Commit: `automations: add campaign run guard and Stop hook`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` passes, with `python scripts/campaign_guard.py --self-test` failing only its 13 `skill-*` cases (**Corrected 2026-10-20:** said the self-test exits 0; that is §4's checkpoint).
+
+> **Verified:** 2026-10-20 | §2 | b10277a6db91c37d4f78db3d7b32c8c4567d2905
+> **Review:** `docs/reviews/d00-t03-s2.json`
 
 ## 3. Keep-Alive Resume Task and Session Observer
 

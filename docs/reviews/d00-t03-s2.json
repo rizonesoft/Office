@@ -1,0 +1,27 @@
+{
+  "ref": "D00 T03 \u00a72",
+  "title": "Run Guard and Stop Hook",
+  "implementation_sha": "b10277a6db91c37d4f78db3d7b32c8c4567d2905",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_campaign_guard.py\" -> OK",
+    "python scripts/campaign_guard.py --self-test -> \"121 cases, 13 failed\" (all skill-*, owned by section 4)"
+  ]
+}
