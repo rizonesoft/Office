@@ -26,6 +26,8 @@ INVENTORY = ROOT / "design" / "inventory"
 SCHEMA = INVENTORY / "schema.json"
 BASELINE_SCHEMA = INVENTORY / "baseline.schema.json"
 BASELINE = "baseline.json"
+SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
+APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
 # Owner rule 2026-10-20: the repository holds no Microsoft text and no Microsoft links, so no record holds a link at all.
 LINK = re.compile(r"https?://|www\.", re.IGNORECASE)
 TARGET_KINDS = ("command", "control")
@@ -153,27 +155,41 @@ def inventory_files(paths):
     for p in paths:
         p = Path(p)
         if p.is_dir():
-            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in (SCHEMA.resolve(), BASELINE_SCHEMA.resolve()))
+            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in (SCHEMA.resolve(), BASELINE_SCHEMA.resolve())
+                            and f.name != SOURCES)
         else:
             files.append(p)
     return files
 
 
-def check_baseline(f, data, schema):
-    """Problems in one baseline file: its envelope against the baseline schema, then every row's cells."""
+def outlook_windows(sources):
+    return sorted(n[len("outlook"):-len("controls.xlsx")] for n in sources.get("blobs", {}) if n.startswith("outlook"))
+
+
+def check_baseline(f, data, schema, sources=None):
+    """Problems in one baseline file: its envelope against the baseline schema, then every row's cells, and with the
+    upstream manifest its commit and (for Outlook) its window names."""
     problems = [f"{f}: {p}" for p in validate(data, schema, schema)]
     if problems or not isinstance(data, dict):
         return problems
+    if not data["rows"]:
+        return [f"{f}: no rows"]
+    if sources and data["source"] != f"baseline:{sources.get('commit')}":
+        problems.append(f"{f}: source {data['source']} is not the manifest commit {sources.get('commit')}")
     defs = schema["$defs"]
     expected = defs["outlookColumns"]["const"] if f.parent.name == "outlook" else defs["columns"]["const"]
     if data["columns"] != expected:
         return [f"{f}: columns {data['columns']} are not {expected}"]
     kinds = {"placement": defs["placement"], "policyId": defs["policyId"]}
+    windows = set(outlook_windows(sources or {}))
     for i, row in enumerate(data["rows"]):
         if len(row) != len(expected):
             problems.append(f"{f}: $.rows[{i}]: {len(row)} cells, expected {len(expected)}")
             continue
         for name, cell in zip(expected, row):
+            if name == "window" and sources and cell not in windows:
+                problems.append(f"{f}: $.rows[{i}].window: {cell!r} is not a window in the manifest")
+                continue
             if cell is None and name not in ("controlType", "window"):
                 continue
             problems += [f"{f}: {p}" for p in validate(cell, kinds.get(name, defs["identifier"]), schema,
@@ -200,12 +216,30 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
                 kinds[rec["id"]] = rec.get("kind")
     named_resolved = [f.resolve() for f in named]
+    inventory = Path(inventory)
+    sources_path = inventory / SOURCES
+    sources = load(sources_path) if sources_path.is_file() else None
+    # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must
+    # exist and Outlook's must hold every window it lists. Checking one file stays a check of that file alone.
+    whole = inventory.is_dir() and inventory.resolve() in [Path(p).resolve() for p in paths]
+    if whole and sources is not None:
+        for app in APPS:
+            path = inventory / app / BASELINE
+            if not path.is_file():
+                problems.append(f"{path}: missing baseline")
+            elif app == "outlook" and sources:
+                data = load(path)
+                rows = data.get("rows", []) if isinstance(data, dict) else []
+                seen = {r[0] for r in rows if isinstance(r, list) and r}
+                absent = [w for w in outlook_windows(sources) if w not in seen]
+                if absent:
+                    problems.append(f"{path}: no rows for the windows {absent}")
     for resolved in named_resolved:
         f = universe[resolved]
         data = load(f)
         if f.name == BASELINE:
             baseline_schema = baseline_schema or load(BASELINE_SCHEMA)
-            problems += check_baseline(f, data, baseline_schema)
+            problems += check_baseline(f, data, baseline_schema, sources)
             continue
         schema_problems = validate(data, schema, schema)
         problems += [f"{f}: {p}" for p in schema_problems]

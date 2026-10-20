@@ -11,7 +11,10 @@ one row per workbook row in workbook order, so a row's position is its order. Ro
 identifier are kept with a null idMso: they are real controls, known by policy id and position. The workbooks hold no
 labels or descriptions, and none are added. Placements the workbooks spell as "None (...)" become our own enum, and
 any other value that is not an identifier stops the import, so new upstream wording is mapped by hand, never copied.
-Outlook's per-window workbooks merge into one file whose first column is the window.
+Outlook's per-window workbooks merge into one file whose first column is the window. Every input must be the exact
+upstream file: its git blob id must match design/inventory/baseline-sources.json, whose commit names the source
+folder and whose file list is the complete set (the Outlook windows included), so a missing, extra or edited workbook
+stops the import before anything is written.
 Writes go to a temporary file in the destination folder, then replace the original, and are read back.
 Exit 0 written (or up to date with --check), 1 on a stale file or an unmappable value, 2 when a workbook is missing.
 """
@@ -25,11 +28,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "design" / "inventory"
+SOURCES = INVENTORY / "baseline-sources.json"
 APPS = ("word", "excel", "powerpoint", "visio", "project")
-# Every Outlook item window the pinned commit publishes; a missing or unknown one stops the import.
-OUTLOOK_WINDOWS = ("addritem", "apptitem", "dlstitem", "explorer", "logitem", "mailitem", "mailread", "mmsedit",
-                   "mmsread", "postitem", "postread", "reportitem", "reqread", "reqsend", "resenditem", "respcounter",
-                   "responseread", "responsesend", "rssitem", "shareitem", "smsedit", "smsread", "taskitem")
 # Compound type spellings and the role each names; any other compound spelling stops the import.
 COMPOUND_TYPES = {"button (dialogBoxLauncher)": "dialogBoxLauncher"}
 HEADER = ("Control Name", "Control Type", "Tab Set", "Tab", "Group/Context Menu Name", "Parent Control",
@@ -55,7 +55,9 @@ class Unmappable(Exception):
 def ident(value, where):
     if value is None or (isinstance(value, str) and not value.strip()):
         return None
-    value = str(value).strip()
+    if not isinstance(value, str):  # a boolean or number is never an identifier
+        raise Unmappable(f"{where}: {value!r} is not text")
+    value = value.strip()
     if not IDENTIFIER.match(value):
         raise Unmappable(f"{where}: {value!r} is not an identifier; map it in import-office-ids.py")
     return value
@@ -71,8 +73,9 @@ def slot(value, placement, where):
 
 
 def control_type(value, where):
-    value = str(value or "").strip()
-    result = ident(COMPOUND_TYPES.get(value, value), where)
+    if isinstance(value, str):
+        value = COMPOUND_TYPES.get(value.strip(), value)
+    result = ident(value, where)
     if result is None:
         raise Unmappable(f"{where}: no control type")
     return result
@@ -82,6 +85,8 @@ def read_rows(path):
     import openpyxl  # read-only, pinned in scripts/requirements.txt
     wb = openpyxl.load_workbook(path, read_only=True, data_only=False)  # a formula reads as its text, then refused
     try:
+        if len(wb.worksheets) != 1:
+            raise Unmappable(f"{path.name}: {len(wb.worksheets)} worksheets; the baseline reads exactly one")
         rows = wb.worksheets[0].iter_rows(values_only=True)
         header = next(rows, ())
         if tuple(header[:len(HEADER)]) != HEADER:
@@ -137,27 +142,45 @@ def render(commit, columns, rows):
     return head + ', "rows": [\n' + ",\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n]}\n"
 
 
-def build(source):
+def git_blob(path):
+    import hashlib
+    data = Path(path).read_bytes()
+    return hashlib.sha1(b"blob %d" % len(data) + bytes(1) + data).hexdigest()
+
+
+def outlook_windows(sources):
+    """The Outlook item windows the manifest lists, in a stable order."""
+    return sorted(n[len("outlook"):-len("controls.xlsx")] for n in sources["blobs"] if n.startswith("outlook"))
+
+
+def build(source, sources_path=SOURCES):
     source = Path(source)
     commit = source.name
     if not COMMIT.match(commit):
         raise Unmappable(f"{source}: the folder must be named after the full upstream commit")
+    sources = json.loads(Path(sources_path).read_text(encoding="utf-8"))
+    if sources.get("commit") != commit:
+        raise Unmappable(f"{source}: the manifest pins {sources.get('commit')}, not {commit}")
+    expected = set(sources["blobs"])
+    if not {f"{app}controls.xlsx" for app in APPS} <= expected or not outlook_windows(sources):
+        raise Unmappable(f"{sources_path}: the manifest must list all six apps")
+    present = {p.name for p in source.glob("*controls.xlsx")}
+    if present - expected:
+        raise Unmappable(f"{source}: unexpected workbooks {sorted(present - expected)}")
+    for name in sorted(expected):
+        if not (source / name).is_file():
+            raise FileNotFoundError(source / name)
+        if git_blob(source / name) != sources["blobs"][name]:
+            raise Unmappable(f"{name}: not the upstream file at {commit} (git blob id differs)")
     out = {}
     for app in APPS:
         path = source / f"{app}controls.xlsx"
         if not path.is_file():
             raise FileNotFoundError(path)
         out[app] = render(commit, COLUMNS, convert(path))
-    found = {p.name[len("outlook"):-len("controls.xlsx")] for p in source.glob("outlook*controls.xlsx")}
-    unknown = sorted(found - set(OUTLOOK_WINDOWS))
-    if unknown:
-        raise Unmappable(f"{source}: unknown Outlook windows {unknown}; add them to OUTLOOK_WINDOWS")
     merged = []
-    for window in OUTLOOK_WINDOWS:
-        path = source / f"outlook{window}controls.xlsx"
-        if not path.is_file():
-            raise FileNotFoundError(path)
-        merged += [[window] + row for row in convert(path)]
+    for window in outlook_windows(sources):
+        merged += [[window] + row for row in convert(source / f"outlook{window}controls.xlsx")]
     out["outlook"] = render(commit, ["window"] + COLUMNS, merged)
     return out
 
@@ -176,13 +199,13 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def main(argv=None, inventory=INVENTORY):
+def main(argv=None, inventory=INVENTORY, sources=SOURCES):
     parser = argparse.ArgumentParser(description="Import the Office control identifier baseline.")
     parser.add_argument("source", help="folder named after the pinned upstream commit, holding its workbooks")
     parser.add_argument("--check", action="store_true", help="report stale baseline files instead of writing")
     args = parser.parse_args(argv)
     try:
-        files = build(args.source)
+        files = build(args.source, sources)
     except FileNotFoundError as exc:
         print(f"import-office-ids: missing workbook {exc}", file=sys.stderr)
         return 2

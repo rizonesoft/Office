@@ -18,6 +18,8 @@ ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ci)
 
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
+WINDOWS = ("explorer", "mailitem", "taskitem")
+NAMES = [f"{app}controls.xlsx" for app in imp.APPS] + [f"outlook{w}controls.xlsx" for w in WINDOWS]
 HEADER = list(imp.HEADER) + ["Column1"]
 WORD = [
     ("AutoSaveSwitch", "toggleButton", "None (Quick Access Toolbar)", "Quick Access Toolbar", None, None, None, 27520),
@@ -51,16 +53,24 @@ class Import(unittest.TestCase):
         self.inv = Path(self.tmp.name) / "inventory"
         for app in imp.APPS:
             workbook(self.src / f"{app}controls.xlsx", WORD)
-        for window in imp.OUTLOOK_WINDOWS:
+        for window in WINDOWS:
             workbook(self.src / f"outlook{window}controls.xlsx", WORD[3:5] if window == "mailitem" else WORD[:1])
+        self.sources = Path(self.tmp.name) / "baseline-sources.json"
+
+    def seal(self):
+        """The manifest for the fixture as it stands, so each test reaches the refusal it is about."""
+        blobs = {n: imp.git_blob(self.src / n) if (self.src / n).is_file() else "0" * 40 for n in NAMES}
+        self.sources.write_text(json.dumps({"commit": COMMIT, "blobs": blobs}), encoding="utf-8")
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_main(self, *extra):
+    def run_main(self, *extra, seal=True):
+        if seal:
+            self.seal()
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = imp.main([str(self.src), *extra], inventory=self.inv)
+            code = imp.main([str(self.src), *extra], inventory=self.inv, sources=self.sources)
         return code, out.getvalue() + err.getvalue()
 
     def baseline(self, app):
@@ -97,7 +107,7 @@ class Import(unittest.TestCase):
         self.run_main()
         rows, data = self.baseline("outlook")
         self.assertEqual(data["columns"][0], "window")
-        expected = [w for w in imp.OUTLOOK_WINDOWS for _ in range(2 if w == "mailitem" else 1)]
+        expected = [w for w in WINDOWS for _ in range(2 if w == "mailitem" else 1)]
         self.assertEqual([r["window"] for r in rows], expected)
 
     def test_outlook_window_set_must_match_the_manifest(self):
@@ -109,6 +119,37 @@ class Import(unittest.TestCase):
             self.assertEqual(self.run_main()[0], 1, extra)
             (self.src / extra).unlink()
         self.assertEqual(self.run_main()[0], 0)
+
+    def test_an_edited_workbook_is_not_the_upstream_file(self):
+        self.seal()
+        workbook(self.src / "wordcontrols.xlsx", WORD[:-1])
+        code, out = self.run_main(seal=False)
+        self.assertEqual(code, 1)
+        self.assertIn("git blob id differs", out)
+
+    def test_the_manifest_must_pin_the_source_folder_commit(self):
+        self.seal()
+        doc = json.loads(self.sources.read_text(encoding="utf-8"))
+        self.sources.write_text(json.dumps(dict(doc, commit="f" * 40)), encoding="utf-8")
+        self.assertEqual(self.run_main(seal=False)[0], 1)
+
+    def test_non_text_cells_are_never_identifiers(self):
+        for bad in ((True, "button", "None (Core Tab)", "TabHome", None, None, None, 1),
+                    ("X", True, "None (Core Tab)", "TabHome", None, None, None, 1),
+                    ("X", "button", True, "TabHome", None, None, None, 1),
+                    ("X", "button", "None (Core Tab)", "TabHome", None, 7, None, 1)):
+            workbook(self.src / "wordcontrols.xlsx", WORD + [bad])
+            self.assertEqual(self.run_main()[0], 1, bad)
+
+    def test_a_second_worksheet_stops_the_import(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(HEADER)
+        for r in WORD:
+            ws.append(list(r) + [None])
+        wb.create_sheet("more").append(["Hidden", "button"])
+        wb.save(self.src / "wordcontrols.xlsx")
+        self.assertEqual(self.run_main()[0], 1)
 
     def test_check_compares_bytes(self):
         self.run_main()
@@ -226,6 +267,41 @@ class Checker(unittest.TestCase):
         row = ["explorer", "Bold", "toggleButton", "coreTab", None, "TabHome", "GroupFont", None, None, 113]
         self.assertEqual(self.problems(self.doc([row], ["window"] + imp.COLUMNS), "outlook"), [])
         self.assertTrue(any("columns" in p for p in self.problems(self.doc([row[1:]]), "outlook")))
+
+    def complete(self, outlook_windows=WINDOWS, drop=None, empty=None):
+        row = ["Bold", "toggleButton", "coreTab", None, "TabHome", "GroupFont", None, None, 113]
+        blobs = {n: "0" * 40 for n in NAMES}
+        (self.inv / ci.SOURCES).write_text(json.dumps({"commit": COMMIT, "blobs": blobs}), encoding="utf-8")
+        for app in ci.APPS:
+            (self.inv / app).mkdir(exist_ok=True)
+            if app == drop:
+                (self.inv / app / "baseline.json").unlink(missing_ok=True)
+                continue
+            if app == "outlook":
+                doc = self.doc([[w] + row for w in outlook_windows], ["window"] + imp.COLUMNS)
+            else:
+                doc = self.doc([] if app == empty else [row])
+            (self.inv / app / "baseline.json").write_text(json.dumps(doc), encoding="utf-8")
+        return ci.check([str(self.inv)], inventory=self.inv)
+
+    def test_the_whole_inventory_needs_every_baseline_and_window(self):
+        self.assertEqual(self.complete(), [])
+        self.assertTrue(any("visio" in p and "missing baseline" in p for p in self.complete(drop="visio")))
+        self.assertTrue(any("no rows" in p for p in self.complete(empty="excel")))
+        self.assertTrue(any("no rows for the windows ['taskitem']" in p
+                            for p in self.complete(outlook_windows=WINDOWS[:2])))
+        self.assertTrue(any("not a window in the manifest" in p
+                            for p in self.complete(outlook_windows=WINDOWS + ("invented",))))
+
+    def test_a_baseline_from_another_commit_fails_against_the_manifest(self):
+        self.complete()
+        doc = self.doc([["Bold", "toggleButton", "coreTab", None, "TabHome", None, None, None, 1]])
+        (self.inv / "word" / "baseline.json").write_text(json.dumps(dict(doc, source="baseline:" + "f" * 40)),
+                                                         encoding="utf-8")
+        self.assertTrue(any("not the manifest commit" in p for p in ci.check([str(self.inv)], inventory=self.inv)))
+
+    def test_the_repository_records_its_baseline_source(self):
+        self.assertTrue((ci.INVENTORY / ci.SOURCES).is_file())
 
     def test_baseline_rows_are_not_inventory_records(self):
         rec = {"id": "word.home", "app": "word", "kind": "tab", "label": "Home"}
