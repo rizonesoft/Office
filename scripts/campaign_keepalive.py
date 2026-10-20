@@ -368,6 +368,8 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
     if not guard:
         return "hold", None, "idle: no open campaign run"
     session = str(guard.get("session_id", ""))
+    if guard.get("runner", "claude") != "claude":
+        return "hold", guard, f"held: a {guard.get('runner')} run owns the tree; only Claude runs are resumed"
     if not SESSION_ID.match(session):
         return "report", guard, f"the guard names {session!r}, not a Claude Code session id; repair the guard"
     sessions = observed(root)
@@ -653,6 +655,12 @@ def _self_test() -> int:
 
         code, msg = run()
         check("no guard is idle", code == 0 and msg.startswith("idle") and not launched, msg)
+
+        campaign_guard.acquire(root, "codex-run", 4, "docs/phase-runs/run.md", campaign_guard.NO_JOB, runner="codex")
+        code, msg = run()
+        check("another runner's guard is held, never reported or resumed",
+              code == 0 and "codex run owns the tree" in msg and not launched, msg)
+        campaign_guard.end(root, "codex-run", "operator-stop")
 
         campaign_guard.acquire(root, s_run, 4, "docs/phase-runs/run.md", "job1")
         code, msg = run()

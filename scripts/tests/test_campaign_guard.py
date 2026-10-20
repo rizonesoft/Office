@@ -30,6 +30,10 @@ class GuardSelfTest(unittest.TestCase):
             # The self-test exits 1 exactly when a case failed, so the exit code must agree with the summary.
             self.assertEqual(result.returncode, 1 if failures else 0, output[-4000:])
         else:
+            # Strict: every case ran and passed, and the exit code agrees, so neither a quiet failure nor an
+            # empty run can pass.
+            self.assertEqual((failures, int(summary.group(2))), ([], 0), output[-4000:])
+            self.assertGreater(int(summary.group(1)), 100, output[-4000:])
             self.assertEqual(result.returncode, 0, output[-4000:])
 
 

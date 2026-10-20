@@ -58,6 +58,10 @@ RUN_FILE = "docs/phase-runs/2099-01-01-phase-0.md"
 
 REPO = os.path.normpath(os.path.join(HERE, ".."))
 END_REASONS = ("closeout", "park", "plan-done", "operator-stop", "escalation", "stall")
+# Every runner takes the guard before its first write, so no two agents ever share the tree. Only Claude Code
+# has the Stop hook, the CronCreate heartbeat and the keep-alive; the others run with no heartbeat job.
+RUNNERS = ("claude", "codex", "antigravity")
+NO_JOB = "none"
 
 
 class GuardError(ValueError):
@@ -166,7 +170,7 @@ def _run_length(root: str, run_file: str) -> int:
 
 
 def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
-            handover: str | None = None, generation: str | None = None) -> str:
+            handover: str | None = None, generation: str | None = None, runner: str = "claude") -> str:
     """Write the guard for `session`. A new guard is created exclusively
     (O_EXCL), so two sessions racing to start a run cannot both win; the
     owner re-points its own guard by compare-and-swap on `session_id`; a
@@ -174,14 +178,18 @@ def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
     hands it over, and the handover is recorded in the guard."""
     if not session or not run_file or not cron_id:
         raise GuardError("acquire needs --session, --run-file, and --cron-id")
+    if runner not in RUNNERS:
+        raise GuardError(f"runner {runner!r} is not one of {', '.join(RUNNERS)}")
+    if (runner == "claude") == (cron_id == NO_JOB):
+        raise GuardError("a claude runner names its heartbeat job; any other runner passes --cron-id none")
     if os.path.isabs(run_file) or ".." in run_file.replace("\\", "/").split("/"):
         raise GuardError(f"run file {run_file!r} must be a repo-relative path inside the workspace")
     with _Lock(root):
-        return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation)
+        return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation, runner)
 
 
 def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id: str,
-                    handover: str | None, generation: str | None = None) -> str:
+                    handover: str | None, generation: str | None = None, runner: str = "claude") -> str:
     guard, state_path = _paths(root)
     os.makedirs(os.path.dirname(guard), exist_ok=True)
     try:
@@ -189,7 +197,7 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
     except GuardError:
         previous = {}
     same_run = previous.get("run_file") == run_file and previous.get("session_id") == session
-    doc = {"runner": "claude", "workspace": root.replace("\\", "/"), "phase": phase,
+    doc = {"runner": runner, "workspace": root.replace("\\", "/"), "phase": phase,
            "run_file": run_file, "session_id": session, "cron_id": cron_id,
            # D00 T04 §36: the generation the heartbeat prompt carries, when
            # its job was created (the 7-day expiry counts from it), and the
@@ -293,7 +301,7 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
     if reason == "escalation" and not re.search(r"(?m)^PARKED\b.*\bescalation:", text):
         raise GuardError(f"escalation needs a column-0 'PARKED <UTC>{tag} escalation: <cause>' line in {run_rel}")
     if reason == "plan-done" and ready != 0:
-        raise GuardError(f"plan-done needs '0 runnable now'; query ready reads {ready}")
+        raise GuardError(f"plan-done needs an empty ready list; query ready reads {ready}")
     if reason == "stall":
         try:
             with open(state_path, encoding="utf-8-sig") as fh:
@@ -302,6 +310,16 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
             trips = 0
         if trips < 2:
             raise GuardError(f"stall needs a state file with trips of 2 or more; it reads {trips}")
+    if guard.get("cron_id") == NO_JOB:  # a runner without a heartbeat has no job to cancel
+        for path in (guard_path, state_path):
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
+        left = [p for p in (guard_path, state_path) if os.path.exists(p)]
+        if left:
+            raise GuardError(f"could not delete {', '.join(left)}")
+        return f"end: {reason}: guard and state deleted; this {guard.get('runner')} run has no heartbeat job"
     # The job id outlives the guard until CronDelete is confirmed: a failed
     # delete stays recoverable (D00 T04 §36).
     pending = _pending_path(root)
@@ -1194,8 +1212,32 @@ def _self_test() -> int:
         code, out, _ = run_hook(root, SESSION)
         check("the-escalation-report-turn-ends", code == 0 and out is None, str(out))
 
-        # D00 T04 §34: exclusive acquisition and every end path.
+        # D00 T03 §4: another agent's run holds the same guard, so a Claude session cannot start over it.
         os.remove(os.path.join(root, "build", "claude-campaign-guard.json"))
+        for args, why in (((SESSION, 0, RUN_FILE, NO_JOB), "a claude runner without a job"),
+                          (("codex-run", 0, RUN_FILE, "job-x", None, None, "codex"), "a codex runner with a job"),
+                          (("codex-run", 0, RUN_FILE, NO_JOB, None, None, "gemini"), "an unknown runner")):
+            try:
+                acquire(root, *args)
+                check("acquire-refuses-a-mismatched-runner", False, why)
+            except GuardError:
+                pass
+        acquire(root, "codex-run", 0, RUN_FILE, NO_JOB, runner="codex")
+        try:
+            acquire(root, SESSION, 0, RUN_FILE, "job-1")
+            check("a-claude-session-cannot-take-another-runners-guard", False, "took the codex guard")
+        except GuardError as exc:
+            check("a-claude-session-cannot-take-another-runners-guard", "without an operator handover" in str(exc),
+                  str(exc))
+        code, out, _ = run_hook(root, SESSION)
+        check("the-hook-never-blocks-for-another-runner", code == 0 and out is None, str(out))
+        msg = end(root, "codex-run", "operator-stop")
+        check("a-runner-without-a-job-ends-with-nothing-to-cancel",
+              "no heartbeat job" in msg and not pending_cancel(root) and read_guard(root) is None, msg)
+
+        # D00 T04 §34: exclusive acquisition and every end path.
+        if os.path.exists(os.path.join(root, "build", "claude-campaign-guard.json")):
+            os.remove(os.path.join(root, "build", "claude-campaign-guard.json"))
         msg = acquire(root, SESSION, 0, RUN_FILE, "job-1")
         check("acquire-creates-the-guard", msg.startswith("acquire: guard created"), msg)
         try:
@@ -1674,7 +1716,7 @@ def main(argv: list[str]) -> int:
         if argv[0] == "acquire":
             print(acquire(root, opts.get("session", ""), int(opts.get("phase", "0")),
                           opts.get("run_file", ""), opts.get("cron_id", ""), opts.get("handover"),
-                          opts.get("generation")))
+                          opts.get("generation"), opts.get("runner", "claude")))
             return 0
         if argv[0] == "end":
             print(end(root, opts.get("session", ""), opts.get("reason", "")))

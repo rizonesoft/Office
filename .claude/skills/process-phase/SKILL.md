@@ -19,7 +19,7 @@ Completion never buys completion with a bypass: no `--no-verify`, no amend of a 
 
 Check that no other writer holds the tree (`git status`; ask about unfamiliar uncommitted work). Writes are serial: this run is the only writer. Open the run file `docs/phase-runs/<YYYY-MM-DD>-phase-<N>.md` (create `docs/phase-runs/` if absent) and append every finding the moment it is made: the file survives session death where chat scrollback does not.
 
-Run guard: if this session entered through `process-plan`, the plan owns the guard; verify that `build/claude-campaign-guard.json` names this session and that the heartbeat job exists (`CronList`), and record the check, but do not create a second. If pinned to this phase standalone, start the guard exactly as the `process-plan` skill's Run guard section specifies (reconcile, heartbeat, acquire, observe), with this phase's run file.
+Run guard: if this session entered through `process-plan`, the plan owns the guard; verify that `build/claude-campaign-guard.json` names this session and that the heartbeat job exists (`CronList`), and record the check, but do not create a second. If pinned to this phase standalone, start the guard before this step's first write exactly as the `process-plan` skill's Run guard section specifies (reconcile, heartbeat with scope `phase <N> only`, acquire, observe), with this phase's run file, so the heartbeat never chains into another phase. Its end is `end --reason closeout`, `park` or `operator-stop`, then `CronDelete`, `CronList` and `cancel-confirmed`.
 
 ```markdown
 # Phase run: <heading>
@@ -51,11 +51,11 @@ Read the phase as a user would use it, end to end, against its governing documen
 
 ## Step 3: ship the phase, one row at a time
 
-In the generated plan's table order, for each open row: `process-todo-section`, then `review-todo-section`. Record each outcome in the run file. Commit the section work, then its stamp commit. Skip rows whose `resolve` is not exit 0 here, and re-check them after each stamp: the graph moves as rows flip. When every remaining open row is a leftover, the phase parks: write a column-0 `PARKED <UTC stamp> <one-line reason>` line in the run file followed by the park record (each leftover, what blocks it, where the blocker lives), commit the run file, and return to `process-plan` (or end, if pinned). After each stamp, check the heartbeat as `process-plan` states (`campaign_guard.py health` and `expiry` against `CronList`), replacing a missing or expiring job before the next section starts.
+In the generated plan's table order, for each open row: `process-todo-section`, then `review-todo-section`. Record each outcome in the run file. Commit the section work, then its stamp commit. Skip rows whose `resolve` is not exit 0 here, and re-check them after each stamp: the graph moves as rows flip. When every remaining open row is a leftover, the phase parks: write a column-0 `PARKED <UTC stamp> run=<run id> <one-line reason>` line in the run file (the run id the guard's `acquire` printed) followed by the park record (each leftover, what blocks it, where the blocker lives), commit the run file, and return to `process-plan`; a run pinned to this phase ends instead, through `end --reason park` as the guard requires. After each stamp, check the heartbeat as `process-plan` states (`campaign_guard.py health` and `expiry` against `CronList`), replacing a missing or expiring job before the next section starts.
 
 ## Step 4: closeout
 
-When the phase table is all `[x]`: `process-todo-file` on any file the phase exhausted, re-run the full test suite once, confirm `query stats` and the regenerated plan show the phase complete, write the closeout under a `## Closeout` heading in the run file (what shipped, what was repaired, what was learned), commit, and report. A phase is complete when its table says so and the closeout is written: not before.
+When the phase table is all `[x]`: `process-todo-file` on any file the phase exhausted, re-run the full test suite once, confirm `query stats` and the regenerated plan show the phase complete, write the closeout under a `## Closeout run=<run id>` heading in the run file (the run id the guard's `acquire` printed) (what shipped, what was repaired, what was learned), commit, and report. A phase is complete when its table says so and the closeout is written: not before. Under `process-plan`, return to it, which re-points the guard; a run pinned to this phase ends through `end --reason closeout` as the guard requires.
 
 ## Guardrails
 
