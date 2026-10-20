@@ -98,6 +98,8 @@ The guard file `build/claude-campaign-guard.json` names the session that owns an
 
 ## 3. Keep-Alive Resume Task and Session Observer
 
+> **Started:** 2026-10-20T01:08:32Z
+
 When the owning session's process is gone and no other Office-2028 session is open, the keep-alive resumes that exact session headless and supervises it. The SessionStart hook records each session's process so death can be proven, never guessed.
 
 **Phase:** 0
@@ -109,12 +111,12 @@ When the owning session's process is gone and no other Office-2028 session is op
 1. Port `scripts/campaign_keepalive.py` with the writer model read from `.conclave/keepalive.toml`. Done when: `python scripts/campaign_keepalive.py --self-test` passes.
 2. Wire the SessionStart hook and the task. Done when: `.claude/settings.json` names `campaign_keepalive.py observe` and `tasks.json` lists `office-2028-claude-keepalive`.
 
-- [ ] Copy `campaign_keepalive.py` to `scripts/campaign_keepalive.py`, renaming Isotone to Office-2028 in the prompt, messages and task name. Done when: `rg -n -i isotone scripts/campaign_keepalive.py` returns nothing. Cheaper substitute: a resume script that relaunches whenever no window is open, without proving the owner gone.
-- [ ] Write `.conclave/keepalive.toml` with `[writer] model = "claude-opus-5-5"` and change `writer_model()` to read it. Done when: the self-test's fixture reads the model from `keepalive.toml`, and a missing file makes `status` report the setup gap. Cheaper substitute: hard-coding the model in the script.
-- [ ] Add the SessionStart hook to `.claude/settings.json` running `campaign_keepalive.py observe`. Done when: starting a new Claude session writes `build/claude-sessions/<session>.json`. Cheaper substitute: observing only when a run starts, which cannot prove an older session gone.
-- [ ] Add `office-2028-claude-keepalive` to `.conclave/automations/tasks.json` (3 minutes after logon, then hourly, timeout 245 minutes) and its row to the README table. Done when: `test_automations.py` passes with the new task. Cheaper substitute: a task the README does not describe.
-- [ ] Add `scripts/tests/test_campaign_keepalive.py` running `--self-test`. Done when: it fails when the self-test fails.
-- [ ] Commit: `automations: add campaign keep-alive and session observer`
+- [x] Copy `campaign_keepalive.py` to `scripts/campaign_keepalive.py`, renaming Isotone to Office-2028 in the prompt, messages and task name. Done when: `rg -n -i isotone scripts/campaign_keepalive.py` returns nothing. Cheaper substitute: a resume script that relaunches whenever no window is open, without proving the owner gone.
+- [x] Write `.conclave/keepalive.toml` with `[writer] model = "claude-opus-5-5"` and change `writer_model()` to read it. Done when: the self-test's fixture reads the model from `keepalive.toml`, and a missing file makes `resurrect` refuse with a setup message before counting a resume (**Corrected 2026-10-20:** said `status`; only a launch reads the model). Cheaper substitute: hard-coding the model in the script.
+- [x] Add the SessionStart hook to `.claude/settings.json` running `campaign_keepalive.py observe`. Done when: starting a new Claude session writes `build/claude-sessions/<session>.json`. Cheaper substitute: observing only when a run starts, which cannot prove an older session gone.
+- [x] Add `office-2028-claude-keepalive` to `.conclave/automations/tasks.json` (3 minutes after logon, then hourly, timeout 245 minutes) and its row to the README table. Done when: `test_automations.py` passes with the new task. Cheaper substitute: a task the README does not describe.
+- [x] Add `scripts/tests/test_campaign_keepalive.py` running `--self-test`. Done when: it fails when the self-test fails.
+- [x] Commit: `automations: add campaign keep-alive and session observer`
 
 **Test checkpoint:** `python scripts/campaign_keepalive.py --self-test` exits 0, and `python -m unittest discover -s scripts/tests -p "test_campaign_keepalive.py"` passes.
 

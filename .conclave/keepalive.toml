@@ -1,0 +1,5 @@
+# The model the keep-alive resumes an Office-2028 campaign session with (scripts/campaign_keepalive.py).
+schema_version = 1
+
+[writer]
+model = "claude-opus-5-5"

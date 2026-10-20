@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import os, runpy, sys; sys.argv = ['campaign_keepalive.py', 'observe']; runpy.run_path(os.path.join(os.environ['CLAUDE_PROJECT_DIR'], 'scripts', 'campaign_keepalive.py'), run_name='__main__')\"",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

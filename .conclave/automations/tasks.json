@@ -1,5 +1,20 @@
 {
   "schema_version": 1,
   "folder": "\\Office-2028\\",
-  "tasks": []
+  "tasks": [
+    {
+      "name": "office-2028-claude-keepalive",
+      "description": "Resume an open Office-2028 campaign run whose owning Claude session has stopped",
+      "command": [
+        "python",
+        "scripts/campaign_keepalive.py",
+        "resurrect"
+      ],
+      "trigger": {
+        "at_logon_delay_minutes": 3,
+        "every_minutes": 60
+      },
+      "timeout_minutes": 245
+    }
+  ]
 }

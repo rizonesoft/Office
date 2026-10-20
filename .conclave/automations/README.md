@@ -6,8 +6,19 @@ Every scheduled job for Office-2028 lives here: the task list in `tasks.json`, t
 
 | Task | When (local time) | Runs | Fails when |
 | --- | --- | --- | --- |
+| office-2028-claude-keepalive | Logon, hourly | scripts/campaign_keepalive.py resurrect | Below |
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored.
+
+## The keep-alive
+
+The run heartbeat (`CronCreate`) runs inside its Claude session, so it dies with it. The keep-alive covers what it cannot: a restart, a crash, or a closed terminal that leaves the guard (`build/claude-campaign-guard.json`) open with nobody working the run. It resumes that exact session headless (`claude -p --resume <session> --model <writer> --permission-mode bypassPermissions`), with the writer model from `.conclave/keepalive.toml`, and supervises it.
+
+It acts only on proof. The SessionStart hook (`campaign_keepalive.py observe`, wired in `.claude/settings.json`) records the Claude process of every Office-2028 session as a pid and creation time under `build/claude-sessions/`. A launch needs the guard's session recorded and that exact process gone, and no other Office-2028 session alive: while the operator has any Office-2028 session open, the keep-alive waits, because one session owns the tree. While a resume runs, the supervisor ends its process tree as soon as the guard is ended or handed over, or another Office-2028 session starts. The full rule list is in the `campaign_keepalive.py` docstring, and `python scripts/campaign_keepalive.py status` says what it would do now.
+
+It runs 3 minutes after each logon and then hourly. It fails (and alerts) when a resumed session exits non-zero or runs past 4 hours, three resumes in a row make no progress (reported once), `.conclave/keepalive.toml` names no writer model, or no `claude` is on PATH. No open run, a live owner, or an attended session is a success.
+
+The resumed session's output goes to `build/claude-keepalive/<run id>-<UTC>.log`, and the keep-alive's own state to `build/claude-keepalive.json`.
 
 ## When a run fails
 
@@ -28,6 +39,7 @@ Get-ScheduledTask -TaskPath '\Office-2028\' | Get-ScheduledTaskInfo | Format-Tab
 python .conclave/automations/run.py <name>                    # run one task in this console
 python .conclave/automations/alert.py <name> --dry-run        # preview the alert for its last run
 python -m unittest discover -s scripts/tests -p "test_automations.py"
+python scripts/campaign_keepalive.py status                    # what the keep-alive would do now
 ```
 
 The installer reads `tasks.json` and registers every task it lists; a task under `\Office-2028\` that the file no longer lists is removed.
