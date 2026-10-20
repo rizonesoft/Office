@@ -10,13 +10,13 @@ title: "TODO-02 -- Licensing and Contributions"
 
 > **Goal:** Rizonesoft Office is cleanly licensed as GPL-3.0-or-later with a contributor agreement that keeps a commercial edition possible. Every source file carries an SPDX identifier and CI refuses one without it; every bundled third-party component has its licence and obligations recorded in one notices file and shipped with the app; outside pull requests cannot merge until the contributor agreement is signed.
 
-> **Current state:** Measured 2026-10-20. On 2026-10-20 the owner chose GPL-3.0-or-later (matching Qt's open-source edition), a contributor licence agreement rather than a DCO sign-off, and Windows first with macOS and Linux following. `LICENSE` holds the verbatim GPLv3 text (SHA-256 `3972dc97...b36986`) and `README.md` states the "or later" grant. Not yet present: SPDX headers on `scripts/`, `THIRD-PARTY-NOTICES.md`, the agreement text, a CLA check on pull requests, and `CONTRIBUTING.md`. Bundled today: Plus Jakarta Sans (SIL OFL 1.1) in `design/fonts/plus-jakarta-sans/`. Planned: Qt 6 (LGPLv3 or GPLv3 parts), Fluent UI System Icons (MIT) for ribbon commands.
+> **Current state:** Measured 2026-10-20. On 2026-10-20 the owner chose GPL-3.0-or-later (first to match Qt's open-source edition, kept after the same-day move to WinUI 3), a contributor licence agreement rather than a DCO sign-off, and Windows only. `LICENSE` holds the verbatim GPLv3 text (SHA-256 `3972dc97...b36986`) and `README.md` states the "or later" grant. Not yet present: SPDX headers on `scripts/`, `THIRD-PARTY-NOTICES.md`, the agreement text, a CLA check on pull requests, and `CONTRIBUTING.md`. Bundled today: Plus Jakarta Sans (SIL OFL 1.1) in `design/fonts/plus-jakarta-sans/`. Bundled since D02 T01 §19: the Office control identifier baseline (MIT, data only). Planned: the Windows App SDK with WinUI 3 (MIT), the .NET runtime (MIT), Fluent UI System Icons (MIT) for ribbon commands. **Corrected 2026-10-20:** planned Qt 6 (LGPLv3 or GPLv3 parts).
 
 ## Inputs
 
 - GNU GPLv3 text https://www.gnu.org/licenses/gpl-3.0.txt and the FSF guidance "How to use GNU licenses for your own software" https://www.gnu.org/licenses/gpl-howto.html: the notice wording for README and file headers.
 - SPDX License List https://spdx.org/licenses/ and REUSE specification 3.3 https://reuse.software/spec/: the per-file identifier convention.
-- Qt licensing https://doc.qt.io/qt-6/licensing.html: which Qt modules are LGPLv3 and which are GPLv3 only, and what LGPL distribution requires.
+- The licence files inside the pinned Windows App SDK and .NET runtime packages: the MIT notices the installer and the MSIX package must carry. **Corrected 2026-10-20:** cited Qt's licensing page.
 - Project Harmony contributor agreement templates https://www.harmonyagreements.org/: a standard starting point for the agreement, reviewed by a lawyer before use.
 - -> XREF: D03 T01 §11 -- the product licence decision and the dependency licence policy this file enforces
 
@@ -65,7 +65,7 @@ Each file states its own licence so a copied file keeps its terms. Rizonesoft co
 
 ## 2. Third-Party Notices File
 
-GPLv3 for our code does not remove the duties of the components we ship. Qt's LGPLv3 parts need their licence text and source availability; GPL-only Qt modules are allowed because the product is GPL; the OFL font and the MIT icon set need their notices.
+GPLv3 for our code does not remove the duties of the components we ship. The Windows App SDK, WinUI 3 and the .NET runtime are MIT and need their copyright and permission notices in both the MSIX package and the Inno Setup installer; the OFL font and the MIT icon set need their notices.
 
 **Phase:** 0
 **Needs:** none
@@ -77,11 +77,11 @@ GPLv3 for our code does not remove the duties of the components we ship. Qt's LG
 
 - [ ] Add the Plus Jakarta Sans entry (version 2.071, SIL OFL 1.1, https://github.com/tokotype/PlusJakartaSans, reserved font name rules) to `THIRD-PARTY-NOTICES.md`. Done when: the entry names version, licence, source and obligations. Cheaper substitute: a link without the licence text.
 - [ ] Add the Fluent UI System Icons entry (MIT, Microsoft's `fluentui-system-icons` repository, pinned version) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
-- [ ] Add the Qt 6 entry listing each module the product links, its licence (LGPLv3 or GPLv3), and how source is offered. Done when: every module in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Qt is LGPL", which hides GPL-only modules.
+- [ ] Add the Windows App SDK (with WinUI 3) and .NET runtime entries, each with its pinned version, MIT notice text and the packages the product redistributes. Done when: every redistributed package in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Microsoft runtime, MIT", which drops the required notices. **Corrected 2026-10-20:** was a Qt 6 entry.
 - [ ] Add a "How this file is maintained" note in `THIRD-PARTY-NOTICES.md` naming D03 T01 §11's dependency policy as the gate for new entries. Done when: the note names the policy file. Cheaper substitute: adding entries only at release time.
 - [ ] Commit: `legal: add third-party notices`
 
-**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Plus Jakarta Sans" --require "Fluent UI System Icons" --require "Qt 6"` exits 0.
+**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Plus Jakarta Sans" --require "Fluent UI System Icons" --require "Windows App SDK"` exits 0.
 
 ## 3. Contributor Agreement Text
 

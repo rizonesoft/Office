@@ -10,7 +10,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 
 > **Goal:** Every expensive-to-reverse technical choice for the suite is decided in a dated design record backed by a measured prototype where a claim needs proof: platform targets, shell framework, text layout, graphics, file formats, spreadsheet calculation, mail protocols, storage and co-authoring, extensibility, fonts, and licensing. The decisions roll up into a foundation plan in `docs/plans/`, and the implementation TODO domains for the shared platform and the six apps are authored from it and from the parity inventory.
 
-> **Current state:** Measured 2026-10-20. No code, no design records and no foundation plan exist; `docs/` holds only the Conclave-SDK workflow documents. On 2026-10-20 the owner chose C++ with Qt 6 on Windows, macOS and Linux (§1, §2); the product licence is still open (§11). The repository runs on a Windows 11 Pro host with WSL available.
+> **Current state:** Measured 2026-10-20. No code, no design records and no foundation plan exist; `docs/` holds only the Conclave-SDK workflow documents. On 2026-10-20 the owner first chose C++ with Qt 6 on Windows, macOS and Linux, then the same day replaced it with WinUI 3 (Windows App SDK) in C# on .NET 11, Windows only, shipped as an MSIX package and an Inno Setup installer (§1, §2); the product licence stays GPL-3.0-or-later (§11). The repository runs on a Windows 11 Pro host with WSL available.
 
 ## Inputs
 
@@ -52,7 +52,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 
 ## 1. Platform Targets Decision
 
-Everything downstream depends on where the suite runs. Microsoft 365 ships native Windows and macOS apps, web apps and mobile apps; matching the Windows desktop first is the default implied by the inventory's reference build. Decision, 2026-10-20 (owner): Windows, macOS and Linux desktop, enabled by the C++ and Qt 6 choice in §2. Windows ships first; macOS and Linux follow from the same code, and CI builds all three from the start. Web and mobile are out of scope until the owner adds them.
+Everything downstream depends on where the suite runs. Microsoft 365 ships native Windows and macOS apps, web apps and mobile apps; matching the Windows desktop first is the default implied by the inventory's reference build. Decision, 2026-10-20 (owner, revised the same day): Windows desktop only, x64 and Arm64, following the move to WinUI 3 in §2; macOS, Linux, web and mobile are out of scope. **Corrected 2026-10-20:** the first decision that day was Windows, macOS and Linux on C++ with Qt 6. Distribution, decided the same day: a signed MSIX package and an Inno Setup installer (Inno Setup 7.1.0, the latest release, is installed on the operator's host) for the unpackaged build.
 
 **Phase:** 3
 **Needs:** none
@@ -63,7 +63,8 @@ Everything downstream depends on where the suite runs. Microsoft 365 ships nativ
 1. Write `docs/specs/YYYY-MM-DD-platform-targets-design.md` with the options and the owner's decision. Done when: the design-doc checker passes with `Decision`.
 
 - [ ] List the candidate targets (Windows x64 and Arm64, macOS, Linux, web browser, iOS, Android) with the cost each adds in the design record. Done when: each target names one stack constraint it imposes. Cheaper substitute: "cross-platform" with no list.
-- [ ] Record the owner's 2026-10-20 decision (Windows, macOS and Linux desktop) and the release order under `## Decision`. Done when: the decision names targets, order and date. Cheaper substitute: treating Windows as the only real target and porting later.
+- [ ] Record the owner's 2026-10-20 decision (Windows desktop only, x64 and Arm64) under `## Decision`, with the earlier same-day decision it replaced. Done when: the decision names the targets, the date and what it replaced. Cheaper substitute: leaving macOS and Linux as an unstated maybe. **Corrected 2026-10-20:** said Windows, macOS and Linux with a release order.
+- [ ] Record the distribution channels under `## Decision`: a signed MSIX package (package identity, automatic updates, Store-ready) and an Inno Setup 7 installer of the unpackaged build with the Windows App SDK runtime self-contained, naming the signing certificate source and how each channel updates. Done when: both channels name signing and update. Cheaper substitute: one channel, which drops either the Store path or machines that block MSIX.
 - [ ] Record minimum OS versions and hardware baseline (RAM, display scaling range) per chosen target. Done when: each target has a minimum version. Cheaper substitute: "modern systems".
 - [ ] Commit: `arch: record platform targets decision`
 
@@ -71,7 +72,7 @@ Everything downstream depends on where the suite runs. Microsoft 365 ships nativ
 
 ## 2. Shell Framework Decision with Ribbon Prototype
 
-Decision, 2026-10-20 (owner): C++ with Qt 6 on Windows, macOS and Linux. Qt can carry the Office look: WPS Office reproduces the Office ribbon on Qt, and every control is custom-painted from the tokens in `design/SPEC.md` rather than taken from a stock Qt style. Qt has no ribbon, so the ribbon is our own control set (an MIT-licensed Qt ribbon such as SARibbon may be studied but must match the Ribbon chapter's scaling rules). The prototype settles what the owner left open: Qt Widgets or Qt Quick (QML) for the shell, a frameless window whose custom title bar keeps Windows 11 Snap Layouts and the Mica backdrop, and UI Automation accessibility through `QAccessible`.
+Decision, 2026-10-20 (owner): WinUI 3 from the Windows App SDK (MIT), in C# on .NET 11 (the release candidate now, the release once it ships), replacing C++ with Qt 6 chosen earlier the same day. Pin: Windows App SDK 2.5.1, the latest stable release (16 September 2026), which fixes crashes in NavigationView and KeyboardAccelerator and a CommandBar overflow button that wrongly appeared at 175 percent scaling, all three used by the shell. Pin rule (owner, 2026-10-20): the pin is always the latest stable WinUI 3 release in the microsoft-ui-xaml repository's releases (tags `winui3/release/<version>`; `-experimental` releases excluded), moved forward as soon as a newer stable release appears. WinUI 3 has no ribbon, so the ribbon is our own control set built from WinUI primitives and the tokens in `design/SPEC.md`. Ink controls (InkCanvas, InkToolbar, InkPresenter) exist only in experimental releases (2.4.1-experimental, extended in 2.5.4-experimental): no section may depend on them until a stable release ships them. Speed (owner concern): WinUI 3 itself is native code in every language; C# drives it, cold start is handled by ReadyToRun or Native AOT, and any engine (text layout, recalculation, rendering) that misses its measured budget in C# is written in C++ and called from C#. Feasibility, measured 2026-10-20 in `R:\scratch\prototypes\winui3-feasibility\`: WinUI 3 from Windows App SDK 2.5.1 builds on .NET 11 release candidate 2 and runs unpackaged (window shown, .NET 11.0.0); median time to a visible window over five runs is 239 ms with ReadyToRun and 327 ms with plain JIT; a Native AOT publish fails on .NET 11 RC (the XAML compiler receives no references in the publish pass, error WMC1007), while the same app on .NET 10 publishes with Native AOT in 222 ms and no trim warnings. The same app packs into an unsigned MSIX package (98 MB) and into an Inno Setup 7.1.0 installer of the ReadyToRun publish (76 MB).
 
 **Phase:** 3
 **Needs:** none
@@ -79,15 +80,16 @@ Decision, 2026-10-20 (owner): C++ with Qt 6 on Windows, macOS and Linux. Qt can 
 
 **Build order:**
 
-1. Build the Word Home tab in Qt Widgets and in Qt Quick in `R:\scratch\prototypes\`. Done when: both render every `word.home.*` control.
-2. Measure both and record the module decision in `docs/specs/YYYY-MM-DD-shell-framework-design.md`. Done when: the checker passes with Measurements and Decision.
+1. Build the Word Home tab in WinUI 3 in `R:\scratch\prototypes\winui3-ribbon\`. Done when: it renders every `word.home.*` control.
+2. Measure it and the engine benchmark, and record the decision in `docs/specs/YYYY-MM-DD-shell-framework-design.md`. Done when: the checker passes with Measurements and Decision. **Corrected 2026-10-20:** compared Qt Widgets with Qt Quick.
 
-- [ ] Build the Word Home tab with the Classic Ribbon in Qt Widgets in `R:\scratch\prototypes\qt-widgets\`, driven by the `word.home.*` inventory records. Done when: every Home tab control renders at its inventoried size. Cheaper substitute: a stock `QToolBar`, which cannot express ribbon groups or scaling.
-- [ ] Build the same tab in Qt Quick in `R:\scratch\prototypes\qt-quick\`. Done when: every Home tab control renders at its inventoried size. Cheaper substitute: prototyping only the module already preferred.
-- [ ] Give each prototype a frameless window with a custom title bar that answers `WM_NCHITTEST` with `HTMAXBUTTON` over the maximise button. Done when: hovering maximise on Windows 11 shows the Snap Layouts flyout and the Mica backdrop shows behind the title bar. Cheaper substitute: the native title bar, which breaks the Office title bar layout, or a frameless window without snap.
-- [ ] Measure cold start, idle memory, resize frame time while the ribbon scales, and UIA tree correctness with `scripts/capture-ui.py` for both prototypes. Done when: four numbers per prototype are under `## Measurements`. Cheaper substitute: vendor claims.
-- [ ] Record the chosen module (Widgets or Quick), the Qt release (the current long-term-support release) and the date under `## Decision`, with the owner's confirmation. Done when: the decision names module, version and date. Cheaper substitute: choosing by familiarity.
-- [ ] Commit: `arch: record Qt shell decision`
+- [ ] Build the Word Home tab with the Classic Ribbon in WinUI 3 (C#) in `R:\scratch\prototypes\winui3-ribbon\`, driven by the `word.home.*` inventory records. Done when: every Home tab control renders at its inventoried size. Cheaper substitute: a stock `CommandBar`, which cannot express ribbon groups or scaling. **Corrected 2026-10-20:** was a Qt Widgets prototype.
+- [ ] Benchmark one engine-shaped workload (laying out and breaking the text runs of a 100-page document) in C# and in a C++ library called from C#, in `R:\scratch\prototypes\engine-benchmark\`. Done when: both times are under `## Measurements` with the rule they set for when an engine goes native. Cheaper substitute: assuming C++ is faster. **Corrected 2026-10-20:** was a Qt Quick prototype.
+- [ ] Give the prototype a custom title bar through `AppWindow.TitleBar` with content extended into it, keeping Windows 11 Snap Layouts and the Mica backdrop (`MicaBackdrop`). Done when: hovering maximise on Windows 11 shows the Snap Layouts flyout and Mica shows behind the title bar. Cheaper substitute: the default title bar, which breaks the Office title bar layout.
+- [ ] Measure cold start (ReadyToRun, and Native AOT where the .NET 11 release publishes it), idle memory, resize frame time while the ribbon scales, and UIA tree correctness with `scripts/capture-ui.py`. Done when: the numbers are under `## Measurements`. Cheaper substitute: vendor claims.
+- [ ] Add `scripts/check-winui-pin.py`, which reads the pinned `Microsoft.WindowsAppSDK` version from the repository's package versions file and compares it with the newest stable `winui3/release/<version>` tag through `gh api`, exiting 1 when a newer stable release exists; CI and every phase start run it. Done when: a fixture pinned to 2.4.0 fails, the current pin passes, and an `-experimental` tag never counts as newer. Cheaper substitute: checking for new releases by hand.
+- [ ] Record the pins (Windows App SDK 2.5.1, the .NET 11 release, ReadyToRun or Native AOT by the measurements) and the date under `## Decision`, with the owner's confirmation. Done when: the decision names framework, versions and date. Cheaper substitute: floating versions.
+- [ ] Commit: `arch: record WinUI 3 shell decision`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/specs/<dated>-shell-framework-design.md --require Measurements --require Decision` exits 0.
 
@@ -103,7 +105,7 @@ Word fidelity depends on line breaking, justification, hyphenation, complex scri
 
 1. Write `docs/specs/YYYY-MM-DD-text-layout-design.md`. Done when: the record passes the checker with Measurements.
 
-- [ ] List the candidate approaches (own C++ engine on HarfBuzz plus ICU, Qt's `QTextLayout`, LibreOffice Writer core) with licence and platform fit. Done when: each has licence, language and maintenance status with dates. Cheaper substitute: Qt's `QTextDocument` by default.
+- [ ] List the candidate approaches (own engine in C# on DirectWrite through the Windows App SDK's DWriteCore, with native code where §2's benchmark rule calls for it; the rich edit control behind `RichEditBox`; LibreOffice Writer core) with licence and fit. Done when: each has licence, language and maintenance status with dates. Cheaper substitute: `RichEditBox` by default, which cannot paginate like Word. **Corrected 2026-10-20:** listed HarfBuzz plus ICU in C++ and Qt's `QTextLayout`.
 - [ ] Assemble a 20-document `.docx` fidelity corpus in `R:\scratch\corpus\docx\` with page counts recorded from Word. Done when: the corpus list and page counts are in the record. Cheaper substitute: a single sample document.
 - [ ] Measure page-count agreement for the top two approaches on the corpus. Done when: agreement percentages are under `## Measurements`. Cheaper substitute: visual impressions.
 - [ ] Record the decision and its consequences for tables, floats and fields under `## Decision`. Done when: each of the three has a named owner component. Cheaper substitute: deciding text only.
@@ -123,7 +125,7 @@ PowerPoint slides, Visio drawings, Excel charts, shapes in every app, and print 
 
 1. Write `docs/specs/YYYY-MM-DD-graphics-design.md`. Done when: the record passes the checker with Measurements.
 
-- [ ] List candidates (Skia, Qt's `QPainter` on the Qt rendering hardware interface, Blend2D, Direct2D and Core Graphics per platform) with licence and platform fit. Done when: each has licence and supported targets. Cheaper substitute: the framework default without comparison.
+- [ ] List candidates (Win2D, Direct2D and Direct3D through a `SwapChainPanel`, SkiaSharp, the Windows composition layer) with licence and fit. Done when: each has licence and a note on DrawingML effect support. Cheaper substitute: the framework default without comparison. **Corrected 2026-10-20:** listed Qt's `QPainter`, Blend2D and per-platform renderers for macOS and Linux.
 - [ ] Render a DrawingML effects test slide (shadow, glow, gradient, soft edges, picture crop) with the top two candidates in `R:\scratch\prototypes\graphics\`. Done when: per-effect support is recorded. Cheaper substitute: rendering rectangles only.
 - [ ] Record PDF output strategy (same renderer to PDF, or separate PDF writer). Done when: the strategy names the library and its licence. Cheaper substitute: printing to the OS PDF printer.
 - [ ] Record the decision under `## Decision`. Done when: renderer, version and date are named. Cheaper substitute: per-app renderer choices.
@@ -164,7 +166,7 @@ Excel parity is mostly the calculation engine: the formula grammar, A1 and R1C1 
 1. Write `docs/specs/YYYY-MM-DD-calc-engine-design.md`. Done when: the record passes the checker with Measurements.
 
 - [ ] Extract the function list from `design/inventory/excel/ribbon.json` (Formulas tab function library) into the record with category counts. Done when: the total matches the inventory. Cheaper substitute: a function list from memory.
-- [ ] List candidates (own C++ engine, LibreOffice Calc's formula core under MPL 2.0, IronCalc through its C interface) with licence, language and function coverage. Done when: each has a coverage percentage against the extracted list. Cheaper substitute: picking by stars.
+- [ ] List candidates (own engine in C#, native where §2's benchmark rule calls for it; LibreOffice Calc's formula core under MPL 2.0; IronCalc through its C interface) with licence, language and function coverage. Done when: each has a coverage percentage against the extracted list. Cheaper substitute: picking by stars.
 - [ ] Build a 200-formula conformance workbook from Microsoft function documentation examples in `R:\scratch\corpus\calc\` and measure the top two candidates. Done when: pass rates are under `## Measurements`. Cheaper substitute: testing SUM and VLOOKUP only.
 - [ ] Record the decision, including recalculation strategy and floating-point compatibility rules (15 significant digits, Excel date serials, 1900 leap-year bug). Done when: each rule is stated. Cheaper substitute: IEEE behaviour without Excel's display rules.
 - [ ] Commit: `arch: record calculation engine decision`
@@ -250,7 +252,7 @@ Documents name Calibri, Cambria, Aptos, Arial, Times New Roman and others. Micro
 
 ## 11. Product Licence and Dependency Policy
 
-The product's own licence decides which dependencies are allowed: a permissive or copyleft open-source licence, or proprietary. The dependency policy then lists allowed and refused licences and the notice process. Decision, 2026-10-20 (owner): GPL-3.0-or-later, matching Qt's open-source edition, with a contributor licence agreement so Rizonesoft can still offer a commercial edition. `LICENSE` and the `README.md` notice landed the same day; enforcement is D00 T02.
+The product's own licence decides which dependencies are allowed: a permissive or copyleft open-source licence, or proprietary. The dependency policy then lists allowed and refused licences and the notice process. Decision, 2026-10-20 (owner): GPL-3.0-or-later with a contributor licence agreement so Rizonesoft can still offer a commercial edition; chosen first to match Qt's open-source edition and kept the same day after the move to WinUI 3, whose MIT licence is compatible. `LICENSE` and the `README.md` notice landed the same day; enforcement is D00 T02.
 
 **Phase:** 3
 **Needs:** none
@@ -260,7 +262,7 @@ The product's own licence decides which dependencies are allowed: a permissive o
 
 1. Write `docs/specs/YYYY-MM-DD-licensing-design.md` with the owner's choice. Done when: the record passes the checker with Decision.
 
-- [ ] Compare licence options (MIT or Apache 2.0, MPL 2.0, GPL or AGPL, proprietary) with their effect on dependencies such as Qt 6 (LGPLv3 with dynamic linking, or a commercial Qt licence), MPXJ (LGPL) and LibreOffice components (MPL). Done when: each option lists allowed dependency licences. Cheaper substitute: choosing a licence without checking dependencies.
+- [ ] Compare licence options (MIT or Apache 2.0, MPL 2.0, GPL or AGPL, proprietary) with their effect on dependencies such as the Windows App SDK and WinUI 3 (MIT), the .NET runtime (MIT), Win2D (MIT), MPXJ (LGPL) and LibreOffice components (MPL). **Corrected 2026-10-20:** named Qt 6 (LGPLv3 or commercial) as the main dependency. Done when: each option lists allowed dependency licences. Cheaper substitute: choosing a licence without checking dependencies.
 - [ ] Record the 2026-10-20 decision (GPL-3.0-or-later, contributor agreement) under `## Decision`. Done when: the decision and date are recorded and `LICENSE` holds the GPLv3 text. Cheaper substitute: a licence named only in README.
 - [ ] Write the dependency policy (allowed licences, refused licences, notice file process) in the record. Done when: the policy names `THIRD-PARTY-NOTICES.md` as the notice file. Cheaper substitute: case-by-case review with no written rule.
 - [ ] Commit: `arch: record product licence and dependency policy`

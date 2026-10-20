@@ -2,7 +2,7 @@
 
 # Rizonesoft Office
 
-Rizonesoft Office is an office suite that matches Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is built in C++ with Qt 6 for Windows first, then macOS and Linux.
+Rizonesoft Office is an office suite that matches Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is a Windows desktop suite built with WinUI 3 in C# on .NET, shipped as an MSIX package and a classic installer.
 
 | App | For the work of |
 | --- | --------------- |
