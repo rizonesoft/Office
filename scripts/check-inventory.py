@@ -230,8 +230,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             elif app == "outlook" and sources:
                 data = load(path)
                 rows = data.get("rows", []) if isinstance(data, dict) else []
-                seen = {r[0] for r in rows if isinstance(r, list) and r}
-                absent = [w for w in outlook_windows(sources) if w not in seen]
+                windows_seen = {r[0] for r in rows if isinstance(r, list) and r}
+                absent = [w for w in outlook_windows(sources) if w not in windows_seen]
                 if absent:
                     problems.append(f"{path}: no rows for the windows {absent}")
     for resolved in named_resolved:

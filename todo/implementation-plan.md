@@ -53,7 +53,7 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 35 | Checklist items: 222
+Sections: 35 | Checklist items: 223
 
 | Status | Reference   | Deliverable                                               | Needs                                                 | Items |
 | ------ | ----------- | --------------------------------------------------------- | ----------------------------------------------------- | ----- |
@@ -63,7 +63,7 @@ Sections: 35 | Checklist items: 222
 | [ ]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session                 | 12    |
 | [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session                 | 7     |
 | [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                                  | 6     |
-| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session                 | 8     |
+| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session                 | 9     |
 | [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session                 | 7     |
 | [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session                 | 8     |
 | [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session                 | 7     |
@@ -125,4 +125,4 @@ Sections: 3 | Checklist items: 12
 
 Progress: 11/82 verified sections, 8 ready to run now.
 
-Checklist: 67/460 items completed (includes Commit items).
+Checklist: 70/461 items completed (includes Commit items).

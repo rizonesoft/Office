@@ -293,6 +293,16 @@ class Checker(unittest.TestCase):
         self.assertTrue(any("not a window in the manifest" in p
                             for p in self.complete(outlook_windows=WINDOWS + ("invented",))))
 
+    def test_records_beside_complete_baselines_are_still_checked(self):
+        # Regression: the completeness check once overwrote the id map the record checks use.
+        tab = {"id": "word.home", "app": "word", "kind": "tab", "label": "Home"}
+        (self.inv / "word").mkdir(exist_ok=True)
+        (self.inv / "word" / "ribbon.json").write_text(json.dumps([tab, dict(tab, id="word.view", parent="word.nope")]),
+                                                       encoding="utf-8")
+        problems = self.complete()
+        self.assertEqual([p for p in problems if "orphan" in p and "word.nope" in p] != [], True, problems)
+        self.assertEqual([p for p in problems if "orphan" not in p], [])
+
     def test_a_baseline_from_another_commit_fails_against_the_manifest(self):
         self.complete()
         doc = self.doc([["Bold", "toggleButton", "coreTab", None, "TabHome", None, None, None, 1]])
