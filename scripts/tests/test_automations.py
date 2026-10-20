@@ -544,6 +544,7 @@ class AlertRecord(unittest.TestCase):
 
     def run_failing(self, alerter):
         with tempfile.TemporaryDirectory() as tmp:
+            self.tmp = tmp
             auto = Path(tmp) / ".conclave" / "automations"
             auto.mkdir(parents=True)
             task = {**FIXTURE_TASK, "command": ["python", "-c", "import sys; sys.exit(1)"]}
@@ -553,6 +554,8 @@ class AlertRecord(unittest.TestCase):
                 code = run.main(["office-2028-fixture"], root=tmp, alerter=alerter)
             last = json.loads((Path(tmp) / "build" / "automations" / "office-2028-fixture" / "last.json")
                               .read_text(encoding="utf-8"))
+            self.records = [json.loads(r.read_text(encoding="utf-8")) for r in sorted(
+                (Path(tmp) / "build" / "automations" / "office-2028-fixture").glob("*.alert.json"))]
             return code, last
 
     def test_a_sent_alert_is_recorded_with_its_id(self):
@@ -560,6 +563,39 @@ class AlertRecord(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(last["alert"]["email_id"], "E123")
         self.assertIn("sent_at", last["alert"])
+
+    def test_the_real_sender_records_its_email_id(self):
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        ok = json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "E-REAL"}}).encode()
+        vault = lambda *a, **kw: subprocess.CompletedProcess(a, 0, stdout="api-" + "B" * 32 + chr(10), stderr="")
+        code, last = self.run_failing(lambda name, task, outcome, tail: alert.send_failure(
+            name, task, outcome, tail, run=vault, opener=lambda *a, **kw: Response(ok), host="PC"))
+        self.assertEqual((code, last["alert"]["email_id"]), (1, "E-REAL"))
+
+    def test_an_accepted_send_without_an_id_says_so(self):
+        code, last = self.run_failing(lambda *a: None)
+        self.assertEqual(code, 1)
+        self.assertIsNone(last["alert"]["email_id"])
+        self.assertIn("without an email id", last["alert"]["note"])
+
+    def test_a_slow_alert_never_overwrites_a_newer_outcome(self):
+        def slow(name, task, outcome, tail):
+            # A newer run finishes while this alert is in flight.
+            folder = Path(self.tmp) / "build" / "automations" / "office-2028-fixture"
+            (folder / "last.json").write_text(json.dumps({"log": "build/automations/office-2028-fixture/newer.log",
+                                                          "exit": 0}), encoding="utf-8")
+            return "E-OLD"
+        code, last = self.run_failing(slow)
+        self.assertEqual(last["log"], "build/automations/office-2028-fixture/newer.log")
+        self.assertNotIn("alert", last)
+        self.assertEqual(len(self.records), 1)
+        self.assertEqual(self.records[0]["alert"]["email_id"], "E-OLD")
 
     def test_an_unsent_alert_is_recorded_with_its_error(self):
         def refuse(*a):

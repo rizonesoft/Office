@@ -157,10 +157,11 @@ def _prune(folder: str) -> None:
     except OSError:
         return
     for old in logs[:-KEEP_LOGS]:
-        try:
-            os.unlink(os.path.join(folder, old))
-        except OSError:
-            pass  # in use or already gone; the next run tries again
+        for path in (os.path.join(folder, old), os.path.join(folder, old) + ".alert.json"):
+            try:
+                os.unlink(path)
+            except OSError:
+                pass  # in use or already gone; the next run tries again
 
 
 def _alert_module():
@@ -197,11 +198,36 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
     except Exception as error:  # the run already failed; an unsent alert must still show, as exit 3
         with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
             fh.write(f"\nrun.py: alert not sent: {type(error).__name__}: {error}\n")
-        _write_outcome(folder, {**outcome, "alert": {"error": f"{type(error).__name__}: {error}", "at": _utc()}})
+        _record_alert(root, folder, outcome, {"error": f"{type(error).__name__}: {error}", "at": _utc()})
         return 3
-    # The outcome records the send, so a failure's alert can be checked without the mailbox.
-    _write_outcome(folder, {**outcome, "alert": {"sent_at": _utc(), "email_id": sent if isinstance(sent, str) else ""}})
+    if isinstance(sent, str) and sent:
+        result = {"sent_at": _utc(), "email_id": sent}
+    else:  # accepted, but SMTP2GO named no message: say so rather than invent an id
+        result = {"sent_at": _utc(), "email_id": None, "note": "the send was accepted without an email id"}
+    _record_alert(root, folder, outcome, result)
     return outcome["exit"]
+
+
+def _record_alert(root: str, folder: str, outcome: dict, result: dict) -> None:
+    """Record the alert beside this run's log, and in last.json only while last.json still describes this run:
+    a slow alert must never overwrite a newer run's outcome."""
+    log = os.path.join(root, outcome["log"])
+    record = {"log": outcome["log"], "alert": result}
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix="alert.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(record, fh, indent=2)
+        os.replace(tmp, log + ".alert.json")
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+    try:
+        with open(os.path.join(folder, "last.json"), encoding="utf-8") as fh:
+            current = json.load(fh)
+    except (OSError, ValueError):
+        return
+    if current.get("log") == outcome["log"]:
+        _write_outcome(folder, {**current, "alert": result})
 
 
 if __name__ == "__main__":
