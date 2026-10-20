@@ -38,7 +38,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Inventory schema and checker | D00 T01 §1 | [x] |
-| 2 | §2 | Reference build and capture configuration | -- | [ ] |
+| 2 | §2 | Reference build and capture configuration | -- | [x] |
 | 3 | §3 | UI Automation capture tool | §1, §2, §21 | [ ] |
 | 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
 | 5 | §5 | Word ribbon and contextual tabs inventory | §3, §19 | [ ] |
@@ -107,9 +107,12 @@ Positions only mean something against one fixed configuration. This section reco
 - [x] Record the capture profile in `design/inventory/REFERENCE.md` under `## Capture profile`: display 1920x1080 at 100 percent scaling, window maximised, Office theme `White`, language `en-US`, ribbon always shown. Done when: the profile has an id that `captureProfile` fields reference. Cheaper substitute: capturing at whatever resolution the host uses.
 - [x] Record the 2026-10-20 layout choices (Classic and Simplified Ribbon both, classic Outlook) in `design/inventory/REFERENCE.md` under `## Layout choices`, with the steps that switch each reference app between the two ribbons. **Corrected 2026-10-20:** Word build 20430's Ribbon Display Options menu has no switch (read live, without changing a setting; elsewhere in Word is unverified), the baseline lists no toggle for Excel, PowerPoint, Visio or Project, and classic Outlook is not started unattended because starting it sends the Outbox; each app's ribbon section (§5, §7, §9, §11, §13, §15) records whether its build offers the switch and the steps, and this section records what was observed. Done when (corrected): both choices carry the owner's date, what was observed is recorded, and every app's switch steps are owned by its ribbon section's corrected item. Done when: both choices carry the owner's date and the switch steps. Cheaper substitute: capturing one ribbon layout and inferring the other.
 - [x] Record which apps are unlicensed on the host and how they will be licensed (trial or subscription) in `design/inventory/REFERENCE.md` under `## Licensing`. Done when: Visio and Project each show `installed` or a dated plan. Cheaper substitute: inventorying Visio and Project from web screenshots. **Corrected 2026-10-20:** each app shows its installed state and the licence found; Visio has none, so its capture sections §11 and §12 carry `owner-decision` until the owner confirms its licence, rather than holding this section and every capture behind it.
-- [ ] Commit: `inventory: record reference build and capture profile`
+- [x] Commit: `inventory: record reference build and capture profile`
 
 **Test checkpoint:** `python scripts/check-design-doc.py design/inventory/REFERENCE.md --require Builds --require "Capture profile" --require "Layout choices" --require Licensing` exits 0.
+
+> **Verified:** 2026-10-20 | §2 | c549c6014b05224248ea78cbbe47fc3aad04bb8d
+> **Review:** `docs/reviews/d02-t01-s2.json`
 
 ## 3. UI Automation Capture Tool
 

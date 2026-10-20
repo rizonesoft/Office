@@ -1,0 +1,27 @@
+{
+  "ref": "D02 T01 \u00a72",
+  "title": "Reference Build and Capture Configuration",
+  "implementation_sha": "c549c6014b05224248ea78cbbe47fc3aad04bb8d",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s2.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py design/inventory/REFERENCE.md --require Builds --require \"Capture profile\" --require \"Layout choices\" --require Licensing --require Baseline -> exit 0",
+    "python -m unittest discover -s scripts/tests -> OK (skipped=1)"
+  ]
+}
