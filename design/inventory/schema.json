@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rizonesoft/Office-2028/design/inventory/schema.json",
+  "title": "Microsoft 365 parity inventory file",
+  "description": "One inventory file: a JSON array of element records. Checked by scripts/check-inventory.py.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/record" },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "app", "kind", "label"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(shell|word|excel|powerpoint|visio|project|outlook)(\\.[A-Za-z0-9][A-Za-z0-9_-]*)+$",
+          "description": "Stable dotted id whose first segment is the app, for example word.home.font.bold."
+        },
+        "app": { "enum": ["shell", "word", "excel", "powerpoint", "visio", "project", "outlook"] },
+        "kind": {
+          "enum": ["tab", "contextualTab", "group", "control", "backstagePage", "pane", "statusItem", "view", "region",
+                   "dialog", "dialogTab", "setting", "contextMenu", "menuItem", "miniToolbar", "shortcut", "command"]
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "parent": { "type": "string", "minLength": 1, "description": "id of the containing record" },
+        "order": { "type": "integer", "minimum": 0, "description": "position among the parent's children" },
+        "controlType": {
+          "enum": ["button", "splitButton", "dropdown", "gallery", "galleryItem", "comboBox", "checkBox", "radioButton",
+                   "toggleButton", "spinner", "dialogLauncher", "menu", "dynamicMenu", "colorPicker", "editBox", "label",
+                   "separator", "box", "buttonGroup", "listBox", "slider"]
+        },
+        "size": { "enum": ["large", "medium", "small"] },
+        "keytip": { "type": "string", "minLength": 1 },
+        "shortcut": { "type": "string", "minLength": 1, "description": "key chord, for example Ctrl+B" },
+        "target": { "type": "string", "minLength": 1, "description": "id of the command or control a shortcut invokes" },
+        "menuPath": { "type": "string" },
+        "bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "width", "height"],
+          "description": "Pixels at 100 percent scaling, relative to the window client area.",
+          "properties": {
+            "x": { "type": "integer" },
+            "y": { "type": "integer" },
+            "width": { "type": "integer", "minimum": 0 },
+            "height": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "captureProfile": { "type": "string", "minLength": 1, "description": "profile id in design/inventory/REFERENCE.md" },
+        "behaviour": { "type": "string", "minLength": 1, "description": "one sentence on what the element does" },
+        "screentip": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title"],
+          "properties": { "title": { "type": "string" }, "description": { "type": "string" } }
+        },
+        "idMso": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "string",
+          "pattern": "^(https?://|uia:|baseline:|listcommands:)",
+          "description": "Where the record came from: a web page, or uia:/baseline:/listcommands: with the build or commit."
+        },
+        "capturedFrom": { "type": "string", "minLength": 1, "description": "Office build string, for example 16.0.20430.20182" },
+        "baselineMissing": { "type": "boolean", "description": "true when the live build shows it but the 2024 baseline lacks it" }
+      },
+      "dependentRequired": { "bounds": ["captureProfile"] },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "control" } }, "required": ["kind"] },
+          "then": { "required": ["controlType", "source"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "shortcut" } }, "required": ["kind"] },
+          "then": { "required": ["shortcut"] }
+        }
+      ]
+    }
+  }
+}
