@@ -7,7 +7,7 @@
 
 process-plan's heartbeat (`CronCreate`) runs inside its session, so it dies with it: a restart, a crash, or a
 closed terminal leaves the guard (`build/claude-campaign-guard.json`) open with nobody working the run. The
-`office-2028-claude-keepalive` task (`.conclave/automations/`, three minutes after logon and then hourly) runs
+`office-claude-keepalive` task (`.conclave/automations/`, three minutes after logon and then hourly) runs
 `resurrect`, which resumes that exact session headless with `claude -p --resume`, as Rizonetech's resurrect
 timer does for its campaigns.
 
@@ -20,14 +20,14 @@ Any one of these stops a launch, in this order:
 - no guard: there is no open run;
 - the guard's session was never observed, so its process cannot be proven gone;
 - that session's recorded process is alive, or Windows will not say (access denied counts as alive);
-- another observed Office-2028 session is alive, or unreadable: the operator is present, and one session owns
+- another observed Office session is alive, or unreadable: the operator is present, and one session owns
   the tree;
 - a launch in the last 15 minutes;
 - three resumes in a row that moved neither HEAD nor the run file, bookkeeping lines aside (reported once,
   then held).
 
 While the resumed session runs, the supervisor ends its process tree the moment the guard goes away (an
-operator stop or a run end), names another session (a handover), another Office-2028 session starts, the
+operator stop or a run end), names another session (a handover), another Office session starts, the
 operator resumes this same session in another process, or the supervision itself fails. Observations
 older than a week are pruned, except the one the open guard names.
 Every command takes `--root` to act on a fixture workspace instead of this repository.
@@ -61,9 +61,9 @@ POLL = 30.0
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 OBSERVED_DAYS = 7
 
-PROMPT = ("Claude keep-alive for Office-2028: this session owns the open campaign run in "
+PROMPT = ("Claude keep-alive for Office: this session owns the open campaign run in "
           "build/claude-campaign-guard.json (phase {phase}, run file {run_file}, run {run_id}), and its process had "
-          "stopped, so the office-2028-claude-keepalive task resumed it headless at {now}. Follow process-plan: append "
+          "stopped, so the office-claude-keepalive task resumed it headless at {now}. Follow process-plan: append "
           "`- bookkeeping: keep-alive resumed {now}` to the run file's Critical events, then reconcile the heartbeat "
           "(CronList, then python scripts/campaign_guard.py reconcile). If CronCreate works here, create a fresh "
           "heartbeat and re-point the guard with acquire and its job id; if it does not, leave the guard as it is "
@@ -154,7 +154,7 @@ class WindowsProcesses:
 
 def default_processes():
     if os.name != "nt":
-        raise KeepAliveError("the keep-alive reads Windows process identity; Office-2028 campaigns run on Windows")
+        raise KeepAliveError("the keep-alive reads Windows process identity; Office campaigns run on Windows")
     return WindowsProcesses()
 
 
@@ -392,7 +392,7 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
         return "hold", guard, f"held: session {session} is alive (Claude process {rec['owner'].get('pid')})"
     present = [s for s, r in sessions.items() if s != session and session_maybe_alive(procs, r)]
     if present:
-        return "hold", guard, f"held: attended, Office-2028 session {present[0]} is alive; one session owns the tree"
+        return "hold", guard, f"held: attended, Office session {present[0]} is alive; one session owns the tree"
     state = _read(_state_path(root))
     if clock() - float(state.get("launched_at", 0)) < RELAUNCH_AFTER:
         return "hold", guard, "held: a resume launched less than 15 minutes ago"
@@ -410,7 +410,7 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
 
 def writer_model(root: str) -> str:
     import tomllib
-    # Office-2028 has no review panel file; the writer model the keep-alive resumes with lives here.
+    # Office has no review panel file; the writer model the keep-alive resumes with lives here.
     with open(os.path.join(root, ".conclave", "keepalive.toml"), "rb") as fh:
         model = tomllib.load(fh)["writer"]["model"]
     if not isinstance(model, str) or not model.strip():
@@ -511,7 +511,7 @@ def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float,
         else:
             others = [s for s, r in sessions.items() if s != session and session_maybe_alive(procs, r)]
             if others:
-                ended = f"Office-2028 session {others[0]} started, and one session owns the tree"
+                ended = f"Office session {others[0]} started, and one session owns the tree"
         if not ended and clock() >= deadline:
             ended = f"the resume ran past {int(limit // 3600)}h"
         if ended:

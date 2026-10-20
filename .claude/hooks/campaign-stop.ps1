@@ -1,6 +1,6 @@
 # Stop hook for the Claude process-plan campaign (Resolute D00 T04 section 32, ported
-# from ScratchPad's 0da6bd2; ported to Office-2028 2026-09-26, where the
-# "D00 T04 section N" notes below are Resolute provenance, not Office-2028
+# from ScratchPad's 0da6bd2; ported to Office 2026-09-26, where the
+# "D00 T04 section N" notes below are Resolute provenance, not Office
 # sections). Blocks the campaign session's end of turn
 # while its run is open, and lets go when the run is finished, parked,
 # out of runnable work, or stalled. Only the session named in the guard
@@ -121,7 +121,7 @@ try {
     try {
         # Genuine halt: nothing runnable here. The runner still owes the
         # PARKED line, but blocking cannot produce work that does not exist.
-        # Office-2028's todo-graph prints the ready sections as a JSON list.
+        # Office's todo-graph prints the ready sections as a JSON list.
         # Bounded: the hook has 30 seconds in all, so the query gets 20 and a timeout counts as unknown (block).
         $ready = $null
         $readyExit = -1

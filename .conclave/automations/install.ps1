@@ -1,12 +1,12 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-  Registers the Office-2028 automations in Windows Task Scheduler, under \Office-2028\.
+  Registers the Office automations in Windows Task Scheduler, under \Office\.
 .DESCRIPTION
   Reads every task from tasks.json (the one list; nothing here names a task) and registers it to run
   `pythonw.exe .conclave\automations\run.py <name>` from this repository, as the signed-in user, only while
   that user is logged on (no stored password). Idempotent: re-run it after editing tasks.json. A task in the
-  \Office-2028\ folder that tasks.json no longer lists is unregistered.
+  \Office\ folder that tasks.json no longer lists is unregistered.
 
   Settings on every task: start when available (a run missed while the PC was off fires at the next chance,
   as systemd's Persistent=true does), ignore a new start while one runs, an execution limit five minutes past
@@ -29,7 +29,7 @@ if (-not $python) { throw 'python.exe is not on PATH; install Python 3 for Windo
 & $python (Join-Path $here 'run.py') --validate
 if ($LASTEXITCODE -ne 0) { throw 'tasks.json is not valid; nothing was changed' }
 $manifest = Get-Content -Raw -Path (Join-Path $here 'tasks.json') | ConvertFrom-Json
-$folder = '\Office-2028\'
+$folder = '\Office\'
 if ($manifest.folder -ne $folder) { throw "tasks.json folder must be $folder; nothing was changed" }
 $existing = @(Get-ScheduledTask | Where-Object TaskPath -eq $folder)
 

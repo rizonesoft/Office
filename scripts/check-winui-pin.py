@@ -42,7 +42,7 @@ class Unreadable(Exception):
 
 
 def fetch_json(url, opener=urllib.request.urlopen):
-    request = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "office-2028-winui-pin"})
+    request = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "office-winui-pin"})
     try:
         with opener(request, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
@@ -148,14 +148,14 @@ def update(version, release, nuget_versions, root=ROOT, dry_run=False, build=sub
             git("add", "Directory.Packages.props", cwd=tree)
             git("commit", "-q", "-m", f"deps: pin WinUI 3 (Windows App SDK) {version}",
                 "-m", f"Newest stable release {release.get('tag_name')} published {release.get('published_at', '')[:10]}; "
-                      f"was {old}. Proposed by the office-2028-winui-pin task.", cwd=tree)
+                      f"was {old}. Proposed by the office-winui-pin task.", cwd=tree)
             commit = git("rev-parse", "HEAD", cwd=tree).stdout.strip()
             committed = True
         finally:
             git("worktree", "remove", "--force", str(tree), cwd=root, check=False)
             if not committed:
                 git("branch", "-D", branch, cwd=root, check=False)
-    mail(f"Office-2028: WinUI 3 {version} is ready to merge",
+    mail(f"Office: WinUI 3 {version} is ready to merge",
          "\n".join([f"A newer stable WinUI 3 release is out: {release.get('tag_name')} "
                     f"(published {release.get('published_at', '')[:10]}).",
                     "", f"Branch {branch} (commit {commit[:12]}) moves the pin from {old} to {version}; its checks passed.",

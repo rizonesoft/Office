@@ -1,4 +1,4 @@
-"""The Office-2028 automations: tasks.json, run.py, alert.py, the installer and the README."""
+"""The Office automations: tasks.json, run.py, alert.py, the installer and the README."""
 import importlib.util
 import io
 import json
@@ -31,10 +31,10 @@ def load(name, path):
     return module
 
 
-run = load("office2028_run", AUTO / "run.py")
-alert = load("office2028_alert", AUTO / "alert.py")
+run = load("office_run", AUTO / "run.py")
+alert = load("office_alert", AUTO / "alert.py")
 # One well-formed task, for tests that must not depend on what tasks.json lists today.
-FIXTURE_TASK = {"name": "office-2028-fixture", "description": "Fixture check", "command": ["python", "scripts/fixture.py"],
+FIXTURE_TASK = {"name": "office-fixture", "description": "Fixture check", "command": ["python", "scripts/fixture.py"],
                 "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}
 
 
@@ -52,11 +52,11 @@ class Manifest(unittest.TestCase):
 
     @staticmethod
     def readme_rows(text):
-        """Every table row whose first cell names an office-2028- task, with or without backticks."""
+        """Every table row whose first cell names an office- task, with or without backticks."""
         rows = {}
         for line in text.splitlines():
             cells = [c.strip().strip("`").strip() for c in line.strip().strip("|").split("|")]
-            if line.lstrip().startswith("|") and cells and cells[0].startswith("office-2028-"):
+            if line.lstrip().startswith("|") and cells and cells[0].startswith("office-"):
                 rows[cells[0]] = cells
         return rows
 
@@ -70,13 +70,13 @@ class Manifest(unittest.TestCase):
                 self.assertIn(script, rows[name][2], "the Runs column must name the task's script")
 
     def test_the_readme_row_check_sees_unformatted_rows(self):
-        rows = self.readme_rows("| office-2028-ghost | Monday | scripts/ghost.py | nonzero |")
-        self.assertIn("office-2028-ghost", rows)
+        rows = self.readme_rows("| office-ghost | Monday | scripts/ghost.py | nonzero |")
+        self.assertIn("office-ghost", rows)
 
     def test_the_installer_reads_the_manifest_and_names_no_task(self):
         text = (AUTO / "install.ps1").read_text(encoding="utf-8")
         self.assertIn("tasks.json", text)
-        self.assertNotIn("office-2028-", text)
+        self.assertNotIn("office-", text)
 
     def test_a_malformed_manifest_is_refused(self):
         good = json.loads((AUTO / "tasks.json").read_text(encoding="utf-8"))
@@ -109,9 +109,9 @@ class Runner(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = Path(self._tmp.name)
         (self.root / ".conclave" / "automations").mkdir(parents=True)
-        self.tasks = {"schema_version": 1, "folder": "\\Office-2028\\", "tasks": [
-            self.task("office-2028-pass", "print('all good')"),
-            self.task("office-2028-fail", "import sys; print('line one'); print('it broke'); sys.exit(3)"),
+        self.tasks = {"schema_version": 1, "folder": "\\Office\\", "tasks": [
+            self.task("office-pass", "print('all good')"),
+            self.task("office-fail", "import sys; print('line one'); print('it broke'); sys.exit(3)"),
         ]}
         (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
         self.alerts = []
@@ -132,16 +132,16 @@ class Runner(unittest.TestCase):
         return json.loads((self.root / "build" / "automations" / name / "last.json").read_text(encoding="utf-8"))
 
     def test_a_passing_run_keeps_its_log_and_sends_nothing(self):
-        self.assertEqual(self.main("office-2028-pass"), 0)
-        outcome = self.last("office-2028-pass")
+        self.assertEqual(self.main("office-pass"), 0)
+        outcome = self.last("office-pass")
         self.assertEqual(outcome["exit"], 0)
         self.assertIn("all good", (self.root / outcome["log"]).read_text(encoding="utf-8"))
         self.assertEqual(self.alerts, [])
 
     def test_a_failing_run_alerts_with_its_log_tail(self):
-        self.assertEqual(self.main("office-2028-fail"), 3)
+        self.assertEqual(self.main("office-fail"), 3)
         (name, task, outcome, tail), = self.alerts
-        self.assertEqual((name, outcome["exit"], task["description"]), ("office-2028-fail", 3, "fixture office-2028-fail"))
+        self.assertEqual((name, outcome["exit"], task["description"]), ("office-fail", 3, "fixture office-fail"))
         self.assertIn("it broke", tail)
 
     def test_a_timeout_stops_the_run_and_alerts(self):
@@ -156,9 +156,9 @@ class Runner(unittest.TestCase):
             def wait(self, timeout=None):
                 raise subprocess.TimeoutExpired("hung", timeout)
 
-        self.assertEqual(self.main("office-2028-pass", popen=Hung, killer=killed.append), 124)
+        self.assertEqual(self.main("office-pass", popen=Hung, killer=killed.append), 124)
         self.assertEqual(len(killed), 1)
-        self.assertTrue(self.last("office-2028-pass")["timed_out"])
+        self.assertTrue(self.last("office-pass")["timed_out"])
         self.assertEqual(len(self.alerts), 1)
 
     def test_an_unsent_alert_exits_3_and_says_so_in_the_log(self):
@@ -167,25 +167,25 @@ class Runner(unittest.TestCase):
 
         self.tasks["tasks"][1]["command"][-1] = "import sys; sys.exit(5)"
         (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
-        self.assertEqual(self.main("office-2028-fail", alerter=refuse), 3)
-        log = (self.root / self.last("office-2028-fail")["log"]).read_text(encoding="utf-8")
+        self.assertEqual(self.main("office-fail", alerter=refuse), 3)
+        log = (self.root / self.last("office-fail")["log"]).read_text(encoding="utf-8")
         self.assertIn("alert not sent: Refused: vault field credential is unavailable", log)
 
     def test_only_the_newest_logs_are_kept(self):
-        folder = self.root / "build" / "automations" / "office-2028-pass"
+        folder = self.root / "build" / "automations" / "office-pass"
         folder.mkdir(parents=True)
         for i in range(run.KEEP_LOGS + 5):
             (folder / f"20000101T0000{i:02d}Z.log").write_text("old", encoding="utf-8")
-        self.main("office-2028-pass")
+        self.main("office-pass")
         self.assertEqual(len(list(folder.glob("*.log"))), run.KEEP_LOGS)
-        self.assertTrue((self.root / self.last("office-2028-pass")["log"]).exists())
+        self.assertTrue((self.root / self.last("office-pass")["log"]).exists())
 
     def test_a_command_that_cannot_start_is_recorded_and_alerted(self):
         def cannot_start(*_a, **_kw):
             raise PermissionError(13, "Access is denied")
 
-        self.assertEqual(self.main("office-2028-pass", popen=cannot_start), 126)
-        outcome = self.last("office-2028-pass")
+        self.assertEqual(self.main("office-pass", popen=cannot_start), 126)
+        outcome = self.last("office-pass")
         self.assertEqual(outcome["exit"], 126)
         self.assertIn("could not start", (self.root / outcome["log"]).read_text(encoding="utf-8"))
         (_name, _task, alerted, tail), = self.alerts
@@ -202,18 +202,18 @@ class Runner(unittest.TestCase):
                 self.assertGreaterEqual(flagged, calls - text.count('"git", "init"'), path.name)
 
     def test_an_unknown_task_is_refused(self):
-        self.assertEqual(self.main("office-2028-missing"), 2)
+        self.assertEqual(self.main("office-missing"), 2)
 
 
 class Alert(unittest.TestCase):
     TASK = {"description": "Fixture check", "command": ["python", "scripts/fixture.py"]}
     OUTCOME = {"exit": 1, "started": "2026-10-19T05:15:00Z", "finished": "2026-10-19T05:16:00Z",
-               "log": "build/automations/office-2028-fixture/x.log", "timed_out": False}
+               "log": "build/automations/office-fixture/x.log", "timed_out": False}
 
     def test_the_message_names_the_task_its_exit_and_its_log_tail(self):
-        subject, body = alert.message("office-2028-fixture", self.TASK, self.OUTCOME, "fixture failed", "PC")
-        self.assertEqual(subject, "Office-2028 automation failed: office-2028-fixture on PC")
-        for text in ("exit 1", "Fixture check", "fixture failed", "Start-ScheduledTask -TaskPath '\\Office-2028\\'"):
+        subject, body = alert.message("office-fixture", self.TASK, self.OUTCOME, "fixture failed", "PC")
+        self.assertEqual(subject, "Office automation failed: office-fixture on PC")
+        for text in ("exit 1", "Fixture check", "fixture failed", "Start-ScheduledTask -TaskPath '\\Office\\'"):
             self.assertIn(text, body)
         _, timed = alert.message("x", self.TASK, {**self.OUTCOME, "timed_out": True}, "", "PC")
         self.assertIn("timed out", timed)
@@ -246,7 +246,7 @@ class Alert(unittest.TestCase):
             root = Path(tmp)
             (root / ".conclave" / "automations").mkdir(parents=True)
             (root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(
-                {"schema_version": 1, "folder": "\\Office-2028\\", "tasks": [FIXTURE_TASK]}), encoding="utf-8")
+                {"schema_version": 1, "folder": "\\Office\\", "tasks": [FIXTURE_TASK]}), encoding="utf-8")
 
             def no_vault(*_a, **_kw):
                 raise AssertionError("a dry run must not read the vault")
@@ -254,11 +254,11 @@ class Alert(unittest.TestCase):
             out = io.StringIO()
             sys.stdout, saved = out, sys.stdout
             try:
-                code = alert.main(["office-2028-fixture", "--dry-run"], run=no_vault, host="PC", root=str(root))
+                code = alert.main(["office-fixture", "--dry-run"], run=no_vault, host="PC", root=str(root))
             finally:
                 sys.stdout = saved
             self.assertEqual(code, 0)
-            self.assertIn("Subject: Office-2028 automation failed: office-2028-fixture on PC", out.getvalue())
+            self.assertIn("Subject: Office automation failed: office-fixture on PC", out.getvalue())
 
 
 class RoundOneFixes(unittest.TestCase):
@@ -267,7 +267,7 @@ class RoundOneFixes(unittest.TestCase):
     def manifest(self, tmp, tasks, folder=None):
         auto = Path(tmp) / ".conclave" / "automations"
         auto.mkdir(parents=True, exist_ok=True)
-        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office-2028" + chr(92), "tasks": tasks}
+        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office" + chr(92), "tasks": tasks}
         (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
         return auto / "tasks.json"
 
@@ -290,8 +290,8 @@ class RoundOneFixes(unittest.TestCase):
     def test_two_runs_in_one_second_keep_both_logs(self):
         with tempfile.TemporaryDirectory() as tmp:
             task = {**FIXTURE_TASK, "command": ["python", "-c", "print('hi')"]}
-            first = run.execute("office-2028-fixture", task, tmp)
-            second = run.execute("office-2028-fixture", task, tmp)
+            first = run.execute("office-fixture", task, tmp)
+            second = run.execute("office-fixture", task, tmp)
             self.assertNotEqual(first["log"], second["log"])
             self.assertTrue((Path(tmp) / first["log"]).exists() and (Path(tmp) / second["log"]).exists())
 
@@ -307,9 +307,9 @@ class RoundOneFixes(unittest.TestCase):
             raise subprocess.TimeoutExpired("taskkill", 60)
 
         with tempfile.TemporaryDirectory() as tmp:
-            outcome = run.execute("office-2028-fixture", FIXTURE_TASK, tmp, popen=Hung, killer=broken_killer)
+            outcome = run.execute("office-fixture", FIXTURE_TASK, tmp, popen=Hung, killer=broken_killer)
             self.assertEqual((outcome["exit"], outcome["timed_out"], outcome.get("cleanup_failed")), (124, True, True))
-            self.assertTrue((Path(tmp) / "build" / "automations" / "office-2028-fixture" / "last.json").exists())
+            self.assertTrue((Path(tmp) / "build" / "automations" / "office-fixture" / "last.json").exists())
             self.assertIn("could not stop", (Path(tmp) / outcome["log"]).read_text(encoding="utf-8"))
 
     def test_the_log_tail_reads_only_the_end(self):
@@ -331,7 +331,7 @@ class InstallerDryRun(unittest.TestCase):
         auto.mkdir(parents=True)
         for name in ("install.ps1", "run.py", "alert.py"):
             (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
-        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office-2028" + chr(92), "tasks": tasks}
+        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office" + chr(92), "tasks": tasks}
         (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
         return auto / "install.ps1"
 
@@ -343,7 +343,7 @@ class InstallerDryRun(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result = self.pwsh(self.fixture(tmp, [FIXTURE_TASK]), "-DryRun")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("would register " + chr(92) + "Office-2028" + chr(92) + "office-2028-fixture", result.stdout)
+            self.assertIn("would register " + chr(92) + "Office" + chr(92) + "office-fixture", result.stdout)
 
     def test_a_foreign_folder_is_refused_before_anything_changes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -370,14 +370,14 @@ class RoundTwoFixes(unittest.TestCase):
             return run.load_tasks(str(path))
 
     def base(self, **over):
-        return {"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92), "tasks": [FIXTURE_TASK], **over}
+        return {"schema_version": 1, "folder": chr(92) + "Office" + chr(92), "tasks": [FIXTURE_TASK], **over}
 
     def test_malformed_types_are_task_errors_not_crashes(self):
         bad_docs = [self.base(schema_version=True), self.base(schema_version=1.0), self.base(tasks=[None]),
                     self.base(tasks=[{**FIXTURE_TASK, "name": 123}]),
                     self.base(tasks=[{**FIXTURE_TASK, "trigger": None}]),
                     self.base(tasks=[{**FIXTURE_TASK, "description": ""}]),
-                    self.base(tasks=[{**FIXTURE_TASK, "name": "office-2028-fixture" + chr(10)}]),
+                    self.base(tasks=[{**FIXTURE_TASK, "name": "office-fixture" + chr(10)}]),
                     self.base(tasks=[{**FIXTURE_TASK, "command": ["python", "a" + chr(0)]}]),
                     self.base(tasks=[{**FIXTURE_TASK, "trigger": {"weekly": "Monday", "at": 7}}]), []]
         for doc in bad_docs:
@@ -399,7 +399,7 @@ class RoundTwoFixes(unittest.TestCase):
 
     def test_a_pruning_failure_cannot_cost_the_outcome(self):
         with tempfile.TemporaryDirectory() as tmp:
-            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder = Path(tmp) / "build" / "automations" / "office-fixture"
             folder.mkdir(parents=True)
             for i in range(run.KEEP_LOGS + 2):
                 (folder / f"20000101T0000{i:02d}.000000Z-1.log").write_text("old", encoding="utf-8")
@@ -412,7 +412,7 @@ class RoundTwoFixes(unittest.TestCase):
 
             os.unlink = locked
             try:
-                outcome = run.execute("office-2028-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
+                outcome = run.execute("office-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
             finally:
                 os.unlink = real
             self.assertTrue((folder / "last.json").exists())
@@ -437,7 +437,7 @@ class RoundTwoFixes(unittest.TestCase):
             auto.mkdir(parents=True)
             (auto / "tasks.json").write_text(json.dumps(self.base()), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-2028-fixture"], root=tmp, popen=Hung, killer=broken_killer,
+                code = run.main(["office-fixture"], root=tmp, popen=Hung, killer=broken_killer,
                                 alerter=lambda *a: alerts.append(a))
         self.assertEqual(code, 124)
         self.assertEqual(len(alerts), 1)
@@ -455,7 +455,7 @@ class InstallerWithFakeScheduler(unittest.TestCase):
             auto.mkdir(parents=True)
             for name in ("install.ps1", "run.py", "alert.py"):
                 (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
-            folder = chr(92) + "Office-2028" + chr(92)
+            folder = chr(92) + "Office" + chr(92)
             (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": folder, "tasks": tasks}),
                                              encoding="utf-8")
             (Path(tmp) / "existing.json").write_text(json.dumps(existing), encoding="utf-8")
@@ -468,23 +468,23 @@ class InstallerWithFakeScheduler(unittest.TestCase):
             return result, calls
 
     def test_install_registers_each_task_with_one_repeating_trigger_and_removes_stale_ones(self):
-        keep = {**FIXTURE_TASK, "name": "office-2028-keep",
+        keep = {**FIXTURE_TASK, "name": "office-keep",
                 "trigger": {"at_logon_delay_minutes": 3, "every_minutes": 60}}
-        folder = chr(92) + "Office-2028" + chr(92)
-        existing = [{"path": folder, "name": "office-2028-keep"}, {"path": folder, "name": "office-2028-stale"},
+        folder = chr(92) + "Office" + chr(92)
+        existing = [{"path": folder, "name": "office-keep"}, {"path": folder, "name": "office-stale"},
                     {"path": chr(92) + "Other" + chr(92), "name": "someone-else"}]
         result, calls = self.run_installer([keep], existing)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         registers = [c for c in calls if c["op"] == "register"]
-        self.assertEqual([c["name"] for c in registers], ["office-2028-keep"])
+        self.assertEqual([c["name"] for c in registers], ["office-keep"])
         triggers = registers[0]["triggers"]
         self.assertEqual(sum(1 for t in triggers if t["Repeat"]), 1, triggers)
         self.assertTrue(any(t["AtLogOn"] and t["Delay"] == "PT3M" for t in triggers), triggers)
         self.assertEqual(registers[0]["logon"], "Interactive")
-        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-stale"])
+        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-stale"])
 
     def test_a_daily_task_registers_one_daily_trigger(self):
-        daily = {**FIXTURE_TASK, "name": "office-2028-daily", "trigger": {"daily_at": "06:23"}}
+        daily = {**FIXTURE_TASK, "name": "office-daily", "trigger": {"daily_at": "06:23"}}
         result, calls = self.run_installer([daily], [])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         triggers = [c for c in calls if c["op"] == "register"][0]["triggers"]
@@ -497,15 +497,15 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         self.assertIn("No tasks registered", result.stdout)
 
     def test_uninstall_removes_only_this_folder_and_dry_run_changes_nothing(self):
-        folder = chr(92) + "Office-2028" + chr(92)
-        existing = [{"path": folder, "name": "office-2028-keep"}, {"path": chr(92) + "Other" + chr(92), "name": "x"}]
+        folder = chr(92) + "Office" + chr(92)
+        existing = [{"path": folder, "name": "office-keep"}, {"path": chr(92) + "Other" + chr(92), "name": "x"}]
         result, calls = self.run_installer([FIXTURE_TASK], existing, "-Uninstall", "-DryRun")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(calls, [])
-        self.assertIn("would remove " + folder + "office-2028-keep", result.stdout)
+        self.assertIn("would remove " + folder + "office-keep", result.stdout)
         result, calls = self.run_installer([FIXTURE_TASK], existing, "-Uninstall")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-keep"])
+        self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-keep"])
 
 class RoundThreeFixes(unittest.TestCase):
     """Defects the third independent review found, fixed after the review cap (D00 T03 §1)."""
@@ -526,14 +526,14 @@ class RoundThreeFixes(unittest.TestCase):
         real = os.listdir
 
         def refuse(path="."):
-            if str(path).endswith("office-2028-fixture"):
+            if str(path).endswith("office-fixture"):
                 raise PermissionError("denied")
             return real(path)
 
         with tempfile.TemporaryDirectory() as tmp:
             os.listdir = refuse
             try:
-                outcome = run.execute("office-2028-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
+                outcome = run.execute("office-fixture", {**FIXTURE_TASK, "command": ["python", "-c", "pass"]}, tmp)
             finally:
                 os.listdir = real
             self.assertEqual(outcome["exit"], 0)
@@ -546,10 +546,10 @@ class RoundThreeFixes(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             auto = Path(tmp) / ".conclave" / "automations"
             auto.mkdir(parents=True)
-            doc = {"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92), "tasks": [FIXTURE_TASK]}
+            doc = {"schema_version": 1, "folder": chr(92) + "Office" + chr(92), "tasks": [FIXTURE_TASK]}
             (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-2028-fixture"], root=tmp, popen=bad_popen, alerter=lambda *a: alerts.append(a))
+                code = run.main(["office-fixture"], root=tmp, popen=bad_popen, alerter=lambda *a: alerts.append(a))
         self.assertEqual(code, 126)
         self.assertEqual(len(alerts), 1)
 
@@ -562,14 +562,14 @@ class AlertRecord(unittest.TestCase):
             auto = Path(tmp) / ".conclave" / "automations"
             auto.mkdir(parents=True)
             task = {**FIXTURE_TASK, "command": ["python", "-c", "import sys; sys.exit(1)"]}
-            (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office-2028" + chr(92),
+            (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office" + chr(92),
                                                          "tasks": [task]}), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-2028-fixture"], root=tmp, alerter=alerter)
-            last = json.loads((Path(tmp) / "build" / "automations" / "office-2028-fixture" / "last.json")
+                code = run.main(["office-fixture"], root=tmp, alerter=alerter)
+            last = json.loads((Path(tmp) / "build" / "automations" / "office-fixture" / "last.json")
                               .read_text(encoding="utf-8"))
             self.records = [json.loads(r.read_text(encoding="utf-8")) for r in sorted(
-                (Path(tmp) / "build" / "automations" / "office-2028-fixture").glob("*.alert.json"))]
+                (Path(tmp) / "build" / "automations" / "office-fixture").glob("*.alert.json"))]
             return code, last
 
     def test_a_sent_alert_is_recorded_with_its_id(self):
@@ -601,12 +601,12 @@ class AlertRecord(unittest.TestCase):
     def test_a_slow_alert_never_overwrites_a_newer_outcome(self):
         def slow(name, task, outcome, tail):
             # A newer run finishes while this alert is in flight.
-            folder = Path(self.tmp) / "build" / "automations" / "office-2028-fixture"
-            (folder / "last.json").write_text(json.dumps({"log": "build/automations/office-2028-fixture/newer.log",
+            folder = Path(self.tmp) / "build" / "automations" / "office-fixture"
+            (folder / "last.json").write_text(json.dumps({"log": "build/automations/office-fixture/newer.log",
                                                           "exit": 0}), encoding="utf-8")
             return "E-OLD"
         code, last = self.run_failing(slow)
-        self.assertEqual(last["log"], "build/automations/office-2028-fixture/newer.log")
+        self.assertEqual(last["log"], "build/automations/office-fixture/newer.log")
         self.assertNotIn("alert", last)
         self.assertEqual(len(self.records), 1)
         self.assertEqual(self.records[0]["alert"]["email_id"], "E-OLD")
@@ -624,10 +624,10 @@ class LastJsonLocking(unittest.TestCase):
     def test_an_alert_waits_for_a_run_holding_the_lock_and_then_skips_its_newer_outcome(self):
         import threading
         with tempfile.TemporaryDirectory() as tmp:
-            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder = Path(tmp) / "build" / "automations" / "office-fixture"
             folder.mkdir(parents=True)
             (folder / "a.log").write_text("a", encoding="utf-8")
-            old = {"log": "build/automations/office-2028-fixture/a.log", "exit": 1}
+            old = {"log": "build/automations/office-fixture/a.log", "exit": 1}
             (folder / "last.json").write_text(json.dumps(old), encoding="utf-8")
             done = threading.Event()
             holder = run.TaskLock(str(folder))
@@ -637,7 +637,7 @@ class LastJsonLocking(unittest.TestCase):
             worker.start()
             self.assertFalse(done.wait(0.5), 'the alert wrote last.json while another writer held the lock')
             # The newer run publishes its outcome while it holds the lock, then releases it.
-            newer = {"log": "build/automations/office-2028-fixture/b.log", "exit": 0}
+            newer = {"log": "build/automations/office-fixture/b.log", "exit": 0}
             (folder / "last.json").write_text(json.dumps(newer), encoding="utf-8")
             holder.__exit__(None, None, None)
             self.assertTrue(done.wait(10))
@@ -657,9 +657,9 @@ class LastJsonLocking(unittest.TestCase):
 
     def test_a_late_alert_for_a_pruned_log_leaves_no_record_behind(self):
         with tempfile.TemporaryDirectory() as tmp:
-            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder = Path(tmp) / "build" / "automations" / "office-fixture"
             folder.mkdir(parents=True)
-            gone = {"log": "build/automations/office-2028-fixture/gone.log", "exit": 1}
+            gone = {"log": "build/automations/office-fixture/gone.log", "exit": 1}
             run._record_alert(tmp, str(folder), gone, {'email_id': 'E2'})
             self.assertEqual(list(folder.glob("*.alert.json")), [])
 

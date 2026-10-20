@@ -114,15 +114,15 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 **Build order:**
 
-1. Install the chosen CLA check on `rizonesoft/Office-2028` pointing at `docs/legal/rizonesoft-cla.md`. Done when: a test pull request from an unsigned account shows a failing check.
+1. Install the chosen CLA check on `rizonesoft/Office` pointing at `docs/legal/rizonesoft-cla.md`. Done when: a test pull request from an unsigned account shows a failing check.
 2. Make the check required in branch protection for `main`. Done when: the unsigned test pull request cannot merge.
 
 - [ ] Choose between CLA Assistant and the self-hosted GitHub Action and record why in `docs/legal/README.md`. Done when: the choice names where signatures are stored. Cheaper substitute: collecting signatures by email.
 - [ ] Install and configure the check to link `docs/legal/rizonesoft-cla.md` and `docs/legal/rizonesoft-cla-entity.md`. Done when: the check comment on a test pull request links both. Cheaper substitute: a README request to sign, with no enforcement.
-- [ ] Mark the check as required on `main` in branch protection. Done when: `gh api repos/rizonesoft/Office-2028/branches/main/protection` lists the check. Cheaper substitute: an optional check that can be ignored.
+- [ ] Mark the check as required on `main` in branch protection. Done when: `gh api repos/rizonesoft/Office/branches/main/protection` lists the check. Cheaper substitute: an optional check that can be ignored.
 - [ ] Commit: `legal: document contributor agreement check`
 
-**Test checkpoint:** `gh api repos/rizonesoft/Office-2028/branches/main/protection --jq .required_status_checks.contexts` includes the CLA check name.
+**Test checkpoint:** `gh api repos/rizonesoft/Office/branches/main/protection --jq .required_status_checks.contexts` includes the CLA check name.
 
 ## 5. Contributing Guide
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:rizonesoft:office-2028:design:inventory:baseline-schema",
+  "$id": "urn:rizonesoft:office:design:inventory:baseline-schema",
   "title": "Control identifier baseline for one app",
   "description": "Written by scripts/import-office-ids.py from the published workbooks at one pinned commit and checked by scripts/check-inventory.py. Each row lists the columns in order; a row's position is its order in the workbook. Identifiers and positions only: no labels, no descriptions.",
   "type": "object",

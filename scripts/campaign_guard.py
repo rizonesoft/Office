@@ -261,7 +261,7 @@ def _ready_count(root: str) -> int | None:
                               timeout=300)
     except (OSError, subprocess.TimeoutExpired):
         return None
-    # Office-2028's todo-graph prints the ready sections as a JSON list; its length is the runnable count.
+    # Office's todo-graph prints the ready sections as a JSON list; its length is the runnable count.
     if proc.returncode != 0:
         return None
     try:
@@ -383,7 +383,7 @@ def _pending_jobs(root: str) -> list[dict]:
         return []
     except (OSError, ValueError):
         raise GuardError("the pending-cancellation record is unreadable: list the jobs and delete any "
-                         "Office-2028 heartbeat by hand")
+                         "Office heartbeat by hand")
     if isinstance(doc, dict):
         doc = [doc]
     return [j for j in doc if isinstance(j, dict)] if isinstance(doc, list) else []
@@ -840,7 +840,7 @@ def _workspace(tmpd: str) -> str:
     shutil.copyfile(HOOK, os.path.join(root, ".claude", "hooks", "campaign-stop.ps1"))
     with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as fh:
         fh.write("build/\n")
-    # The fake graph prints, as Office-2028's does, a JSON list of ready sections; its length is the count
+    # The fake graph prints, as Office's does, a JSON list of ready sections; its length is the count
     # the test writes to ready.txt.
     with open(os.path.join(root, "scripts", "todo-graph.py"), "w", encoding="utf-8") as fh:
         fh.write("import json, os\n"

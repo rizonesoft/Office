@@ -10,7 +10,7 @@ title: "TODO-03 -- GitHub Graphics"
 
 > **Goal:** The GitHub repository presents the suite properly: a README hero banner in light and dark variants, an app lineup strip, a social preview image that GitHub shows when the repository link is shared, and an organisation or repository avatar, all built from the icon masters and set in the repository settings.
 
-> **Current state:** Measured 2026-10-19. `rizonesoft/Office-2028` has no `README.md`, no social preview and no graphics. The icon masters come from D01 T02 §2 and §3; the names from D01 T01 §3.
+> **Current state:** Measured 2026-10-19. `rizonesoft/Office` has no `README.md`, no social preview and no graphics. The icon masters come from D01 T02 §2 and §3; the names from D01 T01 §3.
 
 ## Inputs
 

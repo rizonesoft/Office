@@ -17,7 +17,7 @@ Rizonesoft Office is not affiliated with or endorsed by Microsoft. Microsoft, Wo
 
 ## Status
 
-Planning and design. The plan lives in [`todo/`](todo/TODO-00-INDEX.md); icons and brand assets are in [`assets/`](assets/icons/README.md). `Office-2028` is the repository's working codename.
+Planning and design. The plan lives in [`todo/`](todo/TODO-00-INDEX.md); icons and brand assets are in [`assets/`](assets/icons/README.md). `Office` is the repository's working codename.
 
 ## Licence
 

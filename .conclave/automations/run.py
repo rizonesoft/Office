@@ -1,4 +1,4 @@
-"""Run one Office-2028 automation, keep its log, and email the operator when it fails.
+"""Run one Office automation, keep its log, and email the operator when it fails.
 
     python .conclave/automations/run.py NAME
 
@@ -25,7 +25,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
-NAME = re.compile(r"^office-2028-[a-z0-9-]+$")
+NAME = re.compile(r"^office-[a-z0-9-]+$")
 DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 KEEP_LOGS = 20
 NO_WINDOW = 0x08000000
@@ -40,15 +40,15 @@ def load_tasks(path: str) -> dict[str, dict]:
     with open(path, encoding="utf-8") as fh:
         doc = json.load(fh)
     if (not isinstance(doc, dict) or type(doc.get("schema_version")) is not int or doc["schema_version"] != 1
-            or doc.get("folder") != "\\Office-2028\\" or not isinstance(doc.get("tasks"), list)):
-        raise TaskError("tasks.json needs schema_version 1, folder \\Office-2028\\, and a tasks list")
+            or doc.get("folder") != "\\Office\\" or not isinstance(doc.get("tasks"), list)):
+        raise TaskError("tasks.json needs schema_version 1, folder \\Office\\, and a tasks list")
     out: dict[str, dict] = {}
     for task in doc["tasks"]:
         if not isinstance(task, dict):
             raise TaskError(f"every task must be an object, not {task!r}")
         name = task.get("name")
         if not isinstance(name, str) or not NAME.fullmatch(name) or name in out:
-            raise TaskError(f"task name {name!r} must be a unique office-2028-* name")
+            raise TaskError(f"task name {name!r} must be a unique office-* name")
         if set(task) != {"name", "description", "command", "trigger", "timeout_minutes"}:
             raise TaskError(f"{name}: needs exactly name, description, command, trigger, timeout_minutes")
         if not isinstance(task["description"], str) or not task["description"].strip():
@@ -224,7 +224,7 @@ def _prune(folder: str) -> None:
 
 
 def _alert_module():
-    spec = importlib.util.spec_from_file_location("office2028_alert", os.path.join(HERE, "alert.py"))
+    spec = importlib.util.spec_from_file_location("office_alert", os.path.join(HERE, "alert.py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

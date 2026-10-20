@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:rizonesoft:office-2028:design:inventory:schema",
+  "$id": "urn:rizonesoft:office:design:inventory:schema",
   "title": "Microsoft 365 parity inventory file",
   "description": "One inventory file: a JSON array of element records. Checked by scripts/check-inventory.py.",
   "type": "array",

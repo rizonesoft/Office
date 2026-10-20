@@ -8,7 +8,7 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[2]
 AUTO = REPO / ".conclave" / "automations"
-spec = importlib.util.spec_from_file_location("office2028_run", AUTO / "run.py")
+spec = importlib.util.spec_from_file_location("office_run", AUTO / "run.py")
 run = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(run)
 
@@ -21,7 +21,7 @@ class KeepAlive(unittest.TestCase):
         self.assertIn("self-test: 0 failed", result.stdout + result.stderr)
 
     def test_the_keepalive_runs_after_logon_and_hourly(self):
-        task = run.load_tasks(str(AUTO / "tasks.json"))["office-2028-claude-keepalive"]
+        task = run.load_tasks(str(AUTO / "tasks.json"))["office-claude-keepalive"]
         self.assertEqual(task["command"], ["python", "scripts/campaign_keepalive.py", "resurrect"])
         self.assertEqual(task["trigger"], {"at_logon_delay_minutes": 3, "every_minutes": 60})
         self.assertGreater(task["timeout_minutes"], 240)  # four hours of supervision plus margin

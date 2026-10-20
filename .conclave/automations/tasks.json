@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "folder": "\\Office-2028\\",
+  "folder": "\\Office\\",
   "tasks": [
     {
-      "name": "office-2028-claude-keepalive",
-      "description": "Resume an open Office-2028 campaign run whose owning Claude session has stopped",
+      "name": "office-claude-keepalive",
+      "description": "Resume an open Office campaign run whose owning Claude session has stopped",
       "command": [
         "python",
         "scripts/campaign_keepalive.py",
@@ -17,7 +17,7 @@
       "timeout_minutes": 245
     },
     {
-      "name": "office-2028-winui-pin",
+      "name": "office-winui-pin",
       "description": "Propose the latest stable WinUI 3 release on a winui/<version> branch and email the operator",
       "command": [
         "python",
@@ -30,8 +30,8 @@
       "timeout_minutes": 30
     },
     {
-      "name": "office-2028-vulnerable-packages",
-      "description": "Check no NuGet package in the Office-2028 solution, direct or transitive, has a known vulnerability",
+      "name": "office-vulnerable-packages",
+      "description": "Check no NuGet package in the Office solution, direct or transitive, has a known vulnerability",
       "command": [
         "python",
         "scripts/check-vulnerable-packages.py"
@@ -43,7 +43,7 @@
       "timeout_minutes": 30
     },
     {
-      "name": "office-2028-dotnet-ga",
+      "name": "office-dotnet-ga",
       "description": "Report when .NET 11 ships its GA SDK while global.json still pins a release candidate",
       "command": [
         "python",

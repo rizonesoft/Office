@@ -10,7 +10,7 @@ title: "TODO-01 -- Suite and App Naming"
 
 > **Goal:** The suite and its six apps (the counterparts of Word, Excel, PowerPoint, Visio, Project and Outlook) have names that use no Microsoft trademark (the generic word "Office" appears only behind the Rizonesoft house brand, as competitors do with WPS Office, SoftMaker Office and ONLYOFFICE), pass a knockout trademark screen in Nice classes 9 and 42, have their domain, GitHub and package names reserved or confirmed available, are recorded once in `docs/brand/NAMES.md`, and are applied across the repository.
 
-> **Current state:** Measured 2026-10-19. No brand documents exist (`docs/brand/` is absent). The repository is `rizonesoft/Office-2028`, a working codename; the year form mirrors Microsoft's own version names (Office 2021, Office 2024) and is not used for the product. A brainstorm was held on 2026-10-19 and the owner decided on 2026-10-20: suite "Rizonesoft Office", apps "Rizonesoft Write", "Rizonesoft Grid", "Rizonesoft Stage", "Rizonesoft Flow", "Rizonesoft Plan" and "Rizonesoft Mail" (§3).
+> **Current state:** Measured 2026-10-19. No brand documents exist (`docs/brand/` is absent). The repository is `rizonesoft/Office`, a working codename; the year form mirrors Microsoft's own version names (Office 2021, Office 2024) and is not used for the product. A brainstorm was held on 2026-10-19 and the owner decided on 2026-10-20: suite "Rizonesoft Office", apps "Rizonesoft Write", "Rizonesoft Grid", "Rizonesoft Stage", "Rizonesoft Flow", "Rizonesoft Plan" and "Rizonesoft Mail" (§3).
 
 ## Inputs
 
@@ -191,7 +191,7 @@ A full clearance opinion and any trademark filing need a trademark attorney and 
 
 ## 8. GitHub Repository Rename
 
-Renaming `rizonesoft/Office-2028` changes a public URL. GitHub redirects the old URL, but local clones, CI badges and links need updating. The owner performs or approves the rename.
+Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL, but local clones, CI badges and links need updating. The owner performs or approves the rename.
 
 **Phase:** 1
 **Needs:** operator
@@ -200,11 +200,11 @@ Renaming `rizonesoft/Office-2028` changes a public URL. GitHub redirects the old
 **Build order:**
 
 1. Rename the repository in GitHub settings to the `kebab-case` suite identifier from `docs/brand/NAMES.md`. Done when: `gh repo view --json name` prints the new name.
-2. Update the local remote and every in-repo URL. Done when: `rg -n "Office-2028" --glob "!todo/**"` returns nothing.
+2. Update the local remote and every in-repo URL. Done when: `rg -n "Office" --glob "!todo/**"` returns nothing.
 
 - [ ] Rename the repository with `gh repo rename <kebab-case-name>` after owner approval. Done when: `gh repo view --json name` prints the new name. Cheaper substitute: creating a second repository and abandoning history.
 - [ ] Update `origin` with `git remote set-url origin <new url>`. Done when: `git remote -v` shows the new URL and `git fetch` succeeds. Cheaper substitute: relying on GitHub's redirect forever.
-- [ ] Update in-repo URLs (README badges, workflow references) to the new name. Done when: `rg -n "Office-2028" --glob "!todo/**"` returns nothing. Cheaper substitute: leaving stale links to resolve by redirect.
+- [ ] Update in-repo URLs (README badges, workflow references) to the new name. Done when: `rg -n "Office" --glob "!todo/**"` returns nothing. Cheaper substitute: leaving stale links to resolve by redirect.
 - [ ] Commit: `brand: update repository URLs after rename`
 
 **Test checkpoint:** `gh repo view --json name,url` prints the new name and `git ls-remote origin HEAD` exits 0.

@@ -1,4 +1,4 @@
-"""Email the operator when a scheduled Office-2028 automation fails.
+"""Email the operator when a scheduled Office automation fails.
 
     python .conclave/automations/alert.py NAME            send the failure email for NAME's last run
     python .conclave/automations/alert.py NAME --dry-run  print that email instead, reading no key
@@ -28,7 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
 ITEM = "op://Conclave/jq2q47sqbpdwacivbjead5rrku"
 ENDPOINT = "https://api.smtp2go.com/v3/email/send"
-SENDER = "Office-2028 automations <website@rizonetech.com>"
+SENDER = "Office automations <website@rizonetech.com>"
 TO = "rizonetech@gmail.com"
 TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
@@ -66,10 +66,10 @@ def message(name: str, task: dict, outcome: dict, tail: str, host: str) -> tuple
         "",
         tail or "(the run wrote no output)",
         "",
-        f"Run again: Start-ScheduledTask -TaskPath '\\Office-2028\\' -TaskName {name}",
+        f"Run again: Start-ScheduledTask -TaskPath '\\Office\\' -TaskName {name}",
         f"Or directly: python .conclave/automations/run.py {name}",
     ])
-    return f"Office-2028 automation failed: {name} on {host}", body
+    return f"Office automation failed: {name} on {host}", body
 
 
 def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen) -> str:
@@ -104,7 +104,7 @@ def tail_of(path: str, lines: int = LOG_LINES) -> str:
 
 def main(argv=None, run=subprocess.run, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("name", help="the task that failed, e.g. office-2028-claude-keepalive")
+    p.add_argument("name", help="the task that failed, e.g. office-claude-keepalive")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
     args = p.parse_args(argv)
     with open(os.path.join(root, ".conclave", "automations", "tasks.json"), encoding="utf-8") as fh:
