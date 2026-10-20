@@ -239,6 +239,7 @@ Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data,
 - [ ] Capture drop-down menus one level deep (Conditional Formatting, Format, Sort and Filter, Insert, Delete) as child `control` records. Done when: Conditional Formatting lists its rule families in order. Cheaper substitute: top-level buttons only.
 - [ ] Write a `behaviour` sentence in our own words for every Excel ribbon control, from using it in the reference build. Done when: `python scripts/check-inventory.py --require-behaviour design/inventory/excel/ribbon.json` exits 0. Cheaper substitute: labels copied into `behaviour`.
 - [ ] Capture every Excel tab in the Simplified Ribbon into `design/inventory/excel/ribbon-simplified.json` with `--layout simplified`, including each overflow menu. Done when: every Classic tab has a Simplified counterpart and the checker passes. Cheaper substitute: assuming the Simplified Ribbon is the Classic one with smaller buttons. **Corrected 2026-10-20 (D02 T01 §2):** the reference build may not offer a Simplified Ribbon (Word build 16.0.20430.20182's Ribbon Display Options has no Classic or Simplified switch, and the 2024 baseline lists `SingleLineRibbonToggle` only for Word and Outlook, outside the ribbon). First record in `design/inventory/REFERENCE.md` `## Layout choices` whether this build offers it and the exact steps that switch it; capture only if it does, otherwise record the absence there, which the owner question in the phase 2 run file covers. Done when (corrected): if the build offers the switch, every Classic tab has a Simplified counterpart and the checker passes; if it does not, `REFERENCE.md` records the absence and where it was looked for.
+- [ ] Make `scripts/capture-ui.py` leave no Excel process behind: on 2026-10-20 a probe's Excel stayed running, hidden, after `Quit` and the release of every COM reference, until it was force-closed. Find what keeps it alive and end it through Excel's own shutdown. Done when: an Excel capture run exits 0 and no `EXCEL.EXE` it started is running afterwards. Cheaper substitute: killing the process after a timeout.
 - [ ] Commit: `inventory: capture Excel ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel/ribbon.json` exits 0 and the file holds at least 11 `tab` and 12 `contextualTab` records.
@@ -316,10 +317,10 @@ PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, 
 
 Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Review, View, Help, plus Developer when enabled) and contextual tabs (Shape Format, Picture Format, Container Format, Table Design and Layout where present, Data Graphic, Callout).
 
-**Waiting 2026-10-20:** the owner confirms how Visio is licensed on the host; none was found in either licence store (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). Remove `owner-decision` when the answer is recorded.
+**Answered 2026-10-20:** the owner registered the Visio licence; the subscription store now holds `visioproretail` (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). The capture refuses if Visio still shows a licence notice.
 
 **Phase:** 2
-**Needs:** office, windows-host, display-session, owner-decision
+**Needs:** office, windows-host, display-session
 **Surface:** no
 
 **Build order:**
@@ -341,10 +342,10 @@ Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Revie
 
 Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick Shapes, search), drawing page tabs, rulers, grid, Pan and Zoom, Size and Position, Shape Data, Format Shape panes, the template gallery on New, Backstage and Options, status bar, and dialogs (Page Setup, Shape Data, Define Shape Data, Layers, Data Selector).
 
-**Waiting 2026-10-20:** the owner confirms how Visio is licensed on the host; none was found in either licence store (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). Remove `owner-decision` when the answer is recorded.
+**Answered 2026-10-20:** the owner registered the Visio licence; the subscription store now holds `visioproretail` (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). The capture refuses if Visio still shows a licence notice.
 
 **Phase:** 2
-**Needs:** office, windows-host, display-session, owner-decision
+**Needs:** office, windows-host, display-session
 **Surface:** no
 
 **Build order:**

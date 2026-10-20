@@ -19,11 +19,11 @@ The channel is the update channel id `492350f6-3a01-4f97-b9c0-c7c6ddf67d60`, whi
 
 ## Capture profile
 
-Profile `fhd-100`: display 1920 by 1080 pixels at 100 percent scaling, window maximised, Office theme White, Office display language en-US, ribbon set to Always show Ribbon. `captureProfile` fields name this id, and `bounds` are pixels at this profile relative to the window client area.
+Profile `fhd-100`: display 1920 by 1080 pixels at 100 percent scaling, window maximised, Office display language en-US, ribbon set to Always show Ribbon. Decision, 2026-10-20 (owner): the Office theme is not part of the profile, since it changes colours and not positions or sizes; captures run under the host's theme (Colorful). `captureProfile` fields name this id, and `bounds` are pixels at this profile relative to the window client area.
 
-Confirmed on the host on 2026-10-20, read by a DPI-aware process: the primary display is 3840 by 2160 at 150 percent (system DPI 144) and does not match; the second display is 1920 by 1080 at 100 percent (96 DPI) and matches, so captures run there; Office's display language is en-us; Word's ribbon is set to Always show Ribbon; the Office theme does not match: the capture window's title bar reads Word blue (RGB 24, 90, 189), so the theme is not White (the stored theme value is 7). **Corrected 2026-10-20:** earlier reads of a white title bar were taken while the session was locked, when the screen shows no real window; the tool now refuses to read the theme on a locked desktop. Until the owner decides between switching Office to White for captures and dropping the theme from the profile (it changes colours, not positions), captures record no bounds. Windows' regional format is en-ZA, which the profile does not constrain. **Corrected 2026-10-20:** an earlier read without DPI awareness gave the primary display as 2560 by 1440 and left the second display's scaling and the theme unconfirmed.
+Confirmed on the host on 2026-10-20, read by a DPI-aware process: the primary display is 3840 by 2160 at 150 percent (system DPI 144) and does not match; the second display is 1920 by 1080 at 100 percent (96 DPI) and matches, so captures run there; Office's display language is en-us; Word's ribbon is set to Always show Ribbon; the Office theme is Colorful (the capture window's title bar reads Word blue, RGB 24, 90, 189; the stored theme value is 7), which the profile no longer constrains. **Corrected 2026-10-20:** an earlier note read the theme as White from pixels sampled while the session was locked. Windows' regional format is en-ZA, which the profile does not constrain. **Corrected 2026-10-20:** an earlier read without DPI awareness gave the primary display as 2560 by 1440 and left the second display's scaling and the theme unconfirmed.
 
-The capture tool (`scripts/capture-ui.py`, D02 T01 §3) places its own window on the matching display, maximises it, checks every profile value (display size and DPI, the window on that display and maximised, display language, ribbon shown, theme by the title bar's colour) and records `bounds` and `size` only when all of them hold.
+The capture tool (`scripts/capture-ui.py`, D02 T01 §3) places its own window on the matching display, maximises it, checks every profile value (display size and DPI, the window on that display and maximised, display language, ribbon shown) and records `bounds` and `size` only when all of them hold.
 
 ## Layout choices
 
@@ -45,9 +45,9 @@ Read on 2026-10-20 from the Click-to-Run product list and the two licence stores
 | --- | ------- | --------- | ------------- |
 | Word, Excel, PowerPoint, Outlook | Microsoft 365 Apps for business | yes | subscription entry |
 | Project | Project Professional | yes | subscription entry |
-| Visio | Visio Professional | yes | none in either store |
+| Visio | Visio Professional | yes | subscription entry (registered 2026-10-20) |
 
-A subscription entry shows a licence was issued, not that it is valid today: the entries' state was not read, because the licence tokens hold credentials. Word is in daily use on this host with its full ribbon. Requirement for the capture tool (D02 T01 §3): refuse to capture an app that shows a licence, activation or reduced-functionality notice. Visio's licence is unverified, so its capture sections (D02 T01 §11 and §12) wait on the owner (`owner-decision`): confirm how Visio is licensed on this host (subscription, retail key or trial) before it is captured, since an unlicensed Visio may show a reduced interface. The owner said on 2026-10-20 that Visio and Project are both on this host.
+A subscription entry shows a licence was issued, not that it is valid today: the entries' state was not read, because the licence tokens hold credentials. Word is in daily use on this host with its full ribbon. Requirement for the capture tool (D02 T01 §3): refuse to capture an app that shows a licence, activation or reduced-functionality notice. Visio had no licence in either store when first read on 2026-10-20; the owner then registered it, and the subscription store holds `visioproretail`. **Corrected 2026-10-20:** Visio's capture sections no longer wait on the owner.
 
 ## Baseline
 

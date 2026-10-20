@@ -53,45 +53,45 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 35 | Checklist items: 225
+Sections: 35 | Checklist items: 226
 
-| Status | Reference   | Deliverable                                               | Needs                                                 | Items |
-| ------ | ----------- | --------------------------------------------------------- | ----------------------------------------------------- | ----- |
-| [x]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                                  | 8     |
-| [x]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                                  | 5     |
-| [x]    | D02 T01 §21 | Microsoft-Free Inventory Model                            | none                                                  | 6     |
-| [x]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session                 | 12    |
-| [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session                 | 7     |
-| [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                                  | 6     |
-| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session                 | 10    |
-| [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session                 | 8     |
-| [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §9  | PowerPoint Ribbon and Contextual Tabs Inventory           | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §10 | PowerPoint Backstage, Views, Panes and Dialogs Inventory  | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §11 | Visio Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session, owner-decision | 7     |
-| [ ]    | D02 T01 §12 | Visio Backstage, Shapes Pane and Dialogs Inventory        | office, windows-host, display-session, owner-decision | 6     |
-| [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session                 | 6     |
-| [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session                 | 7     |
-| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session                 | 8     |
-| [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session                 | 7     |
-| [x]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                                  | 4     |
-| [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                                  | 8     |
-| [ ]    | D02 T01 §18 | Inventory Coverage Report                                 | none                                                  | 7     |
-| [ ]    | D02 T02 §1  | Design Tokens and Themes                                  | none                                                  | 6     |
-| [ ]    | D02 T02 §2  | Command Glyph Library Decision                            | none                                                  | 5     |
-| [ ]    | D02 T02 §3  | Shell Layout Chapter                                      | none                                                  | 6     |
-| [ ]    | D02 T02 §4  | Ribbon Component Chapter                                  | office, windows-host, display-session                 | 8     |
-| [ ]    | D02 T02 §5  | Backstage Chapter                                         | none                                                  | 6     |
-| [ ]    | D02 T02 §6  | Status Bar and Zoom Chapter                               | none                                                  | 4     |
-| [ ]    | D02 T02 §7  | Word Surface Chapter                                      | none                                                  | 5     |
-| [ ]    | D02 T02 §8  | Excel Surface Chapter                                     | none                                                  | 5     |
-| [ ]    | D02 T02 §9  | PowerPoint Surface Chapter                                | none                                                  | 5     |
-| [ ]    | D02 T02 §10 | Visio Surface Chapter                                     | none                                                  | 5     |
-| [ ]    | D02 T02 §11 | Project Surface Chapter                                   | none                                                  | 5     |
-| [ ]    | D02 T02 §12 | Outlook Surface Chapter                                   | none                                                  | 5     |
-| [ ]    | D02 T02 §13 | Accessibility and Keyboard Chapter                        | none                                                  | 5     |
-| [ ]    | D02 T02 §14 | Static App Mockups and Owner Sign-Off                     | owner-decision                                        | 5     |
+| Status | Reference   | Deliverable                                               | Needs                                 | Items |
+| ------ | ----------- | --------------------------------------------------------- | ------------------------------------- | ----- |
+| [x]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
+| [x]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                  | 5     |
+| [x]    | D02 T01 §21 | Microsoft-Free Inventory Model                            | none                                  | 6     |
+| [x]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 12    |
+| [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
+| [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                  | 6     |
+| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session | 10    |
+| [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 9     |
+| [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §9  | PowerPoint Ribbon and Contextual Tabs Inventory           | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §10 | PowerPoint Backstage, Views, Panes and Dialogs Inventory  | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §11 | Visio Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §12 | Visio Backstage, Shapes Pane and Dialogs Inventory        | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session | 8     |
+| [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session | 7     |
+| [x]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                  | 4     |
+| [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                  | 8     |
+| [ ]    | D02 T01 §18 | Inventory Coverage Report                                 | none                                  | 7     |
+| [ ]    | D02 T02 §1  | Design Tokens and Themes                                  | none                                  | 6     |
+| [ ]    | D02 T02 §2  | Command Glyph Library Decision                            | none                                  | 5     |
+| [ ]    | D02 T02 §3  | Shell Layout Chapter                                      | none                                  | 6     |
+| [ ]    | D02 T02 §4  | Ribbon Component Chapter                                  | office, windows-host, display-session | 8     |
+| [ ]    | D02 T02 §5  | Backstage Chapter                                         | none                                  | 6     |
+| [ ]    | D02 T02 §6  | Status Bar and Zoom Chapter                               | none                                  | 4     |
+| [ ]    | D02 T02 §7  | Word Surface Chapter                                      | none                                  | 5     |
+| [ ]    | D02 T02 §8  | Excel Surface Chapter                                     | none                                  | 5     |
+| [ ]    | D02 T02 §9  | PowerPoint Surface Chapter                                | none                                  | 5     |
+| [ ]    | D02 T02 §10 | Visio Surface Chapter                                     | none                                  | 5     |
+| [ ]    | D02 T02 §11 | Project Surface Chapter                                   | none                                  | 5     |
+| [ ]    | D02 T02 §12 | Outlook Surface Chapter                                   | none                                  | 5     |
+| [ ]    | D02 T02 §13 | Accessibility and Keyboard Chapter                        | none                                  | 5     |
+| [ ]    | D02 T02 §14 | Static App Mockups and Owner Sign-Off                     | owner-decision                        | 5     |
 
 ### Phase 3: Architecture and tech stack
 
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
 
-Progress: 13/82 verified sections, 13 ready to run now.
+Progress: 13/82 verified sections, 14 ready to run now.
 
-Checklist: 83/463 items completed (includes Commit items).
+Checklist: 83/464 items completed (includes Commit items).

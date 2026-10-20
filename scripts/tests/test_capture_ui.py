@@ -126,6 +126,7 @@ class Walk(unittest.TestCase):
 
     def test_screentip_text_is_never_read(self):
         source = (SCRIPTS / "capture-ui.py").read_text(encoding="utf-8")
+        self.assertNotIn("GetPixel", source)  # owner decision 2026-10-20: the theme is not part of the profile
         for prop in ("CurrentHelpText", "CurrentFullDescription", "HelpTextProperty", "FullDescriptionProperty"):
             self.assertNotIn(prop, source)
         self.assertFalse([n for n in dir(cu.Element) if "help" in n.lower() or "description" in n.lower()])
@@ -189,20 +190,17 @@ class Profile(unittest.TestCase):
     MONITOR = {"rect": (-1920, 1080, 0, 2160), "dpi": 96}
 
     def test_all_values_hold(self):
-        self.assertEqual(cu.profile_problems(self.GOOD, self.MONITOR, 1033, 120, [(255, 255, 255)] * 4), [])
+        self.assertEqual(cu.profile_problems(self.GOOD, self.MONITOR, 1033, 120), [])
 
     def test_each_value_is_checked(self):
-        cases = [(dict(self.GOOD, dpi=144), self.MONITOR, 1033, 120, [(255, 255, 255)], "DPI"),
-                 (dict(self.GOOD, zoomed=False), self.MONITOR, 1033, 120, [(255, 255, 255)], "maximised"),
-                 (self.GOOD, None, 1033, 120, [(255, 255, 255)], "no display"),
-                 (dict(self.GOOD, window=(0, 0, 3840, 2160)), self.MONITOR, 1033, 120, [(255, 255, 255)], "not on"),
-                 (self.GOOD, self.MONITOR, 1036, 120, [(255, 255, 255)], "language"),
-                 (self.GOOD, self.MONITOR, 1033, 20, [(255, 255, 255)], "ribbon"),
-                 (self.GOOD, self.MONITOR, 1033, 120, [(43, 87, 154)], "theme"),
-                 (self.GOOD, self.MONITOR, 1033, 120, [], "theme"),
-                 (self.GOOD, self.MONITOR, 1033, 120, [(255, 255, 255), None], "theme")]
-        for state, monitor, lang, height, pixels, word in cases:
-            problems = cu.profile_problems(state, monitor, lang, height, pixels)
+        cases = [(dict(self.GOOD, dpi=144), self.MONITOR, 1033, 120, "DPI"),
+                 (dict(self.GOOD, zoomed=False), self.MONITOR, 1033, 120, "maximised"),
+                 (self.GOOD, None, 1033, 120, "no display"),
+                 (dict(self.GOOD, window=(0, 0, 3840, 2160)), self.MONITOR, 1033, 120, "not on"),
+                 (self.GOOD, self.MONITOR, 1036, 120, "language"),
+                 (self.GOOD, self.MONITOR, 1033, 20, "ribbon")]
+        for state, monitor, lang, height, word in cases:
+            problems = cu.profile_problems(state, monitor, lang, height)
             self.assertTrue(any(word in p for p in problems), (word, problems))
 
     def test_the_profile_display_is_found(self):
@@ -427,21 +425,6 @@ class Writes(unittest.TestCase):
             with self.assertRaises(OSError):
                 cu.publish({path: "new"}, link=link_fails)
             self.assertEqual(path.read_text(encoding="utf-8"), "original")
-
-    def test_a_locked_desktop_is_not_the_users_desktop(self):
-        win = cu.Win.__new__(cu.Win)
-        import ctypes
-        win.ct, win.wt = ctypes, ctypes.wintypes if hasattr(ctypes, "wintypes") else __import__("ctypes.wintypes").wintypes
-        win.user32 = type("U", (), {"OpenInputDesktop": lambda self, *a: 0})()
-        self.assertFalse(win.unlocked())
-
-    def test_a_failed_pixel_read_is_not_white(self):
-        win = cu.Win.__new__(cu.Win)
-        win.user32 = type("U", (), {"GetDC": lambda self, h: 1, "ReleaseDC": lambda self, h, dc: 1})()
-        win.gdi32 = type("G", (), {"GetPixel": lambda self, dc, x, y: 0xFFFFFFFF})()
-        self.assertIsNone(win.pixel(10, 10))
-        win.gdi32 = type("G", (), {"GetPixel": lambda self, dc, x, y: 0x00FFFFFF})()
-        self.assertEqual(win.pixel(10, 10), (255, 255, 255))
 
     def test_the_destination_never_goes_missing_during_a_replace(self):
         import os

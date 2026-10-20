@@ -349,7 +349,7 @@ def descendants(element, depth=25):
 
 
 class Win:
-    """The few Win32 calls a capture needs: monitors, window placement, process windows and pixels."""
+    """The few Win32 calls a capture needs: monitors, window placement and process windows."""
 
     def __init__(self):
         import ctypes
@@ -361,16 +361,9 @@ class Win:
             pass  # an older Windows: the profile check below then fails on DPI and no bounds are recorded
         # Private DLL objects with full prototypes: handles are pointer-sized and must never pass as 32-bit ints.
         u = self.user32 = ctypes.WinDLL("user32", use_last_error=True)
-        g = self.gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
         self.shcore = ctypes.WinDLL("shcore", use_last_error=True)
-        H, HW, HM, HD = wintypes.HANDLE, wintypes.HWND, wintypes.HMONITOR, wintypes.HDC
+        HW, HM = wintypes.HWND, wintypes.HMONITOR
         protos = {
-            (u, "GetDC"): ([HW], HD), (u, "ReleaseDC"): ([HW, HD], ctypes.c_int),
-            (g, "GetPixel"): ([HD, ctypes.c_int, ctypes.c_int], wintypes.DWORD),
-            (u, "OpenInputDesktop"): ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], H),
-            (u, "GetUserObjectInformationW"): ([H, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
-                                                ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
-            (u, "CloseDesktop"): ([H], wintypes.BOOL),
             (u, "GetMonitorInfoW"): ([HM, ctypes.c_void_p], wintypes.BOOL),
             (u, "MonitorFromWindow"): ([HW, wintypes.DWORD], HM),
             (u, "GetAncestor"): ([HW, wintypes.UINT], HW),
@@ -430,34 +423,6 @@ class Win:
                 "window": (rect.left, rect.top, rect.right, rect.bottom), "origin": (origin.x, origin.y),
                 "monitor": monitor}
 
-    def pixel(self, x, y):
-        dc = self.user32.GetDC(0)
-        try:
-            value = self.gdi32.GetPixel(dc, x, y)
-        finally:
-            self.user32.ReleaseDC(0, dc)
-        if value == 0xFFFFFFFF or value < 0:  # CLR_INVALID: no colour was read
-            return None
-        return value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF
-
-    def unlocked(self):
-        """Whether the input desktop is the user's own: a locked or secure desktop does not show the real windows,
-        so pixels read then say nothing about the app."""
-        ct, wt = self.ct, self.wt
-        desk = self.user32.OpenInputDesktop(0, False, 0x0001)  # DESKTOP_READOBJECTS
-        if not desk:
-            return False
-        try:
-            buf = ct.create_unicode_buffer(256)
-            needed = wt.DWORD()
-            ok = self.user32.GetUserObjectInformationW(desk, 2, buf, ct.sizeof(buf), ct.byref(needed))  # UOI_NAME
-            return bool(ok) and buf.value.lower() == "default"
-        finally:
-            self.user32.CloseDesktop(desk)
-
-    def raise_(self, hwnd, topmost):
-        self.user32.SetWindowPos(hwnd, self.wt.HWND(-1 if topmost else -2), 0, 0, 0, 0, 0x0013)
-
     def popups(self, pid):
         """Visible top-level popup windows of one process (menus and galleries open in these)."""
         ct, wt, found = self.ct, self.wt, []
@@ -485,7 +450,7 @@ def profile_monitor(monitors):
     return None
 
 
-def profile_problems(state, monitor, language, ribbon_height, title_pixels):
+def profile_problems(state, monitor, language, ribbon_height):
     """Every capture-profile value that does not hold; an empty list means bounds may be recorded."""
     problems = []
     if monitor is None:
@@ -503,8 +468,6 @@ def profile_problems(state, monitor, language, ribbon_height, title_pixels):
         problems.append(f"the Office display language is {language}, not en-US ({UI_LANGUAGE})")
     if ribbon_height < 60:
         problems.append("the ribbon is not always shown")
-    if not title_pixels or any(p is None or min(p) < 235 for p in title_pixels):
-        problems.append("the Office theme is not White (the title bar is not white, or the screen is locked)")
     return problems
 
 
@@ -614,6 +577,12 @@ class Launched:
                 if others == 0:
                     self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()
             finally:
+                if others == 0:
+                    # Excel and PowerPoint stay alive while a COM reference to them is held, so every one is
+                    # released before waiting for the process to end.
+                    import gc
+                    self.created, self.document_refs, self.app = [], None, None
+                    gc.collect()
                 gone = self.proc is None or (others == 0 and self.proc.exited(wait))
                 if self.proc is not None:
                     self.proc.close()
@@ -703,17 +672,8 @@ def capture(args, launched, uia, win):
     if problem:
         raise Unsafe(problem)
     state = win.state(launched.hwnd)
-    left, top, right, _ = state["window"]
-    pixels = []
-    if win.unlocked():  # a locked desktop shows no real window, so its pixels are no evidence of the theme
-        win.raise_(launched.hwnd, True)
-        try:
-            time.sleep(0.5)
-            pixels = [win.pixel(left + int((right - left) * f), top + 14) for f in (0.35, 0.45, 0.55, 0.65)]
-        finally:
-            win.raise_(launched.hwnd, False)
     ribbon_h = lower.rect[3] - lower.rect[1] if lower.rect else 0
-    problems = profile_problems(state, monitor, launched.language(), ribbon_h, pixels)
+    problems = profile_problems(state, monitor, launched.language(), ribbon_h)
     identifiers = baseline_ids(args.app)
     ctx = Context(args.app, expected, identifiers, origin=None if problems else state["origin"])
     tab_elements = [t for t in tabs_bar.children() if t.control_type == "TabItem"]
