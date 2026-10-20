@@ -1,0 +1,27 @@
+{
+  "ref": "D00 T03 \u00a73",
+  "title": "Keep-Alive Resume Task and Session Observer",
+  "implementation_sha": "081daed7eb99383e0f4175fef13c2315ba624e57",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python scripts/campaign_keepalive.py --self-test -> \"campaign_keepalive self-test: 0 failed\"",
+    "python -m unittest discover -s scripts/tests -p \"test_campaign_keepalive.py\" -> OK"
+  ]
+}

@@ -35,7 +35,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Automation runner, failure alert and installer | -- | [x] |
 | 2 | §2 | Run guard and Stop hook | -- | [x] |
-| 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [ ] |
+| 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [x] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [ ] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [ ] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [ ] |
@@ -119,6 +119,9 @@ When the owning session's process is gone and no other Office-2028 session is op
 - [x] Commit: `automations: add campaign keep-alive and session observer`
 
 **Test checkpoint:** `python scripts/campaign_keepalive.py --self-test` exits 0, and `python -m unittest discover -s scripts/tests -p "test_campaign_keepalive.py"` passes.
+
+> **Verified:** 2026-10-20 | §3 | 081daed7eb99383e0f4175fef13c2315ba624e57
+> **Review:** `docs/reviews/d00-t03-s3.json`
 
 ## 4. Run Skills Create and Check the Guard
 
