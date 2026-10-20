@@ -463,6 +463,8 @@ class Round3(unittest.TestCase):
         word = type("W", (), {"Build": "16.0.20430", "Version": "16.0"})()
         excel = type("X", (), {"Build": 20430, "Version": "16.0"})()
         self.assertEqual((cu.reported_build(word), cu.reported_build(excel)), ("16.0.20430", "16.0.20430"))
+        excel_com = type("X", (), {"Build": 20430.0, "Version": "16.0"})()  # what Excel really returns through COM
+        self.assertEqual(cu.reported_build(excel_com), "16.0.20430")
         self.assertTrue(cu.same_build(cu.reported_build(excel), BUILD))
 
     def test_a_classic_capture_needs_the_simplified_layout_off(self):
@@ -538,6 +540,32 @@ class Round3(unittest.TestCase):
         self.assertEqual([r["label"] for r in out[1:]], ["Select All", "Selection Pane"])
         self.assertEqual(out[1]["idMso"], "SelectAll")
         self.assertFalse(drop.open)
+
+
+class Worker(unittest.TestCase):
+    def test_the_parent_answers_ownership_checks_until_the_outcome(self):
+        replies, checks = [], []
+        launched = type("L", (), {"check_alone": lambda self: checks.append(1)})()
+        lines = [json.dumps({"ask": "check_alone"}), json.dumps({"ask": "check_alone"}),
+                 json.dumps({"result": {"records": []}}), json.dumps({"never": "read"})]
+        outcome = cu.converse(iter(lines), replies.append, launched)
+        self.assertEqual((outcome, replies, len(checks)), ({"result": {"records": []}}, ["ok", "ok"], 2))
+
+    def test_a_failed_check_is_answered_with_its_reason(self):
+        def refuse(self):
+            raise cu.Refused("now holds 2 documents")
+
+        replies = []
+        cu.converse(iter([json.dumps({"ask": "check_alone"}), json.dumps({"refused": "x"})]), replies.append,
+                    type("L", (), {"check_alone": refuse})())
+        self.assertEqual(replies, ["now holds 2 documents"])
+        proxy = cu.Proxy({"hwnd": 1, "pid": 2, "build": "16.0.20430", "language": 1033}, lambda q: "now holds 2")
+        with self.assertRaises(cu.Refused):
+            proxy.check_alone()
+        self.assertEqual((proxy.language(), cu.reported_build(proxy.app)), (1033, "16.0.20430"))
+
+    def test_a_worker_that_ends_silently_is_a_refusal(self):
+        self.assertIn("refused", cu.converse(iter([]), lambda r: None, None))
 
 if __name__ == "__main__":
     unittest.main()

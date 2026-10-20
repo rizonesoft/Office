@@ -19,6 +19,10 @@ or a group with no control the baseline knows, may be an add-in or may be new in
 the inventory but to build/capture-ui/<app>-unverified.json, marked `baselineMissing`, and listed for review. The run
 reports which of the baseline's core tabs the window did not show, and that File (Backstage) is not a ribbon tab.
 Combo box lists (fonts, sizes) are system and document data, so they are not expanded; the run counts them.
+All UI Automation reading runs in a child process of this script, which exits before the app is quit: Excel keeps
+running after Quit for as long as the process that read its window through UI Automation is alive. The child asks
+this process for every check that needs the app's object model (whether the instance still holds only the tool's
+own document) over its standard input and output.
 Exit 0 written; 1 when a capture step fails (a menu that will not close, an unknown tab, an existing file without
 --merge); 2 when the app cannot be launched safely or the requested layout does not exist in this build.
 """
@@ -717,8 +721,11 @@ def same_geometry(before, after):
 def reported_build(app):
     """The build an app reports, as dotted components: Word gives "16.0.20430"; Excel gives the build alone as a
     number (20430) beside Version "16.0"."""
-    build = str(getattr(app, "Build", "") or "").strip()
+    raw = getattr(app, "Build", "") or ""
     version = str(getattr(app, "Version", "") or "").strip()
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool) and float(raw).is_integer():
+        raw = int(raw)  # Excel's Build is a number, 20430.0 through COM
+    build = str(raw).strip()
     if build.isdigit() and version:
         return f"{version}.{build}"
     return build or version
@@ -803,6 +810,96 @@ def baseline_ids(app):
     return {r[col] for r in data["rows"] if r[col]}
 
 
+class Proxy:
+    """The launched app as the worker process sees it: its window, its process id and the object-model facts the
+    parent read, with every later object-model check asked of the parent."""
+
+    def __init__(self, spec, ask):
+        self.hwnd, self._language, self.ask = spec["hwnd"], spec["language"], ask
+        self.proc = type("Pid", (), {"pid": spec["pid"]})()
+        self.app = type("App", (), {"Build": spec["build"], "Version": ""})()
+
+    def language(self):
+        return self._language
+
+    def check_alone(self):
+        answer = self.ask("check_alone")
+        if answer != "ok":
+            raise Refused(answer)
+
+
+def converse(lines, reply, launched):
+    """Serve a worker's requests until it reports its outcome; returns that outcome message."""
+    for line in lines:
+        message = json.loads(line)
+        if message.get("ask") == "check_alone":
+            try:
+                launched.check_alone()
+                reply("ok")
+            except Refused as exc:
+                reply(str(exc))
+            continue
+        return message
+    return {"refused": "the capture worker ended without reporting an outcome"}
+
+
+def capture_in_worker(args, launched, timeout=3600):
+    """Run capture() in a child process and return its records, profile problems and notes."""
+    import subprocess
+    import types
+    spec = {"args": vars(args), "hwnd": int(launched.hwnd), "pid": int(launched.proc.pid),
+            "build": reported_build(launched.app), "language": launched.language()}
+    child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--worker"], stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+    try:
+        child.stdin.write(json.dumps(spec) + "\n")
+        child.stdin.flush()
+
+        def reply(text):
+            child.stdin.write(json.dumps({"answer": text}) + "\n")
+            child.stdin.flush()
+
+        outcome = converse(iter(child.stdout.readline, ""), reply, launched)
+        child.wait(timeout=60)
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait()
+    if "unsafe" in outcome:
+        raise Unsafe(outcome["unsafe"])
+    if "refused" in outcome:
+        detail = child.stderr.read().strip().splitlines()[-1:] if child.stderr else []
+        raise Refused(outcome["refused"] + (f" ({detail[0]})" if detail else ""))
+    result = outcome["result"]
+    ctx = types.SimpleNamespace(skipped=result["skipped"], notes=result["notes"], unverified=result["unverified"])
+    return result["records"], result["problems"], ctx
+
+
+def worker():
+    """The child side: read the spec, capture, and report the outcome as one JSON line on standard output."""
+    spec = json.loads(sys.stdin.readline())
+
+    def ask(question):
+        print(json.dumps({"ask": question}), flush=True)
+        return json.loads(sys.stdin.readline())["answer"]
+
+    args = argparse.Namespace(**spec["args"])
+    try:
+        records, problems, ctx = capture(args, Proxy(spec, ask), Uia(), Win())
+    except Unsafe as exc:
+        print(json.dumps({"unsafe": str(exc)}), flush=True)
+        return 2
+    except Gone as exc:
+        print(json.dumps({"refused": f"an element vanished while it was read: {exc}"}), flush=True)
+        return 1
+    except Refused as exc:
+        print(json.dumps({"refused": str(exc)}), flush=True)
+        return 1
+    print(json.dumps({"result": {"records": records, "problems": problems, "skipped": ctx.skipped,
+                                 "notes": ctx.notes, "unverified": ctx.unverified}}), flush=True)
+    return 0
+
+
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser = argparse.ArgumentParser(description="Capture an Office app's ribbon through UI Automation.")
     parser.add_argument("--app", required=True, choices=sorted(APPS))
@@ -828,7 +925,10 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         print(f"capture-ui: {APPS[args.app][1]} could not be started ({type(exc).__name__}: {exc})", file=sys.stderr)
         return 2
     try:
-        records, problems, ctx = capture(args, launched, (uia_factory or Uia)(), (win_factory or Win)())
+        if uia_factory or win_factory:  # tests drive capture() in this process with fakes
+            records, problems, ctx = capture(args, launched, (uia_factory or Uia)(), (win_factory or Win)())
+        else:
+            records, problems, ctx = capture_in_worker(args, launched)
     except Unsafe as exc:
         print(f"capture-ui: {exc}", file=sys.stderr)
         launched.close()
@@ -858,4 +958,4 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(worker() if sys.argv[1:] == ["--worker"] else main(sys.argv[1:]))
