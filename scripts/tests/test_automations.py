@@ -604,6 +604,51 @@ class AlertRecord(unittest.TestCase):
         self.assertEqual(code, 3)
         self.assertIn("bad sender", last["alert"]["error"])
 
+class LastJsonLocking(unittest.TestCase):
+    """Every last.json write holds the task lock, so a late alert and a newer run cannot interleave."""
+
+    def test_an_alert_waits_for_a_run_holding_the_lock_and_then_skips_its_newer_outcome(self):
+        import threading
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder.mkdir(parents=True)
+            (folder / "a.log").write_text("a", encoding="utf-8")
+            old = {"log": "build/automations/office-2028-fixture/a.log", "exit": 1}
+            (folder / "last.json").write_text(json.dumps(old), encoding="utf-8")
+            done = threading.Event()
+            holder = run.TaskLock(str(folder))
+            holder.__enter__()
+            worker = threading.Thread(target=lambda: (run._record_alert(tmp, str(folder), old, {'email_id': 'E1'}),
+                                                      done.set()))
+            worker.start()
+            self.assertFalse(done.wait(0.5), 'the alert wrote last.json while another writer held the lock')
+            # The newer run publishes its outcome while it holds the lock, then releases it.
+            newer = {"log": "build/automations/office-2028-fixture/b.log", "exit": 0}
+            (folder / "last.json").write_text(json.dumps(newer), encoding="utf-8")
+            holder.__exit__(None, None, None)
+            self.assertTrue(done.wait(10))
+            worker.join()
+            self.assertEqual(json.loads((folder / "last.json").read_text(encoding="utf-8")), newer)
+            self.assertEqual(json.loads((folder / "a.log.alert.json").read_text(encoding="utf-8"))["alert"]["email_id"], "E1")
+
+    def test_an_alert_record_whose_log_is_gone_is_pruned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "old.log.alert.json").write_text("{}", encoding="utf-8")
+            (folder / "kept.log").write_text("x", encoding="utf-8")
+            (folder / "kept.log.alert.json").write_text("{}", encoding="utf-8")
+            run._prune(str(folder))
+            self.assertFalse((folder / "old.log.alert.json").exists())
+            self.assertTrue((folder / "kept.log.alert.json").exists())
+
+    def test_a_late_alert_for_a_pruned_log_leaves_no_record_behind(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "build" / "automations" / "office-2028-fixture"
+            folder.mkdir(parents=True)
+            gone = {"log": "build/automations/office-2028-fixture/gone.log", "exit": 1}
+            run._record_alert(tmp, str(folder), gone, {'email_id': 'E2'})
+            self.assertEqual(list(folder.glob("*.alert.json")), [])
+
 
 if __name__ == "__main__":
     unittest.main()

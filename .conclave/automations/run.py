@@ -133,9 +133,57 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
                     out.write(f"run.py: could not stop the timed-out process: {error}\n".encode("utf-8"))
                     outcome["cleanup_failed"] = True
     outcome["finished"] = _utc()
-    _write_outcome(folder, outcome)
+    with TaskLock(folder):
+        _write_outcome(folder, outcome)
     _prune(folder)  # after the outcome is safe, and never fatal: a locked old log must not cost the alert
     return outcome
+
+
+class TaskLock:
+    """An interprocess lock per task folder (msvcrt on Windows, flock elsewhere), held around every last.json read
+    and write so a run's outcome and a late alert's update can never interleave. The OS releases it if the holder
+    dies; waiting is bounded, and a lock that cannot be had is an error, never a silent unlocked write."""
+
+    def __init__(self, folder: str, wait: float = 60.0):
+        self.path = os.path.join(folder, ".last.lock")
+        self.wait = wait
+        self.fd = None
+
+    def __enter__(self):
+        import time
+        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o644)
+        deadline = time.monotonic() + self.wait
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    os.lseek(self.fd, 0, os.SEEK_SET)
+                    msvcrt.locking(self.fd, msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except OSError:
+                if time.monotonic() >= deadline:
+                    os.close(self.fd)
+                    self.fd = None
+                    raise TimeoutError(f"could not lock {self.path} within {self.wait:.0f}s")
+                time.sleep(0.05)
+
+    def __exit__(self, *exc):
+        if self.fd is not None:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    os.lseek(self.fd, 0, os.SEEK_SET)
+                    msvcrt.locking(self.fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.fd, fcntl.LOCK_UN)
+            finally:
+                os.close(self.fd)
+                self.fd = None
+        return False
 
 
 def _write_outcome(folder: str, outcome: dict) -> None:
@@ -157,11 +205,19 @@ def _prune(folder: str) -> None:
     except OSError:
         return
     for old in logs[:-KEEP_LOGS]:
-        for path in (os.path.join(folder, old), os.path.join(folder, old) + ".alert.json"):
-            try:
-                os.unlink(path)
-            except OSError:
-                pass  # in use or already gone; the next run tries again
+        try:
+            os.unlink(os.path.join(folder, old))
+        except OSError:
+            pass  # in use or already gone; the next run tries again
+    try:  # alert records are swept on their own: any whose log is gone, however it went
+        for name in os.listdir(folder):
+            if name.endswith(".log.alert.json") and not os.path.exists(os.path.join(folder, name[:-len(".alert.json")])):
+                try:
+                    os.unlink(os.path.join(folder, name))
+                except OSError:
+                    pass
+    except OSError:
+        return
 
 
 def _alert_module():
@@ -213,21 +269,23 @@ def _record_alert(root: str, folder: str, outcome: dict, result: dict) -> None:
     a slow alert must never overwrite a newer run's outcome."""
     log = os.path.join(root, outcome["log"])
     record = {"log": outcome["log"], "alert": result}
-    fd, tmp = tempfile.mkstemp(dir=folder, prefix="alert.", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            json.dump(record, fh, indent=2)
-        os.replace(tmp, log + ".alert.json")
-    finally:
-        if os.path.exists(tmp):
-            os.unlink(tmp)
-    try:
-        with open(os.path.join(folder, "last.json"), encoding="utf-8") as fh:
-            current = json.load(fh)
-    except (OSError, ValueError):
-        return
-    if current.get("log") == outcome["log"]:
-        _write_outcome(folder, {**current, "alert": result})
+    with TaskLock(folder):  # the read, the comparison and the replacement are one step for every writer
+        if os.path.exists(log):  # a log already pruned keeps no sidecar, so none can be orphaned
+            fd, tmp = tempfile.mkstemp(dir=folder, prefix="alert.", suffix=".tmp")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    json.dump(record, fh, indent=2)
+                os.replace(tmp, log + ".alert.json")
+            finally:
+                if os.path.exists(tmp):
+                    os.unlink(tmp)
+        try:
+            with open(os.path.join(folder, "last.json"), encoding="utf-8") as fh:
+                current = json.load(fh)
+        except (OSError, ValueError):
+            return
+        if current.get("log") == outcome["log"]:
+            _write_outcome(folder, {**current, "alert": result})
 
 
 if __name__ == "__main__":
