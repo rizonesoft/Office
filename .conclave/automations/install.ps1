@@ -10,7 +10,7 @@
 
   Settings on every task: start when available (a run missed while the PC was off fires at the next chance,
   as systemd's Persistent=true does), ignore a new start while one runs, an execution limit five minutes past
-  the task's timeout, and run on battery. Weekly tasks carry a five-minute random delay.
+  the task's timeout, and run on battery. Daily and weekly tasks carry a five-minute random delay.
 .EXAMPLE
   pwsh .conclave/automations/install.ps1
   pwsh .conclave/automations/install.ps1 -Uninstall
@@ -69,6 +69,8 @@ foreach ($task in $manifest.tasks) {
     $logon = New-ScheduledTaskTrigger -AtLogOn -User $user
     $logon.Delay = "PT$($trigger.at_logon_delay_minutes)M"
     $t = @($logon, (New-ScheduledTaskTrigger -Once -At (Get-Date).Add($every) -RepetitionInterval $every))
+  } elseif ($null -ne $trigger.daily_at) {
+    $t = New-ScheduledTaskTrigger -Daily -At $trigger.daily_at -RandomDelay (New-TimeSpan -Minutes 5)
   } else {
     $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $trigger.weekly -At $trigger.at -RandomDelay (New-TimeSpan -Minutes 5)
   }

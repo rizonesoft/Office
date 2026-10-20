@@ -15,6 +15,19 @@
         "every_minutes": 60
       },
       "timeout_minutes": 245
+    },
+    {
+      "name": "office-2028-winui-pin",
+      "description": "Propose the latest stable WinUI 3 release on a winui/<version> branch and email the operator",
+      "command": [
+        "python",
+        "scripts/check-winui-pin.py",
+        "update"
+      ],
+      "trigger": {
+        "daily_at": "06:23"
+      },
+      "timeout_minutes": 30
     }
   ]
 }

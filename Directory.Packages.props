@@ -1,0 +1,11 @@
+<Project>
+  <!-- Central package versions for every project in the repository. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Pin rule (owner, 2026-10-20): always the latest stable WinUI 3 release. The office-2028-winui-pin task
+         proposes each newer one on a winui/<version> branch (scripts/check-winui-pin.py). -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+  </ItemGroup>
+</Project>

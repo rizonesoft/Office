@@ -7,6 +7,7 @@ Every scheduled job for Office-2028 lives here: the task list in `tasks.json`, t
 | Task | When (local time) | Runs | Fails when |
 | --- | --- | --- | --- |
 | office-2028-claude-keepalive | Logon, hourly | scripts/campaign_keepalive.py resurrect | Below |
+| office-2028-winui-pin | Daily 06:23 | scripts/check-winui-pin.py update | Below |
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored.
 
@@ -19,6 +20,14 @@ It acts only on proof. The SessionStart hook (`campaign_keepalive.py observe`, w
 It runs 3 minutes after each logon and then hourly. It fails (and alerts) when a resumed session exits non-zero or runs past 4 hours, three resumes in a row make no progress (reported once), `.conclave/keepalive.toml` names no writer model, or no `claude` is on PATH. No open run, a live owner, or an attended session is a success.
 
 The resumed session's output goes to `build/claude-keepalive/<run id>-<UTC>.log`, and the keep-alive's own state to `build/claude-keepalive.json`.
+
+## The WinUI 3 pin
+
+Owner rule (2026-10-20): the repository always pins the latest stable WinUI 3 release, the newest `winui3/release/<version>` GitHub release of the microsoft-ui-xaml repository that is neither a prerelease nor experimental. The pin is the `Microsoft.WindowsAppSDK` version in `Directory.Packages.props`.
+
+Each morning `scripts/check-winui-pin.py update` compares the two. When a newer stable release exists and NuGet publishes it, the script adds a temporary git worktree on a new branch `winui/<version>` from main, rewrites only the pin there, runs the checks (the file parses, NuGet has the version, and, once a solution exists, `dotnet build` passes), commits, removes the worktree and emails `rizonetech@gmail.com` the branch to merge (`git merge winui/<version>`). It never touches the operator's checkout or main, and never pushes. A branch that already exists means the release was proposed before, so nothing is redone or re-sent. It fails (and alerts) when a check fails, which leaves no branch, or when the releases or NuGet cannot be read.
+
+`python scripts/check-winui-pin.py check` exits 1 while a newer stable release is pending, and `update --dry-run` says what the task would do.
 
 ## When a run fails
 

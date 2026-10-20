@@ -9,8 +9,8 @@ function Get-ScheduledTask { param($TaskPath)
   }
   $all }
 function New-ScheduledTaskAction { param($Execute, $Argument, $WorkingDirectory) [pscustomobject]@{Execute = $Execute; Argument = $Argument} }
-function New-ScheduledTaskTrigger { param([switch]$AtLogOn, $User, [switch]$Once, $At, $RepetitionInterval, [switch]$Weekly, $DaysOfWeek, $RandomDelay)
-  [pscustomobject]@{AtLogOn = [bool]$AtLogOn; Once = [bool]$Once; Weekly = [bool]$Weekly; Repeat = "$RepetitionInterval"; Delay = $null; Days = "$DaysOfWeek"} }
+function New-ScheduledTaskTrigger { param([switch]$AtLogOn, $User, [switch]$Once, $At, $RepetitionInterval, [switch]$Daily, [switch]$Weekly, $DaysOfWeek, $RandomDelay)
+  [pscustomobject]@{AtLogOn = [bool]$AtLogOn; Once = [bool]$Once; Daily = [bool]$Daily; Weekly = [bool]$Weekly; Repeat = "$RepetitionInterval"; Delay = $null; Days = "$DaysOfWeek"; At = "$At"} }
 function New-ScheduledTaskSettingsSet { param([switch]$StartWhenAvailable, $MultipleInstances, $ExecutionTimeLimit, [switch]$AllowStartIfOnBatteries, [switch]$DontStopIfGoingOnBatteries)
   [pscustomobject]@{Limit = "$ExecutionTimeLimit"; Instances = "$MultipleInstances"} }
 function New-ScheduledTaskPrincipal { param($UserId, $LogonType, $RunLevel) [pscustomobject]@{LogonType = "$LogonType"} }

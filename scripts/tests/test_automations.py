@@ -84,6 +84,8 @@ class Manifest(unittest.TestCase):
             "zero timeout": {**first, "timeout_minutes": 0},
             "bad day": {**first, "trigger": {"weekly": "Funday", "at": "07:00"}},
             "bad time": {**first, "trigger": {"weekly": "Monday", "at": "7am"}},
+            "bad daily time": {**first, "trigger": {"daily_at": "25:00"}},
+            "daily with extra key": {**first, "trigger": {"daily_at": "06:23", "every_minutes": 5}},
             "unknown trigger": {**first, "trigger": {"daily": "07:00"}},
         }
         with tempfile.TemporaryDirectory() as tmp:
@@ -475,6 +477,13 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         self.assertTrue(any(t["AtLogOn"] and t["Delay"] == "PT3M" for t in triggers), triggers)
         self.assertEqual(registers[0]["logon"], "Interactive")
         self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-2028-stale"])
+
+    def test_a_daily_task_registers_one_daily_trigger(self):
+        daily = {**FIXTURE_TASK, "name": "office-2028-daily", "trigger": {"daily_at": "06:23"}}
+        result, calls = self.run_installer([daily], [])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        triggers = [c for c in calls if c["op"] == "register"][0]["triggers"]
+        self.assertEqual([(t["Daily"], t["At"]) for t in triggers], [(True, "06:23")])
 
     def test_an_empty_manifest_installs_on_a_clean_scheduler(self):
         result, calls = self.run_installer([], [])

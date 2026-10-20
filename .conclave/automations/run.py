@@ -65,12 +65,15 @@ def load_tasks(path: str) -> dict[str, dict]:
         if set(trigger) == {"at_logon_delay_minutes", "every_minutes"}:
             if not all(_whole(trigger[k]) for k in trigger):
                 raise TaskError(f"{name}: a logon trigger needs positive whole minutes")
+        elif set(trigger) == {"daily_at"}:
+            if not isinstance(trigger["daily_at"], str) or not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", trigger["daily_at"]):
+                raise TaskError(f"{name}: a daily trigger needs an HH:MM time")
         elif set(trigger) == {"weekly", "at"}:
             if (trigger["weekly"] not in DAYS or not isinstance(trigger["at"], str)
                     or not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", trigger["at"])):
                 raise TaskError(f"{name}: a weekly trigger needs a day name and an HH:MM time")
         else:
-            raise TaskError(f"{name}: trigger must be at-logon-and-every or weekly-at")
+            raise TaskError(f"{name}: trigger must be at-logon-and-every, daily-at or weekly-at")
         out[name] = task
     return out
 
