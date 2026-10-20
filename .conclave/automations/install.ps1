@@ -22,9 +22,22 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 $repo = (Resolve-Path (Join-Path $here '..\..')).Path
+# Validate the whole manifest with the runner's own rules before any task is read, registered or removed, so a
+# bad folder or name can never point the installer at someone else's tasks.
+$python = (Get-Command python.exe -ErrorAction Ignore).Source
+if (-not $python) { throw 'python.exe is not on PATH; install Python 3 for Windows first' }
+& $python (Join-Path $here 'run.py') --validate
+if ($LASTEXITCODE -ne 0) { throw 'tasks.json is not valid; nothing was changed' }
 $manifest = Get-Content -Raw -Path (Join-Path $here 'tasks.json') | ConvertFrom-Json
-$folder = $manifest.folder
+$folder = '\Office-2028\'
+if ($manifest.folder -ne $folder) { throw "tasks.json folder must be $folder; nothing was changed" }
 $existing = @(Get-ScheduledTask | Where-Object TaskPath -eq $folder)
+
+if ($DryRun -and $Uninstall) {
+  foreach ($task in $existing) { Write-Host "would remove $folder$($task.TaskName)" }
+  Write-Host "$($existing.Count) task(s) under $folder; nothing changed"
+  return
+}
 
 if ($DryRun) {
   $listed = @($manifest.tasks | ForEach-Object { $_.name })
@@ -50,12 +63,11 @@ foreach ($task in $manifest.tasks) {
   $action = New-ScheduledTaskAction -Execute $pythonw -Argument "`"$runner`" $($task.name)" -WorkingDirectory $repo
   $trigger = $task.trigger
   if ($null -ne $trigger.every_minutes) {
-    # Two triggers: after each logon (with the delay), and on the interval from now on. A logon trigger's
-    # repetition starts only at the next logon, so on its own it would never tick in the current one.
+    # One run shortly after each logon (no repetition), and one repeating schedule from install onward that
+    # keeps ticking across logons. Two repeating triggers would fire the task twice per interval.
     $every = New-TimeSpan -Minutes $trigger.every_minutes
     $logon = New-ScheduledTaskTrigger -AtLogOn -User $user
     $logon.Delay = "PT$($trigger.at_logon_delay_minutes)M"
-    $logon.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval $every).Repetition
     $t = @($logon, (New-ScheduledTaskTrigger -Once -At (Get-Date).Add($every) -RepetitionInterval $every))
   } else {
     $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $trigger.weekly -At $trigger.at -RandomDelay (New-TimeSpan -Minutes 5)

@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -48,13 +49,13 @@ def load_tasks(path: str) -> dict[str, dict]:
         if set(task) != {"name", "description", "command", "trigger", "timeout_minutes"}:
             raise TaskError(f"{name}: needs exactly name, description, command, trigger, timeout_minutes")
         command = task["command"]
-        if not command or not all(isinstance(c, str) and c for c in command):
+        if not isinstance(command, list) or not command or not all(isinstance(c, str) and c for c in command):
             raise TaskError(f"{name}: command must be a non-empty list of strings")
-        if not isinstance(task["timeout_minutes"], int) or task["timeout_minutes"] <= 0:
+        if not _whole(task["timeout_minutes"]):
             raise TaskError(f"{name}: timeout_minutes must be a positive whole number")
         trigger = task["trigger"]
         if set(trigger) == {"at_logon_delay_minutes", "every_minutes"}:
-            if not all(isinstance(trigger[k], int) and trigger[k] > 0 for k in trigger):
+            if not all(_whole(trigger[k]) for k in trigger):
                 raise TaskError(f"{name}: a logon trigger needs positive whole minutes")
         elif set(trigger) == {"weekly", "at"}:
             if trigger["weekly"] not in DAYS or not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", trigger["at"]):
@@ -63,6 +64,11 @@ def load_tasks(path: str) -> dict[str, dict]:
             raise TaskError(f"{name}: trigger must be at-logon-and-every or weekly-at")
         out[name] = task
     return out
+
+
+def _whole(value) -> bool:
+    """A positive whole number; JSON true is not one, though Python counts bool as int."""
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
 def resolve(command: list[str]) -> list[str]:
@@ -76,13 +82,16 @@ def resolve(command: list[str]) -> list[str]:
 
 def _utc(stamp: bool = False) -> str:
     now = datetime.datetime.now(datetime.timezone.utc)
-    return now.strftime("%Y%m%dT%H%M%SZ" if stamp else "%Y-%m-%dT%H:%M:%SZ")
+    # The file stamp carries microseconds and the process id, so two runs in one second never share a log.
+    return now.strftime("%Y%m%dT%H%M%S.%fZ") + f"-{os.getpid()}" if stamp else now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _kill_tree(proc) -> None:
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=60,
-                       creationflags=NO_WINDOW)
+        done = subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=60,
+                              creationflags=NO_WINDOW)
+        if done.returncode != 0 and proc.poll() is None:
+            raise OSError(f"taskkill exited {done.returncode}: {done.stderr.decode(errors='replace').strip()}")
     else:
         proc.kill()
     proc.wait(timeout=60)
@@ -108,16 +117,24 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
             try:
                 outcome["exit"] = proc.wait(timeout=task["timeout_minutes"] * 60)
             except subprocess.TimeoutExpired:
-                killer(proc)
                 outcome.update(exit=124, timed_out=True)
+                try:
+                    killer(proc)
+                except (OSError, subprocess.SubprocessError) as error:  # still a timeout: recorded and alerted
+                    out.write(f"run.py: could not stop the timed-out process: {error}\n".encode("utf-8"))
+                    outcome["cleanup_failed"] = True
     outcome["finished"] = _utc()
     logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
     for old in logs[:-KEEP_LOGS]:
         os.unlink(os.path.join(folder, old))
-    tmp = os.path.join(folder, "last.json.tmp")
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(outcome, fh, indent=2)
-    os.replace(tmp, os.path.join(folder, "last.json"))
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix="last.json.", suffix=".tmp")  # unique per run
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(outcome, fh, indent=2)
+        os.replace(tmp, os.path.join(folder, "last.json"))
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
     return outcome
 
 
@@ -132,7 +149,15 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
     if len(argv) != 1:
         print(__doc__.split("\n\n")[0], file=sys.stderr)
         return 2
-    tasks = load_tasks(os.path.join(root, ".conclave", "automations", "tasks.json"))
+    manifest = os.path.join(root, ".conclave", "automations", "tasks.json")
+    if argv[0] == "--validate":  # the installer's gate: every rule in load_tasks, nothing run
+        try:
+            print(f"tasks.json valid: {len(load_tasks(manifest))} task(s)")
+        except (TaskError, OSError, ValueError) as error:
+            print(f"run: tasks.json is not valid: {error}", file=sys.stderr)
+            return 1
+        return 0
+    tasks = load_tasks(manifest)
     task = tasks.get(argv[0])
     if task is None:
         print(f"run: no task named {argv[0]} in tasks.json", file=sys.stderr)

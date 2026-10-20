@@ -8,8 +8,19 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout, redirect_stderr
+from shutil import which as shutil_which
 
 REPO = Path(__file__).resolve().parents[2]
+
+
+def contextlib_redirect():
+    """Silence a call's stdout and stderr."""
+    import contextlib
+    stack = contextlib.ExitStack()
+    stack.enter_context(redirect_stdout(io.StringIO()))
+    stack.enter_context(redirect_stderr(io.StringIO()))
+    return stack
 AUTO = REPO / ".conclave" / "automations"
 
 
@@ -176,7 +187,7 @@ class Alert(unittest.TestCase):
 
     def test_the_message_names_the_task_its_exit_and_its_log_tail(self):
         subject, body = alert.message("office-2028-fixture", self.TASK, self.OUTCOME, "fixture failed", "PC")
-        self.assertEqual(subject, "Automation failed: office-2028-fixture on PC")
+        self.assertEqual(subject, "Office-2028 automation failed: office-2028-fixture on PC")
         for text in ("exit 1", "Fixture check", "fixture failed", "Start-ScheduledTask -TaskPath '\\Office-2028\\'"):
             self.assertIn(text, body)
         _, timed = alert.message("x", self.TASK, {**self.OUTCOME, "timed_out": True}, "", "PC")
@@ -222,7 +233,105 @@ class Alert(unittest.TestCase):
             finally:
                 sys.stdout = saved
             self.assertEqual(code, 0)
-            self.assertIn("Subject: Automation failed: office-2028-fixture on PC", out.getvalue())
+            self.assertIn("Subject: Office-2028 automation failed: office-2028-fixture on PC", out.getvalue())
+
+
+class RoundOneFixes(unittest.TestCase):
+    """Defects the first independent review found in the ported code (D00 T03 §1)."""
+
+    def manifest(self, tmp, tasks, folder=None):
+        auto = Path(tmp) / ".conclave" / "automations"
+        auto.mkdir(parents=True, exist_ok=True)
+        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office-2028" + chr(92), "tasks": tasks}
+        (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
+        return auto / "tasks.json"
+
+    def test_a_command_string_and_boolean_numbers_are_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for bad in ({**FIXTURE_TASK, "command": "python"}, {**FIXTURE_TASK, "timeout_minutes": True},
+                        {**FIXTURE_TASK, "trigger": {"at_logon_delay_minutes": True, "every_minutes": 60}}):
+                with self.subTest(bad=bad), self.assertRaises(run.TaskError):
+                    run.load_tasks(str(self.manifest(tmp, [bad])))
+
+    def test_validate_mode_exits_1_on_a_bad_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.manifest(tmp, [FIXTURE_TASK], folder="\Other\\")
+            with contextlib_redirect():
+                self.assertEqual(run.main(["--validate"], root=tmp), 1)
+            self.manifest(tmp, [FIXTURE_TASK])
+            with contextlib_redirect():
+                self.assertEqual(run.main(["--validate"], root=tmp), 0)
+
+    def test_two_runs_in_one_second_keep_both_logs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            task = {**FIXTURE_TASK, "command": ["python", "-c", "print('hi')"]}
+            first = run.execute("office-2028-fixture", task, tmp)
+            second = run.execute("office-2028-fixture", task, tmp)
+            self.assertNotEqual(first["log"], second["log"])
+            self.assertTrue((Path(tmp) / first["log"]).exists() and (Path(tmp) / second["log"]).exists())
+
+    def test_a_failed_kill_still_records_the_timeout(self):
+        class Hung:
+            pid = 1
+            def __init__(self, *a, **kw):
+                pass
+            def wait(self, timeout=None):
+                raise subprocess.TimeoutExpired("x", timeout)
+
+        def broken_killer(proc):
+            raise subprocess.TimeoutExpired("taskkill", 60)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = run.execute("office-2028-fixture", FIXTURE_TASK, tmp, popen=Hung, killer=broken_killer)
+            self.assertEqual((outcome["exit"], outcome["timed_out"], outcome.get("cleanup_failed")), (124, True, True))
+            self.assertTrue((Path(tmp) / "build" / "automations" / "office-2028-fixture" / "last.json").exists())
+            self.assertIn("could not stop", (Path(tmp) / outcome["log"]).read_text(encoding="utf-8"))
+
+    def test_the_log_tail_reads_only_the_end(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "big.log"
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("x" * (alert.TAIL_BYTES * 4) + "\n" + "\n".join(f"line {i}" for i in range(100)) + "\n")
+            tail = alert.tail_of(str(path))
+            self.assertTrue(tail.endswith("line 99"))
+            self.assertLessEqual(len(tail), alert.TAIL_BYTES)
+            self.assertEqual(len(tail.splitlines()), alert.LOG_LINES)
+
+
+# Task Scheduler and its installer exist only on Windows with PowerShell 7; elsewhere there is nothing to install.
+@unittest.skipUnless(shutil_which("pwsh"), "PowerShell 7 is needed to run the installer")
+class InstallerDryRun(unittest.TestCase):
+    def fixture(self, tmp, tasks, folder=None):
+        auto = Path(tmp) / ".conclave" / "automations"
+        auto.mkdir(parents=True)
+        for name in ("install.ps1", "run.py", "alert.py"):
+            (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
+        doc = {"schema_version": 1, "folder": folder or chr(92) + "Office-2028" + chr(92), "tasks": tasks}
+        (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
+        return auto / "install.ps1"
+
+    def pwsh(self, script, *args):
+        return subprocess.run(["pwsh", "-NoProfile", "-File", str(script), *args], capture_output=True, text=True,
+                              timeout=120)
+
+    def test_dry_run_lists_what_it_would_register(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.pwsh(self.fixture(tmp, [FIXTURE_TASK]), "-DryRun")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("would register " + chr(92) + "Office-2028" + chr(92) + "office-2028-fixture", result.stdout)
+
+    def test_a_foreign_folder_is_refused_before_anything_changes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.pwsh(self.fixture(tmp, [], folder=chr(92) + "Microsoft" + chr(92)), "-DryRun")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("not valid", result.stdout + result.stderr)
+
+    def test_uninstall_dry_run_previews_removal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.pwsh(self.fixture(tmp, [FIXTURE_TASK]), "-Uninstall", "-DryRun")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("would register", result.stdout)
+            self.assertIn("nothing changed", result.stdout)
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ ITEM = "op://Conclave/jq2q47sqbpdwacivbjead5rrku"
 ENDPOINT = "https://api.smtp2go.com/v3/email/send"
 SENDER = "Office-2028 automations <website@rizonetech.com>"
 TO = "rizonetech@gmail.com"
+TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
 
 
@@ -68,7 +69,7 @@ def message(name: str, task: dict, outcome: dict, tail: str, host: str) -> tuple
         f"Run again: Start-ScheduledTask -TaskPath '\\Office-2028\\' -TaskName {name}",
         f"Or directly: python .conclave/automations/run.py {name}",
     ])
-    return f"Automation failed: {name} on {host}", body
+    return f"Office-2028 automation failed: {name} on {host}", body
 
 
 def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen) -> str:
@@ -91,15 +92,18 @@ def send_failure(name: str, task: dict, outcome: dict, tail: str, run=subprocess
 
 def tail_of(path: str, lines: int = LOG_LINES) -> str:
     try:
-        with open(path, encoding="utf-8", errors="replace") as fh:
-            return "".join(fh.readlines()[-lines:]).rstrip()
+        with open(path, "rb") as fh:  # read only the end, so a huge log cannot exhaust memory
+            fh.seek(0, os.SEEK_END)
+            fh.seek(max(0, fh.tell() - TAIL_BYTES))
+            text = fh.read().decode("utf-8", errors="replace")
     except OSError:
         return ""
+    return "\n".join(text.splitlines()[-lines:]).rstrip()
 
 
 def main(argv=None, run=subprocess.run, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("name", help="the task that failed, e.g. office-2028-vulnerable-packages")
+    p.add_argument("name", help="the task that failed, e.g. office-2028-claude-keepalive")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
     args = p.parse_args(argv)
     with open(os.path.join(root, ".conclave", "automations", "tasks.json"), encoding="utf-8") as fh:
