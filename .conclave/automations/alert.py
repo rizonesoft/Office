@@ -104,7 +104,7 @@ def tail_of(path: str, lines: int = LOG_LINES) -> str:
 
 def main(argv=None, run=subprocess.run, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("name", help="the task that failed, e.g. office-claude-keepalive")
+    p.add_argument("name", help="the task that failed, e.g. office-winui-pin")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
     args = p.parse_args(argv)
     with open(os.path.join(root, ".conclave", "automations", "tasks.json"), encoding="utf-8") as fh:

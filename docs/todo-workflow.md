@@ -28,6 +28,7 @@ python3 scripts/todo-graph.py query ready     # dependency-safe work right now
 python3 scripts/todo-graph.py query blocked   # sections waiting, and on what
 python3 scripts/todo-graph.py query stats     # tree health
 python3 scripts/todo-graph.py query deferred  # open and resolved deferrals
+python3 scripts/todo-graph.py query plan      # plan title, phase names and every section's status, as JSON
 ```
 
 Report only commands actually run, and distinguish static evidence, test output and review proof.

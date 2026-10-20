@@ -6,29 +6,21 @@ Every scheduled job for Office lives here: the task list in `tasks.json`, the ru
 
 | Task | When (local time) | Runs |
 | --- | --- | --- |
-| `office-claude-keepalive` | Logon, hourly | `scripts/campaign_keepalive.py resurrect` |
 | `office-winui-pin` | Daily 06:23 | `scripts/check-winui-pin.py update` |
 | `office-vulnerable-packages` | Monday 07:15 | `scripts/check-vulnerable-packages.py` |
 | `office-dotnet-ga` | Monday 07:30 | `scripts/check-sdk-ga.py` |
 
 Each fails, and so alerts, when:
 
-- `office-claude-keepalive`: a resumed session exits non-zero or runs past 4 hours, three resumes in a row make no progress (reported once), `.conclave/keepalive.toml` names no writer model, or no `claude` is on PATH. No open run, a live owner, or an attended session is a success. It runs from logon, and from install in the current logon.
 - `office-winui-pin`: a newer stable WinUI 3 release cannot be proposed (a check fails, which leaves no branch), or the releases or NuGet cannot be read. A proposal is emailed and is a success.
 - `office-vulnerable-packages`: a NuGet package in the solution, direct or transitive, has a published advisory, or the restore or the report fails. No solution yet (until D03 T01 §12 creates it) is a success.
 - `office-dotnet-ga`: the .NET 11 GA SDK is out while `global.json` still pins a release candidate, so D03 T01 §2 is ready. A newer release candidate is printed, not failed.
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored.
 
-## The keep-alive
+## Campaign runs
 
-The run heartbeat (`CronCreate`) runs inside its Claude session, so it dies with it. The keep-alive covers what it cannot: a restart, a crash, or a closed terminal that leaves the guard (`build/claude-campaign-guard.json`) open with nobody working the run. It resumes that exact session headless (`claude -p --resume <session> --model <writer> --permission-mode bypassPermissions`), with the writer model from `.conclave/keepalive.toml`, and supervises it.
-
-It acts only on proof. The SessionStart hook (`campaign_keepalive.py observe`, wired in `.claude/settings.json`) records the Claude process of every Office session as a pid and creation time under `build/claude-sessions/`. A launch needs the guard's session recorded and that exact process gone, and no other Office session alive: while the operator has any Office session open, the keep-alive waits, because one session owns the tree. A guard taken by a Codex or Antigravity run (`acquire --runner`) is held too: only Claude runs are ever resumed. While a resume runs, the supervisor ends its process tree as soon as the guard is ended or handed over, or another Office session starts. The full rule list is in the `campaign_keepalive.py` docstring, and `python scripts/campaign_keepalive.py status` says what it would do now.
-
-It runs 3 minutes after each logon and then hourly. It fails (and alerts) when a resumed session exits non-zero or runs past 4 hours, three resumes in a row make no progress (reported once), `.conclave/keepalive.toml` names no writer model, or no `claude` is on PATH. No open run, a live owner, or an attended session is a success.
-
-The resumed session's output goes to `build/claude-keepalive/<run id>-<UTC>.log`, and the keep-alive's own state to `build/claude-keepalive.json`.
+There is no keep-alive task. Retired 2026-10-21 (operator, adopting the Conclave-SDK todo kit: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the todo kit's run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules.
 
 ## The WinUI 3 pin
 
@@ -57,10 +49,11 @@ Get-ScheduledTask -TaskPath '\Office\' | Get-ScheduledTaskInfo | Format-Table Ta
 python .conclave/automations/run.py <name>                    # run one task in this console
 python .conclave/automations/alert.py <name> --dry-run        # preview the alert for its last run
 python -m unittest discover -s scripts/tests -p "test_automations.py"
-python scripts/campaign_keepalive.py status                    # what the keep-alive would do now
 ```
 
 Installed and verified on the operator's PC (Venom-PC) on 2026-10-20: `office-claude-keepalive` is registered under `\Office\` with a logon trigger (3 minute delay) and an hourly time trigger, next run 2026-10-20 04:16:56 South Africa Standard Time (UTC+2), last result 267011 (not yet run); `campaign_keepalive.py status` answered `idle: no open campaign run` before the phase 2 run was put under the guard; the alert dry run rendered the task, exit and log tail; and one real alert (the throwaway task `office-alert-test`, exiting 1 in a scratch workspace, sent through the runner with the operator's go-ahead) arrived in `rizonetech@gmail.com` from `website@rizonetech.com`: subject "Office automation failed: office-alert-test on Venom-PC", received 2026-10-20 01:17:45 UTC, `internetMessageId` `<E1xIyU5-FnQW0hPmZ73-1DpI@message-id.smtpcorp.com>`. That send predates the runner recording sends in `last.json`; `test_automations.py` (`AlertRecord`) proves every later send records its email id (or that none was given) in a per-run `<log>.alert.json` and in `last.json` while it still describes that run, and an unsent one its error.
+
+Read back on Venom-PC on 2026-10-21: no task is registered under `\Office\` (the folder is absent), so none of the tasks above runs until `install.ps1` is run again. The `office-claude-keepalive` task named above was retired the same day (see Campaign runs).
 
 The installer reads `tasks.json` and registers every task it lists; a task under `\Office\` that the file no longer lists is removed.
 

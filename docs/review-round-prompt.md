@@ -26,4 +26,4 @@ Give a verdict per lens: `approve`, `needs-attention` (numbered findings, each w
 
 ## Reply format
 
-One section per lens with its verdict and findings, then a final line: `OVERALL: approve` or `OVERALL: needs-attention`.
+One section per lens with its verdict and findings, then a final line: `OVERALL: approve` or `OVERALL: needs-attention`. If you could not read the candidate at all (the commit, the diff or the files), say why in one line and end with `OVERALL: blocked` instead: that is not a review, and the next reviewer runs.

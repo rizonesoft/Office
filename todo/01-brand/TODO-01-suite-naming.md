@@ -41,7 +41,7 @@ title: "TODO-01 -- Suite and App Naming"
 | 4 | §4 | Knockout trademark screen for chosen names | §3 | [ ] |
 | 5 | §5 | Domain, GitHub and package name availability | §3 | [ ] |
 | 6 | §6 | Apply names across the repository | §4, §5 | [ ] |
-| 7 | §7 | Attorney clearance and filing decision | §4 | [ ] |
+| 7 | §7 | Attorney clearance and filing | §4 | [ ] |
 | 8 | §8 | GitHub repository rename | §6 | [ ] |
 
 ## 1. Naming Brief and Constraints
@@ -171,7 +171,7 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 
 **Test checkpoint:** `rg -n -i "microsoft (word|excel|powerpoint|visio|project|outlook)" README.md` lists only lines that describe the Microsoft counterpart, and `python scripts/todo-graph.py plan --check` exits 0.
 
-## 7. Attorney Clearance and Filing Decision
+## 7. Attorney Clearance and Filing
 
 A full clearance opinion and any trademark filing need a trademark attorney and money, so this is operator work. It does not block engineering, but it must close before the first public release.
 

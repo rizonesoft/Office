@@ -5,19 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& ([System.IO.Path]::Combine([Environment]::GetEnvironmentVariable('CLAUDE_PROJECT_DIR'), '.claude', 'hooks', 'campaign-stop.ps1'))\"",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python -c \"import os, runpy, sys; sys.argv = ['campaign_keepalive.py', 'observe']; runpy.run_path(os.path.join(os.environ['CLAUDE_PROJECT_DIR'], 'scripts', 'campaign_keepalive.py'), run_name='__main__')\"",
-            "timeout": 30
+            "command": "python3 -c \"import os, runpy, sys; sys.argv = ['campaign_guard.py', 'stop-hook']; runpy.run_path(os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(), 'scripts', 'campaign_guard.py'), run_name='__main__')\"",
+            "timeout": 60
           }
         ]
       }

@@ -3,20 +3,6 @@
   "folder": "\\Office\\",
   "tasks": [
     {
-      "name": "office-claude-keepalive",
-      "description": "Resume an open Office campaign run whose owning Claude session has stopped",
-      "command": [
-        "python",
-        "scripts/campaign_keepalive.py",
-        "resurrect"
-      ],
-      "trigger": {
-        "at_logon_delay_minutes": 3,
-        "every_minutes": 60
-      },
-      "timeout_minutes": 245
-    },
-    {
       "name": "office-winui-pin",
       "description": "Propose the latest stable WinUI 3 release on a winui/<version> branch and email the operator",
       "command": [

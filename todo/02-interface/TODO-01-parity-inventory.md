@@ -37,29 +37,29 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Inventory schema and checker | D00 T01 §1 | [x] |
-| 2 | §2 | Reference build and capture configuration | -- | [x] |
-| 3 | §3 | UI Automation capture tool | §1, §2, §21 | [x] |
-| 4 | §4 | Shared shell chrome inventory | §3 | [ ] |
-| 5 | §5 | Word ribbon and contextual tabs inventory | §3, §19 | [ ] |
-| 6 | §6 | Word Backstage, panes, status bar and dialogs inventory | §5 | [ ] |
-| 7 | §7 | Excel ribbon and contextual tabs inventory | §3, §19 | [ ] |
-| 8 | §8 | Excel Backstage, formula bar, panes and dialogs inventory | §7 | [ ] |
-| 9 | §9 | PowerPoint ribbon and contextual tabs inventory | §3, §19 | [ ] |
-| 10 | §10 | PowerPoint Backstage, views, panes and dialogs inventory | §9 | [ ] |
-| 11 | §11 | Visio ribbon and contextual tabs inventory | §3, §19 | [ ] |
-| 12 | §12 | Visio Backstage, shapes pane and dialogs inventory | §11 | [ ] |
-| 13 | §13 | Project ribbon and contextual tabs inventory | §3, §19 | [ ] |
-| 14 | §14 | Project views, Backstage, panes and dialogs inventory | §13 | [ ] |
-| 15 | §15 | Outlook module and item window ribbons inventory | §3, §19 | [ ] |
-| 16 | §16 | Outlook modules, panes, views and dialogs inventory | §15 | [ ] |
-| 17 | §17 | Keyboard shortcut inventory for six apps | §1, §20 | [ ] |
+| 1 | §1 | Inventory schema checker | D00 T01 §1 | [x] |
+| 2 | §2 | Reference build setup | -- | [x] |
+| 3 | §3 | UIA capture tool | §1, §2, §21 | [x] |
+| 4 | §4 | Shell chrome inventory | §3 | [ ] |
+| 5 | §5 | Word ribbon | §3, §19 | [ ] |
+| 6 | §6 | Word panes, dialogs | §5 | [ ] |
+| 7 | §7 | Excel ribbon | §3, §19 | [ ] |
+| 8 | §8 | Excel panes, dialogs | §7 | [ ] |
+| 9 | §9 | PowerPoint ribbon | §3, §19 | [ ] |
+| 10 | §10 | PowerPoint panes, dialogs | §9 | [ ] |
+| 11 | §11 | Visio ribbon | §3, §19 | [ ] |
+| 12 | §12 | Visio panes, dialogs | §11 | [ ] |
+| 13 | §13 | Project ribbon | §3, §19 | [ ] |
+| 14 | §14 | Project panes, dialogs | §13 | [ ] |
+| 15 | §15 | Outlook ribbons | §3, §19 | [ ] |
+| 16 | §16 | Outlook panes, dialogs | §15 | [ ] |
+| 17 | §17 | Keyboard shortcuts | §1, §20 | [ ] |
 | 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
-| 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [x] |
-| 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [x] |
-| 21 | §21 | Microsoft-free inventory model | §1 | [x] |
+| 19 | §19 | Control ID baseline | §1, §21 | [x] |
+| 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
+| 21 | §21 | Microsoft-free inventory | §1 | [x] |
 
-## 1. Inventory Schema and Checker
+## 1. Inventory Schema Checker
 
 > **Started:** 2026-10-20T00:00:18Z
 
@@ -88,7 +88,7 @@ Every inventoried element is one JSON record with a stable dotted id (`word.home
 > **Verified:** 2026-10-20 | §1 | 602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c
 > **Review:** `docs/reviews/d02-t01-s1.json`
 
-## 2. Reference Build and Capture Configuration
+## 2. Reference Build Setup
 
 > **Started:** 2026-10-20T02:46:15Z
 
@@ -114,7 +114,7 @@ Positions only mean something against one fixed configuration. This section reco
 > **Verified:** 2026-10-20 | §2 | c549c6014b05224248ea78cbbe47fc3aad04bb8d
 > **Review:** `docs/reviews/d02-t01-s2.json`
 
-## 3. UI Automation Capture Tool
+## 3. UIA Capture Tool
 
 > **Started:** 2026-10-20T04:20:46Z
 
@@ -147,7 +147,7 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 > **Verified:** 2026-10-20 | §3 | 59a4e067a17b78e10346424b33e1e43db8704b63
 > **Review:** `docs/reviews/d02-t01-s3.json`
 
-## 4. Shared Shell Chrome Inventory
+## 4. Shell Chrome Inventory
 
 The shell is shared by every app: title bar (AutoSave toggle, Quick Access Toolbar, document name and save state, search box, account, minimise, maximise, close), the ribbon tab row (File, tabs, Comments, Editing mode, Share), ribbon display options, the KeyTips layer, the Backstage frame, and the common parts of the status bar.
 
@@ -170,7 +170,7 @@ The shell is shared by every app: title bar (AutoSave toggle, Quick Access Toolb
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/shell/chrome.json` exits 0 and `python -c "import json; print(len(json.load(open('design/inventory/shell/chrome.json'))))"` prints at least 40.
 
-## 5. Word Ribbon and Contextual Tabs Inventory
+## 5. Word Ribbon
 
 Every built-in Word tab (File, Home, Insert, Draw, Design, Layout, References, Mailings, Review, View, Help) and every contextual tab (Table Design, Table Layout, Picture Format, Shape Format, Header and Footer, Equation, Chart Design, Chart Format, SmartArt Design, Format) with groups, controls in order, sizes and KeyTips.
 
@@ -196,7 +196,7 @@ Every built-in Word tab (File, Home, Insert, Draw, Design, Layout, References, M
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word/ribbon.json` exits 0 and the file holds at least 11 `tab` and 10 `contextualTab` records.
 
-## 6. Word Backstage, Panes, Status Bar and Dialogs Inventory
+## 6. Word Panes, Dialogs
 
 Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, Print, Share, Export, Transform, Close, Account, Feedback, Options), task panes (Navigation, Styles, Clipboard, Reviewing, Editor, Format Shape, Selection), status bar items, views, and every dialog reachable from a ribbon dialog launcher or Backstage.
 
@@ -219,7 +219,7 @@ Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, P
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word` exits 0 and `design/inventory/word/dialogs.json` holds at least 10 `dialog` records.
 
-## 7. Excel Ribbon and Contextual Tabs Inventory
+## 7. Excel Ribbon
 
 Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data, Review, View, Automate, Help) and contextual tab (Table Design, PivotTable Analyze, PivotTable Design, Chart Design, Format, Picture Format, Shape Format, Sparkline, Header and Footer, Query, Timeline, Slicer).
 
@@ -244,7 +244,7 @@ Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data,
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel/ribbon.json` exits 0 and the file holds at least 11 `tab` and 12 `contextualTab` records.
 
-## 8. Excel Backstage, Formula Bar, Panes and Dialogs Inventory
+## 8. Excel Panes, Dialogs
 
 Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context menu, Backstage pages, Excel Options, task panes (Format Cells pane forms, PivotTable Fields, Queries and Connections, Selection, Clipboard), status bar aggregates and their customise menu, and dialogs (Format Cells, Insert Function, Function Arguments, Name Manager, Data Validation, Conditional Formatting Rules Manager, Sort, Paste Special, Go To Special, Goal Seek, Scenario Manager).
 
@@ -267,7 +267,7 @@ Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context 
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel` exits 0 and `design/inventory/excel/dialogs.json` holds at least 11 `dialog` records.
 
-## 9. PowerPoint Ribbon and Contextual Tabs Inventory
+## 9. PowerPoint Ribbon
 
 Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, Animations, Slide Show, Record, Review, View, Help) and contextual tab (Shape Format, Picture Format, Table Design, Table Layout, Chart Design, Chart Format, SmartArt Design, Video Format, Playback, Audio Format, Equation).
 
@@ -290,7 +290,7 @@ Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, An
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/powerpoint/ribbon.json` exits 0 and the file holds at least 12 `tab` and 11 `contextualTab` records.
 
-## 10. PowerPoint Backstage, Views, Panes and Dialogs Inventory
+## 10. PowerPoint Panes, Dialogs
 
 PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, Reading, Slide Master, Handout Master, Notes Master, Slide Show, Presenter View), the thumbnail pane, notes pane, status bar, Backstage and Options, task panes (Animation Pane, Selection, Format Shape, Design Ideas), and dialogs.
 
@@ -313,7 +313,7 @@ PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, 
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/powerpoint` exits 0 and `design/inventory/powerpoint/panes.json` holds at least 10 `view` records.
 
-## 11. Visio Ribbon and Contextual Tabs Inventory
+## 11. Visio Ribbon
 
 Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Review, View, Help, plus Developer when enabled) and contextual tabs (Shape Format, Picture Format, Container Format, Table Design and Layout where present, Data Graphic, Callout).
 
@@ -338,7 +338,7 @@ Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Revie
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/visio/ribbon.json` exits 0 and the file holds at least 9 `tab` records.
 
-## 12. Visio Backstage, Shapes Pane and Dialogs Inventory
+## 12. Visio Panes, Dialogs
 
 Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick Shapes, search), drawing page tabs, rulers, grid, Pan and Zoom, Size and Position, Shape Data, Format Shape panes, the template gallery on New, Backstage and Options, status bar, and dialogs (Page Setup, Shape Data, Define Shape Data, Layers, Data Selector).
 
@@ -362,7 +362,7 @@ Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick 
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/visio` exits 0 and `design/inventory/visio/dialogs.json` holds at least 5 `dialog` records.
 
-## 13. Project Ribbon and Contextual Tabs Inventory
+## 13. Project Ribbon
 
 Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, plus Developer when enabled) and contextual Format tabs (Gantt Chart Tools, Timeline Tools, Task Usage Tools, Resource Sheet Tools, Report Design and Report Table and Chart tabs).
 
@@ -384,7 +384,7 @@ Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, p
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/project/ribbon.json` exits 0 and the file holds at least 7 `tab` records.
 
-## 14. Project Views, Backstage, Panes and Dialogs Inventory
+## 14. Project Panes, Dialogs
 
 Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usage, Team Planner, Network Diagram, Calendar, Resource Sheet, Resource Usage, Resource Graph, Timeline, Task Sheet, Task Form, Resource Form), the view bar and split view, default tables and their columns, Backstage and Project Options, status bar, and dialogs (Task Information, Resource Information, Project Information, Change Working Time, Assign Resources, Level Resources, Baseline).
 
@@ -407,7 +407,7 @@ Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usa
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/project` exits 0 and `design/inventory/project/panes.json` holds at least 13 `view` records.
 
-## 15. Outlook Module and Item Window Ribbons Inventory
+## 15. Outlook Ribbons
 
 Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item window (new message, read message, appointment, meeting, contact, task). The capture follows the Outlook client chosen in §2.
 
@@ -431,7 +431,7 @@ Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item win
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/outlook/ribbon.json` exits 0 and the file has records under `outlook.mail`, `outlook.calendar`, `outlook.people`, `outlook.tasks` and `outlook.compose`.
 
-## 16. Outlook Modules, Panes, Views and Dialogs Inventory
+## 16. Outlook Panes, Dialogs
 
 Outlook's layout beyond the ribbon: navigation bar, folder pane, message list with its columns and conversation grouping, reading pane positions, To-Do Bar, calendar views (Day, Work Week, Week, Month, Schedule), People views, search scopes, Backstage (Info with Account Settings, Rules, Automatic Replies), Outlook Options, and dialogs (Account Settings, Rules and Alerts, Signatures and Stationery, Categories, Address Book).
 
@@ -454,7 +454,7 @@ Outlook's layout beyond the ribbon: navigation bar, folder pane, message list wi
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/outlook` exits 0 and `design/inventory/outlook/panes.json` holds at least 5 calendar `view` records.
 
-## 17. Keyboard Shortcut Inventory for Six Apps
+## 17. Keyboard Shortcuts
 
 Muscle memory is part of parity. Each app's published shortcut list becomes `shortcut` records linked to the command they invoke.
 
@@ -499,7 +499,7 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes and `python scripts/inventory-report.py` exits 0.
 
-## 19. Microsoft Control Identifier Baseline Import
+## 19. Control ID Baseline
 
 > **Started:** 2026-10-20T02:31:07Z
 
@@ -526,7 +526,7 @@ Microsoft publishes, per app, every ribbon tab, group and control with its `idMs
 > **Verified:** 2026-10-20 | §19 | 8193634e3a193aefd853262271a5a2fb2a35893b
 > **Review:** `docs/reviews/d02-t01-s19.json`
 
-## 20. Word Command Catalogue from ListCommands
+## 20. Word Command Catalogue
 
 > **Started:** 2026-10-20T02:59:39Z
 
@@ -551,7 +551,7 @@ Word can list every command it has, with the keyboard shortcut assigned to each,
 > **Verified:** 2026-10-20 | §20 | c6ee91afdaad1bd44488a196a51b1b75f028a052
 > **Review:** `docs/reviews/d02-t01-s20.json`
 
-## 21. Microsoft-Free Inventory Model
+## 21. Microsoft-Free Inventory
 
 > **Started:** 2026-10-20T02:16:35Z
 

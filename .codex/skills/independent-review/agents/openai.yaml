@@ -1,4 +1,4 @@
 interface:
   display_name: "Independent review"
-  short_description: "Review by the pinned reviewer (Gemini 4 for Codex work), with failover and a recorded round."
+  short_description: "Review by Gemini 4 (Sonnet 5.5 as the one fallback), never by Codex, with a recorded round."
   default_prompt: "Get an independent review of this change with scripts/review-dispatch.py --writer codex, then verify and act on every finding. Exit 1 means no review, never an approval."

@@ -194,7 +194,7 @@ class Runner(unittest.TestCase):
 
     def test_every_nested_launch_opens_no_console(self):
         for path in (AUTO / "run.py", AUTO / "alert.py", REPO / "scripts" / "check-vulnerable-packages.py",
-                     REPO / "scripts" / "check-winui-pin.py", REPO / "scripts" / "campaign_keepalive.py"):
+                     REPO / "scripts" / "check-winui-pin.py"):
             text = path.read_text(encoding="utf-8")
             calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
             flagged = text.count("creationflags=")

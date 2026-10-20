@@ -38,19 +38,19 @@ title: "TODO-02 -- Interface Specification"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Design tokens and themes | D01 T02 §1 | [ ] |
-| 2 | §2 | Command glyph library decision | §1 | [ ] |
+| 2 | §2 | Command glyph decision | §1 | [ ] |
 | 3 | §3 | Shell layout chapter | §1, D02 T01 §4 | [ ] |
 | 4 | §4 | Ribbon component chapter | §3, D02 T01 §5 | [ ] |
 | 5 | §5 | Backstage chapter | §3, D02 T01 §6 | [ ] |
-| 6 | §6 | Status bar and zoom chapter | §3, D02 T01 §6 | [ ] |
+| 6 | §6 | Status bar chapter | §3, D02 T01 §6 | [ ] |
 | 7 | §7 | Word surface chapter | §4, §5, §6, D02 T01 §6 | [ ] |
 | 8 | §8 | Excel surface chapter | §4, §5, §6, D02 T01 §8 | [ ] |
-| 9 | §9 | PowerPoint surface chapter | §4, §5, §6, D02 T01 §10 | [ ] |
+| 9 | §9 | PowerPoint chapter | §4, §5, §6, D02 T01 §10 | [ ] |
 | 10 | §10 | Visio surface chapter | §4, §5, §6, D02 T01 §12 | [ ] |
 | 11 | §11 | Project surface chapter | §4, §5, §6, D02 T01 §14 | [ ] |
 | 12 | §12 | Outlook surface chapter | §4, §5, §6, D02 T01 §16 | [ ] |
-| 13 | §13 | Accessibility and keyboard chapter | §4, D02 T01 §17 | [ ] |
-| 14 | §14 | Static app mockups and owner sign-off | §2, §7, §8, §9, §10, §11, §12 | [ ] |
+| 13 | §13 | Accessibility chapter | §4, D02 T01 §17 | [ ] |
+| 14 | §14 | Mockups and sign-off | §2, §7, §8, §9, §10, §11, §12 | [ ] |
 
 ## 1. Design Tokens and Themes
 
@@ -74,7 +74,7 @@ Tokens are the single source for every colour, size and font the interface uses,
 
 **Test checkpoint:** `python -c "import json; json.load(open('design/tokens/tokens.json'))"` exits 0 and `python scripts/check-design-doc.py design/SPEC.md --require Tokens` exits 0.
 
-## 2. Command Glyph Library Decision
+## 2. Command Glyph Decision
 
 The ribbon needs roughly two thousand small command glyphs across six apps. Decision, 2026-10-20 (owner): Fluent UI System Icons (MIT, published by Microsoft on GitHub), the closest set to Office and compatible with the product's GPL-3.0-or-later licence; original glyphs are drawn in the same style only where the set has no match.
 
@@ -161,7 +161,7 @@ Backstage (the File tab) holds the product-wide document lifecycle: Home, New, O
 
 **Test checkpoint:** `python scripts/check-design-doc.py design/SPEC.md --require Backstage --require Print --require Options` exits 0.
 
-## 6. Status Bar and Zoom Chapter
+## 6. Status Bar Chapter
 
 The status bar shows document state on the left and view and zoom controls on the right, and each app customises it through a right-click menu.
 
@@ -220,7 +220,7 @@ The Excel chapter specifies the spreadsheet surface: tabs and contextual tabs, N
 
 **Test checkpoint:** `python scripts/inventory-report.py --cited-in design/SPEC.md --app excel` reports 100 percent of `tab`, `contextualTab` and `dialog` records cited.
 
-## 9. PowerPoint Surface Chapter
+## 9. PowerPoint Chapter
 
 The PowerPoint chapter specifies the presentation surface: tabs and contextual tabs, thumbnail pane, slide canvas with guides and smart guides, notes pane, the master views, Slide Show and Presenter View, panes and dialogs.
 
@@ -300,7 +300,7 @@ The Outlook chapter specifies the mail and calendar surface for the client chose
 
 **Test checkpoint:** `python scripts/inventory-report.py --cited-in design/SPEC.md --app outlook` reports 100 percent of `tab`, `view` and `dialog` records cited.
 
-## 13. Accessibility and Keyboard Chapter
+## 13. Accessibility Chapter
 
 Parity includes keyboard and assistive technology: KeyTips, F6 region cycling, shortcuts from D02 T01 §17, screen reader names and roles, focus order, high contrast and text scaling, meeting WCAG 2.2 AA.
 
@@ -320,7 +320,7 @@ Parity includes keyboard and assistive technology: KeyTips, F6 region cycling, s
 
 **Test checkpoint:** `python scripts/check-design-doc.py design/SPEC.md --require Accessibility --require "F6" --require "High contrast"` exits 0.
 
-## 14. Static App Mockups and Owner Sign-Off
+## 14. Mockups and Sign-Off
 
 A static mockup per app, built from the tokens, glyph set and chapters, lets the owner judge "same place, different look" before code exists. Mockups contain no Microsoft artwork.
 

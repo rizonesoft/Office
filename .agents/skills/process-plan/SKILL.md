@@ -13,7 +13,7 @@ This skill does not ship a section and does not write a stamp. It audits, then c
 
 One continuous loop. You do not stop between sections or phases:
 
-1. Take the run guard on the first phase with a ready row (Run guard, below: before the first write), audit (below), then start `process-phase` on that phase, in this same turn.
+1. Audit (below), then start `process-phase` on the first phase with a ready row, in this same turn.
 2. After that phase's closeout or park, re-run `python scripts/todo-graph.py query ready` and start the next ready phase.
 3. Stop only when no phase has a ready row: every remaining `[ ]` row is blocked or waiting in this context, or the plan is done. That, and an operator stop, are the only halts.
 
@@ -29,8 +29,8 @@ python scripts/todo-graph.py query ready
 
 | State | Do this |
 | ----- | ------- |
-| Another writer holds the tree | Stop and say so; never run two writers on one tree. A guard file (`build/claude-campaign-guard.json`) this session does not own is another writer. |
-| Argument is `--audit` | Run the audit below read-only, then stop: report each refusal and a stale plan instead of repairing it, and write no run file. Repairs are a run's work, under its guard. |
+| Another writer holds the tree | Stop and say so; never run two writers on one tree. |
+| Argument is `--audit` | Run the audit below, then stop. Do not start a run. |
 | Argument is a phase (`0`, `Phase 0`) | Run `process-phase` for that phase only; do not chain. |
 | Empty argument, "the plan", or path | Audit below, then chain ready phases. |
 
@@ -57,15 +57,11 @@ Ready means runnable now in this context: `query ready` already excludes rows wa
 
 If no phase has a ready row, report the leftovers with their blockers and stop. That is a genuine halt.
 
-### Run guard
-
-Every run takes the run guard before its first write (the audit writes), so no two agents ever share the tree. Pick the first phase with a ready row from the read-only Route queries, then run `python scripts/campaign_guard.py acquire --runner antigravity --session antigravity-<UTC stamp, digits only>-<the output of python scripts/campaign_guard.py mint-generation> --phase <N> --run-file <run file> --cron-id none` and record the session id and the printed `run_id` in the run file's Critical events. A refused `acquire` means another writer (a Claude session or another runner) owns the tree: start nothing and report the owner. This agent has no Stop hook, heartbeat or keep-alive (Claude Code features; see `.conclave/automations/README.md`), so nothing resumes it. Every end marker carries the run id (`## Closeout run=<run id>`, column-0 `PARKED <UTC> run=<run id> <reason>`), and every way the run ends, an operator stop included, goes through `python scripts/campaign_guard.py end --session <that session id> --reason <closeout|park|plan-done|operator-stop|escalation>`. A question for the operator records `- waiting: <what> <UTC>` under Critical events and parks first with a `waiting: <what>` reason and ends the guard (the answer is recorded as `- go-ahead: <what> <UTC>`), so the tree is free while it waits.
-
 ## 2. After a phase closeout or park
 
-`process-phase` ends in exactly one of three ways: the phase table is all `[x]` with a written closeout; every leftover is blocked here and it parked (a `PARKED` line and park record in its run file); or the operator paused it. A parked phase is not complete and not a stall. Do not call it either. A park whose reason starts `escalation:` or `waiting:` stopped the whole run for the operator and already ended the guard: report it and stop, never chain past it.
+`process-phase` ends in exactly one of three ways: the phase table is all `[x]` with a written closeout; every leftover is blocked here and it parked (a `PARKED` line and park record in its run file); or the operator paused it. A parked phase is not complete and not a stall. Do not call it either.
 
-Re-run `python scripts/todo-graph.py query ready`. If another phase has a row this session can run (not a leftover of a phase this run already parked), start `process-phase` on it in the same turn, same session, same rules. If none does, the run halts, and a halt always ends the guard before the report: an empty ready list is `end --reason plan-done`; leftovers only ends with the reason that matches the guard's own run file, the last phase's: `end --reason closeout` when that phase closed out (its `## Closeout run=<run id>` heading) and `end --reason park` when it parked. Then report which: plan done, or the leftovers and their blockers, with the run files named. When another phase does have a row to run, re-point the guard before its first write: `python scripts/campaign_guard.py acquire --runner antigravity --session <the same session id> --phase <new N> --run-file <new run file> --cron-id none`, and record the printed run id in the new run file; its markers carry that id.
+Re-run `python scripts/todo-graph.py query ready`. If another phase has a ready row, start `process-phase` on it in the same turn, same session, same rules. If none does, report which: plan done, or the leftovers and their blockers, with the run files named.
 
 ## Deny
 

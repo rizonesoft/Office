@@ -10,7 +10,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 
 > **Goal:** Office runs its scheduled jobs from `.conclave/automations/`, as Isotone does: a task list, a runner that logs every run, an email alert on failure, and a Task Scheduler installer. Long `process-plan` and `process-phase` runs are protected by a run guard, a Stop hook that keeps the owning session working while a run is open, the in-session heartbeat, and a keep-alive task that resumes the exact session headless when its process has died. Every piece has a self-test or unit test, and the operator can see what the keep-alive would do with one command.
 
-> **Current state:** Measured 2026-10-20. `.conclave/` holds only `reviewers.toml`; there is no `.claude/settings.json`, no hook, no guard, and no scheduled task. The phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`) has an in-session `CronCreate` heartbeat whose prompt reads the run file, but nothing survives the session ending. The source to port is Isotone (`R:\GitHub\Isotone`), itself adapted from Rizonetech: `.conclave/automations/{run.py,alert.py,install.ps1,tasks.json,README.md}` (337 lines), `scripts/campaign_guard.py` (1,515 lines with a built-in `--self-test`), `scripts/campaign_keepalive.py` (656 lines with `--self-test`), `.claude/hooks/campaign-stop.ps1` (273 lines), and `scripts/tests/test_automations.py`. Three Isotone assumptions do not hold here: `todo-graph.py query ready` prints JSON, not an `N runnable now` line; the writer model comes from `.conclave/panel.toml`, which this repository does not have; and Isotone's other tasks (.NET SDK, NuGet, panel probe) do not apply. **Renamed 2026-10-20 (owner):** the repository Office-2028 became Office (GitHub `rizonesoft/Office`, local `R:\GitHub\Office`); the Task Scheduler folder is now `\Office\` and the task names `office-*`. Review records under `docs/reviews/` and the phase run files keep the names they verified.
+> **Current state:** Measured 2026-10-20. `.conclave/` holds only `reviewers.toml`; there is no `.claude/settings.json`, no hook, no guard, and no scheduled task. The phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`) has an in-session `CronCreate` heartbeat whose prompt reads the run file, but nothing survives the session ending. The source to port is Isotone (`R:\GitHub\Isotone`), itself adapted from Rizonetech: `.conclave/automations/{run.py,alert.py,install.ps1,tasks.json,README.md}` (337 lines), `scripts/campaign_guard.py` (1,515 lines with a built-in `--self-test`), `scripts/campaign_keepalive.py` (656 lines with `--self-test`), `.claude/hooks/campaign-stop.ps1` (273 lines), and `scripts/tests/test_automations.py`. Three Isotone assumptions do not hold here: `todo-graph.py query ready` prints JSON, not an `N runnable now` line; the writer model comes from `.conclave/panel.toml`, which this repository does not have; and Isotone's other tasks (.NET SDK, NuGet, panel probe) do not apply. **Renamed 2026-10-20 (owner):** the repository Office-2028 became Office (GitHub `rizonesoft/Office`, local `R:\GitHub\Office`); the Task Scheduler folder is now `\Office\` and the task names `office-*`. Review records under `docs/reviews/` and the phase run files keep the names they verified. **Revised 2026-10-21 (operator):** Office adopted the Conclave-SDK todo and reviewer kits as shipped. The run guard is now the kit's `scripts/campaign_guard.py` with its Python Stop hook (`campaign_guard.py stop-hook` in `.claude/settings.json`) and the in-session heartbeat, tested by `scripts/tests/test_campaign_guard.py`; the keep-alive (§3: `scripts/campaign_keepalive.py`, `.conclave/keepalive.toml`, the SessionStart observer and the `office-claude-keepalive` task), `.claude/hooks/campaign-stop.ps1`, the guard's `--self-test` and CI repair ledger, and the Codex and Antigravity `acquire --runner` guard steps were retired. The sections below record what was built and verified on 2026-10-20.
 
 ## Inputs
 
@@ -22,8 +22,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 ## Outcome
 
 - `pwsh .conclave/automations/install.ps1` registers every task in `tasks.json` under `\Office\`, and `python scripts/tests/test_automations.py` passes, failing when README and `tasks.json` disagree.
-- `python scripts/campaign_guard.py --self-test` and `python scripts/campaign_keepalive.py --self-test` pass against fixture workspaces that use this repository's JSON `query ready` output.
-- While a run is open, the Stop hook blocks the owning session's end of turn and names the next ready row; a stopped session is resumed by the `office-claude-keepalive` task, and `python scripts/campaign_keepalive.py status` says what it would do now.
+- `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` drives the guard and its Stop hook against fixture workspaces that use this repository's JSON `query ready` output.
+- While a run is open, the Stop hook blocks the owning session's end of turn and names the next ready row, and the in-session heartbeat resumes an idle run; a session that died is resumed by the operator (revised 2026-10-21: the keep-alive task is retired).
 
 **Adjacency:** all=not-applicable (developer automation for this repository; no product records, settings or user documents)
 
@@ -33,14 +33,14 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Automation runner, failure alert and installer | -- | [x] |
+| 1 | §1 | Automation runner, alert and installer | -- | [x] |
 | 2 | §2 | Run guard and Stop hook | -- | [x] |
-| 3 | §3 | Keep-alive resume task and session observer | §1, §2 | [x] |
+| 3 | §3 | Keep-alive task and session observer | §1, §2 | [x] |
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [x] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
 
-## 1. Automation Runner, Failure Alert and Installer
+## 1. Automation Runner, Alert and Installer
 
 > **Started:** 2026-10-20T00:24:39Z
 
@@ -96,11 +96,11 @@ The guard file `build/claude-campaign-guard.json` names the session that owns an
 > **Verified:** 2026-10-20 | §2 | b10277a6db91c37d4f78db3d7b32c8c4567d2905
 > **Review:** `docs/reviews/d00-t03-s2.json`
 
-## 3. Keep-Alive Resume Task and Session Observer
+## 3. Keep-Alive Task and Session Observer
 
 > **Started:** 2026-10-20T01:08:32Z
 
-When the owning session's process is gone and no other Office session is open, the keep-alive resumes that exact session headless and supervises it. The SessionStart hook records each session's process so death can be proven, never guessed.
+When the owning session's process is gone and no other Office session is open, the keep-alive resumes that exact session headless and supervises it. The SessionStart hook records each session's process so death can be proven, never guessed. **Retired 2026-10-21 (operator):** the keep-alive, its observer and its task were removed when Office adopted the Conclave-SDK todo kit's run guard; see Current state.
 
 **Phase:** 0
 **Needs:** none
@@ -202,7 +202,6 @@ The phase 2 run was opened before the guard existed. This section moves it under
 
 ## Verification
 
-- `python scripts/campaign_guard.py --self-test`, `python scripts/campaign_keepalive.py --self-test` and `python -m unittest discover -s scripts/tests` pass on a fresh clone.
+- `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
-- A killed run session is resumed by the keep-alive within an hour, observed once and recorded in the run file.
 - `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py plan --check` pass.

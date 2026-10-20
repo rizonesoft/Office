@@ -37,6 +37,8 @@ PLAN_DEFAULTS = {"title": "Implementation plan", "acceptance": None, "phases": {
 MAX_SECTIONS_PER_FILE = 55
 MAX_ITEMS_PER_SECTION = 30
 MAX_DELIVERABLE_LEN = 88
+# Every Markdown table row at or under this many characters, so rows never wrap in raw view (AGENTS.md).
+MAX_TABLE_ROW = 100
 
 
 class Refused(ValueError):
@@ -540,11 +542,17 @@ def projection(root=ROOT):
         name = config["phases"].get(phase)
         title = f"Phase {phase}: {name}" if name else f"Phase {phase}"
         lines += [f"### {title}", "", f"Sections: {len(phase_rows)} | Checklist items: {item_count}", ""]
-        lines += markdown_table(
+        table = markdown_table(
             ["Status", "Reference", "Deliverable", "Needs", "Items"],
             [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
               ", ".join(row.needs) or "none", str(len(checks[row.ref]))] for row in phase_rows],
         )
+        # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
+        widest = max(phase_rows, key=lambda row: len(row.title) + len(", ".join(row.needs)))
+        require(all(len(line) <= MAX_TABLE_ROW for line in table),
+                f"plan table for phase {phase} wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} "
+                f"chars); shorten the heading and Deliverable of {widest.ref} (title {len(widest.title)} chars)")
+        lines += table
         lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)

@@ -5,7 +5,7 @@
     python scripts/todo-graph.py build                       # todo/ -> build/todo-cache.json
     python scripts/todo-graph.py render                      # mermaid dependency graph
     python scripts/todo-graph.py plan --sync | --check
-    python scripts/todo-graph.py query ready | blocked | stats | deferred | adjacency
+    python scripts/todo-graph.py query ready | blocked | stats | deferred | adjacency | plan
     python scripts/todo-graph.py resolve 'D02 T01 §1'        # exit 0 ready, 1 no such section,
                                                              # 2 no reference in input, 3 verified,
                                                              # 4 waiting; a pasted plan row works too
@@ -24,7 +24,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from todo_graph import (ROOT, Refused, adjacency_report, atomic, deferrals, disposition,  # noqa: E402
-                        extract_ref, graph, ordered, projections, require, stamp)
+                        extract_ref, graph, ordered, plan_config, projections, require, stamp)
 
 
 def review_round(value):
@@ -34,13 +34,22 @@ def review_round(value):
     return {"round": int(parts[0]), "report": parts[1], "verdict": parts[2]}
 
 
+def plan_status(row, rows):
+    """A section's state for readers of `query plan`: verified, deferred (its file is not active), ready or blocked."""
+    if row.done:
+        return "verified"
+    if row.status != "active":
+        return "deferred"
+    return "ready" if disposition(row, rows) == 0 else "blocked"
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
     for name in ("validate", "build", "render"):
         sub.add_parser(name)
     q = sub.add_parser("query")
-    q.add_argument("kind", choices=["ready", "blocked", "stats", "deferred", "adjacency"])
+    q.add_argument("kind", choices=["ready", "blocked", "stats", "deferred", "adjacency", "plan"])
     r = sub.add_parser("resolve")
     r.add_argument("ref")
     c = sub.add_parser("classify")
@@ -93,6 +102,15 @@ def main():
             result = deferrals()
         elif args.kind == "adjacency":
             result = adjacency_report()
+        elif args.kind == "plan":
+            # The plan's names come from plan_config and every section from the graph, so a reader such as the
+            # editor extension never parses todo/ itself (plan R34). graph() has already loaded todo/plan.json
+            # strictly, so an unreadable one refused before this point.
+            config = plan_config()
+            result = {"title": config["title"], "acceptance": config["acceptance"],
+                      "phases": {str(n): name for n, name in sorted(config["phases"].items())},
+                      "sections": [{"ref": r.ref, "path": r.path, "title": r.title, "phase": r.phase,
+                                    "status": plan_status(r, rows), "depends": r.depends} for r in ordered(rows)]}
         else:
             code = 0 if args.kind == "ready" else 4
             result = [r.public() for r in ordered(rows) if disposition(r, rows) == code]

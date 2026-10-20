@@ -38,7 +38,7 @@ title: "TODO-02 -- Licensing and Contributions"
 | 1 | §1 | SPDX headers and checker | -- | [ ] |
 | 2 | §2 | Third-party notices file | -- | [ ] |
 | 3 | §3 | Contributor agreement text | -- | [ ] |
-| 4 | §4 | Contributor agreement check on pull requests | §3 | [ ] |
+| 4 | §4 | Contributor agreement PR check | §3 | [ ] |
 | 5 | §5 | Contributing guide | §1 | [ ] |
 
 ## 1. SPDX Headers and Checker
@@ -104,7 +104,7 @@ The agreement lets Rizonesoft relicense contributions (for example a commercial 
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/legal/rizonesoft-cla.md --require Review` and the same for `docs/legal/rizonesoft-cla-entity.md` exit 0.
 
-## 4. Contributor Agreement Check on Pull Requests
+## 4. Contributor Agreement PR Check
 
 A GitHub check blocks merging until each pull request author has signed. CLA Assistant (a hosted GitHub app) or a self-hosted workflow such as `contributor-assistant/github-action` records signatures in the repository.
 

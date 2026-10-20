@@ -10,20 +10,20 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 Sections: 12 | Checklist items: 70
 
-| Status | Reference  | Deliverable                                    | Needs                  | Items |
-| ------ | ---------- | ---------------------------------------------- | ---------------------- | ----- |
-| [x]    | D00 T01 §1 | Design Document Checker                        | none                   | 7     |
-| [ ]    | D00 T01 §2 | Image Asset Checker                            | none                   | 6     |
-| [ ]    | D00 T01 §3 | Continuous Integration Workflow                | none                   | 7     |
-| [ ]    | D00 T02 §1 | SPDX Headers and Checker                       | none                   | 6     |
-| [ ]    | D00 T02 §2 | Third-Party Notices File                       | none                   | 5     |
-| [ ]    | D00 T02 §5 | Contributing Guide                             | none                   | 4     |
-| [x]    | D00 T03 §1 | Automation Runner, Failure Alert and Installer | none                   | 7     |
-| [x]    | D00 T03 §2 | Run Guard and Stop Hook                        | none                   | 7     |
-| [x]    | D00 T03 §3 | Keep-Alive Resume Task and Session Observer    | none                   | 6     |
-| [x]    | D00 T03 §4 | Run Skills Create and Check the Guard          | none                   | 6     |
-| [x]    | D00 T03 §5 | Install the Tasks and Verify on This PC        | windows-host, attended | 5     |
-| [x]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run       | attended               | 4     |
+| Status | Reference  | Deliverable                              | Needs                  | Items |
+| ------ | ---------- | ---------------------------------------- | ---------------------- | ----- |
+| [x]    | D00 T01 §1 | Design Document Checker                  | none                   | 7     |
+| [ ]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
+| [ ]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
+| [ ]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 6     |
+| [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 5     |
+| [ ]    | D00 T02 §5 | Contributing Guide                       | none                   | 4     |
+| [x]    | D00 T03 §1 | Automation Runner, Alert and Installer   | none                   | 7     |
+| [x]    | D00 T03 §2 | Run Guard and Stop Hook                  | none                   | 7     |
+| [x]    | D00 T03 §3 | Keep-Alive Task and Session Observer     | none                   | 6     |
+| [x]    | D00 T03 §4 | Run Skills Create and Check the Guard    | none                   | 6     |
+| [x]    | D00 T03 §5 | Install the Tasks and Verify on This PC  | windows-host, attended | 5     |
+| [x]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run | attended               | 4     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -55,43 +55,43 @@ Sections: 19 | Checklist items: 93
 
 Sections: 35 | Checklist items: 226
 
-| Status | Reference   | Deliverable                                               | Needs                                 | Items |
-| ------ | ----------- | --------------------------------------------------------- | ------------------------------------- | ----- |
-| [x]    | D02 T01 §1  | Inventory Schema and Checker                              | none                                  | 8     |
-| [x]    | D02 T01 §2  | Reference Build and Capture Configuration                 | office, windows-host                  | 5     |
-| [x]    | D02 T01 §21 | Microsoft-Free Inventory Model                            | none                                  | 6     |
-| [x]    | D02 T01 §3  | UI Automation Capture Tool                                | office, windows-host, display-session | 12    |
-| [ ]    | D02 T01 §4  | Shared Shell Chrome Inventory                             | office, windows-host, display-session | 7     |
-| [x]    | D02 T01 §19 | Microsoft Control Identifier Baseline Import              | none                                  | 6     |
-| [ ]    | D02 T01 §5  | Word Ribbon and Contextual Tabs Inventory                 | office, windows-host, display-session | 10    |
-| [ ]    | D02 T01 §6  | Word Backstage, Panes, Status Bar and Dialogs Inventory   | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §7  | Excel Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 9     |
-| [ ]    | D02 T01 §8  | Excel Backstage, Formula Bar, Panes and Dialogs Inventory | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §9  | PowerPoint Ribbon and Contextual Tabs Inventory           | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §10 | PowerPoint Backstage, Views, Panes and Dialogs Inventory  | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §11 | Visio Ribbon and Contextual Tabs Inventory                | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §12 | Visio Backstage, Shapes Pane and Dialogs Inventory        | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §13 | Project Ribbon and Contextual Tabs Inventory              | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §14 | Project Views, Backstage, Panes and Dialogs Inventory     | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §15 | Outlook Module and Item Window Ribbons Inventory          | office, windows-host, display-session | 8     |
-| [ ]    | D02 T01 §16 | Outlook Modules, Panes, Views and Dialogs Inventory       | office, windows-host, display-session | 7     |
-| [x]    | D02 T01 §20 | Word Command Catalogue from ListCommands                  | office, windows-host                  | 4     |
-| [ ]    | D02 T01 §17 | Keyboard Shortcut Inventory for Six Apps                  | none                                  | 8     |
-| [ ]    | D02 T01 §18 | Inventory Coverage Report                                 | none                                  | 7     |
-| [ ]    | D02 T02 §1  | Design Tokens and Themes                                  | none                                  | 6     |
-| [ ]    | D02 T02 §2  | Command Glyph Library Decision                            | none                                  | 5     |
-| [ ]    | D02 T02 §3  | Shell Layout Chapter                                      | none                                  | 6     |
-| [ ]    | D02 T02 §4  | Ribbon Component Chapter                                  | office, windows-host, display-session | 8     |
-| [ ]    | D02 T02 §5  | Backstage Chapter                                         | none                                  | 6     |
-| [ ]    | D02 T02 §6  | Status Bar and Zoom Chapter                               | none                                  | 4     |
-| [ ]    | D02 T02 §7  | Word Surface Chapter                                      | none                                  | 5     |
-| [ ]    | D02 T02 §8  | Excel Surface Chapter                                     | none                                  | 5     |
-| [ ]    | D02 T02 §9  | PowerPoint Surface Chapter                                | none                                  | 5     |
-| [ ]    | D02 T02 §10 | Visio Surface Chapter                                     | none                                  | 5     |
-| [ ]    | D02 T02 §11 | Project Surface Chapter                                   | none                                  | 5     |
-| [ ]    | D02 T02 §12 | Outlook Surface Chapter                                   | none                                  | 5     |
-| [ ]    | D02 T02 §13 | Accessibility and Keyboard Chapter                        | none                                  | 5     |
-| [ ]    | D02 T02 §14 | Static App Mockups and Owner Sign-Off                     | owner-decision                        | 5     |
+| Status | Reference   | Deliverable               | Needs                                 | Items |
+| ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
+| [x]    | D02 T01 §1  | Inventory Schema Checker  | none                                  | 8     |
+| [x]    | D02 T01 §2  | Reference Build Setup     | office, windows-host                  | 5     |
+| [x]    | D02 T01 §21 | Microsoft-Free Inventory  | none                                  | 6     |
+| [x]    | D02 T01 §3  | UIA Capture Tool          | office, windows-host, display-session | 12    |
+| [ ]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 7     |
+| [x]    | D02 T01 §19 | Control ID Baseline       | none                                  | 6     |
+| [ ]    | D02 T01 §5  | Word Ribbon               | office, windows-host, display-session | 10    |
+| [ ]    | D02 T01 §6  | Word Panes, Dialogs       | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §7  | Excel Ribbon              | office, windows-host, display-session | 9     |
+| [ ]    | D02 T01 §8  | Excel Panes, Dialogs      | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §9  | PowerPoint Ribbon         | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §10 | PowerPoint Panes, Dialogs | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §11 | Visio Ribbon              | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §13 | Project Ribbon            | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 8     |
+| [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
+| [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
+| [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
+| [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
+| [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
+| [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
+| [ ]    | D02 T02 §3  | Shell Layout Chapter      | none                                  | 6     |
+| [ ]    | D02 T02 §4  | Ribbon Component Chapter  | office, windows-host, display-session | 8     |
+| [ ]    | D02 T02 §5  | Backstage Chapter         | none                                  | 6     |
+| [ ]    | D02 T02 §6  | Status Bar Chapter        | none                                  | 4     |
+| [ ]    | D02 T02 §7  | Word Surface Chapter      | none                                  | 5     |
+| [ ]    | D02 T02 §8  | Excel Surface Chapter     | none                                  | 5     |
+| [ ]    | D02 T02 §9  | PowerPoint Chapter        | none                                  | 5     |
+| [ ]    | D02 T02 §10 | Visio Surface Chapter     | none                                  | 5     |
+| [ ]    | D02 T02 §11 | Project Surface Chapter   | none                                  | 5     |
+| [ ]    | D02 T02 §12 | Outlook Surface Chapter   | none                                  | 5     |
+| [ ]    | D02 T02 §13 | Accessibility Chapter     | none                                  | 5     |
+| [ ]    | D02 T02 §14 | Mockups and Sign-Off      | owner-decision                        | 5     |
 
 ### Phase 3: Architecture and tech stack
 
@@ -117,11 +117,11 @@ Sections: 13 | Checklist items: 65
 
 Sections: 3 | Checklist items: 12
 
-| Status | Reference  | Deliverable                                  | Needs                       | Items |
-| ------ | ---------- | -------------------------------------------- | --------------------------- | ----- |
-| [ ]    | D00 T02 §3 | Contributor Agreement Text                   | third-party, owner-decision | 5     |
-| [ ]    | D00 T02 §4 | Contributor Agreement Check on Pull Requests | operator                    | 4     |
-| [ ]    | D01 T01 §7 | Attorney Clearance and Filing Decision       | third-party, owner-decision | 3     |
+| Status | Reference  | Deliverable                    | Needs                       | Items |
+| ------ | ---------- | ------------------------------ | --------------------------- | ----- |
+| [ ]    | D00 T02 §3 | Contributor Agreement Text     | third-party, owner-decision | 5     |
+| [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
+| [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
 Progress: 13/82 verified sections, 14 ready to run now.
 
