@@ -42,6 +42,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 
 ## 1. Automation Runner, Failure Alert and Installer
 
+> **Started:** 2026-10-20T00:24:39Z
+
 The shared plumbing every scheduled job uses: the task list, a runner that logs each run and alerts on failure, the alert sender, and the installer that keeps Task Scheduler in step with the list. Ported from Isotone with names and paths changed and Isotone's own tasks left out.
 
 **Phase:** 0
@@ -50,16 +52,16 @@ The shared plumbing every scheduled job uses: the task list, a runner that logs 
 
 **Build order:**
 
-1. Port `run.py`, `alert.py`, `install.ps1` and `README.md` into `.conclave/automations/` with Office-2028 names. Done when: `python .conclave/automations/run.py --help` and `python .conclave/automations/alert.py --help` run.
+1. Port `run.py`, `alert.py`, `install.ps1` and `README.md` into `.conclave/automations/` with Office-2028 names. Done when: `python .conclave/automations/alert.py --help` runs and `python .conclave/automations/run.py <unknown task>` exits 2 naming it. **Corrected 2026-10-20:** said `run.py --help`; the ported runner takes only a task name.
 2. Port `scripts/tests/test_automations.py`. Done when: it passes against an Office-2028 `tasks.json`.
 
-- [ ] Copy `run.py` from Isotone to `.conclave/automations/run.py`, changing the log root to `build/automations/<name>/` under this repository and every Isotone name to Office-2028. Done when: `python .conclave/automations/run.py <fixture task>` writes a log and `last.json` under `build/automations/`. Cheaper substitute: invoking scripts straight from Task Scheduler with no log or outcome file.
-- [ ] Copy `alert.py` to `.conclave/automations/alert.py` with the subject prefix `Office-2028` and the same SMTP2GO sender, recipient and vault item. Done when: `python .conclave/automations/alert.py <task> --dry-run` prints the message without sending and without reading the key. Cheaper substitute: an API key in a file or environment variable.
-- [ ] Copy `install.ps1` to `.conclave/automations/install.ps1` registering under `\Office-2028\` and removing tasks the list no longer names. Done when: `install.ps1 -WhatIf` (or a dry-run switch the port adds) lists the tasks it would register. Cheaper substitute: tasks created by hand in Task Scheduler.
-- [ ] Write `.conclave/automations/tasks.json` with schema version 1, folder `\Office-2028\`, and no Isotone task. Done when: it parses and the test in this section reads it. Cheaper substitute: copying Isotone's tasks, which call scripts this repository does not have.
-- [ ] Write `.conclave/automations/README.md` from Isotone's, describing only Office-2028 tasks. Done when: `python scripts/check-design-doc.py .conclave/automations/README.md --require "What runs" --require "When a run fails"` exits 0. Cheaper substitute: linking to Isotone's README.
-- [ ] Port `scripts/tests/test_automations.py` with Office-2028 names. Done when: `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes and fails when a README table row and `tasks.json` disagree.
-- [ ] Commit: `automations: add runner, failure alert and installer`
+- [x] Copy `run.py` from Isotone to `.conclave/automations/run.py`, changing the log root to `build/automations/<name>/` under this repository and every Isotone name to Office-2028. Done when: `python .conclave/automations/run.py <fixture task>` writes a log and `last.json` under `build/automations/`. Cheaper substitute: invoking scripts straight from Task Scheduler with no log or outcome file.
+- [x] Copy `alert.py` to `.conclave/automations/alert.py` with the subject prefix `Office-2028` and the same SMTP2GO sender, recipient and vault item. Done when: `python .conclave/automations/alert.py <task> --dry-run` prints the message without sending and without reading the key. Cheaper substitute: an API key in a file or environment variable.
+- [x] Copy `install.ps1` to `.conclave/automations/install.ps1` registering under `\Office-2028\` and removing tasks the list no longer names. Done when: `install.ps1 -DryRun` lists the tasks it would register and remove, changing nothing. Cheaper substitute: tasks created by hand in Task Scheduler.
+- [x] Write `.conclave/automations/tasks.json` with schema version 1, folder `\Office-2028\`, and no Isotone task. Done when: it parses and the test in this section reads it. Cheaper substitute: copying Isotone's tasks, which call scripts this repository does not have.
+- [x] Write `.conclave/automations/README.md` from Isotone's, describing only Office-2028 tasks. Done when: `python scripts/check-design-doc.py .conclave/automations/README.md --require "What runs" --require "When a run fails"` exits 0. Cheaper substitute: linking to Isotone's README.
+- [x] Port `scripts/tests/test_automations.py` with Office-2028 names. Done when: `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes and fails when a README table row and `tasks.json` disagree.
+- [x] Commit: `automations: add runner, failure alert and installer`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes, and `python .conclave/automations/alert.py --help` exits 0.
 

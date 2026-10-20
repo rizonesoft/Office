@@ -1,0 +1,229 @@
+"""The Office-2028 automations: tasks.json, run.py, alert.py, the installer and the README."""
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+REPO = Path(__file__).resolve().parents[2]
+AUTO = REPO / ".conclave" / "automations"
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+run = load("office2028_run", AUTO / "run.py")
+alert = load("office2028_alert", AUTO / "alert.py")
+# One well-formed task, for tests that must not depend on what tasks.json lists today.
+FIXTURE_TASK = {"name": "office-2028-fixture", "description": "Fixture check", "command": ["python", "scripts/fixture.py"],
+                "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}
+
+
+class Manifest(unittest.TestCase):
+    def test_the_manifest_loads_and_every_command_script_exists(self):
+        tasks = run.load_tasks(str(AUTO / "tasks.json"))
+        for name, task in tasks.items():
+            with self.subTest(name=name):
+                self.assertEqual(task["command"][0], "python")
+                self.assertTrue((REPO / task["command"][1]).is_file(), task["command"][1])
+
+    def test_the_readme_lists_exactly_the_manifest(self):
+        rows = [line.split("|")[1].strip().strip("`") for line in (AUTO / "README.md").read_text(encoding="utf-8")
+                .splitlines() if line.startswith("| `office-2028-")]
+        self.assertEqual(sorted(rows), sorted(run.load_tasks(str(AUTO / "tasks.json"))))
+
+    def test_the_installer_reads_the_manifest_and_names_no_task(self):
+        text = (AUTO / "install.ps1").read_text(encoding="utf-8")
+        self.assertIn("tasks.json", text)
+        self.assertNotIn("office-2028-", text)
+
+    def test_a_malformed_manifest_is_refused(self):
+        good = json.loads((AUTO / "tasks.json").read_text(encoding="utf-8"))
+        first = FIXTURE_TASK
+        cases = {
+            "bad name": {**first, "name": "rizonetech-x"},
+            "extra key": {**first, "enabled": True},
+            "empty command": {**first, "command": []},
+            "zero timeout": {**first, "timeout_minutes": 0},
+            "bad day": {**first, "trigger": {"weekly": "Funday", "at": "07:00"}},
+            "bad time": {**first, "trigger": {"weekly": "Monday", "at": "7am"}},
+            "unknown trigger": {**first, "trigger": {"daily": "07:00"}},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tasks.json"
+            for label, task in cases.items():
+                with self.subTest(label):
+                    path.write_text(json.dumps({**good, "tasks": [task]}), encoding="utf-8")
+                    with self.assertRaises(run.TaskError):
+                        run.load_tasks(str(path))
+            path.write_text(json.dumps({**good, "tasks": [first, first]}), encoding="utf-8")
+            with self.assertRaises(run.TaskError):
+                run.load_tasks(str(path))
+
+
+class Runner(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / ".conclave" / "automations").mkdir(parents=True)
+        self.tasks = {"schema_version": 1, "folder": "\\Office-2028\\", "tasks": [
+            self.task("office-2028-pass", "print('all good')"),
+            self.task("office-2028-fail", "import sys; print('line one'); print('it broke'); sys.exit(3)"),
+        ]}
+        (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
+        self.alerts = []
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    @staticmethod
+    def task(name, code):
+        return {"name": name, "description": f"fixture {name}", "command": [sys.executable, "-c", code],
+                "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 1}
+
+    def main(self, name, **kw):
+        kw.setdefault("alerter", lambda *a: self.alerts.append(a))
+        return run.main([name], root=str(self.root), **kw)
+
+    def last(self, name):
+        return json.loads((self.root / "build" / "automations" / name / "last.json").read_text(encoding="utf-8"))
+
+    def test_a_passing_run_keeps_its_log_and_sends_nothing(self):
+        self.assertEqual(self.main("office-2028-pass"), 0)
+        outcome = self.last("office-2028-pass")
+        self.assertEqual(outcome["exit"], 0)
+        self.assertIn("all good", (self.root / outcome["log"]).read_text(encoding="utf-8"))
+        self.assertEqual(self.alerts, [])
+
+    def test_a_failing_run_alerts_with_its_log_tail(self):
+        self.assertEqual(self.main("office-2028-fail"), 3)
+        (name, task, outcome, tail), = self.alerts
+        self.assertEqual((name, outcome["exit"], task["description"]), ("office-2028-fail", 3, "fixture office-2028-fail"))
+        self.assertIn("it broke", tail)
+
+    def test_a_timeout_stops_the_run_and_alerts(self):
+        killed = []
+
+        class Hung:
+            pid = 0
+
+            def __init__(self, *a, **kw):
+                pass
+
+            def wait(self, timeout=None):
+                raise subprocess.TimeoutExpired("hung", timeout)
+
+        self.assertEqual(self.main("office-2028-pass", popen=Hung, killer=killed.append), 124)
+        self.assertEqual(len(killed), 1)
+        self.assertTrue(self.last("office-2028-pass")["timed_out"])
+        self.assertEqual(len(self.alerts), 1)
+
+    def test_an_unsent_alert_exits_3_and_says_so_in_the_log(self):
+        def refuse(*_a):
+            raise alert.Refused("vault field credential is unavailable")
+
+        self.tasks["tasks"][1]["command"][-1] = "import sys; sys.exit(5)"
+        (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
+        self.assertEqual(self.main("office-2028-fail", alerter=refuse), 3)
+        log = (self.root / self.last("office-2028-fail")["log"]).read_text(encoding="utf-8")
+        self.assertIn("alert not sent: Refused: vault field credential is unavailable", log)
+
+    def test_only_the_newest_logs_are_kept(self):
+        folder = self.root / "build" / "automations" / "office-2028-pass"
+        folder.mkdir(parents=True)
+        for i in range(run.KEEP_LOGS + 5):
+            (folder / f"20000101T0000{i:02d}Z.log").write_text("old", encoding="utf-8")
+        self.main("office-2028-pass")
+        self.assertEqual(len(list(folder.glob("*.log"))), run.KEEP_LOGS)
+        self.assertTrue((self.root / self.last("office-2028-pass")["log"]).exists())
+
+    def test_a_command_that_cannot_start_is_recorded_and_alerted(self):
+        def cannot_start(*_a, **_kw):
+            raise PermissionError(13, "Access is denied")
+
+        self.assertEqual(self.main("office-2028-pass", popen=cannot_start), 126)
+        outcome = self.last("office-2028-pass")
+        self.assertEqual(outcome["exit"], 126)
+        self.assertIn("could not start", (self.root / outcome["log"]).read_text(encoding="utf-8"))
+        (_name, _task, alerted, tail), = self.alerts
+        self.assertEqual(alerted["exit"], 126)
+        self.assertIn("Access is denied", tail)
+
+    def test_every_nested_launch_opens_no_console(self):
+        for path in (AUTO / "run.py", AUTO / "alert.py"):
+            text = path.read_text(encoding="utf-8")
+            calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
+            flagged = text.count("creationflags=")
+            with self.subTest(path=path.name):
+                self.assertGreaterEqual(flagged, calls - text.count('"git", "init"'), path.name)
+
+    def test_an_unknown_task_is_refused(self):
+        self.assertEqual(self.main("office-2028-missing"), 2)
+
+
+class Alert(unittest.TestCase):
+    TASK = {"description": "Fixture check", "command": ["python", "scripts/fixture.py"]}
+    OUTCOME = {"exit": 1, "started": "2026-10-19T05:15:00Z", "finished": "2026-10-19T05:16:00Z",
+               "log": "build/automations/office-2028-fixture/x.log", "timed_out": False}
+
+    def test_the_message_names_the_task_its_exit_and_its_log_tail(self):
+        subject, body = alert.message("office-2028-fixture", self.TASK, self.OUTCOME, "fixture failed", "PC")
+        self.assertEqual(subject, "Automation failed: office-2028-fixture on PC")
+        for text in ("exit 1", "Fixture check", "fixture failed", "Start-ScheduledTask -TaskPath '\\Office-2028\\'"):
+            self.assertIn(text, body)
+        _, timed = alert.message("x", self.TASK, {**self.OUTCOME, "timed_out": True}, "", "PC")
+        self.assertIn("timed out", timed)
+
+    def test_a_send_smtp2go_refused_is_a_refusal(self):
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        refused = Response(json.dumps({"data": {"succeeded": 0, "failed": 1, "failures": ["bad sender"]}}).encode())
+        with self.assertRaises(alert.Refused):
+            alert.send("api-" + "a" * 32, "s", "b", opener=lambda *a, **kw: refused)
+        ok = Response(json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "E1"}}).encode())
+        self.assertEqual(alert.send("api-" + "a" * 32, "s", "b", opener=lambda *a, **kw: ok), "E1")
+
+    def test_a_key_without_the_smtp2go_shape_is_refused(self):
+        def vault(value, code=0):
+            return lambda *a, **kw: subprocess.CompletedProcess(a, code, stdout=value, stderr="")
+
+        self.assertEqual(alert.key(vault("api-" + "B" * 32 + "\n")), "api-" + "B" * 32)
+        for bad, code in (("", 0), ("api-short", 0), ("x" * 36, 0), ("api-" + "B" * 32, 1)):
+            with self.subTest(bad=bad[:8], code=code), self.assertRaises(alert.Refused):
+                alert.key(vault(bad, code))
+
+    def test_a_dry_run_reads_no_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".conclave" / "automations").mkdir(parents=True)
+            (root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(
+                {"schema_version": 1, "folder": "\\Office-2028\\", "tasks": [FIXTURE_TASK]}), encoding="utf-8")
+
+            def no_vault(*_a, **_kw):
+                raise AssertionError("a dry run must not read the vault")
+
+            out = io.StringIO()
+            sys.stdout, saved = out, sys.stdout
+            try:
+                code = alert.main(["office-2028-fixture", "--dry-run"], run=no_vault, host="PC", root=str(root))
+            finally:
+                sys.stdout = saved
+            self.assertEqual(code, 0)
+            self.assertIn("Subject: Automation failed: office-2028-fixture on PC", out.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()
