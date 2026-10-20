@@ -114,6 +114,12 @@ class Inventory(unittest.TestCase):
             problems = self.problems()
             self.assertEqual(len([p for p in problems if ": link" in p]), 1, (rec, problems))
 
+    def test_a_link_in_an_untyped_nested_value_is_reported(self):
+        # The schema types no unknown field, so only the whole-record rule can name the link inside one.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, extra={"items": ["see https://example.com"]})])
+        problems = self.problems()
+        self.assertTrue(any(".extra.items[0]: link" in p for p in problems), problems)
+
     def test_the_schema_alone_refuses_a_link(self):
         schema = ci.load(ci.SCHEMA)
         for field, value in (("behaviour", "See HTTPS://example.com/help"), ("label", "www.example.com"),
