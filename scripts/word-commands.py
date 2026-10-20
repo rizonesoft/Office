@@ -59,7 +59,9 @@ def records(table, build, identifiers):
     commands, shortcuts, unmatched, taken = [], [], [], set()
     source = f"listcommands:{build}"
     for order, (name, modifiers, key) in enumerate(table):
-        name, modifiers, key = name.strip(), modifiers.strip(), key.strip()
+        if modifiers != modifiers.strip() or key != key.strip():
+            raise Refused(f"row {order + 2} ({name.strip()}): spaces around {modifiers!r} {key!r} would be lost")
+        name = name.strip()  # a name is a label; only its outer whitespace goes
         if not name:
             raise Refused(f"row {order + 2} has no command name")
         if bool(modifiers) and not key:
@@ -77,7 +79,7 @@ def records(table, build, identifiers):
                "source": source, "capturedFrom": build}
         if key:
             rec["shortcut"] = modifiers + key  # the row's modifiers end in "+", so this is the chord as listed
-        compact = re.sub(r"[^A-Za-z0-9_]", "", name)
+        compact = name.replace(" ", "")
         if compact in identifiers:
             rec["idMso"] = compact
         else:
@@ -189,13 +191,17 @@ def list_commands(dispatch=None, owner=own_process, wait=60.0):
             for doc in list(app.Documents):
                 doc.Close(SaveChanges=0)
         finally:
-            app.Quit(SaveChanges=0)
-            gone = proc is not None and proc.exited(wait)
-            if proc is not None:
-                if not gone:
-                    print(f"word-commands: the Word instance it started is still running (pid {proc.pid})",
-                          file=sys.stderr)
-                proc.close()
+            try:
+                app.Quit(SaveChanges=0)
+            finally:  # even when Quit fails, the process is waited for and its handle released
+                try:
+                    gone = proc is not None and proc.exited(wait)
+                    if proc is not None and not gone:
+                        print(f"word-commands: the Word instance it started is still running (pid {proc.pid})",
+                              file=sys.stderr)
+                finally:
+                    if proc is not None:
+                        proc.close()
     # The contract is no leftover process: one still running, or one never identified, is not a success.
     if proc is None:
         raise Refused("the Word instance's process was never identified, so its exit cannot be confirmed")
@@ -218,23 +224,41 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def publish(files):
-    """Write every file or none. A failure at any point, including a read-back after a file was replaced, restores
-    every file that differs from what it held before."""
-    previous = {path: path.read_bytes() if path.is_file() else None for path in files}
+def publish(files, write=None, rename=os.replace):
+    """Write every file or none. All new content is written to temporary files first, so a full disk fails before
+    anything changes; the originals are then renamed aside and the new files renamed in, and any failure from there
+    renames the originals back. Renames need no free space, so the rollback cannot fail the way the writes did."""
+    write = write or (lambda path, data: path.write_bytes(data))
+    staged, aside, placed = {}, {}, []
     try:
         for path, text in files.items():
-            write_atomic(path, text)
-    except Exception:
-        for path, before in previous.items():
-            now = path.read_bytes() if path.is_file() else None
-            if now == before:
-                continue
-            if before is None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".new")
+            os.close(fd)
+            staged[path] = Path(tmp)
+            write(staged[path], text.encode("utf-8"))
+            if staged[path].read_bytes() != text.encode("utf-8"):
+                raise OSError(f"{tmp}: read-back differs from what was written")
+        for path in files:
+            if path.is_file():
+                aside[path] = path.with_name(path.name + f".{os.getpid()}.old")
+                rename(path, aside[path])
+            rename(staged[path], path)
+            del staged[path]  # placed: no longer a leftover to clean up
+            placed.append(path)
+    except BaseException:
+        for path in placed:
+            if path not in aside:
                 path.unlink()
-            else:
-                write_atomic(path, before.decode("utf-8"))
+        for path, old in aside.items():
+            rename(old, path)
         raise
+    finally:
+        for tmp in staged.values():
+            if tmp.exists():
+                tmp.unlink()
+    for old in aside.values():
+        old.unlink()
 
 
 def render(recs):

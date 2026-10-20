@@ -3,6 +3,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -77,6 +78,9 @@ class Records(unittest.TestCase):
                           ("F1", "word.command.help")])
         self.assertEqual([c.get("idMso") for c in commands if c.get("idMso")], ["Bold", "Bold", "Zoom200"])
         self.assertEqual(unmatched, ["About", "Align Left", "Align Left", "Help"])
+        dashed, _, left = wc.records([["B-old", "", ""]], BUILD, {"Bold"})
+        self.assertNotIn("idMso", dashed[0])
+        self.assertEqual(left, ["B-old"])
         self.assertEqual({c["source"] for c in commands + shortcuts}, {f"listcommands:{BUILD}"})
 
     def test_records_pass_the_inventory_checker(self):
@@ -102,7 +106,7 @@ class Records(unittest.TestCase):
         commands, _, _ = wc.records(rows, BUILD, set())
         for rec, row in zip(commands, rows):
             self.assertEqual(wc.split_chord(rec["shortcut"]), (row[1], row[2]))
-        for row in (["Odd", "Ctrl", "B"], ["Twice", "Ctrl+", "Shift+B"]):
+        for row in (["Odd", "Ctrl", "B"], ["Twice", "Ctrl+", "Shift+B"], ["Spaced", "Ctrl+", " B "]):
             with self.assertRaises(wc.Refused):
                 wc.records([row], BUILD, set())
 
@@ -170,6 +174,17 @@ class Instance(unittest.TestCase):
             wc.list_commands(dispatch=lambda prog: Fake(), owner=lambda app: Proc(exits=False))
         self.assertIn("still running (pid 222)", err.getvalue())
 
+    def test_a_failing_quit_still_waits_and_releases_the_handle(self):
+        fake, proc = Fake(), Proc(exits=False)
+
+        def quit_fails(SaveChanges):
+            raise OSError("RPC server unavailable")
+
+        fake.Quit = quit_fails
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(OSError):
+            wc.list_commands(dispatch=lambda prog: fake, owner=lambda app: proc, wait=3)
+        self.assertEqual((proc.waited, proc.closed), (3, True))
+
     def test_an_unidentified_process_fails_closed_and_still_quits(self):
         fake = Fake()
 
@@ -209,33 +224,60 @@ class Main(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertEqual(sorted(files), ["baseline.json"])
 
+    def test_persistent_write_and_rename_failures_leave_both_files_as_they_were(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a, b = Path(tmp) / "commands.json", Path(tmp) / "shortcuts.json"
+
+            def reset():
+                a.write_text("old-a", encoding="utf-8")
+                b.write_text("old-b", encoding="utf-8")
+
+            def full_after_first(path, data, n=[0]):
+                n[0] += 1
+                if n[0] > 1:
+                    raise OSError("disk full")  # and stays full for the rest of the run
+                path.write_bytes(data)
+
+            calls = []
+
+            def rename_fails_on_second_placement(src, dst):
+                calls.append((Path(src).name, Path(dst).name))
+                if Path(dst) == b and Path(src).suffix == ".new":
+                    raise OSError("rename refused")
+                os.replace(src, dst)
+
+            for kwargs in ({"write": full_after_first}, {"rename": rename_fails_on_second_placement}):
+                reset()
+                with self.assertRaises(OSError):
+                    wc.publish({a: "new-a", b: "new-b"}, **kwargs)
+                self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("old-a", "old-b"),
+                                 kwargs)
+                self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), ["commands.json", "shortcuts.json"])
+            wc.publish({a: "new-a", b: "new-b"})
+            self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("new-a", "new-b"))
+            self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), ["commands.json", "shortcuts.json"])
+
     def test_both_files_or_neither(self):
         with tempfile.TemporaryDirectory() as tmp:
             a, b = Path(tmp) / "commands.json", Path(tmp) / "shortcuts.json"
             a.write_text("old-a", encoding="utf-8")
             b.write_text("old-b", encoding="utf-8")
-            real, calls = wc.write_atomic, []
+            real, calls = (lambda path, data: path.write_bytes(data)), []
 
-            def flaky(path, text):
+            def flaky(path, data):
                 calls.append(path)
-                if path == b and len(calls) == 2:
+                if len(calls) == 2:
                     raise OSError("disk full")
-                real(path, text)
+                real(path, data)
 
-            def after_replace(path, text):
+            def short_write(path, data):
                 calls.append(path)
-                real(path, text)
-                if path == b:
-                    raise OSError("read-back differs")
+                real(path, data[:-1] if len(calls) == 2 else data)  # the read-back then differs
 
-            for broken in (flaky, after_replace):
+            for broken in (flaky, short_write):
                 calls.clear()
-                wc.write_atomic = broken
-                try:
-                    with self.assertRaises(OSError):
-                        wc.publish({a: "new-a", b: "new-b"})
-                finally:
-                    wc.write_atomic = real
+                with self.assertRaises(OSError):
+                    wc.publish({a: "new-a", b: "new-b"}, write=broken)
                 self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("old-a", "old-b"),
                                  broken.__name__)
 
