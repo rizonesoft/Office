@@ -307,7 +307,12 @@ class Checker(unittest.TestCase):
         commit = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))["commit"]
         text = (ci.INVENTORY / "REFERENCE.md").read_text(encoding="utf-8")
         self.assertIn("## Baseline", text)
-        self.assertIn(commit, text[text.index("## Baseline"):])
+        section = text[text.index("## Baseline"):]
+        self.assertIn(commit, section)
+        # What the section must keep explaining: the manifest, the Outlook windows, null ids and how to refresh.
+        for obligation in ("baseline-sources.json", "`mailitem` (compose)", "null `idMso`", "`baselineMissing`",
+                           "To refresh:", "--check"):
+            self.assertIn(obligation, section)
 
     def test_baseline_rows_are_not_inventory_records(self):
         rec = {"id": "word.home", "app": "word", "kind": "tab", "label": "Home"}
