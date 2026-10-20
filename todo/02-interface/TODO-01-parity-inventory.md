@@ -57,7 +57,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19 | [ ] |
 | 19 | §19 | Microsoft control identifier baseline import | §1, §21 | [ ] |
 | 20 | §20 | Word command catalogue from ListCommands | §1, §2, §21 | [ ] |
-| 21 | §21 | Microsoft-free inventory model | §1 | [ ] |
+| 21 | §21 | Microsoft-free inventory model | §1 | [x] |
 
 ## 1. Inventory Schema and Checker
 
@@ -543,9 +543,12 @@ The owner ruled on 2026-10-20 that the repository holds no Microsoft text and no
 - [x] Add `links()` in `scripts/check-inventory.py` refusing any string value in a record that contains `http://`, `https://` or `www.`. Done when: a behaviour sentence containing a URL fails with `link`. Cheaper substitute: checking only the `source` field.
 - [x] Change `--require-behaviour` in `scripts/check-inventory.py` to require a non-blank behaviour sentence on every control, with no web-source rule. Done when: a control with a behaviour sentence and a `uia:` source passes, and one without behaviour fails. Cheaper substitute: leaving the web-source rule, which would force the links this rule forbids.
 - [x] Update `scripts/tests/test_check_inventory.py`: fixtures use `uia:` sources only, add cases for a `screentip` field, an `https` source, a URL inside `behaviour`, and the new behaviour gate. Done when: the suite passes and each new case fails when its rule is disabled.
-- [ ] Commit: `inventory: keep Microsoft text and links out of the inventory model`
+- [x] Commit: `inventory: keep Microsoft text and links out of the inventory model`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes, and `rg -n -i "https?://|microsoft\.com|screentip" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py` finds nothing except the refusal fixtures in `scripts/tests/test_check_inventory.py` and the schema's `$schema` line. **Corrected 2026-10-20:** said nothing except the `links()` pattern; the checklist's own refusal cases must hold a `screentip` field and `https` values, and `$schema` is the JSON Schema standard's required dialect identifier, not a reference link (the `$id` became a `urn:`). The `links()` pattern `https?://` does not match its own search.
+
+> **Verified:** 2026-10-20 | §21 | 8f59a68e156be1f9157226c05293ce7d46f5586a
+> **Review:** `docs/reviews/d02-t01-s21.json`
 
 ## Verification
 

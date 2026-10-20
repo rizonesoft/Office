@@ -1,0 +1,28 @@
+{
+  "ref": "D02 T01 \u00a721",
+  "title": "Microsoft-Free Inventory Model",
+  "implementation_sha": "8f59a68e156be1f9157226c05293ce7d46f5586a",
+  "date": "2026-10-20",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s21.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_inventory.py\" -> \"Ran 36 tests ... OK\"",
+    "python scripts/check-inventory.py -> exit 0",
+    "rg -n -i \"https?://|microsoft\\.com|screentip\" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py -> refusal fixtures and the $schema line only"
+  ]
+}
