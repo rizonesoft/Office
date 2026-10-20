@@ -146,6 +146,8 @@ When the owning session's process is gone and no other Office-2028 session is op
 
 ## 5. Install the Tasks and Verify on This PC
 
+> **Started:** 2026-10-20T01:18:15Z
+
 Registers the tasks in Task Scheduler on the operator's Windows host and proves each piece live: the task exists with the right triggers, the keep-alive's `status` answers, and the alert renders. A real alert email is sent once, only with the operator's go-ahead.
 
 **Phase:** 0
@@ -157,11 +159,11 @@ Registers the tasks in Task Scheduler on the operator's Windows host and proves 
 1. Run `pwsh .conclave/automations/install.ps1`. Done when: `Get-ScheduledTask -TaskPath '\Office-2028\'` lists every task in `tasks.json`.
 2. Verify each task and the alert. Done when: the findings below are recorded in `.conclave/automations/README.md` under `## Install and inspect`.
 
-- [ ] Run `pwsh .conclave/automations/install.ps1` and read back `Get-ScheduledTask -TaskPath '\Office-2028\' | Get-ScheduledTaskInfo`. Done when: `office-2028-claude-keepalive` shows its next run time. Cheaper substitute: assuming the installer worked.
-- [ ] Run `python scripts/campaign_keepalive.py status` with a run open and with none. Done when: it prints `hold` while this session is alive and `no open run` after the guard ends. Cheaper substitute: reading the code instead of running it.
-- [ ] Run `python .conclave/automations/alert.py office-2028-claude-keepalive --dry-run`. Done when: the rendered alert names the task, its exit and the log tail. Cheaper substitute: none; the dry run sends nothing.
-- [ ] With the operator's go-ahead, send one real alert by running `python .conclave/automations/run.py` on a fixture task that exits 1. Done when: the operator confirms the email arrived, and the run's `last.json` records the send. Cheaper substitute: declaring the alert path working from the dry run alone.
-- [ ] Commit: `automations: record install and live verification`
+- [x] Run `pwsh .conclave/automations/install.ps1` and read back `Get-ScheduledTask -TaskPath '\Office-2028\' | Get-ScheduledTaskInfo`. Done when: `office-2028-claude-keepalive` shows its next run time. Cheaper substitute: assuming the installer worked.
+- [x] Run `python scripts/campaign_keepalive.py status` with no run open. Done when: it prints `idle: no open campaign run`. **Corrected 2026-10-20:** also asked for `hold` with a run open; no run is under the guard until §6, whose checkpoint already proves `hold`. Cheaper substitute: reading the code instead of running it.
+- [x] Run `python .conclave/automations/alert.py office-2028-claude-keepalive --dry-run`. Done when: the rendered alert names the task, its exit and the log tail. Cheaper substitute: none; the dry run sends nothing.
+- [x] With the operator's go-ahead, send one real alert by running `python .conclave/automations/run.py` on a fixture task that exits 1. Done when: the operator confirms the email arrived, and the run's `last.json` records the send. Cheaper substitute: declaring the alert path working from the dry run alone.
+- [x] Commit: `automations: record install and live verification`
 
 **Test checkpoint:** `Get-ScheduledTask -TaskPath '\Office-2028\' | Select-Object -ExpandProperty TaskName` lists `office-2028-claude-keepalive`, and `python scripts/campaign_keepalive.py status` exits 0.
 
