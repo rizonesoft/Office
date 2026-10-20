@@ -21,7 +21,12 @@
         "id": {
           "type": "string",
           "pattern": "^(shell|word|excel|powerpoint|visio|project|outlook)(\\.[A-Za-z0-9][A-Za-z0-9_-]*)+$",
-          "description": "Stable dotted id whose first segment is the app, for example word.home.font.bold."
+          "description": "Stable dotted id whose first segment is the app, for example word.home.font.bold.",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "app": {
           "enum": [
@@ -58,12 +63,22 @@
         "label": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^\\s*\\S"
+          "pattern": "^\\s*\\S",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "parent": {
           "type": "string",
           "minLength": 1,
-          "description": "id of the containing record"
+          "description": "id of the containing record",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "order": {
           "type": "integer",
@@ -104,20 +119,40 @@
         },
         "keytip": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "shortcut": {
           "type": "string",
           "minLength": 1,
-          "description": "key chord, for example Ctrl+B"
+          "description": "key chord, for example Ctrl+B",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "target": {
           "type": "string",
           "minLength": 1,
-          "description": "id of the command or control a shortcut invokes"
+          "description": "id of the command or control a shortcut invokes",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "menuPath": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "bounds": {
           "type": "object",
@@ -149,27 +184,52 @@
         "captureProfile": {
           "type": "string",
           "minLength": 1,
-          "description": "profile id in design/inventory/REFERENCE.md"
+          "description": "profile id in design/inventory/REFERENCE.md",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "behaviour": {
           "type": "string",
           "minLength": 1,
           "description": "one sentence in our own words on what the element does; never quoted product text",
-          "pattern": "^\\s*\\S"
+          "pattern": "^\\s*\\S",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "idMso": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "source": {
           "type": "string",
           "pattern": "^((uia|listcommands):[0-9]+(\\.[0-9]+){3}|baseline:[0-9a-f]{7,40})$",
-          "description": "Capture provenance: uia: or listcommands: followed by the Office build, or baseline: followed by the baseline commit. Records never cite web pages."
+          "description": "Capture provenance: uia: or listcommands: followed by the Office build, or baseline: followed by the baseline commit. Records never cite web pages.",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "capturedFrom": {
           "type": "string",
           "minLength": 1,
-          "description": "Office build string, for example 16.0.20430.20182"
+          "description": "Office build string, for example 16.0.20430.20182",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            }
+          ]
         },
         "baselineMissing": {
           "type": "boolean",
@@ -218,6 +278,13 @@
           }
         }
       ]
+    },
+    "noLink": {
+      "description": "Owner rule 2026-10-20: no record holds a web address.",
+      "not": {
+        "pattern": "[Hh][Tt][Tt][Pp][Ss]?://|[Ww][Ww][Ww]\\.",
+        "description": "link"
+      }
     }
   }
 }

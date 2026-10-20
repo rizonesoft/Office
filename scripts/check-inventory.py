@@ -52,6 +52,32 @@ def type_ok(value, expected):
     }[expected]
 
 
+_PATTERNS = {}
+
+
+def ecma(pattern):
+    """Compile a JSON Schema (ECMA-262) pattern for Python: an unescaped `$` outside a class means end of input there,
+    while Python's `$` also matches before a final newline, so `uia:1.2.3.4` plus a newline would pass."""
+    if pattern not in _PATTERNS:
+        out, i, in_class = [], 0, False
+        while i < len(pattern):
+            c = pattern[i]
+            if c == "\\":
+                out.append(pattern[i:i + 2])
+                i += 2
+                continue
+            if in_class:
+                in_class = c != "]"
+            elif c == "[":
+                in_class = True
+            elif c == "$":
+                c = "\\Z"
+            out.append(c)
+            i += 1
+        _PATTERNS[pattern] = re.compile("".join(out))
+    return _PATTERNS[pattern]
+
+
 def validate(value, schema, root, path="$"):
     """The subset of JSON Schema 2020-12 that schema.json uses. Returns a list of problems."""
     if "$ref" in schema:
@@ -66,7 +92,7 @@ def validate(value, schema, root, path="$"):
     if isinstance(value, str):
         if len(value) < schema.get("minLength", 0):
             problems.append(f"{path}: empty")
-        if "pattern" in schema and not re.search(schema["pattern"], value):
+        if "pattern" in schema and not ecma(schema["pattern"]).search(value):
             problems.append(f"{path}: {value!r} does not match {schema['pattern']}")
     if isinstance(value, (int, Decimal)) and not isinstance(value, bool) and value < schema.get("minimum", value):
         problems.append(f"{path}: below {schema['minimum']}")
@@ -86,6 +112,8 @@ def validate(value, schema, root, path="$"):
         for key, needed in schema.get("dependentRequired", {}).items():
             if key in value:
                 problems += [f"{path}: {key} requires {n}" for n in needed if n not in value]
+    if "not" in schema and not validate(value, schema["not"], root, path):
+        problems.append(f"{path}: {schema['not'].get('description', 'refused value')}")
     for sub in schema.get("allOf", []):
         if "if" in sub:
             if not validate(value, sub["if"], root, path):
@@ -148,14 +176,17 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     for resolved in named_resolved:
         f = universe[resolved]
         data = load(f)
-        problems += [f"{f}: {p}" for p in validate(data, schema, schema)]
+        schema_problems = validate(data, schema, schema)
+        problems += [f"{f}: {p}" for p in schema_problems]
         if not isinstance(data, list):
             continue
         for i, rec in enumerate(data):
             if not isinstance(rec, dict):
                 continue
             where = f"{f}[{i}]"
-            problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]")]
+            # The schema refuses links in its typed fields; links() covers every other string and reports once.
+            reported = {p.split(": ", 1)[0] for p in schema_problems}
+            problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]") if p.split(": ", 1)[0] not in reported]
             rid = rec.get("id")
             if isinstance(rid, str):
                 if len(seen.get(rid, [])) > 1:

@@ -111,7 +111,24 @@ class Inventory(unittest.TestCase):
         for rec in (dict(BOLD, behaviour="Makes text bold, see https://example.com/bold."),
                     dict(BOLD, label="Bold www.example.com"), dict(BOLD, menuPath="HTTP://example.com")):
             self.write("word/ribbon.json", [TAB, GROUP, rec])
-            self.assertTrue(any(": link " in p for p in self.problems()), rec)
+            problems = self.problems()
+            self.assertEqual(len([p for p in problems if ": link" in p]), 1, (rec, problems))
+
+    def test_the_schema_alone_refuses_a_link(self):
+        schema = ci.load(ci.SCHEMA)
+        for field, value in (("behaviour", "See HTTPS://example.com/help"), ("label", "www.example.com"),
+                             ("menuPath", "File > http://x.example")):
+            problems = ci.validate([dict(BOLD, **{field: value})], schema, schema)
+            self.assertTrue(any(f".{field}: link" in p for p in problems), (field, problems))
+        self.assertEqual(ci.validate([dict(BOLD, behaviour="Turns heavy type on or off.")], schema, schema), [])
+
+    def test_a_trailing_newline_does_not_satisfy_an_anchored_pattern(self):
+        for rec in (dict(PASTE, source="uia:16.0.20430.20182" + chr(10)), dict(PASTE, source="baseline:4f1c2ab" + chr(10)),
+                    dict(PASTE, id="word.home.paste" + chr(10))):
+            self.write("word/ribbon.json", [TAB, rec])
+            self.assertTrue(any("does not match" in p for p in self.problems()), rec)
+        self.assertIsNotNone(ci.ecma("^a[$]$").search("a$"))
+        self.assertIsNone(ci.ecma("^a$").search("a" + chr(10)))
 
     def test_integral_float_is_an_integer(self):
         self.write("word/ribbon.json", [dict(TAB, order=1.0), dict(GROUP, order=1e0)])
