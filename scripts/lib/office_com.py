@@ -58,7 +58,18 @@ class OwnProcess:
     def __init__(self, hwnd, exe="WINWORD.EXE"):
         import ctypes
         from ctypes import wintypes
-        self.k32, user32 = ctypes.windll.kernel32, ctypes.windll.user32
+        self.k32, user32 = ctypes.WinDLL("kernel32", use_last_error=True), ctypes.WinDLL("user32", use_last_error=True)
+        user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+        user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+        self.k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        self.k32.OpenProcess.restype = wintypes.HANDLE
+        self.k32.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+                                                        ctypes.POINTER(wintypes.DWORD)]
+        self.k32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        self.k32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        self.k32.WaitForSingleObject.restype = wintypes.DWORD
+        self.k32.CloseHandle.argtypes = [wintypes.HANDLE]
+        self.k32.CloseHandle.restype = wintypes.BOOL
         pid = wintypes.DWORD()
         if not user32.GetWindowThreadProcessId(wintypes.HWND(int(hwnd)), ctypes.byref(pid)) or not pid.value:
             raise Refused(f"the {exe} instance's window has no process")

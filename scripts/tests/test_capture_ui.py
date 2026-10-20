@@ -220,6 +220,24 @@ class Popups(unittest.TestCase):
         root = E("Window", "Doc", kids=[E("Pane", "Lower Ribbon"), shell, outer])
         self.assertEqual([i.name for i in cu.popup_items(root)], ["Underline", "Double underline", "More Underlines..."])
 
+    def test_a_menu_still_rebuilding_is_read_again(self):
+        calls = []
+
+        class Flaky(E):
+            def children(self):
+                calls.append(1)
+                if len(calls) <= 2:
+                    raise cu.Gone("element not available")
+                return iter(self.kids)
+
+        root = Flaky("Window", kids=[E("Menu", "Paste", kids=[E("MenuItem", "Keep Text Only")])])
+        real = cu.time.sleep
+        cu.time.sleep = lambda s: None
+        try:
+            self.assertEqual([i.name for i in cu.popup_items(root)], ["Keep Text Only"])
+        finally:
+            cu.time.sleep = real
+
     def test_a_popup_that_reports_collapsed_while_open_is_closed_again(self):
         class Drop:
             def __init__(self, stubborn):
@@ -455,6 +473,88 @@ class Writes(unittest.TestCase):
                 cu.publish({path: cu.render([{"id": "word.home"}])}, write=killed)
             self.assertEqual(path.read_text(encoding="utf-8"), "[]\n")
             self.assertEqual([p.name for p in Path(tmp).iterdir()], ["ribbon.json"])
+
+
+class Round3(unittest.TestCase):
+    def test_each_apps_build_is_read_in_its_own_form(self):
+        word = type("W", (), {"Build": "16.0.20430", "Version": "16.0"})()
+        excel = type("X", (), {"Build": 20430, "Version": "16.0"})()
+        self.assertEqual((cu.reported_build(word), cu.reported_build(excel)), ("16.0.20430", "16.0.20430"))
+        self.assertTrue(cu.same_build(cu.reported_build(excel), BUILD))
+
+    def test_a_classic_capture_needs_the_simplified_layout_off(self):
+        class T(E):
+            def __init__(self, state):
+                super().__init__("Button", "Simplified", "SingleLineRibbonToggle")
+                self.state = state
+
+            def toggle_state(self):
+                return self.state
+
+        self.assertIsNone(cu.layout_problem(E("Window", kids=[T(0)]), "classic"))
+        self.assertIn("Simplified layout", cu.layout_problem(E("Window", kids=[T(1)]), "classic"))
+        self.assertIsNone(cu.layout_problem(E("Window"), "classic"))
+        self.assertIn("no Simplified Ribbon switch", cu.layout_problem(E("Window"), "simplified"))
+        self.assertIn("§15", cu.layout_problem(E("Window", kids=[T(0)]), "simplified"))
+
+    def test_a_document_opened_mid_capture_stops_it(self):
+        launched = cu.Launched.__new__(cu.Launched)
+        launched.exe, launched.created = "POWERPNT.EXE", [object()]
+        launched.open_documents = lambda: 2
+        with self.assertRaises(cu.Refused):
+            launched.check_alone()
+        launched.open_documents = lambda: 1
+        launched.check_alone()
+
+    def test_geometry_that_moved_is_dropped(self):
+        ctx = cu.Context("word", BUILD, IDS, origin=(0, 0))
+        a = {"window": (0, 0, 10, 10), "origin": (0, 0), "dpi": 96, "zoomed": True}
+        self.assertTrue(cu.same_geometry(a, dict(a)))
+        self.assertFalse(cu.same_geometry(a, dict(a, window=(5, 0, 15, 10))))
+        ctx.drop_geometry("moved")
+        self.assertIsNone(ctx.origin)
+        self.assertIn("no bounds: moved", ctx.notes)
+
+    def test_split_buttons_without_their_own_id_merge_by_idmso(self):
+        old = [{"id": "w.g.x", "parent": "w.g", "idMso": "First", "label": "X", "behaviour": "About First."},
+               {"id": "w.g.x-second", "parent": "w.g", "idMso": "Second", "label": "X"}]
+        new = [{"id": "w.g.x", "parent": "w.g", "idMso": "Second", "label": "X", "order": 0},
+               {"id": "w.g.x-first", "parent": "w.g", "idMso": "First", "label": "X", "order": 1}]
+        out = {r["idMso"]: r for r in cu.merge(old, new)}
+        self.assertEqual((out["First"].get("behaviour"), out["First"]["order"], len(out)), ("About First.", 1, 2))
+
+    def test_expand_reads_items_from_a_separate_popup_window(self):
+        class Drop(E):
+            def __init__(self):
+                super().__init__("MenuItem", "Select", "SelectMenu")
+                self.open = False
+
+            def expand_state(self):
+                return 1 if self.open else 0
+
+            def expand(self):
+                self.open = True
+
+            def collapse(self):
+                self.open = False
+
+        drop = Drop()
+        popup = E("Window", "Select", kids=[E("MenuItem", "Select All", "SelectAll"), E("MenuItem", "Selection Pane")])
+        ctx = cu.Context("word", BUILD, {"SelectMenu", "SelectAll"})
+        rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
+                       controlType="menu", idMso="SelectMenu")
+        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5})()
+        uia = type("U", (), {"element": lambda self, h: popup if h == 77 else E("Window", "Doc")})()
+        win = type("W", (), {"popups": lambda self, pid: [77] if drop.open else []})()
+        real = cu.wait_for
+        cu.wait_for = lambda test, seconds=0, step=0: test()
+        try:
+            out = cu.expand_all([rec], None, ctx, launched, uia, win)
+        finally:
+            cu.wait_for = real
+        self.assertEqual([r["label"] for r in out[1:]], ["Select All", "Selection Pane"])
+        self.assertEqual(out[1]["idMso"], "SelectAll")
+        self.assertFalse(drop.open)
 
 if __name__ == "__main__":
     unittest.main()

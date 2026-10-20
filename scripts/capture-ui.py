@@ -39,6 +39,10 @@ UNVERIFIED = INVENTORY.parents[1] / "build" / "capture-ui"
 LARGE_HEIGHT = 40  # pixels at 100 percent: large ribbon controls are about 66, small ones about 22
 
 
+class Gone(Exception):
+    """A UI Automation element vanished while it was read (a menu rebuilding, a popup closing)."""
+
+
 class Unsafe(Exception):
     """The app cannot be launched without touching the operator's own windows, or the layout does not exist."""
 
@@ -97,6 +101,11 @@ class Context:
         self.origin = origin  # client-area origin on screen, only when the capture profile holds
         self.ids, self.skipped, self.unverified, self.notes = Ids(), [], [], []
         self.elements = {}  # record id -> the element it was read from, for expansion
+
+    def drop_geometry(self, why):
+        """Geometry from a window that moved is no longer under the profile: none is kept for this capture."""
+        self.origin = None
+        self.notes.append(f"no bounds: {why}")
 
     def base(self, rid, kind, label, order, element, parent=None, **extra):
         rec = {"id": rid, "app": self.app, "kind": kind, "label": label}
@@ -178,7 +187,8 @@ def walk_tab(tab, order, lower, ctx, contextual=False):
                                baselineMissing=True if unverified else None))
         for c_order, ((el, frame), idmso) in enumerate(zip(members, ids)):
             label = el.name or frame or el.automation_id or "control"
-            target.append(ctx.base(ctx.ids.make(group_id, label, el.automation_id), "control", label, c_order, el,
+            target.append(ctx.base(ctx.ids.make(group_id, label, el.automation_id or idmso or ""), "control", label,
+                                   c_order, el,
                                    parent=group_id, controlType=control_type(el), idMso=idmso,
                                    baselineMissing=True if unverified else None))
     ctx.unverified += aside
@@ -209,10 +219,14 @@ def merge(existing, captured):
         parent = mapping.get(new.get("parent"), new.get("parent"))
         old = next((r for r in existing if new.get("uiaId") and r.get("uiaId") == new["uiaId"]
                     and r.get("parent") == parent and r["id"] not in matched), None)
+        if old is None and new.get("idMso") and not new.get("uiaId"):
+            old = next((r for r in existing if r.get("idMso") == new["idMso"] and not r.get("uiaId")
+                        and r.get("parent") == parent and r["id"] not in matched), None)
         if old is None:
             same = keep.get(new["id"])
             if same is not None and same["id"] not in matched and same.get("parent") == parent \
-                    and not (same.get("uiaId") and new.get("uiaId") and same["uiaId"] != new["uiaId"]):
+                    and not (same.get("uiaId") and new.get("uiaId") and same["uiaId"] != new["uiaId"]) \
+                    and not (same.get("idMso") and new.get("idMso") and same["idMso"] != new["idMso"]):
                 old = same  # the same id still names the same control
         if old is not None:
             matched.add(old["id"])
@@ -241,6 +255,14 @@ class Element:
     """A UI Automation element, exposing only what a capture records. Help text is deliberately absent."""
 
     def __init__(self, uia, raw):
+        try:
+            self._read(uia, raw)
+        except Exception as exc:  # comtypes raises COMError for an element that no longer exists
+            if type(exc).__name__ == "COMError":
+                raise Gone(str(exc)) from None
+            raise
+
+    def _read(self, uia, raw):
         self.uia, self.raw = uia, raw
         # Word embeds an unseen level-number placeholder (U+0001) in numbering gallery names; control characters
         # are never displayed, so they are dropped from the name.
@@ -271,6 +293,10 @@ class Element:
 
     def can_toggle(self):
         return self.pattern("toggle") is not None
+
+    def toggle_state(self):
+        p = self.pattern("toggle")
+        return None if p is None else p.CurrentToggleState
 
     def select(self):
         self.pattern("select").Select()
@@ -333,7 +359,36 @@ class Win:
             ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))  # per-monitor v2: real pixels
         except (AttributeError, OSError):
             pass  # an older Windows: the profile check below then fails on DPI and no bounds are recorded
-        self.user32, self.gdi32 = ctypes.windll.user32, ctypes.windll.gdi32
+        # Private DLL objects with full prototypes: handles are pointer-sized and must never pass as 32-bit ints.
+        u = self.user32 = ctypes.WinDLL("user32", use_last_error=True)
+        g = self.gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+        self.shcore = ctypes.WinDLL("shcore", use_last_error=True)
+        H, HW, HM, HD = wintypes.HANDLE, wintypes.HWND, wintypes.HMONITOR, wintypes.HDC
+        protos = {
+            (u, "GetDC"): ([HW], HD), (u, "ReleaseDC"): ([HW, HD], ctypes.c_int),
+            (g, "GetPixel"): ([HD, ctypes.c_int, ctypes.c_int], wintypes.DWORD),
+            (u, "OpenInputDesktop"): ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], H),
+            (u, "GetUserObjectInformationW"): ([H, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                                ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
+            (u, "CloseDesktop"): ([H], wintypes.BOOL),
+            (u, "GetMonitorInfoW"): ([HM, ctypes.c_void_p], wintypes.BOOL),
+            (u, "MonitorFromWindow"): ([HW, wintypes.DWORD], HM),
+            (u, "GetAncestor"): ([HW, wintypes.UINT], HW),
+            (u, "SetWindowPos"): ([HW, HW, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT],
+                                  wintypes.BOOL),
+            (u, "ShowWindow"): ([HW, ctypes.c_int], wintypes.BOOL),
+            (u, "GetWindowRect"): ([HW, ctypes.POINTER(wintypes.RECT)], wintypes.BOOL),
+            (u, "ClientToScreen"): ([HW, ctypes.POINTER(wintypes.POINT)], wintypes.BOOL),
+            (u, "IsZoomed"): ([HW], wintypes.BOOL), (u, "GetDpiForWindow"): ([HW], wintypes.UINT),
+            (u, "IsWindowVisible"): ([HW], wintypes.BOOL),
+            (u, "GetWindowThreadProcessId"): ([HW, ctypes.POINTER(wintypes.DWORD)], wintypes.DWORD),
+            (u, "GetClassNameW"): ([HW, wintypes.LPWSTR, ctypes.c_int], ctypes.c_int),
+            (self.shcore, "GetDpiForMonitor"): ([HM, ctypes.c_int, ctypes.POINTER(ctypes.c_uint),
+                                                 ctypes.POINTER(ctypes.c_uint)], ctypes.c_long),
+        }
+        for (dll, name), (args, res) in protos.items():
+            fn = getattr(dll, name)
+            fn.argtypes, fn.restype = args, res
 
     def monitors(self):
         ct, wt, found = self.ct, self.wt, []
@@ -348,7 +403,7 @@ class Win:
             info.cbSize = ct.sizeof(Info)
             self.user32.GetMonitorInfoW(handle, ct.byref(info))
             x, y = ct.c_uint(), ct.c_uint()
-            ct.windll.shcore.GetDpiForMonitor(handle, 0, ct.byref(x), ct.byref(y))
+            self.shcore.GetDpiForMonitor(handle, 0, ct.byref(x), ct.byref(y))
             r = info.rcMonitor
             found.append({"rect": (r.left, r.top, r.right, r.bottom), "dpi": x.value})
             return 1
@@ -362,7 +417,7 @@ class Win:
     def place(self, hwnd, monitor):
         left, top_, _, _ = monitor["rect"]
         self.user32.ShowWindow(hwnd, 9)  # restore first, so the move lands on that monitor
-        self.user32.SetWindowPos(hwnd, 0, left + 40, top_ + 40, 1200, 800, 0x0014)
+        self.user32.SetWindowPos(hwnd, None, left + 40, top_ + 40, 1200, 800, 0x0014)
         self.user32.ShowWindow(hwnd, 3)  # maximise
 
     def state(self, hwnd):
@@ -401,7 +456,7 @@ class Win:
             self.user32.CloseDesktop(desk)
 
     def raise_(self, hwnd, topmost):
-        self.user32.SetWindowPos(hwnd, -1 if topmost else -2, 0, 0, 0, 0, 0x0013)
+        self.user32.SetWindowPos(hwnd, self.wt.HWND(-1 if topmost else -2), 0, 0, 0, 0, 0x0013)
 
     def popups(self, pid):
         """Visible top-level popup windows of one process (menus and galleries open in these)."""
@@ -512,6 +567,14 @@ class Launched:
     def open_documents(self):
         return int(self.documents().Count)
 
+    def check_alone(self):
+        """The instance must still hold only the tool's own document: one the operator opened in a shared instance
+        would be the one the ribbon acts on."""
+        count = self.open_documents()
+        if count != len(self.created):
+            raise Refused(f"the {self.exe} instance now holds {count} documents, not only the tool's own; stopping "
+                          "before the ribbon acts on someone else's")
+
     def new_document(self):
         return {"word": lambda: self.app.Documents.Add(), "excel": lambda: self.app.Workbooks.Add(),
                 "powerpoint": lambda: self.app.Presentations.Add(), "visio": lambda: self.app.Documents.Add(""),
@@ -598,10 +661,20 @@ def popup_items(root, popup_roots=()):
                 items.append(e)
         return items
 
+    def attempt():
+        try:
+            return read()
+        except Gone:
+            return None  # the menu is still rebuilding: not a reading yet
+
     last, stable = None, 0
     deadline = time.monotonic() + 4.0
     while time.monotonic() < deadline and stable < 2:
-        items = read() or []
+        items = attempt()
+        if items is None:
+            stable, last = 0, None
+            time.sleep(0.4)
+            continue
         stable = stable + 1 if last is not None and len(items) == len(last) and items else 0
         last = items
         time.sleep(0.4)
@@ -614,7 +687,7 @@ def capture(args, launched, uia, win):
     expected = reference_build(app=row)
     if installed_build() != expected:
         raise Refused(f"the installed build {installed_build()} is not the reference {expected}")
-    reported = str(getattr(launched.app, "Build", "") or getattr(launched.app, "Version", ""))
+    reported = reported_build(launched.app)
     if reported and not same_build(reported, expected):
         raise Refused(f"{row} reports build {reported}, not the reference {expected}")
     monitor = profile_monitor(win.monitors())
@@ -626,12 +699,9 @@ def capture(args, launched, uia, win):
     lower = wait_for(lambda: find(root, lambda e: e.name == "Lower Ribbon"))
     if not tabs_bar or not lower:
         raise Refused("the ribbon was not found in the app's window")
-    if args.layout == "simplified":
-        toggle = find(root, lambda e: e.automation_id == "SingleLineRibbonToggle", depth=20)
-        if toggle is None:
-            raise Unsafe("this build offers no Simplified Ribbon switch (SingleLineRibbonToggle not found)")
-        raise Unsafe("the Simplified Ribbon switch exists here, but driving it is built in D02 T01 §15, the first "
-                     "app that offers it; until then no Simplified capture is written")
+    problem = layout_problem(root, args.layout)
+    if problem:
+        raise Unsafe(problem)
     state = win.state(launched.hwnd)
     left, top, right, _ = state["window"]
     pixels = []
@@ -660,6 +730,9 @@ def capture(args, launched, uia, win):
     for order, tab in enumerate(tab_elements):
         if tab.name not in wanted:
             continue
+        launched.check_alone()
+        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+            ctx.drop_geometry(f"the window moved or changed size before tab {tab.name!r}")
         tab.select()
         if not wait_for(lambda: first_group_name(uia.element(launched.hwnd)) == tab.name):
             raise Refused(f"tab {tab.name!r} did not open")
@@ -668,7 +741,39 @@ def capture(args, launched, uia, win):
         if args.expand:
             tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
         records += tab_records
+    if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+        ctx.drop_geometry("the window moved or changed size during the capture")
+    if ctx.origin is None:
+        for rec in records:
+            for key in ("bounds", "captureProfile", "size"):
+                rec.pop(key, None)
     return records, problems, ctx
+
+
+def same_geometry(before, after):
+    return all(before[k] == after[k] for k in ("window", "origin", "dpi", "zoomed"))
+
+
+def reported_build(app):
+    """The build an app reports, as dotted components: Word gives "16.0.20430"; Excel gives the build alone as a
+    number (20430) beside Version "16.0"."""
+    build = str(getattr(app, "Build", "") or "").strip()
+    version = str(getattr(app, "Version", "") or "").strip()
+    if build.isdigit() and version:
+        return f"{version}.{build}"
+    return build or version
+
+
+def layout_problem(root, layout):
+    """Why the window cannot be captured as this layout, or None. A Classic capture needs the Simplified Ribbon off."""
+    toggle = find(root, lambda e: e.automation_id == "SingleLineRibbonToggle", depth=20)
+    if layout == "simplified":
+        return "this build offers no Simplified Ribbon switch (SingleLineRibbonToggle not found)" if toggle is None \
+            else ("the Simplified Ribbon switch exists here, but driving it is built in D02 T01 §15, the first app "
+                  "that offers it; until then no Simplified capture is written")
+    if toggle is not None and toggle.toggle_state() == 1:
+        return "the ribbon is in its Simplified layout, so a Classic capture would record the wrong layout"
+    return None
 
 
 def first_group_name(root):
@@ -768,8 +873,9 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         print(f"capture-ui: {exc}", file=sys.stderr)
         launched.close()
         return 2
-    except Refused as exc:
-        print(f"capture-ui: {exc}", file=sys.stderr)
+    except (Refused, Gone) as exc:
+        print(f"capture-ui: {exc if isinstance(exc, Refused) else 'an element vanished while it was read: ' + str(exc)}",
+              file=sys.stderr)
         launched.close()
         return 1
     except BaseException:
