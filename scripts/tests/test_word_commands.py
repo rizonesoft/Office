@@ -88,6 +88,30 @@ class Records(unittest.TestCase):
             (inv / "shortcuts.json").write_text(wc.render(shortcuts), encoding="utf-8")
             self.assertEqual(ci.check([str(inv.parent)], inventory=inv.parent), [])
 
+    def test_ids_are_unique_even_against_natural_suffixes(self):
+        rows = [["Foo", "Ctrl+", "F"], ["Foo", "", ""], ["Foo 2", "Alt+", "F"]]
+        commands, shortcuts, _ = wc.records(rows, BUILD, set())
+        ids = [c["id"] for c in commands]
+        self.assertEqual(len(set(ids)), 3, ids)
+        self.assertEqual(len({s["id"] for s in shortcuts}), 2)
+        self.assertEqual(commands[0]["shortcut"], "Ctrl+F")
+        self.assertNotIn("shortcut", commands[1])
+
+    def test_build_components_must_match(self):
+        self.assertTrue(wc.same_build("16.0.20430", BUILD))
+        self.assertTrue(wc.same_build(BUILD, BUILD))
+        for bad in ("16.0.2043", "16.0.20431", "16", "16.0.20430.20182.1"):
+            self.assertFalse(wc.same_build(bad, BUILD), bad)
+
+    def test_the_reference_build_is_read_from_the_reference(self):
+        self.assertEqual(wc.reference_build(), BUILD)
+        with tempfile.TemporaryDirectory() as tmp:
+            ref = Path(tmp) / "REFERENCE.md"
+            ref.write_text("# R\n\n## Builds\n\n| App | Version | Build |\n| Excel | 16.0 | 16.0.1.2 |\n",
+                           encoding="utf-8")
+            with self.assertRaises(wc.Refused):
+                wc.reference_build(ref)
+
     def test_bad_tables_are_refused(self):
         for text, rows, cols in ((table_text(TABLE), len(TABLE), 4), (table_text(TABLE)[:-2], len(TABLE), 3),
                                  (table_text([["Name", "Modifiers", "Key"]] + TABLE[1:]), len(TABLE), 3)):
@@ -130,17 +154,30 @@ class Instance(unittest.TestCase):
                 wc.list_commands(dispatch=lambda prog, f=fake: f, pids=lambda: set(), sleep=lambda _: None)
             self.assertTrue(fake.quit)
 
-    def test_a_lingering_instance_is_reported(self):
+    def test_a_lingering_instance_fails_the_run(self):
         live = {111}
         err = io.StringIO()
-        with contextlib.redirect_stderr(err):
+        with contextlib.redirect_stderr(err), self.assertRaises(wc.Refused):
             wc.list_commands(dispatch=lambda prog: (live.add(222), Fake())[1], pids=self.pids(live),
                              wait=0, sleep=lambda _: None)
         self.assertIn("still running (pid [222])", err.getvalue())
 
+    def test_a_failure_right_after_start_still_quits_the_instance(self):
+        fake, calls = Fake(), []
+
+        def pids():
+            calls.append(1)
+            if len(calls) == 2:
+                raise OSError("tasklist failed")
+            return set()
+
+        with self.assertRaises(OSError):
+            wc.list_commands(dispatch=lambda prog: fake, pids=pids, sleep=lambda _: None)
+        self.assertTrue(fake.quit)
+
 
 class Main(unittest.TestCase):
-    def run_main(self, lister, build=BUILD):
+    def run_main(self, lister, build=BUILD, installed=BUILD):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "word"
             out.mkdir()
@@ -148,7 +185,8 @@ class Main(unittest.TestCase):
                                                            "rows": [["Bold"]]}), encoding="utf-8")
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-                code = wc.main([], lister=lister, build=lambda: build, out=out, unmatched_path=Path(tmp) / "u.txt")
+                code = wc.main([], lister=lister, build=lambda: build, installed=lambda: installed, out=out,
+                               unmatched_path=Path(tmp) / "u.txt")
             files = {p.name: p.read_text(encoding="utf-8") for p in out.glob("*.json")}
             return code, stdout.getvalue() + stderr.getvalue(), files
 
@@ -159,6 +197,33 @@ class Main(unittest.TestCase):
         self.assertEqual(len(json.loads(files["commands.json"])), 7)
         self.assertEqual(len(json.loads(files["shortcuts.json"])), 3)
         self.assertIn("7 rows: 7 command records (2 with an idMso), 3 shortcut records", out)
+
+    def test_an_installed_build_other_than_the_reference_is_refused(self):
+        table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
+        code, out, files = self.run_main(lambda: (table, "16.0.20500"), installed="16.0.20500.20000")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(sorted(files), ["baseline.json"])
+
+    def test_both_files_or_neither(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a, b = Path(tmp) / "commands.json", Path(tmp) / "shortcuts.json"
+            a.write_text("old-a", encoding="utf-8")
+            b.write_text("old-b", encoding="utf-8")
+            real, calls = wc.write_atomic, []
+
+            def flaky(path, text):
+                calls.append(path)
+                if path == b and len(calls) == 2:
+                    raise OSError("disk full")
+                real(path, text)
+
+            wc.write_atomic = flaky
+            try:
+                with self.assertRaises(OSError):
+                    wc.publish({a: "new-a", b: "new-b"})
+            finally:
+                wc.write_atomic = real
+            self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8")), ("old-a", "old-b"))
 
     def test_refusals_and_failures_write_nothing(self):
         def refused():
