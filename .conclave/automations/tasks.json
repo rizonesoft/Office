@@ -96,20 +96,6 @@
         "at": "07:30"
       },
       "timeout_minutes": 5
-    },
-    {
-      "name": "office-conclave-kits",
-      "description": "Email once when Conclave SDK kit files drift from the SDK or its doctor reports a gap",
-      "command": [
-        "python",
-        "scripts/check-conclave-kits.py",
-        "notify"
-      ],
-      "trigger": {
-        "weekly": "Monday",
-        "at": "07:35"
-      },
-      "timeout_minutes": 10
     }
   ]
 }

@@ -13,7 +13,6 @@ Every scheduled job for Office lives here: the task list in `tasks.json`, the ru
 | `office-dotnet-local` | Monday 07:20 | `scripts/check-dotnet-pin.py local` |
 | `office-visual-studio` | Monday 07:25 | `scripts/check-visual-studio.py notify` |
 | `office-python-pin` | Monday 07:30 | `scripts/check-python-pin.py notify` |
-| `office-conclave-kits` | Monday 07:35 | `scripts/check-conclave-kits.py notify` |
 
 What each one emails you about, and when it fails (which sends the failure alert instead):
 
@@ -24,23 +23,22 @@ What each one emails you about, and when it fails (which sends the failure alert
 - `office-dotnet-local`: emails once when this machine lacks the .NET SDK that `global.json` pins. Fails when `global.json` cannot be read or `dotnet` is not on PATH.
 - `office-visual-studio`: emails once per release when this machine's Visual Studio 2026 is behind its latest servicing release. Fails when none is installed, or vswhere or the release channel cannot be read.
 - `office-python-pin`: emails once when this machine's Python is behind the newest stable CPython (minor or patch). Fails when python.org cannot be read.
-- `office-conclave-kits`: emails once per state when Office's base, todo or reviewer kit files drift from the Conclave SDK's committed kits, or its doctor reports a gap. Fails when no SDK checkout is configured (`CONCLAVE_SDK_ROOT`) or found beside this repository (`Conclave-SDK`), the doctor gives no report, or an allow-list entry has no reason.
 
-Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and daily and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored. Office keeps its own runner, alert and installer rather than the Conclave SDK automations kit's (operator, 2026-10-21), for the fixed-time daily trigger and the per-run alert record.
+Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and daily and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored. Everything in this folder is Office's own, for the fixed-time daily trigger and the per-run alert record. Office takes nothing from the Conclave SDK (operator, 2026-10-21): the `office-conclave-kits` drift check and `.conclave/kits.json` were removed that day.
 
 ## How you hear about it
 
 Every email goes to `rizonetech@gmail.com` from "Office automations" (`website@rizonetech.com`, through SMTP2GO), and there are exactly three kinds:
 
 - **"Office: ... is ready to merge"**: a pin moved on a branch. The WinUI 3, .NET and NuGet tasks change pins only on a new branch from main, after its checks pass, and the email names the branch and the `git merge` command. Nothing changes on main or in your checkout until you merge, and nothing is pushed.
-- **"Office: ... is available", "install ..." or "has drifted"**: something on this PC is behind (Visual Studio, Python, the pinned .NET SDK) or the Conclave kits drifted. The task succeeds and sends this once per new version or state.
+- **"Office: ... is available", "install ..." or "has drifted"**: something on this PC is behind (Visual Studio, Python, the pinned .NET SDK). The task succeeds and sends this once per new version or state.
 - **"Office automation failed: <task> on <host>"**: a check could not run or found a broken pin. It repeats on every failing run until fixed, with the log tail.
 
 Each new version or state is emailed once, so no new email means nothing new, not that every pin is current: a proposal you have not merged stays on its branch without another email, and a machine finding you have not acted on is not sent again. `python scripts/check-<name>.py check` (exit 1 while main is behind or this PC needs an update) and `git branch --list winui/* dotnet/* pins/*` show what is still open. Each finished proposal and announcement is a git ref (`refs/office-pin/<key>`, `refs/office-notice/<key>`); `git for-each-ref refs/office-pin refs/office-notice` lists them, and deleting one makes its task propose or announce again. A proposal branch without its ref is an unfinished attempt (an email that failed, a run cut short), which the next run discards and redoes. The shared code is `scripts/lib/pin_proposal.py`, `scripts/lib/pin_sources.py` and `scripts/lib/package_versions.py`, ported from RectoPDF on 2026-10-21.
 
 ## Campaign runs
 
-There is no keep-alive task. Retired 2026-10-21 (operator, adopting the Conclave-SDK todo kit: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the todo kit's run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules.
+There is no keep-alive task. Retired 2026-10-21 (operator: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules.
 
 ## The WinUI 3 pin
 
@@ -83,7 +81,7 @@ git for-each-ref refs/office-pin refs/office-notice           # finished proposa
 
 Installed and verified on the operator's PC (Venom-PC) on 2026-10-20: `office-claude-keepalive` is registered under `\Office\` with a logon trigger (3 minute delay) and an hourly time trigger, next run 2026-10-20 04:16:56 South Africa Standard Time (UTC+2), last result 267011 (not yet run); `campaign_keepalive.py status` answered `idle: no open campaign run` before the phase 2 run was put under the guard; the alert dry run rendered the task, exit and log tail; and one real alert (the throwaway task `office-alert-test`, exiting 1 in a scratch workspace, sent through the runner with the operator's go-ahead) arrived in `rizonetech@gmail.com` from `website@rizonetech.com`: subject "Office automation failed: office-alert-test on Venom-PC", received 2026-10-20 01:17:45 UTC, `internetMessageId` `<E1xIyU5-FnQW0hPmZ73-1DpI@message-id.smtpcorp.com>`. That send predates the runner recording sends in `last.json`; `test_automations.py` (`AlertRecord`) proves every later send records its email id (or that none was given) in a per-run `<log>.alert.json` and in `last.json` while it still describes that run, and an unsent one its error.
 
-Read back on Venom-PC on 2026-10-21: no task was registered under `\Office\` (the folder was absent). The same day `install.ps1` registered all eight tasks in `tasks.json`, with the first runs read back as `office-winui-pin` 2026-10-21 06:26:59 and `office-dotnet-pin` 06:37:05 (daily), and the weekly tasks from 2026-10-26 07:00:47. The `office-claude-keepalive` task named above was retired the same day (see Campaign runs).
+Read back on Venom-PC on 2026-10-21: no task was registered under `\Office\` (the folder was absent). The same day `install.ps1` registered all eight tasks in `tasks.json`, with the first runs read back as `office-winui-pin` 2026-10-21 06:26:59 and `office-dotnet-pin` 06:37:05 (daily), and the weekly tasks from 2026-10-26 07:00:47. The `office-claude-keepalive` task named above was retired the same day (see Campaign runs), and `office-conclave-kits` was removed later that day, leaving seven.
 
 The installer reads `tasks.json` and registers every task it lists; a task under `\Office\` that the file no longer lists is removed.
 

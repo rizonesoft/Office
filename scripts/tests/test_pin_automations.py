@@ -27,7 +27,6 @@ dotnet = load("check_dotnet_pin", "check-dotnet-pin.py")
 nuget = load("check_nuget_pins", "check-nuget-pins.py")
 python_pin = load("check_python_pin", "check-python-pin.py")
 vs = load("check_visual_studio", "check-visual-studio.py")
-kits = load("check_conclave_kits", "check-conclave-kits.py")
 
 RC1 = "11.0.100-rc.1.26425.128"
 RC2 = "11.0.100-rc.2.26504.105"
@@ -326,71 +325,6 @@ class VisualStudio(GitRepo):
     def test_current_passes_and_missing_fails(self):
         self.assertEqual(self.main("check", ["18.12.0"])[0], 0)
         self.assertEqual(self.main("check", [])[0], 1)
-
-
-class ConclaveKits(GitRepo):
-    FILES = {"AGENTS.md": "project\n"}
-
-    def sdk(self, files):
-        sdk = Path(self.tmp.name) / "sdk"
-        for rel, text in files.items():
-            path = sdk / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(text.encode())
-        for args in (["init", "-q"], ["add", "."], ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "kits"]):
-            subprocess.run(["git", *args], cwd=sdk, check=True, capture_output=True)
-        return sdk
-
-    def test_drift_compares_managed_files_with_the_sdk_head(self):
-        skill = ".claude/skills/add-todo/SKILL.md"
-        sdk = self.sdk({f"kits/todo/templates/{skill}": "kit\n", "kits/todo/templates/todo/plan.json": "{}",
-                        "kits/base/templates/scripts/verify-agent-tiers.mjs": "x\n"})
-        (self.root / skill).parent.mkdir(parents=True)
-        (self.root / skill).write_bytes(b"kit\r\n")  # a CRLF checkout is not drift
-        found = kits.drift(sdk, self.root, allow={})
-        self.assertEqual(found, ["scripts/verify-agent-tiers.mjs is missing (kit base)"])  # todo/ is project data
-        (self.root / skill).write_text("local\n", encoding="utf-8")
-        self.assertIn(f"{skill} differs from the SDK (kit todo)", kits.drift(sdk, self.root, allow={}))
-        self.assertEqual(kits.drift(sdk, self.root, allow={skill: "r", "scripts/verify-agent-tiers.mjs": "r"}), [])
-
-    @staticmethod
-    def doctor_run(code, stdout, stderr=""):
-        def run(cmd, **_kw):
-            return subprocess.CompletedProcess(cmd, code, stdout=stdout, stderr=stderr)
-        return run
-
-    def test_a_failed_or_empty_doctor_is_never_healthy(self):
-        ok = json.dumps({"checks": [{"name": "AGENTS.md", "status": "ok"}]})
-        self.assertEqual(kits.doctor(self.root, self.root, self.doctor_run(0, ok)), [])
-        gap = json.dumps({"checks": [{"name": "stop-hook", "status": "setup_required"}]})
-        self.assertEqual(kits.doctor(self.root, self.root, self.doctor_run(1, gap))[0], "doctor base: setup_required stop-hook")
-        for run in (self.doctor_run(1, "{}", "boom"), self.doctor_run(0, '{"checks": []}'), self.doctor_run(1, ok),
-                    self.doctor_run(0, "not json"), self.doctor_run(0, '{"checks": [{"status": "ok"}]}'),
-                    self.doctor_run(0, '{"checks": [{"name": "x", "status": 1}]}'), self.doctor_run(0, '{"checks": ["ok"]}')):
-            with self.assertRaises(RuntimeError):
-                kits.doctor(self.root, self.root, run)
-
-    def test_the_sdk_comes_from_config_then_discovery_then_setup_required(self):
-        repo = Path(self.tmp.name) / "work" / "Office"
-        repo.mkdir(parents=True)
-        self.assertIsNone(kits.sdk_root(repo, environ={}))
-        beside = repo.parent / "Conclave-SDK"
-        beside.mkdir()
-        (beside / "forge.py").write_text("", encoding="utf-8")
-        self.assertEqual(kits.sdk_root(repo, environ={}), beside)
-        configured = Path(self.tmp.name) / "elsewhere"
-        configured.mkdir()
-        (configured / "forge.py").write_text("", encoding="utf-8")
-        self.assertEqual(kits.sdk_root(repo, environ={"CONCLAVE_SDK_ROOT": str(configured)}), configured)
-        code, out = quiet(kits.main, ["check"], root=Path(self.tmp.name) / "nowhere" / "Office")
-        self.assertEqual(code, 2)
-        self.assertIn("setup required", out)
-
-    def test_an_allow_entry_needs_a_reason(self):
-        (self.root / ".conclave").mkdir()
-        (self.root / kits.ALLOW).write_text("scripts/x.py |\n", encoding="utf-8")
-        with self.assertRaises(ValueError):
-            kits.allowed(self.root)
 
 
 if __name__ == "__main__":
