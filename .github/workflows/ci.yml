@@ -9,6 +9,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# The gates only read the repository.
+permissions:
+  contents: read
+
 jobs:
   gates:
     runs-on: windows-latest
