@@ -140,7 +140,14 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 ## 5. Contributing Guide
 
+> **Started:** 2026-10-21T20:40:00Z
+
 `CONTRIBUTING.md` tells a newcomer how to build, test, follow the TODO workflow, sign the agreement and open a pull request, and states the licence their work is released under.
+
+**Corrected 2026-10-21:** the agreement text and the foundation plan do not exist yet (§3 waits on a lawyer and an owner decision; D03 T01 §12 is Phase 3), so the guide names the agreement's path and status in plain text instead of a dead link, and its Build and test section lists the commands that run today (the ones CI runs), with the application build commands to follow.
+
+> **Deferred:** the link to `docs/legal/rizonesoft-cla.md` in `CONTRIBUTING.md`, once the agreement exists -> XREF: D00 T02 §3
+> **Deferred:** the application build and test commands in `CONTRIBUTING.md`, from the foundation plan's Toolchain section -> XREF: D03 T01 §12
 
 **Phase:** 0
 **Needs:** none
@@ -150,9 +157,9 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 1. Write `CONTRIBUTING.md`. Done when: the design-doc checker passes with the required headings.
 
-- [ ] Write the Licence and agreement section of `CONTRIBUTING.md`: GPL-3.0-or-later, the agreement link, and the SPDX header to add. Done when: it links `docs/legal/rizonesoft-cla.md` and shows the header line. Cheaper substitute: "see LICENSE".
-- [ ] Write the Build and test section from the foundation plan's Toolchain commands and `scripts/requirements.txt`. Done when: every command in it runs on a clean clone. Cheaper substitute: commands copied from memory.
-- [ ] Write the Workflow section pointing at `docs/todo-workflow.md` and the commit rules in `AGENTS.md`. Done when: both links resolve. Cheaper substitute: restating the rules, which then drift.
+- [x] Write the Licence and agreement section of `CONTRIBUTING.md`: GPL-3.0-or-later, the agreement and its status, and the SPDX header to add. Done when: it names `docs/legal/rizonesoft-cla.md` and its status, and shows the header line. **Corrected 2026-10-21:** said it links the agreement, which does not exist yet. Cheaper substitute: "see LICENSE".
+- [x] Write the Build and test section from the commands CI runs (`.github/workflows/ci.yml`) and `scripts/requirements.txt`. Done when: every command in it runs on a clean clone. **Corrected 2026-10-21:** said from the foundation plan's Toolchain commands, which do not exist yet. Cheaper substitute: commands copied from memory.
+- [x] Write the Workflow section pointing at `docs/todo-workflow.md` and the commit rules in `AGENTS.md`. Done when: both links resolve. Cheaper substitute: restating the rules, which then drift.
 - [ ] Commit: `docs: add contributing guide`
 
 **Test checkpoint:** `python scripts/check-design-doc.py CONTRIBUTING.md --require "Licence and agreement" --require "Build and test" --require Workflow` exits 0.
