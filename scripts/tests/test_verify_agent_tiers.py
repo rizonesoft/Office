@@ -60,13 +60,21 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\ndescription: |\n  text\n" + NBSP + "\n",
                      "model: sonnet\ndescription: |\n  text\n" + TAB + "\n",                      # yaml refuses it
                      "model: sonnet\nhooks:\n  true: first\n  TRUE: second\n",                    # one boolean key
-                     "model: sonnet\ntrue: a\nTRUE: b\n"]
+                     "model: sonnet\ntrue: a\nTRUE: b\n",
+                     "model: sonnet\n# comment" + chr(13) + "description: @bad\n",                # a bare CR breaks
+                     "model: sonnet\ndescription: a" + chr(0x85) + "b\n",                         # NEL breaks in 1.1
+                     "model: sonnet\n" + "a" * 1025 + ": ok\n",                                   # over 1024
+                     "model: sonnet\nhooks:\n  " + "a" * 1025 + ": ok\n"]
+# These load in the YAML 1.2 loaders, but a YAML 1.1 loader (PyYAML) reads tabs differently; no tab is accepted.
+POLICY_BODIES = ["model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",
+                 "model: sonnet\ndescription: |\n  text\n  " + TAB + "\n",
+                 "model: sonnet\ndescription:" + TAB + "x\n"]
 ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non-breaking space is content
                    "description: 'it''s fine'\nmodel: sonnet\n",
                    "model: sonnet\ndescription: |\n    first\n      deeper\n",
-                   "model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",   # a tab past the indentation
                    "model: sonnet\nhooks:\n  command : ok\n",                       # a space before the colon
-                   "model: sonnet\ndescription: |\n  text\n  " + TAB + "\n",        # a tab past the indentation
+                   "model: sonnet\n" + "a" * 1024 + ": ok\n",                       # a key at the 1024 limit
+                   "model: sonnet\r\ndescription: crlf line endings\r\n",
                    "model: sonnet\nhooks:\n  PreToolUse:\n  - matcher: Bash\n    hooks:\n    - type: command\n"
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
@@ -129,6 +137,13 @@ class Frontmatter(unittest.TestCase):
         for body in UNLOADABLE_BODIES:
             with self.subTest(body=body):
                 self.assertEqual(self.verify_body(body).returncode, 1)
+
+    def test_a_tab_anywhere_is_refused_by_policy(self):
+        for body in POLICY_BODIES:
+            with self.subTest(body=body):
+                result = self.verify_body(body)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("holds a tab", result.stderr)
 
     def test_quoting_and_block_scalar_lines_yaml_loads_pass(self):
         for body in ACCEPTED_BODIES:

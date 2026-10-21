@@ -117,6 +117,19 @@ export function readAgentFrontmatter(text) {
   if (unprintable) {
     return { fields: null, error: `frontmatter holds the non-printable character U+${unprintable[0].charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}, which YAML refuses; remove it` };
   }
+  // YAML loaders disagree on tabs (a YAML 1.1 loader refuses a tab after "key:", on a blank line or before an
+  // indicator where YAML 1.2 loaders accept it), and no agent definition needs one, so none is accepted.
+  const tab = match[1].indexOf("\t");
+  if (tab !== -1) {
+    const line = match[1].slice(0, tab).split("\n").length;
+    return { fields: null, error: `frontmatter line ${line} holds a tab; YAML loaders read tabs differently, so use spaces` };
+  }
+  // Lines are split on LF and CRLF only. A bare CR is a line break to YAML, and NEL, U+2028 and U+2029 are line
+  // breaks to YAML 1.1 loaders, so a comment could hide what follows any of them from this check.
+  const otherBreak = /\r(?!\n)|[\u0085\u2028\u2029]/.exec(match[1]);
+  if (otherBreak) {
+    return { fields: null, error: `frontmatter holds a line break other than LF or CRLF (U+${otherBreak[0].charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}); some YAML loaders split lines there and this check does not, so remove it` };
+  }
   const lines = match[1].split(/\r?\n/);
   const fields = new Map();
   let index = 0;
@@ -135,6 +148,9 @@ export function readAgentFrontmatter(text) {
     }
 
     const [, key, rest = ""] = entry;
+    if (key.length > MAX_IMPLICIT_KEY) {
+      return { fields: null, error: `a key is ${key.length} characters long; YAML caps an implicit key at ${MAX_IMPLICIT_KEY}` };
+    }
     if (NON_STRING_KEY.test(key)) {
       return { fields: null, error: `"${key}:" is a key YAML reads as a boolean or null, not a name; no agent field is called that` };
     }
@@ -251,6 +267,9 @@ export function readAgentFrontmatter(text) {
  * reader accepts them as names.
  */
 const NON_STRING_KEY = /^(?:true|True|TRUE|false|False|FALSE|null|Null|NULL)$/;
+
+/** YAML 1.2 limits an implicit key, quotes included, to 1024 characters. */
+const MAX_IMPLICIT_KEY = 1024;
 
 export function plainScalarProblem(plain) {
   if (/^[,\]}%@`|>'"#]/.test(plain)) return `it opens with the reserved indicator "${plain[0]}"`;
@@ -395,6 +414,9 @@ function hooksLine(text) {
       // Keys are compared as YAML values: quotes removed, separation spaces before the colon dropped, and a plain
       // key held to an identifier, so no two spellings (`1` and `0x1`) can resolve to one key unnoticed.
       key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node.replace(/ +$/, "");
+      if (node.length > MAX_IMPLICIT_KEY) {
+        return { error: `holds a key ${node.length} characters long; YAML caps an implicit key at ${MAX_IMPLICIT_KEY}` };
+      }
       if (!quoted && (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key) || NON_STRING_KEY.test(key))) {
         return { error: `holds the key ${JSON.stringify(key)}; a plain key here is an identifier (letters, digits, "_" and "-") that YAML reads as a string, not a boolean or null, so quote any other` };
       }
