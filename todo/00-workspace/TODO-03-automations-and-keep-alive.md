@@ -2,7 +2,7 @@
 schema_version: 1
 id: automations-and-keep-alive
 domain: 00-workspace
-status: active
+status: done
 title: "TODO-03 -- Automations and Campaign Keep-Alive"
 ---
 
@@ -41,7 +41,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
 | 7 | §7 | Run guard robustness fixes | §2 | [x] |
 | 8 | §8 | Agent tier verifier YAML strictness | -- | [x] |
-| 9 | §9 | Dependency PR merges at boundaries | §1 | [ ] |
+| 9 | §9 | Dependency PR merges at boundaries | §1 | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -278,9 +278,12 @@ Owner request 2026-10-21 (replacing "nothing merges by itself" for dependency pu
 - [x] Add the run after each stamp push to `process-plan` in `.claude/skills/`, `.agents/skills/` and `.codex/skills/`, before the next row is claimed, with a failure recorded in the run file and the campaign continuing. Done when: all three mirrors name `python scripts/merge_prs.py` at the section boundary, with `--session <id>` where the agent holds the run guard (Claude). **Corrected 2026-10-22:** required `--session` in every mirror; the Antigravity and Codex mirrors hold no run guard, so they call it without one and it defers to an open Claude campaign. Cheaper substitute: merging only when the operator asks.
 - [x] Add an `office-pr-merge` task to `.conclave/automations/tasks.json`, with its README row and line, and install it. Done when: `test_automations.py` passes and `Get-ScheduledTask -TaskPath '\Office\'` lists it. Cheaper substitute: no fallback when no campaign runs.
 - [x] Update `.conclave/automations/README.md` and `AGENTS.md` with the merge rule: green dependency pull requests merge by themselves at section boundaries or on the schedule; local proposal branches still wait for the owner. Done when: both state it and no line says dependency pull requests wait for a manual merge. Cheaper substitute: the rule only in the script's docstring.
-- [ ] Commit: `automations: merge green dependency pull requests at section boundaries`
+- [x] Commit: `automations: merge green dependency pull requests at section boundaries`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_merge_prs.py"` passes, `python scripts/merge_prs.py --session <this session>` refuses while this section is in progress, naming it, and the first run after its stamp exits 0 reporting what it merged or that nothing was eligible (recorded in the run file). **Corrected 2026-10-22:** asked for an exit 0 "at a section boundary" before the stamp, which the in-progress rule this section adds makes impossible; the boundary run moves to just after the stamp.
+
+> **Verified:** 2026-10-22 | §9 | a89d8abf44813692c3b08c6955c20957f025c96d
+> **Review:** `docs/reviews/d00-t03-s9.json`
 
 ## Verification
 

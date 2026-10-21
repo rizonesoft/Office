@@ -1,0 +1,56 @@
+{
+  "ref": "D00 T03 \u00a79",
+  "title": "Dependency PR Merges at Boundaries",
+  "implementation_sha": "a89d8abf44813692c3b08c6955c20957f025c96d",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s9.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_merge_prs.py\" -> Ran 30 tests, OK (with test_automations.py: 80 tests, OK)",
+    "python scripts/merge_prs.py --session <this session> while D00 T03 \u00a79 is open -> exit 2, \"a section is in progress: D00 T03 \u00a79\"",
+    "python .conclave/automations/run.py office-pr-merge -> exit 0, skipped: campaign open",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success (run 39695190914 at a89d8ab)"
+  ],
+  "rounds_spent": 8,
+  "round_cap": 22
+}

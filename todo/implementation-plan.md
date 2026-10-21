@@ -26,7 +26,7 @@ Sections: 15 | Checklist items: 88
 | [x]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run | attended               | 4     |
 | [x]    | D00 T03 §7 | Run Guard Robustness Fixes               | none                   | 5     |
 | [x]    | D00 T03 §8 | Agent Tier Verifier YAML Strictness      | none                   | 4     |
-| [ ]    | D00 T03 §9 | Dependency PR Merges at Boundaries       | none                   | 10    |
+| [x]    | D00 T03 §9 | Dependency PR Merges at Boundaries       | none                   | 10    |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -132,6 +132,6 @@ Sections: 3 | Checklist items: 13
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 20/91 verified sections, 8 ready to run now.
+Progress: 21/91 verified sections, 7 ready to run now.
 
-Checklist: 129/520 items completed (includes Commit items).
+Checklist: 130/520 items completed (includes Commit items).
