@@ -76,7 +76,7 @@ Each file states its own licence so a copied file keeps its terms. Rizonesoft co
 
 GPLv3 for our code does not remove the duties of the components we ship. The Windows App SDK, WinUI 3 and the .NET runtime are MIT and need their copyright and permission notices in both the MSIX package and the Inno Setup installer; the OFL font and the MIT icon set need their notices.
 
-**Corrected 2026-10-21:** the Fluent UI System Icons, Windows App SDK and .NET runtime entries moved to §6. None of the three is bundled yet: the glyph set is chosen (D02 T02 §2) but not pinned, and the redistributed packages come from the foundation plan's Toolchain section (D03 T01 §12), which does not exist; both are later phases, so a version written here now would be invented.
+**Corrected 2026-10-21:** the Fluent UI System Icons, Windows App SDK and .NET runtime entries moved to §6. None of the three is redistributed yet: the glyph set is chosen (D02 T02 §2) but not pinned; `Microsoft.WindowsAppSDK` is pinned (2.5.1 in `Directory.Packages.props`) but no build ships it, and the set of redistributed packages (with the .NET runtime's) comes from the foundation plan's Toolchain section (D03 T01 §12), which does not exist. Both are later phases, so an inventory written here now would be guessed.
 
 > **Deferred:** the Fluent UI System Icons, Windows App SDK and .NET runtime notices, once each is pinned and redistributed -> XREF: D00 T02 §6
 
@@ -156,7 +156,7 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 ## 6. Runtime and Icon Notices
 
-The components the product will redistribute get their notices once each is pinned: the Fluent UI System Icons glyph set chosen in D02 T02 §2, and the Windows App SDK (with WinUI 3) and .NET runtime packages the foundation plan's Toolchain section names (D03 T01 §12). Moved from §2 on 2026-10-21, when none of them was bundled or pinned.
+The components the product will redistribute get their notices once each is pinned: the Fluent UI System Icons glyph set chosen in D02 T02 §2, and the Windows App SDK (with WinUI 3) and .NET runtime packages the foundation plan's Toolchain section names (D03 T01 §12). Moved from §2 on 2026-10-21, when none of them was redistributed (the Windows App SDK was already pinned, the glyph set was not).
 
 **Phase:** 3
 **Needs:** none

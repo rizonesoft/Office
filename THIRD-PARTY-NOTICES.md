@@ -11,7 +11,7 @@ Rizonesoft Office is licensed under GPL-3.0-or-later. This file lists the third-
 - Upstream: https://github.com/tokotype/PlusJakartaSans.
 - Copyright: Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans).
 - Licence: OFL-1.1. The full licence text ships beside the font as `design/fonts/plus-jakarta-sans/OFL.txt` (also `LICENSES/OFL-1.1.txt`).
-- Obligations: every copy of the font, in the repository and in each installer and MSIX package, carries the copyright line above and the OFL text; the font is never sold on its own; a modified version must be renamed and stays under OFL-1.1. The font declares no Reserved Font Name.
+- Obligations (OFL-1.1 conditions 1 to 5): the font is never sold on its own; every copy, in the repository and in each installer and MSIX package, carries the copyright line above and the OFL text; a modified version may keep the name, because the font declares no Reserved Font Name; the authors' and copyright holders' names are never used to promote, endorse or advertise a modified version, except to acknowledge their contribution or with their written permission; and the font, modified or not, is distributed only under OFL-1.1, never under the suite's GPL.
 
 ## Data sources
 
