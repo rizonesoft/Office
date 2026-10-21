@@ -153,3 +153,34 @@ Candidate `0e11949..fbd8aa1`. Both findings verified and fixed in the next commi
 2. P2 audit rounds appended to the stamped findings file: fixed at the skill layer. `review-todo-section` (all three mirrors) now records audit rounds in `docs/reviews/<NN-domain>/audit-d<NN>-t<NN>-s<N>.md`, never in the stamped findings file, and says why (the receipt names that file's last round; a round appended there breaks validation and `unstamp`). This is Recto's practice (`docs/reviews/06-quality/audit-*.md`).
 
 Gates: `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`. No code changed in this commit.
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T18:31:37Z
+- Effort: medium
+- Lines: 18
+- Digest: 9bf7edd0498f83eb
+
+## adversarial: approve
+
+No new actionable finding.
+
+## consistency: approve
+
+No remaining round 4 defect identified in the revised TODO instructions or the three skill mirrors.
+
+## integration: approve
+
+The separate audit findings path addresses the receipt-validation and `unstamp` conflict. No new integration defect identified.
+
+## record: advisory
+
+Review was limited to the supplied diff and repository file inspection. The claimed 439-test run, live scheduled-task removal, Git executable mode, and validation outputs were not independently reproduced. No files were modified or Git commands run.
+
+HIGHEST: none
+OVERALL: approve
+
+## Outcome
+
+Round 5 approved every lens on `0e11949..42f174e` (`HIGHEST: none`, `OVERALL: approve`): clean after four rounds of fixes, well inside the 22-round cap.
