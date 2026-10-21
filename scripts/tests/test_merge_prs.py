@@ -42,7 +42,8 @@ class Fake:
         self.prs = {p["number"]: p for p in prs}
         self.views = views or {}           # number -> the fresh state `gh pr view` returns instead
         self.after_merge = after_merge     # called after each successful merge, to change the clone
-        self.state = {"status": status, "branch": branch, "head": head, "upstream": upstream}
+        # "remote" is main on GitHub; "upstream" is the local origin/main ref, which only a fetch moves.
+        self.state = {"status": status, "branch": branch, "head": head, "upstream": upstream, "remote": upstream}
         self.merged = []
 
     def __call__(self, args, root):
@@ -77,7 +78,10 @@ class Fake:
             if self.after_merge:
                 self.after_merge(self)
             return 0, "", ""
-        if str(args[-1]) == "validate" or args[:2] == ["git", "pull"] or args[:2] == ["git", "fetch"]:
+        if args[:2] == ["git", "fetch"]:
+            self.state["upstream"] = self.state["remote"]
+            return 0, "", ""
+        if str(args[-1]) == "validate" or args[:2] == ["git", "pull"]:
             return 0, "", ""
         if args[:2] == ["git", "status"]:
             return 0, self.state["status"], ""
@@ -129,7 +133,7 @@ class Safety(unittest.TestCase):
         self.assertIn("merged #1; not merging further: the working tree", out)
 
     def test_main_moved_by_someone_else_mid_batch_stops_the_next_merge(self):
-        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: f.state.update(upstream="c" * 40))
+        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: f.state.update(remote="c" * 40))  # seen only by a fetch
         code, out = run_main(fake)
         self.assertEqual(code, 2)
         self.assertEqual(fake.merged, [1])
@@ -231,12 +235,17 @@ class Eligibility(unittest.TestCase):
         self.assertIn("head commit does not match", out)
         self.assertFalse(any(c[:4] == ["gh", "pr", "merge", "2"] for c in fake.calls))
 
-    def test_a_checkout_edited_while_the_files_are_read_stops_the_merge(self):
-        fake = Fake(prs=[pr(1)], during_files=lambda f: f.state.update(status=" M edited.py\n"))
-        code, out = run_main(fake)
-        self.assertEqual(code, 2)
-        self.assertEqual(fake.merged, [])
-        self.assertIn("uncommitted or untracked", out)
+    def test_a_checkout_changed_while_the_files_are_read_stops_the_merge(self):
+        changes = {"uncommitted or untracked": {"status": " M edited.py\n"},
+                   "not main": {"branch": "feature"},           # a clean switch to another branch
+                   "is not origin/main": {"head": "b" * 40}}    # a clean, unpushed commit
+        for message, change in changes.items():
+            with self.subTest(change=message):
+                fake = Fake(prs=[pr(1)], during_files=lambda f, change=change: f.state.update(change))
+                code, out = run_main(fake)
+                self.assertEqual(code, 2)
+                self.assertEqual(fake.merged, [])
+                self.assertIn(message, out)
 
     def test_an_incomplete_file_list_is_refused(self):
         fake = Fake(prs=[pr(1, changedFiles=3, files=["a.yml"])])

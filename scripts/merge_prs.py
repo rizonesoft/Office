@@ -93,22 +93,14 @@ def guard_lock(root):
 
 
 def local_safety(runner, root, session):
-    """The checks that need no network: the campaign, the working tree and a section in progress. Run again just
-    before each merge, after the slow reads, because an editor or a second session does not take the guard lock."""
+    """Every check that needs no network: the campaign, the working tree, the branch, HEAD against the last fetched
+    origin/main, and a section in progress. Run again just before each merge, after the slow reads, because an
+    editor, a checkout or a second session does not take the guard lock."""
     owner = campaign_owner(root)
     if owner is not None and owner != session:
         raise Unsafe(f"a campaign run is open for session {owner}; only that session merges, at a section boundary")
     if checked(runner, root, ["git", "status", "--porcelain"], "git status").strip():
         raise Unsafe("the working tree has uncommitted or untracked changes")
-    started = in_progress_sections(root)
-    if started:
-        raise Unsafe(f"a section is in progress: {', '.join(started)}")
-
-
-def safety(runner, root, session):
-    """Raise Unsafe naming the first state that forbids merging."""
-    local_safety(runner, root, session)
-    checked(runner, root, ["git", "fetch", "--quiet", "origin", "main"], "git fetch")
     branch = checked(runner, root, ["git", "rev-parse", "--abbrev-ref", "HEAD"], "git rev-parse").strip()
     if branch != "main":
         raise Unsafe(f"the clone is on branch {branch}, not main")
@@ -116,6 +108,15 @@ def safety(runner, root, session):
     upstream = checked(runner, root, ["git", "rev-parse", "origin/main"], "git rev-parse").strip()
     if head != upstream:
         raise Unsafe(f"HEAD {head[:12]} is not origin/main {upstream[:12]}; push or pull first")
+    started = in_progress_sections(root)
+    if started:
+        raise Unsafe(f"a section is in progress: {', '.join(started)}")
+
+
+def safety(runner, root, session):
+    """Raise Unsafe naming the first state that forbids merging: fetch origin/main, then every local check."""
+    checked(runner, root, ["git", "fetch", "--quiet", "origin", "main"], "git fetch")
+    local_safety(runner, root, session)
 
 
 def ineligibility(pr):
