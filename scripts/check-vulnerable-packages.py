@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Fail when any NuGet package in the repository's solution, direct or transitive, has a known vulnerability.
 
     python scripts/check-vulnerable-packages.py [--report FILE]

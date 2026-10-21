@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/check-winui-pin.py: the pin follows the latest stable WinUI 3 release, proposed on a branch, never on main."""
 import contextlib
 import importlib.util

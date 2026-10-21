@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Keep the .NET SDK pin on the newest .NET 11 SDK, and this machine able to build with it (owner rule, 2026-10-21).
 
     python scripts/check-dotnet-pin.py check              # exit 1 when a newer .NET 11 SDK is out

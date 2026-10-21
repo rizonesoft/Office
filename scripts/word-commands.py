@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Capture Word's command catalogue and default shortcut map through its built-in ListCommands command.
 
     python scripts/word-commands.py            # writes design/inventory/word/commands.json and shortcuts.json

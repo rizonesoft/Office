@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/campaign_guard.py, the process-plan run guard: the Stop hook against a throwaway workspace, and the
 lifecycle commands.
 

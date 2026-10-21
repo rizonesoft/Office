@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Rizonesoft Office icon design: the approved Glass drawings as SVG generators.
 
 Approved 2026-10-20 (todo/01-brand/TODO-02-icon-system.md section 1):

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """The Office automations: tasks.json, run.py, alert.py, the installer and the README."""
 import importlib.util
 import io

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Read release metadata for the pin automations: JSON over HTTPS, with a typed failure for "could not check".
 
 A GitHub API request carries `GITHUB_TOKEN` from the environment when it is set (the unauthenticated limit is 60

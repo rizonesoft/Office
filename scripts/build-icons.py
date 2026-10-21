@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Build every Rizonesoft Office icon and brand asset from the design modules in scripts/lib/.
 
     python scripts/build-icons.py           # write design/icons/ masters and assets/ outputs, then verify

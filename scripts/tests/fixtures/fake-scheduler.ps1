@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 # Stand-ins for the ScheduledTasks commands, so the real install.ps1 can be tested without touching Task Scheduler.
 $ErrorActionPreference = 'Stop'
 function Get-ScheduledTask { param($TaskPath)

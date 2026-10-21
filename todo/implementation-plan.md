@@ -8,14 +8,14 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 12 | Checklist items: 70
+Sections: 12 | Checklist items: 71
 
 | Status | Reference  | Deliverable                              | Needs                  | Items |
 | ------ | ---------- | ---------------------------------------- | ---------------------- | ----- |
 | [x]    | D00 T01 §1 | Design Document Checker                  | none                   | 7     |
 | [x]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
 | [x]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
-| [ ]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 6     |
+| [ ]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 7     |
 | [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 5     |
 | [ ]    | D00 T02 §5 | Contributing Guide                       | none                   | 4     |
 | [x]    | D00 T03 §1 | Automation Runner, Alert and Installer   | none                   | 7     |
@@ -130,4 +130,4 @@ Sections: 3 | Checklist items: 12
 
 Progress: 15/87 verified sections, 9 ready to run now.
 
-Checklist: 97/497 items completed (includes Commit items).
+Checklist: 102/498 items completed (includes Commit items).

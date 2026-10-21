@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Capture a reference Office app's ribbon through UI Automation into draft inventory records.
 
     python scripts/capture-ui.py --app word --tab Home --out R:/scratch/word-home.json

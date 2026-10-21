@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/hooks/pre-commit: a commit that stages TODO changes with a stale plan is refused before CI sees it."""
 import pathlib
 import shutil

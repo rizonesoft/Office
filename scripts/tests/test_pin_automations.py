@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """The pin automations: the shared libraries, the .NET 11 and NuGet pins, and the checks of this machine."""
 import contextlib
 import importlib.util

@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 # Refuse a commit that would turn CI's plan-gates red: one that stages TODO changes while todo/implementation-plan.md
 # is stale or the TODO graph is invalid. Enabled per clone with `git config core.hooksPath scripts/hooks`
 # (AGENTS.md). Ticking a checklist item changes the generated plan, so every TODO edit needs `plan --sync`.

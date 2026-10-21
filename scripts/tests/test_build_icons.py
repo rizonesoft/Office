@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/build-icons.py and scripts/lib/icon_design.py: tiers, packers, verification and the glass pane base."""
 import importlib.util
 import io

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Refuse a design document that is not ready: missing headings, placeholder text, dash characters or wide table rows.
 
     python scripts/check-design-doc.py docs/brand/naming-brief.md --require Exclusions --require "Structure options"

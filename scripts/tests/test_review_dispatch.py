@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/review-dispatch.py: routing, failover, read-only invocations and records, with fake reviewer CLIs."""
 import importlib.util
 import json

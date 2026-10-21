@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Rizonesoft
 // Enforce the delegation tier invariant on this project's agent definitions.
 //
 // The rule is in AGENTS.md: mechanical subtasks delegate to subagents on the

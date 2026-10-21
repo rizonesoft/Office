@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Alert when this machine's Python, which runs the automations and `scripts/`, falls behind the latest stable release.
 
     python scripts/check-python-pin.py check     # exit 0 current, 1 behind, 2 cannot check

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Validate the Microsoft 365 parity inventory against design/inventory/schema.json and across files.
 
     python scripts/check-inventory.py                                   # every file under design/inventory/

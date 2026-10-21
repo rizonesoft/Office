@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Refuse an image asset that is not what it claims: wrong format, wrong dimensions, over its byte budget, corrupt, or
 an SVG that pulls in content from outside itself.
 

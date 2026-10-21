@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/capture-ui.py: UI Automation trees become inventory records, facts only, with safe launch and closing."""
 import contextlib
 import importlib.util

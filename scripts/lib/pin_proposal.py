@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Propose a dependency pin bump on its own branch, or announce a machine update once, for the pin automations.
 
 `propose` never touches the operator's checkout or main. It adds a temporary git worktree on a new branch from main,

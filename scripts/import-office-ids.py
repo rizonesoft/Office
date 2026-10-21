@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Convert the published Office control identifier workbooks into design/inventory/<app>/baseline.json.
 
     python scripts/import-office-ids.py R:/scratch/office-ui-ids/<commit>        # all six apps

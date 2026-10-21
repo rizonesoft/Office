@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/word-commands.py: ListCommands rows become command and shortcut records from Word's own hidden instance."""
 import contextlib
 import importlib.util

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/check-design-doc.py: headings, fences, placeholders, dashes and table width, each with a refusal fixture."""
 import contextlib
 import importlib.util

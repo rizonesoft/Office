@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Shared pieces for scripts that drive a reference Office app: the pinned reference build, the one process a
 script started (held by handle), the app's baseline identifiers, and writes that publish every file or none."""
 import json

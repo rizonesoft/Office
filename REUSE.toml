@@ -1,0 +1,38 @@
+# Licensing of files that carry no SPDX header of their own (REUSE specification 3.3). Source files state their
+# licence in a header, which scripts/check-spdx.py enforces; everything else is covered here. The last matching
+# annotation wins.
+version = 1
+
+# Everything Rizonesoft writes: documents, plans, configuration and data.
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 Rizonesoft"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# Markdown is prose: a licence tag quoted in it (as todo/ and docs/ do) is text, not the file's licence.
+[[annotations]]
+path = "**/*.md"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Rizonesoft"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# Generated output of scripts/build-icons.py and the icon designs it renders.
+[[annotations]]
+path = ["assets/**", "design/icons/**"]
+SPDX-FileCopyrightText = "2026 Rizonesoft"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# Plus Jakarta Sans, bundled unmodified (THIRD-PARTY-NOTICES.md).
+[[annotations]]
+path = "design/fonts/**"
+precedence = "override"
+SPDX-FileCopyrightText = "2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans)"
+SPDX-License-Identifier = "OFL-1.1"
+
+# The Office control identifier baselines, converted from OfficeDev office-fluent-ui-command-identifiers
+# (THIRD-PARTY-NOTICES.md, D02 T01 §19).
+[[annotations]]
+path = "design/inventory/*/baseline.json"
+precedence = "override"
+SPDX-FileCopyrightText = "Microsoft Corporation"
+SPDX-License-Identifier = "MIT"

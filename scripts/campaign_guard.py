@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """The campaign run guard for process-plan: the Claude Code Stop hook and its lifecycle commands.
 
     python scripts/campaign_guard.py stop-hook                      (the Stop hook; reads the payload on stdin)

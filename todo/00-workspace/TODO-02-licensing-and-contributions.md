@@ -43,6 +43,8 @@ title: "TODO-02 -- Licensing and Contributions"
 
 ## 1. SPDX Headers and Checker
 
+> **Started:** 2026-10-21T19:25:00Z
+
 Each file states its own licence so a copied file keeps its terms. Rizonesoft code carries `SPDX-License-Identifier: GPL-3.0-or-later` and a copyright line; vendored third-party files keep their own identifier. Generated assets are covered by a `REUSE.toml` annotation instead of per-file headers.
 
 **Phase:** 0
@@ -54,11 +56,12 @@ Each file states its own licence so a copied file keeps its terms. Rizonesoft co
 1. Write `scripts/check-spdx.py` with tests. Done when: it refuses a fixture source file without an identifier and passes one with it.
 2. Add headers to every tracked file under `scripts/` and annotate generated assets in `REUSE.toml`. Done when: `python scripts/check-spdx.py` exits 0 on the repository.
 
-- [ ] Write `scripts/check-spdx.py` listing tracked files with `git ls-files` and checking the first 10 lines of each `.py`, `.mjs`, `.cpp`, `.h`, `.qml` and `.cmake` file for `SPDX-License-Identifier:`. Done when: a fixture without the line exits 1 naming the file. Cheaper substitute: checking only files changed in the last commit.
-- [ ] Add `--allow` handling in `scripts/check-spdx.py` for third-party identifiers recorded in `THIRD-PARTY-NOTICES.md`. Done when: a vendored MIT file with `SPDX-License-Identifier: MIT` passes and an unknown identifier fails. Cheaper substitute: accepting any identifier string.
-- [ ] Write `scripts/tests/test_check_spdx.py` covering missing, valid, third-party and unknown identifiers. Done when: the suite passes and fails when the identifier check returns success unconditionally.
-- [ ] Add `# SPDX-License-Identifier: GPL-3.0-or-later` and `# Copyright 2026 Rizonesoft` to every Rizonesoft-authored file under `scripts/`, including those first ported from the Conclave SDK or Recto (Office's own since 2026-10-21), leaving only third-party files listed in `THIRD-PARTY-NOTICES.md` with their own identifier. Done when: `python scripts/check-spdx.py` exits 0. Cheaper substitute: one blanket statement in README instead of per-file identifiers.
-- [ ] Write `REUSE.toml` annotating `assets/**` and `design/icons/**` as GPL-3.0-or-later generated output, and `design/fonts/**` as OFL-1.1. Done when: `reuse lint` reports no unlicensed files. Cheaper substitute: leaving generated files unannotated.
+- [x] Write `scripts/check-spdx.py` listing tracked files with `git ls-files` and checking the first 10 lines of each `.py`, `.mjs`, `.ps1`, `.sh`, `.cs` and `.xaml` file, and every file under `scripts/hooks/`, for `SPDX-License-Identifier:`. Done when: a fixture without the line exits 1 naming the file. **Corrected 2026-10-21:** listed `.cpp`, `.h`, `.qml` and `.cmake`, from the Qt plan; the stack is WinUI 3 in C# with Python and PowerShell tooling, and git hooks have no extension. Cheaper substitute: checking only files changed in the last commit.
+- [x] Add `--allow` handling in `scripts/check-spdx.py` for third-party identifiers recorded in `THIRD-PARTY-NOTICES.md`. Done when: a vendored MIT file with `SPDX-License-Identifier: MIT` passes and an unknown identifier fails. Cheaper substitute: accepting any identifier string.
+- [x] Write `scripts/tests/test_check_spdx.py` covering missing, valid, third-party and unknown identifiers. Done when: the suite passes and fails when the identifier check returns success unconditionally.
+- [x] Add `# SPDX-License-Identifier: GPL-3.0-or-later` and `# Copyright 2026 Rizonesoft` to every Rizonesoft-authored file under `scripts/`, including those first ported from the Conclave SDK or Recto (Office's own since 2026-10-21), leaving only third-party files listed in `THIRD-PARTY-NOTICES.md` with their own identifier. Done when: `python scripts/check-spdx.py` exits 0. Cheaper substitute: one blanket statement in README instead of per-file identifiers.
+- [x] Write `REUSE.toml` annotating `assets/**` and `design/icons/**` as GPL-3.0-or-later generated output, and `design/fonts/**` as OFL-1.1. Done when: `reuse lint` reports no unlicensed files. Cheaper substitute: leaving generated files unannotated. **Corrected 2026-10-21:** `reuse lint` checks every file in the repository, so `REUSE.toml` also needs a catch-all GPL-3.0-or-later annotation (with `precedence = "override"` for Markdown, whose prose quotes licence tags), an MIT annotation for the six `design/inventory/*/baseline.json` files converted from OfficeDev's identifier lists, and the licence texts in `LICENSES/`.
+- [ ] Add `python scripts/check-spdx.py` and `reuse lint` steps to `.github/workflows/ci.yml`, with `reuse` and its dependencies pinned in `scripts/requirements.txt`. Done when: a run on `main` shows both steps green. Cheaper substitute: running the checks only locally. (Added 2026-10-21: the file's Outcome says CI runs the checker, and no item put it there.)
 - [ ] Commit: `legal: add SPDX headers and checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_spdx.py"` passes and `python scripts/check-spdx.py` exits 0.

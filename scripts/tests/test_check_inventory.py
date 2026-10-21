@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/check-inventory.py: schema subset, conditional rules, ids, parents and the behaviour gate."""
 import contextlib
 import importlib.util

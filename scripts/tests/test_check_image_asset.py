@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/check-image-asset.py: format, dimensions, budget, corruption and SVG content, on generated fixtures."""
 import contextlib
 import importlib.util

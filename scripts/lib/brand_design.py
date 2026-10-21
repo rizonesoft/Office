@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Rizonesoft Office wordmark and lockups, set in Plus Jakarta Sans (SIL OFL 1.1) and outlined.
 
 Approved 2026-10-20 (todo/01-brand/TODO-02-icon-system.md section 2): "Rizonesoft" in weight 700 and the product name

@@ -6,3 +6,14 @@ openpyxl==3.1.5
 et-xmlfile==2.0.0
 pywin32==312
 comtypes==1.4.11
+reuse==6.2.0
+attrs==26.1.0
+boolean.py==5.0
+charset-normalizer==3.5.2
+click==8.5.0
+Jinja2==3.1.6
+license-expression==30.4.4
+MarkupSafe==3.0.4
+python-debian==1.1.1
+python-magic==0.4.27
+tomlkit==0.15.2

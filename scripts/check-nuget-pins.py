@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Keep every NuGet pin in `Directory.Packages.props` on its latest stable release (owner rule, 2026-10-21).
 
     python scripts/check-nuget-pins.py check              # exit 1 when any pin is behind

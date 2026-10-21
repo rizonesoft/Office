@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """The canonical TODO graph: parse todo/NN-domain/TODO-NN-*.md, validate it, order it, project the plan.
 
 Adapted from swisshotelschool-coza's scripts/lib/todo_graph.py (itself a port of rizonetech-com's

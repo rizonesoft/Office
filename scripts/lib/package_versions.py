@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Read and rewrite the central NuGet pins in `Directory.Packages.props`, keeping its formatting and comments.
 
 Shared by `check-winui-pin.py` (the `Microsoft.WindowsAppSDK` pin) and `check-nuget-pins.py` (every other pin).

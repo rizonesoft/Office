@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Rizonesoft Office document file-type icons: the approved "Labelled" direction as SVG generators.
 
 Approved 2026-10-20 (todo/01-brand/TODO-02-icon-system.md section 5): the Office composition. A white page with a

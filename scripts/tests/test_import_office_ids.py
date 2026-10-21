@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """scripts/import-office-ids.py: workbook rows become baseline rows in order, facts only, with refusals."""
 import contextlib
 import importlib.util

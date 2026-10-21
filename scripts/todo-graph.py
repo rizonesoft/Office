@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Validate, query, resolve and stamp the canonical TODO graph, and keep todo/implementation-plan.md current.
 
     python scripts/todo-graph.py validate

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Shape text with HarfBuzz and emit it as SVG path data, so brand artwork never depends on installed fonts."""
 from pathlib import Path
 

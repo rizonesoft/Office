@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Keep the WinUI 3 pin on the latest stable release (owner rule, 2026-10-20).
 
     python scripts/check-winui-pin.py check              # exit 1 when a newer stable release exists
