@@ -6,7 +6,7 @@ This brief fixes what a good name for the suite and its six apps must do, before
 
 ## Exclusions
 
-No name may be, or be confusable with, any of the following. Microsoft's marks come from Microsoft's published Trademark and Brand Guidelines, cited by name only: this repository holds no Microsoft links.
+No name may be, contain, or be confusable with any Microsoft mark (every mark on the list in Microsoft's published Trademark and Brand Guidelines, cited by name only: this repository holds no Microsoft links) or any competitor name below. The table is the minimum the screens check by name; it does not narrow the Microsoft exclusion, so a mark missing from it, such as OneNote, is still excluded.
 
 | Owner | Excluded names |
 | --- | --- |
@@ -23,16 +23,16 @@ No name may be, or be confusable with, any of the following. Microsoft's marks c
 
 "Office" appears only inside the house brand "Rizonesoft Office", as competitors use it (WPS Office, SoftMaker Office, ONLYOFFICE), never alone, never with a version year, and never with Microsoft's logo styling.
 
-Three of the chosen app words sit close to excluded names: "Stage" and "Plan" are words in Calligra's app names, and "Write" is one letter from LibreOffice's and Zoho's "Writer". Under the house-brand structure the app is "Rizonesoft Stage", never "Stage" alone, but each overlap is real and is screened by name in the collision screen and the trademark screen, which decide whether a word must change.
+Four of the chosen app words sit close to excluded names: "Stage" and "Plan" are words in Calligra's app names, "Write" is one letter from LibreOffice's and Zoho's "Writer", and "Flow" was Microsoft's product name until 2019. The owner's decision makes the full name "Rizonesoft Stage" outside the app and lets the bare word label it inside the app, so each overlap is real and is screened by name in the collision screen and the trademark screen, which decide whether a word must change.
 
 ## Structure options
 
 | Structure | Advantage | Cost |
 | --- | --- | --- |
-| House brand plus descriptive app names | One mark to clear and defend | App words are weak marks |
-| Six standalone app names | Each app is a mark of its own | Seven clearances and seven defences |
+| House brand plus app words | One shared brand for seven products | App words are weak marks |
+| Six standalone app names | Each app is a mark of its own | Seven marks to build and defend |
 
-The owner chose the house brand plus descriptive app names on 2026-10-20. A descriptive word ("Write", "Grid") is cheap to clear behind "Rizonesoft" and tells a user what the app does; it is never used without the house brand in product-facing text.
+The owner chose the house brand plus descriptive app names on 2026-10-20: the house brand carries the trademark protection, because the app words and "Office" are generic. A descriptive word ("Write", "Grid") tells a user what the app does. Under either structure every product name is still screened (D01 T01 §4); the house brand does not shrink that work. Outside the app, product-facing text uses the full name ("Rizonesoft Write"); inside the app, the bare word is its label, as the owner decided.
 
 ## Criteria
 
@@ -40,13 +40,15 @@ Each criterion is a yes or no test, applied to the suite name and to each app na
 
 | Criterion | Passes when |
 | --- | --- |
-| No excluded name | The name is not, and does not contain, any name in Exclusions |
+| No excluded name | It is not, contains no, and is not confusable with any excluded name |
 | Pronounceable in English | A reader says it one way on first sight |
 | Short | Each app word is at most 3 syllables |
-| No negative meaning | No negative meaning in the 10 most spoken languages |
+| No negative meaning | No negative meaning in any of the ten languages below |
 | Domain | A `.com` or `.app` domain for the suite is available or owned |
 | Icon motif | The word suggests a glyph the icon system can draw (D01 T02 §1) |
-| Knockout clear | No live identical mark in Nice classes 9 or 42 (D01 T01 §4) |
+| Knockout clear | No live identical or near-identical mark in Nice classes 9 or 42 (§4) |
+
+The ten languages are the ten with the most total speakers (first and second language) in Ethnologue's 2026 edition, as tabled in Wikipedia's "List of languages by total number of speakers" (https://en.wikipedia.org/wiki/List_of_languages_by_total_number_of_speakers, read 2026-10-22): English, Mandarin Chinese, Hindi, Spanish, Modern Standard Arabic, French, Bengali, Portuguese, Indonesian and Urdu. The set is fixed here so every screen tests the same languages; a later edition changes it only by a dated edit to this brief.
 
 ## Scoring
 
