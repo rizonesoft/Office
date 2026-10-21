@@ -11,15 +11,21 @@ It runs only when: the working tree is clean (untracked files included); after a
 branch `main`; no open TODO section carries a `Started:` line (a section in progress); and no campaign is open, unless
 `--session` names the session that owns its run guard (`build/claude-campaign-guard.json`).
 
-A pull request is eligible when it is open, not a draft, by Dependabot or the GitHub Actions bot, labelled
-`dependencies` or `pins`, mergeable with a clean merge state, every check green (at least one), and it changes no
-`global.json` (the .NET SDK pin moves only through its own proposal, scripts/check-dotnet-pin.py). Eligible pull
-requests merge one at a time with `gh pr merge --rebase --match-head-commit <sha>`, then `git pull --ff-only`, then
-`python scripts/todo-graph.py validate`; the first failure stops the run and leaves the rest open.
+A pull request is eligible when it is open, not a draft, based on `main`, by Dependabot or the GitHub Actions bot,
+labelled `dependencies` or `pins`, mergeable with a clean merge state, every check green (at least one), and none of
+its files (all of them, read page by page from the API) is a `global.json` (the .NET SDK pin moves only through its
+own proposal, scripts/check-dotnet-pin.py).
+
+Pull requests merge one at a time. Each one is handled under the run guard's lock, so no campaign starts mid-merge:
+the clone's safety is checked again, the pull request is read again and judged again from that fresh read (a label
+removed, a base retargeted or a check re-run since the listing stops it), then `gh pr merge --rebase
+--match-head-commit <sha>` merges exactly the head that was judged, and `git pull --ff-only` and
+`python scripts/todo-graph.py validate` follow. The first failure stops the run and leaves the rest open; a pull
+request already merged when a later step failed is reported as merged.
 
 Exit 0 when the run finished (merging some, or none being eligible), 1 when a merge, pull or validate failed, 2 when
-the clone or campaign state made it unsafe to start (0 with `--skip-unsafe`, so a scheduled run alerts only on real
-failures), 3 when git or gh could not be read.
+the clone or campaign state made it unsafe (0 with `--skip-unsafe`, so a scheduled run alerts only on real failures),
+3 when git or gh could not be run or read.
 """
 import argparse
 import json
@@ -34,7 +40,9 @@ sys.path.insert(0, str(ROOT / "scripts"))  # campaign_guard
 AUTHORS = {"dependabot[bot]", "app/dependabot", "github-actions[bot]", "app/github-actions"}
 LABELS = {"dependencies", "pins"}
 GREEN = {"SUCCESS", "NEUTRAL", "SKIPPED"}
-PR_FIELDS = "number,author,labels,isDraft,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,files,title"
+PR_FIELDS = ("number,author,labels,isDraft,baseRefName,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,"
+             "changedFiles,title")
+NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 
 
 class Unsafe(Exception):
@@ -42,12 +50,16 @@ class Unsafe(Exception):
 
 
 class Unreadable(Exception):
-    """git or gh failed, so the state could not be read at all."""
+    """git or gh could not be run, or failed, so the state could not be read."""
 
 
 def run(args, root):
-    """Run one command in the clone; returns (exit code, stdout, stderr)."""
-    proc = subprocess.run(args, cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    """Run one command in the clone; returns (exit code, stdout, stderr). A command that cannot start is exit 127."""
+    try:
+        proc = subprocess.run(args, cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              creationflags=NO_WINDOW)
+    except OSError as exc:
+        return 127, "", f"cannot run {args[0]}: {exc}"
     return proc.returncode, proc.stdout, proc.stderr
 
 
@@ -72,6 +84,12 @@ def campaign_owner(root):
     return str(guard.get("session_id", "")) if guard else None
 
 
+def guard_lock(root):
+    """The run guard's own interprocess lock: while it is held, no campaign can start, re-point or end."""
+    import campaign_guard
+    return campaign_guard._Lock(str(root))
+
+
 def safety(runner, root, session):
     """Raise Unsafe naming the first state that forbids merging."""
     owner = campaign_owner(root)
@@ -93,7 +111,7 @@ def safety(runner, root, session):
 
 
 def ineligibility(pr):
-    """Why `pr` (one object of `gh pr list --json`) may not merge by itself, or None when it may."""
+    """Why `pr` (one `gh pr` JSON object) may not merge by itself, from its own fields, or None when they allow it."""
     login = (pr.get("author") or {}).get("login", "")
     if login not in AUTHORS:
         return f"author {login or 'unknown'} is not Dependabot or the GitHub Actions bot"
@@ -101,6 +119,8 @@ def ineligibility(pr):
         return "not labelled dependencies or pins"
     if pr.get("isDraft"):
         return "a draft"
+    if pr.get("baseRefName") != "main":
+        return f"based on {pr.get('baseRefName')}, not main"
     if pr.get("mergeable") != "MERGEABLE" or pr.get("mergeStateStatus") != "CLEAN":
         return f"not cleanly mergeable ({pr.get('mergeable')}, {pr.get('mergeStateStatus')})"
     checks = pr.get("statusCheckRollup") or []
@@ -110,12 +130,23 @@ def ineligibility(pr):
            if (c.get("conclusion") or c.get("state")) not in GREEN]
     if red:
         return f"checks not green: {', '.join(red)}"
-    if any(Path(f.get("path", "")).name == "global.json" for f in pr.get("files") or []):
+    return None
+
+
+def file_problem(runner, root, pr):
+    """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100)."""
+    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{pr['number']}/files",
+                                 "--jq", ".[].filename"], "gh api pulls/files")
+    files = [line for line in out.splitlines() if line.strip()]
+    if len(files) != pr.get("changedFiles"):
+        return f"the API listed {len(files)} of its {pr.get('changedFiles')} changed files"
+    if any(Path(name).name == "global.json" for name in files):
         return "changes global.json (the .NET SDK pin moves only through its own proposal)"
     return None
 
 
-def eligible(runner, root):
+def candidates(runner, root):
+    """The open pull requests whose listed fields allow them, lowest number first, and the rest with a reason."""
     out = checked(runner, root, ["gh", "pr", "list", "--state", "open", "--base", "main", "--limit", "100",
                                  "--json", PR_FIELDS], "gh pr list")
     try:
@@ -125,27 +156,42 @@ def eligible(runner, root):
     chosen, skipped = [], []
     for pr in sorted(prs, key=lambda p: p.get("number", 0)):
         why = ineligibility(pr)
-        (skipped.append((pr.get("number"), why)) if why else chosen.append(pr))
+        (skipped.append((pr.get("number"), why)) if why else chosen.append(pr["number"]))
     return chosen, skipped
 
 
-def merge_all(runner, root, prs, dry_run=False):
-    """Merge `prs` in order; returns (merged numbers, the failure message or None)."""
-    merged = []
-    for pr in prs:
-        number, sha = pr["number"], pr["headRefOid"]
+def fresh(runner, root, number):
+    """The pull request read again, just before its merge."""
+    out = checked(runner, root, ["gh", "pr", "view", str(number), "--json", PR_FIELDS + ",state"], "gh pr view")
+    try:
+        return json.loads(out)
+    except ValueError:
+        raise Unreadable(f"gh pr view {number} gave no JSON") from None
+
+
+def merge_one(runner, root, number, session, dry_run):
+    """Judge and merge one pull request under the guard lock. Returns (outcome, detail): "merged", "skipped",
+    "would", "failed" (nothing merged) or "merged-then-failed"; raises Unsafe or Unreadable."""
+    with guard_lock(root):
+        safety(runner, root, session)
+        pr = fresh(runner, root, number)
+        if pr.get("state") != "OPEN":
+            return "skipped", f"#{number}: no longer open"
+        why = ineligibility(pr) or file_problem(runner, root, pr)
+        if why:
+            return "skipped", f"#{number}: {why}"
         if dry_run:
-            merged.append(number)
-            continue
-        steps = (["gh", "pr", "merge", str(number), "--rebase", "--match-head-commit", sha],
-                 ["git", "pull", "--ff-only", "--quiet", "origin", "main"],
-                 [sys.executable, str(Path(root) / "scripts" / "todo-graph.py"), "validate"])
-        for step in steps:
+            return "would", f"#{number}"
+        code, out, err = runner(["gh", "pr", "merge", str(number), "--rebase", "--match-head-commit",
+                                 pr["headRefOid"]], root)
+        if code != 0:
+            return "failed", f"#{number}: gh pr merge failed: {(err or out).strip()[:200]}"
+        for step, what in ((["git", "pull", "--ff-only", "--quiet", "origin", "main"], "git pull"),
+                           ([sys.executable, str(Path(root) / "scripts" / "todo-graph.py"), "validate"], "validate")):
             code, out, err = runner(step, root)
             if code != 0:
-                return merged, f"#{number}: {' '.join(step[:3])} failed: {(err or out).strip()[:200]}"
-        merged.append(number)
-    return merged, None
+                return "merged-then-failed", f"#{number} merged, then {what} failed: {(err or out).strip()[:200]}"
+        return "merged", f"#{number}"
 
 
 def main(argv=None, root=ROOT, runner=run):
@@ -155,23 +201,36 @@ def main(argv=None, root=ROOT, runner=run):
     parser.add_argument("--skip-unsafe", action="store_true",
                         help="exit 0 when the moment is unsafe (the scheduled task), so only real failures alert")
     args = parser.parse_args(argv)
+    merged, would = [], []
     try:
         safety(runner, root, args.session)
-        chosen, skipped = eligible(runner, root)
+        chosen, skipped = candidates(runner, root)
+        for number, why in skipped:
+            print(f"merge-prs: skipping #{number}: {why}")
+        for number in chosen:
+            outcome, detail = merge_one(runner, root, number, args.session, args.dry_run)
+            if outcome == "skipped":
+                print(f"merge-prs: skipping {detail}")
+            elif outcome == "would":
+                would.append(detail)
+            elif outcome == "merged":
+                merged.append(detail)
+            else:
+                if outcome == "merged-then-failed":
+                    merged.append(f"#{number}")
+                print(f"merge-prs: merged {', '.join(merged) or 'nothing'}")
+                print(f"merge-prs: stopped: {detail}; the rest stay open for the owner", file=sys.stderr)
+                return 1
     except Unsafe as exc:
-        print(f"merge-prs: not merging: {exc}", file=sys.stderr)
+        print(f"merge-prs: merged {', '.join(merged) or 'nothing'}; not merging further: {exc}", file=sys.stderr)
         return 0 if args.skip_unsafe else 2
     except Unreadable as exc:
-        print(f"merge-prs: cannot read the state: {exc}", file=sys.stderr)
+        print(f"merge-prs: merged {', '.join(merged) or 'nothing'}; cannot read the state: {exc}", file=sys.stderr)
         return 3
-    for number, why in skipped:
-        print(f"merge-prs: skipping #{number}: {why}")
-    merged, failure = merge_all(runner, root, chosen, args.dry_run)
-    verb = "would merge" if args.dry_run else "merged"
-    print(f"merge-prs: {verb} {', '.join(f'#{n}' for n in merged) if merged else 'nothing'}")
-    if failure:
-        print(f"merge-prs: stopped at {failure}; the rest stay open for the owner", file=sys.stderr)
-        return 1
+    if args.dry_run:
+        print(f"merge-prs: would merge {', '.join(would) or 'nothing'}")
+    else:
+        print(f"merge-prs: merged {', '.join(merged) or 'nothing'}")
     return 0
 
 

@@ -2,6 +2,7 @@
 # Copyright 2026 Rizonesoft
 """scripts/merge_prs.py: green dependency pull requests merge one at a time, only when the clone is safe (D00 T03 §9)."""
 import contextlib
+import copy
 import importlib.util
 import io
 import json
@@ -22,21 +23,25 @@ SHA = "a" * 40
 
 def pr(number, **over):
     base = {"number": number, "author": {"login": "app/dependabot"}, "labels": [{"name": "dependencies"}],
-            "isDraft": False, "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
-            "statusCheckRollup": [{"name": "gates", "conclusion": "SUCCESS"}], "files": [{"path": ".github/workflows/ci.yml"}],
-            "title": f"bump {number}"}
+            "isDraft": False, "baseRefName": "main", "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE",
+            "mergeStateStatus": "CLEAN", "statusCheckRollup": [{"name": "gates", "conclusion": "SUCCESS"}],
+            "changedFiles": 1, "title": f"bump {number}", "state": "OPEN", "files": [".github/workflows/ci.yml"]}
     base.update(over)
     return base
 
 
 class Fake:
-    """A scripted git and gh: the first matching prefix answers; every call is recorded."""
+    """A scripted git and gh over a little GitHub: pull requests can change between the listing and their merge,
+    a merge must name the current head, and every call is recorded."""
 
-    def __init__(self, prs=(), status="", branch="main", head=SHA, upstream=SHA, fail=None):
-        self.calls, self.prs, self.fail = [], list(prs), fail or {}
-        self.answers = {("git", "status"): status, ("git", "fetch"): "", ("git", "pull"): "",
-                        ("git", "rev-parse", "--abbrev-ref"): branch + "\n",
-                        ("git", "rev-parse", "HEAD"): head + "\n", ("git", "rev-parse", "origin/main"): upstream + "\n"}
+    def __init__(self, prs=(), status="", branch="main", head=SHA, upstream=SHA, fail=None, views=None,
+                 after_merge=None):
+        self.calls, self.fail = [], fail or {}
+        self.prs = {p["number"]: p for p in prs}
+        self.views = views or {}           # number -> the fresh state `gh pr view` returns instead
+        self.after_merge = after_merge     # called after each successful merge, to change the clone
+        self.state = {"status": status, "branch": branch, "head": head, "upstream": upstream}
+        self.merged = []
 
     def __call__(self, args, root):
         self.calls.append(list(args))
@@ -45,22 +50,43 @@ class Fake:
             if needle in key:
                 return code, "", err
         if args[:3] == ["gh", "pr", "list"]:
-            return 0, json.dumps(self.prs), ""
-        if args[:3] == ["gh", "pr", "merge"] or (len(args) > 2 and str(args[-1]) == "validate"):
+            listed = [{k: v for k, v in p.items() if k not in ("files", "state")} for p in self.prs.values()]
+            return 0, json.dumps(listed), ""
+        if args[:3] == ["gh", "pr", "view"]:
+            number = int(args[3])
+            view = copy.deepcopy(self.views.get(number, self.prs[number]))
+            view.pop("files", None)
+            return 0, json.dumps(view), ""
+        if args[:3] == ["gh", "api", "--paginate"]:
+            number = int(args[3].split("/")[-2])
+            return 0, "".join(f"{name}\n" for name in self.views.get(number, self.prs[number])["files"]), ""
+        if args[:3] == ["gh", "pr", "merge"]:
+            number, sha = int(args[3]), args[args.index("--match-head-commit") + 1]
+            current = self.views.get(number, self.prs[number])["headRefOid"]
+            if sha != current:
+                return 1, "", "head commit does not match"
+            self.merged.append(number)
+            if self.after_merge:
+                self.after_merge(self)
             return 0, "", ""
-        for prefix in sorted(self.answers, key=len, reverse=True):
-            if tuple(args[:len(prefix)]) == prefix:
-                return 0, self.answers[prefix], ""
+        if str(args[-1]) == "validate" or args[:2] == ["git", "pull"] or args[:2] == ["git", "fetch"]:
+            return 0, "", ""
+        if args[:2] == ["git", "status"]:
+            return 0, self.state["status"], ""
+        if args[:3] == ["git", "rev-parse", "--abbrev-ref"]:
+            return 0, self.state["branch"] + "\n", ""
+        if args[:3] == ["git", "rev-parse", "HEAD"]:
+            return 0, self.state["head"] + "\n", ""
+        if args[:3] == ["git", "rev-parse", "origin/main"]:
+            return 0, self.state["upstream"] + "\n", ""
         raise AssertionError(f"unexpected command {args}")
-
-    def merges(self):
-        return [c[3] for c in self.calls if c[:3] == ["gh", "pr", "merge"]]
 
 
 def run_main(fake, argv=(), owner=None, started=()):
     out = io.StringIO()
     with mock.patch.object(merge_prs, "campaign_owner", return_value=owner), \
             mock.patch.object(merge_prs, "in_progress_sections", return_value=list(started)), \
+            mock.patch.object(merge_prs, "guard_lock", side_effect=lambda root: contextlib.nullcontext()), \
             contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
         code = merge_prs.main(list(argv), root=Path("."), runner=fake)
     return code, out.getvalue()
@@ -68,53 +94,112 @@ def run_main(fake, argv=(), owner=None, started=()):
 
 class Safety(unittest.TestCase):
     def test_each_unsafe_state_refuses_and_names_itself(self):
-        cases = [(Fake(status=" M file.py\n"), {}, "uncommitted or untracked"),
-                 (Fake(status="?? new.py\n"), {}, "uncommitted or untracked"),
-                 (Fake(branch="feature"), {}, "not main"),
-                 (Fake(head="b" * 40), {}, "is not origin/main"),
-                 (Fake(), {"started": ["D00 T03 §9"]}, "a section is in progress: D00 T03 §9"),
-                 (Fake(), {"owner": "other-session"}, "a campaign run is open for session other-session")]
+        cases = [(Fake(prs=[pr(1)], status=" M file.py\n"), {}, "uncommitted or untracked"),
+                 (Fake(prs=[pr(1)], status="?? new.py\n"), {}, "uncommitted or untracked"),
+                 (Fake(prs=[pr(1)], branch="feature"), {}, "not main"),
+                 (Fake(prs=[pr(1)], head="b" * 40), {}, "is not origin/main"),
+                 (Fake(prs=[pr(1)]), {"started": ["D00 T03 §9"]}, "a section is in progress: D00 T03 §9"),
+                 (Fake(prs=[pr(1)]), {"owner": "other-session"}, "a campaign run is open for session other-session")]
         for fake, kw, message in cases:
             with self.subTest(message=message):
                 code, out = run_main(fake, **kw)
                 self.assertEqual(code, 2)
                 self.assertIn(message, out)
-                self.assertEqual(fake.merges(), [])
+                self.assertEqual(fake.merged, [])
 
     def test_the_session_that_owns_the_campaign_may_merge(self):
         fake = Fake(prs=[pr(1)])
         code, out = run_main(fake, ["--session", "me"], owner="me")
         self.assertEqual(code, 0, out)
-        self.assertEqual(fake.merges(), ["1"])
+        self.assertEqual(fake.merged, [1])
 
-    def test_a_failed_git_or_gh_read_is_a_failure_even_when_skipping_unsafe_moments(self):
-        for needle in ("git fetch", "gh pr list"):
+    def test_a_clone_made_unsafe_mid_batch_stops_the_next_merge(self):
+        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: f.state.update(status=" M edited.py\n"))
+        code, out = run_main(fake)
+        self.assertEqual(code, 2)
+        self.assertEqual(fake.merged, [1])
+        self.assertIn("merged #1; not merging further: the working tree", out)
+
+    def test_each_merge_holds_the_run_guard_lock(self):
+        events = []
+
+        @contextlib.contextmanager
+        def lock(root):
+            events.append("lock")
+            yield
+            events.append("unlock")
+
+        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: events.append(f"merged {f.merged[-1]}"))
+        with mock.patch.object(merge_prs, "campaign_owner", return_value=None), \
+                mock.patch.object(merge_prs, "in_progress_sections", return_value=[]), \
+                mock.patch.object(merge_prs, "guard_lock", side_effect=lock), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(merge_prs.main([], root=Path("."), runner=fake), 0)
+        self.assertEqual(events, ["lock", "merged 1", "unlock", "lock", "merged 2", "unlock"])
+
+    def test_a_git_or_gh_that_cannot_run_or_read_is_a_failure_even_when_skipping_unsafe_moments(self):
+        for needle in ("git fetch", "gh pr list", "gh pr view", "gh api"):
             with self.subTest(failing=needle):
-                code, out = run_main(Fake(fail={needle: (128, "no network")}), ["--skip-unsafe"])
+                code, out = run_main(Fake(prs=[pr(1)], fail={needle: (127, "cannot run")}), ["--skip-unsafe"])
                 self.assertEqual(code, 3)
-                self.assertIn(f"{needle} failed: no network", out)
+                self.assertIn("cannot run", out)
+
+    def test_a_missing_executable_is_reported_not_raised(self):
+        code, _, err = merge_prs.run(["no-such-command-merge-prs"], ".")
+        self.assertEqual(code, 127)
+        self.assertIn("cannot run", err)
 
     def test_the_scheduled_task_skips_an_unsafe_moment_without_failing(self):
-        code, out = run_main(Fake(), ["--skip-unsafe"], owner="campaign-session")
+        code, out = run_main(Fake(prs=[pr(1)]), ["--skip-unsafe"], owner="campaign-session")
         self.assertEqual(code, 0)
-        self.assertIn("not merging: a campaign run is open", out)
+        self.assertIn("not merging further: a campaign run is open", out)
 
 
 class Eligibility(unittest.TestCase):
-    def test_only_green_labelled_bot_pull_requests_are_chosen(self):
+    def test_only_green_labelled_bot_pull_requests_on_main_are_chosen(self):
         prs = [pr(1), pr(2, author={"login": "someone"}), pr(3, labels=[{"name": "feature"}]), pr(4, isDraft=True),
                pr(5, mergeable="CONFLICTING"), pr(6, mergeStateStatus="BLOCKED"), pr(7, statusCheckRollup=[]),
                pr(8, statusCheckRollup=[{"name": "gates", "conclusion": "FAILURE"}]),
                pr(9, statusCheckRollup=[{"name": "gates", "conclusion": None, "status": "IN_PROGRESS"}]),
-               pr(10, files=[{"path": "global.json"}]), pr(11, author={"login": "app/github-actions"},
-                                                             labels=[{"name": "pins"}]),
-               pr(12, statusCheckRollup=[{"context": "legacy", "state": "SUCCESS"}])]
+               pr(10, files=["global.json"]), pr(11, author={"login": "app/github-actions"}, labels=[{"name": "pins"}]),
+               pr(12, statusCheckRollup=[{"context": "legacy", "state": "SUCCESS"}]), pr(13, baseRefName="release")]
         fake = Fake(prs=prs)
         code, out = run_main(fake)
         self.assertEqual(code, 0, out)
-        self.assertEqual(fake.merges(), ["1", "11", "12"])
-        for number in (2, 3, 4, 5, 6, 7, 8, 9, 10):
+        self.assertEqual(fake.merged, [1, 11, 12])
+        for number in (2, 3, 4, 5, 6, 7, 8, 9, 10, 13):
             self.assertIn(f"skipping #{number}:", out)
+
+    def test_every_file_is_read_so_a_late_global_json_is_seen(self):
+        files = [f"src/f{i}.cs" for i in range(150)] + ["sdk/global.json"]
+        fake = Fake(prs=[pr(1, changedFiles=len(files), files=files)])
+        code, out = run_main(fake)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("changes global.json", out)
+
+    def test_an_incomplete_file_list_is_refused(self):
+        fake = Fake(prs=[pr(1, changedFiles=3, files=["a.yml"])])
+        run_main(fake)
+        self.assertEqual(fake.merged, [])
+
+    def test_a_pull_request_changed_since_the_listing_is_judged_on_its_fresh_state(self):
+        changes = {"label removed": {"labels": []}, "retargeted": {"baseRefName": "release"},
+                   "check re-run": {"statusCheckRollup": [{"name": "gates", "conclusion": None}]},
+                   "closed": {"state": "MERGED"}}
+        for name, change in changes.items():
+            with self.subTest(change=name):
+                fake = Fake(prs=[pr(1)], views={1: pr(1, **change)})
+                code, out = run_main(fake)
+                self.assertEqual(code, 0)
+                self.assertEqual(fake.merged, [])
+                self.assertIn("skipping #1", out)
+
+    def test_a_new_head_pushed_since_the_listing_is_judged_and_merged_by_its_own_sha(self):
+        fake = Fake(prs=[pr(1)], views={1: pr(1, headRefOid="f" * 40)})
+        run_main(fake)
+        merge = next(c for c in fake.calls if c[:3] == ["gh", "pr", "merge"])
+        self.assertEqual(merge[-1], "f" * 40)
+        self.assertEqual(fake.merged, [1])
 
 
 class Merging(unittest.TestCase):
@@ -122,41 +207,59 @@ class Merging(unittest.TestCase):
         fake = Fake(prs=[pr(2), pr(1)])
         code, _ = run_main(fake)
         self.assertEqual(code, 0)
-        sequence = [c[:3] if c[0] in ("gh", "git") else ["validate"] for c in fake.calls
-                    if c[:3] == ["gh", "pr", "merge"] or c[:2] == ["git", "pull"] or str(c[-1]) == "validate"]
-        self.assertEqual(sequence, [["gh", "pr", "merge"], ["git", "pull", "--ff-only"], ["validate"]] * 2)
-        first = next(c for c in fake.calls if c[:3] == ["gh", "pr", "merge"])
-        self.assertEqual(first[3:], ["1", "--rebase", "--match-head-commit", f"{1:040d}"])  # lowest number first
+        steps = [("merge" if c[:3] == ["gh", "pr", "merge"] else "pull" if c[:2] == ["git", "pull"] else "validate")
+                 for c in fake.calls if c[:3] == ["gh", "pr", "merge"] or c[:2] == ["git", "pull"]
+                 or str(c[-1]) == "validate"]
+        self.assertEqual(steps, ["merge", "pull", "validate"] * 2)
+        self.assertEqual(fake.merged, [1, 2])  # lowest number first
+        self.assertIn("--rebase", next(c for c in fake.calls if c[:3] == ["gh", "pr", "merge"]))
 
-    def test_the_first_failure_stops_and_leaves_the_rest_open(self):
-        for needle in ("gh pr merge 1", "git pull", "validate"):
+    def test_a_failed_merge_stops_with_nothing_merged_and_the_rest_open(self):
+        fake = Fake(prs=[pr(1), pr(2)], fail={"gh pr merge 1": (1, "boom")})
+        code, out = run_main(fake)
+        self.assertEqual(code, 1)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("merged nothing", out)
+
+    def test_a_failure_after_a_merge_reports_that_merge(self):
+        for needle in ("git pull", "validate"):
             with self.subTest(failing=needle):
                 fake = Fake(prs=[pr(1), pr(2)], fail={needle: (1, "boom")})
                 code, out = run_main(fake)
                 self.assertEqual(code, 1)
-                self.assertNotIn("2", fake.merges())
-                self.assertIn("the rest stay open", out)
+                self.assertEqual(fake.merged, [1])  # merged on GitHub before the local step failed
+                self.assertIn("merge-prs: merged #1", out)
+                self.assertIn("#1 merged, then", out)
 
     def test_a_dry_run_merges_nothing(self):
         fake = Fake(prs=[pr(1)])
         code, out = run_main(fake, ["--dry-run"])
         self.assertEqual(code, 0)
-        self.assertEqual(fake.merges(), [])
+        self.assertEqual(fake.merged, [])
         self.assertIn("would merge #1", out)
 
 
 class State(unittest.TestCase):
-    def test_a_started_open_section_is_in_progress_and_a_stamped_one_is_not(self):
+    def tree(self, root):
         from test_todo_graph import todo_file
+        todo = root / "todo" / "00-workspace"
+        todo.mkdir(parents=True)
+        text = todo_file([(1, "A", 0, "none", "--")]).replace(
+            "## 1. A\n\n", "## 1. A\n\n> **Started:** 2026-10-22T00:00:00Z\n\n")
+        (todo / "TODO-01-a.md").write_text(text, encoding="utf-8")
+        (todo / "INDEX.md").write_text("# Index\n- TODO-01-a.md\n", encoding="utf-8")
+        (root / "todo" / "TODO-00-INDEX.md").write_text("# Index\n- 00-workspace/TODO-01-a.md\n", encoding="utf-8")
+
+    def test_a_started_open_section_is_in_progress(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            todo = root / "todo" / "00-workspace"
-            todo.mkdir(parents=True)
-            text = todo_file([(1, "A", 0, "none", "--")]).replace("## 1. A\n\n", "## 1. A\n\n> **Started:** 2026-10-22T00:00:00Z\n\n")
-            (todo / "TODO-01-a.md").write_text(text, encoding="utf-8")
-            (todo / "INDEX.md").write_text("# Index\n- TODO-01-a.md\n", encoding="utf-8")
-            (root / "todo" / "TODO-00-INDEX.md").write_text("# Index\n- 00-workspace/TODO-01-a.md\n", encoding="utf-8")
-            self.assertEqual(merge_prs.in_progress_sections(root), ["D00 T01 §1"])
+            self.tree(Path(tmp))
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), ["D00 T01 §1"])
+
+    def test_a_started_section_that_is_stamped_is_not_in_progress(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done = mock.Mock(done=True, body="> **Started:** 2026-10-22T00:00:00Z")
+            with mock.patch("todo_graph.graph", return_value={"D00 T01 §1": done}):
+                self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), [])
 
     def test_the_campaign_owner_is_read_from_the_run_guard(self):
         with tempfile.TemporaryDirectory() as tmp:

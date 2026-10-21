@@ -197,9 +197,9 @@ class Runner(unittest.TestCase):
         scripts = REPO / "scripts"
         for path in (AUTO / "run.py", AUTO / "alert.py", scripts / "check-vulnerable-packages.py",
                      scripts / "check-dotnet-pin.py", scripts / "check-visual-studio.py",
-                     scripts / "lib" / "pin_proposal.py"):
+                     scripts / "merge_prs.py", scripts / "lib" / "pin_proposal.py"):
             text = path.read_text(encoding="utf-8")
-            calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
+            calls = text.count("subprocess.run(") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
             flagged = text.count("creationflags=")
             with self.subTest(path=path.name):
                 self.assertGreaterEqual(flagged, calls - text.count('"git", "init"'), path.name)
