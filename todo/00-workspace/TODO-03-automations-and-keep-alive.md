@@ -39,7 +39,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [x] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
-| 7 | §7 | Run guard robustness fixes | §2 | [ ] |
+| 7 | §7 | Run guard robustness fixes | §2 | [x] |
 | 8 | §8 | Agent tier verifier YAML strictness | -- | [ ] |
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [ ] |
 
@@ -222,9 +222,12 @@ Three defects the owner reported on 2026-10-21, found by independent review in a
 - [x] Make `--phase` optional in `scripts/campaign_guard.py` `acquire`: a fresh guard requires it, and a re-point of the owner's own guard without it keeps the guard's phase. Done when: a test re-pointing with a new `--cron-id` and no `--phase` keeps phase 2, and a fresh `acquire` without `--phase` is refused. Cheaper substitute: documenting that every re-point must repeat `--phase`.
 - [x] Mark the guard ended before deleting it in `scripts/campaign_guard.py` `_end_locked`: write `ended` (reason and time) into the guard atomically with the pending cancellation, and make `whoami`, `stop-hook` and `acquire` treat an ended guard as over and finish its deletion. Done when: a test that stops `end` after the pending record is written sees `whoami` print `NO GUARD`, the Stop hook let the turn end, and a later `acquire` start a fresh run. Cheaper substitute: retrying the delete in a loop.
 - [x] Record each defect, its test and the fix in `docs/reviews/00-workspace/D00-T03-s7.md` with the failing-before and passing-after outputs. Done when: three entries quote both results. Cheaper substitute: one summary line.
-- [ ] Commit: `guard: fix device and symlink stalls, phase resets on re-point, and interrupted ends`
+- [x] Commit: `guard: fix device and symlink stalls, phase resets on re-point, and interrupted ends`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` passes, and its three new tests fail when the previous `scripts/campaign_guard.py` is restored.
+
+> **Verified:** 2026-10-21 | §7 | 2d237eefa1258b8655dc3b0fb6f8249825f5e5d9
+> **Review:** `docs/reviews/d00-t03-s7.json`
 
 ## 8. Agent Tier Verifier YAML Strictness
 
