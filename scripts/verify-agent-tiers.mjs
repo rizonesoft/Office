@@ -271,7 +271,18 @@ const NON_STRING_KEY = /^(?:true|True|TRUE|false|False|FALSE|null|Null|NULL)$/;
 /** YAML 1.2 limits an implicit key, quotes included, to 1024 characters. */
 const MAX_IMPLICIT_KEY = 1024;
 
+// PyYAML's YAML 1.1 implicit resolvers for ints, floats and timestamps. A plain value matching one is built as that
+// type, and the build can fail (`2026-02-30`, `0x_`, `._`), so only the forms that always build are accepted plain.
+const YAML11_INT = /^(?:[-+]?0b[0-1_]+|[-+]?0[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x[0-9a-fA-F_]+|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$/;
+const YAML11_FLOAT = /^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+][0-9]+)?|\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
+const YAML11_TIMESTAMP = /^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]*)?(?:[ \t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?)$/;
+const PLAIN_NUMBER = /^[-+]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
+
 export function plainScalarProblem(plain) {
+  if (plain === "=" || plain === "<<") return `"${plain}" is a YAML 1.1 value or merge indicator`;
+  if ((YAML11_INT.test(plain) || YAML11_FLOAT.test(plain) || YAML11_TIMESTAMP.test(plain)) && !PLAIN_NUMBER.test(plain)) {
+    return "a YAML 1.1 loader reads it as a number or date and may fail to build it";
+  }
   if (/^[,\]}%@`|>'"#]/.test(plain)) return `it opens with the reserved indicator "${plain[0]}"`;
   if (/^[-?:](?:[ \t]|$)/.test(plain)) return `it opens with "${plain[0]}" and a space`;
   if (/:(?:[ \t]|$)/.test(plain)) return 'it holds ": " or ends with ":"';

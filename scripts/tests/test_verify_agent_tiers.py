@@ -66,7 +66,15 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\ndescription: a" + chr(0x85) + "b\n",                         # NEL breaks in 1.1
                      "model: sonnet\n" + "a" * 1025 + ": ok\n",                                   # over 1024
                      "model: sonnet\nhooks:\n  " + "a" * 1025 + ": ok\n",
-                     "model: sonnet\nhooks:\n  \"a\"" + " " * 1024 + ": ok\n"]                    # spaces count too
+                     "model: sonnet\nhooks:\n  \"a\"" + " " * 1024 + ": ok\n",                    # spaces count too
+                     "model: sonnet\ndescription: 2026-02-30\n",                                  # 1.1: no such date
+                     "model: sonnet\nhooks:\n  command: 2026-02-30\n",
+                     "model: sonnet\ndescription: =\n",                                           # 1.1 value tag
+                     "model: sonnet\nhooks:\n  command: <<\n",                                    # 1.1 merge tag
+                     "model: sonnet\ndescription: 0x_\n"]                                         # 1.1 int, unbuilt
+# Plain values a YAML 1.1 loader builds as numbers or dates: they load, but only plain decimals are accepted unquoted.
+RESOLVED_POLICY_BODIES = ["model: sonnet\ndescription: 2026-02-28\n", "model: sonnet\ndescription: 0x1F\n",
+                          "model: sonnet\ndescription: 1:20\n", "model: sonnet\ndescription: .inf\n"]
 # These load in the YAML 1.2 loaders, but a YAML 1.1 loader (PyYAML) reads tabs differently; no tab is accepted.
 POLICY_BODIES = ["model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",
                  "model: sonnet\ndescription: |\n  text\n  " + TAB + "\n",
@@ -78,6 +86,8 @@ ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non
                    "model: sonnet\n" + "a" * 1024 + ": ok\n",                       # a key at the 1024 limit
                    "model: sonnet\r\ndescription: crlf line endings\r\n",
                    "model: sonnet\nhooks:\n  \"" + chr(0x1F600) * 600 + "\": ok\n",       # 602 characters, not 1202
+                   "model: sonnet\nhooks:\n  timeout: 60\n",                         # a plain decimal builds anywhere
+                   "model: sonnet\ndescription: '2026-02-28'\n",                     # a quoted date is a string
                    "model: sonnet\nhooks:\n  PreToolUse:\n  - matcher: Bash\n    hooks:\n    - type: command\n"
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
@@ -140,6 +150,13 @@ class Frontmatter(unittest.TestCase):
         for body in UNLOADABLE_BODIES:
             with self.subTest(body=body):
                 self.assertEqual(self.verify_body(body).returncode, 1)
+
+    def test_a_plain_value_yaml_1_1_reads_as_a_date_or_special_number_is_refused_by_policy(self):
+        for body in RESOLVED_POLICY_BODIES:
+            with self.subTest(body=body):
+                result = self.verify_body(body)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("number or date", result.stderr)
 
     def test_a_tab_anywhere_is_refused_by_policy(self):
         for body in POLICY_BODIES:
