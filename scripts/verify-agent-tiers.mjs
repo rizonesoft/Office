@@ -276,7 +276,8 @@ const MAX_IMPLICIT_KEY = 1024;
 const YAML11_INT = /^(?:[-+]?0b[0-1_]+|[-+]?0[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x[0-9a-fA-F_]+|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$/;
 const YAML11_FLOAT = /^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+][0-9]+)?|\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/;
 const YAML11_TIMESTAMP = /^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]*)?(?:[ \t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?)$/;
-const PLAIN_NUMBER = /^[-+]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
+// Bounded: a decimal integer past Python's 4,300-digit conversion limit fails to build, so long numbers are quoted.
+const PLAIN_NUMBER = /^[-+]?(?:0|[1-9][0-9]{0,17})(?:\.[0-9]{1,18})?$/;
 
 export function plainScalarProblem(plain) {
   if (plain === "=" || plain === "<<") return `"${plain}" is a YAML 1.1 value or merge indicator`;

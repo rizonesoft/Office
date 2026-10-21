@@ -71,7 +71,9 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\nhooks:\n  command: 2026-02-30\n",
                      "model: sonnet\ndescription: =\n",                                           # 1.1 value tag
                      "model: sonnet\nhooks:\n  command: <<\n",                                    # 1.1 merge tag
-                     "model: sonnet\ndescription: 0x_\n"]                                         # 1.1 int, unbuilt
+                     "model: sonnet\ndescription: 0x_\n",                                         # 1.1 int, unbuilt
+                     "model: sonnet\ndescription: " + "1" * 4301 + "\n",                          # over Python's limit
+                     "model: sonnet\nhooks:\n  command: " + "1" * 4301 + "\n"]
 # Plain values a YAML 1.1 loader builds as numbers or dates: they load, but only plain decimals are accepted unquoted.
 RESOLVED_POLICY_BODIES = ["model: sonnet\ndescription: 2026-02-28\n", "model: sonnet\ndescription: 0x1F\n",
                           "model: sonnet\ndescription: 1:20\n", "model: sonnet\ndescription: .inf\n"]
