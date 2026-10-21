@@ -67,10 +67,20 @@ def run(args, root):
     return proc.returncode, proc.stdout, proc.stderr
 
 
+# The userinfo of any URL in command output (https://user:token@host/...): masked before it is printed, since the
+# output reaches the run log and the failure email.
+CREDENTIALS = re.compile(r"(\w+://)[^/@\s]+@")
+
+
+def said(text):
+    """A command's output, short and with any credentials in a URL masked, fit to print."""
+    return CREDENTIALS.sub(r"\1***@", text.strip())[:200]
+
+
 def checked(runner, root, args, what):
     code, out, err = runner(args, root)
     if code != 0:
-        raise Unreadable(f"{what} failed: {(err or out).strip()[:200]}")
+        raise Unreadable(f"{what} failed: {said(err or out)}")
     return out
 
 
@@ -110,7 +120,9 @@ def origin_repo(runner, root):
         match = form.fullmatch(url)
         if match:
             return f"{match.group(1)}/{match.group(2)}"
-    raise Unreadable(f"origin ({url}) is not a {HOST} repository")
+    # The URL itself is never printed: it can carry a token (https://user:token@host/...), and this message reaches
+    # the run log and the failure email.
+    raise Unreadable(f"origin is not a {HOST} repository (its URL is not shown, as it may hold credentials)")
 
 
 def local_safety(runner, root, session, refs=True):
@@ -241,12 +253,12 @@ def merge_one(runner, root, repo, number, session, dry_run):
         code, out, err = runner(["gh", "pr", "merge", str(number), "--repo", f"{HOST}/{repo}", "--rebase",
                                  "--match-head-commit", pr["headRefOid"]], root)
         if code != 0:
-            return "failed", f"#{number}: gh pr merge failed: {(err or out).strip()[:200]}"
+            return "failed", f"#{number}: gh pr merge failed: {said(err or out)}"
         for step, what in ((["git", "pull", "--ff-only", "--quiet", "origin", "main"], "git pull"),
                            ([sys.executable, str(Path(root) / "scripts" / "todo-graph.py"), "validate"], "validate")):
             code, out, err = runner(step, root)
             if code != 0:
-                return "merged-then-failed", f"#{number} merged, then {what} failed: {(err or out).strip()[:200]}"
+                return "merged-then-failed", f"#{number} merged, then {what} failed: {said(err or out)}"
         return "merged", f"#{number}"
     finally:
         lock.__exit__(None, None, None)

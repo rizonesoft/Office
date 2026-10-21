@@ -233,6 +233,23 @@ class Safety(unittest.TestCase):
                 self.assertIn("is not a github.com repository", out)
                 self.assertEqual(fake.merged, [])
 
+    def test_command_output_echoed_in_a_failure_masks_url_credentials(self):
+        secret = "SYNTHETIC-TOKEN-1111"
+        message = f"fatal: unable to access 'https://user:{secret}@github.com/rizonesoft/Office.git/': 403"
+        for needle in ("git fetch", "gh pr merge 1", "git pull"):
+            with self.subTest(failing=needle):
+                code, out = run_main(Fake(prs=[pr(1)], fail={needle: (128, message)}))
+                self.assertNotIn(secret, out)
+                self.assertIn("https://***@github.com/", out)
+
+    def test_a_rejected_origin_never_prints_its_credentials(self):
+        secret = "SYNTHETIC-TOKEN-0000"
+        for origin in (f"https://user:{secret}@gitlab.example/x/y.git", f"https://{secret}@notgithub.com/o/r.git"):
+            with self.subTest(origin=origin):
+                code, out = run_main(Fake(prs=[pr(1)], origin=origin))
+                self.assertEqual(code, 3)
+                self.assertNotIn(secret, out)
+
     def test_the_scheduled_task_skips_an_unsafe_moment_without_failing(self):
         code, out = run_main(Fake(prs=[pr(1)]), ["--skip-unsafe"], owner="campaign-session")
         self.assertEqual(code, 0)
