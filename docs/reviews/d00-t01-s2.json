@@ -1,0 +1,28 @@
+{
+  "ref": "D00 T01 \u00a72",
+  "title": "Image Asset Checker",
+  "implementation_sha": "ae11782ee47cbeea2615edebb6df2994f827c0a7",
+  "date": "2026-10-21",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T01-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T01-s2.md",
+      "verdict": "stopped-at-3"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_image_asset.py\" -> Ran 21 tests, OK",
+    "every committed SVG, PNG and ICO under assets/ and design/ -> 927 checked, 0 refused",
+    "python scripts/todo-graph.py validate -> valid: 82 sections"
+  ]
+}

@@ -35,7 +35,7 @@ title: "TODO-01 -- Design Document Tooling"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Design document checker | -- | [x] |
-| 2 | §2 | Image asset checker | -- | [ ] |
+| 2 | §2 | Image asset checker | -- | [x] |
 | 3 | §3 | Continuous integration workflow | §1, §2 | [ ] |
 
 ## 1. Design Document Checker
@@ -89,6 +89,9 @@ Icons, banners and the social preview are verified by a script before they are c
 - [x] Commit: `tooling: add image asset checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_image_asset.py"` reports at least 6 tests run and `OK`.
+
+> **Verified:** 2026-10-21 | §2 | ae11782ee47cbeea2615edebb6df2994f827c0a7
+> **Review:** `docs/reviews/d00-t01-s2.json`
 
 ## 3. Continuous Integration Workflow
 

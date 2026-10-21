@@ -13,7 +13,7 @@ Sections: 12 | Checklist items: 70
 | Status | Reference  | Deliverable                              | Needs                  | Items |
 | ------ | ---------- | ---------------------------------------- | ---------------------- | ----- |
 | [x]    | D00 T01 §1 | Design Document Checker                  | none                   | 7     |
-| [ ]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
+| [x]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
 | [ ]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
 | [ ]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 6     |
 | [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 5     |
@@ -123,6 +123,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 13/82 verified sections, 14 ready to run now.
+Progress: 14/82 verified sections, 14 ready to run now.
 
-Checklist: 84/466 items completed (includes Commit items).
+Checklist: 90/466 items completed (includes Commit items).
