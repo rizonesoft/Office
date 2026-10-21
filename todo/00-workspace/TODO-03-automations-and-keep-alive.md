@@ -40,7 +40,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
 | 7 | §7 | Run guard robustness fixes | §2 | [x] |
-| 8 | §8 | Agent tier verifier YAML strictness | -- | [ ] |
+| 8 | §8 | Agent tier verifier YAML strictness | -- | [x] |
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
@@ -247,9 +247,12 @@ Three defects the owner reported on 2026-10-21, found by independent review in a
 - [x] List the frontmatter lines `scripts/verify-agent-tiers.mjs` accepts but a YAML 1.2 loader refuses (a plain scalar containing `: ` or ` #`, opening with an indicator character such as `@`, `` ` ``, `%`, `[`, `{`, `|`, `>`, `!`, `&`, `*`, or holding a tab), checked against a real loader. Done when: `docs/reviews/00-workspace/D00-T03-s8.md` lists each case with the loader's error. Cheaper substitute: guessing the cases without a loader.
 - [x] Refuse each listed case in `scripts/verify-agent-tiers.mjs` with a message naming the line and the rule. Done when: a fixture agent for each case fails the verifier. Cheaper substitute: refusing only the reported case.
 - [x] Add the fixtures and a test runner for them in `scripts/tests/test_verify_agent_tiers.py`, invoking `node scripts/verify-agent-tiers.mjs` on fixture directories. Done when: the suite passes, and fails when the new refusals are removed. Cheaper substitute: checking the repository's own agents only.
-- [ ] Commit: `tooling: refuse agent frontmatter Claude Code cannot load`
+- [x] Commit: `tooling: refuse agent frontmatter Claude Code cannot load`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_verify_agent_tiers.py"` passes and `node scripts/verify-agent-tiers.mjs` reports every agent in `.claude/agents/` valid.
+
+> **Verified:** 2026-10-22 | §8 | c6f40d6ca6c7e56635cedd257a4c41896a5c708f
+> **Review:** `docs/reviews/d00-t03-s8.json`
 
 ## 9. Dependency PR Merges at Boundaries
 

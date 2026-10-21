@@ -1,0 +1,61 @@
+{
+  "ref": "D00 T03 \u00a78",
+  "title": "Agent Tier Verifier YAML Strictness",
+  "implementation_sha": "c6f40d6ca6c7e56635cedd257a4c41896a5c708f",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/00-workspace/D00-T03-s8.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_verify_agent_tiers.py\" -> Ran 11 tests, OK",
+    "node scripts/verify-agent-tiers.mjs -> Agent tiers valid: 5 definition(s) checked",
+    "three-loader differential fuzzing (yaml 2.9.1, js-yaml 4.1.0, PyYAML 6.0.3) -> 0 accepted-but-unloadable in 40,000 cases",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success (run 39687075882 at c6f40d6)"
+  ],
+  "rounds_spent": 9,
+  "round_cap": 22
+}
