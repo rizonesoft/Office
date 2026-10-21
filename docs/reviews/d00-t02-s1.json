@@ -1,0 +1,41 @@
+{
+  "ref": "D00 T02 \u00a71",
+  "title": "SPDX Headers and Checker",
+  "implementation_sha": "617de71764da9143f1d110797de98595b41518be",
+  "date": "2026-10-21",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T02-s1.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_spdx.py\" -> Ran 13 tests, OK",
+    "python scripts/check-spdx.py -> spdx: every tracked source file states its licence (47 files)",
+    "reuse lint -> compliant with version 3.3 of the REUSE Specification (1158 / 1158 files)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success (run 39667176905 at 617de71)"
+  ],
+  "rounds_spent": 5,
+  "round_cap": 22
+}

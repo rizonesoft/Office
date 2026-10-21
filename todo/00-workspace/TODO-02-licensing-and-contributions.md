@@ -35,7 +35,7 @@ title: "TODO-02 -- Licensing and Contributions"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | SPDX headers and checker | -- | [ ] |
+| 1 | §1 | SPDX headers and checker | -- | [x] |
 | 2 | §2 | Third-party notices file | -- | [ ] |
 | 3 | §3 | Contributor agreement text | -- | [ ] |
 | 4 | §4 | Contributor agreement PR check | §3 | [ ] |
@@ -62,9 +62,12 @@ Each file states its own licence so a copied file keeps its terms. Rizonesoft co
 - [x] Add `# SPDX-License-Identifier: GPL-3.0-or-later` and `# Copyright 2026 Rizonesoft` to every Rizonesoft-authored file under `scripts/`, including those first ported from the Conclave SDK or Recto (Office's own since 2026-10-21), leaving only third-party files listed in `THIRD-PARTY-NOTICES.md` with their own identifier. Done when: `python scripts/check-spdx.py` exits 0. Cheaper substitute: one blanket statement in README instead of per-file identifiers.
 - [x] Write `REUSE.toml` annotating `assets/**` and `design/icons/**` as GPL-3.0-or-later generated output, and `design/fonts/**` as OFL-1.1. Done when: `reuse lint` reports no unlicensed files. Cheaper substitute: leaving generated files unannotated. **Corrected 2026-10-21:** `reuse lint` checks every file in the repository, so `REUSE.toml` also needs a catch-all GPL-3.0-or-later annotation (with `precedence = "override"` for Markdown, whose prose quotes licence tags), an MIT annotation for the six `design/inventory/*/baseline.json` files converted from OfficeDev's identifier lists, and the licence texts in `LICENSES/`.
 - [x] Add `python scripts/check-spdx.py` and `reuse lint` steps to `.github/workflows/ci.yml`, with `reuse` and its dependencies pinned in `scripts/requirements.txt`. Done when: a run on `main` shows both steps green. Cheaper substitute: running the checks only locally. (Added 2026-10-21: the file's Outcome says CI runs the checker, and no item put it there.)
-- [ ] Commit: `legal: add SPDX headers and checker`
+- [x] Commit: `legal: add SPDX headers and checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_spdx.py"` passes and `python scripts/check-spdx.py` exits 0.
+
+> **Verified:** 2026-10-21 | §1 | 617de71764da9143f1d110797de98595b41518be
+> **Review:** `docs/reviews/d00-t02-s1.json`
 
 ## 2. Third-Party Notices File
 
