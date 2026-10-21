@@ -114,6 +114,7 @@ The agreement lets Rizonesoft relicense contributions (for example a commercial 
 - [ ] Draft the entity agreement in `docs/legal/rizonesoft-cla-entity.md` from HA-CLA-E with the same choices. Done when: the draft matches the individual one except for the entity clauses. Cheaper substitute: individual agreement only, which blocks company contributors.
 - [ ] Record the lawyer's review in both files under `## Review` with date and firm. Done when: both files carry the review. Cheaper substitute: publishing an unreviewed agreement.
 - [ ] Record the owner's approval and remove `owner-decision` and `third-party` from this section. Done when: the approval line carries the date. Cheaper substitute: treating the draft as final.
+- [ ] Link the agreement from the Licence and agreement section of `CONTRIBUTING.md`, replacing its pending-review note. Done when: the link resolves to `docs/legal/rizonesoft-cla.md`. Cheaper substitute: leaving the guide saying the agreement is pending. (Deferred from §5 on 2026-10-21.)
 - [ ] Commit: `legal: add contributor agreements`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/legal/rizonesoft-cla.md --require Review` and the same for `docs/legal/rizonesoft-cla-entity.md` exit 0.

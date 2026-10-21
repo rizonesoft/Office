@@ -103,7 +103,7 @@ Sections: 40 | Checklist items: 255
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 14 | Checklist items: 70
+Sections: 14 | Checklist items: 71
 
 | Status | Reference   | Deliverable                                    | Needs | Items |
 | ------ | ----------- | ---------------------------------------------- | ----- | ----- |
@@ -118,20 +118,20 @@ Sections: 14 | Checklist items: 70
 | [ ]    | D03 T01 §9  | Extensibility and Macro Decision               | none  | 4     |
 | [ ]    | D03 T01 §10 | Font Strategy Decision                         | none  | 4     |
 | [ ]    | D03 T01 §11 | Product Licence and Dependency Policy          | none  | 4     |
-| [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 6     |
+| [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 7     |
 | [ ]    | D00 T02 §6  | Runtime and Icon Notices                       | none  | 3     |
 | [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 8     |
 
 ### Phase 99: Manual, operator only
 
-Sections: 3 | Checklist items: 12
+Sections: 3 | Checklist items: 13
 
 | Status | Reference  | Deliverable                    | Needs                       | Items |
 | ------ | ---------- | ------------------------------ | --------------------------- | ----- |
-| [ ]    | D00 T02 §3 | Contributor Agreement Text     | third-party, owner-decision | 5     |
+| [ ]    | D00 T02 §3 | Contributor Agreement Text     | third-party, owner-decision | 6     |
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
 Progress: 17/91 verified sections, 11 ready to run now.
 
-Checklist: 110/518 items completed (includes Commit items).
+Checklist: 110/520 items completed (includes Commit items).
