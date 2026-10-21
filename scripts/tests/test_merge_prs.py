@@ -35,10 +35,11 @@ class Fake:
     a merge must name the current head, and every call is recorded."""
 
     def __init__(self, prs=(), status="", branch="main", head=SHA, upstream=SHA, fail=None, views=None,
-                 after_merge=None, during_files=None, before_merge=None):
+                 after_merge=None, during_files=None, before_merge=None, after_pull=None):
         self.calls, self.fail = [], fail or {}
         self.during_files = during_files   # called while the file list is read: a change during the slow reads
         self.before_merge = before_merge   # called as the merge request arrives: a change after the last read
+        self.after_pull = after_pull       # called after a pull: a push by someone else between merges
         self.prs = {p["number"]: p for p in prs}
         self.views = views or {}           # number -> the fresh state `gh pr view` returns instead
         self.after_merge = after_merge     # called after each successful merge, to change the clone
@@ -81,7 +82,12 @@ class Fake:
         if args[:2] == ["git", "fetch"]:
             self.state["upstream"] = self.state["remote"]
             return 0, "", ""
-        if str(args[-1]) == "validate" or args[:2] == ["git", "pull"]:
+        if args[:2] == ["git", "pull"]:  # a pull fetches and fast-forwards: HEAD and origin/main meet the remote
+            self.state.update(head=self.state["remote"], upstream=self.state["remote"])
+            if self.after_pull:
+                self.after_pull(self)
+            return 0, "", ""
+        if str(args[-1]) == "validate":
             return 0, "", ""
         if args[:2] == ["git", "status"]:
             return 0, self.state["status"], ""
@@ -133,7 +139,7 @@ class Safety(unittest.TestCase):
         self.assertIn("merged #1; not merging further: the working tree", out)
 
     def test_main_moved_by_someone_else_mid_batch_stops_the_next_merge(self):
-        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: f.state.update(remote="c" * 40))  # seen only by a fetch
+        fake = Fake(prs=[pr(1), pr(2)], after_pull=lambda f: f.state.update(remote="c" * 40))  # after our pull
         code, out = run_main(fake)
         self.assertEqual(code, 2)
         self.assertEqual(fake.merged, [1])
@@ -182,6 +188,12 @@ class Safety(unittest.TestCase):
         code, _, err = merge_prs.run(["no-such-command-merge-prs"], ".")
         self.assertEqual(code, 127)
         self.assertIn("cannot run", err)
+
+    def test_an_open_campaign_is_a_quiet_skip_even_when_github_cannot_be_reached(self):
+        code, out = run_main(Fake(prs=[pr(1)], fail={"git fetch": (1, "network unavailable")}), ["--skip-unsafe"],
+                             owner="active-session")
+        self.assertEqual(code, 0)
+        self.assertIn("a campaign run is open", out)
 
     def test_the_scheduled_task_skips_an_unsafe_moment_without_failing(self):
         code, out = run_main(Fake(prs=[pr(1)]), ["--skip-unsafe"], owner="campaign-session")
