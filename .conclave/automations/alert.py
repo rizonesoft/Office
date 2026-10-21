@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Email the operator when a scheduled Office automation fails.
 
     python .conclave/automations/alert.py NAME            send the failure email for NAME's last run

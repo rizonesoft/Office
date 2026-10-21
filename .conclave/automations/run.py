@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Run one Office automation, keep its log, and email the operator when it fails.
 
     python .conclave/automations/run.py NAME
