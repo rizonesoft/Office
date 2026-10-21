@@ -21,13 +21,14 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 - Word's built-in `ListCommands` command (through COM, `Application.ListCommands(True)`): every Word command with its keyboard assignment, including commands with no ribbon button.
 - Legal boundary: the inventory records names, positions and behaviour as text and numbers only. It never commits Microsoft icons, screenshots or artwork; screenshots stay in `R:\scratch`.
 - -> XREF: D02 T02 §3 -- the shell layout spec is measured from the shell chrome inventory in §4
-- -> XREF: D03 T01 §13 -- application TODO domains are authored from this inventory, one section per inventory group
+- -> XREF: D03 T01 §13 -- application TODO domains are authored from this inventory, every inventory record owned by exactly one section (1:1), proven by §22
 
 ## Outcome
 
 - `design/inventory/schema.json` defines an element record; `python scripts/check-inventory.py` validates every inventory file against it and refuses duplicates, orphans and missing sources.
 - `design/inventory/<app>/` holds `ribbon.json`, `backstage.json`, `panes.json`, `statusbar.json`, `dialogs.json` and `shortcuts.json` for each of `word`, `excel`, `powerpoint`, `visio`, `project` and `outlook`, plus `design/inventory/shell/chrome.json`.
 - `python scripts/inventory-report.py` prints element counts per app and kind, and writes `design/inventory/COVERAGE.md`.
+- `python scripts/inventory-report.py --owners --check` names every inventory record no TODO section owns, so each element of the six apps maps 1:1 to the section that implements it.
 
 **Adjacency:** all=not-applicable (a reference catalogue of Microsoft's surfaces; it creates no user records, settings or permissions in the product)
 
@@ -58,6 +59,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 19 | §19 | Control ID baseline | §1, §21 | [x] |
 | 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
+| 22 | §22 | Inventory ownership check | §18 | [ ] |
 
 ## 1. Inventory Schema Checker
 
@@ -577,6 +579,30 @@ The owner ruled on 2026-10-20 that the repository holds no Microsoft text and no
 
 > **Verified:** 2026-10-20 | §21 | 8f59a68e156be1f9157226c05293ce7d46f5586a
 > **Review:** `docs/reviews/d02-t01-s21.json`
+
+## 22. Inventory Ownership Check
+
+Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, Outlook, Visio and Project is built by exactly the TODO section that cites it, so the plan always says what to implement where. This section builds the check that proves it at record level (every `control`, `tab`, `contextualTab`, `group`, menu item, `dialog`, `pane`, `view`, Backstage page, Options setting, status bar item, `command` and `shortcut` record), not one section per group. D03 T01 §13 runs it to zero and makes it a standing gate. Owner request 2026-10-21: "We need to match Word, Excel, PowerPoint, Outlook, Visio, Projects feature per feature 1:1."
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add `--owners` to `scripts/inventory-report.py`, reading citations from `todo/**/TODO-*.md`. Done when: it lists every unowned record id per app and kind.
+2. Add `--check` so a non-empty unowned list exits 1. Done when: the fixture tests below pass and fail as described.
+
+- [ ] Add a citation reader to `scripts/inventory-report.py` that collects every backticked inventory id (`<app>.<dotted.path>`) from the sections of `todo/**/TODO-*.md`, keyed by the citing section reference (`DNN TNN §N`). Done when: a fixture section citing `word.home.font.bold` maps that id to its reference. Cheaper substitute: a plain substring search over the whole tree with no section attribution.
+- [ ] Add `--owners` to `scripts/inventory-report.py` listing, per app and `kind`, every captured record id in `design/inventory/<app>/*.json` that no section cites, with counts owned and total. Done when: removing one citation from a fixture makes the report name that id. Cheaper substitute: checking only `group`, `dialog`, `pane` and `view` ids.
+- [ ] Refuse a citation of an id the inventory does not hold in `scripts/inventory-report.py --owners`, naming the citing section. Done when: a fixture section citing `word.home.font.nosuch` is reported with its `DNN TNN §N`. Cheaper substitute: ignoring unknown ids.
+- [ ] Report an id cited by more than one open or stamped section in `scripts/inventory-report.py --owners`, unless one of the two cites it on a deferral line that names the other as owner. Done when: a fixture with two plain citations of one id reports both references. Cheaper substitute: allowing silent co-ownership.
+- [ ] Add `--check` to `scripts/inventory-report.py --owners`: exit 1 while any record is unowned, any citation is unknown or any id has two owners; exit 0 otherwise. Done when: the three fixtures above exit 1 and a fully cited fixture exits 0. Cheaper substitute: always exiting 0 and relying on someone reading the list.
+- [ ] Add `--app` filtering to `--owners` so one app can be brought to zero at a time. Done when: `--owners --check --app word` ignores unowned Excel ids in a fixture. Cheaper substitute: a whole-tree check only.
+- [ ] Write the owners tests in `scripts/tests/test_inventory_report.py`: unowned, unknown, doubly owned, filtered and fully cited fixtures. Done when: the suite passes and fails when the unowned list is forced empty. Cheaper substitute: one happy-path test.
+- [ ] Commit: `inventory: add record-level ownership check`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes, and `python scripts/inventory-report.py --owners` exits 0 and prints owned and total counts per app.
 
 ## Verification
 

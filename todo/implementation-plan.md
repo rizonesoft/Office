@@ -53,7 +53,7 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 35 | Checklist items: 226
+Sections: 36 | Checklist items: 234
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -78,6 +78,7 @@ Sections: 35 | Checklist items: 226
 | [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
+| [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 8     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter      | none                                  | 6     |
@@ -95,7 +96,7 @@ Sections: 35 | Checklist items: 226
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 13 | Checklist items: 65
+Sections: 13 | Checklist items: 67
 
 | Status | Reference   | Deliverable                                    | Needs | Items |
 | ------ | ----------- | ---------------------------------------------- | ----- | ----- |
@@ -111,7 +112,7 @@ Sections: 13 | Checklist items: 65
 | [ ]    | D03 T01 §10 | Font Strategy Decision                         | none  | 4     |
 | [ ]    | D03 T01 §11 | Product Licence and Dependency Policy          | none  | 4     |
 | [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 6     |
-| [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 6     |
+| [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 8     |
 
 ### Phase 99: Manual, operator only
 
@@ -123,6 +124,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 14/82 verified sections, 14 ready to run now.
+Progress: 14/83 verified sections, 14 ready to run now.
 
-Checklist: 90/466 items completed (includes Commit items).
+Checklist: 90/476 items completed (includes Commit items).

@@ -20,6 +20,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 - Global rule: specs go to `docs/specs/YYYY-MM-DD-<topic>-design.md` and plans to `docs/plans/YYYY-MM-DD-<feature>.md`, dated on the day they are written.
 - -> XREF: D02 T02 §4 -- the shell framework must render the ribbon component chapter, including its scaling rules
 - -> XREF: D02 T01 §18 -- application TODO sections cite inventory ids so the coverage report can count implemented elements
+- -> XREF: D02 T01 §22 -- the record-level ownership check that holds every inventory record to exactly one owning section
 - -> XREF: D00 T02 §2 -- the dependency licence policy decided in §11 is enforced through the third-party notices file
 
 ## Outcome
@@ -48,7 +49,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 10 | §10 | Font strategy decision | §3 | [ ] |
 | 11 | §11 | Product licence and dependency policy | -- | [ ] |
 | 12 | §12 | Foundation plan | §4, §7, §8, §9, §10, §11 | [ ] |
-| 13 | §13 | Platform and app TODO domains | §12, D02 T01 §18, D02 T02 §14 | [ ] |
+| 13 | §13 | Platform and app TODO domains | §12, D02 T01 §18, D02 T01 §22, D02 T02 §14 | [ ] |
 
 ## 1. Platform Targets Decision
 
@@ -292,7 +293,7 @@ The foundation plan joins the decisions into one architecture: component diagram
 
 ## 13. Platform and App TODO Domains
 
-The plan becomes executable work: new domains for the shared platform and each app, authored with the `create-todo` skill, with sections sized one inventory group at a time so every inventoried element has an owning section.
+The plan becomes executable work: new domains for the shared platform and each app, authored with the `create-todo` skill, with every inventoried record (control, menu item, dialog, pane, view, Backstage page, Options setting, status bar item, command and shortcut) owned by exactly one section, 1:1 with Word, Excel, PowerPoint, Outlook, Visio and Project (owner request 2026-10-21).
 
 **Phase:** 3
 **Needs:** none
@@ -301,16 +302,18 @@ The plan becomes executable work: new domains for the shared platform and each a
 **Build order:**
 
 1. Author the domains in the order of the foundation plan's Milestones. Done when: `python scripts/todo-graph.py validate` passes with all new domains.
-2. Prove inventory ownership. Done when: a script check shows every inventory group id cited by at least one section.
+2. Prove inventory ownership and keep it proven. Done when: `python scripts/inventory-report.py --owners --check` exits 0 and runs as a gate on every later TODO or inventory commit.
 
 - [ ] Author `todo/04-platform/` (shell, ribbon engine, command model, Backstage, settings, file I/O, fonts, rendering, accessibility) with `create-todo`. Done when: every chapter of `design/SPEC.md` shared by all apps is owned by a section. Cheaper substitute: one umbrella platform section.
-- [ ] Author one domain per app (`05-` onward, in Milestones order) with `create-todo`, one section per inventory group. Done when: each app domain validates. Cheaper substitute: one section per ribbon tab.
+- [ ] Author one domain per app (`05-` onward, in Milestones order) with `create-todo`, each section citing in backticks every inventory record id it implements (a group's section lists each of its controls, menu items and dialog controls, not the group id alone). Done when: each app domain validates and `python scripts/inventory-report.py --owners --check --app <app>` exits 0 for that app. Cheaper substitute: one section per ribbon tab, or citing only group ids.
 - [ ] Author the interoperability domain (round-trip corpora, fidelity diffing against the reference apps) and the release domain (installers, signing, updates, store listings). Done when: both validate. Cheaper substitute: fidelity testing left to manual checks.
-- [ ] Add `--owners` to `scripts/inventory-report.py` listing inventory `group`, `dialog`, `pane` and `view` ids with no citing TODO section. Done when: the command prints an empty list. Cheaper substitute: sampling a few ids by hand.
+- [ ] Run `python scripts/inventory-report.py --owners --check` (D02 T01 §22) over all six apps and the shell. Done when: it exits 0 with no unowned, unknown or doubly owned id. Cheaper substitute: sampling a few ids by hand.
+- [ ] Add `python scripts/inventory-report.py --owners --check` to `scripts/hooks/pre-commit` for commits that stage `todo/` or `design/inventory/`, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: staging a new inventory record with no citing section refuses the commit. Cheaper substitute: running the check only in this section.
+- [ ] Add `python scripts/inventory-report.py --owners --check` to the audit commands of `process-plan` in `.claude/skills/`, `.agents/skills/` and `.codex/skills/`. Done when: all three mirrors list it and an unowned record is a refusal the audit fixes before shipping. Cheaper substitute: a note in `todo/README.md` only.
 - [ ] Run `python scripts/todo-graph.py plan --sync` and commit the regenerated plan. Done when: `plan --check` exits 0. Cheaper substitute: editing `todo/implementation-plan.md` by hand.
 - [ ] Commit: `todo: author platform and application domains`
 
-**Test checkpoint:** `python scripts/inventory-report.py --owners` prints no unowned ids and `python scripts/todo-graph.py validate` exits 0.
+**Test checkpoint:** `python scripts/inventory-report.py --owners --check` exits 0, `python -m unittest discover -s scripts/tests -p "test_pre_commit_hook.py"` passes and `python scripts/todo-graph.py validate` exits 0.
 
 ## Verification
 

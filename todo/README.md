@@ -4,7 +4,7 @@ The `todo/` tree is the live execution plan for building the project. Markdown i
 
 One rule governs everything below: **a TODO section must be implementable by someone with zero conversation context.** A fresh session starts with none. If a section only makes sense to someone who was in the room, it is not done.
 
-This system is seeded by `R:\GitHub\Conclave-SDK` in its clean strict form: one validator that refuses malformed work, a generated plan, and stamps backed by review receipts. The governing product documents stay where they are: architecture and milestones in `docs/plans/`, the interface in `design/SPEC.md`. TODO files execute those documents; they do not restate them.
+This system is Office's own, in its clean strict form: one validator that refuses malformed work, a generated plan, and stamps backed by review receipts. The governing product documents stay where they are: architecture and milestones in `docs/plans/`, the interface in `design/SPEC.md`. TODO files execute those documents; they do not restate them.
 
 ## Tree shape
 
@@ -90,7 +90,7 @@ Do not rewrite a `[x]` section's checklist: that is the contract its stamp cover
 
 When adopting or grooming this system on a repository where code is already partially implemented or the `todo/` tree is incomplete:
 
-- **Already-stamped `[x]` sections are never rewritten:** Their checklist is the historical contract covered by their receipt. If a `[x]` section was coarse or left gaps, keep it untouched and file the missing work as a new `## N.` section in numerical order with `-> XREF:` back to the original section. If a `[x]` section's `Test checkpoint` no longer passes, `review-todo-section` in audit stance flips it back to `[ ]` with a dated regression note.
+- **Already-stamped `[x]` sections are never rewritten:** Their checklist is the historical contract covered by their receipt. If a `[x]` section was coarse or left gaps, keep it untouched and file the missing work as a new `## N.` section in numerical order with `-> XREF:` back to the original section. If a `[x]` section's `Test checkpoint` no longer passes, or its own `Done when:` was never met, `review-todo-section` in audit stance files the repair and reopens it with `todo-graph.py unstamp`.
 - **Open `[ ]` micro-steps already implemented in code:** During `groom-plan` or `process-todo-section` Step 2/3, verify the existing code against the micro-step's `Done when:` and `Cheaper substitute:`. If 100% satisfied, tick `[x]` with the `file:line` and commit SHA that shipped it. If only partially implemented (for example, happy path exists but refusal path, token binding, or test is missing), leave it `[ ]`, update `> **Current state:**` to name what exists, and decompose the remaining work into concrete micro-steps.
 - **Open `[ ]` section already 100% implemented in code:** Do not churn working code just to manufacture a diff. Verify every micro-step's `Done when:`, add any missing falsifiable test if the checkpoint cannot fail, run the `Test checkpoint` for real, commit the ticked checklist and verification evidence, and run `review-todo-section` plus `stamp` against the implementing or verification commit SHA.
 - **Features already in the codebase with no TODO file:** Features that are already 100% complete and tested in the baseline codebase are recorded in `> **Current state:**` of the relevant domain's TODO file; features that are incomplete, untested, or stubbed get small single-responsibility sections and five-part micro-steps for the remaining work so (`baseline code` + `open plan`) equals a 100% complete product.
@@ -107,6 +107,10 @@ A section closes only through `stamp`:
 python scripts/todo-graph.py stamp 'D01 T01 §1' --sha <full 40-char implementation commit> --review '1:docs/reviews/01-engine/D01-T01-s1.md:clean' --check '<command> -> <quoted result>'
 ```
 
+`stamp` refuses unless every checklist item except `Commit:` is ticked, every prerequisite is stamped, no waiting Need remains, the SHA is a full commit on this branch, at least one review round (`clean`, `fixed` or `stopped-at-22`; `stopped-at-13`, `stopped-at-8` or `stopped-at-3` on receipts from earlier caps; with the findings file as its report) and at least one check are given. A `stopped-at-22` verdict, or `stopped-low-severity` (from round 9 on, a round with only `P3` or advisory findings, declared by the reviewer as `HIGHEST: P3`, ends the loop and its findings are filed), also needs `--cap-outcome` saying what was done. The receipt records `rounds_spent` and `round_cap` (and `cap_outcome`); `query rounds` summarises them. It then writes the receipt `docs/reviews/<ref>.json`, ticks the `Commit:` item and the Implementation Order row, appends the stamp at the end of the section, and marks the file `done` when its last section stamps, all or nothing.
+
+An audit that finds a stamped section regressed reopens it only through `python scripts/todo-graph.py unstamp '<ref>' --reason '<what regressed; repair -> XREF: <ref>>'`: it removes the two stamp lines, unticks the `Commit:` item and the row, reopens the file, keeps the receipt as `docs/reviews/<ref>.revoked-<date>.json`, adds `> **Unstamped:** <date>: <reason>` to the section and syncs the plan, all or nothing. The section then re-stamps with a fresh receipt.
+
 ## Commands
 
 ```powershell
@@ -115,11 +119,12 @@ python scripts/todo-graph.py build               # parse todo/ -> build/todo-cac
 python scripts/todo-graph.py render              # mermaid dependency graph
 python scripts/todo-graph.py plan --sync         # regenerate todo/implementation-plan.md after any edit
 python scripts/todo-graph.py plan --check        # fail if the generated plan is stale (CI runs this)
-python scripts/todo-graph.py query ready         # sections that can run now (also: blocked, stats, deferred, adjacency, plan)
+python scripts/todo-graph.py query ready         # sections that can run now (also: blocked, stats, deferred, adjacency, plan, rounds)
 python scripts/todo-graph.py resolve 'D01 T01 §1'  # 0 ready, 1 no such section, 2 no reference, 3 verified, 4 waiting
 python scripts/todo-graph.py classify 'D01 T01 §1' 'D02 T01 §1'   # dispositions as JSON
 python scripts/todo-graph.py stamp 'D01 T01 §1' --sha <commit> --review '1:<report>:clean' --check '<cmd> -> <result>'
-python -m unittest tests.scripts.test_todo_graph   # the tooling's own tests
+python scripts/todo-graph.py unstamp 'D01 T01 §1' --reason '<what regressed; repair -> XREF: <ref>>'
+python -m unittest scripts.tests.test_todo_graph   # the tooling's own tests
 ```
 
 ## Skills
