@@ -45,7 +45,8 @@ POLICY_COMMANDS = ["echo" + TAB + "x",                   # loads, but tabs are n
                    '"' + BACKSLASH + 'n"',               # loads, but escapes are not decoded
                    "|"]                                  # loads, but block scalars are not read in hooks
 ACCEPTED_COMMANDS = ["echo ok", "plain, fine", '"quoted: fine"', "'it''s fine'"]
-# Top-level frontmatter bodies after "name: probe": the unloadable ones both loaders reject, the accepted ones load.
+# Top-level frontmatter bodies after "name: probe": at least one loader rejects each unloadable one; the accepted
+# ones load in both.
 UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\ndescription: |\n    first\n  second\n",
                      "model: sonnet\ndescription: |\n    \n  text\n",              # a deeper leading blank line
@@ -57,12 +58,15 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\nhooks:\n  1: first\n  0x1: second\n",                         # one int key
                      "model: sonnet\n" + NBSP + "\n",                                             # NBSP is content
                      "model: sonnet\ndescription: |\n  text\n" + NBSP + "\n",
-                     "model: sonnet\ndescription: |\n  text\n" + TAB + "\n"]                      # yaml refuses it
+                     "model: sonnet\ndescription: |\n  text\n" + TAB + "\n",                      # yaml refuses it
+                     "model: sonnet\nhooks:\n  true: first\n  TRUE: second\n",                    # one boolean key
+                     "model: sonnet\ntrue: a\nTRUE: b\n"]
 ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non-breaking space is content
                    "description: 'it''s fine'\nmodel: sonnet\n",
                    "model: sonnet\ndescription: |\n    first\n      deeper\n",
                    "model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",   # a tab past the indentation
                    "model: sonnet\nhooks:\n  command : ok\n",                       # a space before the colon
+                   "model: sonnet\ndescription: |\n  text\n  " + TAB + "\n",        # a tab past the indentation
                    "model: sonnet\nhooks:\n  PreToolUse:\n  - matcher: Bash\n    hooks:\n    - type: command\n"
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 

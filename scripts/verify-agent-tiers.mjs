@@ -135,6 +135,9 @@ export function readAgentFrontmatter(text) {
     }
 
     const [, key, rest = ""] = entry;
+    if (NON_STRING_KEY.test(key)) {
+      return { fields: null, error: `"${key}:" is a key YAML reads as a boolean or null, not a name; no agent field is called that` };
+    }
     if (fields.has(key)) {
       // This reader takes the first, a YAML parser takes the last. Refuse the
       // ambiguity rather than pick a winner: `model: sonnet` above
@@ -176,9 +179,10 @@ export function readAgentFrontmatter(text) {
         const line = lines[index];
         const spaces = /^ */.exec(line)[0].length;
         if (/^[ \t]*$/.test(line)) {
-          if (line.includes("\t")) {
-            // A whitespace-only line with a tab: one loader reads the tab as indentation and refuses it.
-            return { fields: null, error: `"${key}:" block scalar holds a blank line with a tab; YAML loaders disagree on it, so remove the tab` };
+          if (line.includes("\t") && (contentIndent === null || spaces < contentIndent)) {
+            // A tab inside the indentation of a blank line: one loader reads it as indentation and refuses it.
+            // Past the block's indentation a tab is content, as in any other line.
+            return { fields: null, error: `"${key}:" block scalar holds a blank line with a tab inside its indentation; YAML loaders disagree on it, so remove the tab` };
           }
           if (contentIndent === null) blankLead = Math.max(blankLead, spaces);
         } else {
@@ -241,6 +245,13 @@ export function readAgentFrontmatter(text) {
  * character (`-`, `?` and `:` only when a space follows them), and may not hold
  * `: ` or end with `:`, which YAML reads as a nested mapping.
  */
+/**
+ * A plain key YAML's core schema resolves to a boolean or null, not a string.
+ * Two of its spellings (`true` and `TRUE`) are one key to YAML, so neither
+ * reader accepts them as names.
+ */
+const NON_STRING_KEY = /^(?:true|True|TRUE|false|False|FALSE|null|Null|NULL)$/;
+
 export function plainScalarProblem(plain) {
   if (/^[,\]}%@`|>'"#]/.test(plain)) return `it opens with the reserved indicator "${plain[0]}"`;
   if (/^[-?:](?:[ \t]|$)/.test(plain)) return `it opens with "${plain[0]}" and a space`;
@@ -384,8 +395,8 @@ function hooksLine(text) {
       // Keys are compared as YAML values: quotes removed, separation spaces before the colon dropped, and a plain
       // key held to an identifier, so no two spellings (`1` and `0x1`) can resolve to one key unnoticed.
       key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node.replace(/ +$/, "");
-      if (!quoted && !/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key)) {
-        return { error: `holds the key ${JSON.stringify(key)}; a plain key here is an identifier (letters, digits, "_" and "-"), so quote any other` };
+      if (!quoted && (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key) || NON_STRING_KEY.test(key))) {
+        return { error: `holds the key ${JSON.stringify(key)}; a plain key here is an identifier (letters, digits, "_" and "-") that YAML reads as a string, not a boolean or null, so quote any other` };
       }
       rest = rest.slice(colon[0].length);
       continue;
