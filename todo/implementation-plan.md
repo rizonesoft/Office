@@ -53,7 +53,7 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 36 | Checklist items: 235
+Sections: 40 | Checklist items: 255
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -61,8 +61,13 @@ Sections: 36 | Checklist items: 235
 | [x]    | D02 T01 §2  | Reference Build Setup     | office, windows-host                  | 5     |
 | [x]    | D02 T01 §21 | Microsoft-Free Inventory  | none                                  | 6     |
 | [x]    | D02 T01 §3  | UIA Capture Tool          | office, windows-host, display-session | 12    |
-| [ ]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 7     |
 | [x]    | D02 T01 §19 | Control ID Baseline       | none                                  | 6     |
+| [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
+| [ ]    | D02 T01 §23 | Audit Schema Checker      | none                                  | 5     |
+| [ ]    | D02 T01 §24 | Audit Capture Tool        | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §25 | Audit Control ID Baseline | none                                  | 5     |
+| [ ]    | D02 T01 §26 | Audit Microsoft-Free Rule | none                                  | 5     |
+| [ ]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §5  | Word Ribbon               | office, windows-host, display-session | 10    |
 | [ ]    | D02 T01 §6  | Word Panes, Dialogs       | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §7  | Excel Ribbon              | office, windows-host, display-session | 9     |
@@ -75,7 +80,6 @@ Sections: 36 | Checklist items: 235
 | [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
-| [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
 | [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
@@ -124,6 +128,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 14/83 verified sections, 14 ready to run now.
+Progress: 14/87 verified sections, 10 ready to run now.
 
-Checklist: 90/477 items completed (includes Commit items).
+Checklist: 90/497 items completed (includes Commit items).
