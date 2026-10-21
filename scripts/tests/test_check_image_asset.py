@@ -25,9 +25,18 @@ def png(width, height):
             + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b""))
 
 
-def bmp(size):
-    """An icon bitmap: BITMAPINFOHEADER with the doubled height, then empty pixels."""
-    return struct.pack("<IiiHHIIiiII", 40, size, size * 2, 1, 32, 0, 0, 0, 0, 0, 0) + b"\x00" * 16
+def bmp(size, bits=32):
+    """A complete icon bitmap: BITMAPINFOHEADER with the doubled height, the palette, colour pixels, then the mask."""
+    palette = (1 << bits) * 4 if bits <= 8 else 0
+    rows = ((size * bits + 31) // 32) * 4 + ((size + 31) // 32) * 4
+    return (struct.pack("<IiiHHIIiiII", 40, size, size * 2, 1, bits, 0, 0, 0, 0, 0, 0)
+            + bytes(palette + rows * size))
+
+
+def png_raw(width, height, idat, depth=8, colour=0, interlace=0, plte=b""):
+    """A PNG with the given IHDR fields and raw IDAT bodies, every CRC correct."""
+    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, depth, colour, 0, 0, interlace))
+    return ia.PNG_SIGNATURE + ihdr + plte + b"".join(chunk(b"IDAT", d) for d in idat) + chunk(b"IEND", b"")
 
 
 def ico(*images):
@@ -83,6 +92,29 @@ class Png(Fixtures):
         self.assertIn("format is png, expected svg", out)
         self.assertIn("not a PNG, SVG or ICO", self.run_check("x.png", b"GIF89a....")[1])
 
+    def test_a_well_framed_but_undecodable_png_is_refused(self):
+        two_rows = zlib.compress(bytes([0, 128]) * 4)
+        cases = {
+            "no image data (IDAT)": png_raw(4, 4, []),
+            "does not inflate": png_raw(4, 4, [b"not zlib"]),
+            "bit depth 3 is not allowed": png_raw(4, 4, [two_rows], depth=3),
+            "invalid dimensions 0x4": png_raw(0, 4, [two_rows]),
+            "image data is 8 bytes, 4x4 needs 20": png_raw(4, 4, [two_rows]),
+            "more image data than 1x1 needs": png_raw(1, 1, [zlib.compress(bytes(100))]),
+            "no PLTE": png_raw(1, 1, [zlib.compress(bytes(2))], colour=3),
+        }
+        for reason, data in cases.items():
+            with self.subTest(reason=reason):
+                code, out = self.run_check("bad.png", data)
+                self.assertEqual(code, 1, out)
+                self.assertIn(reason, out)
+
+    def test_an_interlaced_png_and_split_idat_pass(self):
+        size = ia.png_data_size(5, 3, 8, 6, 1)
+        split = zlib.compress(bytes(size))
+        data = png_raw(5, 3, [split[:7], split[7:]], colour=6, interlace=1)
+        self.assertEqual(self.run_check("i.png", data, "--size", "5x3")[0], 0)
+
     def test_a_corrupt_or_truncated_png_is_refused(self):
         good = bytearray(png(8, 8))
         good[-20] ^= 0xFF  # a byte inside IDAT, so its CRC fails
@@ -127,6 +159,37 @@ class Svg(Fixtures):
                 self.assertEqual(code, 1, out)
                 self.assertIn(reason, out)
 
+    def test_css_escapes_stylesheets_and_image_functions_are_refused(self):
+        backslash = chr(92)
+        cases = {
+            f"<style>rect {{ fill: u{backslash}72l(https://example.invalid/a.svg#p) }}</style>": "CSS escape in <style>",
+            f'<style>@impor{backslash}74 "https://example.invalid/a.css";</style>': "CSS escape in <style>",
+            '<rect style="fill:image-set(&quot;a.png&quot; 1x)" width="1" height="1"/>': "CSS image function",
+        }
+        for extra, reason in cases.items():
+            with self.subTest(reason=reason):
+                code, out = self.run_check("mark.svg", SVG.format(extra=extra))
+                self.assertEqual(code, 1, out)
+                self.assertIn(reason, out)
+        pi = '<?xml version="1.0"?><?xml-stylesheet type="text/css" href="https://example.invalid/a.css"?>'
+        code, out = self.run_check("mark.svg", pi + SVG.format(extra=""))
+        self.assertEqual(code, 1, out)
+        self.assertIn("processing instruction <?xml-stylesheet?>", out)
+
+    def test_a_non_finite_or_empty_viewbox_is_refused(self):
+        for box in ("nan 0 48 48", "0 0 nan inf", "0 0 0 48", "0 0 48 -1", "0 0 48"):
+            with self.subTest(box=box):
+                code, out = self.run_check("a.svg", SVG.format(extra="").replace("0 0 48 48", box))
+                self.assertEqual(code, 1, out)
+                self.assertIn("viewBox is missing or invalid", out)
+
+    def test_a_prefixed_or_utf16_svg_is_detected(self):
+        prefixed = ('<s:svg xmlns:s="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+                    '<s:rect width="1" height="1"/></s:svg>')
+        self.assertEqual(self.run_check("p.svg", prefixed, "--format", "svg", "--size", "48x48")[0], 0)
+        utf16 = SVG.format(extra="").encode("utf-16")
+        self.assertEqual(self.run_check("u.svg", utf16, "--format", "svg", "--size", "48x48")[0], 0)
+
     def test_a_doctype_missing_viewbox_or_wrong_root_is_refused(self):
         doctype = '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY a "x">]>' + SVG.format(extra="")
         self.assertIn("DOCTYPE or entity", self.run_check("a.svg", doctype)[1])
@@ -135,10 +198,10 @@ class Svg(Fixtures):
 
 
 class Ico(Fixtures):
-    ICON = ico((16, 16, png(16, 16)), (32, 32, bmp(32)), (256, 256, png(256, 256)))
+    ICON = ico((16, 16, png(16, 16)), (32, 32, bmp(32)), (48, 48, bmp(48, bits=8)), (256, 256, png(256, 256)))
 
     def test_ico_sizes_lists_every_entry(self):
-        self.assertEqual(ia.ico_sizes(self.ICON), [(16, 16), (32, 32), (256, 256)])
+        self.assertEqual(ia.ico_sizes(self.ICON), [(16, 16), (32, 32), (48, 48), (256, 256)])
         code, out = self.run_check("app.ico", self.ICON, "--size", "16x16", "--size", "32x32", "--size", "256x256")
         self.assertEqual(code, 0, out)
 
@@ -153,11 +216,25 @@ class Ico(Fixtures):
         self.assertIn("entry 1 says 32x32, its image is 16x16", self.run_check("app.ico", lying)[1])
         self.assertIn("truncated ICO", self.run_check("app.ico", self.ICON[:-40])[1])
 
+    def test_a_truncated_or_unsupported_bitmap_is_refused(self):
+        complete = bmp(32)
+        cases = {
+            "truncated bitmap header": struct.pack("<Iii", 40, 32, 64),
+            "truncated bitmap: ": complete[:-1],
+            "unsupported bitmap": complete[:14] + struct.pack("<H", 7) + complete[16:],
+        }
+        for reason, image in cases.items():
+            with self.subTest(reason=reason):
+                code, out = self.run_check("app.ico", ico((32, 32, image)), "--size", "32x32")
+                self.assertEqual(code, 1, out)
+                self.assertIn(reason, out)
+
 
 class Arguments(Fixtures):
     def test_bad_arguments_and_unreadable_files_exit_2(self):
         self.assertEqual(self.run_check("a.png", png(4, 4), "--size", "4by4")[0], 2)
         self.assertEqual(self.run_check("a.png", png(4, 4), "--format", "png", "--size", "4x4", "--size", "8x8")[0], 2)
+        self.assertEqual(self.run_check("a.png", png(4, 4), "--size", "4x4", "--size", "8x8")[0], 2)  # no --format
         out = io.StringIO()
         with contextlib.redirect_stderr(out):
             self.assertEqual(ia.main([str(self.dir / "missing.png")]), 2)
