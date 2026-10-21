@@ -7,7 +7,8 @@
     python scripts/check-spdx.py --allow MIT     # also accept MIT, which THIRD-PARTY-NOTICES.md must record
 
 Source files are the tracked `.py`, `.mjs`, `.ps1`, `.sh`, `.cs` and `.xaml` files, and every tracked file under
-`scripts/hooks/` (git hooks have no extension). Each must carry an SPDX licence identifier line in its first 10 lines.
+`scripts/hooks/` (git hooks have no extension). Each must carry exactly one SPDX licence identifier line in its first
+10 lines, naming one licence (a compound expression such as `A AND B` is refused), and must exist in the working tree.
 Rizonesoft code is `GPL-3.0-or-later`. A vendored third-party file keeps its own identifier, accepted only when it is
 named with `--allow` and `THIRD-PARTY-NOTICES.md` records that licence on a `- Licence: <identifier>` line, so a new
 licence cannot slip in without its notice.
@@ -28,7 +29,10 @@ HEAD_LINES = 10
 NOTICES = "THIRD-PARTY-NOTICES.md"
 # Built from parts so this file's own text is not read as a licence tag by REUSE tooling.
 TAG = "SPDX-" + "License-Identifier:"
-IDENTIFIER = re.compile(re.escape(TAG) + r"\s*([A-Za-z0-9.+-]+)")
+# The tag must start a word (not "NotSPDX-..."), and the declaration runs to the end of the line, less a closing
+# comment marker, so a compound expression is read whole rather than by its first identifier.
+DECLARATION = re.compile(r"(?<![A-Za-z0-9-])" + re.escape(TAG) + r"[ \t]*(.*?)[ \t]*(?:-->|\*/)?[ \t]*$")
+SINGLE = re.compile(r"[A-Za-z0-9.+-]+")
 NOTICE_LICENCE = re.compile(r"^- Licence: ([A-Za-z0-9.+-]+?)\.?(?:\s|$)", re.M)
 
 
@@ -49,14 +53,21 @@ def recorded_licences(root):
     return set(NOTICE_LICENCE.findall(path.read_text(encoding="utf-8")))
 
 
-def identifier(path):
-    """The SPDX identifier in the file's first lines, or None."""
+def declarations(path):
+    """Every SPDX licence declaration in the file's first lines, as written."""
+    found = []
     with open(path, encoding="utf-8", errors="replace") as handle:
         for _, line in zip(range(HEAD_LINES), handle):
-            match = IDENTIFIER.search(line)
+            match = DECLARATION.search(line.rstrip("\r\n"))
             if match:
-                return match.group(1)
-    return None
+                found.append(match.group(1))
+    return found
+
+
+def identifier(path):
+    """The file's one SPDX identifier, or None when it has no declaration or more than one."""
+    found = declarations(path)
+    return found[0] if len(found) == 1 else None
 
 
 def problems(root, allow=()):
@@ -64,13 +75,18 @@ def problems(root, allow=()):
     found = []
     for rel in tracked(root):
         path = Path(root) / rel
-        if not path.is_file():  # tracked but deleted in the working tree: nothing to check
+        if not path.is_file():  # the index still holds it, so it cannot be certified from the working tree
+            found.append(f"{rel}: tracked but missing from the working tree, so its licence cannot be read")
             continue
-        ident = identifier(path)
-        if ident is None:
+        declared = declarations(path)
+        if not declared:
             found.append(f"{rel}: no {TAG} line in its first {HEAD_LINES} lines")
-        elif ident not in accepted:
-            found.append(f"{rel}: {ident} is not {OWN} or an allowed third-party licence")
+        elif len(declared) > 1:
+            found.append(f"{rel}: {len(declared)} {TAG} lines; a file declares its licence once")
+        elif not SINGLE.fullmatch(declared[0]):
+            found.append(f"{rel}: '{declared[0]}' is not a single licence identifier")
+        elif declared[0] not in accepted:
+            found.append(f"{rel}: {declared[0]} is not {OWN} or an allowed third-party licence")
     return found
 
 

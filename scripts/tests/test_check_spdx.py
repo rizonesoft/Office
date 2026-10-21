@@ -66,6 +66,28 @@ class Identifiers(Repo):
             self.assertIn(f"{rel}: no", out)
         self.assertNotIn("notes.md", out)
 
+    def test_only_a_whole_single_declaration_counts(self):
+        cases = {"compound.py": f"# {TAG} GPL-3.0-or-later AND Apache-2.0\n",
+                 "prefixed.py": f"# Not{TAG} GPL-3.0-or-later\n",
+                 "twice.py": f"# {TAG} GPL-3.0-or-later\n# {TAG} Apache-2.0\n"}
+        for rel, text in cases.items():
+            self.add(rel, text)
+        self.add("xaml.xaml", f"<!-- {TAG} GPL-3.0-or-later -->\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("compound.py: 'GPL-3.0-or-later AND Apache-2.0' is not a single licence identifier", out)
+        self.assertIn("prefixed.py: no", out)
+        self.assertIn("twice.py: 2 ", out)
+        self.assertNotIn("xaml.xaml", out)
+
+    def test_a_tracked_file_missing_from_the_working_tree_is_refused(self):
+        self.add("scripts/ok.py", f"# {TAG} GPL-3.0-or-later\n")
+        self.add("scripts/bad.py", "print()\n")
+        (self.root / "scripts/bad.py").unlink()  # deleted, deletion not staged: the index still holds it
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("scripts/bad.py: tracked but missing", out)
+
     def test_an_untracked_file_is_not_checked(self):
         (self.root / "loose.py").write_text("print()\n", encoding="utf-8")
         self.assertEqual(self.run_main()[0], 0)
