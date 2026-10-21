@@ -117,3 +117,39 @@ Candidate `0e11949..98f9c59`. All three findings verified and fixed in the next 
 3. P2 `rounds_spent` unchecked: fixed. A receipt's `rounds_spent` must equal `rounds_recorded` over its findings files. Test: `test_rounds_spent_must_be_what_the_findings_files_record`.
 
 Gates: `python -m unittest discover -s scripts/tests` -> 439 tests OK (2 skipped); `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`.
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T18:29:37Z
+- Effort: medium
+- Lines: 18
+- Digest: 6813c0ae19a1e324
+
+## adversarial: approve
+
+## consistency: needs-attention
+
+1. **P3** `todo/00-workspace/TODO-02-licensing-and-contributions.md:60`: An open implementation item still requires preserving identifiers declared by Conclave-SDK kits, although this candidate removes the kit manifest and SDK relationship. Reproduce by following that item: its source for identifying kit files and their declared licences is gone. Replace this instruction with explicit, locally verifiable provenance. Stale SDK instructions also remain at `todo/01-brand/TODO-01-suite-naming.md:167` and `todo/03-architecture/TODO-01-tech-stack.md:289`.
+
+## integration: needs-attention
+
+2. **P2** `scripts/lib/todo_graph.py:343`, `scripts/lib/todo_graph.py:911`: Auditing a stamped section can invalidate its receipt and prevent `unstamp` from reopening it. The audit workflow reuses the section’s findings file, but receipt validation requires that file’s latest round to match the existing receipt. `unstamp` first calls `graph(root)`, which enforces that validation.
+
+   Reproduce: stamp after round 1, then append an independent audit as round 2 to the same findings file. Even an approving audit makes validation refuse because the receipt names round 1; an outage triggers the new last-round refusal. Calling `unstamp` encounters the same refusal before changing anything. Confirmed the receipt failure with an in-memory probe. Give audit rounds a separate evidence file or explicit review-loop identity, preserving validation of the original stamped evidence.
+
+## record: advisory
+
+The claimed 439-test run, live scheduled-task removal and Git executable mode were not independently verified. Review used file inspection and in-memory probes, without file modifications or Git commands.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Dispositions after round 4
+
+Candidate `0e11949..fbd8aa1`. Both findings verified and fixed in the next commit:
+
+1. P3 open TODO items still named the Conclave SDK: fixed. D00 T02 §2 now heads every Rizonesoft-authored script, including those first ported from the Conclave SDK or Recto, leaving only third-party files in `THIRD-PARTY-NOTICES.md`; D01 T01 and D03 T01 cheaper substitutes name the adaptation placeholder. The remaining mentions are dated `Current state` measurements and stamped sections, left as written.
+2. P2 audit rounds appended to the stamped findings file: fixed at the skill layer. `review-todo-section` (all three mirrors) now records audit rounds in `docs/reviews/<NN-domain>/audit-d<NN>-t<NN>-s<N>.md`, never in the stamped findings file, and says why (the receipt names that file's last round; a round appended there breaks validation and `unstamp`). This is Recto's practice (`docs/reviews/06-quality/audit-*.md`).
+
+Gates: `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`. No code changed in this commit.

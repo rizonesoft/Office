@@ -286,7 +286,7 @@ The foundation plan joins the decisions into one architecture: component diagram
 - [ ] Write the Repository layout section mapping components to directories. Done when: each top-level directory has a purpose line. Cheaper substitute: deciding layout while coding.
 - [ ] Write the Toolchain section: languages, package managers, build, lint, test and CI matrix per target. Done when: each tool has a version policy. Cheaper substitute: "standard tooling".
 - [ ] Write the Milestones section ordering the shared platform and the six apps, with the parity bar per milestone as inventory coverage percentages. Done when: each milestone names its coverage target. Cheaper substitute: dates without a measurable bar.
-- [ ] Update `AGENTS.md` with where the code lives and which commands verify it, from the Toolchain section. Done when: `AGENTS.md` lists the build, lint and test commands. Cheaper substitute: leaving the Conclave-SDK placeholder line.
+- [ ] Update `AGENTS.md` with where the code lives and which commands verify it, from the Toolchain section. Done when: `AGENTS.md` lists the build, lint and test commands. Cheaper substitute: leaving the adaptation placeholder line.
 - [ ] Commit: `arch: add foundation plan`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/plans/<dated>-foundation-plan.md --require Architecture --require "Repository layout" --require Toolchain --require Milestones` exits 0.
