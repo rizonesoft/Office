@@ -4,7 +4,7 @@
 """The campaign run guard for process-plan: the Claude Code Stop hook and its lifecycle commands.
 
     python scripts/campaign_guard.py stop-hook                      (the Stop hook; reads the payload on stdin)
-    python scripts/campaign_guard.py acquire --session S --phase N --run-file F --cron-id J [--scope plan|phase] [--generation G] [--handover REASON]
+    python scripts/campaign_guard.py acquire --session S [--phase N] --run-file F --cron-id J [--scope plan|phase] [--generation G] [--handover REASON]
     python scripts/campaign_guard.py end --session S --reason closeout|park|plan-done|operator-stop|escalation|stall
     python scripts/campaign_guard.py hook-error [--session S] [--ack LINE]
     python scripts/campaign_guard.py mint-generation
@@ -37,6 +37,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import time
@@ -134,7 +135,8 @@ def _write_json(path: str, doc) -> None:
             os.unlink(tmp)
 
 
-def read_guard(root: str) -> dict | None:
+def _read_guard_doc(root: str) -> dict | None:
+    """The guard file as written, an ended one included."""
     guard, _ = _paths(root)
     try:
         with open(guard, encoding="utf-8-sig") as fh:
@@ -146,6 +148,29 @@ def read_guard(root: str) -> dict | None:
     if not isinstance(doc, dict):
         raise GuardError(f"the guard file {guard} is not an object")
     return doc
+
+
+def read_guard(root: str) -> dict | None:
+    """The live guard, or None. A guard `end` marked `ended` is over even while its file still exists (an end
+    interrupted before it deleted the file), so nothing resumes or re-points a run that was stopped."""
+    doc = _read_guard_doc(root)
+    return None if doc is not None and doc.get("ended") else doc
+
+
+def _finish_ended(root: str) -> bool:
+    """Under the lock: delete the guard and state an interrupted `end` left behind. True when it did."""
+    try:
+        doc = _read_guard_doc(root)
+    except GuardError:
+        return False  # unreadable: never this function's to delete
+    if doc is None or not doc.get("ended"):
+        return False
+    for path in _paths(root):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+    return True
 
 
 def _read_state(root: str) -> dict:
@@ -167,14 +192,15 @@ def _utc_now() -> str:
     return datetime.datetime.now(datetime.timezone.utc).strftime(UTC_FORMAT)
 
 
-def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
+def acquire(root: str, session: str, phase: int | None, run_file: str, cron_id: str,
             handover: str | None = None, generation: str | None = None, scope: str | None = None) -> str:
     """Write the guard for `session`. Only one session can hold it: every guard change holds the lock, so two sessions
     racing to start a run cannot both win; the owner re-points its own guard; a live guard owned by another session is
     refused unless the operator hands it over, and the handover is recorded in the guard.
 
     `scope` is what the run covers: `plan` (process-plan chains every ready phase) or `phase` (process-phase was asked
-    for one phase), so a heartbeat resumes only what was asked for. A re-point keeps the scope unless one is given."""
+    for one phase), so a heartbeat resumes only what was asked for. A re-point keeps the scope unless one is given, and
+    keeps the phase when `phase` is None (a heartbeat repair names only the new job); a new run needs a phase."""
     if not session or not run_file or not cron_id:
         raise GuardError("acquire needs --session, --run-file, and --cron-id")
     if os.path.isabs(run_file) or ".." in run_file.replace("\\", "/").split("/"):
@@ -185,16 +211,21 @@ def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
         return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation, scope)
 
 
-def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id: str,
+def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, cron_id: str,
                     handover: str | None, generation: str | None, scope: str | None) -> str:
     guard, state_path = _paths(root)
     os.makedirs(os.path.dirname(guard), exist_ok=True)
+    _finish_ended(root)  # an end that was interrupted leaves no run to re-point: this one starts fresh
     exists = os.path.exists(guard)
     try:
         previous = read_guard(root) or {}
     except GuardError:
         previous = {}  # a torn or unreadable guard: only an operator handover may replace it (below)
     same_run = previous.get("run_file") == run_file and previous.get("session_id") == session
+    if phase is None:
+        if not (same_run and type(previous.get("phase")) is int):
+            raise GuardError("a new run needs --phase; only a re-point of this session's own run keeps its phase")
+        phase = previous["phase"]
     doc = {"runner": "claude", "workspace": root.replace("\\", "/"), "phase": phase,
            "run_file": run_file, "session_id": session, "cron_id": cron_id,
            "scope": scope or (previous.get("scope") if previous.get("session_id") == session or
@@ -316,6 +347,8 @@ def end(root: str, session: str, reason: str) -> str:
 
 def _end_locked(root: str, session: str, reason: str, ready: int | None, still_open: int | None = None) -> str:
     guard_path, state_path = _paths(root)
+    if _finish_ended(root):
+        return "end: finished an interrupted end; guard and state deleted"
     guard = read_guard(root)
     if guard is None:
         raise GuardError("no guard file: the run is already over")
@@ -344,6 +377,9 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None, still_o
             raise GuardError(f"stall needs a state file with trips of 2 or more; it reads {trips}")
     # The job id outlives the guard until CronDelete is confirmed, so a failed delete stays recoverable, and a later
     # end never overwrites an earlier unconfirmed cancellation.
+    # Ended first, atomically: from here an interrupted end leaves a guard every reader treats as over, never one
+    # the heartbeat or the Stop hook would resume.
+    _write_json(guard_path, {**guard, "ended": {"reason": reason, "at": _utc_now()}})
     jobs = [j for j in _pending_jobs(root) if j.get("cron_id") != guard.get("cron_id")]
     jobs.append({"cron_id": guard.get("cron_id"), "reason": reason, "at": _utc_now()})
     _write_json(_pending_path(root), jobs)
@@ -408,6 +444,7 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
     """What this heartbeat is to the run: OWNER, NOT THE OWNER, NOT THE CURRENT JOB (a replaced job in the owning
     session), NO GUARD, or MALFORMED GUARD."""
     with _Lock(root):
+        _finish_ended(root)  # an interrupted end: the run is over, so the heartbeat stands down
         try:
             guard = read_guard(root)
         except GuardError:
@@ -582,6 +619,34 @@ OWN_FILES = re.compile(r"^build/claude-campaign-(guard|state|pending-cancel)\.js
                        r"^build/claude-campaign-guard\.lock$|^build/claude-campaign-hook-errors/")
 
 
+def _untracked_entry(full: str, path: str, hash_it: bool, max_bytes: int) -> bytes:
+    """One untracked path's line in the fingerprint. The path is read with lstat, so a symlink is never followed (it
+    counts by its target text) and only a regular file is ever opened: a FIFO, device or socket counts by its type,
+    because opening one can block the hook for good. The file is opened without blocking and checked again after the
+    open, so one swapped in after the lstat is not read either."""
+    try:
+        info = os.lstat(full)
+    except OSError:
+        return f"{path} missing\n".encode("utf-8")
+    if stat.S_ISLNK(info.st_mode):
+        try:
+            return f"{path} -> {os.readlink(full)}\n".encode("utf-8")
+        except OSError:
+            return f"{path} link\n".encode("utf-8")
+    if not stat.S_ISREG(info.st_mode):
+        return f"{path} type {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8")
+    if hash_it and info.st_size <= max_bytes:
+        try:
+            fd = os.open(full, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0))
+        except OSError:
+            return f"{path} unreadable\n".encode("utf-8")
+        with os.fdopen(fd, "rb") as fh:
+            if stat.S_ISREG(os.fstat(fh.fileno()).st_mode):
+                return f"{path} ".encode("utf-8") + hashlib.sha256(fh.read(max_bytes + 1)).hexdigest().encode() + b"\n"
+        return f"{path} changed type\n".encode("utf-8")
+    return f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8")
+
+
 def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None = None) -> str:
     """HEAD, the working-tree diff, the untracked files, and the run file without its `- bookkeeping:` lines.
 
@@ -603,19 +668,10 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
     for index, path in enumerate((p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)),
                                  1):
         _remaining(deadline)
-        full = os.path.join(root, path)
-        try:
-            info = os.stat(full)
-        except OSError:
-            digest.update(f"{path} missing\n".encode("utf-8"))
+        if index > max_hashed + max_stat:
+            digest.update(f"{path}\n".encode("utf-8"))  # past both bounds: by name, with no filesystem call
             continue
-        if index <= max_hashed and info.st_size <= max_bytes:
-            with open(full, "rb") as fh:
-                digest.update(f"{path} ".encode("utf-8") + hashlib.sha256(fh.read()).hexdigest().encode() + b"\n")
-        elif index <= max_hashed + max_stat:
-            digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
-        else:
-            digest.update(f"{path}\n".encode("utf-8"))
+        digest.update(_untracked_entry(os.path.join(root, path), path, index <= max_hashed, max_bytes))
     digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
     return digest.hexdigest()
 
@@ -765,7 +821,8 @@ def main(argv: list[str]) -> int:
         opts = _opts(argv[1:])
         root = opts.pop("root", REPO)
         if argv[0] == "acquire":
-            print(acquire(root, opts.get("session", ""), int(opts.get("phase", "0")), opts.get("run_file", ""),
+            phase = int(opts["phase"]) if "phase" in opts else None  # a re-point without one keeps the run's
+            print(acquire(root, opts.get("session", ""), phase, opts.get("run_file", ""),
                           opts.get("cron_id", ""), opts.get("handover"), opts.get("generation"), opts.get("scope")))
             return 0
         if argv[0] == "end":

@@ -453,5 +453,101 @@ class Lifecycle(Workspace):
         self.assertEqual(cli("frobnicate").returncode, 2)
 
 
+class Robustness(Workspace):
+    """D00 T03 §7: the three defects reported 2026-10-21."""
+
+    def test_a_device_a_fifo_or_a_symlink_never_blocks_or_breaks_the_fingerprint(self):
+        import stat
+        from unittest import mock
+        self.write("notes.txt", "plain\n")
+        self.write("dev0", "")  # reported below as a character device
+        os.makedirs(os.path.join(self.root, "somedir"))
+        links = False
+        try:
+            os.symlink(os.path.join(self.root, "somedir"), os.path.join(self.root, "dirlink"),
+                       target_is_directory=True)
+            links = True
+        except (OSError, NotImplementedError):
+            pass  # Windows without the symlink privilege: the device and FIFO cases still run
+        if hasattr(os, "mkfifo"):
+            os.mkfifo(os.path.join(self.root, "pipe"))  # opening it for reading would block forever
+        real_lstat, opened = os.lstat, []
+        real_open = os.open
+
+        def lstat(path, *a, **kw):
+            result = real_lstat(path, *a, **kw)
+            if os.path.basename(path) == "dev0":
+                fields = list(result)
+                fields[0] = stat.S_IFCHR | 0o600
+                return os.stat_result(fields)
+            return result
+
+        def tracking_open(path, *a, **kw):
+            opened.append(os.path.basename(path))
+            return real_open(path, *a, **kw)
+
+        with mock.patch.object(guard.os, "lstat", lstat), mock.patch.object(guard.os, "open", tracking_open):
+            first = guard.fingerprint(self.root, RUN_FILE, "")
+        self.assertIn("notes.txt", opened)
+        for special in ("dev0", "pipe", "dirlink"):
+            self.assertNotIn(special, opened, f"{special} was opened")
+        if links:  # the link is recorded by its target text, so retargeting it changes the fingerprint
+            os.unlink(os.path.join(self.root, "dirlink"))
+            os.symlink(os.path.join(self.root, "build"), os.path.join(self.root, "dirlink"), target_is_directory=True)
+            with mock.patch.object(guard.os, "lstat", lstat):
+                self.assertNotEqual(guard.fingerprint(self.root, RUN_FILE, ""), first)
+
+    def test_a_path_past_both_bounds_makes_no_filesystem_call(self):
+        from unittest import mock
+        for name in ("a.txt", "b.txt", "c.txt"):
+            self.write(name, name)
+        seen = []
+        real_lstat = os.lstat
+
+        def lstat(path, *a, **kw):
+            seen.append(os.path.basename(path))
+            return real_lstat(path, *a, **kw)
+
+        with mock.patch.dict(os.environ, {"CAMPAIGN_HASH_FILES": "1", "CAMPAIGN_STAT_FILES": "1"}), \
+                mock.patch.object(guard.os, "lstat", lstat):
+            guard.fingerprint(self.root, RUN_FILE, "")
+        untracked = [p for p in seen if p.endswith(".txt")]
+        self.assertEqual(len(untracked), 2, f"the third untracked path was touched: {seen}")
+
+    def test_a_repoint_without_a_phase_keeps_the_phase_and_a_fresh_run_needs_one(self):
+        with self.assertRaises(guard.GuardError) as ctx:
+            guard.acquire(self.root, SESSION, None, RUN_FILE, "job-1")
+        self.assertIn("--phase", str(ctx.exception))
+        guard.acquire(self.root, SESSION, 2, RUN_FILE, "job-1")
+        out = guard.acquire(self.root, SESSION, None, RUN_FILE, "job-2")  # the heartbeat repair at a boundary
+        self.assertEqual(guard.read_guard(self.root)["phase"], 2)
+        self.assertEqual(guard.read_guard(self.root)["cron_id"], "job-2")
+        self.assertIn("phase 2", out)
+        cli = subprocess.run([sys.executable, os.path.join(self.root, "scripts", "campaign_guard.py"), "acquire",
+                              "--root", self.root, "--session", SESSION, "--run-file", RUN_FILE, "--cron-id", "job-3"],
+                             capture_output=True, text=True)
+        self.assertEqual(cli.returncode, 0, cli.stderr)
+        self.assertEqual(guard.read_guard(self.root)["phase"], 2)
+
+    def test_an_end_interrupted_after_it_began_never_resumes_the_run(self):
+        from unittest import mock
+        self.acquire()
+        self.write(RUN_FILE, f"PARKED 2026-10-21T00:00:00Z run={self.run_id()} done here\n", mode="a")
+        real_unlink = os.unlink
+
+        def crash_on_guard(path, *a, **kw):
+            if path.endswith("claude-campaign-guard.json"):
+                raise KeyboardInterrupt("session died mid-end")
+            return real_unlink(path, *a, **kw)
+
+        with mock.patch.object(guard.os, "unlink", crash_on_guard), self.assertRaises(KeyboardInterrupt):
+            guard.end(self.root, SESSION, "park")
+        self.assertTrue(os.path.exists(os.path.join(self.root, "build", "claude-campaign-guard.json")))
+        self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")  # the heartbeat stands down
+        self.assertIsNone(self.hook())  # the Stop hook lets the turn end
+        self.assertFalse(os.path.exists(os.path.join(self.root, "build", "claude-campaign-guard.json")))
+        self.assertIn("created", guard.acquire(self.root, SESSION, 0, RUN_FILE, "job-9"))  # a later run starts fresh
+
+
 if __name__ == "__main__":
     unittest.main()
