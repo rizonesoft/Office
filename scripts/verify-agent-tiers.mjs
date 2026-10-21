@@ -100,7 +100,8 @@ export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
  * the block's content, a quoted scalar or a flow collection spanning lines, are
  * refused line by line, as are tabs anywhere in the block, block scalars,
  * anchors, aliases and tags, a second key on one line, and any line that is not
- * a key, a sequence entry, a scalar or a comment (`hooksLineProblem`). Every
+ * a key, a sequence entry, a scalar or a comment (`hooksLine`), and the lines
+ * must form valid block structure (`skipHooksBlock`). Every
  * other nested block stays refused.
  *
  * Returns `{ fields, error }`: `error` is set when the block cannot be read
@@ -110,6 +111,12 @@ export function readAgentFrontmatter(text) {
   const match = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
   if (!match) return { fields: null, error: "has no opening frontmatter block; the tier pin must be a machine-read field, not prose" };
 
+  // YAML admits only printable characters (tab, line breaks and the printable Unicode ranges); a raw control
+  // character makes one loader refuse the file even where another reads it.
+  const unprintable = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F￾￿]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.exec(match[1]);
+  if (unprintable) {
+    return { fields: null, error: `frontmatter holds the non-printable character U+${unprintable[0].charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}, which YAML refuses; remove it` };
+  }
   const lines = match[1].split(/\r?\n/);
   const fields = new Map();
   let index = 0;
@@ -160,16 +167,24 @@ export function readAgentFrontmatter(text) {
       // counts as content, and this reader does not model that.
       // Its first content line sets the indentation; a later line indented less (but still indented), or indented
       // with a tab, is one YAML refuses, so this check refuses it too.
+      // Indentation is spaces only; past it a tab is content. A leading blank line may not be indented deeper than
+      // the first content line, which YAML refuses.
       const collected = [];
       let contentIndent = null;
+      let blankLead = 0;
       while (index < lines.length && (lines[index].trim() === "" || /^[ \t]/.test(lines[index]))) {
         const line = lines[index];
-        if (line.trim() !== "") {
-          const lead = /^[ \t]*/.exec(line)[0];
-          if (lead.includes("\t") || (contentIndent !== null && lead.length < contentIndent)) {
-            return { fields: null, error: `"${key}:" block scalar line ${JSON.stringify(line)} breaks the indentation its first line set, or uses a tab; YAML refuses it` };
+        const spaces = /^ */.exec(line)[0].length;
+        if (line.trim() === "") {
+          if (contentIndent === null) blankLead = Math.max(blankLead, spaces);
+        } else {
+          const bad = contentIndent === null
+            ? spaces === 0 || spaces < blankLead
+            : spaces < contentIndent;
+          if (bad) {
+            return { fields: null, error: `"${key}:" block scalar line ${JSON.stringify(line)} breaks the indentation the block set; YAML refuses it` };
           }
-          contentIndent ??= lead.length;
+          contentIndent ??= spaces;
         }
         collected.push(line.trim());
         index += 1;
@@ -230,32 +245,76 @@ export function plainScalarProblem(plain) {
 }
 
 /**
- * Skip the indented block under `hooks:`, starting at `start`, and return the
+ * Read the indented block under `hooks:`, starting at `start`, and return the
  * index of the first line after it. The block ends at the first non-blank line
- * at column 0. Each line inside is checked by `hooksLineProblem` so none of
- * them can make YAML read a later column-0 line as part of the block.
+ * at column 0. Each line is read by `hooksLine` (a strict subset of one YAML
+ * line), and the lines are fitted into a strict subset of YAML block structure:
+ * every mapping and sequence sits at one indentation, a deeper line opens a
+ * child only under a key or dash with no value (or a sequence at the same
+ * indentation as its key, YAML's compact form), and a mapping holds each key
+ * once. A line that fits none of that is refused, so a block this check accepts
+ * is one YAML loads (D00 T03 §8: misaligned nesting and duplicate keys were
+ * accepted line by line and refused by YAML).
  */
 function skipHooksBlock(lines, start) {
   let index = start;
   let content = 0;
+  const stack = []; // { indent, kind: "map" | "seq", keys: Set, compact }
+  let pending = null; // { column, byKey }: the last line opened a child here
+  const refuse = (line, why) => ({ index, error: `"${HOOKS_FIELD}:" block line ${JSON.stringify(line)} ${why}` });
   while (index < lines.length) {
     const line = lines[index];
-    if (line.trim() === "") {
+    if (line.trim() === "" || /^ *#/.test(line)) {
       index += 1;
       continue;
     }
     if (!/^[ \t]/.test(line)) break;
-
     const indentation = /^[ \t]*/.exec(line)[0];
     if (indentation.includes("\t")) {
-      return { index, error: `"${HOOKS_FIELD}:" block line ${JSON.stringify(line)} is indented with a tab; YAML refuses tab indentation and this check would read a different column, so indent with spaces` };
+      return refuse(line, "is indented with a tab; YAML refuses tab indentation, so indent with spaces");
     }
     index += 1;
     content += 1;
+    const shape = hooksLine(line.slice(indentation.length));
+    if (shape.error) return refuse(line, shape.error);
+    const column = indentation.length;
 
-    const shape = hooksLineProblem(line.slice(indentation.length));
-    if (shape) {
-      return { index, error: `"${HOOKS_FIELD}:" block line ${JSON.stringify(line)} ${shape}` };
+    if (pending && (column > pending.column || (shape.dash && pending.byKey && column === pending.column))) {
+      // A child block: deeper than the line that opened it, or a sequence at its key's own indentation.
+      stack.push({ indent: column, kind: shape.dash ? "seq" : "map", keys: new Set(),
+                   compact: shape.dash && column === pending.column });
+    } else if (stack.length === 0) {
+      stack.push({ indent: column, kind: shape.dash ? "seq" : "map", keys: new Set(), compact: false });
+    } else {
+      while (stack.length > 0 && stack[stack.length - 1].indent > column) stack.pop();
+      // A compact sequence ends when its parent mapping's next key arrives at the same indentation.
+      if (stack.length > 1 && !shape.dash && stack[stack.length - 1].compact
+          && stack[stack.length - 1].indent === column) stack.pop();
+      if (stack.length === 0 || stack[stack.length - 1].indent !== column) {
+        return refuse(line, "is not aligned with the mapping or sequence it belongs to; YAML cannot load it");
+      }
+    }
+    pending = null;
+
+    const top = stack[stack.length - 1];
+    if (top.kind === "map") {
+      if (shape.dash || shape.key === null) {
+        return refuse(line, "is not a key, but its mapping's other lines are; YAML cannot load a mapping mixed with other entries");
+      }
+      if (top.keys.has(shape.key)) return refuse(line, `repeats the key "${shape.key}" in one mapping; YAML refuses duplicate keys`);
+      top.keys.add(shape.key);
+      if (!shape.hasValue) pending = { column, byKey: true };
+    } else {
+      if (!shape.dash) {
+        return refuse(line, "is not a sequence entry, but its sequence's other lines are; YAML cannot load a sequence mixed with other entries");
+      }
+      if (shape.key !== null) {
+        // "- key: ..." starts a mapping at the key's own column, which later keys of that item continue.
+        stack.push({ indent: column + shape.keyOffset, kind: "map", keys: new Set([shape.key]), compact: false });
+        if (!shape.hasValue) pending = { column: column + shape.keyOffset, byKey: true };
+      } else if (!shape.hasValue) {
+        pending = { column, byKey: false };
+      }
     }
   }
   if (content === 0) {
@@ -265,63 +324,67 @@ function skipHooksBlock(lines, start) {
 }
 
 /**
- * Check one line of the `hooks:` block, indentation removed. The accepted shape
- * is a strict subset of YAML, so a line accepted here always loads: any number
- * of `- ` sequence entries, then at most one `key:` (a plain or quoted key),
- * then an empty value, a comment, or one scalar: plain (checked by
- * `plainScalarProblem`), single-quoted, or double-quoted without a backslash
- * escape, closing on this line and followed by nothing but a comment. Tabs,
- * block scalars, flow collections, anchors, aliases and tags are refused
- * (D00 T03 §8: each was a line this check accepted and YAML refused). Returns
- * null when the line is accepted, or the reason it is refused.
+ * Read one line of the `hooks:` block, indentation removed, as a strict subset
+ * of YAML: an optional `- ` (one, not nested on the line), then at most one key
+ * (plain or quoted), then an empty value, a comment, or one scalar: plain
+ * (checked by `plainScalarProblem`), single-quoted, or double-quoted without a
+ * backslash escape, closing on this line and followed by nothing but a comment.
+ * Tabs, block scalars, flow collections, anchors, aliases and tags are refused.
+ * Returns `{ dash, key, keyOffset, hasValue }`, or `{ error }`.
  */
-function hooksLineProblem(text) {
+function hooksLine(text) {
   if (text.includes("\t")) {
-    return "holds a tab; YAML reads a tab differently from this check in several places, so use spaces";
+    return { error: "holds a tab; YAML reads a tab differently from this check in several places, so use spaces" };
   }
-  let rest = text.replace(/^(?:-(?: +|$))*/, "");
-  let afterKey = false;
+  const dashMatch = /^-(?: +|$)/.exec(text);
+  const dash = dashMatch !== null;
+  let rest = dash ? text.slice(dashMatch[0].length) : text;
+  const keyOffset = dash ? dashMatch[0].length : 0;
+  if (dash && /^-(?: |$)/.test(rest)) {
+    return { error: "nests a sequence inside a sequence entry on one line; write each level on its own line" };
+  }
+  let key = null;
   for (;;) {
-    if (rest === "" || rest.startsWith("#")) return null;
+    if (rest === "" || rest.startsWith("#")) return { dash, key, keyOffset, hasValue: false };
 
     let node;
     let quoted = false;
     if (rest.startsWith('"') || rest.startsWith("'")) {
       const closed = rest.startsWith('"') ? /^"[^"\\]*"/.exec(rest) : /^'(?:[^']|'')*'/.exec(rest);
       if (!closed) {
-        return rest.startsWith('"') && /^"[^"]*\\/.test(rest)
+        return { error: rest.startsWith('"') && /^"[^"]*\\/.test(rest)
           ? "holds a backslash escape inside double quotes; this check does not decode escapes, so use single quotes"
-          : "opens a quote that does not close on the same line; a multi-line quoted scalar can carry a column-0 line that YAML reads as content and this check reads as a key";
+          : "opens a quote that does not close on the same line; a multi-line quoted scalar can carry a column-0 line that YAML reads as content and this check reads as a key" };
       }
       node = closed[0];
       quoted = true;
     } else if (/^[|>]/.test(rest)) {
-      return "opens a block scalar; write the value on one line, quoted if it needs to be";
+      return { error: "opens a block scalar; write the value on one line, quoted if it needs to be" };
     } else if (/^[[{]/.test(rest)) {
-      return "uses YAML flow collection syntax; one that spans lines can carry a column-0 line, so write the block in block style";
+      return { error: "uses YAML flow collection syntax; write the block in block style" };
     } else if (/^[&*!]/.test(rest)) {
-      return "uses a YAML anchor, alias or tag; write the value plainly";
+      return { error: "uses a YAML anchor, alias or tag; write the value plainly" };
     } else {
       // A plain scalar runs to a mapping colon or a comment; quotes inside it are content.
       const stop = /:(?=[ ]|$)|[ ]#/.exec(rest);
       node = stop ? rest.slice(0, stop.index) : rest;
       const isKey = stop !== null && stop[0] === ":";
       const unloadable = plainScalarProblem(isKey ? node : rest.replace(/(?:^| )#.*$/, "").replace(/ +$/, ""));
-      if (unloadable) return `holds a ${isKey ? "key" : "value"} YAML cannot load (${unloadable}); quote it`;
+      if (unloadable) return { error: `holds a ${isKey ? "key" : "value"} YAML cannot load (${unloadable}); quote it` };
     }
 
     rest = rest.slice(node.length);
-    const key = /^ *:(?: +|$)/.exec(rest);
-    if (key) {
-      if (afterKey) return "holds a second key on one line (`a: b: c`), which YAML cannot load";
-      rest = rest.slice(key[0].length);
-      afterKey = true;
+    const colon = /^ *:(?: +|$)/.exec(rest);
+    if (colon) {
+      if (key !== null) return { error: "holds a second key on one line (`a: b: c`), which YAML cannot load" };
+      key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node;
+      rest = rest.slice(colon[0].length);
       continue;
     }
-    if (/^ *$|^ +#/.test(rest)) return null;
-    return quoted
+    if (/^ *$|^ +#/.test(rest)) return { dash, key, keyOffset, hasValue: true };
+    return { error: quoted
       ? "has text after its closing quote; YAML refuses it, so quote the whole value"
-      : "is not a key, a sequence entry, a scalar or a comment; the hooks block is read as a closed subset of YAML";
+      : "is not a key, a sequence entry, a scalar or a comment; the hooks block is read as a closed subset of YAML" };
   }
 }
 
