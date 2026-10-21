@@ -35,8 +35,10 @@ class Fake:
     a merge must name the current head, and every call is recorded."""
 
     def __init__(self, prs=(), status="", branch="main", head=SHA, upstream=SHA, fail=None, views=None,
-                 after_merge=None):
+                 after_merge=None, during_files=None, before_merge=None):
         self.calls, self.fail = [], fail or {}
+        self.during_files = during_files   # called while the file list is read: a change during the slow reads
+        self.before_merge = before_merge   # called as the merge request arrives: a change after the last read
         self.prs = {p["number"]: p for p in prs}
         self.views = views or {}           # number -> the fresh state `gh pr view` returns instead
         self.after_merge = after_merge     # called after each successful merge, to change the clone
@@ -59,9 +61,15 @@ class Fake:
             return 0, json.dumps(view), ""
         if args[:3] == ["gh", "api", "--paginate"]:
             number = int(args[3].split("/")[-2])
-            return 0, "".join(f"{name}\n" for name in self.views.get(number, self.prs[number])["files"]), ""
+            if self.during_files:
+                self.during_files(self)
+            files = self.views.get(number, self.prs[number])["files"]
+            pairs = [entry if isinstance(entry, (list, tuple)) else (entry, "") for entry in files]
+            return 0, "".join(json.dumps(list(pair)) + "\n" for pair in pairs), ""
         if args[:3] == ["gh", "pr", "merge"]:
             number, sha = int(args[3]), args[args.index("--match-head-commit") + 1]
+            if self.before_merge:
+                self.before_merge(self)
             current = self.views.get(number, self.prs[number])["headRefOid"]
             if sha != current:
                 return 1, "", "head commit does not match"
@@ -120,6 +128,13 @@ class Safety(unittest.TestCase):
         self.assertEqual(fake.merged, [1])
         self.assertIn("merged #1; not merging further: the working tree", out)
 
+    def test_main_moved_by_someone_else_mid_batch_stops_the_next_merge(self):
+        fake = Fake(prs=[pr(1), pr(2)], after_merge=lambda f: f.state.update(upstream="c" * 40))
+        code, out = run_main(fake)
+        self.assertEqual(code, 2)
+        self.assertEqual(fake.merged, [1])
+        self.assertIn("is not origin/main", out)
+
     def test_each_merge_holds_the_run_guard_lock(self):
         events = []
 
@@ -136,6 +151,21 @@ class Safety(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(merge_prs.main([], root=Path("."), runner=fake), 0)
         self.assertEqual(events, ["lock", "merged 1", "unlock", "lock", "merged 2", "unlock"])
+
+    def test_a_busy_run_guard_is_an_unsafe_moment_not_a_crash(self):
+        import campaign_guard
+
+        def busy(root):
+            raise campaign_guard.GuardError("the guard lock is held by another process")
+
+        out = io.StringIO()
+        with mock.patch.object(merge_prs, "campaign_owner", return_value=None), \
+                mock.patch.object(merge_prs, "in_progress_sections", return_value=[]), \
+                mock.patch.object(merge_prs, "guard_lock", side_effect=busy), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            code = merge_prs.main(["--skip-unsafe"], root=Path("."), runner=Fake(prs=[pr(1)]))
+        self.assertEqual(code, 0)
+        self.assertIn("the run guard is busy", out.getvalue())
 
     def test_a_git_or_gh_that_cannot_run_or_read_is_a_failure_even_when_skipping_unsafe_moments(self):
         for needle in ("git fetch", "gh pr list", "gh pr view", "gh api"):
@@ -176,6 +206,37 @@ class Eligibility(unittest.TestCase):
         code, out = run_main(fake)
         self.assertEqual(fake.merged, [])
         self.assertIn("changes global.json", out)
+
+    def test_renaming_global_json_away_is_a_change_to_it(self):
+        fake = Fake(prs=[pr(1, files=[("sdk-pin.json", "global.json")])])
+        _, out = run_main(fake)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("changes global.json", out)
+
+    def test_a_label_removed_while_the_files_are_read_stops_the_merge(self):
+        def unlabel(f):
+            f.views[1] = pr(1, labels=[])
+        fake = Fake(prs=[pr(1)], during_files=unlabel)
+        _, out = run_main(fake)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("skipping #1: not labelled", out)
+
+    def test_a_head_pushed_after_the_last_read_is_refused_and_the_rest_stay_open(self):
+        def push(f):
+            f.views[1] = pr(1, headRefOid="e" * 40)
+        fake = Fake(prs=[pr(1), pr(2)], before_merge=lambda f: push(f) if 1 not in f.views else None)
+        code, out = run_main(fake)
+        self.assertEqual(code, 1)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("head commit does not match", out)
+        self.assertFalse(any(c[:4] == ["gh", "pr", "merge", "2"] for c in fake.calls))
+
+    def test_a_checkout_edited_while_the_files_are_read_stops_the_merge(self):
+        fake = Fake(prs=[pr(1)], during_files=lambda f: f.state.update(status=" M edited.py\n"))
+        code, out = run_main(fake)
+        self.assertEqual(code, 2)
+        self.assertEqual(fake.merged, [])
+        self.assertIn("uncommitted or untracked", out)
 
     def test_an_incomplete_file_list_is_refused(self):
         fake = Fake(prs=[pr(1, changedFiles=3, files=["a.yml"])])

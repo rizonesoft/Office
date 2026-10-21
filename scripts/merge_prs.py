@@ -13,15 +13,17 @@ branch `main`; no open TODO section carries a `Started:` line (a section in prog
 
 A pull request is eligible when it is open, not a draft, based on `main`, by Dependabot or the GitHub Actions bot,
 labelled `dependencies` or `pins`, mergeable with a clean merge state, every check green (at least one), and none of
-its files (all of them, read page by page from the API) is a `global.json` (the .NET SDK pin moves only through its
-own proposal, scripts/check-dotnet-pin.py).
+its files (all of them, read page by page from the API, both sides of a rename) is a `global.json` (the .NET SDK pin
+moves only through its own proposal, scripts/check-dotnet-pin.py).
 
 Pull requests merge one at a time. Each one is handled under the run guard's lock, so no campaign starts mid-merge:
-the clone's safety is checked again, the pull request is read again and judged again from that fresh read (a label
-removed, a base retargeted or a check re-run since the listing stops it), then `gh pr merge --rebase
---match-head-commit <sha>` merges exactly the head that was judged, and `git pull --ff-only` and
+the clone's safety is checked again, the files are read, the pull request is read again and judged from that fresh
+read (a label removed, a base retargeted or a check re-run since the listing stops it), the local checks run once
+more, then `gh pr merge --rebase --match-head-commit <sha>` merges exactly the head that was judged, and `git pull --ff-only` and
 `python scripts/todo-graph.py validate` follow. The first failure stops the run and leaves the rest open; a pull
-request already merged when a later step failed is reported as merged.
+request already merged when a later step failed is reported as merged. GitHub has no merge conditional on labels
+or checks, so a change in the moment between the last read and the merge is not seen; making one needs write
+access to the repository, which could merge directly.
 
 Exit 0 when the run finished (merging some, or none being eligible), 1 when a merge, pull or validate failed, 2 when
 the clone or campaign state made it unsafe (0 with `--skip-unsafe`, so a scheduled run alerts only on real failures),
@@ -90,13 +92,22 @@ def guard_lock(root):
     return campaign_guard._Lock(str(root))
 
 
-def safety(runner, root, session):
-    """Raise Unsafe naming the first state that forbids merging."""
+def local_safety(runner, root, session):
+    """The checks that need no network: the campaign, the working tree and a section in progress. Run again just
+    before each merge, after the slow reads, because an editor or a second session does not take the guard lock."""
     owner = campaign_owner(root)
     if owner is not None and owner != session:
         raise Unsafe(f"a campaign run is open for session {owner}; only that session merges, at a section boundary")
     if checked(runner, root, ["git", "status", "--porcelain"], "git status").strip():
         raise Unsafe("the working tree has uncommitted or untracked changes")
+    started = in_progress_sections(root)
+    if started:
+        raise Unsafe(f"a section is in progress: {', '.join(started)}")
+
+
+def safety(runner, root, session):
+    """Raise Unsafe naming the first state that forbids merging."""
+    local_safety(runner, root, session)
     checked(runner, root, ["git", "fetch", "--quiet", "origin", "main"], "git fetch")
     branch = checked(runner, root, ["git", "rev-parse", "--abbrev-ref", "HEAD"], "git rev-parse").strip()
     if branch != "main":
@@ -105,9 +116,6 @@ def safety(runner, root, session):
     upstream = checked(runner, root, ["git", "rev-parse", "origin/main"], "git rev-parse").strip()
     if head != upstream:
         raise Unsafe(f"HEAD {head[:12]} is not origin/main {upstream[:12]}; push or pull first")
-    started = in_progress_sections(root)
-    if started:
-        raise Unsafe(f"a section is in progress: {', '.join(started)}")
 
 
 def ineligibility(pr):
@@ -133,14 +141,18 @@ def ineligibility(pr):
     return None
 
 
-def file_problem(runner, root, pr):
-    """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100)."""
-    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{pr['number']}/files",
-                                 "--jq", ".[].filename"], "gh api pulls/files")
-    files = [line for line in out.splitlines() if line.strip()]
-    if len(files) != pr.get("changedFiles"):
-        return f"the API listed {len(files)} of its {pr.get('changedFiles')} changed files"
-    if any(Path(name).name == "global.json" for name in files):
+def file_problem(runner, root, number, changed):
+    """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100). A rename
+    counts on both sides, so moving `global.json` away is a change to it."""
+    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{number}/files",
+                                 "--jq", ".[] | [.filename, (.previous_filename // \"\")] | @json"], "gh api pulls/files")
+    try:
+        files = [json.loads(line) for line in out.splitlines() if line.strip()]
+    except ValueError:
+        raise Unreadable(f"gh api pulls/{number}/files gave no JSON lines") from None
+    if len(files) != changed:
+        return f"the API listed {len(files)} of its {changed} changed files"
+    if any(Path(name).name == "global.json" for pair in files for name in pair if name):
         return "changes global.json (the .NET SDK pin moves only through its own proposal)"
     return None
 
@@ -172,14 +184,28 @@ def fresh(runner, root, number):
 def merge_one(runner, root, number, session, dry_run):
     """Judge and merge one pull request under the guard lock. Returns (outcome, detail): "merged", "skipped",
     "would", "failed" (nothing merged) or "merged-then-failed"; raises Unsafe or Unreadable."""
-    with guard_lock(root):
+    import campaign_guard
+    try:
+        lock = guard_lock(root)
+        lock.__enter__()
+    except campaign_guard.GuardError as exc:
+        raise Unsafe(f"the run guard is busy ({exc})") from None
+    try:
         safety(runner, root, session)
+        # Slow reads first, then the fresh judgement and a last local check, so the moment between the last read
+        # and the merge is as short as it can be. GitHub has no merge conditional on labels or checks: what remains
+        # is that moment, and changing a label or re-running a check needs write access, which could merge anyway.
+        listed = fresh(runner, root, number)
+        problem = file_problem(runner, root, number, listed.get("changedFiles"))
         pr = fresh(runner, root, number)
+        if pr.get("headRefOid") != listed.get("headRefOid") or pr.get("changedFiles") != listed.get("changedFiles"):
+            return "skipped", f"#{number}: changed while it was being read"
         if pr.get("state") != "OPEN":
             return "skipped", f"#{number}: no longer open"
-        why = ineligibility(pr) or file_problem(runner, root, pr)
+        why = ineligibility(pr) or problem
         if why:
             return "skipped", f"#{number}: {why}"
+        local_safety(runner, root, session)
         if dry_run:
             return "would", f"#{number}"
         code, out, err = runner(["gh", "pr", "merge", str(number), "--rebase", "--match-head-commit",
@@ -192,6 +218,8 @@ def merge_one(runner, root, number, session, dry_run):
             if code != 0:
                 return "merged-then-failed", f"#{number} merged, then {what} failed: {(err or out).strip()[:200]}"
         return "merged", f"#{number}"
+    finally:
+        lock.__exit__(None, None, None)
 
 
 def main(argv=None, root=ROOT, runner=run):
