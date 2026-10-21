@@ -39,11 +39,11 @@ def bumps(current, fetch=fetch_json):
         if package_versions.stable_key(version) is None:
             problems.append(f"{package} {version} is not an exact stable version")
             continue
-        published = nuget_versions(package, fetch)
-        if version not in published:
+        versions = nuget_versions(package, fetch)
+        if not package_versions.published(version, versions):
             problems.append(f"{package} {version} is not published on nuget.org")
             continue
-        newest = package_versions.latest_stable(published)
+        newest = package_versions.latest_stable(versions)
         if newest and package_versions.stable_key(newest) > package_versions.stable_key(version):
             out.append((package, version, newest))
     return out, problems

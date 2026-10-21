@@ -125,6 +125,25 @@ class Repo(unittest.TestCase):
         self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
         self.assertEqual(len(self.mails), 1)
 
+    def test_a_run_killed_mid_proposal_is_recovered(self):
+        abandoned = self.root / "build" / "office-pin-killed" / "tree"
+        self.run_git("worktree", "add", "-b", "winui/2.5.1", str(abandoned), "main")  # what a killed run leaves
+        code, out = self.main("update")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn(str(abandoned).replace(chr(92), "/"), self.git("worktree", "list").replace(chr(92), "/"))
+        self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
+
+    def test_the_operators_own_worktree_is_never_removed(self):
+        mine = self.root.parent / (self.root.name + "-review")
+        self.run_git("worktree", "add", "-b", "winui/2.5.1", str(mine), "main")
+        try:
+            code, out = self.main("update")
+            self.assertEqual(code, 1)
+            self.assertIn("which this automation did not create", out)
+            self.assertTrue((mine / "Directory.Packages.props").is_file())
+        finally:
+            self.run_git("worktree", "remove", "--force", str(mine))
+
     def test_an_unsent_email_leaves_no_proposal(self):
         def refuse(*_a):
             raise RuntimeError("SMTP2GO refused")

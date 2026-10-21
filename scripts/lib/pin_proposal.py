@@ -92,7 +92,35 @@ def build_problems(tree, build=subprocess.run):
     return problems
 
 
+def _worktrees_on(branch, root):
+    """The paths of the worktrees that have the branch checked out."""
+    listed = git("worktree", "list", "--porcelain", cwd=root, check=False).stdout
+    paths, path = [], None
+    for line in listed.splitlines():
+        if line.startswith("worktree "):
+            path = line[len("worktree "):]
+        elif line == f"branch refs/heads/{branch}" and path:
+            paths.append(path)
+    return paths
+
+
 def _drop(branch, root):
+    """Delete an unfinished proposal branch; the problems, empty when it is gone.
+
+    A run killed mid-proposal leaves its worktree (under an `office-pin-*` folder) with the branch checked out, and git
+    will not delete a checked-out branch, so that worktree is removed first. A worktree anywhere else is the
+    operator's, and is never removed."""
+    git("worktree", "prune", cwd=root, check=False)
+    problems = []
+    for path in _worktrees_on(branch, root):
+        if not any(part.startswith("office-pin-") for part in Path(path).parts):
+            problems.append(f"{branch} is checked out at {path}, which this automation did not create")
+            continue
+        removed = git("worktree", "remove", "--force", path, cwd=root, check=False)
+        if removed.returncode != 0:
+            problems.append(f"could not remove the abandoned worktree {path}: {(removed.stderr or removed.stdout).strip()}")
+    if problems:
+        return problems
     result = git("branch", "-D", branch, cwd=root, check=False)
     return [] if result.returncode == 0 else [f"could not delete {branch}: {(result.stderr or result.stdout).strip()}"]
 

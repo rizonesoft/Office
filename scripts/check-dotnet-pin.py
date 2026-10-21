@@ -74,16 +74,26 @@ def latest(feed):
     version = feed.get("latest-sdk") if isinstance(feed, dict) else None
     if not isinstance(version, str) or version not in sdks or sdk_key(version) is None:
         raise Unreadable(f"{FEED}: latest-sdk {version!r} is not an SDK the feed lists")
+    if not in_channel(version):
+        raise Unreadable(f"{FEED}: latest-sdk {version} is not a .NET {CHANNEL} SDK")
     return version, sdks[version], sdks
 
 
+def in_channel(version):
+    return sdk_key(version) is not None and ".".join(version.split(".")[:2]) == CHANNEL
+
+
 def pinned_text(text, where=PIN_FILE):
+    """The pinned SDK version; refused unless global.json also disables roll-forward, so the pin is the SDK used."""
     try:
-        version = json.loads(text)["sdk"]["version"]
-    except (ValueError, KeyError, TypeError):
+        sdk = json.loads(text)["sdk"]
+        version, roll = sdk["version"], sdk.get("rollForward")
+    except (ValueError, KeyError, TypeError, AttributeError):
         raise ValueError(f"{where}: needs sdk.version") from None
     if not isinstance(version, str):
         raise ValueError(f"{where}: sdk.version must be text")
+    if roll != "disable":
+        raise ValueError(f'{where}: sdk.rollForward must be "disable", so every build uses exactly the pinned SDK')
     return version
 
 
@@ -195,7 +205,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, build=subprocess.run, run=subpr
     except ValueError as exc:
         print(f"check-dotnet-pin: {exc}", file=sys.stderr)
         return 1
-    if sdk_key(current) is None or ".".join(current.split(".")[:2]) != CHANNEL:
+    if not in_channel(current):
         print(f"global.json on main pins {current}, which is not a .NET {CHANNEL} SDK")
         return 1
     if current not in sdks:

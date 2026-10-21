@@ -51,8 +51,19 @@ def repinned(text, package, old, new):
 
 
 def stable_key(version):
-    """A numeric sort key for an exact stable NuGet version (three or four parts); None for anything else."""
-    return tuple(int(n) for n in version.split(".")) if STABLE.match(version) else None
+    """A numeric sort key for an exact stable NuGet version (three or four parts); None for anything else.
+
+    NuGet normalizes a zero fourth part away (4.3.0.0 is 4.3.0), so the key does too, and equal versions compare equal."""
+    if not STABLE.match(version):
+        return None
+    parts = tuple(int(n) for n in version.split("."))
+    return parts[:3] if len(parts) == 4 and parts[3] == 0 else parts
+
+
+def published(version, versions):
+    """Whether a stable version is among the published ones, compared as NuGet normalizes them."""
+    key = stable_key(version)
+    return key is not None and key in {stable_key(v) for v in versions}
 
 
 def latest_stable(versions):

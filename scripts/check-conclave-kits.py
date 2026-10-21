@@ -4,7 +4,9 @@
     python scripts/check-conclave-kits.py check     # exit 0 in step, 1 drift or a doctor gap, 2 cannot check
     python scripts/check-conclave-kits.py notify    # as check, but drift is emailed once per state, exit 0
 
-The SDK is the checkout named by `CONCLAVE_SDK_ROOT`, or `R:\\GitHub\\Conclave-SDK` (this machine's default). Every
+The SDK is the checkout `CONCLAVE_SDK_ROOT` names (explicit config), else a `Conclave-SDK` folder beside this
+repository (discovery); with neither, the check reports setup required and exits 2 (AGENTS.md: config, then discovery,
+then setup required, never a hardcoded path). Every
 SDK-managed file of the kits Office installs (base, todo and reviewer: skills, rules and subagents for each agent, and
 the kit's `scripts/`) is compared with the SDK's committed `HEAD`, never its working tree, so an SDK change in progress
 is not reported; line endings are normalized. Project files (`AGENTS.md`, `docs/`, `todo/`, pins, the reviewer pin)
@@ -25,15 +27,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import pin_proposal
 
-DEFAULT_SDK = r"R:\GitHub\Conclave-SDK"
 KITS = ("base", "todo", "reviewer")
 ALLOW = ".conclave/kit-drift-allow.txt"
 MANAGED = tuple(f"{d}/{k}/" for d in (".agents", ".claude", ".codex") for k in ("skills", "rules")) + (
     ".claude/agents/", "scripts/")
 
 
-def sdk_root():
-    return Path(os.environ.get("CONCLAVE_SDK_ROOT") or DEFAULT_SDK)
+def sdk_root(root=ROOT, environ=os.environ):
+    """The SDK checkout from config, else discovered beside this repository; None when neither has forge.py."""
+    for candidate in (environ.get("CONCLAVE_SDK_ROOT"), Path(root).resolve().parent / "Conclave-SDK"):
+        if candidate and (Path(candidate) / "forge.py").is_file():
+            return Path(candidate)
+    return None
 
 
 def git(sdk, *args):
@@ -77,30 +82,37 @@ def drift(sdk, root=ROOT, allow=None):
     return out
 
 
-def doctor(sdk, root=ROOT):
+def doctor(sdk, root=ROOT, run=subprocess.run):
+    """The gaps forge.py doctor reports for each kit. A doctor that fails without naming a gap, or whose report is not
+    a list of named checks, could not check, which is never read as healthy."""
     gaps = []
     for kit in KITS:
-        result = subprocess.run([sys.executable, str(sdk / "forge.py"), "doctor", str(root), kit], capture_output=True,
-                                text=True, encoding="utf-8", creationflags=pin_proposal.NO_WINDOW)
+        result = run([sys.executable, str(Path(sdk) / "forge.py"), "doctor", str(root), kit], capture_output=True,
+                     text=True, encoding="utf-8", creationflags=pin_proposal.NO_WINDOW)
         try:
-            report = json.loads(result.stdout)
-        except ValueError:
-            gaps.append(f"forge.py doctor {kit} failed: {(result.stderr or result.stdout).strip()[:200]}")
-            continue
-        gaps += [f"doctor {kit}: {c['status']} {c['name']}" for c in report.get("checks", []) if c.get("status") != "ok"]
+            checks = json.loads(result.stdout)["checks"]
+            found = [f"doctor {kit}: {c['status']} {c['name']}" for c in checks if c["status"] != "ok"]
+        except (ValueError, KeyError, TypeError):
+            raise RuntimeError(f"forge.py doctor {kit} gave no report: {(result.stderr or result.stdout).strip()[:200]}") from None
+        if not isinstance(checks, list) or not checks:
+            raise RuntimeError(f"forge.py doctor {kit} reported no checks")
+        if result.returncode != 0 and not found:
+            raise RuntimeError(f"forge.py doctor {kit} exited {result.returncode}: {(result.stderr or '').strip()[:200]}")
+        gaps += found
     return gaps
 
 
-def main(argv=None, root=ROOT, sdk=None, mail=pin_proposal.notify):
+def main(argv=None, root=ROOT, sdk=None, run=subprocess.run, mail=pin_proposal.notify):
     parser = argparse.ArgumentParser(description="Alert when Conclave kit files drift from the SDK.")
     parser.add_argument("mode", choices=("check", "notify"))
     args = parser.parse_args(argv)
-    sdk = Path(sdk) if sdk else sdk_root()
-    if not (sdk / "forge.py").is_file():
-        print(f"check-conclave-kits: no Conclave SDK at {sdk} (set CONCLAVE_SDK_ROOT)", file=sys.stderr)
+    sdk = Path(sdk) if sdk else sdk_root(root)
+    if sdk is None or not (sdk / "forge.py").is_file():
+        print("check-conclave-kits: setup required: no Conclave SDK checkout found; set CONCLAVE_SDK_ROOT, or clone it "
+              f"beside this repository as {Path(root).resolve().parent / 'Conclave-SDK'}", file=sys.stderr)
         return 2
     try:
-        found = drift(sdk, root) + doctor(sdk, root)
+        found = drift(sdk, root) + doctor(sdk, root, run)
     except (RuntimeError, ValueError, OSError) as exc:
         print(f"check-conclave-kits: {exc}", file=sys.stderr)
         return 2

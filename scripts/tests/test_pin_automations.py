@@ -138,6 +138,12 @@ class PackageVersions(unittest.TestCase):
         self.assertIn("<PackageVersion Version='4.4.0' Include='Serilog' />", out)
         self.assertIn('Include="Microsoft.WindowsAppSDK" Version="2.5.1"', out)
 
+    def test_a_zero_fourth_part_is_the_same_version(self):
+        self.assertEqual(pv.stable_key("4.3.0.0"), pv.stable_key("4.3.0"))
+        self.assertTrue(pv.published("4.3.0.0", ["4.3.0", "4.4.0"]))
+        self.assertFalse(pv.published("4.3.0.1", ["4.3.0", "4.4.0"]))
+        self.assertGreater(pv.stable_key("4.3.0.1"), pv.stable_key("4.3.0"))
+
     def test_latest_stable_skips_prereleases(self):
         self.assertEqual(pv.latest_stable(["4.3.0", "4.10.0", "5.0.0-rc.1", "4.9.1.2"]), "4.10.0")
         self.assertIsNone(pv.stable_key("5.0.0-rc.1"))
@@ -157,6 +163,8 @@ class DotnetVersions(unittest.TestCase):
         self.assertEqual(dotnet.latest(feed(RC2, RC2, RC1))[0], RC2)
         with self.assertRaises(pin_sources.Unreadable):
             dotnet.latest(feed("11.0.100", RC2))
+        with self.assertRaises(pin_sources.Unreadable):  # a feed that names another channel never moves the pin
+            dotnet.latest(feed("12.0.100", "12.0.100", RC2))
 
     def test_only_the_sdk_version_changes(self):
         self.assertEqual(dotnet.repinned(GLOBAL % RC1, RC1, RC2), GLOBAL % RC2)
@@ -210,6 +218,17 @@ class DotnetPin(GitRepo):
         self.commit({"global.json": GLOBAL % RC2})
         self.assertIn("ahead of the newest", self.main("check", data=feed(RC1, RC1, RC2))[1])
 
+    def test_a_pin_that_may_roll_forward_fails(self):
+        self.commit({"global.json": (GLOBAL % RC1).replace('"disable"', '"latestMajor"')})
+        code, out = self.main("update")
+        self.assertEqual(code, 1)
+        self.assertIn('rollForward must be "disable"', out)
+        self.assertEqual(self.git("branch", "--list", "dotnet/*"), "")
+
+    def test_a_feed_naming_another_channel_cannot_check(self):
+        self.assertEqual(self.main("update", data=feed("12.0.100", "12.0.100", RC1))[0], 2)
+        self.assertEqual(self.git("branch", "--list", "dotnet/*"), "")
+
     def test_local_announces_a_missing_sdk_once(self):
         args = dict(root=self.root, run=self.sdks(RC2), mail=self.mail, host="TestPC")
         self.assertEqual(quiet(dotnet.local, **args)[0], 0)
@@ -244,6 +263,12 @@ class NugetPins(GitRepo):
         self.assertIn("Version='4.4.0' Include='Serilog'", props)
         self.assertIn('Include="Microsoft.WindowsAppSDK" Version="2.5.1"', props)
         self.assertIn("Serilog 4.3.0 -> 4.4.0", self.mails[0][1])
+
+    def test_a_four_part_pin_is_compared_as_nuget_normalizes_it(self):
+        self.commit({"Directory.Packages.props": PROPS.replace("4.3.0", "4.3.0.0")})
+        code, out = self.main("check")
+        self.assertEqual(code, 1)
+        self.assertIn("Serilog 4.3.0.0 is behind 4.4.0", out)
 
     def test_current_pins_pass(self):
         self.assertEqual(self.main("check", versions=("4.3.0",))[0], 0)
@@ -327,6 +352,38 @@ class ConclaveKits(GitRepo):
         (self.root / skill).write_text("local\n", encoding="utf-8")
         self.assertIn(f"{skill} differs from the SDK (kit todo)", kits.drift(sdk, self.root, allow={}))
         self.assertEqual(kits.drift(sdk, self.root, allow={skill: "r", "scripts/verify-agent-tiers.mjs": "r"}), [])
+
+    @staticmethod
+    def doctor_run(code, stdout, stderr=""):
+        def run(cmd, **_kw):
+            return subprocess.CompletedProcess(cmd, code, stdout=stdout, stderr=stderr)
+        return run
+
+    def test_a_failed_or_empty_doctor_is_never_healthy(self):
+        ok = json.dumps({"checks": [{"name": "AGENTS.md", "status": "ok"}]})
+        self.assertEqual(kits.doctor(self.root, self.root, self.doctor_run(0, ok)), [])
+        gap = json.dumps({"checks": [{"name": "stop-hook", "status": "setup_required"}]})
+        self.assertEqual(kits.doctor(self.root, self.root, self.doctor_run(1, gap))[0], "doctor base: setup_required stop-hook")
+        for run in (self.doctor_run(1, "{}", "boom"), self.doctor_run(0, '{"checks": []}'), self.doctor_run(1, ok),
+                    self.doctor_run(0, "not json")):
+            with self.assertRaises(RuntimeError):
+                kits.doctor(self.root, self.root, run)
+
+    def test_the_sdk_comes_from_config_then_discovery_then_setup_required(self):
+        repo = Path(self.tmp.name) / "work" / "Office"
+        repo.mkdir(parents=True)
+        self.assertIsNone(kits.sdk_root(repo, environ={}))
+        beside = repo.parent / "Conclave-SDK"
+        beside.mkdir()
+        (beside / "forge.py").write_text("", encoding="utf-8")
+        self.assertEqual(kits.sdk_root(repo, environ={}), beside)
+        configured = Path(self.tmp.name) / "elsewhere"
+        configured.mkdir()
+        (configured / "forge.py").write_text("", encoding="utf-8")
+        self.assertEqual(kits.sdk_root(repo, environ={"CONCLAVE_SDK_ROOT": str(configured)}), configured)
+        code, out = quiet(kits.main, ["check"], root=Path(self.tmp.name) / "nowhere" / "Office")
+        self.assertEqual(code, 2)
+        self.assertIn("setup required", out)
 
     def test_an_allow_entry_needs_a_reason(self):
         (self.root / ".conclave").mkdir()
