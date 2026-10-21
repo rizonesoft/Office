@@ -109,6 +109,12 @@ class Png(Fixtures):
             "invalid PLTE (0 bytes": png_raw(1, 1, [one_pixel], colour=3, plte=chunk(b"PLTE", b"")),
             "invalid PLTE (4 bytes": png_raw(1, 1, [one_pixel], colour=3, plte=chunk(b"PLTE", bytes(4))),
             "invalid PLTE (3 bytes for colour type 0)": png_raw(1, 1, [one_pixel], plte=palette),
+            "palette index 1 past the 1-entry PLTE": png_raw(1, 1, [zlib.compress(bytes([0, 1]))], colour=3, plte=palette),
+            "palette index 1 past the 1-entry PLTE ": png_raw(  # row 2's Up filter adds 0 above to stored 1: index 1
+                1, 2, [zlib.compress(bytes([0, 0, 2, 1]))], colour=3, plte=chunk(b"PLTE", bytes(3))),
+            "unknown critical chunk ABCD": png(1, 1)[:33] + chunk(b"ABCD", b"") + png(1, 1)[33:],
+            "a second IHDR, or an IEND that is not empty": png(1, 1)[:33] + png(1, 1)[8:33] + png(1, 1)[33:],
+            "a second IHDR, or an IEND that is not empty ": png(1, 1)[:-12] + chunk(b"IEND", b"x"),
             "more image data than 1x1 needs": png_raw(1, 1, [zlib.compress(bytes(100))]),
             "no PLTE": png_raw(1, 1, [zlib.compress(bytes(2))], colour=3),
         }
@@ -117,6 +123,12 @@ class Png(Fixtures):
                 code, out = self.run_check("bad.png", data)
                 self.assertEqual(code, 1, out)
                 self.assertIn(reason.strip(), out)  # trailing spaces only keep the dictionary keys apart
+
+    def test_a_palette_png_with_filtered_rows_in_range_passes(self):
+        # Two 2-bit pixels per row, palette of 3; row 2's Up filter adds 0b01000000 above to reach index 2 (0b10).
+        data = png_raw(2, 2, [zlib.compress(bytes([0, 0b01000000, 2, 0b01000000]))], depth=2, colour=3,
+                       plte=chunk(b"PLTE", bytes(9)))
+        self.assertEqual(self.run_check("p.png", data, "--size", "2x2")[0], 0)
 
     def test_an_interlaced_png_and_split_idat_pass(self):
         size = ia.png_data_size(5, 3, 8, 6, 1)
@@ -164,6 +176,10 @@ class Svg(Fixtures):
             '<style>rect { fill: url("https://example.invalid/a\'b.svg#p"); }</style>': "external url() reference in <style>",
             '<style>rect { fill: url("https://example.invalid/(a).svg#p"); }</style>': "external url() reference",
             '<g xml:base="https://example.invalid/external.svg"><use href="#shape"/></g>': "xml:base on <g>",
+            '<rect style="fill:url(#g);stroke:url(https://example.invalid/p.svg#x)" width="1" height="1"/>':
+                "external url() reference in <rect style>: 'https://example.invalid/p.svg#x)",
+            '<a href="#g"><set attributeName="href" to="https://example.invalid/" begin="0s"/></a>':
+                "animation element <set>",
         }
         for extra, reason in cases.items():
             with self.subTest(reason=reason):
@@ -189,7 +205,9 @@ class Svg(Fixtures):
         self.assertIn("processing instruction <?xml-stylesheet?>", out)
 
     def test_a_non_finite_or_empty_viewbox_is_refused(self):
-        for box in ("nan 0 48 48", "0 0 nan inf", "0 0 0 48", "0 0 48 -1", "0 0 48", "0 0 4_8 48", "0 0 0x30 48"):
+        arabic_48 = chr(0x0664) + chr(0x0668)
+        for box in ("nan 0 48 48", "0 0 nan inf", "0 0 0 48", "0 0 48 -1", "0 0 48", "0 0 4_8 48", "0 0 0x30 48",
+                    f"0 0 {arabic_48} 48", "0,,0,48,48,", "0 0 48 48 1"):
             with self.subTest(box=box):
                 code, out = self.run_check("a.svg", SVG.format(extra="").replace("0 0 48 48", box))
                 self.assertEqual(code, 1, out)

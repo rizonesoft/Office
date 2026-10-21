@@ -39,9 +39,16 @@ import zlib
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SVG_NS = "http://www.w3.org/2000/svg"
 SIZE = re.compile(r"^([1-9]\d{0,5})x([1-9]\d{0,5})$")
-# Every url( opening, whatever its quoting: what follows must be a fragment, or the reference leaves the file.
-STYLE_URL = re.compile(r"url\(\s*['\"]?(.{0,60})", re.IGNORECASE | re.DOTALL)
-SVG_NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?")
+# Every url( opening, whatever its quoting: what follows must be a fragment, or the reference leaves the file. The
+# match consumes only the opening, so a later url( in the same value is never swallowed.
+STYLE_URL = re.compile(r"url\(", re.IGNORECASE)
+# The SVG viewBox grammar: four numbers in ASCII digits, separated by whitespace and at most one comma.
+_NUM = r"[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
+VIEWBOX = re.compile(rf"[ \t\r\n]*({_NUM})(?:(?:[ \t\r\n]+,?[ \t\r\n]*|,[ \t\r\n]*)({_NUM})){{3}}[ \t\r\n]*", re.ASCII)
+VIEWBOX_NUM = re.compile(_NUM, re.ASCII)
+# SMIL animation can rewrite any attribute after it was checked (an href made external), so an asset may not animate.
+ANIMATION = {"set", "animate", "animateTransform", "animateMotion", "animateColor", "discard"}
+PNG_CRITICAL = {b"IHDR", b"PLTE", b"IDAT", b"IEND"}
 XML_BASE = "{http://www.w3.org/XML/1998/namespace}base"
 CSS_IMAGE = re.compile(r"(?:-webkit-)?image-set\(|\bimage\(|cross-fade\(|element\(", re.IGNORECASE)
 FORBIDDEN = {"image": "embedded raster <image>", "script": "script element", "foreignObject": "embedded HTML <foreignObject>"}
@@ -125,11 +132,41 @@ def _passes(width, height, interlace):
 
 
 def png_row_lengths(width, height, depth, colour, interlace):
-    """Each scanline's byte count, filter byte included, in stream order."""
+    """Each scanline as (byte count with its filter byte, pixel count, first row of a pass), in stream order."""
     bits = depth * PNG_CHANNELS[colour]
     for cols, rows in _passes(width, height, interlace):
-        for _ in range(rows):
-            yield 1 + (cols * bits + 7) // 8
+        for row in range(rows):
+            yield 1 + (cols * bits + 7) // 8, cols, row == 0
+
+
+def _paeth(a, b, c):
+    p = a + b - c
+    pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+    return a if pa <= pb and pa <= pc else b if pb <= pc else c
+
+
+def palette_row(row, prior, cols, depth, entries):
+    """Unfilter one scanline of a palette image (one byte per filter unit) and refuse an index past the palette;
+    the unfiltered bytes, for the next row's filters."""
+    kind, data = row[0], bytearray(row[1:])
+    above = prior if prior is not None else bytes(len(data))
+    for i in range(len(data)):
+        left, up, corner = (data[i - 1] if i else 0), above[i], (above[i - 1] if i else 0)
+        if kind == 1:
+            data[i] = (data[i] + left) & 0xFF
+        elif kind == 2:
+            data[i] = (data[i] + up) & 0xFF
+        elif kind == 3:
+            data[i] = (data[i] + (left + up) // 2) & 0xFF
+        elif kind == 4:
+            data[i] = (data[i] + _paeth(left, up, corner)) & 0xFF
+    per_byte, mask = 8 // depth, (1 << depth) - 1
+    for pixel in range(cols):
+        byte = data[pixel // per_byte]
+        index = (byte >> (8 - depth * (pixel % per_byte + 1))) & mask
+        if index >= entries:
+            raise ValueError(f"corrupt PNG: palette index {index} past the {entries}-entry PLTE")
+    return bytes(data)
 
 
 def png_data_size(width, height, depth, colour, interlace):
@@ -152,6 +189,11 @@ def png_size(data):
     if compression != 0 or method != 0 or interlace not in (0, 1):
         raise ValueError("corrupt PNG: unknown compression, filter or interlace method")
     kinds = [k for k, _ in chunks]
+    for kind in kinds:  # a critical chunk (upper-case first letter) a decoder does not know cannot be skipped
+        if not kind[0] & 0x20 and kind not in PNG_CRITICAL:
+            raise ValueError(f"corrupt PNG: unknown critical chunk {kind.decode('latin-1')}")
+    if kinds.count(b"IHDR") != 1 or chunks[-1][1]:
+        raise ValueError("corrupt PNG: a second IHDR, or an IEND that is not empty")
     if b"IDAT" not in kinds:
         raise ValueError("corrupt PNG: no image data (IDAT)")
     first, last = kinds.index(b"IDAT"), len(kinds) - 1 - kinds[::-1].index(b"IDAT")
@@ -160,6 +202,8 @@ def png_size(data):
     palettes = [body for k, body in chunks if k == b"PLTE"]
     if colour == 3 and b"PLTE" not in kinds[:first]:
         raise ValueError("corrupt PNG: a palette image has no PLTE before its data")
+    if b"PLTE" in kinds[first:]:
+        raise ValueError("corrupt PNG: PLTE after the image data")
     if palettes:
         entries, spare = divmod(len(palettes[0]), 3)
         if len(palettes) > 1 or colour in (0, 4) or spare or not 1 <= entries <= 256 \
@@ -167,11 +211,13 @@ def png_size(data):
             raise ValueError(f"corrupt PNG: invalid PLTE ({len(palettes[0])} bytes for colour type {colour})")
     expected = png_data_size(width, height, depth, colour, interlace)
     rows = png_row_lengths(width, height, depth, colour, interlace)
-    inflater, produced, left = zlib.decompressobj(), 0, 0
+    entries = len(palettes[0]) // 3 if palettes else 0
+    inflater, produced, left, cols, row, prior = zlib.decompressobj(), 0, 0, 0, bytearray(), None
 
     def take(out):
-        """Count inflated bytes and check the filter byte that starts each scanline (0 to 4, PNG 3, 7.3)."""
-        nonlocal produced, left
+        """Count inflated bytes, check the filter byte that starts each scanline (0 to 4, PNG 3, 7.3), and for a
+        palette image check every index against the palette, one row held at a time."""
+        nonlocal produced, left, cols, row, prior
         produced += len(out)
         if produced > expected:
             raise ValueError(f"corrupt PNG: more image data than {width}x{height} needs")
@@ -180,10 +226,17 @@ def png_size(data):
             if not left:
                 if out[at] > 4:
                     raise ValueError(f"corrupt PNG: scanline filter type {out[at]} is not 0 to 4")
-                left = next(rows)
+                left, cols, fresh = next(rows)
+                row = bytearray()
+                if fresh:
+                    prior = None  # each Adam7 pass filters against its own previous row
             step = min(left, len(out) - at)
+            if colour == 3:
+                row += out[at:at + step]
             left -= step
             at += step
+            if colour == 3 and not left:
+                prior = palette_row(row, prior, cols, depth, entries)
 
     try:
         for _kind, part in chunks[first:last + 1]:
@@ -226,11 +279,13 @@ def svg_check(data):
     if root.tag not in (f"{{{SVG_NS}}}svg", "svg"):
         return None, problems + [f"root element is {_local(root.tag)}, not svg"]
     size = None
-    box = (root.get("viewBox") or "").replace(",", " ").split()
+    box = root.get("viewBox") or ""
     try:
-        if not all(SVG_NUMBER.fullmatch(v) for v in box):  # SVG number syntax, not Python's (no "4_8", "nan", "inf")
+        # The whole viewBox grammar, ASCII digits only: not Python's float syntax ("4_8", "nan", Arabic-Indic digits)
+        # and not stray separators ("0,,0,48,48,").
+        if not VIEWBOX.fullmatch(box):
             raise ValueError
-        values = [float(v) for v in box]
+        values = [float(v) for v in VIEWBOX_NUM.findall(box)]
         if len(values) != 4 or not all(math.isfinite(v) for v in values) or values[2] <= 0 or values[3] <= 0:
             raise ValueError
         size = (values[2], values[3])
@@ -240,6 +295,8 @@ def svg_check(data):
         name = _local(element.tag) if isinstance(element.tag, str) else ""
         if name in FORBIDDEN:
             problems.append(FORBIDDEN[name])
+        if name in ANIMATION:
+            problems.append(f"animation element <{name}>")
         for attr, value in element.attrib.items():
             attr_name = _local(attr)
             if attr == XML_BASE:  # a base outside the file would turn every "#fragment" into an external reference
@@ -259,8 +316,11 @@ def _css_problems(css, where):
     """A backslash escape could spell `url` or `@import` past any text match, so CSS here may not use one."""
     if "\\" in css:
         return [f"CSS escape in <{where}>"]
-    problems = [f"external url() reference in <{where}>: {after.strip()[:40]!r}" for after in STYLE_URL.findall(css)
-                if not after.lstrip().startswith("#")]
+    problems = []
+    for opening in STYLE_URL.finditer(css):
+        after = css[opening.end():].lstrip(" \t\r\n\f").lstrip("'\"")
+        if not after.startswith("#"):
+            problems.append(f"external url() reference in <{where}>: {after[:40]!r}")
     if re.search(r"@import", css, re.IGNORECASE):
         problems.append(f"@import in <{where}>")
     if CSS_IMAGE.search(css):
