@@ -19,8 +19,9 @@ moves only through its own proposal, scripts/check-dotnet-pin.py).
 Pull requests merge one at a time. Each one is handled under the run guard's lock, so no campaign starts mid-merge:
 the clone's safety is checked again, the files are read, the pull request is read again and judged from that fresh
 read (a label removed, a base retargeted or a check re-run since the listing stops it), the local checks run once
-more, then `gh pr merge --rebase --match-head-commit <sha>` merges exactly the head that was judged, and `git pull --ff-only` and
-`python scripts/todo-graph.py validate` follow. The first failure stops the run and leaves the rest open; a pull
+more, then `gh pr merge --rebase --match-head-commit <sha>` merges exactly the head that was judged, and
+`git pull --ff-only` and `python scripts/todo-graph.py validate` follow. Every gh call names the repository `origin`
+points at, so GH_REPO cannot aim a merge elsewhere. The first failure stops the run and leaves the rest open; a pull
 request already merged when a later step failed is reported as merged. GitHub has no merge conditional on labels
 or checks, so a change in the moment between the last read and the merge is not seen; making one needs write
 access to the repository, which could merge directly.
@@ -32,6 +33,7 @@ the clone or campaign state made it unsafe (0 with `--skip-unsafe`, so a schedul
 import argparse
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -92,9 +94,19 @@ def guard_lock(root):
     return campaign_guard._Lock(str(root))
 
 
+def origin_repo(runner, root):
+    """`owner/name` of the GitHub repository `origin` points at. Every gh call names it, so neither GH_REPO nor
+    another default can aim a merge at a repository other than the one whose clone was checked."""
+    url = checked(runner, root, ["git", "remote", "get-url", "origin"], "git remote get-url").strip()
+    match = re.search(r"github\.com[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$", url)
+    if not match:
+        raise Unreadable(f"origin ({url}) is not a GitHub repository")
+    return f"{match.group(1)}/{match.group(2)}"
+
+
 def local_safety(runner, root, session, refs=True):
-    """Every check that needs no network: the campaign, the working tree, a section in progress and, with `refs`,
-    the branch and HEAD against the last fetched origin/main. Run again just before each merge, after the slow reads,
+    """Every check that needs no network: the campaign, the working tree, a section in progress, the branch and,
+    with `refs`, HEAD against the last fetched origin/main. Run again just before each merge, after the slow reads,
     because an editor, a checkout or a second session does not take the guard lock."""
     owner = campaign_owner(root)
     if owner is not None and owner != session:
@@ -104,11 +116,11 @@ def local_safety(runner, root, session, refs=True):
     started = in_progress_sections(root)
     if started:
         raise Unsafe(f"a section is in progress: {', '.join(started)}")
-    if not refs:
-        return
     branch = checked(runner, root, ["git", "rev-parse", "--abbrev-ref", "HEAD"], "git rev-parse").strip()
     if branch != "main":
         raise Unsafe(f"the clone is on branch {branch}, not main")
+    if not refs:
+        return
     head = checked(runner, root, ["git", "rev-parse", "HEAD"], "git rev-parse").strip()
     upstream = checked(runner, root, ["git", "rev-parse", "origin/main"], "git rev-parse").strip()
     if head != upstream:
@@ -147,11 +159,12 @@ def ineligibility(pr):
     return None
 
 
-def file_problem(runner, root, number, changed):
+def file_problem(runner, root, repo, number, changed):
     """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100). A rename
     counts on both sides, so moving `global.json` away is a change to it."""
-    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{number}/files",
-                                 "--jq", ".[] | [.filename, (.previous_filename // \"\")] | @json"], "gh api pulls/files")
+    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{repo}/pulls/{number}/files",
+                                 "--jq", ".[] | [.filename, (.previous_filename // \"\")] | @json"],
+                  "gh api pulls/files")
     try:
         files = [json.loads(line) for line in out.splitlines() if line.strip()]
     except ValueError:
@@ -163,10 +176,10 @@ def file_problem(runner, root, number, changed):
     return None
 
 
-def candidates(runner, root):
+def candidates(runner, root, repo):
     """The open pull requests whose listed fields allow them, lowest number first, and the rest with a reason."""
-    out = checked(runner, root, ["gh", "pr", "list", "--state", "open", "--base", "main", "--limit", "100",
-                                 "--json", PR_FIELDS], "gh pr list")
+    out = checked(runner, root, ["gh", "pr", "list", "--repo", repo, "--state", "open", "--base", "main",
+                                 "--limit", "100", "--json", PR_FIELDS], "gh pr list")
     try:
         prs = json.loads(out)
     except ValueError:
@@ -178,16 +191,17 @@ def candidates(runner, root):
     return chosen, skipped
 
 
-def fresh(runner, root, number):
+def fresh(runner, root, repo, number):
     """The pull request read again, just before its merge."""
-    out = checked(runner, root, ["gh", "pr", "view", str(number), "--json", PR_FIELDS + ",state"], "gh pr view")
+    out = checked(runner, root, ["gh", "pr", "view", str(number), "--repo", repo, "--json", PR_FIELDS + ",state"],
+                  "gh pr view")
     try:
         return json.loads(out)
     except ValueError:
         raise Unreadable(f"gh pr view {number} gave no JSON") from None
 
 
-def merge_one(runner, root, number, session, dry_run):
+def merge_one(runner, root, repo, number, session, dry_run):
     """Judge and merge one pull request under the guard lock. Returns (outcome, detail): "merged", "skipped",
     "would", "failed" (nothing merged) or "merged-then-failed"; raises Unsafe or Unreadable."""
     import campaign_guard
@@ -201,9 +215,9 @@ def merge_one(runner, root, number, session, dry_run):
         # Slow reads first, then the fresh judgement and a last local check, so the moment between the last read
         # and the merge is as short as it can be. GitHub has no merge conditional on labels or checks: what remains
         # is that moment, and changing a label or re-running a check needs write access, which could merge anyway.
-        listed = fresh(runner, root, number)
-        problem = file_problem(runner, root, number, listed.get("changedFiles"))
-        pr = fresh(runner, root, number)
+        listed = fresh(runner, root, repo, number)
+        problem = file_problem(runner, root, repo, number, listed.get("changedFiles"))
+        pr = fresh(runner, root, repo, number)
         if pr.get("headRefOid") != listed.get("headRefOid") or pr.get("changedFiles") != listed.get("changedFiles"):
             return "skipped", f"#{number}: changed while it was being read"
         if pr.get("state") != "OPEN":
@@ -214,7 +228,7 @@ def merge_one(runner, root, number, session, dry_run):
         local_safety(runner, root, session)
         if dry_run:
             return "would", f"#{number}"
-        code, out, err = runner(["gh", "pr", "merge", str(number), "--rebase", "--match-head-commit",
+        code, out, err = runner(["gh", "pr", "merge", str(number), "--repo", repo, "--rebase", "--match-head-commit",
                                  pr["headRefOid"]], root)
         if code != 0:
             return "failed", f"#{number}: gh pr merge failed: {(err or out).strip()[:200]}"
@@ -238,11 +252,12 @@ def main(argv=None, root=ROOT, runner=run):
     merged, would = [], []
     try:
         safety(runner, root, args.session)
-        chosen, skipped = candidates(runner, root)
+        repo = origin_repo(runner, root)
+        chosen, skipped = candidates(runner, root, repo)
         for number, why in skipped:
             print(f"merge-prs: skipping #{number}: {why}")
         for number in chosen:
-            outcome, detail = merge_one(runner, root, number, args.session, args.dry_run)
+            outcome, detail = merge_one(runner, root, repo, number, args.session, args.dry_run)
             if outcome == "skipped":
                 print(f"merge-prs: skipping {detail}")
             elif outcome == "would":

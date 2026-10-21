@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""scripts/merge_prs.py: green dependency pull requests merge one at a time, only when the clone is safe (D00 T03 §9)."""
+"""scripts/merge_prs.py: green dependency pull requests merge one at a time, only into a safe clone (D00 T03 §9)."""
 import contextlib
 import copy
 import importlib.util
@@ -35,7 +35,8 @@ class Fake:
     a merge must name the current head, and every call is recorded."""
 
     def __init__(self, prs=(), status="", branch="main", head=SHA, upstream=SHA, fail=None, views=None,
-                 after_merge=None, during_files=None, before_merge=None, after_pull=None):
+                 after_merge=None, during_files=None, before_merge=None, after_pull=None,
+                 origin="https://github.com/rizonesoft/Office.git"):
         self.calls, self.fail = [], fail or {}
         self.during_files = during_files   # called while the file list is read: a change during the slow reads
         self.before_merge = before_merge   # called as the merge request arrives: a change after the last read
@@ -46,6 +47,7 @@ class Fake:
         # "remote" is main on GitHub; "upstream" is the local origin/main ref, which only a fetch moves.
         self.state = {"status": status, "branch": branch, "head": head, "upstream": upstream, "remote": upstream}
         self.merged = []
+        self.origin = origin
 
     def __call__(self, args, root):
         self.calls.append(list(args))
@@ -79,6 +81,8 @@ class Fake:
             if self.after_merge:
                 self.after_merge(self)
             return 0, "", ""
+        if args[:4] == ["git", "remote", "get-url", "origin"]:
+            return 0, self.origin + "\n", ""
         if args[:2] == ["git", "fetch"]:
             self.state["upstream"] = self.state["remote"]
             return 0, "", ""
@@ -194,6 +198,31 @@ class Safety(unittest.TestCase):
                              owner="active-session")
         self.assertEqual(code, 0)
         self.assertIn("a campaign run is open", out)
+
+    def test_an_off_main_checkout_is_a_quiet_skip_even_when_github_cannot_be_reached(self):
+        code, out = run_main(Fake(prs=[pr(1)], branch="feature", fail={"git fetch": (1, "network unavailable")}),
+                             ["--skip-unsafe"])
+        self.assertEqual(code, 0)
+        self.assertIn("not main", out)
+
+    def test_every_github_call_names_the_repository_origin_points_at(self):
+        for origin in ("https://github.com/rizonesoft/Office.git", "git@github.com:rizonesoft/Office.git",
+                       "https://github.com/rizonesoft/Office"):
+            with self.subTest(origin=origin):
+                fake = Fake(prs=[pr(1)], origin=origin)
+                with mock.patch.dict("os.environ", {"GH_REPO": "someone/elsewhere"}):
+                    self.assertEqual(run_main(fake)[0], 0)
+                gh_calls = [c for c in fake.calls if c[0] == "gh"]
+                self.assertTrue(gh_calls)
+                for call in gh_calls:
+                    named = ("--repo" in call and call[call.index("--repo") + 1] == "rizonesoft/Office") or \
+                        any(str(a).startswith("repos/rizonesoft/Office/") for a in call)
+                    self.assertTrue(named, call)
+
+    def test_an_origin_that_is_not_on_github_is_unreadable(self):
+        code, out = run_main(Fake(prs=[pr(1)], origin="https://gitlab.example/x/y.git"))
+        self.assertEqual(code, 3)
+        self.assertIn("not a GitHub repository", out)
 
     def test_the_scheduled_task_skips_an_unsafe_moment_without_failing(self):
         code, out = run_main(Fake(prs=[pr(1)]), ["--skip-unsafe"], owner="campaign-session")
