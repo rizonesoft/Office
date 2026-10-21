@@ -84,6 +84,13 @@ class Identifiers(Repo):
         self.assertIn("twice.py: 2 ", out)
         self.assertNotIn("xaml.xaml", out)
 
+    def test_a_header_after_a_byte_order_mark_and_with_crlf_passes(self):
+        path = self.root / "tools/install.ps1"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"\xef\xbb\xbf# " + TAG.encode() + b" GPL-3.0-or-later\r\n# Copyright 2026 Rizonesoft\r\n")
+        subprocess.run(["git", "-C", str(self.root), "add", "tools/install.ps1"], check=True)
+        self.assertEqual(self.run_main()[0], 0)
+
     def test_a_tracked_file_missing_from_the_working_tree_is_refused(self):
         self.add("scripts/ok.py", f"# {TAG} GPL-3.0-or-later\n")
         self.add("scripts/bad.py", "print()\n")

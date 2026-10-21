@@ -57,7 +57,8 @@ def recorded_licences(root):
 def declarations(path):
     """Every SPDX licence declaration in the file's first lines, as written."""
     found = []
-    with open(path, encoding="utf-8", errors="replace") as handle:
+    # utf-8-sig drops a byte-order mark, which PowerShell files often carry, before the anchored match reads line one.
+    with open(path, encoding="utf-8-sig", errors="replace") as handle:
         for _, line in zip(range(HEAD_LINES), handle):
             match = DECLARATION.search(line.rstrip("\r\n"))
             if match:
