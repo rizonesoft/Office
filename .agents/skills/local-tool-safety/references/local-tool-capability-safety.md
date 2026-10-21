@@ -1,9 +1,9 @@
 # Local Tool Capability Safety Rules
 
-Conclave local tool integrations follow these rules:
+Office local tool integrations follow these rules:
 
 1. Never assume a tool path; discover the capability.
-2. Prefer global/user-level tool installs and keep repo-scoped assets only when they encode Conclave-specific behavior or reproducible commands.
+2. Prefer global/user-level tool installs and keep repo-scoped assets only when they encode Office-specific behavior or reproducible commands.
 3. Run safe local workflows and normal user-requested development edits inside the repository without repeated confirmation.
 4. Ask the operator once before anything that sends, deletes or changes something outside the repository: mail, production, Azure/M365, SQL writes, dropping data, credentials.
 5. Hand sudo commands to the operator as `! sudo ...`. Never configure blanket `NOPASSWD: ALL` and never store the OS sudo password.
@@ -12,7 +12,7 @@ Conclave local tool integrations follow these rules:
 ## Capability Resolution
 
 - [ ] Prefer global/user-level installed tools for vendor CLIs, desktop apps, package managers, language runtimes, cloud tools, database clients, and third-party servers.
-- [ ] Keep repo-scoped assets limited to Conclave-specific scripts, wrappers, schemas, config templates, hooks, tests, and docs.
+- [ ] Keep repo-scoped assets limited to Office-specific scripts, wrappers, schemas, config templates, hooks, tests, and docs.
 - [ ] Do not vendor bulky tool binaries into git unless a documented reproducibility or compatibility exception exists.
 - [ ] Prefer explicit config, then platform discovery, then a setup-required state.
 - [ ] Store discovered paths only in ignored local config.
@@ -49,7 +49,3 @@ Conclave local tool integrations follow these rules:
 - [ ] Drop or delete data outside the repository.
 
 When asking, state the target, the exact command or API operation, the blast radius and the rollback.
-
-## Host Network
-
-- [ ] Host LAN TCP on `conclave-srv` matches `scripts/conclave-srv-lan-ingress.json`. Probe `pnpm test:conclave-srv-lan`. Never iptables-only, never WAN, never `ufw reset` or `ufw enable` without that set.

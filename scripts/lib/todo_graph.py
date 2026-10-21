@@ -17,6 +17,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = "todo/implementation-plan.md"
+# What follows each "-> XREF:": one space and exactly one well-formed reference, nothing run into it.
+XREF_TARGET = re.compile(r" (?:D(?P<d>\d{2}) )?(?:T(?P<t>\d{2}) )?§(?P<s>[1-9]\d*)(?![\w§]|\.\d)")
 REF = re.compile(r"(?:D(?P<d>\d{2})\s+)?(?:T(?P<t>\d{2})\s+)?§(?P<s>[1-9]\d*)")
 ROW = re.compile(r"^\|\s*([1-9]\d*)\s*\|\s*§([1-9]\d*)\s*\|\s*([^|]+)\|\s*([^|]*)\|\s*\[([ x])\]\s*\|$")
 # What a section needs from outside the repository. The WAITING values are people, companies, or the
@@ -26,7 +28,14 @@ NEEDS = {"windows-host", "arm64-host", "display-session", "office", "libreoffice
          "attended", "owner-decision", "third-party", "operator"}
 WAITING = {"owner-decision", "third-party", "operator"}
 STATUSES = {"draft", "active", "blocked", "done", "superseded"}
-VERDICTS = {"clean", "fixed", "stopped-at-3"}
+# stopped-at-22 is the current review-round cap; stopped-at-13, -8 and -3 stay valid on earlier receipts.
+# stopped-low-severity: after SEVERITY_CUTOFF_ROUND, a round whose findings are all P3 or advisory ends the loop and
+# its findings are filed as leftovers (review-todo-section).
+VERDICTS = {"clean", "fixed", "stopped-at-22", "stopped-at-13", "stopped-at-8", "stopped-at-3", "stopped-low-severity"}
+REVIEW_ROUND_CAP = 22
+SEVERITY_CUTOFF_ROUND = 8
+# A round scripts/review-dispatch.py recorded in a findings file, reviewed or not ("## Round 2: none").
+ROUND_RECORD = re.compile(r"^## Round ([0-9]+): ", re.M)
 ADJACENCY_KEYS = ["list", "document", "settings", "reporting", "notifications", "permissions",
                   "audit", "exchange", "reverse"]
 # The closed phase list. A project names its phases (and the plan's title and acceptance bar) in
@@ -77,10 +86,18 @@ def normalize(value, domain, todo):
 
 
 def find_ref(text, domain, todo):
-    m = REF.search(text)
+    """The section the whole text names (surrounding spaces and backticks aside), or None: a reference with anything
+    run into it does not parse, so a malformed one is never read as a neighbouring section."""
+    m = REF.fullmatch(text.strip().strip("`"))
     if m is None:
         return None
     return f"D{m['d'] or domain} T{m['t'] or todo} §{m['s']}"
+
+
+def xref_target(text, domain, todo):
+    """The section the text right after one "-> XREF:" names, or None when it is not exactly one reference."""
+    m = XREF_TARGET.match(text)
+    return f"D{m['d'] or domain} T{m['t'] or todo} §{m['s']}" if m else None
 
 
 def extract_ref(text, rows):
@@ -88,11 +105,12 @@ def extract_ref(text, rows):
     or a '<path> §N' pair (POSIX or Windows path). Returns (ref_or_None, exit_code): 1 no such
     section, 2 no reference."""
     normalized = text.replace("\\", "/")
-    m = re.search(r"D(\d{2})\s+T(\d{2})\s+§([1-9]\d*)", normalized)
+    # A reference run into more text ("§1oops", "§1.5") is not a reference to §1.
+    m = re.search(r"D(\d{2})\s+T(\d{2})\s+§([1-9]\d*)(?![\w§]|\.\d)", normalized)
     if m:
         ref = f"D{m[1]} T{m[2]} §{int(m[3])}"
         return (ref, 0) if ref in rows else (ref, 1)
-    m = re.search(r"(\d{2})-[a-z0-9-]+/TODO-(\d{2})-[a-z0-9-]+\.md\s*§([1-9]\d*)", normalized)
+    m = re.search(r"(\d{2})-[a-z0-9-]+/TODO-(\d{2})-[a-z0-9-]+\.md\s*§([1-9]\d*)(?![\w§]|\.\d)", normalized)
     if m:
         ref = f"D{m[1]} T{m[2]} §{int(m[3])}"
         return (ref, 0) if ref in rows else (ref, 1)
@@ -168,16 +186,33 @@ def receipt_ok(root, receipt, ref, stamp_sha, commits=None):
         commit_ok(root, stamp_sha)
 
 
+_REVIEW_DISPATCH = []
+
+
+def review_dispatch():
+    """scripts/review-dispatch.py as a module (its file name is not importable), loaded once."""
+    if not _REVIEW_DISPATCH:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "review_dispatch", Path(__file__).resolve().parents[1] / "review-dispatch.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _REVIEW_DISPATCH.append(module)
+    return _REVIEW_DISPATCH[0]
+
+
 def receipt_data_ok(data, ref, stamp_sha, root=None):
     require(isinstance(data, dict), f"receipt is not an object: {ref}")
     require(data.get("ref") == ref and data.get("implementation_sha") == stamp_sha,
             f"receipt does not match its stamp: {ref}")
     rounds = data.get("reviews")
     require(isinstance(rounds, list) and rounds and all(
-        isinstance(r, dict) and isinstance(r.get("round"), int)
+        isinstance(r, dict) and type(r.get("round")) is int and r["round"] >= 1
         and isinstance(r.get("report"), str) and r["report"]
         and isinstance(r.get("verdict"), str) and r["verdict"] in VERDICTS for r in rounds),
         f"receipt has no valid review rounds (verdict one of {', '.join(sorted(VERDICTS))}): {ref}")
+    require(all(r["round"] > SEVERITY_CUTOFF_ROUND for r in rounds if r["verdict"] == "stopped-low-severity"),
+            f"stopped-low-severity is allowed only after round {SEVERITY_CUTOFF_ROUND}: {ref}")
     if root is not None:
         root_path = Path(root)
         root_resolved = root_path.resolve()
@@ -197,6 +232,70 @@ def receipt_data_ok(data, ref, stamp_sha, root=None):
                     and report_path.resolve().is_relative_to(root_resolved)
                     and bool(read_text(report_path).strip()),
                     f"missing or empty review report ({raw_report}): {ref}")
+    # Receipts written since 2026-10-21 record the rounds spent against the cap, and what was done when a review
+    # stopped at the cap; earlier receipts carry neither field.
+    if "rounds_spent" in data:
+        spent, cap = data.get("rounds_spent"), data.get("round_cap")
+        require(type(spent) is int and spent >= max(r["round"] for r in rounds) and type(cap) is int and cap >= 1,
+                f"receipt rounds_spent or round_cap is invalid: {ref}")
+        # A cap stop is the current cap, reached: stopped-at-3, -8 and -13 belong to receipts older than this field.
+        require(all(r["verdict"] == f"stopped-at-{cap}" for r in rounds if r["verdict"].startswith("stopped-at-")),
+                f"a stopped-at verdict must be stopped-at-{cap}: {ref}")
+        if root is not None:
+            # A claimed round is one scripts/review-dispatch.py recorded with a reviewer, read by the dispatcher's own
+            # reader, so a report it would refuse is no evidence here either.
+            # The reviewer must also be of another model family than the writer (a self-review is not a round), and
+            # must have returned a review: one ending in the prompt's OVERALL approve or needs-attention line, not an
+            # empty or blocked reply. Reports are read as the dispatcher wrote them, "\r" bytes and all.
+            dispatch = review_dispatch()
+            for report in dict.fromkeys(r["report"] for r in rounds):
+                recorded = dispatch.read_rounds((Path(root) / report).read_bytes().decode("utf-8"))
+                require(recorded is not None, f"{report} is not a findings file the dispatcher can read: {ref}")
+                # A returned review: a reviewer of another model family than the writer ran and replied with the
+                # prompt's OVERALL approve or needs-attention line. Outages, self-reviews, empty and blocked replies are
+                # recorded rounds but not reviews: they earn no stop and end no loop.
+                reviewed = {e["number"]: e for e in recorded if e["reviewer"]
+                            and e["writer"] in dispatch.WRITER_FAMILY
+                            and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
+                            and ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1]
+                            in ("OVERALL: approve", "OVERALL: needs-attention")}
+                require(reviewed, f"{report} holds no returned review: {ref}")
+                claimed = sorted((r for r in rounds if r["report"] == report), key=lambda r: r["round"])
+                for r in claimed:
+                    e = reviewed.get(r["round"])
+                    last = ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1] if e else ""
+                    require(e is not None and e["writer"] in dispatch.WRITER_FAMILY
+                            and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
+                            and last == ("OVERALL: approve" if r["verdict"] == "clean" else "OVERALL: needs-attention"),
+                            f"round {r['round']} is not a review returned by another model family with a verdict "
+                            f"matching {r['verdict']} (clean needs OVERALL: approve, any other needs-attention) in "
+                            f"{report}: {ref}")
+                    # A severity stop is for a round whose findings are all P3 or advisory. The reviewer, who tags each
+                    # finding (an untagged one counts as P1), declares the highest on the line before OVERALL; reading
+                    # severities back out of free prose would guess where the reviewer already said.
+                    lines = [x.strip() for x in e["review"].splitlines() if x.strip()]
+                    require(r["verdict"] != "stopped-low-severity" or (len(lines) >= 2 and lines[-2] == "HIGHEST: P3"),
+                            f"round {r['round']} does not declare HIGHEST: P3 before its OVERALL line, so it cannot "
+                            f"stop on severity: {ref}")
+                    # Stopping is earned by reviews returned: a round that returned no review (an outage) does not
+                    # count toward the severity cutoff or the cap.
+                    returned = sum(1 for n in reviewed if n <= r["round"])
+                    require(r["verdict"] != "stopped-low-severity" or returned > SEVERITY_CUTOFF_ROUND,
+                            f"round {r['round']} follows only {returned} returned reviews, so it cannot stop on "
+                            f"severity before {SEVERITY_CUTOFF_ROUND + 1}: {ref}")
+                    require(not r["verdict"].startswith("stopped-at-") or returned == cap,
+                            f"round {r['round']} follows {returned} returned reviews; a cap stop is the round that "
+                            f"returns review {cap}: {ref}")
+                # Each findings file is one review loop, and the loop's end is its last reviewed round: the receipt
+                # must name it, and it must be clean or a stop, so no later failing review can be left out.
+                require(claimed[-1]["round"] == max(reviewed)
+                        and (claimed[-1]["verdict"] == "clean" or claimed[-1]["verdict"].startswith("stopped-")),
+                        f"the review loop in {report} must end at its last reviewed round ({max(reviewed)}), clean or "
+                        f"stopped, and the receipt must name that round: {ref}")
+        stopped = any(r["verdict"].startswith("stopped-") for r in rounds)
+        outcome = data.get("cap_outcome")
+        require((isinstance(outcome, str) and bool(outcome.strip())) == stopped,
+                f"receipt needs cap_outcome exactly when a review stopped (at the cap or on severity): {ref}")
     checks = data.get("checks")
     require(isinstance(checks, list) and checks and all(isinstance(c, str) and c.strip() for c in checks),
             f"receipt has no checks: {ref}")
@@ -244,11 +343,12 @@ def adjacency_of(body, relative, domain, todo):
 def xrefs_of(body, domain, todo):
     refs = []
     for line in body.splitlines():
-        if "-> XREF:" not in line:
-            continue
-        ref = find_ref(line.split("-> XREF:", 1)[1], domain, todo)
-        require(ref is not None, f"XREF line names no section: {line.strip()}")
-        refs.append(ref)
+        # Every XREF on the line, each read strictly: a malformed one refuses instead of resolving to whatever
+        # reference text happens to follow it.
+        for tail in line.split("-> XREF:")[1:]:
+            ref = xref_target(tail, domain, todo)
+            require(ref is not None, f"XREF must name exactly one well-formed section: {line.strip()}")
+            refs.append(ref)
     return refs
 
 
@@ -294,6 +394,8 @@ def graph(root=ROOT):
         rows, orders = {}, []
         for line in table.splitlines():
             if not line.startswith("|"):
+                # A row written without its leading pipe would otherwise vanish from the graph.
+                require("|" not in line, f"implementation table line without a leading pipe: {relative}")
                 continue
             m = ROW.fullmatch(line)
             if not m:
@@ -314,6 +416,13 @@ def graph(root=ROOT):
                 f"row/body mismatch: {relative}")
         require(body.rfind("## Verification\n") > headings[-1].start(),
                 f"Verification must follow numbered sections: {relative}")
+        # The level-two headings are exactly the format's, once each and in order: any other, or a repeat, would end
+        # the section above it early and hide what follows from the graph.
+        level_two = re.findall(r"^##(?:[ \t].*)?$", body, re.M)
+        numbered = [line for line in level_two if re.fullmatch(r"## \d+\. \S.*", line)]
+        require(level_two == ["## Inputs", "## Outcome", "## Implementation Order", *numbered, "## Verification"],
+                f"level-two headings must be Inputs, Outcome, Implementation Order, the sections and Verification, "
+                f"once each and in that order: {relative}")
         for h in headings:
             n = int(h[1])
             section_body = body[h.end():].split("\n## ", 1)[0].strip()
@@ -332,7 +441,9 @@ def graph(root=ROOT):
             deps = [] if dep == "--" else [normalize(v, d, t) for v in dep.split(",")]
             require(len(deps) == len(set(deps)), f"duplicate dependency: {ref}")
             for line in section_body.splitlines():
-                if re.match(r"^\s*[-*+]\s*\[(?![^\]]+\]\()", line):
+                # Every checklist-shaped line (a list marker and a box, quoted, numbered or indented) must be the one
+                # form the graph counts, so no item can hide in another spelling.
+                if re.match(r"^[\s>]*(?:[-*+]|\d+[.)])[ \t]*\[[^\]\n]*\](?!\()", line):
                     require(re.fullmatch(r"- \[([ x])\] \S.*", line) is not None,
                             f"malformed checklist item: {ref}")
             require("**Build order:**\n" in section_body and "\n- [" in section_body,
@@ -372,6 +483,7 @@ def graph(root=ROOT):
                     f"checkbox/stamp/receipt mismatch: {ref}")
             if done:
                 require(all(x[0] == "x" for x in checks), f"unfinished stamped checklist: {ref}")
+                require(not set(needs) & WAITING, f"stamped section has a waiting Need: {ref}")
                 m = re.fullmatch(r"\d{4}-\d{2}-\d{2} \| §" + str(n) + r" \| ([0-9a-f]{40})", stamp_line)
                 require(m is not None, f"invalid stamp: {ref}")
                 if head_commits is None:
@@ -408,9 +520,16 @@ def graph(root=ROOT):
                     f"one-sided XREF {target} has no pointer back: {relative}")
     # Deferrals carry an owner or they are abandonments; a shipped owner makes a live deferral stale.
     for row in sections.values():
+        # Only a blockquoted marker is read below; any other spelling would drop the deferral from every check.
+        for line in row.body.splitlines():
+            require(len(re.findall(r"\*\*(?:Deferred|Resolved):\*\*", line)) <= 1,
+                    f"one Deferred or Resolved marker per line: {row.ref}")
+            if re.search(r"\*\*(?:Deferred|Resolved):\*\*", line):
+                require(re.match(r"> \*\*(?:Deferred|Resolved):\*\*[ \t]*\S", line) is not None,
+                        f"a Deferred or Resolved marker must open a blockquote line and say something: {row.ref}")
         for marker in ("Deferred", "Resolved"):
-            for line in re.findall(r"^> \*\*" + marker + r":\*\*\s*(.+)$", row.body, re.M):
-                owner = find_ref(line.split("-> XREF:", 1)[1], row.ref[1:3], row.ref[5:7]) \
+            for line in re.findall(r"^> \*\*" + marker + r":\*\*[ \t]*(\S.*)$", row.body, re.M):
+                owner = xref_target(line.split("-> XREF:", 1)[1], row.ref[1:3], row.ref[5:7]) \
                     if "-> XREF:" in line else None
                 require(owner is not None and owner in sections,
                         f"{marker} without a resolving owner: {row.ref}")
@@ -434,7 +553,10 @@ def graph(root=ROOT):
                 require(dep not in visiting, f"dependency cycle: {dep}")
                 require(sections[dep].phase <= sections[ref].phase,
                         f"prerequisite in later phase: {ref} -> {dep}")
-                require(not sections[ref].done or sections[dep].done,
+                # A stamped section may sit on an open prerequisite only when an audit reopened that prerequisite
+                # (its Unstamped note): the consumer is then suspect until the prerequisite re-stamps, not unstamped.
+                require(not sections[ref].done or sections[dep].done
+                        or re.search(r"^> \*\*Unstamped:\*\* ", sections[dep].body, re.M) is not None,
                         f"stamped section has open dependency: {ref}")
                 if dep not in visited:
                     visiting.add(dep)
@@ -462,12 +584,27 @@ def _index_coverage(root, files):
             require(f"{domain}/{filename}" in root_text, f"missing from root index: {domain}/{filename}")
 
 
+def settled(ref, rows):
+    """A prerequisite that holds: it and every section it depends on, however far back, are stamped. A stamp on top of
+    an ancestor an audit reopened is suspect, so new work may not build on it."""
+    stack, seen = [ref], set()
+    while stack:
+        current = stack.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        if not rows[current].done:
+            return False
+        stack.extend(rows[current].depends)
+    return True
+
+
 def disposition(row, rows):
-    """0 ready, 3 already verified, 4 waiting (inactive file, open prerequisite, or a person to answer)."""
+    """0 ready, 3 already verified, 4 waiting (inactive file, open or suspect prerequisite, or a person to answer)."""
     if row.done:
         return 3
     if row.status != "active" or set(row.needs) & WAITING \
-            or any(not rows[d].done for d in row.depends):
+            or any(not settled(d, rows) for d in row.depends):
         return 4
     return 0
 
@@ -578,7 +715,7 @@ def deferrals(root=ROOT):
     found = []
     for row in ordered(rows):
         for marker in ("Deferred", "Resolved"):
-            for line in re.findall(r"^> \*\*" + marker + r":\*\*\s*(.+)$", row.body, re.M):
+            for line in re.findall(r"^> \*\*" + marker + r":\*\*[ \t]*(\S.*)$", row.body, re.M):
                 found.append({"ref": row.ref, "state": marker.lower(), "text": line.strip()})
     return found
 
@@ -596,14 +733,56 @@ def adjacency_report(root=ROOT):
     return report
 
 
-def stamp(root, ref, sha, reviews, checks, date, sync_plan=False):
-    """Close a section: write its receipt, tick its row and checklist, add the Verified and Review lines."""
+def rounds_recorded(root, reviews):
+    """Review rounds spent on a section, summed over its findings files (one per review loop): in each, the highest
+    round the dispatcher recorded (an outage round that returned no review counts) or the highest round named for
+    that file on the command line, whichever is higher."""
+    spent = 0
+    for report in dict.fromkeys(r["report"] for r in reviews):
+        named = max(r["round"] for r in reviews if r["report"] == report)
+        path = Path(root) / report
+        text = path.read_bytes().decode("utf-8") if path.is_file() else ""  # as written: the dispatcher keeps "\r"
+        # The dispatcher's reader, so a round heading quoted inside a review is not counted; a report it cannot read
+        # (one older than its format) falls back to the headings, and a new receipt refuses such a report anyway.
+        parsed = review_dispatch().read_rounds(text)
+        recorded = [e["number"] for e in parsed] if parsed is not None else [int(n) for n in ROUND_RECORD.findall(text)]
+        spent += max([named, *recorded])
+    return spent
+
+
+def review_rounds(root=ROOT):
+    """Rounds spent per stamped section, from each receipt (or its findings files, for receipts older than the
+    rounds_spent field), and a summary for tuning the cap."""
+    root = Path(root)
+    sections = []
+    for row in ordered(graph(root)):
+        if not row.done or not row.receipt:
+            continue
+        data = json.loads(read_text(root / row.receipt))
+        spent = data.get("rounds_spent") or rounds_recorded(root, data["reviews"])
+        sections.append({"ref": row.ref, "rounds_spent": spent, "round_cap": data.get("round_cap"),
+                         "verdicts": [r["verdict"] for r in data["reviews"]],
+                         "cap_outcome": data.get("cap_outcome")})
+    spent = [s["rounds_spent"] for s in sections]
+    return {"cap": REVIEW_ROUND_CAP, "sections": sections,
+            "summary": {"stamped": len(sections), "rounds": sum(spent),
+                        "mean": round(sum(spent) / len(spent), 2) if spent else None,
+                        "max": max(spent, default=None),
+                        "stopped_at_cap": sum(any(v.startswith("stopped-at-") for v in s["verdicts"])
+                                              for s in sections),
+                        "stopped_low_severity": sum("stopped-low-severity" in s["verdicts"] for s in sections)}}
+
+
+def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=None):
+    """Close a section: write its receipt, tick its row and checklist, add the Verified and Review lines. The receipt
+    records the review rounds spent against the cap and, when a review stopped at the cap, what was done about it."""
     root = Path(root)
     rows = graph(root)
     require(ref in rows, "unresolved section: " + ref)
     row = rows[ref]
     require(not row.done, f"already verified: {ref}")
-    require(all(rows[d].done for d in row.depends), f"open prerequisite: {ref}")
+    require(all(settled(d, rows) for d in row.depends),
+            f"open prerequisite, or one resting on a reopened section: {ref}")
     require(not set(row.needs) & WAITING,
             f"still waiting on {', '.join(sorted(set(row.needs) & WAITING))}: {ref}")
     require(re.fullmatch(r"[0-9a-f]{40}", sha) is not None,
@@ -614,9 +793,18 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False):
             f"unticked checklist items in {ref}: {open_items[0] if open_items else ''}")
     slug = re.sub(r"[^a-z0-9]+", "-", ref.lower().replace("§", "s")).strip("-")
     receipt = f"docs/reviews/{slug}.json"
+    stopped = any(isinstance(r, dict) and str(r.get("verdict", "")).startswith("stopped-") for r in reviews)
+    require(stopped == bool((cap_outcome or "").strip()),
+            "--cap-outcome is required with a stopped verdict (what was done when the review stopped at the cap or on "
+            "severity), and only then")
     data = {"ref": ref, "title": row.title, "implementation_sha": sha, "date": date,
             "reviews": reviews, "checks": checks}
-    receipt_data_ok(data, ref, sha, root=root)  # every argument is checked before anything is written
+    receipt_data_ok(data, ref, sha, root=root)  # every argument is checked before anything is read or written
+    data["rounds_spent"] = rounds_recorded(root, reviews)
+    data["round_cap"] = REVIEW_ROUND_CAP
+    if stopped:
+        data["cap_outcome"] = cap_outcome.strip()
+    receipt_data_ok(data, ref, sha, root=root)
     receipt_path = root / receipt
     require(not receipt_path.exists(), f"receipt already exists: {receipt}")
     path = root / row.path
@@ -643,7 +831,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False):
         graph(root)
         if sync_plan or original_plan_bytes is not None:
             projections(root, sync=True)
-    except Exception:
+    except BaseException:  # an interrupt between writes must roll back as an error does
         receipt_path.unlink(missing_ok=True)
         try:
             if not path.is_file() or path.read_bytes() != original_bytes:
@@ -656,5 +844,75 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False):
                 plan_path.unlink(missing_ok=True)
         raise
     return receipt
+
+
+def unstamp(root, ref, reason, date):
+    """Flip a stamped section back to open when an audit finds it regressed: remove its Verified and Review lines,
+    untick its Commit item and row, reopen its file, and keep the receipt as evidence under a revoked name, with a dated
+    Unstamped note in the section saying why. Re-stamping later writes a fresh receipt."""
+    root = Path(root)
+    rows = graph(root)
+    require(ref in rows, "unresolved section: " + ref)
+    row = rows[ref]
+    require(row.done, f"not stamped: {ref}")
+    require(bool(reason.strip()) and "\n" not in reason, "--reason must be one line saying what regressed")
+    require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, f"invalid date: {date}")
+    stamp_lines = re.compile(r"\n\n> \*\*Verified:\*\* [^\n]*\n> \*\*Review:\*\* `[^`\n]*`")
+    require(len(stamp_lines.findall(row.body)) == 1, f"stamp lines not found: {ref}")
+    receipt_path = root / row.receipt
+    revoked_path = receipt_path.with_name(f"{receipt_path.stem}.revoked-{date}.json")
+    n = 2
+    while revoked_path.exists():
+        revoked_path = receipt_path.with_name(f"{receipt_path.stem}.revoked-{date}-{n}.json")
+        n += 1
+    revoked = revoked_path.relative_to(root).as_posix()
+    body = stamp_lines.sub("", row.body)
+    body = re.sub(r"^- \[x\] (Commit:.+)$", r"- [ ] \1", body, flags=re.M)
+    body += f"\n\n> **Unstamped:** {date}: {reason.strip()} (revoked receipt `{revoked}`)"
+    path = root / row.path
+    original_bytes = path.read_bytes()
+    text = read_text(path)
+    require(text.count(row.body) == 1, f"section body is not unique in {row.path}")
+    text = text.replace(row.body, body)
+    line = re.compile(r"^(\|\s*\d+\s*\|\s*§" + str(row.number) + r"\s*\|[^\n]*\|\s*)\[x\](\s*\|)$", re.M)
+    require(len(line.findall(text)) == 1, f"implementation row not found: {ref}")
+    text = line.sub(r"\1[ ]\2", text)
+    text = re.sub(r"\A(---\n(?:.*\n)*?)status: done\n", r"\1status: active\n", text, count=1)
+    receipt_bytes = receipt_path.read_bytes()
+    plan_path = root / PLAN
+    original_plan_bytes = plan_path.read_bytes() if plan_path.is_file() else None
+    try:
+        atomic(revoked_path, receipt_bytes)
+        atomic(path, text)
+        receipt_path.unlink()
+        graph(root)
+        if original_plan_bytes is not None:
+            projections(root, sync=True)
+    except BaseException:  # an interrupt between writes must roll back as an error does
+        try:
+            if not receipt_path.is_file():
+                atomic(receipt_path, receipt_bytes)
+            revoked_path.unlink(missing_ok=True)
+            if not path.is_file() or path.read_bytes() != original_bytes:
+                atomic(path, original_bytes)
+        finally:
+            if original_plan_bytes is not None and (not plan_path.is_file()
+                                                    or plan_path.read_bytes() != original_plan_bytes):
+                atomic(plan_path, original_plan_bytes)
+        raise
+    return revoked
+
+
+def suspects(root, ref):
+    """Stamped sections that depend on ref, directly or through other sections: suspect while ref is open."""
+    rows = graph(root)
+    found, frontier = [], [ref]
+    while frontier:
+        current = frontier.pop()
+        for row in ordered(rows):
+            if current in row.depends and row.ref not in found:
+                found.append(row.ref)
+                frontier.append(row.ref)
+    return [r for r in found if rows[r].done]
 
 M_FLAG = re.M

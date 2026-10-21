@@ -6,3 +6,5 @@ assets/** text=auto eol=lf
 *.icns binary
 # Baselines are compared byte for byte by scripts/import-office-ids.py --check.
 design/inventory/** text=auto eol=lf
+# Git hooks run under sh, which a CRLF shebang line breaks.
+scripts/hooks/** text eol=lf

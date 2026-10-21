@@ -14,7 +14,7 @@ This skill does not ship a section and does not write a stamp. It audits, then c
 One continuous loop. You do not stop between sections or phases:
 
 1. Audit (below), then start `process-phase` on the first phase with a ready row, in this same turn.
-2. After that phase's closeout or park, re-run `python scripts/todo-graph.py query ready` and start the next ready phase.
+2. After that phase's closeout or park, re-run `python scripts/todo-graph.py query ready` and start the next phase with a ready row this session can run: `query ready` does not know which hosts are reachable, so a row whose Needs name an unreachable host (`arm64-host`, `display-session`, `office`, `attended`) is a leftover here even when listed.
 3. Stop only when no phase has a ready row: every remaining `[ ]` row is blocked or waiting in this context, or the plan is done. That, and an operator stop, are the only halts.
 
 A report to the operator is not a stop. An audit-only reply while a ready phase exists is a process defect: starting the phase is the next action, in the same turn. The self-correcting parts stay in the loop: drifted plan claims are corrected before building (inside `process-todo-section`), every gap and review leftover files through `add-todo`, and red gates are fixed, never bypassed (no `--no-verify`, no amend of a reviewed candidate, no force-push).
@@ -46,9 +46,9 @@ python -m unittest discover -s scripts/tests
 python -m unittest discover -s tests/scripts
 ```
 
-The two test runs are the kits' own tests, which kits install under `scripts/tests`, and the project's own script tests under `tests/scripts`; run both, skip only a folder the repository does not have, and add any further suite the project's `AGENTS.md` names. A project's tests are never dropped for the kits' or the other way round.
+The two test runs are the agent tooling tests under `scripts/tests` (review dispatch, automations) and the project's script tests under `tests/scripts`; run both, skip only a folder the repository does not have, and add any further suite the project's `AGENTS.md` names. Neither is dropped in favour of the other.
 
-Fix every validator refusal before talking about shipping. If `plan --check` is stale, run `plan --sync` and re-check. The deep phase repair belongs to `process-phase` step 1; this audit is the commands above plus five recorded lines in the first phase's run file (`docs/phase-runs/<date>-phase-<N>.md`), not as the turn's last words:
+Read `todo/README.md` (the format every TODO edit keeps) before the first edit, then fix every validator refusal before talking about shipping. If `plan --check` is stale, run `plan --sync` and re-check. The deep phase repair belongs to `process-phase` step 1; this audit is the commands above plus five recorded lines in the first phase's run file (`docs/phase-runs/<date>-phase-<N>.md`), not as the turn's last words:
 
 1. Graph: valid section count, or the refusal.
 2. Plan currency: the `--check` result.
@@ -64,7 +64,7 @@ If no phase has a ready row, report the leftovers with their blockers and stop. 
 
 `process-phase` ends in exactly one of three ways: the phase table is all `[x]` with a written closeout; every leftover is blocked here and it parked (a `PARKED` line and park record in its run file); or the operator paused it. A parked phase is not complete and not a stall. Do not call it either.
 
-Re-run `python scripts/todo-graph.py query ready`. If another phase has a ready row, start `process-phase` on it in the same turn, same session, same rules. If none does, report which: plan done, or the leftovers and their blockers, with the run files named.
+Re-run `python scripts/todo-graph.py query ready`. If another phase has a ready row this session can run (Needs within reach, as in the loop above), start `process-phase` on it in the same turn, same session, same rules. If none does, report which: plan done, or the leftovers and their blockers, with the run files named.
 
 ## Deny
 

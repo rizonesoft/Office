@@ -232,7 +232,7 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
 def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> tuple[int | None, str]:
     """How many rows `query ready` offers, and the first one, or (None, "") when the query cannot be read.
 
-    The SDK's todo-graph prints a JSON list of ready rows; a graph that prints a `N runnable now` summary (Isotone's)
+    This repository's todo-graph prints a JSON list of ready rows; a graph that prints a `N runnable now` summary (Isotone's)
     is read by that line instead. With `phase`, only that phase's rows count. The text summary does not say which
     phase a row is in, so for a phase it is unknown (None, ""): a phase run then ends on its own closeout or park
     marker, never on another phase's count, and is never pointed at another phase's row.
@@ -261,6 +261,19 @@ def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> t
         return None, ""
     lines = [ln.strip() for ln in out.splitlines() if ln.strip() and "runnable now" not in ln]
     return int(counts[-1]), (lines[0] if lines else "")
+
+
+def open_rows(root: str, timeout: float = 300.0) -> int | None:
+    """How many rows the plan still has open (not stamped), from `query stats`, or None when it cannot be read. A plan
+    with nothing ready can still hold blocked rows: that is a park, not a finished plan."""
+    try:
+        proc = subprocess.run([sys.executable, os.path.join(root, "scripts", "todo-graph.py"), "query", "stats"],
+                              capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=root,
+                              timeout=max(timeout, 1.0))
+        stats = json.loads(proc.stdout) if proc.returncode == 0 else None
+        return int(stats["total"]) - int(stats["verified"])
+    except (OSError, subprocess.TimeoutExpired, ValueError, TypeError, KeyError):
+        return None
 
 
 def marker_run(line: str) -> str | None:
@@ -294,11 +307,12 @@ def end(root: str, session: str, reason: str) -> str:
         raise GuardError("end needs --session (the session that owns the guard)")
     # The plan query runs before the lock, so no subprocess is ever held under it.
     ready = ready_rows(root)[0] if reason == "plan-done" else None
+    still_open = open_rows(root) if reason == "plan-done" else None
     with _Lock(root):
-        return _end_locked(root, session, reason, ready)
+        return _end_locked(root, session, reason, ready, still_open)
 
 
-def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
+def _end_locked(root: str, session: str, reason: str, ready: int | None, still_open: int | None = None) -> str:
     guard_path, state_path = _paths(root)
     guard = read_guard(root)
     if guard is None:
@@ -317,6 +331,8 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
         raise GuardError(f"escalation needs a column-0 'PARKED <UTC>{tag} escalation: <cause>' line in {run_rel}")
     if reason == "plan-done" and ready != 0:
         raise GuardError(f"plan-done needs nothing runnable; query ready reads {ready}")
+    if reason == "plan-done" and still_open != 0:
+        raise GuardError(f"plan-done needs every row stamped; {still_open} still open, so end with a park")
     if reason == "stall":
         try:
             trips = int(_read_state(root).get("trips", 0))

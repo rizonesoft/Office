@@ -1,6 +1,6 @@
 ---
 name: local-tool-safety
-description: Use when adding, reviewing, or invoking Conclave local tools, Windows/Linux/WSL integrations, connector-backed workflows, automation launchers, CLI wrappers, or any operation that might send outbound data, delete data, change infrastructure, modify accounts, run SQL writes, install tools, or use discovered executable paths.
+description: Use when adding, reviewing, or invoking Office local tools, Windows/Linux/WSL integrations, connector-backed workflows, automation launchers, CLI wrappers, or any operation that might send outbound data, delete data, change infrastructure, modify accounts, run SQL writes, install tools, or use discovered executable paths.
 ---
 
 # Local Tool Safety
@@ -19,7 +19,7 @@ When implementing or using a local tool integration:
 2. Keep discovery output bounded: resolve the executable, inspect its version, and query only the relevant subcommand help or needed flags. Do not dump an entire help manual when a targeted query is sufficient.
 3. Prefer explicit config, then discovery, then setup-required state.
 4. Prefer global/user-level installs for vendor tools, CLIs, runtimes, package managers, database clients, and desktop apps.
-5. Keep only Conclave-specific scripts, wrappers, schemas, config templates, hooks, tests, and docs in the repo.
+5. Keep only Office-specific scripts, wrappers, schemas, config templates, hooks, tests, and docs in the repo.
 6. Store discovered paths only in local ignored config.
 7. Report health plainly: available, missing, degraded, auth-required, or blocked.
 8. Run safe read/open/inspect workflows directly.
@@ -39,4 +39,3 @@ When implementing or using a local tool integration:
 - No secret values in logs, UI or test snapshots.
 - No OS sudo password in `.secrets`, environment files, logs, or memory notes.
 - Missing optional tools produce setup guidance, not crashes.
-- Host LAN ports on `conclave-srv` stay in `scripts/conclave-srv-lan-ingress.json`. Probe with `pnpm test:conclave-srv-lan`. Never iptables-only, never a WAN allow, never `ufw reset` or `ufw enable` without that set.

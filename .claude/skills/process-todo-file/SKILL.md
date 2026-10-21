@@ -29,7 +29,7 @@ The `## Verification` section is not decoration. Run every item in it and record
 Read the whole file with fresh eyes and check:
 
 - **Stubs and TODOs in the code.** Search the touched paths for `TODO`, `FIXME` and not-implemented markers introduced during the work. Each is finished now or gets an owning section through `add-todo`.
-- **Partial items.** Any checklist item ticked when only part shipped. The remainder becomes a new section; a stamped checklist is never rewritten.
+- **Partial items.** Any checklist item ticked when only part shipped. In a stamped section that is an unearned stamp: run `review-todo-section` in audit stance, which files the repair and reopens the section through `todo-graph.py unstamp` (its consumers become suspect); a stamped checklist is never rewritten by hand. Work beyond the item's own `Done when:` (new granularity) becomes a new section instead.
 - **Orphaned deferrals.** `python scripts/todo-graph.py query deferred`: every `Deferred:` line names a live, still-open owner (a shipped owner already refuses validation, so what remains is confirming the description is still true).
 - **Integration reality.** The feature is reachable from where its user looks for it: its menu, page or panel, command entry, keyboard shortcut, CLI verb. A control whose Job is a write and that only displays is not done. A setting nothing reads is not done.
 - **Adjacency honesty.** `python scripts/todo-graph.py query adjacency`: every `applicable` key has its owning section shipped or still tracked, and every `not-applicable` reason still holds.

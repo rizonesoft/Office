@@ -7,8 +7,9 @@
 # recorded: there is no review, never an approval, and no other reviewer runs.
 #
 # Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route
-# naming an undefined reviewer, a same-family reviewer or more than one
-# reviewer refuses every dispatch.
+# naming an undefined reviewer or a same-family reviewer refuses every
+# dispatch. The dispatcher accepts one fallback; this repository allows none,
+# held by scripts/tests/test_review_dispatch.py.
 
 schema_version = 1
 

@@ -27,12 +27,6 @@ eferences/, executable helpers in scripts/, assets in ssets/.
 - [ ] .codex/skills/<skill-name>/agents/openai.yaml is a real OpenAI/Codex metadata file when needed.
 - [ ] Codex wording is adapted for Codex when needed.
 
-## Reusable Kit
-
-- [ ] kits/base/templates/ is updated if new projects should inherit the skill.
-- [ ] Kit templates use real files and directories, not symlinks.
-- [ ] Kit docs explain any project-specific text that must be adapted after install.
-
 ## Rules
 
 - [ ] Repo-wide durable instructions are in AGENTS.md.

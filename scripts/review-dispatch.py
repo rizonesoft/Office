@@ -401,6 +401,10 @@ def read_rounds(text):
                 return None
             if sealed is not None and digest(raw[start:i]) != sealed:
                 return None
+            entry["review"] = "\n".join(lines[start:i])
+        else:
+            end = next((j for j in range(i, len(lines)) if lines[j].startswith("## Round")), len(lines))
+            entry["review"] = "\n".join(lines[i:end])
         rounds.append(entry)
     return rounds
 

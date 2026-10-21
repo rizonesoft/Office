@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository follows the Conclave-SDK 3-agent conventions. Adapt this file to the project: name what the project is, where the code lives, and which commands verify it.
+This repository keeps its own 3-agent conventions (Antigravity, Claude Code, Codex); it takes nothing from the Conclave SDK. Adapt this file to the project: name what the project is, where the code lives, and which commands verify it.
 
 ## Working rules
 
@@ -39,3 +39,7 @@ This repository follows the Conclave-SDK 3-agent conventions. Adapt this file to
 ## TODO workflow
 
 Plan and build through the TODO system: [docs/todo-workflow.md](./docs/todo-workflow.md).
+
+- Every clone runs `git config core.hooksPath scripts/hooks`: its pre-commit hook refuses a TODO change committed without `python scripts/todo-graph.py plan --sync`.
+- Review rounds go through `scripts/review-dispatch.py` to the one reviewer `.conclave/reviewers.toml` pins per writer, up to 22 rounds; from round 9 on, a round whose findings are all `P3` or advisory ends the loop and its findings are filed (`review-todo-section`).
+- Tests: `python -m unittest discover -s scripts/tests` (agent tooling, TODO graph, run guard, automations and project scripts).

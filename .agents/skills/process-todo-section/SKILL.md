@@ -37,9 +37,9 @@ Use the printed `skill_arg` (`DNN TNN §N`) as the canonical form for the rest o
 
 If the section carries `windows-host`, `arm64-host`, `display-session`, `office`, `libreoffice` or `attended` in Needs, confirm that environment is actually reachable before writing `Started:`. If it is not, stop and say what the section waits on: starting an environment-bound section without the environment burns a session producing nothing committable.
 
-Write `Started:` now. If the section body carries no `> **Started:**` line, add one directly under its heading with the current UTC instant. Do not overwrite an existing one on resume.
+Before the first edit in a session, read `todo/README.md` (the format every TODO edit must keep). Before any write, stop here if another writer holds the tree. Check `git status` for unfamiliar uncommitted work you do not understand, and ask before building over it.
 
-Stop here if another writer holds the tree. Check `git status` for unfamiliar uncommitted work you do not understand, and ask before building over it.
+Write `Started:` now. If the section body carries no `> **Started:**` line, add one directly under its heading with the current UTC instant. Do not overwrite an existing one on resume.
 
 ## Execution discipline
 
@@ -48,7 +48,7 @@ Stop here if another writer holds the tree. Check `git status` for unfamiliar un
 - **Commits follow logical steps.** A section may be committed in one or more commits as steps complete; review fix-loop commits append to the candidate range, never amend. Plan corrections ride with the section commits or land as their own `todo:` commit first when substantial.
 - **Never mark `[x]` without evidence.** The Implementation Order row flips only through `stamp`, after review. This skill never flips a row itself.
 - **User data first.** Every file write follows the saving rule: temporary file in the destination folder, then atomic replace (`ReplaceFileW`, `MoveFileExW`, or `os.replace`). Read back what was written. Destructive paths are confirmed. The checkpoint exercises a failure path, not only the happy path.
-- **The layer rules hold.** Respect the module boundaries and thread-safety contract in `AGENTS.md` and the foundation plan (e.g., `src/pdf` owns the native PDF engine, the UI thread never parses or renders PDFs, and a document belongs to its actor thread). A fix that violates the module table is wrong even when it works.
+- **The layer rules hold.** Respect the module boundaries and thread-safety contract in `AGENTS.md` and the foundation plan. A fix that violates the module table is wrong even when it works.
 - **Fidelity is the bar on surfaces.** Build against `design/SPEC.md` and its screenshot, using tokens from `design/tokens/` only. No raw hex value on a control.
 
 ## Workflow

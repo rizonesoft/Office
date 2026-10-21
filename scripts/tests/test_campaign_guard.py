@@ -1,6 +1,8 @@
-"""scripts/campaign_guard.py, the todo kit's campaign run guard: the Stop hook against a throwaway workspace, and the lifecycle
-commands. Ported from Conclave-SDK tests/test_campaign_guard.py; the hook command is read from this repository's
-.claude/settings.json."""
+"""scripts/campaign_guard.py, the process-plan run guard: the Stop hook against a throwaway workspace, and the
+lifecycle commands.
+
+The guard and the Stop hook wiring are read from this repository.
+"""
 import importlib.util
 import json
 import os
@@ -21,8 +23,13 @@ spec = importlib.util.spec_from_file_location("campaign_guard_under_test", GUARD
 guard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(guard)
 
-# The fake graph answers `query ready` the way the test asks: the SDK's JSON list, or Isotone's text summary.
+# The fake graph answers `query ready` the way the test asks: this repository's JSON list, or Isotone's text summary.
 FAKE_GRAPH = """import json, os, sys
+if sys.argv[2:3] == ["stats"]:  # open rows from open.txt (none when absent)
+    path = os.path.join(os.path.dirname(__file__), 'open.txt')
+    still_open = int(open(path).read()) if os.path.exists(path) else 0
+    print(json.dumps({"total": 10, "verified": 10 - still_open}))
+    sys.exit(0)
 mode, n = open(os.path.join(os.path.dirname(__file__), 'ready.txt')).read().split()
 rows = [{"ref": "D00 T01 \\u00a73", "title": "Interface SPEC and screenshots", "phase": 0}] * int(n)
 if mode == "mixed":  # this phase's rows, and one ready row of a later phase
@@ -50,7 +57,7 @@ class Workspace(unittest.TestCase):
             os.makedirs(os.path.join(self.root, folder))
         shutil.copy(GUARD_PY, os.path.join(self.root, "scripts", "campaign_guard.py"))
         self.write("scripts/todo-graph.py", FAKE_GRAPH)
-        self.write(".gitignore", "build/\nscripts/ready.txt\n")
+        self.write(".gitignore", "build/\nscripts/ready.txt\nscripts/open.txt\n")
         self.ready(3)
         self.write(RUN_FILE, "# Phase run: Phase 0\n\n## Critical events\n")
         for args in (["init", "-q"], ["config", "user.email", "t@t"], ["config", "user.name", "t"],
@@ -389,6 +396,11 @@ class Lifecycle(Workspace):
         self.assertIn("nothing pending", guard.cancel_confirmed(self.root, "job-1"))
         self.acquire(cron_id="job-4")
         self.ready(0)
+        self.write("scripts/open.txt", "1")  # nothing ready, but a blocked row is still open: a park, not done
+        with self.assertRaises(guard.GuardError) as ctx:
+            guard.end(self.root, SESSION, "plan-done")
+        self.assertIn("still open", str(ctx.exception))
+        self.write("scripts/open.txt", "0")
         self.assertIn("plan-done", guard.end(self.root, SESSION, "plan-done"))
 
     def test_whoami_names_what_a_heartbeat_is_to_the_run(self):

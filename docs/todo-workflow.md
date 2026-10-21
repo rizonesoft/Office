@@ -1,6 +1,6 @@
 # TODO workflow
 
-Installed by the Conclave-SDK `todo` kit. Link this file from the project's `AGENTS.md` (for example: "Plan and build through the TODO system in [docs/todo-workflow.md](./docs/todo-workflow.md).") so every agent reads it.
+Link this file from the project's `AGENTS.md` (for example: "Plan and build through the TODO system in [docs/todo-workflow.md](./docs/todo-workflow.md).") so every agent reads it.
 
 `todo/` is the live execution plan; format spec: `todo/README.md`. Markdown is canonical.
 

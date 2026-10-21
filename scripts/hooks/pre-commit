@@ -1,0 +1,29 @@
+#!/bin/sh
+# Refuse a commit that would turn CI's plan-gates red: one that stages TODO changes while todo/implementation-plan.md
+# is stale or the TODO graph is invalid. Enabled per clone with `git config core.hooksPath scripts/hooks`
+# (AGENTS.md). Ticking a checklist item changes the generated plan, so every TODO edit needs `plan --sync`.
+git diff --cached --name-only -- todo/ | grep -q . || exit 0
+
+# The check reads the working tree, so the TODO files there must be exactly what is being committed.
+if ! git diff --quiet -- todo/; then
+    echo "pre-commit: todo/ has unstaged changes; stage them (or stash them) so the plan check sees what is committed" >&2
+    exit 1
+fi
+
+root=$(git rev-parse --show-toplevel) || exit 1
+# The first interpreter that actually runs: on Windows `python3` can be the Microsoft Store stub.
+python=
+for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "" >/dev/null 2>&1; then
+        python=$candidate
+        break
+    fi
+done
+if [ -z "$python" ]; then
+    echo "pre-commit: Python is needed to check the TODO graph" >&2
+    exit 1
+fi
+if ! "$python" "$root/scripts/todo-graph.py" plan --check; then
+    echo "pre-commit: run 'python scripts/todo-graph.py plan --sync', stage todo/implementation-plan.md, and commit again" >&2
+    exit 1
+fi
