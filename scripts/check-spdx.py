@@ -17,6 +17,7 @@ Exit 0 when every file passes, 1 with one line per refused file, 2 when the argu
 the files. Stdlib only.
 """
 import argparse
+import codecs
 from pathlib import Path
 import re
 import subprocess
@@ -54,11 +55,23 @@ def recorded_licences(root):
     return set(NOTICE_LICENCE.findall(path.read_text(encoding="utf-8")))
 
 
+def encoding(path):
+    """The file's encoding from its byte-order mark (PowerShell may write UTF-8, UTF-16 or UTF-32 with one), else
+    UTF-8. The codec named drops the mark, so the anchored match reads line one as written."""
+    with open(path, "rb") as handle:
+        head = handle.read(4)
+    for bom, codec in ((codecs.BOM_UTF32_LE, "utf-32"), (codecs.BOM_UTF32_BE, "utf-32"),
+                       (codecs.BOM_UTF8, "utf-8-sig"), (codecs.BOM_UTF16_LE, "utf-16"),
+                       (codecs.BOM_UTF16_BE, "utf-16")):
+        if head.startswith(bom):  # UTF-32 LE is tried before UTF-16 LE, whose mark is its prefix
+            return codec
+    return "utf-8"
+
+
 def declarations(path):
     """Every SPDX licence declaration in the file's first lines, as written."""
     found = []
-    # utf-8-sig drops a byte-order mark, which PowerShell files often carry, before the anchored match reads line one.
-    with open(path, encoding="utf-8-sig", errors="replace") as handle:
+    with open(path, encoding=encoding(path), errors="replace") as handle:
         for _, line in zip(range(HEAD_LINES), handle):
             match = DECLARATION.search(line.rstrip("\r\n"))
             if match:

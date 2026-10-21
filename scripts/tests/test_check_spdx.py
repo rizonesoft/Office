@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
 """scripts/check-spdx.py: every tracked source file states its licence, and third-party ones only with their notice."""
+import codecs
 import contextlib
 import importlib.util
 import io
@@ -90,6 +91,19 @@ class Identifiers(Repo):
         path.write_bytes(b"\xef\xbb\xbf# " + TAG.encode() + b" GPL-3.0-or-later\r\n# Copyright 2026 Rizonesoft\r\n")
         subprocess.run(["git", "-C", str(self.root), "add", "tools/install.ps1"], check=True)
         self.assertEqual(self.run_main()[0], 0)
+
+    def test_a_header_in_any_unicode_encoding_with_its_mark_passes(self):
+        header = f"# {TAG} GPL-3.0-or-later\r\n# Copyright 2026 Rizonesoft\r\n"
+        for n, codec in enumerate(("utf-16", "utf-16-be", "utf-32", "utf-32-be")):
+            data = header.encode(codec)
+            if codec.endswith("-be"):  # the explicit-endian codecs write no mark; add the big-endian one
+                data = {"utf-16-be": codecs.BOM_UTF16_BE, "utf-32-be": codecs.BOM_UTF32_BE}[codec] + data
+            rel = f"tools/h{n}.ps1"
+            (self.root / "tools").mkdir(exist_ok=True)
+            (self.root / rel).write_bytes(data)
+            subprocess.run(["git", "-C", str(self.root), "add", rel], check=True)
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
 
     def test_a_tracked_file_missing_from_the_working_tree_is_refused(self):
         self.add("scripts/ok.py", f"# {TAG} GPL-3.0-or-later\n")
