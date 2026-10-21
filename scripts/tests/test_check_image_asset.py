@@ -33,9 +33,9 @@ def bmp(size, bits=32):
             + bytes(palette + rows * size))
 
 
-def png_raw(width, height, idat, depth=8, colour=0, interlace=0, plte=b""):
+def png_raw(width, height, idat, depth=8, colour=0, interlace=0, plte=b"", compression=0, method=0):
     """A PNG with the given IHDR fields and raw IDAT bodies, every CRC correct."""
-    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, depth, colour, 0, 0, interlace))
+    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, depth, colour, compression, method, interlace))
     return ia.PNG_SIGNATURE + ihdr + plte + b"".join(chunk(b"IDAT", d) for d in idat) + chunk(b"IEND", b"")
 
 
@@ -93,13 +93,22 @@ class Png(Fixtures):
         self.assertIn("not a PNG, SVG or ICO", self.run_check("x.png", b"GIF89a....")[1])
 
     def test_a_well_framed_but_undecodable_png_is_refused(self):
-        two_rows = zlib.compress(bytes([0, 128]) * 4)
+        two_rows = zlib.compress(bytes(8))  # rows of 5 bytes for 4 pixels: 8 bytes is short, filters all 0
+        one_pixel = zlib.compress(bytes(2))
+        palette = chunk(b"PLTE", bytes(3))
         cases = {
             "no image data (IDAT)": png_raw(4, 4, []),
             "does not inflate": png_raw(4, 4, [b"not zlib"]),
             "bit depth 3 is not allowed": png_raw(4, 4, [two_rows], depth=3),
             "invalid dimensions 0x4": png_raw(0, 4, [two_rows]),
             "image data is 8 bytes, 4x4 needs 20": png_raw(4, 4, [two_rows]),
+            "scanline filter type 255": png_raw(1, 1, [zlib.compress(bytes([255, 0]))]),
+            "unknown compression, filter or interlace method": png_raw(1, 1, [one_pixel], compression=1),
+            "unknown compression, filter or interlace method ": png_raw(1, 1, [one_pixel], method=1),
+            "unknown compression, filter or interlace method  ": png_raw(1, 1, [one_pixel], interlace=2),
+            "invalid PLTE (0 bytes": png_raw(1, 1, [one_pixel], colour=3, plte=chunk(b"PLTE", b"")),
+            "invalid PLTE (4 bytes": png_raw(1, 1, [one_pixel], colour=3, plte=chunk(b"PLTE", bytes(4))),
+            "invalid PLTE (3 bytes for colour type 0)": png_raw(1, 1, [one_pixel], plte=palette),
             "more image data than 1x1 needs": png_raw(1, 1, [zlib.compress(bytes(100))]),
             "no PLTE": png_raw(1, 1, [zlib.compress(bytes(2))], colour=3),
         }
@@ -107,7 +116,7 @@ class Png(Fixtures):
             with self.subTest(reason=reason):
                 code, out = self.run_check("bad.png", data)
                 self.assertEqual(code, 1, out)
-                self.assertIn(reason, out)
+                self.assertIn(reason.strip(), out)  # trailing spaces only keep the dictionary keys apart
 
     def test_an_interlaced_png_and_split_idat_pass(self):
         size = ia.png_data_size(5, 3, 8, 6, 1)
@@ -151,7 +160,10 @@ class Svg(Fixtures):
             '<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="other.svg#a"/>': "external href",
             '<rect style="fill:url(https://example.invalid/a.svg#p)" width="1" height="1"/>': "external url",
             '<style>@import "https://example.invalid/a.css";</style>': "@import",
-            '<rect fill="url(other.svg#p)" width="1" height="1"/>': "external url('other.svg#p') in <rect fill>",
+            '<rect fill="url(other.svg#p)" width="1" height="1"/>': "external url() reference in <rect fill>",
+            '<style>rect { fill: url("https://example.invalid/a\'b.svg#p"); }</style>': "external url() reference in <style>",
+            '<style>rect { fill: url("https://example.invalid/(a).svg#p"); }</style>': "external url() reference",
+            '<g xml:base="https://example.invalid/external.svg"><use href="#shape"/></g>': "xml:base on <g>",
         }
         for extra, reason in cases.items():
             with self.subTest(reason=reason):
@@ -177,11 +189,17 @@ class Svg(Fixtures):
         self.assertIn("processing instruction <?xml-stylesheet?>", out)
 
     def test_a_non_finite_or_empty_viewbox_is_refused(self):
-        for box in ("nan 0 48 48", "0 0 nan inf", "0 0 0 48", "0 0 48 -1", "0 0 48"):
+        for box in ("nan 0 48 48", "0 0 nan inf", "0 0 0 48", "0 0 48 -1", "0 0 48", "0 0 4_8 48", "0 0 0x30 48"):
             with self.subTest(box=box):
                 code, out = self.run_check("a.svg", SVG.format(extra="").replace("0 0 48 48", box))
                 self.assertEqual(code, 1, out)
                 self.assertIn("viewBox is missing or invalid", out)
+
+    def test_an_unknown_encoding_is_refused_without_a_traceback(self):
+        odd = '<?xml version="1.0" encoding="x-not-a-real-encoding"?>' + SVG.format(extra="")
+        code, out = self.run_check("odd.svg", odd)
+        self.assertEqual(code, 1, out)
+        self.assertNotIn("Traceback", out)
 
     def test_a_prefixed_or_utf16_svg_is_detected(self):
         prefixed = ('<s:svg xmlns:s="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'

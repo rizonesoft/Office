@@ -39,7 +39,10 @@ import zlib
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SVG_NS = "http://www.w3.org/2000/svg"
 SIZE = re.compile(r"^([1-9]\d{0,5})x([1-9]\d{0,5})$")
-STYLE_URL = re.compile(r"url\(\s*(['\"]?)([^)'\"]*)\1\s*\)", re.IGNORECASE)
+# Every url( opening, whatever its quoting: what follows must be a fragment, or the reference leaves the file.
+STYLE_URL = re.compile(r"url\(\s*['\"]?(.{0,60})", re.IGNORECASE | re.DOTALL)
+SVG_NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?")
+XML_BASE = "{http://www.w3.org/XML/1998/namespace}base"
 CSS_IMAGE = re.compile(r"(?:-webkit-)?image-set\(|\bimage\(|cross-fade\(|element\(", re.IGNORECASE)
 FORBIDDEN = {"image": "embedded raster <image>", "script": "script element", "foreignObject": "embedded HTML <foreignObject>"}
 # Legal PNG bit depths per colour type, and the samples per pixel each type carries (PNG 3, IHDR).
@@ -65,7 +68,7 @@ def svg_root_name(data):
     try:
         for _event, element in ET.iterparse(io.BytesIO(data), events=("start",)):
             return element.tag
-    except ET.ParseError:
+    except (ET.ParseError, LookupError, ValueError):  # not XML, or an encoding Python does not know
         return None
     return None
 
@@ -108,18 +111,31 @@ def png_chunks(data):
             return chunks
 
 
-def png_data_size(width, height, depth, colour, interlace):
-    """The inflated image data byte count: one filter byte per row, rows packed to whole bytes, per Adam7 pass."""
-    bits = depth * PNG_CHANNELS[colour]
+def _passes(width, height, interlace):
+    """(columns, rows) of each pass that has pixels: the whole image, or the Adam7 passes."""
     if not interlace:
-        return height * (1 + (width * bits + 7) // 8)
-    total = 0
+        return [(width, height)]
+    out = []
     for x0, y0, dx, dy in ADAM7:
         cols = (width - x0 + dx - 1) // dx if width > x0 else 0
         rows = (height - y0 + dy - 1) // dy if height > y0 else 0
         if cols and rows:
-            total += rows * (1 + (cols * bits + 7) // 8)
-    return total
+            out.append((cols, rows))
+    return out
+
+
+def png_row_lengths(width, height, depth, colour, interlace):
+    """Each scanline's byte count, filter byte included, in stream order."""
+    bits = depth * PNG_CHANNELS[colour]
+    for cols, rows in _passes(width, height, interlace):
+        for _ in range(rows):
+            yield 1 + (cols * bits + 7) // 8
+
+
+def png_data_size(width, height, depth, colour, interlace):
+    """The inflated image data byte count: one filter byte per row, rows packed to whole bytes, per Adam7 pass."""
+    bits = depth * PNG_CHANNELS[colour]
+    return sum(rows * (1 + (cols * bits + 7) // 8) for cols, rows in _passes(width, height, interlace))
 
 
 def png_size(data):
@@ -141,26 +157,45 @@ def png_size(data):
     first, last = kinds.index(b"IDAT"), len(kinds) - 1 - kinds[::-1].index(b"IDAT")
     if any(k != b"IDAT" for k in kinds[first:last + 1]):
         raise ValueError("corrupt PNG: IDAT chunks are not consecutive")
+    palettes = [body for k, body in chunks if k == b"PLTE"]
     if colour == 3 and b"PLTE" not in kinds[:first]:
         raise ValueError("corrupt PNG: a palette image has no PLTE before its data")
+    if palettes:
+        entries, spare = divmod(len(palettes[0]), 3)
+        if len(palettes) > 1 or colour in (0, 4) or spare or not 1 <= entries <= 256 \
+                or (colour == 3 and entries > 1 << depth):
+            raise ValueError(f"corrupt PNG: invalid PLTE ({len(palettes[0])} bytes for colour type {colour})")
     expected = png_data_size(width, height, depth, colour, interlace)
-    inflater, produced = zlib.decompressobj(), 0
+    rows = png_row_lengths(width, height, depth, colour, interlace)
+    inflater, produced, left = zlib.decompressobj(), 0, 0
+
+    def take(out):
+        """Count inflated bytes and check the filter byte that starts each scanline (0 to 4, PNG 3, 7.3)."""
+        nonlocal produced, left
+        produced += len(out)
+        if produced > expected:
+            raise ValueError(f"corrupt PNG: more image data than {width}x{height} needs")
+        at = 0
+        while at < len(out):
+            if not left:
+                if out[at] > 4:
+                    raise ValueError(f"corrupt PNG: scanline filter type {out[at]} is not 0 to 4")
+                left = next(rows)
+            step = min(left, len(out) - at)
+            left -= step
+            at += step
+
     try:
         for _kind, part in chunks[first:last + 1]:
             pending = part
-            while pending:  # inflate in bounded steps, counting bytes, never holding the image
-                out = inflater.decompress(pending, 1 << 20)
-                produced += len(out)
-                if produced > expected:
-                    raise ValueError(f"corrupt PNG: more image data than {width}x{height} needs")
+            while pending:  # inflate in bounded steps, never holding the whole image
+                take(inflater.decompress(pending, 1 << 20))
                 pending = inflater.unconsumed_tail
         while not inflater.eof:
             out = inflater.decompress(b"", 1 << 20)
             if not out:
                 break
-            produced += len(out)
-            if produced > expected:
-                raise ValueError(f"corrupt PNG: more image data than {width}x{height} needs")
+            take(out)
     except zlib.error as exc:
         raise ValueError(f"corrupt PNG: image data does not inflate ({exc})") from None
     if not inflater.eof or produced != expected:
@@ -186,13 +221,15 @@ def svg_check(data):
             problems.append(f"processing instruction <?{instruction}?>")
     try:
         root = ET.fromstring(data)
-    except ET.ParseError as exc:
+    except (ET.ParseError, LookupError, ValueError) as exc:  # LookupError: an encoding Python does not know
         return None, problems + [f"not well-formed XML: {exc}"]
     if root.tag not in (f"{{{SVG_NS}}}svg", "svg"):
         return None, problems + [f"root element is {_local(root.tag)}, not svg"]
     size = None
     box = (root.get("viewBox") or "").replace(",", " ").split()
     try:
+        if not all(SVG_NUMBER.fullmatch(v) for v in box):  # SVG number syntax, not Python's (no "4_8", "nan", "inf")
+            raise ValueError
         values = [float(v) for v in box]
         if len(values) != 4 or not all(math.isfinite(v) for v in values) or values[2] <= 0 or values[3] <= 0:
             raise ValueError
@@ -205,7 +242,9 @@ def svg_check(data):
             problems.append(FORBIDDEN[name])
         for attr, value in element.attrib.items():
             attr_name = _local(attr)
-            if attr_name.lower().startswith("on"):
+            if attr == XML_BASE:  # a base outside the file would turn every "#fragment" into an external reference
+                problems.append(f"xml:base on <{name}>")
+            elif attr_name.lower().startswith("on"):
                 problems.append(f"event handler attribute {attr_name} on <{name}>")
             elif attr_name == "href" and not value.strip().startswith("#"):
                 problems.append(f"external href {value[:60]!r} on <{name}>")
@@ -220,8 +259,8 @@ def _css_problems(css, where):
     """A backslash escape could spell `url` or `@import` past any text match, so CSS here may not use one."""
     if "\\" in css:
         return [f"CSS escape in <{where}>"]
-    problems = [f"external url({url[:60]!r}) in <{where}>" for _q, url in STYLE_URL.findall(css)
-                if not url.strip().startswith("#")]
+    problems = [f"external url() reference in <{where}>: {after.strip()[:40]!r}" for after in STYLE_URL.findall(css)
+                if not after.lstrip().startswith("#")]
     if re.search(r"@import", css, re.IGNORECASE):
         problems.append(f"@import in <{where}>")
     if CSS_IMAGE.search(css):
