@@ -1,0 +1,25 @@
+{
+  "ref": "D00 T01 \u00a73",
+  "title": "Continuous Integration Workflow",
+  "implementation_sha": "336bde061fc8432cf07261883a9febe582efb564",
+  "date": "2026-10-21",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T01-s3.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "gh run list --workflow ci.yml --branch main --limit 1 --json conclusion -> [{\"conclusion\":\"success\"}] (run 39659821522 at 336bde0, CPython 3.15.1, 439 tests OK, 2 skipped)",
+    "actionlint .github/workflows/ci.yml -> exit 0 (1.7.12)",
+    "python scripts/todo-graph.py validate -> valid: 87 sections"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 22
+}

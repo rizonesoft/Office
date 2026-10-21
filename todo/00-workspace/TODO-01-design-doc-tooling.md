@@ -2,7 +2,7 @@
 schema_version: 1
 id: design-doc-tooling
 domain: 00-workspace
-status: active
+status: done
 title: "TODO-01 -- Design Document Tooling"
 ---
 
@@ -36,7 +36,7 @@ title: "TODO-01 -- Design Document Tooling"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Design document checker | -- | [x] |
 | 2 | §2 | Image asset checker | -- | [x] |
-| 3 | §3 | Continuous integration workflow | §1, §2 | [ ] |
+| 3 | §3 | Continuous integration workflow | §1, §2 | [x] |
 
 ## 1. Design Document Checker
 
@@ -114,9 +114,12 @@ One workflow keeps the TODO tree, the generated plan and the tooling tests hones
 - [x] Add a step running `python scripts/todo-graph.py validate` in `.github/workflows/ci.yml`. Done when: a deliberately malformed TODO row on a scratch branch makes the run fail. Cheaper substitute: `continue-on-error: true`.
 - [x] Add a step running `python scripts/todo-graph.py plan --check` in `.github/workflows/ci.yml`. Done when: an unsynced plan on a scratch branch makes the run fail. Cheaper substitute: running `plan --sync` in CI, which hides staleness.
 - [x] Add a step running `python -m unittest discover -s scripts/tests -v` in `.github/workflows/ci.yml`. Done when: the run log lists the design-doc and image-asset suites by test name. Cheaper substitute: listing test files by name so new suites are skipped.
-- [ ] Commit: `ci: validate todo tree and run tooling tests`
+- [x] Commit: `ci: validate todo tree and run tooling tests`
 
 **Test checkpoint:** `gh run list --workflow ci.yml --branch main --limit 1 --json conclusion` prints `"conclusion":"success"`.
+
+> **Verified:** 2026-10-21 | §3 | 336bde061fc8432cf07261883a9febe582efb564
+> **Review:** `docs/reviews/d00-t01-s3.json`
 
 ## Verification
 
