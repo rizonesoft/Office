@@ -13,6 +13,7 @@ Every scheduled job for Office lives here: the task list in `tasks.json`, the ru
 | `office-dotnet-local` | Monday 07:20 | `scripts/check-dotnet-pin.py local` |
 | `office-visual-studio` | Monday 07:25 | `scripts/check-visual-studio.py notify` |
 | `office-python-pin` | Monday 07:30 | `scripts/check-python-pin.py notify` |
+| `office-pr-merge` | Daily 07:43 | `scripts/merge_prs.py --skip-unsafe` |
 
 What each one emails you about, and when it fails (which sends the failure alert instead):
 
@@ -23,6 +24,7 @@ What each one emails you about, and when it fails (which sends the failure alert
 - `office-dotnet-local`: emails once when this machine lacks the .NET SDK that `global.json` pins. Fails when `global.json` cannot be read or `dotnet` is not on PATH.
 - `office-visual-studio`: emails once per release when this machine's Visual Studio 2026 is behind its latest servicing release. Fails when none is installed, or vswhere or the release channel cannot be read.
 - `office-python-pin`: emails once when this machine's Python is behind the newest stable CPython (minor or patch). Fails when python.org cannot be read.
+- `office-pr-merge`: never emails on success; merges green Dependabot and pins pull requests (labelled `dependencies` or `pins`, every check green, cleanly mergeable, no `global.json` change) one at a time by rebase, then pulls and validates. It skips quietly (exit 0, the reason in its log) while a campaign run is open (the campaign merges at its own section boundaries) or while the checkout is dirty, off `main`, behind or ahead of `origin/main`, or mid-section. Fails when a merge, pull or validate fails (exit 1), leaving that pull request and the rest open, or when git or gh cannot be read (exit 3).
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and daily and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored. Everything in this folder is Office's own, for the fixed-time daily trigger and the per-run alert record. Office takes nothing from the Conclave SDK (operator, 2026-10-21): the `office-conclave-kits` drift check and `.conclave/kits.json` were removed that day.
 

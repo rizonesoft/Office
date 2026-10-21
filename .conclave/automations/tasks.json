@@ -96,6 +96,19 @@
         "at": "07:30"
       },
       "timeout_minutes": 5
+    },
+    {
+      "name": "office-pr-merge",
+      "description": "Merge green Dependabot and pins pull requests when no campaign is open (scripts/merge_prs.py)",
+      "command": [
+        "python",
+        "scripts/merge_prs.py",
+        "--skip-unsafe"
+      ],
+      "trigger": {
+        "daily_at": "07:43"
+      },
+      "timeout_minutes": 30
     }
   ]
 }

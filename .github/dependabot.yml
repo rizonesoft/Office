@@ -1,0 +1,12 @@
+# Dependabot keeps the GitHub Actions in .github/workflows/ on their latest releases (D00 T03 §9). Its pull requests
+# carry the dependencies label, run CI, and merge by themselves when green, through scripts/merge_prs.py at a
+# campaign section boundary or the office-pr-merge task. NuGet pins stay with the local proposal tasks: the WinUI 3
+# pin follows winui3/release builds, which Dependabot cannot express.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - dependencies
