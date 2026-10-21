@@ -1,0 +1,32 @@
+name: ci
+
+# Keeps the TODO tree, the generated plan and the tooling tests honest on every push and pull request
+# (D00 T01 §3). Windows, because the product and its tooling are Windows only; Python is the newest stable
+# CPython, as scripts/check-python-pin.py requires of every interpreter the repository uses.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # validate checks every stamp's commit, so it needs real history, not a shallow clone.
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      - name: Install the tooling requirements
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Check the committed icons match their sources
+        run: python scripts/build-icons.py --check
+      - name: Validate the TODO tree
+        run: python scripts/todo-graph.py validate
+      - name: Check the generated plan is current
+        run: python scripts/todo-graph.py plan --check
+      - name: Run the tooling tests
+        run: python -m unittest discover -s scripts/tests -v

@@ -95,7 +95,9 @@ Icons, banners and the social preview are verified by a script before they are c
 
 ## 3. Continuous Integration Workflow
 
-One workflow keeps the TODO tree, the generated plan and the tooling tests honest on every push. It runs on `ubuntu-latest` with Python 3.12 so it also proves the scripts are not Windows-only.
+> **Started:** 2026-10-21T19:10:00Z
+
+One workflow keeps the TODO tree, the generated plan and the tooling tests honest on every push. It runs on `windows-latest` with the newest stable Python (3.15), the platform the product and its tooling target. **Corrected 2026-10-21:** said `ubuntu-latest` with Python 3.12 "so it also proves the scripts are not Windows-only". The product is Windows only, `scripts/requirements.txt` pins Windows-only `pywin32` and `comtypes` (no Linux wheels, so the install step could not pass), and the suites test Windows tooling (the Task Scheduler installer, COM capture). Python follows the repository rule of the newest stable CPython (`scripts/check-python-pin.py`, 3.15.1 on 2026-10-21), as Recto's CI does. Reversing it means splitting the requirements by platform and skipping the Windows suites on Linux.
 
 **Phase:** 0
 **Needs:** none
@@ -106,12 +108,12 @@ One workflow keeps the TODO tree, the generated plan and the tooling tests hones
 1. Write `.github/workflows/ci.yml` triggered on `push` and `pull_request`. Done when: the file passes `actionlint` locally or in the run.
 2. Push to `main` and read the run result. Done when: `gh run list --workflow ci.yml --limit 1` shows `success`.
 
-- [ ] Add the checkout and `actions/setup-python` steps pinned to a release tag in `.github/workflows/ci.yml`. Done when: the workflow file names Python `3.12`. Cheaper substitute: relying on the runner's default Python, which drifts.
+- [ ] Add the checkout (full history, `fetch-depth: 0`, so `validate` can check every stamp's commit) and `actions/setup-python` steps pinned to a release tag in `.github/workflows/ci.yml`. Done when: the workflow file names Python `3.15`. Cheaper substitute: relying on the runner's default Python, which drifts, or a shallow clone that refuses every stamp. **Corrected 2026-10-21:** said Python `3.12` and no history depth.
 - [ ] Add a step running `python -m pip install -r scripts/requirements.txt` in `.github/workflows/ci.yml` (Pillow and resvg_py for `scripts/build-icons.py` and its tests). Done when: the run log shows both packages installed at the pinned versions. Cheaper substitute: skipping the icon tests when the packages are missing, which lets CI pass without running them.
 - [ ] Add a step running `python scripts/build-icons.py --check` in `.github/workflows/ci.yml`. Done when: editing a committed PNG under `assets/icons/` on a scratch branch makes the run fail. Cheaper substitute: rebuilding icons in CI, which hides drift.
 - [ ] Add a step running `python scripts/todo-graph.py validate` in `.github/workflows/ci.yml`. Done when: a deliberately malformed TODO row on a scratch branch makes the run fail. Cheaper substitute: `continue-on-error: true`.
 - [ ] Add a step running `python scripts/todo-graph.py plan --check` in `.github/workflows/ci.yml`. Done when: an unsynced plan on a scratch branch makes the run fail. Cheaper substitute: running `plan --sync` in CI, which hides staleness.
-- [ ] Add a step running `python -m unittest discover -s scripts/tests` in `.github/workflows/ci.yml`. Done when: the run log lists the design-doc and image-asset suites. Cheaper substitute: listing test files by name so new suites are skipped.
+- [ ] Add a step running `python -m unittest discover -s scripts/tests -v` in `.github/workflows/ci.yml`. Done when: the run log lists the design-doc and image-asset suites by test name. Cheaper substitute: listing test files by name so new suites are skipped.
 - [ ] Commit: `ci: validate todo tree and run tooling tests`
 
 **Test checkpoint:** `gh run list --workflow ci.yml --branch main --limit 1 --json conclusion` prints `"conclusion":"success"`.
