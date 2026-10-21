@@ -453,7 +453,17 @@ class Stamp(Tree):
         data = json.loads(receipt.read_text(encoding="utf-8"))
         del data["rounds_spent"], data["round_cap"]
         receipt.write_text(json.dumps(data), encoding="utf-8")
-        tg.graph(self.root)  # an old clean receipt still validates
+        with self.assertRaises(tg.Refused) as ctx:  # the old shape alone does not make a receipt old
+            tg.graph(self.root)
+        self.assertIn(tg.LEGACY_RECEIPTS, str(ctx.exception))
+        legacy = self.root / tg.LEGACY_RECEIPTS
+        legacy.write_text(json.dumps({"schema_version": 1, "receipts": {"D00 T01 §1": tg.receipt_digest(data)}}),
+                          encoding="utf-8")
+        tg.graph(self.root)  # a frozen old receipt still validates
+        data["date"] = "2026-10-22"
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused):  # and any change to it is no longer the frozen receipt
+            tg.graph(self.root)
         report = "docs/reviews/00-workspace/D00-T01-s1.md"
         for rounds in ([{"round": 9, "report": report, "verdict": "stopped-low-severity"}],
                        [{"round": 1, "report": report, "verdict": "stopped-at-22"}],
@@ -474,6 +484,15 @@ class Stamp(Tree):
             tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "clean"}],
                      ["true -> ok"], "2026-10-13")
         self.assertIn(f"over the {tg.REVIEW_ROUND_CAP}-round cap", str(ctx.exception))
+
+    def test_a_repeated_round_number_refuses(self):
+        self.tick_work()
+        report = "docs/reviews/00-workspace/D00-T01-s1.md"
+        (self.root / report).write_text("".join(envelope(1, overall="needs-attention") for _ in range(3))
+                                        + envelope(1), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertIn("must number its rounds 1 to 4 in order", str(ctx.exception))
 
     def test_a_receipt_names_a_cap_the_process_has_used(self):
         self.tick_work()
@@ -673,7 +692,8 @@ class Stamp(Tree):
             with self.assertRaises(tg.Refused) as ctx:
                 tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
             self.assertRegex(str(ctx.exception), "is not a review returned by another model family|"
-                                                 "is not a findings file the dispatcher can read|holds no returned review")
+                                                 "is not a findings file the dispatcher can read|holds no returned review|"
+                                                 "must number its rounds")
         for bad in (0, -1, True):
             with self.assertRaises(tg.Refused):
                 tg.stamp(self.root, "D00 T01 §1", self.sha,

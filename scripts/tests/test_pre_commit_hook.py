@@ -78,6 +78,17 @@ class PreCommitHook(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("docs/reviews/ has unstaged or untracked changes", result.stderr)
 
+    def test_an_ignored_review_file_beside_a_todo_change_is_refused(self):
+        self.tick()
+        self.sync()
+        (self.root / "docs/reviews").mkdir(parents=True)
+        (self.root / "docs/reviews/D00-T01-s1.json").write_text("{}" + chr(10), encoding="utf-8")
+        (self.root / ".git/info/exclude").write_text("docs/reviews/" + chr(10), encoding="utf-8")
+        self.git("add", "todo")
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("docs/reviews/ has unstaged or untracked changes", result.stderr)
+
     def test_the_hook_is_tracked_as_executable(self):
         mode = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-s", "scripts/hooks/pre-commit"],
                               capture_output=True, text=True, check=True).stdout.split()[0]

@@ -43,3 +43,40 @@ Candidate `0e11949..68b0b7a`. All six findings verified against the code and fix
 6. P1 hook not executable: fixed. Tracked as `100755`; the hook test copies it with mode 755 and `test_the_hook_is_tracked_as_executable` checks the index.
 
 Gates: `python -m unittest discover -s scripts/tests` -> 435 tests OK (2 skipped); `python scripts/todo-graph.py validate` -> `valid: 83 sections`; `plan --check` -> `plan current`.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T18:13:49Z
+- Effort: medium
+- Lines: 18
+- Digest: e342bdf8b7d54831
+
+## adversarial: needs-attention
+
+1. **P1** `scripts/lib/todo_graph.py:242`: The legacy bypass remains for rounds 1 to 3. Reproduce with a round-1 `clean` receipt dated `2026-10-21`, a report containing only `No reviewer ran`, and no `rounds_spent` or `round_cap`. `receipt_data_ok(..., root=...)` accepts it. Adding those fields correctly causes refusal. Confirmed with an in-memory probe. The new shape restriction does not establish that a receipt is genuinely historical, so round 1 finding 1 is only partially fixed.
+
+2. **P1** `scripts/lib/todo_graph.py:269`: Duplicate round numbers overwrite earlier reviews before the cap and final-verdict checks. Reproduce with 23 dispatcher-format envelopes numbered `1`, the first 22 returning `needs-attention` and the last returning `approve`. A receipt claiming round 1 as `clean`, with `rounds_spent: 1` and `round_cap: 22`, passes. Confirmed in memory: the dispatcher reader returns 23 records, but the validator collapses them to one. Reject duplicate round numbers before constructing the dictionary.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. **P1** `scripts/hooks/pre-commit:10`: `--exclude-standard` hides ignored evidence files from the check, although validation still reads them. Reproduce by excluding a new receipt and findings file through `.git/info/exclude`, leaving them untracked, and staging the stamped TODO plus synchronized plan. Neither the tracked diff check nor the untracked check detects the missing evidence; validation reads the local files and the hook can pass. The resulting commit fails validation in a clean checkout. Verify that every referenced evidence file exists in the index and matches the working copy. This is a static finding; git was not run.
+
+## record: advisory
+
+The dispositions overstate completion of findings 1 and 3: both retain bypasses described above. The claimed 435-test run was not independently reproduced. Verification here used file inspection and in-memory probes without modifying files or running git.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after round 2
+
+Candidate `0e11949..b33a390`. All three findings verified and fixed in the next commit:
+
+1. P1 legacy bypass by shape: fixed. A receipt without `rounds_spent` must also match, by content digest (`receipt_digest`, key order and line endings ignored), one of the 14 receipts frozen in `docs/reviews/legacy-receipts.json`, generated from the receipts on disk at `b33a390`. Test: `test_a_receipt_without_rounds_spent_holds_only_what_the_old_process_wrote` now refuses the old shape unless frozen, and refuses a frozen receipt once edited.
+2. P1 repeated round numbers: fixed. A findings file must number its rounds 1 to N in order, once each. Test: `test_a_repeated_round_number_refuses`.
+3. P1 ignored evidence files: fixed. The hook lists untracked files without `--exclude-standard`, so ignored files under `todo/` or `docs/reviews/` refuse the commit too. Test: `test_an_ignored_review_file_beside_a_todo_change_is_refused` (fails on the previous hook).
+
+Gates: `python -m unittest discover -s scripts/tests` -> 437 tests OK (2 skipped); `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`.

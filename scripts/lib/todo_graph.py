@@ -8,6 +8,7 @@ deferrals. Rules: todo/README.md.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -36,6 +37,8 @@ REVIEW_ROUND_CAP = 22
 # Caps a receipt that records round_cap may name: the current one and those Recto's receipts were written under.
 EARLIER_CAPS = {8, 13}
 # Receipts older than the rounds_spent field were written under a three-round cap, before severity stops existed.
+# Each is frozen by the digest of its content in LEGACY_RECEIPTS, so a new receipt cannot pass by dropping the field.
+LEGACY_RECEIPTS = "docs/reviews/legacy-receipts.json"
 LEGACY_VERDICTS = {"clean", "fixed", "stopped-at-3"}
 SEVERITY_CUTOFF_ROUND = 8
 # A round scripts/review-dispatch.py recorded in a findings file, reviewed or not ("## Round 2: none").
@@ -205,6 +208,27 @@ def review_dispatch():
     return _REVIEW_DISPATCH[0]
 
 
+def receipt_digest(data):
+    """The SHA-256 of a receipt's content, independent of key order, spacing and line endings."""
+    return hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def legacy_receipts(root):
+    """ref -> digest of every receipt written before rounds_spent existed; empty when the file is absent."""
+    path = Path(root) / LEGACY_RECEIPTS
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(read_text(path))
+    except ValueError:
+        raise Refused(f"{LEGACY_RECEIPTS} is not JSON") from None
+    receipts = data.get("receipts") if isinstance(data, dict) and data.get("schema_version") == 1 else None
+    require(isinstance(receipts, dict) and all(isinstance(k, str) and isinstance(v, str)
+                                               and re.fullmatch(r"[0-9a-f]{64}", v) for k, v in receipts.items()),
+            f"{LEGACY_RECEIPTS} needs schema_version 1 and receipts mapping each ref to a SHA-256 digest")
+    return receipts
+
+
 def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
     """building: stamp's first pass over its arguments, before it adds rounds_spent and round_cap."""
     require(isinstance(data, dict), f"receipt is not an object: {ref}")
@@ -245,6 +269,8 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                 and "round_cap" not in data and "cap_outcome" not in data,
                 f"a receipt without rounds_spent may only hold rounds 1 to 3 with verdicts "
                 f"{', '.join(sorted(LEGACY_VERDICTS))}: {ref}")
+        require(root is not None and legacy_receipts(root).get(ref) == receipt_digest(data),
+                f"a receipt without rounds_spent must be one of the old receipts {LEGACY_RECEIPTS} freezes: {ref}")
     if "rounds_spent" in data:
         spent, cap = data.get("rounds_spent"), data.get("round_cap")
         require(type(spent) is int and spent >= max(r["round"] for r in rounds)
@@ -263,6 +289,11 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
             for report in dict.fromkeys(r["report"] for r in rounds):
                 recorded = dispatch.read_rounds((Path(root) / report).read_bytes().decode("utf-8"))
                 require(recorded is not None, f"{report} is not a findings file the dispatcher can read: {ref}")
+                # The dispatcher numbers rounds 1, 2, 3 in order; a repeated or reordered number would let one round
+                # stand in for others when they are keyed by number below.
+                numbers = [e["number"] for e in recorded]
+                require(numbers == list(range(1, len(numbers) + 1)),
+                        f"{report} must number its rounds 1 to {len(numbers)} in order, once each: {ref}")
                 # A returned review: a reviewer of another model family than the writer ran and replied with the
                 # prompt's OVERALL approve or needs-attention line. Outages, self-reviews, empty and blocked replies are
                 # recorded rounds but not reviews: they earn no stop and end no loop.
