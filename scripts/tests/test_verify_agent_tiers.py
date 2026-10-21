@@ -33,8 +33,20 @@ REFUSED_DESCRIPTIONS = [
     "? question space first",
 ]
 ACCEPTED_DESCRIPTIONS = ["plain, with comma", "has a #hash inside", "a url https://example.com/x", "-dash no space"]
-REFUSED_COMMANDS = ["echo: bad", "ends:", "- dash", "@at"]
-ACCEPTED_COMMANDS = ["echo ok", "plain, fine", '"quoted: fine"']
+TAB, NBSP, BACKSLASH = chr(9), chr(0xA0), chr(92)
+REFUSED_COMMANDS = ["echo: bad", "ends:", "- dash", "@at",
+                    '"echo": bad',                       # a second key after a quoted one
+                    '"' + BACKSLASH + 'q"',              # an escape this check does not decode
+                    "|++",                               # block scalars are not read in hooks
+                    "echo" + TAB + "x"]                  # tabs are not read in hooks
+ACCEPTED_COMMANDS = ["echo ok", "plain, fine", '"quoted: fine"', "'it''s fine'"]
+# Top-level frontmatter bodies after "name: probe": refused ones both loaders reject, accepted ones both load.
+REFUSED_BODIES = ['description: "a"b"\nmodel: sonnet\n',
+                  "model: sonnet\ndescription: |\n    first\n  second\n"]
+ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non-breaking space is content
+                   "description: 'it''s fine'\nmodel: sonnet\n",
+                   "model: sonnet\ndescription: |\n    first\n      deeper\n"]
+SEQUENCE_ENTRY = "hooks:\n  PreToolUse:\n    -" + TAB + "@bad\n"            # a tab after a sequence dash
 
 
 class Frontmatter(unittest.TestCase):
@@ -76,6 +88,25 @@ class Frontmatter(unittest.TestCase):
         for command in ACCEPTED_COMMANDS:
             with self.subTest(command=command):
                 result = self.verify(extra=HOOKS.format(command=command))
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def verify_body(self, body):
+        with tempfile.TemporaryDirectory() as tmp:
+            agents = Path(tmp) / ".claude" / "agents"
+            agents.mkdir(parents=True)
+            text = "---\nname: probe\ntools: Read, Grep\n" + body + "---\n\nYou are a probe.\n"
+            (agents / "probe.md").write_bytes(text.encode("utf-8"))
+            return subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
+
+    def test_quoting_and_block_scalar_lines_yaml_refuses_are_refused(self):
+        for body in REFUSED_BODIES + ["model: sonnet\n" + SEQUENCE_ENTRY]:
+            with self.subTest(body=body):
+                self.assertEqual(self.verify_body(body).returncode, 1)
+
+    def test_quoting_and_block_scalar_lines_yaml_loads_pass(self):
+        for body in ACCEPTED_BODIES:
+            with self.subTest(body=body):
+                result = self.verify_body(body)
                 self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_this_repositorys_agents_pass(self):

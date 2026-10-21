@@ -98,11 +98,10 @@ export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
  * a `model:` or `tools:` inside the block is not a pin and a second `model:`
  * after it is still a duplicate. The two ways YAML can carry a column-0 line as
  * the block's content, a quoted scalar or a flow collection spanning lines, are
- * refused line by line, as are tabs in the indentation (where YAML and this
- * reader would disagree on the column), anchors, aliases and tags, and any line
- * that is not a key, a sequence entry, a scalar or a comment. A block scalar's
- * own content is opaque text and is skipped. Every other nested block stays
- * refused.
+ * refused line by line, as are tabs anywhere in the block, block scalars,
+ * anchors, aliases and tags, a second key on one line, and any line that is not
+ * a key, a sequence entry, a scalar or a comment (`hooksLineProblem`). Every
+ * other nested block stays refused.
  *
  * Returns `{ fields, error }`: `error` is set when the block cannot be read
  * under these rules, and `fields` maps key to `{ value, isQuoted }`.
@@ -150,16 +149,29 @@ export function readAgentFrontmatter(text) {
     // A comment after the value is ordinary YAML, and rejecting it would fail
     // correct definitions. It is stripped here, outside the quoted region, so
     // `model: "sonnet # haiku"` still keeps its hash as content.
-    const quotedWithComment = /^((["'])(?:[^\\]|\\.)*?\2)[ \t]+#[^\r\n]*$/.exec(rest);
+    // A quoted scalar may not hold its own delimiter (a single quote only doubled) or, double-quoted, a backslash;
+    // anything after the closing quote but a comment is refused below, as YAML refuses it.
+    const quotedWithComment = /^("[^"\\]*"|'(?:[^']|'')*')[ \t]+#[^\r\n]*$/.exec(rest);
     const scalarWithComment = /^([|>][-+0-9]*)[ \t]+#[^\r\n]*$/.exec(rest);
     const value = quotedWithComment?.[1] ?? scalarWithComment?.[1] ?? rest;
 
     if (/^[|>]$/.test(value)) {
       // A bare block scalar only. An indentation indicator (`|2`) changes what
       // counts as content, and this reader does not model that.
+      // Its first content line sets the indentation; a later line indented less (but still indented), or indented
+      // with a tab, is one YAML refuses, so this check refuses it too.
       const collected = [];
+      let contentIndent = null;
       while (index < lines.length && (lines[index].trim() === "" || /^[ \t]/.test(lines[index]))) {
-        collected.push(lines[index].trim());
+        const line = lines[index];
+        if (line.trim() !== "") {
+          const lead = /^[ \t]*/.exec(line)[0];
+          if (lead.includes("\t") || (contentIndent !== null && lead.length < contentIndent)) {
+            return { fields: null, error: `"${key}:" block scalar line ${JSON.stringify(line)} breaks the indentation its first line set, or uses a tab; YAML refuses it` };
+          }
+          contentIndent ??= lead.length;
+        }
+        collected.push(line.trim());
         index += 1;
       }
       fields.set(key, { value: collected.filter(Boolean).join(" "), isQuoted: true });
@@ -170,20 +182,25 @@ export function readAgentFrontmatter(text) {
       return { fields: null, error: `"${key}:" uses a block scalar indicator (${JSON.stringify(value)}); write the value plainly so this check and YAML agree on where it ends` };
     }
 
-    const quoted = /^(["'])((?:[^\\]|\\.)*?)\1[ \t]*$/.exec(value);
+    if (/^"[^"]*\\/.test(value)) {
+      return { fields: null, error: `"${key}:" contains a backslash escape; this check does not decode escapes, so write the value plainly` };
+    }
+    const quoted = /^(?:"([^"\\]*)"|'((?:[^']|'')*)')[ \t]*$/.exec(value);
     if (quoted) {
-      if (/\\/.test(quoted[2])) {
-        return { fields: null, error: `"${key}:" contains a backslash escape; this check does not decode escapes, so write the value plainly` };
-      }
-      fields.set(key, { value: quoted[2].trim(), isQuoted: true });
+      const content = quoted[1] ?? quoted[2].replace(/''/g, "'");
+      fields.set(key, { value: content.trim(), isQuoted: true });
       continue;
     }
 
+    if (/^"[^"]*"./.test(value) || /^'(?:[^']|'')*'./.test(value)) {
+      return { fields: null, error: `"${key}:" has text after its closing quote (${JSON.stringify(value)}); YAML refuses it, so quote the whole value` };
+    }
     if (/^["']/.test(value)) {
       return { fields: null, error: `"${key}:" opens a quote that does not close on the same line; a multi-line quoted scalar can hide another key inside it` };
     }
 
-    const plain = value.replace(/(?:^|[ \t])#.*$/, "").trim();
+    // Only spaces and tabs are YAML separation here: a non-breaking space is content, so it is kept.
+    const plain = value.replace(/(?:^|[ \t])#.*$/, "").replace(/^[ \t]+|[ \t]+$/g, "");
     if (/^[&*!]/.test(plain) || /^[[{]/.test(plain)) {
       return { fields: null, error: `"${key}:" uses YAML ${plain.startsWith("[") || plain.startsWith("{") ? "flow collection" : "anchor, alias or tag"} syntax (${JSON.stringify(plain)}); write the value plainly, because an alias resolves to something this check cannot see` };
     }
@@ -221,7 +238,6 @@ export function plainScalarProblem(plain) {
 function skipHooksBlock(lines, start) {
   let index = start;
   let content = 0;
-  let scalarIndent = null;
   while (index < lines.length) {
     const line = lines[index];
     if (line.trim() === "") {
@@ -237,15 +253,8 @@ function skipHooksBlock(lines, start) {
     index += 1;
     content += 1;
 
-    // A block scalar's content is text, not structure, and ends at the first
-    // line indented no deeper than the line that opened it.
-    if (scalarIndent !== null && indentation.length > scalarIndent) continue;
-    scalarIndent = null;
-
     const shape = hooksLineProblem(line.slice(indentation.length));
-    if (shape === BLOCK_SCALAR) {
-      scalarIndent = indentation.length;
-    } else if (shape) {
+    if (shape) {
       return { index, error: `"${HOOKS_FIELD}:" block line ${JSON.stringify(line)} ${shape}` };
     }
   }
@@ -255,58 +264,64 @@ function skipHooksBlock(lines, start) {
   return { index, error: null };
 }
 
-const BLOCK_SCALAR = Symbol("block scalar");
-
 /**
- * Check one line of the `hooks:` block, indentation removed: sequence entries,
- * then any number of `key:` prefixes, then an empty value, a comment, a quoted
- * scalar that closes on this line, a block scalar header or a plain scalar.
- * Returns null when the line is one of those, `BLOCK_SCALAR` for a block
- * scalar header, or the reason it is refused.
+ * Check one line of the `hooks:` block, indentation removed. The accepted shape
+ * is a strict subset of YAML, so a line accepted here always loads: any number
+ * of `- ` sequence entries, then at most one `key:` (a plain or quoted key),
+ * then an empty value, a comment, or one scalar: plain (checked by
+ * `plainScalarProblem`), single-quoted, or double-quoted without a backslash
+ * escape, closing on this line and followed by nothing but a comment. Tabs,
+ * block scalars, flow collections, anchors, aliases and tags are refused
+ * (D00 T03 §8: each was a line this check accepted and YAML refused). Returns
+ * null when the line is accepted, or the reason it is refused.
  */
 function hooksLineProblem(text) {
+  if (text.includes("\t")) {
+    return "holds a tab; YAML reads a tab differently from this check in several places, so use spaces";
+  }
   let rest = text.replace(/^(?:-(?: +|$))*/, "");
   let afterKey = false;
   for (;;) {
-    if (afterKey && rest !== "" && !/^["'|>[{&*!#]/.test(rest)) {
-      // A key's value on its own line is one plain scalar to the end of the line (less a comment): `a: b: c`
-      // and `a: - b` are not a second key or a sequence to YAML but a load error (D00 T03 §8).
-      const unloadable = plainScalarProblem(rest.replace(/(?:^|[ \t])#.*$/, "").trim());
-      if (unloadable) return `holds a value YAML cannot load (${unloadable}); quote it`;
-    }
     if (rest === "" || rest.startsWith("#")) return null;
 
     let node;
+    let quoted = false;
     if (rest.startsWith('"') || rest.startsWith("'")) {
-      const closed = rest.startsWith('"') ? /^"(?:[^"\\]|\\.)*"/.exec(rest) : /^'(?:[^']|'')*'/.exec(rest);
+      const closed = rest.startsWith('"') ? /^"[^"\\]*"/.exec(rest) : /^'(?:[^']|'')*'/.exec(rest);
       if (!closed) {
-        return "opens a quote that does not close on the same line; a multi-line quoted scalar can carry a column-0 line that YAML reads as content and this check reads as a key";
+        return rest.startsWith('"') && /^"[^"]*\\/.test(rest)
+          ? "holds a backslash escape inside double quotes; this check does not decode escapes, so use single quotes"
+          : "opens a quote that does not close on the same line; a multi-line quoted scalar can carry a column-0 line that YAML reads as content and this check reads as a key";
       }
       node = closed[0];
+      quoted = true;
     } else if (/^[|>]/.test(rest)) {
-      if (/^[|>][-+1-9]{0,2}(?:[ \t]+#.*)?[ \t]*$/.test(rest)) return BLOCK_SCALAR;
-      return "has a block scalar header this check does not read";
+      return "opens a block scalar; write the value on one line, quoted if it needs to be";
     } else if (/^[[{]/.test(rest)) {
       return "uses YAML flow collection syntax; one that spans lines can carry a column-0 line, so write the block in block style";
     } else if (/^[&*!]/.test(rest)) {
       return "uses a YAML anchor, alias or tag; write the value plainly";
-    } else if (/^[\]},%@`?:]/.test(rest)) {
-      return "starts with a YAML indicator this check does not read";
     } else {
       // A plain scalar runs to a mapping colon or a comment; quotes inside it are content.
-      const stop = /:(?=[ \t]|$)|[ \t]#/.exec(rest);
+      const stop = /:(?=[ ]|$)|[ ]#/.exec(rest);
       node = stop ? rest.slice(0, stop.index) : rest;
+      const isKey = stop !== null && stop[0] === ":";
+      const unloadable = plainScalarProblem(isKey ? node : rest.replace(/(?:^| )#.*$/, "").replace(/ +$/, ""));
+      if (unloadable) return `holds a ${isKey ? "key" : "value"} YAML cannot load (${unloadable}); quote it`;
     }
 
     rest = rest.slice(node.length);
-    const key = /^[ \t]*:(?:[ \t]+|$)/.exec(rest);
+    const key = /^ *:(?: +|$)/.exec(rest);
     if (key) {
+      if (afterKey) return "holds a second key on one line (`a: b: c`), which YAML cannot load";
       rest = rest.slice(key[0].length);
       afterKey = true;
       continue;
     }
-    if (/^[ \t]*$|^[ \t]+#/.test(rest)) return null;
-    return "is not a key, a sequence entry, a scalar or a comment; the hooks block is read as a closed subset of YAML";
+    if (/^ *$|^ +#/.test(rest)) return null;
+    return quoted
+      ? "has text after its closing quote; YAML refuses it, so quote the whole value"
+      : "is not a key, a sequence entry, a scalar or a comment; the hooks block is read as a closed subset of YAML";
   }
 }
 
