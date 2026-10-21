@@ -414,8 +414,10 @@ function hooksLine(text) {
       // Keys are compared as YAML values: quotes removed, separation spaces before the colon dropped, and a plain
       // key held to an identifier, so no two spellings (`1` and `0x1`) can resolve to one key unnoticed.
       key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node.replace(/ +$/, "");
-      if (node.length > MAX_IMPLICIT_KEY) {
-        return { error: `holds a key ${node.length} characters long; YAML caps an implicit key at ${MAX_IMPLICIT_KEY}` };
+      // The limit covers the key's whole span to its colon, separation spaces included, in Unicode characters.
+      const span = [...node + /^ */.exec(colon[0])[0]].length;
+      if (span > MAX_IMPLICIT_KEY) {
+        return { error: `holds a key ${span} characters long up to its colon; YAML caps an implicit key at ${MAX_IMPLICIT_KEY}` };
       }
       if (!quoted && (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key) || NON_STRING_KEY.test(key))) {
         return { error: `holds the key ${JSON.stringify(key)}; a plain key here is an identifier (letters, digits, "_" and "-") that YAML reads as a string, not a boolean or null, so quote any other` };

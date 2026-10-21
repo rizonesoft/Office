@@ -2,9 +2,10 @@
 # Copyright 2026 Rizonesoft
 """scripts/verify-agent-tiers.mjs: agent frontmatter Claude Code cannot load is refused (D00 T03 §8).
 
-The UNLOADABLE cases were measured against the `yaml` 2.9.1 and `js-yaml` 4.1.0 loaders: at least one of them
-rejects each (docs/reviews/00-workspace/D00-T03-s8.md), and this check accepts only what both load. The ACCEPTED
-ones load in both. The POLICY cases load in YAML but sit
+The UNLOADABLE cases were measured against three loaders, the YAML 1.2 loaders `yaml` 2.9.1 and `js-yaml` 4.1.0 and
+the YAML 1.1 loader PyYAML 6.0.3: at least one of them rejects each (some, like NEL as a line break, only the YAML 1.1
+one; docs/reviews/00-workspace/D00-T03-s8.md), and this check accepts only what all three load. The ACCEPTED ones
+load in all three. The POLICY cases load in YAML but sit
 outside the closed subset this check reads (tabs, block scalars and escapes in `hooks:`), so it refuses them by
 design, never claiming YAML does.
 """
@@ -64,7 +65,8 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\n# comment" + chr(13) + "description: @bad\n",                # a bare CR breaks
                      "model: sonnet\ndescription: a" + chr(0x85) + "b\n",                         # NEL breaks in 1.1
                      "model: sonnet\n" + "a" * 1025 + ": ok\n",                                   # over 1024
-                     "model: sonnet\nhooks:\n  " + "a" * 1025 + ": ok\n"]
+                     "model: sonnet\nhooks:\n  " + "a" * 1025 + ": ok\n",
+                     "model: sonnet\nhooks:\n  \"a\"" + " " * 1024 + ": ok\n"]                    # spaces count too
 # These load in the YAML 1.2 loaders, but a YAML 1.1 loader (PyYAML) reads tabs differently; no tab is accepted.
 POLICY_BODIES = ["model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",
                  "model: sonnet\ndescription: |\n  text\n  " + TAB + "\n",
@@ -75,6 +77,7 @@ ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non
                    "model: sonnet\nhooks:\n  command : ok\n",                       # a space before the colon
                    "model: sonnet\n" + "a" * 1024 + ": ok\n",                       # a key at the 1024 limit
                    "model: sonnet\r\ndescription: crlf line endings\r\n",
+                   "model: sonnet\nhooks:\n  \"" + chr(0x1F600) * 600 + "\": ok\n",       # 602 characters, not 1202
                    "model: sonnet\nhooks:\n  PreToolUse:\n  - matcher: Bash\n    hooks:\n    - type: command\n"
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
