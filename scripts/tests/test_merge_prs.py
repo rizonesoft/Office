@@ -63,8 +63,8 @@ class Fake:
             view = copy.deepcopy(self.views.get(number, self.prs[number]))
             view.pop("files", None)
             return 0, json.dumps(view), ""
-        if args[:3] == ["gh", "api", "--paginate"]:
-            number = int(args[3].split("/")[-2])
+        if args[:2] == ["gh", "api"]:
+            number = int(next(a for a in args if str(a).startswith("repos/")).split("/")[-2])
             if self.during_files:
                 self.during_files(self)
             files = self.views.get(number, self.prs[number])["files"]
@@ -205,24 +205,33 @@ class Safety(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("not main", out)
 
-    def test_every_github_call_names_the_repository_origin_points_at(self):
+    def test_every_github_call_names_github_com_and_the_repository_origin_points_at(self):
         for origin in ("https://github.com/rizonesoft/Office.git", "git@github.com:rizonesoft/Office.git",
-                       "https://github.com/rizonesoft/Office"):
+                       "https://github.com/rizonesoft/Office", "ssh://git@github.com/rizonesoft/Office.git",
+                       "https://user@github.com/rizonesoft/Office.git"):
             with self.subTest(origin=origin):
                 fake = Fake(prs=[pr(1)], origin=origin)
-                with mock.patch.dict("os.environ", {"GH_REPO": "someone/elsewhere"}):
+                with mock.patch.dict("os.environ", {"GH_REPO": "someone/elsewhere", "GH_HOST": "ghe.example"}):
                     self.assertEqual(run_main(fake)[0], 0)
                 gh_calls = [c for c in fake.calls if c[0] == "gh"]
                 self.assertTrue(gh_calls)
                 for call in gh_calls:
-                    named = ("--repo" in call and call[call.index("--repo") + 1] == "rizonesoft/Office") or \
-                        any(str(a).startswith("repos/rizonesoft/Office/") for a in call)
-                    self.assertTrue(named, call)
+                    if call[1] == "api":  # an API path names the repository, --hostname the host
+                        self.assertEqual(call[call.index("--hostname") + 1], "github.com", call)
+                        self.assertTrue(any(str(a).startswith("repos/rizonesoft/Office/") for a in call), call)
+                    else:
+                        self.assertEqual(call[call.index("--repo") + 1], "github.com/rizonesoft/Office", call)
 
-    def test_an_origin_that_is_not_on_github_is_unreadable(self):
-        code, out = run_main(Fake(prs=[pr(1)], origin="https://gitlab.example/x/y.git"))
-        self.assertEqual(code, 3)
-        self.assertIn("not a GitHub repository", out)
+    def test_an_origin_not_on_github_com_is_unreadable(self):
+        for origin in ("https://gitlab.example/x/y.git", "https://notgithub.com/rizonesoft/Office.git",
+                       "https://mirror.example/github.com/rizonesoft/Office.git", "git@github.com.evil:x/y.git",
+                       "https://github.com.evil/rizonesoft/Office.git"):
+            with self.subTest(origin=origin):
+                fake = Fake(prs=[pr(1)], origin=origin)
+                code, out = run_main(fake)
+                self.assertEqual(code, 3)
+                self.assertIn("is not a github.com repository", out)
+                self.assertEqual(fake.merged, [])
 
     def test_the_scheduled_task_skips_an_unsafe_moment_without_failing(self):
         code, out = run_main(Fake(prs=[pr(1)]), ["--skip-unsafe"], owner="campaign-session")

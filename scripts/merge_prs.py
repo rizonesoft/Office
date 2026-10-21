@@ -21,10 +21,10 @@ the clone's safety is checked again, the files are read, the pull request is rea
 read (a label removed, a base retargeted or a check re-run since the listing stops it), the local checks run once
 more, then `gh pr merge --rebase --match-head-commit <sha>` merges exactly the head that was judged, and
 `git pull --ff-only` and `python scripts/todo-graph.py validate` follow. Every gh call names the repository `origin`
-points at, so GH_REPO cannot aim a merge elsewhere. The first failure stops the run and leaves the rest open; a pull
-request already merged when a later step failed is reported as merged. GitHub has no merge conditional on labels
-or checks, so a change in the moment between the last read and the merge is not seen; making one needs write
-access to the repository, which could merge directly.
+points at on github.com, so neither GH_REPO nor GH_HOST can aim a merge elsewhere. The first failure stops the run
+and leaves the rest open; a pull request already merged when a later step failed is reported as merged. GitHub
+has no merge conditional on labels or checks, so a change in the moment between the last read and the merge is not
+seen; making one needs write access to the repository, which could merge directly.
 
 Exit 0 when the run finished (merging some, or none being eligible), 1 when a merge, pull or validate failed, 2 when
 the clone or campaign state made it unsafe (0 with `--skip-unsafe`, so a scheduled run alerts only on real failures),
@@ -94,14 +94,23 @@ def guard_lock(root):
     return campaign_guard._Lock(str(root))
 
 
+HOST = "github.com"
+# The URL forms git writes for a github.com repository, matched whole: the host must be exactly github.com.
+ORIGIN_FORMS = (re.compile(r"https://(?:[^@/]+@)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"),
+                re.compile(r"git@github\.com:([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"),
+                re.compile(r"ssh://git@github\.com(?::22)?/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"))
+
+
 def origin_repo(runner, root):
-    """`owner/name` of the GitHub repository `origin` points at. Every gh call names it, so neither GH_REPO nor
-    another default can aim a merge at a repository other than the one whose clone was checked."""
+    """`owner/name` of the github.com repository `origin` points at. Every gh call names that host and repository,
+    so neither GH_REPO, GH_HOST nor another default can aim a merge anywhere but the repository whose clone was
+    checked."""
     url = checked(runner, root, ["git", "remote", "get-url", "origin"], "git remote get-url").strip()
-    match = re.search(r"github\.com[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$", url)
-    if not match:
-        raise Unreadable(f"origin ({url}) is not a GitHub repository")
-    return f"{match.group(1)}/{match.group(2)}"
+    for form in ORIGIN_FORMS:
+        match = form.fullmatch(url)
+        if match:
+            return f"{match.group(1)}/{match.group(2)}"
+    raise Unreadable(f"origin ({url}) is not a {HOST} repository")
 
 
 def local_safety(runner, root, session, refs=True):
@@ -162,7 +171,8 @@ def ineligibility(pr):
 def file_problem(runner, root, repo, number, changed):
     """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100). A rename
     counts on both sides, so moving `global.json` away is a change to it."""
-    out = checked(runner, root, ["gh", "api", "--paginate", f"repos/{repo}/pulls/{number}/files",
+    out = checked(runner, root, ["gh", "api", "--hostname", HOST, "--paginate",
+                                 f"repos/{repo}/pulls/{number}/files",
                                  "--jq", ".[] | [.filename, (.previous_filename // \"\")] | @json"],
                   "gh api pulls/files")
     try:
@@ -178,7 +188,7 @@ def file_problem(runner, root, repo, number, changed):
 
 def candidates(runner, root, repo):
     """The open pull requests whose listed fields allow them, lowest number first, and the rest with a reason."""
-    out = checked(runner, root, ["gh", "pr", "list", "--repo", repo, "--state", "open", "--base", "main",
+    out = checked(runner, root, ["gh", "pr", "list", "--repo", f"{HOST}/{repo}", "--state", "open", "--base", "main",
                                  "--limit", "100", "--json", PR_FIELDS], "gh pr list")
     try:
         prs = json.loads(out)
@@ -193,8 +203,8 @@ def candidates(runner, root, repo):
 
 def fresh(runner, root, repo, number):
     """The pull request read again, just before its merge."""
-    out = checked(runner, root, ["gh", "pr", "view", str(number), "--repo", repo, "--json", PR_FIELDS + ",state"],
-                  "gh pr view")
+    out = checked(runner, root, ["gh", "pr", "view", str(number), "--repo", f"{HOST}/{repo}",
+                                 "--json", PR_FIELDS + ",state"], "gh pr view")
     try:
         return json.loads(out)
     except ValueError:
@@ -228,8 +238,8 @@ def merge_one(runner, root, repo, number, session, dry_run):
         local_safety(runner, root, session)
         if dry_run:
             return "would", f"#{number}"
-        code, out, err = runner(["gh", "pr", "merge", str(number), "--repo", repo, "--rebase", "--match-head-commit",
-                                 pr["headRefOid"]], root)
+        code, out, err = runner(["gh", "pr", "merge", str(number), "--repo", f"{HOST}/{repo}", "--rebase",
+                                 "--match-head-commit", pr["headRefOid"]], root)
         if code != 0:
             return "failed", f"#{number}: gh pr merge failed: {(err or out).strip()[:200]}"
         for step, what in ((["git", "pull", "--ff-only", "--quiet", "origin", "main"], "git pull"),
