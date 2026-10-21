@@ -3,6 +3,7 @@ import contextlib
 import importlib.util
 import io
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -125,35 +126,30 @@ class Repo(unittest.TestCase):
         self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
         self.assertEqual(len(self.mails), 1)
 
-    def test_a_run_killed_mid_proposal_is_recovered(self):
+    def test_a_killed_run_whose_folder_is_gone_is_recovered(self):
         abandoned = self.root / "build" / "office-pin-killed" / "tree"
-        abandoned.parent.mkdir(parents=True)
-        wp.pin_proposal._claim(abandoned, "winui/2.5.1")  # what a killed run leaves: its owner record, then the worktree
         self.run_git("worktree", "add", "-b", "winui/2.5.1", str(abandoned), "main")
-        (abandoned / "Directory.Packages.props").write_text("half-written", encoding="utf-8")
+        shutil.rmtree(abandoned.parent)  # the run died and its temporary folder was cleaned up
         code, out = self.main("update")
         self.assertEqual(code, 0, out)
-        self.assertFalse(abandoned.exists())
         self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
 
-    def test_an_operators_worktree_is_never_removed_whatever_its_path(self):
-        for name, claim in (("office-pin-review", None), ("office-pin-other", "winui/9.9.9"), ("review", None)):
+    def test_a_worktree_holding_the_branch_is_never_removed_whatever_its_path(self):
+        for name in ("office-pin-killed", "office-pin-review", "review"):
             with self.subTest(name=name):
-                mine = self.root.parent / f"{name}-{self.root.name}" / "tree"  # office-pin-* names lead the path
-                mine.parent.mkdir(parents=True)
-                if claim:  # an owner record for another branch proves nothing about this one
-                    wp.pin_proposal._claim(mine, claim)
-                self.run_git("worktree", "add", "-b", "winui/2.5.1", str(mine), "main")
-                (mine / "notes.txt").write_text("my uncommitted work", encoding="utf-8")
+                held = self.root.parent / f"{name}-{self.root.name}" / "tree"
+                self.run_git("worktree", "add", "-b", "winui/2.5.1", str(held), "main")
+                (held / "notes.txt").write_text("my uncommitted work", encoding="utf-8")
                 try:
                     code, out = self.main("update")
                     self.assertEqual(code, 1)
-                    self.assertIn("which this automation did not create", out)
-                    self.assertEqual((mine / "notes.txt").read_text(encoding="utf-8"), "my uncommitted work")
+                    self.assertIn("git worktree remove --force", out)  # the alert says how to release it
+                    self.assertEqual((held / "notes.txt").read_text(encoding="utf-8"), "my uncommitted work")
                     self.assertEqual(self.mails, [])
                 finally:
-                    self.run_git("worktree", "remove", "--force", str(mine))
+                    self.run_git("worktree", "remove", "--force", str(held))
                     self.run_git("branch", "-D", "winui/2.5.1")
+        self.assertEqual(self.main("update")[0], 0)  # released, the next run proposes as usual
 
     def test_an_unsent_email_leaves_no_proposal(self):
         def refuse(*_a):

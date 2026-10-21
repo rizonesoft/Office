@@ -77,3 +77,43 @@ OVERALL: needs-attention
 2. Fixed: every doctor entry must be an object with a non-empty text `name` and `status`, or the check cannot check (exit 2); the malformed cases are in `test_a_failed_or_empty_doctor_is_never_healthy`.
 3. Fixed: `test_an_operators_worktree_is_never_removed_whatever_its_path` covers an `office-pin-review` folder, an owner record for another branch, and a plain folder, each with an uncommitted file that must survive; it fails on the round 1 code.
 4. Fixed: the first round's disposition 1 is superseded by disposition 1 above.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T00:10:52Z
+- Effort: medium
+- Lines: 23
+- Digest: 778ae7c8ef23d7e0
+
+Review limited to the supplied diff: the shell failed before execution, so I could not read the remaining files or run reproductions. Line numbers refer to the candidate diff.
+
+## adversarial: needs-attention
+
+1. **[P1] An old ownership record authorizes deletion of a replacement, operator-created worktree.** `scripts/lib/pin_proposal.py:118` checks only branch and resolved path. It does not bind the record to the particular worktree the automation created. Removing that worktree with Git leaves the adjacent record intact.
+
+   **Reproduce:** interrupt a proposal after worktree creation; remove its worktree using `git worktree remove`; create an operator worktree at the same path using the existing proposal branch; add uncommitted notes; run the update again without a completion ref. `_ours` returns true and `_drop` forcibly removes the operator's replacement and notes. No forged record is necessary. Recovery needs evidence tied to the worktree instance, with stale ownership invalidated.
+
+## integration: needs-attention
+
+2. **[P2] The preservation regression omits the stale, matching-record case.** `scripts/tests/test_check_winui_pin.py:140` covers absent records and a different branch, but no operator worktree replacing a previously claimed worktree at the same path and branch. All added cases pass despite finding 1.
+
+   **Reproduce:** extend the fixture with finding 1's lifecycle, retaining a genuine matching owner record from the original worktree. Assert that the replacement's uncommitted notes survive and no email is sent. The current ownership predicate fails that preservation requirement.
+
+   Caller integration and execution results remain unverified because repository reads failed.
+
+## record: needs-attention
+
+3. **[P2] The ownership disposition overstates the guarantee.** `docs/reviews/automations-pins.md:74` says every other worktree is kept with its uncommitted files. The record establishes a historical claim to a branch/path pair, not ownership of its current occupant.
+
+   **Reproduce:** follow finding 1. The operator-created replacement is deleted despite the disposition's claim. Keep this guarantee open until replacement-worktree protection is implemented and tested. README claims could not be independently checked.
+
+OVERALL: needs-attention
+
+## Dispositions of the third round
+
+The unit needed fixing three rounds running, so it was re-thought rather than patched (independent-review rule). No record can prove who owns a worktree's current contents, so the automation no longer removes a leftover worktree at all.
+
+1. Fixed by design: `_drop` runs `git worktree prune` (which drops only entries whose folder is gone, so a killed run whose temporary folder was cleaned up recovers by itself), and a worktree that still has the branch checked out fails the run with the exact `git worktree remove` and `git branch -D` commands in the failure alert. The owner record of round 2 is removed. The only worktree ever force-removed is the one the same run created, in `propose`'s `finally`.
+2. Fixed: `test_a_worktree_holding_the_branch_is_never_removed_whatever_its_path` keeps an uncommitted file in an `office-pin-killed`, an `office-pin-review` and a plain folder, and fails on the round 1 recovery; `test_a_killed_run_whose_folder_is_gone_is_recovered` covers the prune path.
+3. Fixed: the dispositions of the first and second rounds on recovery are superseded by this one. No fourth round was run (three is the limit); the change was verified by the tests above, each shown failing on the destructive version.
