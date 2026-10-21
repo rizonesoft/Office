@@ -16,7 +16,7 @@ Sections: 15 | Checklist items: 88
 | [x]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
 | [x]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
 | [x]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 7     |
-| [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 3     |
+| [x]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 3     |
 | [ ]    | D00 T02 §5 | Contributing Guide                       | none                   | 4     |
 | [x]    | D00 T03 §1 | Automation Runner, Alert and Installer   | none                   | 7     |
 | [x]    | D00 T03 §2 | Run Guard and Stop Hook                  | none                   | 7     |
@@ -132,6 +132,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 16/91 verified sections, 12 ready to run now.
+Progress: 17/91 verified sections, 11 ready to run now.
 
-Checklist: 106/518 items completed (includes Commit items).
+Checklist: 107/518 items completed (includes Commit items).

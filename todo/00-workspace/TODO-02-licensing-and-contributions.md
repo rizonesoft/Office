@@ -36,7 +36,7 @@ title: "TODO-02 -- Licensing and Contributions"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | SPDX headers and checker | -- | [x] |
-| 2 | §2 | Third-party notices file | -- | [ ] |
+| 2 | §2 | Third-party notices file | -- | [x] |
 | 3 | §3 | Contributor agreement text | -- | [ ] |
 | 4 | §4 | Contributor agreement PR check | §3 | [ ] |
 | 5 | §5 | Contributing guide | §1 | [ ] |
@@ -90,9 +90,12 @@ GPLv3 for our code does not remove the duties of the components we ship. The Win
 
 - [x] Add the Plus Jakarta Sans entry (version 2.071, SIL OFL 1.1, https://github.com/tokotype/PlusJakartaSans, reserved font name rules) to `THIRD-PARTY-NOTICES.md`. Done when: the entry names version, licence, source and obligations. Cheaper substitute: a link without the licence text.
 - [x] Add a "How this file is maintained" note in `THIRD-PARTY-NOTICES.md` naming D03 T01 §11's dependency policy as the gate for new entries. Done when: the note names D03 T01 §11 and the licensing spec it writes (`docs/specs/<date>-licensing-design.md`). **Corrected 2026-10-21:** said "names the policy file", which does not exist until D03 T01 §11 runs. Cheaper substitute: adding entries only at release time.
-- [ ] Commit: `legal: add third-party notices`
+- [x] Commit: `legal: add third-party notices`
 
 **Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Plus Jakarta Sans" --require "Office control identifier baseline" --require "How this file is maintained"` exits 0. **Corrected 2026-10-21:** required the Fluent UI System Icons and Windows App SDK headings, now §6's.
+
+> **Verified:** 2026-10-21 | §2 | 25646710bfe835c5ba966e691da5b6e2b01a8c60
+> **Review:** `docs/reviews/d00-t02-s2.json`
 
 ## 3. Contributor Agreement Text
 

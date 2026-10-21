@@ -1,0 +1,25 @@
+{
+  "ref": "D00 T02 \u00a72",
+  "title": "Third-Party Notices File",
+  "implementation_sha": "25646710bfe835c5ba966e691da5b6e2b01a8c60",
+  "date": "2026-10-21",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T02-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T02-s2.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require \"Plus Jakarta Sans\" --require \"Office control identifier baseline\" --require \"How this file is maintained\" -> exit 0",
+    "reuse lint -> compliant (REUSE 3.3)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success (run 39669718411 at 2564671)"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 22
+}
