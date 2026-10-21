@@ -1,15 +1,14 @@
 # Independent reviewers for this repository, read by scripts/review-dispatch.py.
 #
-# A route names one reviewer and at most one fallback for work written by one
-# agent, and neither is of the writer's own model family (the CLI names it:
-# codex is OpenAI, agy is Google, claude is Anthropic). The first reviewer that
-# runs and returns a review is the round; one that is not installed, fails,
-# times out, returns nothing or replies OVERALL: blocked is skipped and the
-# reason recorded. If both fail there is no review, never an approval.
+# A route names exactly one reviewer for work written by one agent, never of
+# the writer's own model family (the CLI names it: codex is OpenAI, agy is
+# Google, claude is Anthropic). A reviewer that is not installed, fails, times
+# out, returns nothing or replies OVERALL: blocked is skipped and the reason
+# recorded: there is no review, never an approval, and no other reviewer runs.
 #
 # Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route
-# naming an undefined reviewer, a same-family reviewer or a second fallback
-# refuses every dispatch.
+# naming an undefined reviewer, a same-family reviewer or more than one
+# reviewer refuses every dispatch.
 
 schema_version = 1
 
@@ -19,21 +18,15 @@ cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
 
-# Gemini 4 through the Antigravity CLI in plan mode and its sandbox. The
-# effort is part of the model name (gemini-4-argon-low, -medium or -high).
-[reviewers.gemini]
-cli = "agy"
-model = "gemini-4-argon-high"
-
 # Sonnet 5.5 through Claude Code in plan mode.
 [reviewers.sonnet]
 cli = "claude"
 model = "claude-sonnet-5-5"
 effort = "high"
 
-# Each writer is reviewed by the other two families: Astra first wherever it
-# may review, and the third family as the one fallback.
+# Astra reviews wherever it may; Sonnet reviews Codex work (owner decision
+# 2026-10-21: one reviewer per writer, no fallback).
 [routes]
-claude = ["astra", "gemini"]
-codex = ["gemini", "sonnet"]
-gemini = ["astra", "sonnet"]
+claude = ["astra"]
+codex = ["sonnet"]
+gemini = ["astra"]
