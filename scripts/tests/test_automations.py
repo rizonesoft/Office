@@ -38,7 +38,6 @@ FIXTURE_TASK = {"name": "office-fixture", "description": "Fixture check", "comma
                 "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}
 
 
-sdk_ga = load("check_sdk_ga", REPO / "scripts" / "check-sdk-ga.py")
 vulnerable = load("check_vulnerable_packages", REPO / "scripts" / "check-vulnerable-packages.py")
 
 
@@ -193,8 +192,10 @@ class Runner(unittest.TestCase):
         self.assertIn("Access is denied", tail)
 
     def test_every_nested_launch_opens_no_console(self):
-        for path in (AUTO / "run.py", AUTO / "alert.py", REPO / "scripts" / "check-vulnerable-packages.py",
-                     REPO / "scripts" / "check-winui-pin.py"):
+        scripts = REPO / "scripts"
+        for path in (AUTO / "run.py", AUTO / "alert.py", scripts / "check-vulnerable-packages.py",
+                     scripts / "check-dotnet-pin.py", scripts / "check-visual-studio.py",
+                     scripts / "check-conclave-kits.py", scripts / "lib" / "pin_proposal.py"):
             text = path.read_text(encoding="utf-8")
             calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
             flagged = text.count("creationflags=")
@@ -662,32 +663,6 @@ class LastJsonLocking(unittest.TestCase):
             gone = {"log": "build/automations/office-fixture/gone.log", "exit": 1}
             run._record_alert(tmp, str(folder), gone, {'email_id': 'E2'})
             self.assertEqual(list(folder.glob("*.alert.json")), [])
-
-
-class SdkGa(unittest.TestCase):
-    @staticmethod
-    def feed(*versions):
-        return {"channel-version": "11.0", "releases": [{"sdk": {"version": v}} for v in versions]}
-
-    def test_a_ga_sdk_with_a_prerelease_pin_is_reported(self):
-        code, line = sdk_ga.verdict("11.0.100-rc.1.26425.128", self.feed("11.0.100", "11.0.100-rc.2.1"))
-        self.assertEqual(code, 1)
-        self.assertIn("GA SDK 11.0.100 is out", line)
-
-    def test_no_ga_yet_passes_and_names_a_newer_prerelease(self):
-        code, line = sdk_ga.verdict("11.0.100-rc.1.26425.128", self.feed("11.0.100-rc.2.26504.105"))
-        self.assertEqual(code, 0)
-        self.assertIn("newer prerelease 11.0.100-rc.2.26504.105", line)
-
-    def test_a_ga_pin_passes(self):
-        self.assertEqual(sdk_ga.verdict("11.0.100", self.feed("11.0.101", "11.0.100"))[0], 0)
-
-    def test_an_empty_feed_is_unverified(self):
-        self.assertEqual(sdk_ga.verdict("11.0.100-rc.1", {"releases": []})[0], 2)
-
-    def test_the_sdks_list_is_read_too(self):
-        feed = {"releases": [{"sdk": {"version": "11.0.100-rc.2"}, "sdks": [{"version": "11.0.100"}]}]}
-        self.assertEqual(sdk_ga.sdk_versions(feed), ["11.0.100-rc.2", "11.0.100"])
 
 
 class Vulnerable(unittest.TestCase):

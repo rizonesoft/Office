@@ -13,7 +13,34 @@
       "trigger": {
         "daily_at": "06:23"
       },
-      "timeout_minutes": 30
+      "timeout_minutes": 60
+    },
+    {
+      "name": "office-dotnet-pin",
+      "description": "Propose the newest .NET 11 SDK on a dotnet/<version> branch and email the operator",
+      "command": [
+        "python",
+        "scripts/check-dotnet-pin.py",
+        "update"
+      ],
+      "trigger": {
+        "daily_at": "06:33"
+      },
+      "timeout_minutes": 60
+    },
+    {
+      "name": "office-nuget-pins",
+      "description": "Propose every other NuGet pin at its latest stable release on a pins/nuget-<key> branch",
+      "command": [
+        "python",
+        "scripts/check-nuget-pins.py",
+        "update"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:00"
+      },
+      "timeout_minutes": 60
     },
     {
       "name": "office-vulnerable-packages",
@@ -29,17 +56,60 @@
       "timeout_minutes": 30
     },
     {
-      "name": "office-dotnet-ga",
-      "description": "Report when .NET 11 ships its GA SDK while global.json still pins a release candidate",
+      "name": "office-dotnet-local",
+      "description": "Email once when this machine lacks the .NET SDK that global.json pins",
       "command": [
         "python",
-        "scripts/check-sdk-ga.py"
+        "scripts/check-dotnet-pin.py",
+        "local"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:20"
+      },
+      "timeout_minutes": 5
+    },
+    {
+      "name": "office-visual-studio",
+      "description": "Email once when this machine's Visual Studio 2026 is behind its latest servicing release",
+      "command": [
+        "python",
+        "scripts/check-visual-studio.py",
+        "notify"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:25"
+      },
+      "timeout_minutes": 5
+    },
+    {
+      "name": "office-python-pin",
+      "description": "Email once when this machine's Python is behind the newest stable CPython",
+      "command": [
+        "python",
+        "scripts/check-python-pin.py",
+        "notify"
       ],
       "trigger": {
         "weekly": "Monday",
         "at": "07:30"
       },
       "timeout_minutes": 5
+    },
+    {
+      "name": "office-conclave-kits",
+      "description": "Email once when Conclave SDK kit files drift from the SDK or its doctor reports a gap",
+      "command": [
+        "python",
+        "scripts/check-conclave-kits.py",
+        "notify"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:35"
+      },
+      "timeout_minutes": 10
     }
   ]
 }

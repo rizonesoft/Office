@@ -11,10 +11,11 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("check_winui_pin", SCRIPTS / "check-winui-pin.py")
 wp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wp)
+pv = wp.package_versions
 
 PROPS = """<Project>
   <ItemGroup>
-    <!-- keep this comment -->
+    <!-- keep this comment; <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" /> stays commented -->
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
   </ItemGroup>
 </Project>
@@ -35,48 +36,61 @@ class Selection(unittest.TestCase):
     def test_the_newest_stable_winui3_release_wins(self):
         self.assertEqual(wp.latest_stable(RELEASES)[0], "2.5.1")
 
-    def test_experimental_never_counts_even_unmarked(self):
+    def test_experimental_drafts_and_junk_never_count(self):
         sneaky = [release("winui3/release/9.9.9-experimental"), release("winui3/release/2.5.1")]
         self.assertEqual(wp.latest_stable(sneaky)[0], "2.5.1")
         labelled = [dict(release("winui3/release/2.6.0"), name="WinUI 3 in WinAppSDK 2.6.0-experimental"),
                     release("winui3/release/2.5.1")]
         self.assertEqual(wp.latest_stable(labelled)[0], "2.5.1")
+        draft = [dict(release("winui3/release/2.7.0"), draft=True), "not a release", release("winui3/release/2.5.1")]
+        self.assertEqual(wp.latest_stable(draft)[0], "2.5.1")
 
     def test_versions_compare_numerically(self):
         self.assertEqual(wp.latest_stable([release("winui3/release/2.9.0"), release("winui3/release/2.10.0")])[0], "2.10.0")
         self.assertTrue(wp.newer("2.10.0", "2.9.9"))
         self.assertFalse(wp.newer("2.5.1", "2.5.1"))
 
-    def test_only_the_version_changes(self):
-        out = wp.repinned(PROPS, "2.4.0", "2.5.1")
-        self.assertEqual(out, PROPS.replace('Version="2.4.0"', 'Version="2.5.1"'))
+    def test_only_the_live_version_changes(self):
+        out = pv.repinned(PROPS, wp.PACKAGE, "2.4.0", "2.5.1")
+        self.assertEqual(out, PROPS.replace('<PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" />\n',
+                                            '<PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />\n'))
+        self.assertIn('Version="2.4.0" /> stays commented', out)
         with self.assertRaises(ValueError):
-            wp.repinned(PROPS, "1.0.0", "2.5.1")
+            pv.repinned(PROPS, wp.PACKAGE, "1.0.0", "2.5.1")
 
 
 class Repo(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        run = lambda *a: subprocess.run(["git", *a], cwd=self.root, check=True, capture_output=True)
-        run("init", "-q", "-b", "main")
-        run("config", "user.email", "test@example.invalid")
-        run("config", "user.name", "Test")
-        (self.root / "Directory.Packages.props").write_text(PROPS, encoding="utf-8", newline="")
-        run("add", ".")
-        run("commit", "-q", "-m", "init")
+        self.run_git("init", "-q", "-b", "main")
+        self.run_git("config", "user.email", "test@example.invalid")
+        self.run_git("config", "user.name", "Test")
+        self.run_git("config", "commit.gpgsign", "false")
+        self.commit_props(PROPS)
         self.mails = []
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def main(self, *argv, releases=RELEASES, nuget=("2.4.0", "2.5.1")):
+    def run_git(self, *args):
+        subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True)
+
+    def commit_props(self, text):
+        (self.root / "Directory.Packages.props").write_text(text, encoding="utf-8", newline="")
+        self.run_git("add", ".")
+        self.run_git("commit", "-q", "-m", "pin")
+
+    def mail(self, _root, subject, body, _dry_run=False):
+        self.mails.append((subject, body))
+
+    def main(self, *argv, releases=RELEASES, nuget=("2.4.0", "2.5.1"), mail=None):
         def fetch(url):
             return releases if "github" in url else {"versions": list(nuget)}
 
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = wp.main(list(argv), fetch=fetch, root=self.root, mail=lambda s, b, d=False: self.mails.append((s, b)))
+            code = wp.main(list(argv), fetch=fetch, root=self.root, mail=mail or self.mail)
         return code, out.getvalue() + err.getvalue()
 
     def git(self, *args):
@@ -91,14 +105,35 @@ class Repo(unittest.TestCase):
         code, out = self.main("update")
         self.assertEqual(code, 0, out)
         self.assertEqual((self.root / "Directory.Packages.props").read_text(encoding="utf-8"), before)
-        self.assertIn('Version="2.4.0"', self.git("show", "main:Directory.Packages.props"))
-        self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
+        self.assertIn('Version="2.4.0" />\n', self.git("show", "main:Directory.Packages.props") + "\n")
+        self.assertIn('Version="2.5.1" />', self.git("show", "winui/2.5.1:Directory.Packages.props"))
         self.assertIn("keep this comment", self.git("show", "winui/2.5.1:Directory.Packages.props"))
         self.assertEqual(self.git("worktree", "list").count("\n"), 0)  # the temporary worktree is gone
         self.assertEqual(len(self.mails), 1)
         self.assertIn("git merge winui/2.5.1", self.mails[0][1])
-        self.assertEqual(self.main("update")[0], 0)  # proposed before: nothing is redone or re-sent
+        self.assertTrue(self.git("rev-parse", "--verify", "refs/office-pin/winui-2.5.1"))
+        self.assertEqual(self.main("update")[0], 0)  # finished: nothing is redone or re-sent
+        self.run_git("branch", "-D", "winui/2.5.1")
+        self.assertEqual(self.main("update")[0], 0)  # even after the operator deletes the branch
         self.assertEqual(len(self.mails), 1)
+
+    def test_an_unfinished_branch_is_discarded_and_redone(self):
+        self.run_git("branch", "winui/2.5.1")  # a branch with no done ref: a run cut short
+        code, out = self.main("update")
+        self.assertEqual(code, 0, out)
+        self.assertIn("discarded the unfinished winui/2.5.1", out)
+        self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
+        self.assertEqual(len(self.mails), 1)
+
+    def test_an_unsent_email_leaves_no_proposal(self):
+        def refuse(*_a):
+            raise RuntimeError("SMTP2GO refused")
+
+        code, out = self.main("update", mail=refuse)
+        self.assertEqual(code, 1)
+        self.assertIn("next run proposes it again", out)
+        self.assertEqual(self.git("branch", "--list", "winui/*"), "")
+        self.assertEqual(self.git("for-each-ref", "refs/office-pin"), "")
 
     def test_a_failed_check_proposes_nothing(self):
         code, out = self.main("update", nuget=("2.4.0",))
@@ -106,6 +141,35 @@ class Repo(unittest.TestCase):
         self.assertIn("NuGet has no", out)
         self.assertEqual(self.git("branch", "--list", "winui/*"), "")
         self.assertEqual(self.mails, [])
+
+    def test_a_rewrite_that_fails_exits_1_and_leaves_nothing(self):
+        def broken(*_a):
+            raise ValueError("the pin was not found")
+
+        real, pv.repinned = pv.repinned, broken
+        try:
+            code, out = self.main("update")
+        finally:
+            pv.repinned = real
+        self.assertEqual(code, 1)
+        self.assertIn("check-winui-pin: the pin was not found", out)
+        self.assertNotIn("Traceback", out)
+        self.assertEqual((self.git("branch", "--list", "winui/*"), self.git("worktree", "list").count("\n")), ("", 0))
+
+    def test_main_is_the_baseline_not_the_checkout(self):
+        (self.root / "Directory.Packages.props").write_text(PROPS.replace('Version="2.4.0" />\n', 'Version="2.5.1" />\n'),
+                                                           encoding="utf-8")
+        self.assertEqual(self.main("check")[0], 1)  # the checkout already says 2.5.1, but main still pins 2.4.0
+
+    def test_a_broken_pin_on_main_fails(self):
+        self.commit_props(PROPS.replace('Version="2.4.0" />\n', 'Version="2.5.0-preview1" />\n'))
+        self.assertIn("not an exact stable version", self.main("check")[1])
+        self.commit_props(PROPS.replace('Version="2.4.0" />\n', 'Version="2.9.0" />\n'))
+        self.assertIn("ahead of the newest", self.main("check", nuget=("2.9.0", "2.5.1"))[1])
+        self.commit_props(PROPS.replace('Version="2.4.0" />\n', 'Version="2.5.1" />\n'))
+        code, out = self.main("check", nuget=("2.4.0",))
+        self.assertEqual(code, 1)
+        self.assertIn("not published on NuGet", out)
 
     def test_unreadable_releases_exit_2(self):
         def broken(url):
@@ -129,8 +193,9 @@ class NoConsole(unittest.TestCase):
             seen.append((cmd[0], kwargs.get("creationflags")))
             return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
-        real = wp.subprocess.run
-        wp.subprocess.run = fake_run
+        proposal = wp.pin_proposal
+        real = proposal.subprocess.run
+        proposal.subprocess.run = fake_run
         try:
             wp.git("status")
             with tempfile.TemporaryDirectory() as tmp:
@@ -139,7 +204,7 @@ class NoConsole(unittest.TestCase):
                 (tree / "Office.slnx").write_text("<Solution />", encoding="utf-8")
                 wp.checks(tree, "2.4.0", {"2.4.0"}, build=fake_run)
         finally:
-            wp.subprocess.run = real
+            proposal.subprocess.run = real
         self.assertEqual([c for c, _ in seen], ["git", "dotnet"])
         if wp.sys.platform == "win32":
             self.assertTrue(all(flags == 0x08000000 for _, flags in seen), seen)
