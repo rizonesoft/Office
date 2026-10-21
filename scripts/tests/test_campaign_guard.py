@@ -472,7 +472,7 @@ class Robustness(Workspace):
         if hasattr(os, "mkfifo"):
             os.mkfifo(os.path.join(self.root, "pipe"))  # opening it for reading would block forever
         real_lstat, opened = os.lstat, []
-        real_open = os.open
+        real_open = guard._open_no_follow
 
         def lstat(path, *a, **kw):
             result = real_lstat(path, *a, **kw)
@@ -486,7 +486,7 @@ class Robustness(Workspace):
             opened.append(os.path.basename(path))
             return real_open(path, *a, **kw)
 
-        with mock.patch.object(guard.os, "lstat", lstat), mock.patch.object(guard.os, "open", tracking_open):
+        with mock.patch.object(guard.os, "lstat", lstat), mock.patch.object(guard, "_open_no_follow", tracking_open):
             first = guard.fingerprint(self.root, RUN_FILE, "")
         self.assertIn("notes.txt", opened)
         for special in ("dev0", "pipe", "dirlink"):
@@ -512,6 +512,27 @@ class Robustness(Workspace):
             line = guard._untracked_entry(full, "swapped.txt", True, 1 << 20)
         self.assertEqual(line, b"swapped.txt changed during the read\n")
         self.assertTrue(guard._untracked_entry(full, "swapped.txt", True, 1 << 20).startswith(b"swapped.txt "))
+
+    def test_a_symlink_swapped_in_at_the_open_is_refused_by_the_open_itself(self):
+        from unittest import mock
+        self.write("real.txt", "original\n")
+        self.write("elsewhere.txt", "never read\n")
+        full = os.path.join(self.root, "real.txt")
+        try:  # can this machine make symlinks at all?
+            os.symlink(os.path.join(self.root, "elsewhere.txt"), os.path.join(self.root, "probe"))
+            os.unlink(os.path.join(self.root, "probe"))
+        except (OSError, NotImplementedError):
+            self.skipTest("this account cannot create symlinks")
+        real_open = guard._open_no_follow
+
+        def swap_then_open(path):  # the swap lands after the lstat, immediately before the open
+            os.unlink(path)
+            os.symlink(os.path.join(self.root, "elsewhere.txt"), path)
+            return real_open(path)
+
+        with mock.patch.object(guard, "_open_no_follow", swap_then_open):
+            line = guard._untracked_entry(full, "real.txt", True, 1 << 20)
+        self.assertEqual(line, b"real.txt unreadable\n", "the open followed the link instead of refusing it")
 
     def test_a_path_past_both_bounds_makes_no_filesystem_call(self):
         from unittest import mock
@@ -584,6 +605,28 @@ class Robustness(Workspace):
         self.assertEqual(guard.pending_cancel(self.root), "")  # nothing recorded yet
         self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")  # the cleanup records the job first
         self.assertIn("CronDelete job-7 (ended by park", guard.pending_cancel(self.root))
+
+    def test_an_ended_guard_whose_job_cannot_be_recorded_is_never_replaced(self):
+        from unittest import mock
+        self.acquire(cron_id="job-old")
+        self.write(RUN_FILE, f"PARKED 2026-10-21T00:00:00Z run={self.run_id()} done here\n", mode="a")
+        real_write = guard._write_json
+
+        def crash_on_pending(path, doc):
+            if path.endswith("claude-campaign-pending-cancel.json"):
+                raise KeyboardInterrupt("session died before the pending record")
+            return real_write(path, doc)
+
+        with mock.patch.object(guard, "_write_json", crash_on_pending), self.assertRaises(KeyboardInterrupt):
+            guard.end(self.root, SESSION, "park")
+        self.write("build/claude-campaign-pending-cancel.json", "{not json")  # the record cannot be read
+        with self.assertRaises(guard.GuardError) as ctx:
+            guard.acquire(self.root, OTHER, 0, RUN_FILE, "job-new", handover="operator moved the run")
+        self.assertIn("job-old", str(ctx.exception))
+        self.assertEqual(guard._read_guard_doc(self.root)["cron_id"], "job-old")  # still there to be cancelled
+        with self.assertRaises(guard.GuardError):
+            guard.end(self.root, SESSION, "park")
+        self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")  # the run is over all the same
 
 
 if __name__ == "__main__":

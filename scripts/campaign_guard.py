@@ -169,8 +169,10 @@ def _finish_ended(root: str) -> bool:
     # written): record the job for cancellation before the guard goes, or leave the guard for a later try.
     try:
         jobs = _pending_jobs(root)
-    except GuardError:
-        return False
+    except GuardError as exc:
+        # Not "nothing to clean up": the job would be lost, so nothing may replace this guard until it is recorded.
+        raise GuardError(f"an ended run's heartbeat job {doc.get('cron_id')} cannot be recorded for cancellation "
+                         f"({exc}); fix the pending-cancellation record before starting or ending a run") from None
     if doc.get("cron_id") and all(j.get("cron_id") != doc.get("cron_id") for j in jobs):
         ended = doc.get("ended") if isinstance(doc.get("ended"), dict) else {}
         jobs.append({"cron_id": doc.get("cron_id"), "reason": ended.get("reason", "ended"),
@@ -455,7 +457,10 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
     """What this heartbeat is to the run: OWNER, NOT THE OWNER, NOT THE CURRENT JOB (a replaced job in the owning
     session), NO GUARD, or MALFORMED GUARD."""
     with _Lock(root):
-        _finish_ended(root)  # an interrupted end: the run is over, so the heartbeat stands down
+        try:
+            _finish_ended(root)  # an interrupted end: the run is over, so the heartbeat stands down
+        except GuardError:
+            pass  # the ended guard stays (read_guard hides it); this heartbeat deletes its own job on NO GUARD
         try:
             guard = read_guard(root)
         except GuardError:
@@ -630,6 +635,38 @@ OWN_FILES = re.compile(r"^build/claude-campaign-(guard|state|pending-cancel)\.js
                        r"^build/claude-campaign-guard\.lock$|^build/claude-campaign-hook-errors/")
 
 
+_REPARSE_POINT = 0x400  # FILE_ATTRIBUTE_REPARSE_POINT: a Windows symlink or junction
+
+
+def _open_no_follow(full: str) -> int:
+    """Open `full` for reading without following a symlink swapped in after the lstat, and without blocking.
+
+    POSIX refuses a link at the open itself (O_NOFOLLOW). Windows has no such flag for `os.open`, so the file is opened
+    with CreateFileW and FILE_FLAG_OPEN_REPARSE_POINT, which opens a link itself rather than its target, and a
+    handle that turns out to be a reparse point is refused before it becomes a descriptor."""
+    if os.name != "nt":
+        return os.open(full, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0))
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel32.CreateFileW
+    create.restype = wintypes.HANDLE
+    create.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD,
+                       wintypes.DWORD, wintypes.HANDLE)
+    generic_read, share_all, open_existing = 0x80000000, 0x7, 3
+    open_reparse_point, invalid = 0x00200000, wintypes.HANDLE(-1).value
+    handle = create(full, generic_read, share_all, None, open_existing, open_reparse_point, None)
+    if handle == invalid:
+        raise ctypes.WinError(ctypes.get_last_error())
+    info = ctypes.create_string_buffer(52)  # BY_HANDLE_FILE_INFORMATION; dwFileAttributes is its first DWORD
+    ok = kernel32.GetFileInformationByHandle(wintypes.HANDLE(handle), info)
+    if not ok or int.from_bytes(info.raw[:4], "little") & _REPARSE_POINT:
+        kernel32.CloseHandle(wintypes.HANDLE(handle))
+        raise OSError(f"{full} is a link, not the file the lstat saw")
+    return msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+
+
 def _untracked_entry(full: str, path: str, hash_it: bool, max_bytes: int) -> bytes:
     """One untracked path's line in the fingerprint. The path is read with lstat, so a symlink is never followed (it
     counts by its target text) and only a regular file is ever opened: a FIFO, device or socket counts by its type,
@@ -647,16 +684,16 @@ def _untracked_entry(full: str, path: str, hash_it: bool, max_bytes: int) -> byt
     if not stat.S_ISREG(info.st_mode):
         return f"{path} type {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8")
     if hash_it and info.st_size <= max_bytes:
-        # O_NOFOLLOW refuses a symlink swapped in after the lstat where the platform has it; everywhere, the opened
-        # file must be the very regular file the lstat saw (same device and inode) before a byte is read.
-        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
-            fd = os.open(full, flags)
+            fd = _open_no_follow(full)
         except OSError:
             return f"{path} unreadable\n".encode("utf-8")
         with os.fdopen(fd, "rb") as fh:
             opened = os.fstat(fh.fileno())
-            if stat.S_ISREG(opened.st_mode) and (opened.st_dev, opened.st_ino) == (info.st_dev, info.st_ino):
+            # The opened file must be the very regular file the lstat saw (same device and inode), and not a link,
+            # before a byte is read.
+            if (stat.S_ISREG(opened.st_mode) and not getattr(opened, "st_file_attributes", 0) & _REPARSE_POINT
+                    and (opened.st_dev, opened.st_ino) == (info.st_dev, info.st_ino)):
                 return f"{path} ".encode("utf-8") + hashlib.sha256(fh.read(max_bytes + 1)).hexdigest().encode() + b"\n"
         return f"{path} changed during the read\n".encode("utf-8")
     return f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8")
