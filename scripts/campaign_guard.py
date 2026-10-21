@@ -165,6 +165,17 @@ def _finish_ended(root: str) -> bool:
         return False  # unreadable: never this function's to delete
     if doc is None or not doc.get("ended"):
         return False
+    # The ended guard may be the only record of its heartbeat job (an end interrupted before the pending record was
+    # written): record the job for cancellation before the guard goes, or leave the guard for a later try.
+    try:
+        jobs = _pending_jobs(root)
+    except GuardError:
+        return False
+    if doc.get("cron_id") and all(j.get("cron_id") != doc.get("cron_id") for j in jobs):
+        ended = doc.get("ended") if isinstance(doc.get("ended"), dict) else {}
+        jobs.append({"cron_id": doc.get("cron_id"), "reason": ended.get("reason", "ended"),
+                     "at": ended.get("at", _utc_now())})
+        _write_json(_pending_path(root), jobs)
     for path in _paths(root):
         try:
             os.unlink(path)
@@ -636,14 +647,18 @@ def _untracked_entry(full: str, path: str, hash_it: bool, max_bytes: int) -> byt
     if not stat.S_ISREG(info.st_mode):
         return f"{path} type {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8")
     if hash_it and info.st_size <= max_bytes:
+        # O_NOFOLLOW refuses a symlink swapped in after the lstat where the platform has it; everywhere, the opened
+        # file must be the very regular file the lstat saw (same device and inode) before a byte is read.
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
-            fd = os.open(full, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0))
+            fd = os.open(full, flags)
         except OSError:
             return f"{path} unreadable\n".encode("utf-8")
         with os.fdopen(fd, "rb") as fh:
-            if stat.S_ISREG(os.fstat(fh.fileno()).st_mode):
+            opened = os.fstat(fh.fileno())
+            if stat.S_ISREG(opened.st_mode) and (opened.st_dev, opened.st_ino) == (info.st_dev, info.st_ino):
                 return f"{path} ".encode("utf-8") + hashlib.sha256(fh.read(max_bytes + 1)).hexdigest().encode() + b"\n"
-        return f"{path} changed type\n".encode("utf-8")
+        return f"{path} changed during the read\n".encode("utf-8")
     return f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8")
 
 

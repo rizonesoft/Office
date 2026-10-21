@@ -497,22 +497,42 @@ class Robustness(Workspace):
             with mock.patch.object(guard.os, "lstat", lstat):
                 self.assertNotEqual(guard.fingerprint(self.root, RUN_FILE, ""), first)
 
+    def test_a_file_swapped_after_the_lstat_is_not_read(self):
+        from unittest import mock
+        self.write("swapped.txt", "secret\n")
+        full = os.path.join(self.root, "swapped.txt")
+        real_lstat = os.lstat
+
+        def lstat(path, *a, **kw):  # what the lstat saw was another file (another inode) at this path
+            fields = list(real_lstat(path, *a, **kw))
+            fields[1] += 1
+            return os.stat_result(fields)
+
+        with mock.patch.object(guard.os, "lstat", lstat):
+            line = guard._untracked_entry(full, "swapped.txt", True, 1 << 20)
+        self.assertEqual(line, b"swapped.txt changed during the read\n")
+        self.assertTrue(guard._untracked_entry(full, "swapped.txt", True, 1 << 20).startswith(b"swapped.txt "))
+
     def test_a_path_past_both_bounds_makes_no_filesystem_call(self):
         from unittest import mock
         for name in ("a.txt", "b.txt", "c.txt"):
             self.write(name, name)
         seen = []
-        real_lstat = os.lstat
+        real_lstat, real_stat = os.lstat, os.stat
 
-        def lstat(path, *a, **kw):
-            seen.append(os.path.basename(path))
-            return real_lstat(path, *a, **kw)
+        def watch(real):
+            def call(path, *a, **kw):
+                seen.append(os.path.basename(os.fspath(path)))
+                return real(path, *a, **kw)
+            return call
 
         with mock.patch.dict(os.environ, {"CAMPAIGN_HASH_FILES": "1", "CAMPAIGN_STAT_FILES": "1"}), \
-                mock.patch.object(guard.os, "lstat", lstat):
+                mock.patch.object(guard.os, "lstat", watch(real_lstat)), \
+                mock.patch.object(guard.os, "stat", watch(real_stat)):
             guard.fingerprint(self.root, RUN_FILE, "")
-        untracked = [p for p in seen if p.endswith(".txt")]
-        self.assertEqual(len(untracked), 2, f"the third untracked path was touched: {seen}")
+        self.assertIn("a.txt", seen)
+        self.assertIn("b.txt", seen)
+        self.assertNotIn("c.txt", seen, f"the path past both bounds was touched: {seen}")
 
     def test_a_repoint_without_a_phase_keeps_the_phase_and_a_fresh_run_needs_one(self):
         with self.assertRaises(guard.GuardError) as ctx:
@@ -547,6 +567,23 @@ class Robustness(Workspace):
         self.assertIsNone(self.hook())  # the Stop hook lets the turn end
         self.assertFalse(os.path.exists(os.path.join(self.root, "build", "claude-campaign-guard.json")))
         self.assertIn("created", guard.acquire(self.root, SESSION, 0, RUN_FILE, "job-9"))  # a later run starts fresh
+
+    def test_an_end_interrupted_before_its_pending_record_keeps_the_job_for_cancellation(self):
+        from unittest import mock
+        self.acquire(cron_id="job-7")
+        self.write(RUN_FILE, f"PARKED 2026-10-21T00:00:00Z run={self.run_id()} done here\n", mode="a")
+        real_write = guard._write_json
+
+        def crash_on_pending(path, doc):
+            if path.endswith("claude-campaign-pending-cancel.json"):
+                raise KeyboardInterrupt("session died before the pending record")
+            return real_write(path, doc)
+
+        with mock.patch.object(guard, "_write_json", crash_on_pending), self.assertRaises(KeyboardInterrupt):
+            guard.end(self.root, SESSION, "park")
+        self.assertEqual(guard.pending_cancel(self.root), "")  # nothing recorded yet
+        self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")  # the cleanup records the job first
+        self.assertIn("CronDelete job-7 (ended by park", guard.pending_cancel(self.root))
 
 
 if __name__ == "__main__":
