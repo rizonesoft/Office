@@ -2,7 +2,7 @@
 schema_version: 1
 id: automations-and-keep-alive
 domain: 00-workspace
-status: done
+status: active
 title: "TODO-03 -- Automations and Campaign Keep-Alive"
 ---
 
@@ -39,6 +39,9 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 4 | §4 | Run skills create and check the guard | §2, §3 | [x] |
 | 5 | §5 | Install the tasks and verify on this PC | §1, §3 | [x] |
 | 6 | §6 | Adopt the guard for the open phase 2 run | §4, §5 | [x] |
+| 7 | §7 | Run guard robustness fixes | §2 | [ ] |
+| 8 | §8 | Agent tier verifier YAML strictness | -- | [ ] |
+| 9 | §9 | Dependency PR merges at boundaries | §1 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -199,6 +202,73 @@ The phase 2 run was opened before the guard existed. This section moves it under
 
 > **Verified:** 2026-10-20 | §6 | 4bac442d4ea5ecbbeefe4a5687777c2ce739c845
 > **Review:** `docs/reviews/d00-t03-s6.json`
+
+## 7. Run Guard Robustness Fixes
+
+Three defects the owner reported on 2026-10-21, found by independent review in a sibling repository and present in Office's guard (`scripts/campaign_guard.py`), each verified here: `fingerprint` calls `os.stat` (following symlinks) on every untracked path and `open()` on any of the first 500, so a FIFO or device in the working tree blocks the Stop hook and a symlink to a directory raises; `acquire` defaults `--phase` to `0`, so a re-point of the owner's own guard (the heartbeat repair at a section boundary) silently resets the run to phase 0; `end` records the pending cancellation, then deletes the guard, so an end interrupted between the two leaves a guard `whoami` still reports as OWNER, and the heartbeat resumes a run that was stopped.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write a failing test for each defect in `scripts/tests/test_campaign_guard.py`. Done when: each fails on the current guard.
+2. Fix each at its owning function. Done when: the tests pass and the full guard suite stays green.
+
+- [ ] Make `fingerprint` in `scripts/campaign_guard.py` read each untracked path with `os.lstat`, hash only regular files, record a symlink by its target text and any other entry by its type, and make no filesystem call for a path past both bounds. Done when: a test with a FIFO (POSIX) or a stub `os.lstat` reporting a character device, and a symlink to a directory, returns a fingerprint without opening either. Cheaper substitute: catching the exception after the hook has already blocked.
+- [ ] Make `--phase` optional in `scripts/campaign_guard.py` `acquire`: a fresh guard requires it, and a re-point of the owner's own guard without it keeps the guard's phase. Done when: a test re-pointing with a new `--cron-id` and no `--phase` keeps phase 2, and a fresh `acquire` without `--phase` is refused. Cheaper substitute: documenting that every re-point must repeat `--phase`.
+- [ ] Mark the guard ended before deleting it in `scripts/campaign_guard.py` `_end_locked`: write `ended` (reason and time) into the guard atomically with the pending cancellation, and make `whoami`, `stop-hook` and `acquire` treat an ended guard as over and finish its deletion. Done when: a test that stops `end` after the pending record is written sees `whoami` print `NO GUARD`, the Stop hook let the turn end, and a later `acquire` start a fresh run. Cheaper substitute: retrying the delete in a loop.
+- [ ] Record each defect, its test and the fix in `docs/reviews/00-workspace/D00-T03-s7.md` with the failing-before and passing-after outputs. Done when: three entries quote both results. Cheaper substitute: one summary line.
+- [ ] Commit: `guard: fix device and symlink stalls, phase resets on re-point, and interrupted ends`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` passes, and its three new tests fail when the previous `scripts/campaign_guard.py` is restored.
+
+## 8. Agent Tier Verifier YAML Strictness
+
+`scripts/verify-agent-tiers.mjs` reads agent frontmatter as a closed subset of YAML, but the owner reported on 2026-10-21 that it accepts a line Claude Code cannot load, so an agent passes the check and then fails to load. The file is Office's own (the Conclave SDK link was cut on 2026-10-21), so the fix lands here. The usual case is a plain scalar YAML refuses, such as a value containing `: ` or ` #`, or opening with an indicator character.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Find every frontmatter line the verifier accepts and a YAML 1.2 loader refuses. Done when: the cases are listed with the loader's error.
+2. Refuse those lines in the verifier with fixtures. Done when: each case fails the verifier and every agent in `.claude/agents/` still passes.
+
+- [ ] List the frontmatter lines `scripts/verify-agent-tiers.mjs` accepts but a YAML 1.2 loader refuses (a plain scalar containing `: ` or ` #`, opening with an indicator character such as `@`, `` ` ``, `%`, `[`, `{`, `|`, `>`, `!`, `&`, `*`, or holding a tab), checked against a real loader. Done when: `docs/reviews/00-workspace/D00-T03-s8.md` lists each case with the loader's error. Cheaper substitute: guessing the cases without a loader.
+- [ ] Refuse each listed case in `scripts/verify-agent-tiers.mjs` with a message naming the line and the rule. Done when: a fixture agent for each case fails the verifier. Cheaper substitute: refusing only the reported case.
+- [ ] Add the fixtures and a test runner for them in `scripts/tests/test_verify_agent_tiers.py`, invoking `node scripts/verify-agent-tiers.mjs` on fixture directories. Done when: the suite passes, and fails when the new refusals are removed. Cheaper substitute: checking the repository's own agents only.
+- [ ] Commit: `tooling: refuse agent frontmatter Claude Code cannot load`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_verify_agent_tiers.py"` passes and `node scripts/verify-agent-tiers.mjs` reports every agent in `.claude/agents/` valid.
+
+## 9. Dependency PR Merges at Boundaries
+
+Owner request 2026-10-21 (replacing "nothing merges by itself" for dependency pull requests): merge green dependency pull requests inside the campaign loop at section boundaries, the one moment the clone matches GitHub, with a scheduled fallback when no campaign runs. Office has no pull request source yet, so this adds Dependabot for GitHub Actions only; NuGet pins stay with the local proposal tasks, because the WinUI 3 pin follows `winui3/release` builds, which Dependabot cannot express. Local proposal branches (`winui/*`, `dotnet/*`, `pins/*`) still wait for the owner's merge.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `scripts/merge_prs.py` with its safety checks and tests. Done when: it merges an eligible fixture pull request and refuses every unsafe state.
+2. Wire it into `process-plan` and the automations. Done when: the skill runs it after each stamp push and the task is installed.
+
+- [ ] Add `.github/dependabot.yml` for the `github-actions` ecosystem, weekly, labelled `dependencies`. Done when: the file validates and GitHub lists the Dependabot configuration. Cheaper substitute: bumping action majors by hand.
+- [ ] Write `scripts/merge_prs.py` refusing to run unless the working tree is clean, `HEAD` equals `origin/main` after a fetch, and no open section carries a `Started:` line. Done when: a test of each state exits non-zero naming it. Cheaper substitute: merging from a dirty or unpushed clone.
+- [ ] Select eligible pull requests in `scripts/merge_prs.py`: author `dependabot[bot]` or `github-actions[bot]`, a `dependencies` or `pins` label, every check green, mergeable and clean, and no change to `global.json` (the .NET SDK pin moves only through its own proposal). Done when: a test over fixture `gh pr list` JSON selects exactly the eligible ones. Cheaper substitute: merging every Dependabot pull request.
+- [ ] Merge one pull request at a time in `scripts/merge_prs.py` with `gh pr merge --rebase --match-head-commit <sha>`, then `git pull --ff-only`, then `python scripts/todo-graph.py validate`, stopping at the first failure and leaving that pull request open. Done when: a test with a failing merge or validate leaves the later pull requests unmerged and exits 1. Cheaper substitute: merging all and validating once at the end.
+- [ ] Refuse to run while a campaign is open in `scripts/merge_prs.py` unless `--session` names the guard's own session (`build/claude-campaign-guard.json`). Done when: a test with a guard owned by another session exits non-zero, and one with `--session <owner>` runs. Cheaper substitute: checking for a lock file of another tool.
+- [ ] Write `scripts/tests/test_merge_prs.py` covering the safety states, eligibility, the merge sequence and the campaign check with fake `git` and `gh`. Done when: the suite passes and fails when any one safety check is removed. Cheaper substitute: a dry run against the live repository only.
+- [ ] Add the run after each stamp push to `process-plan` in `.claude/skills/`, `.agents/skills/` and `.codex/skills/`, before the next row is claimed, with a failure recorded in the run file and the campaign continuing. Done when: all three mirrors name `python scripts/merge_prs.py --session <id>` at the section boundary. Cheaper substitute: merging only when the operator asks.
+- [ ] Add an `office-pr-merge` task to `.conclave/automations/tasks.json`, with its README row and line, and install it. Done when: `test_automations.py` passes and `Get-ScheduledTask -TaskPath '\Office\'` lists it. Cheaper substitute: no fallback when no campaign runs.
+- [ ] Update `.conclave/automations/README.md` and `AGENTS.md` with the merge rule: green dependency pull requests merge by themselves at section boundaries or on the schedule; local proposal branches still wait for the owner. Done when: both state it and no line says dependency pull requests wait for a manual merge. Cheaper substitute: the rule only in the script's docstring.
+- [ ] Commit: `automations: merge green dependency pull requests at section boundaries`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_merge_prs.py"` passes, and `python scripts/merge_prs.py --session <this session>` at a section boundary exits 0 reporting the pull requests it merged or that none were eligible.
 
 ## Verification
 
