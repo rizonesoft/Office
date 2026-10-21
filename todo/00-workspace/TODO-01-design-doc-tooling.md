@@ -10,7 +10,7 @@ title: "TODO-01 -- Design Document Tooling"
 
 > **Goal:** Design work (brand, interface, architecture) is checked by scripts, not by eye. A design-document checker refuses missing headings, placeholder text, dash characters and over-wide table rows; an image-asset checker refuses wrong dimensions, formats or byte budgets; CI runs both test suites plus the TODO validator on every push and pull request.
 
-> **Current state:** Measured 2026-10-19. The repository holds only the Conclave-SDK kits: `scripts/todo-graph.py`, `scripts/lib/todo_graph.py`, `scripts/review-dispatch.py`, `scripts/verify-agent-tiers.mjs` and `scripts/tests/test_review_dispatch.py`. There is no application code, no `design/` directory, no `docs/plans/`, no `.github/workflows/`, and no checker for design documents or image assets. Python 3.14 is on the Windows host.
+> **Current state:** Measured 2026-10-19. The repository holds only the Conclave-SDK kits: `scripts/todo-graph.py`, `scripts/lib/todo_graph.py`, `scripts/review-dispatch.py`, `scripts/verify-agent-tiers.mjs` and `scripts/tests/test_review_dispatch.py`. There is no application code, no `design/` directory, no `docs/plans/`, no `.github/workflows/`, and no checker for design documents or image assets. Python 3.14 is on the Windows host. **Corrected 2026-10-21:** the tree has moved on since: `design/` holds the SPEC, inventory and brand sources, `assets/` holds 200 generated SVG, 693 PNG and the Windows `.ico` icons (`scripts/build-icons.py`), `scripts/` holds the inventory, capture, automation and pin tooling with tests in `scripts/tests/`, and there is still no `.github/workflows/` and no image-asset checker.
 
 ## Inputs
 
@@ -68,6 +68,8 @@ Every design deliverable in domains 01 to 03 is a Markdown document whose Test c
 
 ## 2. Image Asset Checker
 
+> **Started:** 2026-10-21T00:44:36Z
+
 Icons, banners and the social preview are verified by a script before they are committed. It reads PNG dimensions from the IHDR chunk, SVG `viewBox` and forbidden content (embedded raster `<image>`, external `href`, `<script>`), ICO directory entries, and the byte size, using only the standard library.
 
 **Phase:** 0
@@ -79,12 +81,12 @@ Icons, banners and the social preview are verified by a script before they are c
 1. Write `scripts/check-image-asset.py` with `--size WxH` (repeatable for ICO), `--max-bytes` and `--format`. Done when: each refusal fixture exits 1 with a reason and the conforming fixtures exit 0.
 2. Write `scripts/tests/test_check_image_asset.py` with generated fixtures. Done when: the suite passes and fails when a rule is disabled.
 
-- [ ] Add `png_size()` in `scripts/check-image-asset.py` reading width and height from the IHDR chunk. Done when: a generated 1280x640 PNG reports `1280x640`. Cheaper substitute: trusting the file name or extension.
-- [ ] Add `svg_check()` in `scripts/check-image-asset.py` reading the root `viewBox` and refusing `<image>`, `<script>` and non-fragment `href` values. Done when: a fixture embedding a base64 PNG fails with `embedded raster`. Cheaper substitute: accepting any file that parses as XML.
-- [ ] Add `ico_sizes()` in `scripts/check-image-asset.py` listing every directory entry size. Done when: an ICO built with 16, 32 and 256 entries passes `--size 16x16 --size 32x32 --size 256x256` and fails when one is missing. Cheaper substitute: checking only the first entry.
-- [ ] Add the `--max-bytes` budget check in `scripts/check-image-asset.py`. Done when: a file one byte over the budget fails with `over budget`. Cheaper substitute: rounding to kilobytes so near misses pass.
-- [ ] Write `scripts/tests/test_check_image_asset.py` generating PNG, SVG and ICO fixtures in a temporary directory with `zlib` and `struct`. Done when: the suite passes and fails when any check returns success unconditionally.
-- [ ] Commit: `tooling: add image asset checker`
+- [x] Add `png_size()` in `scripts/check-image-asset.py` reading width and height from the IHDR chunk. Done when: a generated 1280x640 PNG reports `1280x640`. Cheaper substitute: trusting the file name or extension. **Corrected 2026-10-21:** `png_chunks()` also walks every chunk's CRC through IEND, so a PNG corrupted after its header is refused (D01 T02 §6 needs a corrupted output to fail the build).
+- [x] Add `svg_check()` in `scripts/check-image-asset.py` reading the root `viewBox` and refusing `<image>`, `<script>` and non-fragment `href` values. Done when: a fixture embedding a base64 PNG fails with `embedded raster`. Cheaper substitute: accepting any file that parses as XML. **Corrected 2026-10-21:** the same rule (no content from outside the file, no script) also refuses `<foreignObject>`, `on*` attributes, style `url()` and `@import` references, and DOCTYPE or entity declarations.
+- [x] Add `ico_sizes()` in `scripts/check-image-asset.py` listing every directory entry size. Done when: an ICO built with 16, 32 and 256 entries passes `--size 16x16 --size 32x32 --size 256x256` and fails when one is missing. Cheaper substitute: checking only the first entry.
+- [x] Add the `--max-bytes` budget check in `scripts/check-image-asset.py`. Done when: a file one byte over the budget fails with `over budget`. Cheaper substitute: rounding to kilobytes so near misses pass.
+- [x] Write `scripts/tests/test_check_image_asset.py` generating PNG, SVG and ICO fixtures in a temporary directory with `zlib` and `struct`. Done when: the suite passes and fails when any check returns success unconditionally.
+- [x] Commit: `tooling: add image asset checker`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_image_asset.py"` reports at least 6 tests run and `OK`.
 
