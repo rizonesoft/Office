@@ -39,7 +39,7 @@ title: "TODO-02 -- Licensing and Contributions"
 | 2 | §2 | Third-party notices file | -- | [x] |
 | 3 | §3 | Contributor agreement text | -- | [ ] |
 | 4 | §4 | Contributor agreement PR check | §3 | [ ] |
-| 5 | §5 | Contributing guide | §1 | [ ] |
+| 5 | §5 | Contributing guide | §1 | [x] |
 | 6 | §6 | Runtime and icon notices | §2, D02 T02 §2, D03 T01 §11, D03 T01 §12 | [ ] |
 
 ## 1. SPDX Headers and Checker
@@ -161,9 +161,12 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 - [x] Write the Licence and agreement section of `CONTRIBUTING.md`: GPL-3.0-or-later, the agreement and its status, and the SPDX header to add. Done when: it names `docs/legal/rizonesoft-cla.md` and its status, and shows the header line. **Corrected 2026-10-21:** said it links the agreement, which does not exist yet. Cheaper substitute: "see LICENSE".
 - [x] Write the Build and test section from the commands CI runs (`.github/workflows/ci.yml`) and `scripts/requirements.txt`. Done when: every command in it runs on a clean clone. **Corrected 2026-10-21:** said from the foundation plan's Toolchain commands, which do not exist yet. Cheaper substitute: commands copied from memory.
 - [x] Write the Workflow section pointing at `docs/todo-workflow.md` and the commit rules in `AGENTS.md`. Done when: both links resolve. Cheaper substitute: restating the rules, which then drift.
-- [ ] Commit: `docs: add contributing guide`
+- [x] Commit: `docs: add contributing guide`
 
 **Test checkpoint:** `python scripts/check-design-doc.py CONTRIBUTING.md --require "Licence and agreement" --require "Build and test" --require Workflow` exits 0.
+
+> **Verified:** 2026-10-21 | §5 | c3e773b673a38605e7ac1ea189b5d2bd386e849b
+> **Review:** `docs/reviews/d00-t02-s5.json`
 
 ## 6. Runtime and Icon Notices
 
