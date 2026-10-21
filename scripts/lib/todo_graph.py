@@ -33,6 +33,10 @@ STATUSES = {"draft", "active", "blocked", "done", "superseded"}
 # its findings are filed as leftovers (review-todo-section).
 VERDICTS = {"clean", "fixed", "stopped-at-22", "stopped-at-13", "stopped-at-8", "stopped-at-3", "stopped-low-severity"}
 REVIEW_ROUND_CAP = 22
+# Caps a receipt that records round_cap may name: the current one and those Recto's receipts were written under.
+EARLIER_CAPS = {8, 13}
+# Receipts older than the rounds_spent field were written under a three-round cap, before severity stops existed.
+LEGACY_VERDICTS = {"clean", "fixed", "stopped-at-3"}
 SEVERITY_CUTOFF_ROUND = 8
 # A round scripts/review-dispatch.py recorded in a findings file, reviewed or not ("## Round 2: none").
 ROUND_RECORD = re.compile(r"^## Round ([0-9]+): ", re.M)
@@ -201,7 +205,8 @@ def review_dispatch():
     return _REVIEW_DISPATCH[0]
 
 
-def receipt_data_ok(data, ref, stamp_sha, root=None):
+def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
+    """building: stamp's first pass over its arguments, before it adds rounds_spent and round_cap."""
     require(isinstance(data, dict), f"receipt is not an object: {ref}")
     require(data.get("ref") == ref and data.get("implementation_sha") == stamp_sha,
             f"receipt does not match its stamp: {ref}")
@@ -234,9 +239,16 @@ def receipt_data_ok(data, ref, stamp_sha, root=None):
                     f"missing or empty review report ({raw_report}): {ref}")
     # Receipts written since 2026-10-21 record the rounds spent against the cap, and what was done when a review
     # stopped at the cap; earlier receipts carry neither field.
+    if "rounds_spent" not in data and not building:
+        # Dropping the field must not dodge the checks below: an old receipt holds only what the old process wrote.
+        require(all(r["verdict"] in LEGACY_VERDICTS for r in rounds) and max(r["round"] for r in rounds) <= 3
+                and "round_cap" not in data and "cap_outcome" not in data,
+                f"a receipt without rounds_spent may only hold rounds 1 to 3 with verdicts "
+                f"{', '.join(sorted(LEGACY_VERDICTS))}: {ref}")
     if "rounds_spent" in data:
         spent, cap = data.get("rounds_spent"), data.get("round_cap")
-        require(type(spent) is int and spent >= max(r["round"] for r in rounds) and type(cap) is int and cap >= 1,
+        require(type(spent) is int and spent >= max(r["round"] for r in rounds)
+                and type(cap) is int and cap in EARLIER_CAPS | {REVIEW_ROUND_CAP},
                 f"receipt rounds_spent or round_cap is invalid: {ref}")
         # A cap stop is the current cap, reached: stopped-at-3, -8 and -13 belong to receipts older than this field.
         require(all(r["verdict"] == f"stopped-at-{cap}" for r in rounds if r["verdict"].startswith("stopped-at-")),
@@ -260,6 +272,9 @@ def receipt_data_ok(data, ref, stamp_sha, root=None):
                             and ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1]
                             in ("OVERALL: approve", "OVERALL: needs-attention")}
                 require(reviewed, f"{report} holds no returned review: {ref}")
+                # The cap bounds every loop, however it ends: a clean round after review 22 is past the cap.
+                require(len(reviewed) <= cap,
+                        f"{report} holds {len(reviewed)} returned reviews, over the {cap}-round cap: {ref}")
                 claimed = sorted((r for r in rounds if r["report"] == report), key=lambda r: r["round"])
                 for r in claimed:
                     e = reviewed.get(r["round"])
@@ -799,7 +814,8 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
             "severity), and only then")
     data = {"ref": ref, "title": row.title, "implementation_sha": sha, "date": date,
             "reviews": reviews, "checks": checks}
-    receipt_data_ok(data, ref, sha, root=root)  # every argument is checked before anything is read or written
+    # Every argument is checked before anything is read or written.
+    receipt_data_ok(data, ref, sha, root=root, building=True)
     data["rounds_spent"] = rounds_recorded(root, reviews)
     data["round_cap"] = REVIEW_ROUND_CAP
     if stopped:

@@ -21,6 +21,7 @@ class PreCommitHook(unittest.TestCase):
                     "scripts/hooks/pre-commit"):
             (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / rel, self.root / rel)
+        (self.root / "scripts/hooks/pre-commit").chmod(0o755)  # git runs only an executable hook on Linux
         todo = self.root / "todo/00-workspace"
         todo.mkdir(parents=True)
         (todo / "TODO-01-a.md").write_text(todo_file([(1, "A", 0, "none", "--")]), encoding="utf-8")
@@ -65,7 +66,22 @@ class PreCommitHook(unittest.TestCase):
         self.git("add", "todo/00-workspace/TODO-01-a.md")  # the synced plan is left unstaged
         result = self.commit()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("unstaged changes", result.stderr)
+        self.assertIn("todo/ has unstaged or untracked changes", result.stderr)
+
+    def test_an_untracked_review_file_beside_a_todo_change_is_refused(self):
+        self.tick()
+        self.sync()
+        (self.root / "docs/reviews").mkdir(parents=True)
+        (self.root / "docs/reviews/D00-T01-s1.json").write_text("{}" + chr(10), encoding="utf-8")  # left out of the commit
+        self.git("add", "todo")
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("docs/reviews/ has unstaged or untracked changes", result.stderr)
+
+    def test_the_hook_is_tracked_as_executable(self):
+        mode = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-s", "scripts/hooks/pre-commit"],
+                              capture_output=True, text=True, check=True).stdout.split()[0]
+        self.assertEqual(mode, "100755")
 
     def test_a_commit_without_todo_changes_is_not_checked(self):
         (self.root / "notes.txt").write_text("x\n", encoding="utf-8")

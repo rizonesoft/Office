@@ -53,7 +53,7 @@ Sections: 19 | Checklist items: 93
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 36 | Checklist items: 234
+Sections: 36 | Checklist items: 235
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -78,7 +78,7 @@ Sections: 36 | Checklist items: 234
 | [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
-| [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 8     |
+| [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter      | none                                  | 6     |
@@ -126,4 +126,4 @@ Sections: 3 | Checklist items: 12
 
 Progress: 14/83 verified sections, 14 ready to run now.
 
-Checklist: 90/476 items completed (includes Commit items).
+Checklist: 90/477 items completed (includes Commit items).

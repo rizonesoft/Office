@@ -447,6 +447,44 @@ class Stamp(Tree):
         with self.assertRaises(tg.Refused):
             tg.graph(self.root)
 
+    def test_a_receipt_without_rounds_spent_holds_only_what_the_old_process_wrote(self):
+        self.tick_work()
+        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        del data["rounds_spent"], data["round_cap"]
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        tg.graph(self.root)  # an old clean receipt still validates
+        report = "docs/reviews/00-workspace/D00-T01-s1.md"
+        for rounds in ([{"round": 9, "report": report, "verdict": "stopped-low-severity"}],
+                       [{"round": 1, "report": report, "verdict": "stopped-at-22"}],
+                       [{"round": 4, "report": report, "verdict": "clean"}]):
+            data["reviews"] = rounds
+            receipt.write_text(json.dumps(data), encoding="utf-8")
+            with self.subTest(rounds=rounds), self.assertRaises(tg.Refused) as ctx:
+                tg.graph(self.root)
+            self.assertIn("without rounds_spent", str(ctx.exception))
+
+    def test_a_loop_past_the_cap_refuses_even_when_it_ends_clean(self):
+        self.tick_work()
+        report = "docs/reviews/00-workspace/D00-T01-s1.md"
+        last = tg.REVIEW_ROUND_CAP + 1
+        (self.root / report).write_text("".join(envelope(n, overall="needs-attention") for n in range(1, last))
+                                        + envelope(last), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "clean"}],
+                     ["true -> ok"], "2026-10-13")
+        self.assertIn(f"over the {tg.REVIEW_ROUND_CAP}-round cap", str(ctx.exception))
+
+    def test_a_receipt_names_a_cap_the_process_has_used(self):
+        self.tick_work()
+        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        data["round_cap"] = 50
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("round_cap is invalid", str(ctx.exception))
+
     def test_a_review_with_carriage_returns_is_read_as_the_dispatcher_wrote_it(self):
         self.tick_work()
         dispatch = tg.review_dispatch()
