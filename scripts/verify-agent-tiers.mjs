@@ -124,7 +124,7 @@ export function readAgentFrontmatter(text) {
   while (index < lines.length) {
     const line = lines[index];
     index += 1;
-    if (line.trim() === "" || /^[ \t]*#/.test(line)) continue;
+    if (/^[ \t]*$/.test(line) || /^[ \t]*#/.test(line)) continue;
 
     // YAML needs whitespace after the colon in a block mapping: `model:sonnet`
     // is the plain scalar "model:sonnet", not a pin, and reading it as one let
@@ -172,10 +172,14 @@ export function readAgentFrontmatter(text) {
       const collected = [];
       let contentIndent = null;
       let blankLead = 0;
-      while (index < lines.length && (lines[index].trim() === "" || /^[ \t]/.test(lines[index]))) {
+      while (index < lines.length && (/^[ \t]*$/.test(lines[index]) || /^[ \t]/.test(lines[index]))) {
         const line = lines[index];
         const spaces = /^ */.exec(line)[0].length;
-        if (line.trim() === "") {
+        if (/^[ \t]*$/.test(line)) {
+          if (line.includes("\t")) {
+            // A whitespace-only line with a tab: one loader reads the tab as indentation and refuses it.
+            return { fields: null, error: `"${key}:" block scalar holds a blank line with a tab; YAML loaders disagree on it, so remove the tab` };
+          }
           if (contentIndent === null) blankLead = Math.max(blankLead, spaces);
         } else {
           const bad = contentIndent === null
@@ -264,7 +268,7 @@ function skipHooksBlock(lines, start) {
   const refuse = (line, why) => ({ index, error: `"${HOOKS_FIELD}:" block line ${JSON.stringify(line)} ${why}` });
   while (index < lines.length) {
     const line = lines[index];
-    if (line.trim() === "" || /^ *#/.test(line)) {
+    if (/^[ \t]*$/.test(line) || /^ *#/.test(line)) {
       index += 1;
       continue;
     }
@@ -377,7 +381,12 @@ function hooksLine(text) {
     const colon = /^ *:(?: +|$)/.exec(rest);
     if (colon) {
       if (key !== null) return { error: "holds a second key on one line (`a: b: c`), which YAML cannot load" };
-      key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node;
+      // Keys are compared as YAML values: quotes removed, separation spaces before the colon dropped, and a plain
+      // key held to an identifier, so no two spellings (`1` and `0x1`) can resolve to one key unnoticed.
+      key = quoted ? (node.startsWith('"') ? node.slice(1, -1) : node.slice(1, -1).replace(/''/g, "'")) : node.replace(/ +$/, "");
+      if (!quoted && !/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key)) {
+        return { error: `holds the key ${JSON.stringify(key)}; a plain key here is an identifier (letters, digits, "_" and "-"), so quote any other` };
+      }
       rest = rest.slice(colon[0].length);
       continue;
     }

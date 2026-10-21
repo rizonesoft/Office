@@ -2,8 +2,9 @@
 # Copyright 2026 Rizonesoft
 """scripts/verify-agent-tiers.mjs: agent frontmatter Claude Code cannot load is refused (D00 T03 §8).
 
-The UNLOADABLE cases were measured against the `yaml` 2.9.1 and `js-yaml` 4.1.0 loaders, which reject each one
-(docs/reviews/00-workspace/D00-T03-s8.md); the ACCEPTED ones load in both. The POLICY cases load in YAML but sit
+The UNLOADABLE cases were measured against the `yaml` 2.9.1 and `js-yaml` 4.1.0 loaders: at least one of them
+rejects each (docs/reviews/00-workspace/D00-T03-s8.md), and this check accepts only what both load. The ACCEPTED
+ones load in both. The POLICY cases load in YAML but sit
 outside the closed subset this check reads (tabs, block scalars and escapes in `hooks:`), so it refuses them by
 design, never claiming YAML does.
 """
@@ -51,11 +52,17 @@ UNLOADABLE_BODIES = ['description: "a"b"\nmodel: sonnet\n',
                      "model: sonnet\ndescription: a" + chr(1) + "b\n",           # a control character
                      "model: sonnet\nhooks:\n  -" + TAB + "@bad\n",              # a tab after a sequence dash
                      "model: sonnet\nhooks:\n  PreToolUse:\n    - matcher: Bash\n   hooks: value\n",  # misaligned
-                     "model: sonnet\nhooks:\n  command: first\n  command: second\n"]                # duplicate key
+                     "model: sonnet\nhooks:\n  command: first\n  command: second\n",               # duplicate key
+                     "model: sonnet\nhooks:\n  command: first\n  command : second\n",              # the same key
+                     "model: sonnet\nhooks:\n  1: first\n  0x1: second\n",                         # one int key
+                     "model: sonnet\n" + NBSP + "\n",                                             # NBSP is content
+                     "model: sonnet\ndescription: |\n  text\n" + NBSP + "\n",
+                     "model: sonnet\ndescription: |\n  text\n" + TAB + "\n"]                      # yaml refuses it
 ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non-breaking space is content
                    "description: 'it''s fine'\nmodel: sonnet\n",
                    "model: sonnet\ndescription: |\n    first\n      deeper\n",
                    "model: sonnet\ndescription: |\n  text\n  " + TAB + "more\n",   # a tab past the indentation
+                   "model: sonnet\nhooks:\n  command : ok\n",                       # a space before the colon
                    "model: sonnet\nhooks:\n  PreToolUse:\n  - matcher: Bash\n    hooks:\n    - type: command\n"
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
