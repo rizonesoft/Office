@@ -4,5 +4,5 @@ resvg_py==0.5.0
 uharfbuzz==0.56.3
 openpyxl==3.1.5
 et-xmlfile==2.0.0
-pywin32==311
+pywin32==312
 comtypes==1.4.11
