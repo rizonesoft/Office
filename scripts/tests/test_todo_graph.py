@@ -494,6 +494,24 @@ class Stamp(Tree):
             tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("must number its rounds 1 to 4 in order", str(ctx.exception))
 
+    def test_a_loop_whose_last_round_returned_no_review_refuses(self):
+        self.tick_work()
+        report = "docs/reviews/00-workspace/D00-T01-s1.md"
+        (self.root / report).write_text(envelope(1) + envelope(2, "none", overall="blocked"), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:  # round 2 ran after the approval and returned nothing
+            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertIn("ends with round 2, which returned no review", str(ctx.exception))
+
+    def test_rounds_spent_must_be_what_the_findings_files_record(self):
+        self.tick_work()
+        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        data["rounds_spent"] = 999
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("receipt rounds_spent 999 is not the 1 rounds", str(ctx.exception))
+
     def test_a_receipt_names_a_cap_the_process_has_used(self):
         self.tick_work()
         receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")

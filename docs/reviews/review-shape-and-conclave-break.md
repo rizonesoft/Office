@@ -80,3 +80,40 @@ Candidate `0e11949..b33a390`. All three findings verified and fixed in the next 
 3. P1 ignored evidence files: fixed. The hook lists untracked files without `--exclude-standard`, so ignored files under `todo/` or `docs/reviews/` refuse the commit too. Test: `test_an_ignored_review_file_beside_a_todo_change_is_refused` (fails on the previous hook).
 
 Gates: `python -m unittest discover -s scripts/tests` -> 437 tests OK (2 skipped); `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T18:21:56Z
+- Effort: medium
+- Lines: 18
+- Digest: 68afcba3370d8494
+
+## adversarial: needs-attention
+
+1. **P1** `scripts/lib/todo_graph.py:340`: A later failed review attempt does not invalidate an earlier approval. Reproduce with sequential dispatcher envelopes: round 1 approves, round 2 records `none` with `OVERALL: blocked`; submit round 1 as `clean`, with `rounds_spent: 2`. The validator accepts it because it checks the last **returned review**, excluding the later outage. Confirmed in memory. This permits stamping after the latest review failed, contrary to the skill’s requirement to stop without a stamp.
+
+## consistency: needs-attention
+
+2. **P3** `docs/todo-workflow.md:11` and `todo/README.md:56`: Both prescribe table rows under 140 characters, conflicting with Office’s 100-character rule and retained plan-table refusal. Reproduce by following that guidance with a 120-character row: it satisfies these documents but violates `AGENTS.md`. Align the documented limit.
+
+## integration: approve
+
+## record: needs-attention
+
+3. **P2** `scripts/lib/todo_graph.py:276`: `rounds_spent` is not checked against the findings files. Reproduce with one valid round-1 approval and `rounds_spent: 999`; validation accepts it, and `query rounds` uses that false count in its totals and mean. Confirmed in memory. Validate the count against the recorded rounds across the referenced reports.
+
+The claimed 437-test run was not independently reproduced. Verification used file inspection and in-memory probes, without writes or git commands.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after round 3
+
+Candidate `0e11949..98f9c59`. All three findings verified and fixed in the next commit:
+
+1. P1 a later outage left behind an approval: fixed. A findings file's last recorded round must be a returned review; a loop ending in an outage gets another round before stamping. Test: `test_a_loop_whose_last_round_returned_no_review_refuses`.
+2. P3 the 140-character row figure: fixed. `docs/todo-workflow.md` and `todo/README.md` now state Office's 100-character limit (`MAX_TABLE_ROW`, `AGENTS.md`).
+3. P2 `rounds_spent` unchecked: fixed. A receipt's `rounds_spent` must equal `rounds_recorded` over its findings files. Test: `test_rounds_spent_must_be_what_the_findings_files_record`.
+
+Gates: `python -m unittest discover -s scripts/tests` -> 439 tests OK (2 skipped); `validate` -> `valid: 83 sections`; `plan --check` -> `plan current`.

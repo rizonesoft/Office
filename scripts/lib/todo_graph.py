@@ -333,11 +333,20 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                             f"round {r['round']} follows {returned} returned reviews; a cap stop is the round that "
                             f"returns review {cap}: {ref}")
                 # Each findings file is one review loop, and the loop's end is its last reviewed round: the receipt
-                # must name it, and it must be clean or a stop, so no later failing review can be left out.
+                # must name it, and it must be clean or a stop, so no later failing review can be left out. Nothing may
+                # be recorded after it either: a round run later (even one that returned no review) was run on work
+                # the earlier verdict does not cover, so an outage at the end means no stamp until a review returns.
+                require(max(reviewed) == len(recorded),
+                        f"the review loop in {report} ends with round {len(recorded)}, which returned no review; "
+                        f"run another round before stamping: {ref}")
                 require(claimed[-1]["round"] == max(reviewed)
                         and (claimed[-1]["verdict"] == "clean" or claimed[-1]["verdict"].startswith("stopped-")),
                         f"the review loop in {report} must end at its last reviewed round ({max(reviewed)}), clean or "
                         f"stopped, and the receipt must name that round: {ref}")
+            # The count the receipt reports is the count the findings files hold, so query rounds sums real rounds.
+            require(spent == rounds_recorded(root, rounds),
+                    f"receipt rounds_spent {spent} is not the {rounds_recorded(root, rounds)} rounds its findings files "
+                    f"record: {ref}")
         stopped = any(r["verdict"].startswith("stopped-") for r in rounds)
         outcome = data.get("cap_outcome")
         require((isinstance(outcome, str) and bool(outcome.strip())) == stopped,
