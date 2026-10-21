@@ -365,7 +365,8 @@ class ConclaveKits(GitRepo):
         gap = json.dumps({"checks": [{"name": "stop-hook", "status": "setup_required"}]})
         self.assertEqual(kits.doctor(self.root, self.root, self.doctor_run(1, gap))[0], "doctor base: setup_required stop-hook")
         for run in (self.doctor_run(1, "{}", "boom"), self.doctor_run(0, '{"checks": []}'), self.doctor_run(1, ok),
-                    self.doctor_run(0, "not json")):
+                    self.doctor_run(0, "not json"), self.doctor_run(0, '{"checks": [{"status": "ok"}]}'),
+                    self.doctor_run(0, '{"checks": [{"name": "x", "status": 1}]}'), self.doctor_run(0, '{"checks": ["ok"]}')):
             with self.assertRaises(RuntimeError):
                 kits.doctor(self.root, self.root, run)
 

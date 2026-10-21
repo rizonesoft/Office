@@ -91,11 +91,13 @@ def doctor(sdk, root=ROOT, run=subprocess.run):
                      text=True, encoding="utf-8", creationflags=pin_proposal.NO_WINDOW)
         try:
             checks = json.loads(result.stdout)["checks"]
-            found = [f"doctor {kit}: {c['status']} {c['name']}" for c in checks if c["status"] != "ok"]
         except (ValueError, KeyError, TypeError):
             raise RuntimeError(f"forge.py doctor {kit} gave no report: {(result.stderr or result.stdout).strip()[:200]}") from None
-        if not isinstance(checks, list) or not checks:
-            raise RuntimeError(f"forge.py doctor {kit} reported no checks")
+        if (not isinstance(checks, list) or not checks
+                or not all(isinstance(c, dict) and isinstance(c.get("name"), str) and c["name"]
+                           and isinstance(c.get("status"), str) and c["status"] for c in checks)):
+            raise RuntimeError(f"forge.py doctor {kit} reported no list of named checks with a status each")
+        found = [f"doctor {kit}: {c['status']} {c['name']}" for c in checks if c["status"] != "ok"]
         if result.returncode != 0 and not found:
             raise RuntimeError(f"forge.py doctor {kit} exited {result.returncode}: {(result.stderr or '').strip()[:200]}")
         gaps += found

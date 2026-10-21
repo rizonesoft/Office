@@ -14,6 +14,8 @@ alerts). Ported from RectoPDF's `scripts/lib/pin_proposal.py` (2026-10-21), with
 
 Stdlib only.
 """
+import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -22,6 +24,8 @@ import tempfile
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 PIN_REF = "refs/office-pin/{key}"
 NOTICE_REF = "refs/office-notice/{key}"
+# Written beside each worktree before it is created: the only proof that a leftover worktree is this automation's.
+OWNER = "office-pin-owner.json"
 
 
 def git(*args, cwd, check=True):
@@ -104,16 +108,34 @@ def _worktrees_on(branch, root):
     return paths
 
 
+def _claim(tree, branch):
+    """Record, before the worktree exists, that this automation creates it for this branch."""
+    marker = Path(tree).parent / OWNER
+    tmp = marker.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"branch": branch, "worktree": str(Path(tree).resolve())}), encoding="utf-8")
+    os.replace(tmp, marker)
+
+
+def _ours(path, branch):
+    """Whether this automation created the worktree at path for this branch: its owner record says exactly that."""
+    try:
+        doc = json.loads((Path(path).parent / OWNER).read_text(encoding="utf-8"))
+        return (isinstance(doc, dict) and doc.get("branch") == branch
+                and Path(str(doc.get("worktree"))).resolve() == Path(path).resolve())
+    except (OSError, ValueError):
+        return False
+
+
 def _drop(branch, root):
     """Delete an unfinished proposal branch; the problems, empty when it is gone.
 
-    A run killed mid-proposal leaves its worktree (under an `office-pin-*` folder) with the branch checked out, and git
-    will not delete a checked-out branch, so that worktree is removed first. A worktree anywhere else is the
-    operator's, and is never removed."""
+    A run killed mid-proposal leaves its worktree with the branch checked out, and git will not delete a checked-out
+    branch, so that worktree is removed first, but only when its owner record (written before the worktree was
+    created) names this branch and that path. Any other worktree is the operator's, and is never removed."""
     git("worktree", "prune", cwd=root, check=False)
     problems = []
     for path in _worktrees_on(branch, root):
-        if not any(part.startswith("office-pin-") for part in Path(path).parts):
+        if not _ours(path, branch):
             problems.append(f"{branch} is checked out at {path}, which this automation did not create")
             continue
         removed = git("worktree", "remove", "--force", path, cwd=root, check=False)
@@ -153,6 +175,7 @@ def propose(*, root, key, branch, rewrite, checks, message, subject, body, dry_r
     scratch = root / "build" if (root / "build").is_dir() else None
     with tempfile.TemporaryDirectory(prefix="office-pin-", dir=scratch) as tmp:
         tree = Path(tmp) / "tree"
+        _claim(tree, branch)
         git("worktree", "add", "-b", branch, str(tree), "main", cwd=root)
         try:
             changed = rewrite(tree)

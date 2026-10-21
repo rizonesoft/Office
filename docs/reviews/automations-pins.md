@@ -44,3 +44,36 @@ OVERALL: needs-attention
 6. Fixed: a doctor report without a non-empty `checks` list, or a non-zero exit with no gap named, raises and the check exits 2.
 7. Fixed: `global.json` must set `rollForward` to `disable`, or the pin check fails.
 8. Fixed: the README says one email per new version or state, that no new email is not proof every pin is current, and how to list open proposals.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T00:07:07Z
+- Effort: medium
+- Lines: 17
+- Digest: 2da586f93241482e
+
+Review based on the supplied diff. The shell failed before execution, so I could not read additional files or run reproductions. Line references are from the diff.
+
+## adversarial: needs-attention
+
+1. **[P1] Recovery can forcibly delete an operator-owned worktree and its uncommitted work.** `scripts/lib/pin_proposal.py:115` treats any path component beginning with `office-pin-` as proof of ownership. An operator worktree at `R:\scratch\office-pin-review\tree`, or anywhere beneath an ancestor named `office-pin-project`, passes this check. Line 118 then runs `git worktree remove --force`. **Reproduce:** create a personal worktree on `winui/2.5.1` at either path, leave uncommitted changes, ensure no completion ref exists, and run `update`. Recovery attempts to delete it. Require durable evidence that the automation created that specific worktree; a directory prefix is insufficient.
+
+## integration: needs-attention
+
+2. **[P2] Doctor schema validation still accepts malformed reports as healthy.** `scripts/check-conclave-kits.py:95` accesses `c["name"]` only when `status != "ok"`. Consequently, exit 0 with `{"checks":[{"status":"ok"}]}` passes validation and returns no gaps, despite the stated requirement for named checks. Non-string statuses and names also become ordinary gap text instead of invalid-report failures. **Reproduce:** pass `doctor_run(0, '{"checks":[{"status":"ok"}]}')` to `kits.doctor`; it returns `[]`. Validate every entry’s required fields and types before filtering. The new doctor tests omit these malformed-entry cases.
+
+3. **[P2] The ownership regression test does not establish its claimed guarantee.** `scripts/tests/test_check_winui_pin.py:137` tests only an operator path without the accepted prefix. It therefore passes while finding 1 remains destructive. **Reproduce:** change that fixture’s parent to an operator-created `office-pin-review` directory and retain its preservation assertions. Add an uncommitted file and assert its contents survive recovery.
+
+## record: needs-attention
+
+4. **[P2] The recovery disposition claims ownership protection the implementation does not provide.** `docs/reviews/automations-pins.md:39` closes finding 1 using `test_the_operators_own_worktree_is_never_removed`, but that test covers only one naming case. The implementation classifies ownership by ancestor names, not creation evidence. **Reproduce:** use finding 1’s operator-owned path; it satisfies the deletion predicate despite never having been created by the automation. The disposition should remain open until ownership is established and the destructive counterexample is tested.
+
+OVERALL: needs-attention
+
+## Dispositions of the second round
+
+1. Fixed: a directory name is no longer evidence. `propose` writes an owner record (`office-pin-owner.json`, naming the branch and the worktree path) beside the worktree before creating it, and `_drop` removes a leftover worktree only when that record names this branch and that exact path. Any other worktree, whatever its path, is reported and kept with its uncommitted files.
+2. Fixed: every doctor entry must be an object with a non-empty text `name` and `status`, or the check cannot check (exit 2); the malformed cases are in `test_a_failed_or_empty_doctor_is_never_healthy`.
+3. Fixed: `test_an_operators_worktree_is_never_removed_whatever_its_path` covers an `office-pin-review` folder, an owner record for another branch, and a plain folder, each with an uncommitted file that must survive; it fails on the round 1 code.
+4. Fixed: the first round's disposition 1 is superseded by disposition 1 above.

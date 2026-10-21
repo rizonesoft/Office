@@ -127,22 +127,33 @@ class Repo(unittest.TestCase):
 
     def test_a_run_killed_mid_proposal_is_recovered(self):
         abandoned = self.root / "build" / "office-pin-killed" / "tree"
-        self.run_git("worktree", "add", "-b", "winui/2.5.1", str(abandoned), "main")  # what a killed run leaves
+        abandoned.parent.mkdir(parents=True)
+        wp.pin_proposal._claim(abandoned, "winui/2.5.1")  # what a killed run leaves: its owner record, then the worktree
+        self.run_git("worktree", "add", "-b", "winui/2.5.1", str(abandoned), "main")
+        (abandoned / "Directory.Packages.props").write_text("half-written", encoding="utf-8")
         code, out = self.main("update")
         self.assertEqual(code, 0, out)
-        self.assertNotIn(str(abandoned).replace(chr(92), "/"), self.git("worktree", "list").replace(chr(92), "/"))
+        self.assertFalse(abandoned.exists())
         self.assertIn('Version="2.5.1"', self.git("show", "winui/2.5.1:Directory.Packages.props"))
 
-    def test_the_operators_own_worktree_is_never_removed(self):
-        mine = self.root.parent / (self.root.name + "-review")
-        self.run_git("worktree", "add", "-b", "winui/2.5.1", str(mine), "main")
-        try:
-            code, out = self.main("update")
-            self.assertEqual(code, 1)
-            self.assertIn("which this automation did not create", out)
-            self.assertTrue((mine / "Directory.Packages.props").is_file())
-        finally:
-            self.run_git("worktree", "remove", "--force", str(mine))
+    def test_an_operators_worktree_is_never_removed_whatever_its_path(self):
+        for name, claim in (("office-pin-review", None), ("office-pin-other", "winui/9.9.9"), ("review", None)):
+            with self.subTest(name=name):
+                mine = self.root.parent / f"{name}-{self.root.name}" / "tree"  # office-pin-* names lead the path
+                mine.parent.mkdir(parents=True)
+                if claim:  # an owner record for another branch proves nothing about this one
+                    wp.pin_proposal._claim(mine, claim)
+                self.run_git("worktree", "add", "-b", "winui/2.5.1", str(mine), "main")
+                (mine / "notes.txt").write_text("my uncommitted work", encoding="utf-8")
+                try:
+                    code, out = self.main("update")
+                    self.assertEqual(code, 1)
+                    self.assertIn("which this automation did not create", out)
+                    self.assertEqual((mine / "notes.txt").read_text(encoding="utf-8"), "my uncommitted work")
+                    self.assertEqual(self.mails, [])
+                finally:
+                    self.run_git("worktree", "remove", "--force", str(mine))
+                    self.run_git("branch", "-D", "winui/2.5.1")
 
     def test_an_unsent_email_leaves_no_proposal(self):
         def refuse(*_a):
