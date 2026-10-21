@@ -628,6 +628,30 @@ class Robustness(Workspace):
             guard.end(self.root, SESSION, "park")
         self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")  # the run is over all the same
 
+    def test_whoami_reports_an_ended_run_even_when_its_cleanup_fails(self):
+        from unittest import mock
+        for failing in ("write", "unlink"):
+            with self.subTest(failing=failing):
+                self.acquire(cron_id="job-x")
+                self.write(RUN_FILE, f"PARKED 2026-10-21T00:00:00Z run={self.run_id()} done\n", mode="a")
+                real_unlink = os.unlink
+
+                def no_guard_delete(path, *a, **kw):
+                    if path.endswith("claude-campaign-guard.json"):
+                        raise KeyboardInterrupt("interrupted")
+                    return real_unlink(path, *a, **kw)
+
+                with mock.patch.object(guard.os, "unlink", no_guard_delete), self.assertRaises(KeyboardInterrupt):
+                    guard.end(self.root, SESSION, "park")  # leaves an ended guard behind
+                denied = PermissionError(13, "denied")
+                patch = (mock.patch.object(guard, "_write_json", side_effect=denied) if failing == "write"
+                         else mock.patch.object(guard.os, "unlink", side_effect=denied))
+                guard._write_json(guard._pending_path(self.root), [])  # unrecorded, so the cleanup must write
+                with patch:
+                    self.assertEqual(guard.whoami(self.root, SESSION), "NO GUARD")
+                guard.whoami(self.root, SESSION)  # unpatched: the cleanup completes
+                self.assertIsNone(guard._read_guard_doc(self.root))
+
 
 if __name__ == "__main__":
     unittest.main()

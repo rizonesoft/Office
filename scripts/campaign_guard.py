@@ -459,7 +459,7 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
     with _Lock(root):
         try:
             _finish_ended(root)  # an interrupted end: the run is over, so the heartbeat stands down
-        except GuardError:
+        except (GuardError, OSError):
             pass  # the ended guard stays (read_guard hides it); this heartbeat deletes its own job on NO GUARD
         try:
             guard = read_guard(root)
