@@ -12,7 +12,8 @@ SVG's root `viewBox`, an ICO's directory entries (0 meaning 256, each entry's im
 PNG or SVG, `--size` must name the one size it has; for an ICO, each `--size` must be one of its entries. A PNG is
 walked chunk by chunk with every CRC checked through IEND, so a corrupted file is refused. An SVG may not embed a
 raster (`<image>`), run script (`<script>`, `on*` attributes), embed HTML (`<foreignObject>`), declare a DOCTYPE or
-entities, or reference anything but its own fragments (`href` or a style `url()` not starting with `#`).
+entities, or reference anything but its own fragments (`href`, or `url()` in a style or any attribute, not
+starting with `#`).
 
 Exit 0 when the asset passes (printing its format, size and bytes), 1 with one line per problem, 2 when the file
 cannot be read or the arguments are invalid. Stdlib only.
@@ -113,8 +114,8 @@ def svg_check(data):
                 problems.append(f"event handler attribute {attr_name} on <{name}>")
             elif attr_name == "href" and not value.strip().startswith("#"):
                 problems.append(f"external href {value[:60]!r} on <{name}>")
-            elif attr_name == "style":
-                problems += _style_urls(value, name)
+            else:  # style="fill:url(...)" and presentation attributes such as fill="url(...)" alike
+                problems += _style_urls(value, f"{name} {attr_name}")
         if name == "style" and element.text:
             problems += _style_urls(element.text, name)
             if re.search(r"@import", element.text, re.IGNORECASE):
@@ -123,7 +124,7 @@ def svg_check(data):
 
 
 def _style_urls(css, where):
-    return [f"external url({url[:60]!r}) in <{where}> style" for _q, url in STYLE_URL.findall(css)
+    return [f"external url({url[:60]!r}) in <{where}>" for _q, url in STYLE_URL.findall(css)
             if not url.strip().startswith("#")]
 
 

@@ -119,6 +119,7 @@ class Svg(Fixtures):
             '<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="other.svg#a"/>': "external href",
             '<rect style="fill:url(https://example.invalid/a.svg#p)" width="1" height="1"/>': "external url",
             '<style>@import "https://example.invalid/a.css";</style>': "@import",
+            '<rect fill="url(other.svg#p)" width="1" height="1"/>': "external url('other.svg#p') in <rect fill>",
         }
         for extra, reason in cases.items():
             with self.subTest(reason=reason):
