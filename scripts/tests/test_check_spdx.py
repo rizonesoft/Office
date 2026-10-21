@@ -69,6 +69,9 @@ class Identifiers(Repo):
     def test_only_a_whole_single_declaration_counts(self):
         cases = {"compound.py": f"# {TAG} GPL-3.0-or-later AND Apache-2.0\n",
                  "prefixed.py": f"# Not{TAG} GPL-3.0-or-later\n",
+                 "underscored.py": f"# Not_{TAG} GPL-3.0-or-later\n",
+                 "accented.py": f"# é{TAG} GPL-3.0-or-later\n",
+                 "trailing.py": f"x = 1  # {TAG} GPL-3.0-or-later\n",
                  "twice.py": f"# {TAG} GPL-3.0-or-later\n# {TAG} Apache-2.0\n"}
         for rel, text in cases.items():
             self.add(rel, text)
@@ -76,7 +79,8 @@ class Identifiers(Repo):
         code, out = self.run_main()
         self.assertEqual(code, 1)
         self.assertIn("compound.py: 'GPL-3.0-or-later AND Apache-2.0' is not a single licence identifier", out)
-        self.assertIn("prefixed.py: no", out)
+        for rel in ("prefixed.py", "underscored.py", "accented.py", "trailing.py"):
+            self.assertIn(f"{rel}: no", out)
         self.assertIn("twice.py: 2 ", out)
         self.assertNotIn("xaml.xaml", out)
 

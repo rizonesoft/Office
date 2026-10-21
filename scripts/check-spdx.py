@@ -29,9 +29,10 @@ HEAD_LINES = 10
 NOTICES = "THIRD-PARTY-NOTICES.md"
 # Built from parts so this file's own text is not read as a licence tag by REUSE tooling.
 TAG = "SPDX-" + "License-Identifier:"
-# The tag must start a word (not "NotSPDX-..."), and the declaration runs to the end of the line, less a closing
-# comment marker, so a compound expression is read whole rather than by its first identifier.
-DECLARATION = re.compile(r"(?<![A-Za-z0-9-])" + re.escape(TAG) + r"[ \t]*(.*?)[ \t]*(?:-->|\*/)?[ \t]*$")
+# The tag opens the line, after at most a comment marker (so "NotSPDX-..." or "x_SPDX-..." is no declaration), and
+# the declaration runs to the end of the line, less a closing comment marker, so a compound expression is read whole
+# rather than by its first identifier.
+DECLARATION = re.compile(r"^[ \t]*(?:#|//|<!--|/\*|\*)?[ \t]*" + re.escape(TAG) + r"[ \t]*(.*?)[ \t]*(?:-->|\*/)?[ \t]*$")
 SINGLE = re.compile(r"[A-Za-z0-9.+-]+")
 NOTICE_LICENCE = re.compile(r"^- Licence: ([A-Za-z0-9.+-]+?)\.?(?:\s|$)", re.M)
 
