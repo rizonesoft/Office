@@ -231,6 +231,8 @@ Three defects the owner reported on 2026-10-21, found by independent review in a
 
 ## 8. Agent Tier Verifier YAML Strictness
 
+> **Started:** 2026-10-21T22:05:00Z
+
 `scripts/verify-agent-tiers.mjs` reads agent frontmatter as a closed subset of YAML, but the owner reported on 2026-10-21 that it accepts a line Claude Code cannot load, so an agent passes the check and then fails to load. The file is Office's own (the Conclave SDK link was cut on 2026-10-21), so the fix lands here. The usual case is a plain scalar YAML refuses, such as a value containing `: ` or ` #`, or opening with an indicator character.
 
 **Phase:** 0
@@ -242,9 +244,9 @@ Three defects the owner reported on 2026-10-21, found by independent review in a
 1. Find every frontmatter line the verifier accepts and a YAML 1.2 loader refuses. Done when: the cases are listed with the loader's error.
 2. Refuse those lines in the verifier with fixtures. Done when: each case fails the verifier and every agent in `.claude/agents/` still passes.
 
-- [ ] List the frontmatter lines `scripts/verify-agent-tiers.mjs` accepts but a YAML 1.2 loader refuses (a plain scalar containing `: ` or ` #`, opening with an indicator character such as `@`, `` ` ``, `%`, `[`, `{`, `|`, `>`, `!`, `&`, `*`, or holding a tab), checked against a real loader. Done when: `docs/reviews/00-workspace/D00-T03-s8.md` lists each case with the loader's error. Cheaper substitute: guessing the cases without a loader.
-- [ ] Refuse each listed case in `scripts/verify-agent-tiers.mjs` with a message naming the line and the rule. Done when: a fixture agent for each case fails the verifier. Cheaper substitute: refusing only the reported case.
-- [ ] Add the fixtures and a test runner for them in `scripts/tests/test_verify_agent_tiers.py`, invoking `node scripts/verify-agent-tiers.mjs` on fixture directories. Done when: the suite passes, and fails when the new refusals are removed. Cheaper substitute: checking the repository's own agents only.
+- [x] List the frontmatter lines `scripts/verify-agent-tiers.mjs` accepts but a YAML 1.2 loader refuses (a plain scalar containing `: ` or ` #`, opening with an indicator character such as `@`, `` ` ``, `%`, `[`, `{`, `|`, `>`, `!`, `&`, `*`, or holding a tab), checked against a real loader. Done when: `docs/reviews/00-workspace/D00-T03-s8.md` lists each case with the loader's error. Cheaper substitute: guessing the cases without a loader.
+- [x] Refuse each listed case in `scripts/verify-agent-tiers.mjs` with a message naming the line and the rule. Done when: a fixture agent for each case fails the verifier. Cheaper substitute: refusing only the reported case.
+- [x] Add the fixtures and a test runner for them in `scripts/tests/test_verify_agent_tiers.py`, invoking `node scripts/verify-agent-tiers.mjs` on fixture directories. Done when: the suite passes, and fails when the new refusals are removed. Cheaper substitute: checking the repository's own agents only.
 - [ ] Commit: `tooling: refuse agent frontmatter Claude Code cannot load`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_verify_agent_tiers.py"` passes and `node scripts/verify-agent-tiers.mjs` reports every agent in `.claude/agents/` valid.

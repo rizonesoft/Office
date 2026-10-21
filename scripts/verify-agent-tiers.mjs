@@ -187,10 +187,29 @@ export function readAgentFrontmatter(text) {
     if (/^[&*!]/.test(plain) || /^[[{]/.test(plain)) {
       return { fields: null, error: `"${key}:" uses YAML ${plain.startsWith("[") || plain.startsWith("{") ? "flow collection" : "anchor, alias or tag"} syntax (${JSON.stringify(plain)}); write the value plainly, because an alias resolves to something this check cannot see` };
     }
+    const unloadable = plainScalarProblem(plain);
+    if (unloadable) {
+      return { fields: null, error: `"${key}:" is not a plain scalar YAML can load (${unloadable}: ${JSON.stringify(plain)}); Claude Code would fail to load this agent, so quote the value` };
+    }
     fields.set(key, { value: plain, isQuoted: false });
   }
 
   return { fields, error: null };
+}
+
+/**
+ * Why YAML 1.2 cannot load `plain` as an unquoted block-context scalar, or null
+ * when it can. Accepting a line here that YAML refuses lets an agent pass this
+ * check and then fail to load in Claude Code (D00 T03 §8, measured against the
+ * `yaml` and `js-yaml` loaders). A plain scalar may not open with an indicator
+ * character (`-`, `?` and `:` only when a space follows them), and may not hold
+ * `: ` or end with `:`, which YAML reads as a nested mapping.
+ */
+export function plainScalarProblem(plain) {
+  if (/^[,\]}%@`|>'"#]/.test(plain)) return `it opens with the reserved indicator "${plain[0]}"`;
+  if (/^[-?:](?:[ \t]|$)/.test(plain)) return `it opens with "${plain[0]}" and a space`;
+  if (/:(?:[ \t]|$)/.test(plain)) return 'it holds ": " or ends with ":"';
+  return null;
 }
 
 /**
@@ -247,7 +266,14 @@ const BLOCK_SCALAR = Symbol("block scalar");
  */
 function hooksLineProblem(text) {
   let rest = text.replace(/^(?:-(?: +|$))*/, "");
+  let afterKey = false;
   for (;;) {
+    if (afterKey && rest !== "" && !/^["'|>[{&*!#]/.test(rest)) {
+      // A key's value on its own line is one plain scalar to the end of the line (less a comment): `a: b: c`
+      // and `a: - b` are not a second key or a sequence to YAML but a load error (D00 T03 §8).
+      const unloadable = plainScalarProblem(rest.replace(/(?:^|[ \t])#.*$/, "").trim());
+      if (unloadable) return `holds a value YAML cannot load (${unloadable}); quote it`;
+    }
     if (rest === "" || rest.startsWith("#")) return null;
 
     let node;
@@ -276,6 +302,7 @@ function hooksLineProblem(text) {
     const key = /^[ \t]*:(?:[ \t]+|$)/.exec(rest);
     if (key) {
       rest = rest.slice(key[0].length);
+      afterKey = true;
       continue;
     }
     if (/^[ \t]*$|^[ \t]+#/.test(rest)) return null;
