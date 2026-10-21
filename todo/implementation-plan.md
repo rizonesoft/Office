@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 15 | Checklist items: 90
+Sections: 15 | Checklist items: 88
 
 | Status | Reference  | Deliverable                              | Needs                  | Items |
 | ------ | ---------- | ---------------------------------------- | ---------------------- | ----- |
@@ -16,7 +16,7 @@ Sections: 15 | Checklist items: 90
 | [x]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
 | [x]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
 | [x]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 7     |
-| [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 5     |
+| [ ]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 3     |
 | [ ]    | D00 T02 §5 | Contributing Guide                       | none                   | 4     |
 | [x]    | D00 T03 §1 | Automation Runner, Alert and Installer   | none                   | 7     |
 | [x]    | D00 T03 §2 | Run Guard and Stop Hook                  | none                   | 7     |
@@ -103,7 +103,7 @@ Sections: 40 | Checklist items: 255
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 13 | Checklist items: 67
+Sections: 14 | Checklist items: 70
 
 | Status | Reference   | Deliverable                                    | Needs | Items |
 | ------ | ----------- | ---------------------------------------------- | ----- | ----- |
@@ -119,6 +119,7 @@ Sections: 13 | Checklist items: 67
 | [ ]    | D03 T01 §10 | Font Strategy Decision                         | none  | 4     |
 | [ ]    | D03 T01 §11 | Product Licence and Dependency Policy          | none  | 4     |
 | [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 6     |
+| [ ]    | D00 T02 §6  | Runtime and Icon Notices                       | none  | 3     |
 | [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 8     |
 
 ### Phase 99: Manual, operator only
@@ -131,6 +132,6 @@ Sections: 3 | Checklist items: 12
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 16/90 verified sections, 12 ready to run now.
+Progress: 16/91 verified sections, 12 ready to run now.
 
-Checklist: 104/517 items completed (includes Commit items).
+Checklist: 106/518 items completed (includes Commit items).

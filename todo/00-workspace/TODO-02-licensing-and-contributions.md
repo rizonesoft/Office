@@ -40,6 +40,7 @@ title: "TODO-02 -- Licensing and Contributions"
 | 3 | §3 | Contributor agreement text | -- | [ ] |
 | 4 | §4 | Contributor agreement PR check | §3 | [ ] |
 | 5 | §5 | Contributing guide | §1 | [ ] |
+| 6 | §6 | Runtime and icon notices | §2, D02 T02 §2, D03 T01 §11, D03 T01 §12 | [ ] |
 
 ## 1. SPDX Headers and Checker
 
@@ -71,7 +72,13 @@ Each file states its own licence so a copied file keeps its terms. Rizonesoft co
 
 ## 2. Third-Party Notices File
 
+> **Started:** 2026-10-21T20:10:00Z
+
 GPLv3 for our code does not remove the duties of the components we ship. The Windows App SDK, WinUI 3 and the .NET runtime are MIT and need their copyright and permission notices in both the MSIX package and the Inno Setup installer; the OFL font and the MIT icon set need their notices.
+
+**Corrected 2026-10-21:** the Fluent UI System Icons, Windows App SDK and .NET runtime entries moved to §6. None of the three is bundled yet: the glyph set is chosen (D02 T02 §2) but not pinned, and the redistributed packages come from the foundation plan's Toolchain section (D03 T01 §12), which does not exist; both are later phases, so a version written here now would be invented.
+
+> **Deferred:** the Fluent UI System Icons, Windows App SDK and .NET runtime notices, once each is pinned and redistributed -> XREF: D00 T02 §6
 
 **Phase:** 0
 **Needs:** none
@@ -79,15 +86,13 @@ GPLv3 for our code does not remove the duties of the components we ship. The Win
 
 **Build order:**
 
-1. Write `THIRD-PARTY-NOTICES.md` with one entry per bundled component. Done when: every component in Current state has an entry with all fields.
+1. Write `THIRD-PARTY-NOTICES.md` with one entry per component the repository carries today. Done when: Plus Jakarta Sans and the control identifier baseline each have an entry with all fields.
 
-- [ ] Add the Plus Jakarta Sans entry (version 2.071, SIL OFL 1.1, https://github.com/tokotype/PlusJakartaSans, reserved font name rules) to `THIRD-PARTY-NOTICES.md`. Done when: the entry names version, licence, source and obligations. Cheaper substitute: a link without the licence text.
-- [ ] Add the Fluent UI System Icons entry (MIT, Microsoft's `fluentui-system-icons` repository, pinned version) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
-- [ ] Add the Windows App SDK (with WinUI 3) and .NET runtime entries, each with its pinned version, MIT notice text and the packages the product redistributes. Done when: every redistributed package in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Microsoft runtime, MIT", which drops the required notices. **Corrected 2026-10-20:** was a Qt 6 entry.
-- [ ] Add a "How this file is maintained" note in `THIRD-PARTY-NOTICES.md` naming D03 T01 §11's dependency policy as the gate for new entries. Done when: the note names the policy file. Cheaper substitute: adding entries only at release time.
+- [x] Add the Plus Jakarta Sans entry (version 2.071, SIL OFL 1.1, https://github.com/tokotype/PlusJakartaSans, reserved font name rules) to `THIRD-PARTY-NOTICES.md`. Done when: the entry names version, licence, source and obligations. Cheaper substitute: a link without the licence text.
+- [x] Add a "How this file is maintained" note in `THIRD-PARTY-NOTICES.md` naming D03 T01 §11's dependency policy as the gate for new entries. Done when: the note names D03 T01 §11 and the licensing spec it writes (`docs/specs/<date>-licensing-design.md`). **Corrected 2026-10-21:** said "names the policy file", which does not exist until D03 T01 §11 runs. Cheaper substitute: adding entries only at release time.
 - [ ] Commit: `legal: add third-party notices`
 
-**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Plus Jakarta Sans" --require "Fluent UI System Icons" --require "Windows App SDK"` exits 0.
+**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Plus Jakarta Sans" --require "Office control identifier baseline" --require "How this file is maintained"` exits 0. **Corrected 2026-10-21:** required the Fluent UI System Icons and Windows App SDK headings, now §6's.
 
 ## 3. Contributor Agreement Text
 
@@ -148,6 +153,24 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 - [ ] Commit: `docs: add contributing guide`
 
 **Test checkpoint:** `python scripts/check-design-doc.py CONTRIBUTING.md --require "Licence and agreement" --require "Build and test" --require Workflow` exits 0.
+
+## 6. Runtime and Icon Notices
+
+The components the product will redistribute get their notices once each is pinned: the Fluent UI System Icons glyph set chosen in D02 T02 §2, and the Windows App SDK (with WinUI 3) and .NET runtime packages the foundation plan's Toolchain section names (D03 T01 §12). Moved from §2 on 2026-10-21, when none of them was bundled or pinned.
+
+**Phase:** 3
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add one `THIRD-PARTY-NOTICES.md` entry per redistributed component, from its pinned version. Done when: every package the Toolchain section redistributes has an entry with all fields.
+
+- [ ] Add the Fluent UI System Icons entry (MIT, Microsoft's `fluentui-system-icons` repository, the version D02 T02 §2 pins) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
+- [ ] Add the Windows App SDK (with WinUI 3) and .NET runtime entries, each with its pinned version, MIT notice text and the packages the product redistributes. Done when: every redistributed package in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Microsoft runtime, MIT", which drops the required notices. **Corrected 2026-10-20:** was a Qt 6 entry. (Moved from §2 on 2026-10-21.)
+- [ ] Commit: `legal: add runtime and icon notices`
+
+**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Fluent UI System Icons" --require "Windows App SDK" --require ".NET runtime"` exits 0.
 
 ## Verification
 

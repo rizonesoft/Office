@@ -2,6 +2,17 @@
 
 Rizonesoft Office is licensed under GPL-3.0-or-later. This file lists the third-party material the repository carries, with the licence each one requires us to reproduce. D00 T02 owns this file and adds the bundled components.
 
+## Fonts
+
+### Plus Jakarta Sans
+
+- What: the Plus Jakarta Sans variable font, `design/fonts/plus-jakarta-sans/PlusJakartaSans[wght].ttf`, the suite's brand and interface typeface, bundled unmodified.
+- Version: 2.071 (the font's own version string, `Version 2.071;gftools[0.9.30]`).
+- Upstream: https://github.com/tokotype/PlusJakartaSans.
+- Copyright: Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans).
+- Licence: OFL-1.1. The full licence text ships beside the font as `design/fonts/plus-jakarta-sans/OFL.txt` (also `LICENSES/OFL-1.1.txt`).
+- Obligations: every copy of the font, in the repository and in each installer and MSIX package, carries the copyright line above and the OFL text; the font is never sold on its own; a modified version must be renamed and stays under OFL-1.1. The font declares no Reserved Font Name.
+
 ## Data sources
 
 ### Office control identifier baseline
@@ -34,3 +45,9 @@ Rizonesoft Office is licensed under GPL-3.0-or-later. This file lists the third-
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE
 ```
+
+## How this file is maintained
+
+- Every component the repository carries or the product redistributes has one entry here before it lands, with what it is, its pinned version or commit, upstream, copyright, licence (as an SPDX identifier on a `- Licence:` line, which `scripts/check-spdx.py --allow` reads) and obligations.
+- The gate for a new entry is the dependency licence policy D03 T01 §11 writes in `docs/specs/<date>-licensing-design.md`: a component whose licence that policy does not allow does not land.
+- The Fluent UI System Icons, Windows App SDK and .NET runtime entries arrive with D00 T02 §6, once each is pinned and redistributed.

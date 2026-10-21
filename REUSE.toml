@@ -22,7 +22,7 @@ path = ["assets/**", "design/icons/**"]
 SPDX-FileCopyrightText = "2026 Rizonesoft"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
-# Plus Jakarta Sans, bundled unmodified with its OFL.txt (D00 T02 §2 records it in THIRD-PARTY-NOTICES.md).
+# Plus Jakarta Sans, bundled unmodified with its OFL.txt (recorded in THIRD-PARTY-NOTICES.md).
 [[annotations]]
 path = "design/fonts/**"
 precedence = "override"
