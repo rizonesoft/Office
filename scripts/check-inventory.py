@@ -156,20 +156,42 @@ def links(value, path, link):
     """Problems for every string inside a record (nested values included) that holds a link. link is the schema's own
     noLink pattern (owner rule 2026-10-20: the repository holds no Microsoft text and no links), so the typed fields and
     every other string are held to one rule. Walked with an explicit stack, in document order, so no depth of nesting
-    can exhaust the interpreter's recursion limit."""
-    problems, stack = [], [(value, path)]
+    can exhaust the interpreter's recursion limit. Each node keeps only its parent and its own short label, and a path
+    is spelled out only for a reported link, at most LINKS_SHOWN per record, so neither long keys nor deep nesting
+    can make the report grow faster than the input."""
+    problems, found = [], 0
+    nodes = [(None, path)]  # (parent node, this node's label)
+    stack = [(value, 0)]
+
+    def spelled(node):
+        parts = []
+        while node is not None:
+            node, label = nodes[node]
+            parts.append(label)
+        text = "".join(reversed(parts))
+        return text if len(text) <= 300 else f"{text[:150]}...{text[-120:]}"
+
     while stack:
-        item, where = stack.pop()
+        item, node = stack.pop()
         if isinstance(item, str):
             if len(item) > MAX_STRING:  # longer than any field allows: refused by the schema, and not worth a search
                 continue
-            found = link.search(item)
-            if found:
-                problems.append(f"{where}: link {found.group(0)!r} in a record")
-        elif isinstance(item, dict):
-            stack.extend(reversed([(v, f"{where}.{k}") for k, v in item.items()]))
-        elif isinstance(item, list):
-            stack.extend(reversed([(v, f"{where}[{i}]") for i, v in enumerate(item)]))
+            hit = link.search(item)
+            if hit:
+                found += 1
+                if found <= LINKS_SHOWN:
+                    problems.append(f"{spelled(node)}: link {hit.group(0)!r} in a record")
+        elif isinstance(item, (dict, list)):
+            children = item.items() if isinstance(item, dict) else enumerate(item)
+            labelled = []
+            for key, child in children:
+                nodes.append((node, f".{key if len(key) <= 40 else key[:40] + '...'}" if isinstance(item, dict)
+                              else f"[{key}]"))
+                labelled.append((child, len(nodes) - 1))
+            stack.extend(reversed(labelled))
+    if found > LINKS_SHOWN:
+        # Its own location (path.*), so a schema problem reported at the record does not hide the count.
+        problems.append(f"{path}.*: and {found - LINKS_SHOWN} more links in this record")
     return problems
 
 
@@ -189,6 +211,7 @@ def reference(inventory):
 
 LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
 DUPLICATES_SHOWN = 5  # other places a duplicate-id diagnostic names before counting the rest
+LINKS_SHOWN = 20  # links one record's whole-record scan reports before counting the rest
 
 
 def parent_loops(parents):

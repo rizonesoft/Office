@@ -407,6 +407,33 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_identifier_fields_hold_no_colon(self):
+        # Audit round 15, finding 1: a scheme with no slashes (https:localhost) resolves too; identifiers take no colon.
+        for field in ("uiaId", "idMso", "parent", "target", "captureProfile", "capturedFrom"):
+            for text in ("https:localhost", "x：y"):
+                self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: text})])
+                self.assertTrue(any(f".{field}" in p and "colon" in p for p in self.problems()), (field, ascii(text)))
+
+    def test_long_keys_do_not_amplify_the_report(self):
+        # Audit round 15, finding 2: a 4000-character key over 400 links made 1.6 million diagnostic characters.
+        rec = dict(TAB)
+        rec["x" * 4000] = ["//x"] * 400
+        self.write("word/ribbon.json", [rec])
+        problems = self.problems()
+        self.assertLess(sum(len(p) for p in problems), 20000)
+        self.assertTrue(any("and 380 more links in this record" in p for p in problems), problems[-2:])
+
+    def test_a_boolean_is_not_an_integer(self):
+        # Audit round 15, finding 3: true is not an order, though Python counts bool as int.
+        for value in (True, False):
+            self.write("word/ribbon.json", [dict(TAB, order=value)])
+            self.assertTrue(any(".order: expected integer" in p for p in self.problems()), value)
+
+    def test_an_uncompressed_ipv6_address_is_refused(self):
+        # Audit round 15, finding 3: the full eight-group form, with no ::.
+        self.write("word/ribbon.json", [dict(TAB, label="2001:4860:4860:0000:0000:0000:0000:8888")])
+        self.assertTrue(any("host name or address" in p for p in self.problems()))
+
     def test_noncanonical_links_are_refused(self):
         # Audit round 14, finding 1: backslash network paths and single-slash schemes still resolve to addresses.
         for field, text in (("label", "\\\\localhost\\help"), ("uiaId", "https:/localhost/help"),

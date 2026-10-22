@@ -28,6 +28,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "maxLength": 200
@@ -92,6 +95,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "maxLength": 200
@@ -178,6 +184,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "maxLength": 200
@@ -236,6 +245,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "maxLength": 64
@@ -267,6 +279,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "pattern": "\\S",
@@ -282,6 +297,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "pattern": "\\S",
@@ -311,6 +329,9 @@
             },
             {
               "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
             }
           ],
           "maxLength": 64
@@ -400,6 +421,13 @@
       "not": {
         "pattern": "[.\\u3002\\uff0e\\uff61](?![\\s.\\u3002\\uff0e\\uff61)\\]\"'\\u201d\\u2019]|\\d|$)|(?<![0-9])[.\\u3002\\uff0e\\uff61](?=\\d)|\\d+[.\\u3002\\uff0e\\uff61]\\d+[.\\u3002\\uff0e\\uff61]\\d+|[A-Za-z][A-Za-z0-9+.-]*[:\\uff1a]\\S|[0-9A-Fa-f]{0,4}::[0-9A-Fa-f]{0,4}|[0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){3,}",
         "description": "host name or address"
+      }
+    },
+    "noColon": {
+      "description": "No colon in an identifier field (id, parent, target, captureProfile, capturedFrom, idMso, uiaId): none holds one, and a scheme followed by a colon is how every address begins, with slashes or without (https:localhost resolves too). source keeps its own anchored pattern, whose colon is part of the format.",
+      "not": {
+        "pattern": "[:\\uff1a]",
+        "description": "colon"
       }
     }
   }

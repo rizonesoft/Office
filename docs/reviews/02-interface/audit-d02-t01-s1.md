@@ -574,3 +574,47 @@ All three findings verified and fixed in the next commit; the first two tests fa
 1. P1 a backslash network path (`\localhost\help`) and a single-slash scheme (`https:/localhost/help`), which URL parsers still resolve, passed. `noLink`, which every string field carries, now refuses two slashes or backslashes followed by a host, and any scheme followed by a slash or backslash. Sources keep their colon, which no slash follows (`test_noncanonical_links_are_refused`, in a label, `uiaId` and `idMso`).
 2. P2 ambiguous-parent and ambiguous-target diagnostics grew quadratically: they name at most five places and count the rest, like duplicate ids (`test_ambiguous_reference_diagnostics_are_bounded`, 400 copies and 400 children).
 3. P3 loop propagation across walks was untested: `test_a_chain_into_a_loop_in_another_file_is_reported` names a file whose child leads into a two-record cycle in another file. The cycle's file sorts first, so the child's answer must come from the known loop. A first draft passed with the branch removed (the child sorted first and found the cycle itself), and the file order was fixed so the test fails without it.
+
+## Round 15: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T11:54:06Z
+- Effort: xhigh
+- Lines: 27
+- Digest: 6b93a826c3b7a888
+
+## source-defect: needs-attention
+
+1. **[P1] Schemes without slashes bypass link rejection.** `design/inventory/schema.json:387` accepts this array:
+
+   ```json
+   [{"id":"word.probe","app":"word","kind":"tab","label":"Probe","uiaId":"https:localhost"}]
+   ```
+
+   Schema validation and `check()` return `[]`; `main()` returns **0**. Node’s `new URL("https:localhost").href` returns `https://localhost/`. Identifier fields therefore still admit prohibited web addresses.
+
+## adversarial: needs-attention
+
+2. **[P2] Long property names cause quadratic diagnostic amplification.** `scripts/check-inventory.py:170` and `:172` copy the complete property path into every descendant; `:168` retains it in every link diagnostic. Add an unknown property whose name is `"x" * (10*n)` and value is `["//x"] * n` to an otherwise valid tab. For **n = 100, 200, 400**, full checks produced **109,764**, **419,564**, and **1,639,164** diagnostic characters from inputs of **1,783**, **3,483**, and **6,883** bytes. Schema rejection does not stop this traversal. Small malformed files can consume disproportionate memory before reporting failure.
+
+## consistency: approve
+
+## record: needs-attention
+
+3. **[P3] The ticked every-rule sensitivity claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` claims disabling any rule fails the suite. Two independent in-memory mutations each leave **all 87 tests passing**:
+
+   - Remove boolean exclusion from integer validation at `scripts/check-inventory.py:60`. The mutant accepts an otherwise valid tab with `order: true`.
+   - Remove the final, uncompressed IPv6 alternative at `design/inventory/schema.json:401`. The mutant accepts `label: "2001:4860:4860:0000:0000:0000:0000:8888"`.
+
+   Both mutant records return `[]` from `check()`. Relevant coverage at `scripts/tests/test_check_inventory.py:157` and `:567` misses these cases. All fixture operations were redirected to memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 15
+
+All three findings verified and fixed in the next commit; the first two tests fail against the round 14 checker (fixes stashed), and each of the two P3 tests fails when its rule is removed in memory:
+
+1. P1 a scheme with no slashes (`https:localhost`, which URL parsers resolve) passed in an identifier field. Patching address shapes one at a time keeps losing, so the class is closed instead: a new `noColon` rule gives the identifier fields (`id`, `parent`, `target`, `captureProfile`, `capturedFrom`, `idMso`, `uiaId`) no colon at all, fullwidth included. Every address begins with a scheme and a colon. None of these fields holds a colon in the committed inventory, and `source` keeps its own anchored pattern, whose colon is part of the format (`test_identifier_fields_hold_no_colon`).
+2. P2 long keys multiplied into every descendant's diagnostic: the whole-record scan keeps only each node's parent and its own label, truncates a key past 40 characters, and spells a path out only for a reported link, at most 20 per record, then counts the rest at its own location (`$[i].*`) so a schema problem at the record does not hide it (`test_long_keys_do_not_amplify_the_report`: a 4000-character key over 400 links now reports under 20000 characters).
+3. P3 two rules could be removed unnoticed: `test_a_boolean_is_not_an_integer` (`order: true`) and `test_an_uncompressed_ipv6_address_is_refused` (the full eight-group form).
