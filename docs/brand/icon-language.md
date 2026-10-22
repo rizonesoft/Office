@@ -4,7 +4,7 @@ The rules every Rizonesoft Office icon is drawn to, so the suite logo and six ap
 
 ## Grid
 
-Every icon is drawn on a 128-unit square canvas, `viewBox="0 0 128 128"`, and rasterised to each size the platforms ask for (16 to 1024 pixels). These drawings are not snapped to the pixel grid at small sizes (at 16 pixels a unit is an eighth of a pixel); they stay legible through their own larger shapes and heavier strokes. Pixel-aligned 16, 24 and 32 pixel variants, on their own 16, 24 and 32 unit canvases and drawn to the `sm` and `md` designs, are D01 T02 §4.
+Every icon is drawn on a 128-unit square canvas, `viewBox="0 0 128 128"`, and rasterised to each size the platforms ask for (16 to 1024 pixels). These drawings are not snapped to the pixel grid at small sizes (at 16 pixels a unit is an eighth of a pixel); they stay legible through their own larger shapes and heavier strokes. For 16, 24 and 32 pixels there are pixel-aligned variants, `design/icons/apps/<app>-16.svg`, `-24.svg` and `-32.svg`, on their own 16, 24 and 32 unit canvases: `pixel_svg()` redraws the `sm` design (16, 24) or the `md` design (32) with every edge on the pixel grid, strokes in whole pixels (an odd width centred on a half pixel), and each shape's size rounded on its own, so equal shapes stay equal and the gaps between them survive.
 
 Three drawings share the canvas, picked by the size the icon is shown at (`tier_for` in `icon_design.py`):
 

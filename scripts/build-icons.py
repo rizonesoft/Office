@@ -9,6 +9,7 @@
 
 Outputs:
     design/icons/apps/<app>-<tier>.svg, design/icons/suite/rizonesoft-office-<tier>.svg   app and suite SVG masters
+    design/icons/apps/<app>-{16,24,32}.svg      app icons redrawn on the pixel grid for those sizes
     design/icons/files/<ext>-<variant>.svg      file-type SVG masters (lg, lg-badge-md, lg-badge-sm, md, sm)
     assets/icons/png/<icon>/<icon>-<px>.png     app and suite PNGs 16 to 1024, each size drawn with its tier
     assets/icons/windows/<icon>.ico             16, 20, 24, 32, 40, 48, 64, 96, 128, 256 (PNG-compressed entries)
@@ -120,6 +121,9 @@ def build():
         master = text if icon == d.SUITE else d.app_master_svg(icon, tier)
         out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = master.encode("utf-8")
     out["design/icons/keylines.svg"] = d.keylines_svg().encode("utf-8")
+    for key in d.APPS:  # the pixel-aligned small variants (section 4); section 6 rasterises from them
+        for size in d.PIXEL_SIZES:
+            out[f"design/icons/apps/{key}-{size}.svg"] = d.pixel_svg(key, size).encode("utf-8")
     out["design/icons/suite/rizonesoft-office-mono.svg"] = d.suite_mono_svg().encode("utf-8")
     for icon in icons():
         draw = lambda shown, icon=icon: svg[(icon, d.tier_for(shown))]

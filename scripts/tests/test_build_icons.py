@@ -349,6 +349,56 @@ class AppMasters(unittest.TestCase):
         self.assertEqual(refused.exception.code, 2)  # argparse's usage error, not a success
 
 
+class PixelVariants(unittest.TestCase):
+    def shapes(self, svg):
+        return [(name, dict(re.findall(r'([\w-]+)="([^"]*)"', attrs)))
+                for name, attrs in re.findall(r"<(rect|circle|path)\b([^>]*)/>", svg.split("</defs>", 1)[1])]
+
+    def test_committed_and_named(self):
+        for key, (_, counterpart, _) in d.APPS.items():
+            for size in (16, 24, 32):
+                svg = d.pixel_svg(key, size)
+                path = SCRIPTS.parent / f"design/icons/apps/{key}-{size}.svg"
+                self.assertEqual(path.read_text(encoding="utf-8"), svg, (key, size))
+                self.assertIn(f'viewBox="0 0 {size} {size}" width="{size}" height="{size}"', svg)
+                self.assertEqual(re.findall(r"<!--(.*?)-->", svg), [f" Counterpart: Microsoft {counterpart} "])
+
+    def test_every_edge_is_on_the_pixel_grid(self):
+        # A stroke of odd width is centred on a half pixel, anything else lies on whole pixels.
+        for key in d.APPS:
+            for size in (16, 24, 32):
+                shapes = self.shapes(d.pixel_svg(key, size))
+                self.assertGreaterEqual(len(shapes), 5, (key, size))  # orb, pane, seen orb, rim and the symbol
+                for name, a in shapes:
+                    width = float(a.get("stroke-width", 0)) if a.get("stroke", "none") != "none" else 0
+                    self.assertEqual(width, int(width), (key, size, a))
+                    offset = .5 if int(width) % 2 else 0
+                    if name == "rect":
+                        values = [float(a["x"]) - offset, float(a["y"]) - offset, float(a["width"]), float(a["height"])]
+                    elif name == "circle":
+                        values = [float(a[v]) - float(a["r"]) for v in ("cx", "cy")] + [2 * float(a["r"])]
+                    else:
+                        values = [float(v) - offset for v in re.findall(r"-?[\d.]+", a["d"])]
+                    self.assertTrue(all(v == int(v) for v in values), (key, size, name, a))
+                    self.assertTrue(all(0 <= v <= size for v in values), (key, size, name, a))
+
+    def test_separate_shapes_stay_separate(self):
+        # Filled shapes apart on the 128-unit drawing keep at least a pixel between them.
+        for key in d.APPS:
+            for size, tier in d.PIXEL_SIZES.items():
+                filled = [a for name, a in self.shapes(d.pixel_svg(key, size)) if name == "rect" and a["fill"] != "none"
+                          and "clip-path" not in a][1:]  # the first filled rect is the pane
+                glyph = d.glyph(key, tier, "#000000")
+                drawn = [a for name, a in re.findall(r"<(rect)\b([^>]*)/>", glyph)]
+                self.assertEqual(len(filled), len([g for g in drawn if 'fill="#000000"' in g]), (key, size))
+                boxes = [(float(a["x"]), float(a["y"]), float(a["x"]) + float(a["width"]),
+                          float(a["y"]) + float(a["height"])) for a in filled]
+                for i, p in enumerate(boxes):
+                    for q in boxes[i + 1:]:
+                        apart = p[2] < q[0] or q[2] < p[0] or p[3] < q[1] or q[3] < p[1]
+                        self.assertTrue(apart, (key, size, p, q))
+
+
 class MonoMark(unittest.TestCase):
     def test_one_paint_and_no_live_text(self):
         svg = d.suite_mono_svg()

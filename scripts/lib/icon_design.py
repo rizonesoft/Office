@@ -11,6 +11,7 @@ Approved 2026-10-20 (todo/01-brand/TODO-02-icon-system.md section 1):
 Every function is pure and deterministic, so the same inputs always produce byte-identical SVG.
 """
 import math
+import re
 
 APPS = {
     # key: (display name, Microsoft counterpart, [light, dark] gradient ends)
@@ -271,3 +272,90 @@ def suite_mono_svg():
             f'<circle cx="{n(cx)}" cy="{n(cy)}" r="{n(r)}" fill="currentColor" clip-path="url(#mono-cut)"/>'
             f'<path fill="currentColor" fill-rule="evenodd" d="{rounded_rect_path(px, py, pw, ph, prx)} {holes}"/>'
             '</svg>\n')
+
+
+# Each pixel-aligned small variant and the tier whose design it redraws (todo/01-brand/TODO-02-icon-system.md
+# section 4).
+PIXEL_SIZES = {16: "sm", 24: "sm", 32: "md"}
+
+
+def _on_grid(v, width):
+    """A coordinate snapped so a stroke of a whole number of pixels covers whole pixels."""
+    return math.floor(v) + .5 if width % 2 else round(v)
+
+
+def _pixel_glyph(svg, at, k):
+    """Redraw glyph SVG (the closed vocabulary: rect, circle, stroked path) on the pixel grid; at is the glyph's
+    (centre x, centre y, scale) on the 128-unit canvas and k the pixels per canvas unit."""
+    gx, gy, gs = at
+
+    def X(v):
+        return (gx + gs * v) * k
+
+    def Y(v):
+        return (gy + gs * v) * k
+
+    out = []
+    for name, attrs in re.findall(r"<(\w+)([^>]*)/>", svg):
+        a = dict(re.findall(r'([\w-]+)="([^"]*)"', attrs))
+        stroke = a.get("stroke", "none")
+        width = max(1, round(float(a["stroke-width"]) * gs * k)) if stroke != "none" else 0
+        keep = "".join(f' {key}="{a[key]}"' for key in ("stroke-linecap", "stroke-linejoin") if key in a)
+        paint = f'fill="{a["fill"]}" stroke="{stroke}"' + (f' stroke-width="{width}"{keep}' if width else "")
+        if name == "rect":
+            x, y, w, h = (float(a[v]) for v in ("x", "y", "width", "height"))
+            # The start snaps and the size rounds on its own, so equal shapes stay equal and the gaps between
+            # them survive (rounding both edges closes a gap under a pixel, as between the Grid cells at 16 px).
+            x0, y0 = (_on_grid(X(x), width), _on_grid(Y(y), width)) if width else (round(X(x)), round(Y(y)))
+            x1, y1 = x0 + max(1, round(w * gs * k)), y0 + max(1, round(h * gs * k))
+            rx = max(1, round(float(a.get("rx", 0)) * gs * k)) if float(a.get("rx", 0)) else 0
+            out.append(f'<rect x="{n(x0)}" y="{n(y0)}" width="{n(x1 - x0)}" height="{n(y1 - y0)}" rx="{rx}" {paint}/>')
+        elif name == "circle":
+            d = max(2, round(2 * float(a["r"]) * gs * k))
+            cx, cy = (_on_grid(v, d) for v in (X(float(a["cx"])), Y(float(a["cy"]))))
+            out.append(f'<circle cx="{n(cx)}" cy="{n(cy)}" r="{n(d / 2)}" {paint}/>')
+        else:
+            parts = []
+            for cmd, args in re.findall(r"([MLHVZ])([^MLHVZ]*)", a["d"]):
+                v = [float(t) for t in re.findall(r"-?[\d.]+", args)]
+                if cmd in "ML":
+                    parts.append(f"{cmd}{n(_on_grid(X(v[0]), width))},{n(_on_grid(Y(v[1]), width))}")
+                elif cmd == "H":
+                    parts.append(f"H{n(_on_grid(X(v[0]), width))}")
+                elif cmd == "V":
+                    parts.append(f"V{n(_on_grid(Y(v[0]), width))}")
+                else:
+                    parts.append("Z")
+            out.append(f'<path {paint} d="{" ".join(parts)}"/>')
+    return "".join(out)
+
+
+def pixel_svg(key, size):
+    """An app icon redrawn for one small size on a size-unit canvas with every edge on the pixel grid, following the
+    design its tier uses at that size (PIXEL_SIZES). The Microsoft counterpart is noted in a comment, as on the
+    other masters."""
+    tier = PIXEL_SIZES[size]
+    k = size / 128
+    a, b = APPS[key][2]
+    cx, cy, r = APP_ORB[tier]
+    px, py, pw, ph, prx = APP_PANE[tier]
+    d = max(2, round(2 * r * k))
+    ocx, ocy, orr = _on_grid(cx * k, d), _on_grid(cy * k, d), d / 2
+    x0, y0, x1, y1 = round(px * k), round(py * k), round((px + pw) * k), round((py + ph) * k)
+    rr = max(1, round(prx * k))
+    tint = mix(a, "#ffffff", .8 if tier == "sm" else .84)
+    grad, clip = f"{key}-{size}-g", f"{key}-{size}-p"
+    pane = f'x="{x0}" y="{y0}" width="{x1 - x0}" height="{y1 - y0}" rx="{rr}"'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="{size}" height="{size}">'
+            f'<!-- Counterpart: Microsoft {APPS[key][1]} --><title>Rizonesoft {APPS[key][0]}</title>'
+            f'<defs><linearGradient id="{grad}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{a}"/>'
+            f'<stop offset="1" stop-color="{b}"/></linearGradient>'
+            f'<clipPath id="{clip}"><rect {pane}/></clipPath></defs>'
+            f'<circle cx="{n(ocx)}" cy="{n(ocy)}" r="{n(orr)}" fill="url(#{grad})"/>'
+            f'<rect {pane} fill="{tint}"/>'
+            f'<circle cx="{n(ocx)}" cy="{n(ocy)}" r="{n(orr)}" fill="{mix(a, "#ffffff", .5)}" '
+            f'clip-path="url(#{clip})"/>'
+            f'<rect x="{x0 + .5}" y="{y0 + .5}" width="{x1 - x0 - 1}" height="{y1 - y0 - 1}" rx="{n(rr - .5)}" '
+            f'fill="none" stroke="{mix(a, "#000000", .1)}" stroke-opacity="{".6" if tier == "sm" else ".4"}" '
+            f'stroke-width="1"/>'
+            f'{_pixel_glyph(glyph(key, tier, mix(b, "#000000", .15)), APP_GLYPH_AT[tier], k)}</svg>\n')

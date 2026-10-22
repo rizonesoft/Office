@@ -132,7 +132,11 @@ One master SVG per app, drawn on the shared grid with the motif from §1. File n
 
 ## 4. Small-Size App Icon Variants
 
+> **Started:** 2026-10-22T07:40:00Z
+
 Detail that reads at 256 pixels turns to mud at 16. Each app gets hand-simplified 16, 24 and 32 pixel variants aligned to the pixel grid instead of relying on downscaling.
+
+**Corrected 2026-10-22:** the variants are generated, as every other master is: `pixel_svg()` in `scripts/lib/icon_design.py` redraws each app's approved small design (`sm` for 16 and 24, `md` for 32, the split the owner chose on 2026-10-20) on the pixel grid, and `python scripts/build-icons.py` writes them. File names use the app key, as the §3 masters do.
 
 **Phase:** 1
 **Needs:** none
@@ -142,9 +146,9 @@ Detail that reads at 256 pixels turns to mud at 16. Each app gets hand-simplifie
 
 1. Draw `<app-id>-16.svg`, `<app-id>-24.svg` and `<app-id>-32.svg` for each app in `design/icons/apps/`. Done when: 18 variant files exist with integer-aligned coordinates.
 
-- [ ] Draw the 32 pixel variant for each app with `viewBox="0 0 32 32"` and integer-aligned edges. Done when: six `-32.svg` files exist. Cheaper substitute: the master with a smaller `width`.
-- [ ] Draw the 24 pixel variant for each app with `viewBox="0 0 24 24"`. Done when: six `-24.svg` files exist. Cheaper substitute: downscaling the 32 pixel variant.
-- [ ] Draw the 16 pixel variant for each app with `viewBox="0 0 16 16"`, keeping only the primary glyph. Done when: six `-16.svg` files exist. Cheaper substitute: downscaling the master.
+- [x] Draw the 32 pixel variant for each app with `viewBox="0 0 32 32"` and integer-aligned edges. Done when: six `-32.svg` files exist. Cheaper substitute: the master with a smaller `width`.
+- [x] Draw the 24 pixel variant for each app with `viewBox="0 0 24 24"`. Done when: six `-24.svg` files exist. Cheaper substitute: downscaling the 32 pixel variant.
+- [x] Draw the 16 pixel variant for each app with `viewBox="0 0 16 16"`, keeping only the primary glyph. Done when: six `-16.svg` files exist. Cheaper substitute: downscaling the master.
 - [ ] Commit: `brand: add small-size app icon variants`
 
 **Test checkpoint:** `(Get-ChildItem design/icons/apps/*-16.svg, design/icons/apps/*-24.svg, design/icons/apps/*-32.svg).Count` returns 18 and each passes `python scripts/check-image-asset.py <file> --format svg`.
