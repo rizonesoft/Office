@@ -189,6 +189,12 @@ def parent_loop(rid, parents):
     return None
 
 
+def printable(text):
+    """text with every character that is not printable (controls such as ESC, format characters such as bidi
+    overrides, lone surrogates) written as an escape, so a record's own content cannot rewrite the terminal."""
+    return "".join(ch if ch.isprintable() else ascii(ch)[1:-1] for ch in str(text))
+
+
 def unique_pairs(pairs):
     """A JSON object hook that refuses a repeated member: json would keep the last value and silently drop the first."""
     keys = [k for k, _ in pairs]
@@ -298,6 +304,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     if manifest and not (isinstance(sources, dict) and isinstance(sources.get("commit"), str)
                          and isinstance(sources.get("blobs"), dict)):
         raise Unreadable(f"{sources_path}: not a manifest (an object with a commit string and a blobs object)")
+    # The baseline every baseline: source must name: this inventory's manifest, or the repository's when it has none.
+    baseline_commit = (sources if manifest else load(INVENTORY / SOURCES))["commit"]
     # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must
     # exist and Outlook's must hold every window it lists. Checking one file stays a check of that file alone.
     whole = inventory.is_dir() and inventory.resolve() in [Path(p).resolve() for p in paths]
@@ -349,6 +357,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 problems.append(f"{where}: capturedFrom {build} is not a build in {REFERENCE}")
             source = rec.get("source")
             stamped = re.fullmatch(r"[a-z]+:(\d+\.\d+\.\d+\.\d+)", source) if isinstance(source, str) else None
+            pinned = re.fullmatch(r"baseline:([0-9a-f]{7,40})", source) if isinstance(source, str) else None
+            if pinned and not baseline_commit.startswith(pinned.group(1)):
+                problems.append(f"{where}: source baseline:{pinned.group(1)} is not the pinned baseline "
+                                f"{baseline_commit}")
             if stamped and stamped.group(1) not in builds:
                 problems.append(f"{where}: source build {stamped.group(1)} is not a build in {REFERENCE}")
             if stamped and isinstance(build, str) and stamped.group(1) != build:
@@ -385,15 +397,15 @@ def main(argv=None):
             stream.reconfigure(errors="backslashreplace")
     missing = [p for p in args.paths if not Path(p).exists()]
     if missing:
-        print("\n".join(f"{p}: no such file or folder" for p in missing), file=sys.stderr)
+        print("\n".join(printable(f"{p}: no such file or folder") for p in missing), file=sys.stderr)
         return 2
     try:
         problems = check(args.paths, args.require_behaviour)
     except Unreadable as exc:
-        print(exc, file=sys.stderr)
+        print(printable(exc), file=sys.stderr)
         return 2
     for problem in problems:
-        print(problem)
+        print(printable(problem))
     return 1 if problems else 0
 
 

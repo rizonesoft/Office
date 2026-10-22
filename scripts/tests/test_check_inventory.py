@@ -103,7 +103,7 @@ class Inventory(unittest.TestCase):
         self.assertTrue(any("link" in p for p in problems), problems)
 
     def test_capture_provenance_sources_pass(self):
-        for good in ("uia:16.0.20430.20182", "listcommands:16.0.20430.20182", "baseline:4f1c2ab"):
+        for good in ("uia:16.0.20430.20182", "listcommands:16.0.20430.20182", "baseline:b230a0d"):
             self.write("word/ribbon.json", [TAB, dict(PASTE, source=good)])
             self.assertEqual(self.problems(), [], good)
         for bad in ("uia:latest", "baseline:main", "uia:16.0.20430.20182 extra"):
@@ -147,7 +147,7 @@ class Inventory(unittest.TestCase):
         self.assertEqual(ci.validate([dict(BOLD, behaviour="Turns heavy type on or off.")], schema, schema), [])
 
     def test_a_trailing_newline_does_not_satisfy_an_anchored_pattern(self):
-        for rec in (dict(PASTE, source="uia:16.0.20430.20182" + chr(10)), dict(PASTE, source="baseline:4f1c2ab" + chr(10)),
+        for rec in (dict(PASTE, source="uia:16.0.20430.20182" + chr(10)), dict(PASTE, source="baseline:b230a0d" + chr(10)),
                     dict(PASTE, id="word.home.paste" + chr(10))):
             self.write("word/ribbon.json", [TAB, rec])
             self.assertTrue(any("does not match" in p for p in self.problems()), rec)
@@ -335,7 +335,7 @@ class Inventory(unittest.TestCase):
     def test_any_address_in_text_is_refused(self):
         # Audit round 5, findings 1 and 3: punycode hosts and URI schemes other than scheme:// in text a person reads.
         for text in ("xn--e1afmkfd.xn--p1ai", "data:text/plain,hello", "javascript:alert(1)", "tel:+27110000000"):
-            for field in ("label", "behaviour", "menuPath"):
+            for field in ("label", "behaviour", "menuPath", "keytip", "shortcut"):
                 rec = dict(BOLD, **{field: text})
                 self.write("word/ribbon.json", [TAB, GROUP, rec])
                 self.assertTrue(any(f".{field}" in p and "host name or address" in p for p in self.problems()),
@@ -372,6 +372,32 @@ class Inventory(unittest.TestCase):
         out.flush()
         self.assertEqual(code, 1)
         self.assertIn(b"\\ud800", out.buffer.getvalue())
+
+    def test_a_baseline_source_names_the_pinned_baseline(self):
+        # Audit round 9, finding 1: baseline: names the commit the manifest pins (a prefix of it), not any hex.
+        for bad in ("0" * 40, "b230a0e", "deadbeef"):
+            self.write("word/ribbon.json", [TAB, dict(PASTE, source=f"baseline:{bad}")])
+            self.assertTrue(any("is not the pinned baseline" in p for p in self.problems()), bad)
+        self.write("word/ribbon.json", [TAB, dict(PASTE, source="baseline:b230a0df45036b2d5e8b49ebf368b3f90ada8d63")])
+        self.assertEqual(self.problems(), [])
+
+    def test_diagnostics_escape_control_characters(self):
+        # Audit round 9, finding 2: a record's text cannot send control or bidi characters to the terminal.
+        path = self.inv / "word" / "ribbon.json"
+        path.write_text(json.dumps([dict(TAB, captureProfile="\u001b[2JFORGED‮")]), encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = ci.main([str(path)])
+        self.assertEqual(code, 1)
+        self.assertNotIn("\u001b", out.getvalue())
+        self.assertNotIn("‮", out.getvalue())
+        self.assertIn("\\x1b[2JFORGED\\u202e", out.getvalue())
+
+    def test_a_time_is_not_an_ipv6_address(self):
+        # Audit round 9, finding 3: three colon-joined groups is a time, not an address.
+        for text in ("12:30:45", "Starts at 09:15:00"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertEqual(self.problems(), [], text)
 
     def test_ipv6_addresses_in_text_are_refused(self):
         # Audit round 8, finding 1: colon-joined hexadecimal groups, :: included.

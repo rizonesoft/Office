@@ -348,3 +348,41 @@ All five findings verified and fixed in the next commit; four tests fail against
 3. P2 unreadable-file diagnostics could still crash: the output streams take their escaping at the start of `main`, before any report (`test_unreadable_diagnostics_do_not_crash_on_unencodable_text`).
 4. P1 `\d` matched any script's digits: patterns compile with `re.ASCII`, so `\d`, `\w` and `\b` mean what ECMA-262 means (ASCII), while `\s` and `\S` keep the explicit ECMA whitespace class (`test_patterns_use_ecma_ascii_digits`).
 5. P3 `bounds` members could leave `required` unnoticed: `test_every_bounds_member_is_required` lists `x`, `y`, `width` and `height`.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T10:17:44Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 93f3e0d98f88f0e5
+
+### source-defect: needs-attention
+
+1. **P1: Fabricated baseline provenance passes.** `scripts/check-inventory.py:351` validates live-source builds but never resolves record-level `baseline:` sources against the pinned baseline. Append an otherwise valid control with `source="baseline:" + "0"*40`. The whole-inventory check returns **0**, although this null revision cannot identify the baseline recorded in `design/inventory/REFERENCE.md:60`.
+
+### adversarial: needs-attention
+
+2. **P2: Rejected metadata reaches the terminal unescaped.** `scripts/check-inventory.py:347` interpolates `captureProfile` directly, and `:396` prints it. Set an otherwise valid record’s `captureProfile` to `"\u001b[2JFORGED"`. The checker returns **1**, but stdout contains the literal screen-clearing escape sequence. The encoding error handler does not escape representable control characters, so malformed input can corrupt displayed diagnostics.
+
+### consistency: needs-attention
+
+3. **P2: The IPv6 rule rejects ordinary time values.** `design/inventory/schema.json:387` treats any three colon-separated hexadecimal groups as an IPv6 address. An otherwise valid tab with `label:"12:30:45"` makes the whole-inventory check return **1**, reporting `host name or address`. This is ordinary time text and is not a valid IPv6 address. The description at `:385` repeats the same incorrect classification.
+
+### record: needs-attention
+
+4. **P3: The ticked every-rule test claim remains unsupported.** `scripts/tests/test_check_inventory.py:336` exercises address rejection for label, behaviour and menuPath, but leaves keytip’s independent address constraint unprotected. Remove only `{"$ref":"#/$defs/noHost"}` from `keytip.allOf` in memory: all **66 tests pass**, while `keytip:"data:text/plain,hello"` becomes accepted. This contradicts `todo/02-interface/TODO-01-parity-inventory.md:89`. Verified with all fixture writes intercepted in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 9
+
+Round 9 declared HIGHEST P1, so it cannot stop the loop on severity. All four findings verified and fixed in the next commit:
+
+1. P1 a fabricated `baseline:` source passed: a record's `baseline:` source must now be a prefix of the commit the manifest pins (this inventory's manifest, or the repository's when it has none). The test fixtures that used an invented `baseline:4f1c2ab` now name the pinned commit (`test_a_baseline_source_names_the_pinned_baseline`, an all-zero and two near-miss commits refused).
+2. P2 a record's control characters reached the terminal: every diagnostic is printed through `printable()`, which writes any non-printable character (ESC, bidi overrides, surrogates) as an escape (`test_diagnostics_escape_control_characters`).
+3. P2 a time such as 12:30:45 was taken for IPv6: the rule now needs `::` between hexadecimal groups, or four or more groups (`test_a_time_is_not_an_ipv6_address`; IPv6 cases still refused).
+4. P3 a text field's address rule could be removed unnoticed: `test_any_address_in_text_is_refused` now covers all five text fields; removing `noHost` from any one of them in memory fails it.
+
+The three tests for findings 1 to 3 fail against the round 8 checker (fixes stashed).
