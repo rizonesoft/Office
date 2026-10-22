@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository keeps its own 3-agent conventions (Antigravity, Claude Code, Codex); it takes nothing from the Conclave SDK. Adapt this file to the project: name what the project is, where the code lives, and which commands verify it.
+This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) Windows office suite of six apps that match their Microsoft counterparts feature by feature: Rizonesoft Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook). The names and identifiers are recorded in `docs/brand/NAMES.md`; the plan is `todo/`; brand and icon sources are `scripts/lib/` and `design/`, with generated outputs in `assets/`. The verification commands are `python scripts/todo-graph.py validate`, `python scripts/build-icons.py --check` and `python -m unittest discover -s scripts/tests`, all run in CI (`.github/workflows/ci.yml`). The repository keeps its own 3-agent conventions (Antigravity, Claude Code, Codex) and takes nothing from the Conclave SDK.
 
 ## Working rules
 

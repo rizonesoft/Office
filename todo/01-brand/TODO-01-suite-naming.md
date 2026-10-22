@@ -183,6 +183,8 @@ The product needs a home domain, a GitHub repository or organisation name, and p
 
 ## 6. Apply Names Across the Repository
 
+> **Started:** 2026-10-22T12:20:00Z
+
 Once names are clear, contributor-facing documents stop calling the product "Office 2028". The repository folder and remote keep their codename until §8.
 
 **Corrected 2026-10-22:** the owner dropped the trademark screen (§4) and the repository rename (§8), so this section waits only on §5, and the repository stays `rizonesoft/Office` for good rather than until §8.
@@ -195,9 +197,9 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 
 1. Update `AGENTS.md` and create `README.md` with the product name from `docs/brand/NAMES.md`. Done when: `rg -n "Office 2028" README.md AGENTS.md` returns only the codename note.
 
-- [ ] Replace the first paragraph placeholder in `AGENTS.md` with what the project is, using the suite name from `docs/brand/NAMES.md`. Done when: `AGENTS.md` names the suite and its six apps. Cheaper substitute: leaving the adaptation placeholder in place.
-- [ ] Update `README.md` (created 2026-10-20 with the licence notice) so the suite name, one line per app with its Microsoft counterpart, and the codename note match `docs/brand/NAMES.md`. Done when: `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses). Cheaper substitute: a README that only says "Office clone".
-- [ ] Update `todo/plan.json` `title` to the suite name. Done when: `python scripts/todo-graph.py plan --sync` writes the new title into `todo/implementation-plan.md`. Cheaper substitute: editing the generated plan by hand.
+- [x] Replace the first paragraph placeholder in `AGENTS.md` with what the project is, using the suite name from `docs/brand/NAMES.md`. Done when: `AGENTS.md` names the suite and its six apps. Cheaper substitute: leaving the adaptation placeholder in place.
+- [x] Update `README.md` (created 2026-10-20 with the licence notice) so the suite name, one line per app with its Microsoft counterpart, and the codename note match `docs/brand/NAMES.md`. Done when: `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses). Cheaper substitute: a README that only says "Office clone".
+- [x] Update `todo/plan.json` `title` to the suite name. Done when: `python scripts/todo-graph.py plan --sync` writes the new title into `todo/implementation-plan.md`. Cheaper substitute: editing the generated plan by hand.
 - [ ] Commit: `brand: apply suite and app names`
 
 **Test checkpoint:** `rg -n -i "microsoft (word|excel|powerpoint|visio|project|outlook)" README.md` lists only lines that describe the Microsoft counterpart, and `python scripts/todo-graph.py plan --check` exits 0.

@@ -1,5 +1,5 @@
 {
-  "title": "Office 2028 implementation plan",
+  "title": "Rizonesoft Office implementation plan",
   "acceptance": "Every element in design/inventory works in its app at its inventoried position, and OOXML files round-trip.",
   "phases": {
     "0": "Repository and tooling",

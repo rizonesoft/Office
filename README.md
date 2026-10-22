@@ -17,7 +17,7 @@ Rizonesoft Office is not affiliated with or endorsed by Microsoft. Microsoft, Wo
 
 ## Status
 
-Planning and design. The plan lives in [`todo/`](todo/TODO-00-INDEX.md); icons and brand assets are in [`assets/`](assets/icons/README.md). `Office` is the repository's working codename.
+Planning and design. The plan lives in [`todo/`](todo/TODO-00-INDEX.md); icons and brand assets are in [`assets/`](assets/icons/README.md). The repository keeps the name `Office` (`rizonesoft/Office`), the owner's decision of 2026-10-22.
 
 ## Licence
 
