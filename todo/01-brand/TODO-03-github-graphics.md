@@ -35,7 +35,7 @@ title: "TODO-03 -- GitHub Graphics"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | README hero banner in light and dark | D01 T02 §2 | [x] |
-| 2 | §2 | Social preview image | D01 T02 §3 | [ ] |
+| 2 | §2 | Social preview image | D01 T02 §3 | [x] |
 | 3 | §3 | App lineup strip in light and dark | D01 T02 §3 | [ ] |
 | 4 | §4 | README brand presentation | §1, §3, D01 T01 §6 | [ ] |
 | 5 | §5 | Upload social preview and avatar | §2 | [ ] |
@@ -87,9 +87,12 @@ The social preview is what shows on X, LinkedIn, Slack and Discord when the repo
 - [x] Compose `design/github/social-preview.svg` with the wordmark, the six app icons and the tagline inside a 40 pixel safe margin. Done when: no element's bounding box crosses the margin. Cheaper substitute: the README banner stretched to 2:1.
 - [x] Add a social preview target to `scripts/build-icons.py` exporting `docs/assets/github/social-preview.png`. Done when: `python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000` exits 0. Cheaper substitute: a JPEG with visible compression artefacts.
 - [x] Review the PNG at 400 by 200 pixels in `R:\scratch`. Done when: the suite name is legible at that size. Cheaper substitute: reviewing only at full size.
-- [ ] Commit: `brand: add social preview image`
+- [x] Commit: `brand: add social preview image`
 
 **Test checkpoint:** `python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000` exits 0.
+
+> **Verified:** 2026-10-22 | §2 | 98a89d307dfa128a24ff82f0e41f102aae366c29
+> **Review:** `docs/reviews/d01-t03-s2.json`
 
 ## 3. App Lineup Strip in Light and Dark
 

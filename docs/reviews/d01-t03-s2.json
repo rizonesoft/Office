@@ -1,0 +1,36 @@
+{
+  "ref": "D01 T03 \u00a72",
+  "title": "Social Preview Image",
+  "implementation_sha": "98a89d307dfa128a24ff82f0e41f102aae366c29",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T03-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T03-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T03-s2.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/01-brand/D01-T03-s2.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000 -> ok, png 1280x640 96131 bytes",
+    "reviewed at 400x200: suite name and tagline legible",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (49 tests)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at 98a89d3"
+  ],
+  "rounds_spent": 4,
+  "round_cap": 22
+}

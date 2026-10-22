@@ -47,7 +47,7 @@ Sections: 17 | Checklist items: 85
 | [x]    | D01 T02 §6 | Icon Export Pipeline                    | none           | 8     |
 | [ ]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | owner-decision | 6     |
 | [x]    | D01 T03 §1 | README Hero Banner in Light and Dark    | none           | 4     |
-| [ ]    | D01 T03 §2 | Social Preview Image                    | none           | 4     |
+| [x]    | D01 T03 §2 | Social Preview Image                    | none           | 4     |
 | [ ]    | D01 T03 §3 | App Lineup Strip in Light and Dark      | none           | 4     |
 | [ ]    | D01 T03 §4 | README Brand Presentation               | none           | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar        | operator       | 3     |
@@ -140,6 +140,6 @@ Sections: 5 | Checklist items: 22
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename       | operator, owner-decision        | 4     |
 
-Progress: 33/92 verified sections, 9 ready to run now.
+Progress: 34/92 verified sections, 8 ready to run now.
 
-Checklist: 198/526 items completed (includes Commit items).
+Checklist: 199/526 items completed (includes Commit items).
