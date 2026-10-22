@@ -40,7 +40,7 @@ title: "TODO-01 -- Suite and App Naming"
 | 3 | §3 | Owner selection of suite and app names | §2 | [x] |
 | 4 | §4 | Knockout trademark screen | §3 | [ ] |
 | 5 | §5 | Domain, GitHub and package availability | §3 | [x] |
-| 6 | §6 | Apply names across the repository | §5 | [ ] |
+| 6 | §6 | Apply names across the repository | §5 | [x] |
 | 7 | §7 | Attorney clearance and filing | §4 | [ ] |
 | 8 | §8 | GitHub repository rename | §6 | [ ] |
 | 9 | §9 | Microsoft Store name reservation | §3 | [ ] |
@@ -200,9 +200,12 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 - [x] Replace the first paragraph placeholder in `AGENTS.md` with what the project is, using the suite name from `docs/brand/NAMES.md`. Done when: `AGENTS.md` names the suite and its six apps. Cheaper substitute: leaving the adaptation placeholder in place.
 - [x] Update `README.md` (created 2026-10-20 with the licence notice) so the suite name, one line per app with its Microsoft counterpart, and the codename note match `docs/brand/NAMES.md`. Done when: `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses). Cheaper substitute: a README that only says "Office clone".
 - [x] Update `todo/plan.json` `title` to the suite name. Done when: `python scripts/todo-graph.py plan --sync` writes the new title into `todo/implementation-plan.md`. Cheaper substitute: editing the generated plan by hand.
-- [ ] Commit: `brand: apply suite and app names`
+- [x] Commit: `brand: apply suite and app names`
 
 **Test checkpoint:** `rg -n -i "microsoft (word|excel|powerpoint|visio|project|outlook)" README.md` lists only lines that describe the Microsoft counterpart, and `python scripts/todo-graph.py plan --check` exits 0.
+
+> **Verified:** 2026-10-22 | §6 | 13ad86f30241299507b83fbbb1ed1dfd1ee0e8c8
+> **Review:** `docs/reviews/d01-t01-s6.json`
 
 ## 7. Attorney Clearance and Filing
 

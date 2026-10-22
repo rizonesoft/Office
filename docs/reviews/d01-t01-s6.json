@@ -1,0 +1,31 @@
+{
+  "ref": "D01 T01 \u00a76",
+  "title": "Apply Names Across the Repository",
+  "implementation_sha": "13ad86f30241299507b83fbbb1ed1dfd1ee0e8c8",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T01-s6.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T01-s6.md",
+      "verdict": "clean"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T01-s6.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py README.md --require \"Rizonesoft Office\" -> exit 0",
+    "rg -n -i \"microsoft (word|excel|powerpoint|visio|project|outlook)\" README.md -> six counterpart rows only",
+    "python scripts/todo-graph.py plan --check -> plan current",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at 13ad86f"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}

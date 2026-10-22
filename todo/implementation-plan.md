@@ -38,7 +38,7 @@ Sections: 17 | Checklist items: 85
 | [x]    | D01 T01 §2 | Collision Screen for the Chosen Names   | none           | 6     |
 | [x]    | D01 T01 §3 | Owner Selection of Suite and App Names  | none           | 4     |
 | [x]    | D01 T01 §5 | Domain, GitHub and Package Availability | none           | 4     |
-| [ ]    | D01 T01 §6 | Apply Names Across the Repository       | none           | 4     |
+| [x]    | D01 T01 §6 | Apply Names Across the Repository       | none           | 4     |
 | [x]    | D01 T02 §1 | Icon Design Language Brief              | none           | 5     |
 | [x]    | D01 T02 §2 | Suite Mark and Wordmark Masters         | none           | 5     |
 | [x]    | D01 T02 §3 | Six App Icon Masters                    | none           | 8     |
@@ -140,6 +140,6 @@ Sections: 5 | Checklist items: 22
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename       | operator, owner-decision        | 4     |
 
-Progress: 32/92 verified sections, 10 ready to run now.
+Progress: 33/92 verified sections, 9 ready to run now.
 
-Checklist: 194/526 items completed (includes Commit items).
+Checklist: 195/526 items completed (includes Commit items).
