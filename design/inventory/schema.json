@@ -143,7 +143,8 @@
             {
               "$ref": "#/$defs/noHost"
             }
-          ]
+          ],
+          "pattern": "\\S"
         },
         "shortcut": {
           "type": "string",
@@ -258,7 +259,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "pattern": "\\S"
         },
         "uiaId": {
           "type": "string",
@@ -271,7 +273,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "pattern": "\\S"
         },
         "source": {
           "type": "string",
@@ -365,7 +368,7 @@
       ]
     },
     "noLink": {
-      "description": "Owner rule 2026-10-20: no record holds a web address: a URL with any scheme, a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Endings that are also inventory words (app, dev, io, info) are left out, since ids such as word.command.app-restore and Backstage's Info page use them.",
+      "description": "Owner rule 2026-10-20: no record holds a web address. In every string field: a scheme followed by ://, a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Text a person reads is held to the stricter noHost rule as well.",
       "not": {
         "pattern": "[A-Za-z][A-Za-z0-9+.-]*://|[Ww][Ww][Ww]\\.|[Mm][Aa][Ii][Ll][Tt][Oo]:|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+/|[A-Za-z0-9-]+\\.([Cc][Oo][Mm]|[Oo][Rr][Gg]|[Nn][Ee][Tt]|[Gg][Oo][Vv]|[Ee][Dd][Uu])(?![A-Za-z0-9-])",
         "description": "link"
@@ -379,10 +382,10 @@
       }
     },
     "noHost": {
-      "description": "No host name in text a person reads: any dotted name ending in a label of two or more letters, such as support.microsoft.co.uk, wherever it starts (after an ellipsis included) and including one followed by the full stop that ends a sentence. Identifier fields carry noLink only, since ids such as word.command.about are dotted names too.",
+      "description": "No address of any kind in text a person reads (label, keytip, shortcut, menuPath, behaviour): no letter or digit joined to a letter by a dot, which every host name has (punycode such as xn--p1ai included), and no word followed directly by a colon and a non-space character, which every URI scheme has (data:, mailto:, javascript:, http: and the rest). Office's own labels have neither. Identifier fields carry noLink only, since ids are dotted and sources such as uia:16.0.20430.20182 carry a colon. Abbreviations with inner dots are refused too, so write \"for example\", not \"e.g.\".",
       "not": {
-        "pattern": "[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}(?![A-Za-z0-9-]|\\.[A-Za-z0-9])",
-        "description": "host name"
+        "pattern": "[A-Za-z0-9]\\.[A-Za-z]|[A-Za-z][A-Za-z0-9+.-]*:\\S",
+        "description": "host name or address"
       }
     }
   }

@@ -194,3 +194,38 @@ Round 4 was the first by GPT-6.1 Sol at xhigh (about eight and a half minutes). 
 1. P1 a host after an ellipsis passed: `noHost` no longer needs a particular character before the host; any dotted name ending in a label of two or more letters is a host wherever it starts (`test_a_host_after_an_ellipsis_is_refused`, after "...", "(" and "-").
 2. P2 deep nesting in an unknown field crashed the link scan with `RecursionError`: `links()` now walks with an explicit stack in document order, so any depth the loader accepts is scanned (`test_deep_nesting_is_a_problem_not_a_crash`, 5000 levels, with a link found at the bottom).
 3. P3 removing a field's empty-value rule failed no test: `test_every_text_and_reference_field_refuses_an_empty_value` lists thirteen fields in the test itself (label, parent, keytip, shortcut, target, menuPath, captureProfile, behaviour, idMso, uiaId, source, capturedFrom, id), each required to refuse "" on its own. It found a gap the review had not: `menuPath` accepted an empty string, and the schema now requires a non-blank value there too.
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T09:28:16Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 3d8c31a3fc6ba992
+
+## source-defect: needs-attention
+
+1. **P1:** `design/inventory/schema.json:384` misses internationalized hostnames. An otherwise valid tab with `label: "xn--e1afmkfd.xn--p1ai"` passes both schema validation and `check()` with `[]`. This is a valid punycode hostname, so the no-web-address rule remains bypassable.
+
+## adversarial: needs-attention
+
+2. **P2:** `scripts/check-inventory.py:290` loads the source manifest without validating its structure; line 223 assumes an object containing iterable `blobs`. Supply `[1]` as `baseline-sources.json` and run the whole-inventory check: `main([])` raises uncaught `AttributeError`. Supplying the recorded commit with `"blobs": null` raises uncaught `TypeError`. Neither produces the documented controlled failure.
+
+## consistency: needs-attention
+
+3. **P1:** `design/inventory/schema.json:368` promises to prohibit URLs with any scheme, but the pattern at line 370 requires `://`, except for its special `mailto:` alternative. An otherwise valid tab with `label: "data:text/plain,hello"` passes schema validation and `check()`. This valid URL contradicts both the description and the no-links contract.
+
+## record: needs-attention
+
+4. **P3:** `scripts/tests/test_check_inventory.py:326` still does not support the every-rule claim ticked at `todo/02-interface/TODO-01-parity-inventory.md:89`. Remove only `menuPath.pattern` at `design/inventory/schema.json:192`: all **53 tests pass**, while `menuPath: " "` becomes valid. The new empty-value test is satisfied by `minLength` and never exercises whitespace-only menu paths. Verified through an in-memory schema mutation with fixture writes intercepted.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 5
+
+All four findings verified. The link rule had been patched four rounds running, so it was re-thought rather than extended a fifth time. Every fix has a test that fails against the round 4 checker (fixes stashed):
+
+1. P1 a punycode host and 3. P1 a `data:` URL passed. Instead of listing host and URL shapes, text a person reads (`label`, `keytip`, `shortcut`, `menuPath`, `behaviour`) now refuses the two marks every address has. One is a letter or digit joined to a letter by a dot: every host name has one, punycode included. The other is a word followed directly by a colon and a non-space character: every URI scheme has one (`data:`, `mailto:`, `javascript:`, `tel:`). No text in the committed inventory has either, checked before the change. The cost is that an abbreviation with inner dots, such as "e.g.", is refused in our own sentences; the schema says to write "for example". Identifier fields keep `noLink`, since ids are dotted and sources carry a colon (`test_any_address_in_text_is_refused`, four addresses in three fields, with "Zoom: sets 1.5 line spacing." still valid).
+2. P2 a malformed source manifest crashed: the manifest must be an object with a commit string and a blobs object, else the run is unreadable, exit 2 (`test_a_malformed_manifest_is_unreadable_not_a_crash`, three malformed manifests).
+4. P3 a field's whitespace rule could be removed unnoticed: `keytip`, `menuPath`, `idMso` and `uiaId` now need a visible character like the other text fields, and `test_every_text_and_reference_field_refuses_a_blank_value` requires each of thirteen fields, listed in the test, to refuse a value of spaces on its own.

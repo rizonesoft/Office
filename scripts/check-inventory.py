@@ -288,6 +288,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     inventory = Path(inventory)
     sources_path = inventory / SOURCES
     sources = load(sources_path) if sources_path.is_file() else None
+    # The manifest is read as an object with a string commit and an object of blobs; anything else cannot be used.
+    if sources is not None and not (isinstance(sources, dict) and isinstance(sources.get("commit"), str)
+                                    and isinstance(sources.get("blobs"), dict)):
+        raise Unreadable(f"{sources_path}: not a manifest (an object with a commit string and a blobs object)")
     # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must
     # exist and Outlook's must hold every window it lists. Checking one file stays a check of that file alone.
     whole = inventory.is_dir() and inventory.resolve() in [Path(p).resolve() for p in paths]

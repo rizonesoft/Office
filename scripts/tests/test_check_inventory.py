@@ -269,8 +269,8 @@ class Inventory(unittest.TestCase):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name" in p for p in self.problems()), text)
         # Ordinary text with dots stays valid, and dotted ids are not host names.
-        self.write("word/ribbon.json", [dict(TAB, label="e.g. Save As..."),
-                                        dict(GROUP, behaviour="Version 16.0 only.")])
+        self.write("word/ribbon.json", [dict(TAB, label="Save As..."),
+                                        dict(GROUP, behaviour="Version 16.0 only, for example.")])
         self.assertEqual(self.problems(), [])
 
     def test_a_host_name_ending_a_sentence_is_refused(self):
@@ -331,6 +331,37 @@ class Inventory(unittest.TestCase):
             rec = dict(BOLD, **{field: ""})
             self.write("word/ribbon.json", [TAB, GROUP, rec])
             self.assertTrue(any(f".{field}" in p for p in self.problems()), field)
+
+    def test_any_address_in_text_is_refused(self):
+        # Audit round 5, findings 1 and 3: punycode hosts and URI schemes other than scheme:// in text a person reads.
+        for text in ("xn--e1afmkfd.xn--p1ai", "data:text/plain,hello", "javascript:alert(1)", "tel:+27110000000"):
+            for field in ("label", "behaviour", "menuPath"):
+                rec = dict(BOLD, **{field: text})
+                self.write("word/ribbon.json", [TAB, GROUP, rec])
+                self.assertTrue(any(f".{field}" in p and "host name or address" in p for p in self.problems()),
+                                (field, text))
+        # A colon followed by a space, and digits around a dot, stay valid in text.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Zoom: sets 1.5 line spacing.")])
+        self.assertEqual(self.problems(), [])
+
+    def test_every_text_and_reference_field_refuses_a_blank_value(self):
+        # Audit round 5, finding 4: each field below must refuse a value of spaces on its own, written out here.
+        fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
+                  "idMso", "uiaId", "source", "capturedFrom", "id")
+        for field in fields:
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "  "})])
+            self.assertTrue(any(f".{field}" in p or f" {field} " in p or "orphan" in p and field == "parent"
+                                for p in self.problems()), field)
+
+    def test_a_malformed_manifest_is_unreadable_not_a_crash(self):
+        # Audit round 5, finding 2: the source manifest must be an object with a commit and a blobs object.
+        real = ci.INVENTORY
+        for manifest in ([1], {"commit": "x", "blobs": None}, {"blobs": {}}):
+            (self.inv / ci.SOURCES).write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaises(ci.Unreadable, msg=repr(manifest)):
+                ci.check([str(self.inv)], inventory=self.inv)
+        (self.inv / ci.SOURCES).write_text((real / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
+        ci.check([str(self.inv)], inventory=self.inv)  # the real manifest still reads
 
     def test_malformed_outlook_rows_are_a_problem_not_a_crash(self):
         # Audit round 2, finding 2: rows that are not a list reached the whole-inventory window gate.
