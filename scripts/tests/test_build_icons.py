@@ -305,13 +305,32 @@ class SocialPreview(unittest.TestCase):
         top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</defs>", 1)[1], flags=re.S)
         paths = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
         self.assertEqual(len(paths), len(texts))
+        def points(d):
+            # Every coordinate the path visits, as (x, y), following M, L, Q, C, H and V; Z adds none.
+            out, x, y, cmd = [], 0.0, 0.0, None
+            tokens = re.findall(r"[MLQCHVZ]|-?\d+(?:\.\d+)?", d)
+            i = 0
+            while i < len(tokens):
+                if tokens[i].isalpha():
+                    cmd, i = tokens[i], i + 1
+                    continue
+                if cmd == "H":
+                    x, i = float(tokens[i]), i + 1
+                elif cmd == "V":
+                    y, i = float(tokens[i]), i + 1
+                else:
+                    x, y, i = float(tokens[i]), float(tokens[i + 1]), i + 2
+                out.append((x, y))
+            return out
+
         for path, (text, size, weight, track) in zip(paths, texts):
-            alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">'
-                     f'{path}</svg>')
-            box = Image.open(io.BytesIO(build_icons.render(alone, 1280, 640))).getchannel("A").getbbox()
-            self.assertIsNotNone(box, text)
-            want = bd.outliner().path(text, size, weight, 0, 0, track)[1]
-            self.assertAlmostEqual(box[2] - box[0], want, delta=want * .05 + 4, msg=text)
+            # The glyph outlines must be the literal text's, up to where the line was placed.
+            got = points(re.search(r'd="([^"]+)"', path).group(1))
+            want = points(bd.outliner().path(text, size, weight, 0, 0, track)[0])
+            self.assertEqual(len(got), len(want), text)
+            dx, dy = got[0][0] - want[0][0], got[0][1] - want[0][1]
+            drift = max(max(abs(gx - wx - dx), abs(gy - wy - dy)) for (gx, gy), (wx, wy) in zip(got, want))
+            self.assertLess(drift, .05, text)
 
 
 class GlassPane(unittest.TestCase):
