@@ -30,7 +30,7 @@ Sections: 15 | Checklist items: 88
 
 ### Phase 1: Brand, icons and GitHub graphics
 
-Sections: 20 | Checklist items: 96
+Sections: 20 | Checklist items: 97
 
 | Status | Reference  | Deliverable                             | Needs                   | Items |
 | ------ | ---------- | --------------------------------------- | ----------------------- | ----- |
@@ -48,7 +48,7 @@ Sections: 20 | Checklist items: 96
 | [ ]    | D01 T02 §4 | Small-Size App Icon Variants            | none                    | 4     |
 | [ ]    | D01 T02 §5 | Document File-Type Icons                | none                    | 7     |
 | [ ]    | D01 T02 §6 | Icon Export Pipeline                    | none                    | 8     |
-| [ ]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | owner-decision          | 5     |
+| [ ]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | owner-decision          | 6     |
 | [ ]    | D01 T03 §1 | README Hero Banner in Light and Dark    | none                    | 4     |
 | [ ]    | D01 T03 §2 | Social Preview Image                    | none                    | 4     |
 | [ ]    | D01 T03 §3 | App Lineup Strip in Light and Dark      | none                    | 4     |
@@ -135,4 +135,4 @@ Sections: 3 | Checklist items: 13
 
 Progress: 25/92 verified sections, 8 ready to run now.
 
-Checklist: 153/524 items completed (includes Commit items).
+Checklist: 153/525 items completed (includes Commit items).

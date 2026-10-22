@@ -3,6 +3,7 @@
 """scripts/build-icons.py and scripts/lib/icon_design.py: tiers, packers, verification and the glass pane base."""
 import importlib.util
 import io
+import json
 from pathlib import Path
 import struct
 import sys
@@ -118,6 +119,10 @@ class GlassPane(unittest.TestCase):
             self.assertLessEqual(max(abs(a - b) for a, b in zip(on_black, on_white)), 6, icon)
 
 
+def render_rgb(svg):
+    return Image.open(io.BytesIO(build_icons.render(svg, 128, background="#ffffff"))).convert("RGB")
+
+
 class Palette(unittest.TestCase):
     def test_contrast_matches_wcag_reference_values(self):
         self.assertAlmostEqual(d.contrast("#000000", "#ffffff"), 21.0, places=6)
@@ -129,18 +134,38 @@ class Palette(unittest.TestCase):
             for background in ("#ffffff", "#1f1f1f"):
                 self.assertGreaterEqual(d.contrast(color, background), 3, (key, background))
 
+    def test_exported_accent_is_the_app_colour(self):
+        exported = json.loads((SCRIPTS.parent / "assets/icons/palette.json").read_text(encoding="utf-8"))["apps"]
+        for key, (_, _, (light, dark)) in d.APPS.items():
+            self.assertEqual((exported[key]["accent"], exported[key]["light"], exported[key]["dark"]),
+                             (d.APP_COLOR[key], light, dark), key)
+
     def test_app_colour_lies_on_its_gradient(self):
         for key, color in d.APP_COLOR.items():
             light, dark = d.APPS[key][2]
             self.assertIn(color, {d.mix(light, dark, i / 100) for i in range(101)}, key)
 
-    def test_symbol_reads_on_its_pane(self):
+    def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
+        # Rendered, not computed: each symbol pixel against the same pixel with the symbol left out. The lg symbols
+        # cross the blurred orb and block; their contrast is the owner's call at D01 T02 section 7.
+        real = d.glyph
         for key in d.APPS:
-            light, dark = d.APPS[key][2]
-            symbol = d.mix(dark, "#000000", .15)
-            for tier in d.TIERS:
-                tint = d.mix(light, "#ffffff", .8 if tier == "sm" else .84)
-                self.assertGreaterEqual(d.contrast(symbol, tint), 4.5, (key, tier))
+            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+            rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
+            for tier in ("md", "sm"):
+                drawn = render_rgb(d.icon_svg(key, tier))
+                try:
+                    d.glyph = lambda *_: ""
+                    bare = render_rgb(d.icon_svg(key, tier))
+                finally:
+                    d.glyph = real
+                grid = [(x, y) for y in range(128) for x in range(128)]
+                pairs = [(drawn.getpixel(xy), bare.getpixel(xy)) for xy in grid]
+                pairs = [(s, b) for s, b in pairs if s != b]
+                self.assertGreater(len(pairs), 500, (key, tier))
+                self.assertIn(rgb, {s for s, _ in pairs}, (key, tier))
+                worst = min(d.contrast("#%02x%02x%02x" % s, "#%02x%02x%02x" % b) for s, b in pairs if s == rgb)
+                self.assertGreaterEqual(worst, 3, (key, tier))
 
 
 class Keylines(unittest.TestCase):
@@ -153,12 +178,15 @@ class Keylines(unittest.TestCase):
             cx, cy, r = d.APP_ORB[tier]
             self.assertIn(f'cx="{d.n(i * 144 + cx)}" cy="{d.n(cy)}" r="{d.n(r)}"', svg, tier)
 
-    def test_every_tier_fits_the_canvas(self):
-        for tier in d.TIERS:
-            px, py, pw, ph, _ = d.APP_PANE[tier]
-            cx, cy, r = d.APP_ORB[tier]
-            self.assertTrue(0 <= px and px + pw <= 128 and 0 <= py and py + ph <= 128, tier)
-            self.assertTrue(0 <= cx - r and cx + r <= 128 and 0 <= cy - r and cy + r <= 128, tier)
+    def test_every_drawing_fits_the_canvas(self):
+        # Rendered on a canvas three times the size, so a shape, stroke or shadow past the edge shows, not clipped.
+        for icon in [d.SUITE, *d.APPS]:
+            for tier in d.TIERS:
+                svg = d.icon_svg(icon, tier).replace('viewBox="0 0 128 128" width="128" height="128"',
+                                                     'viewBox="-128 -128 384 384" width="384" height="384"', 1)
+                alpha = Image.open(io.BytesIO(build_icons.render(svg, 384))).getchannel("A")
+                x0, y0, x1, y1 = alpha.point(lambda v: 255 if v > 8 else 0).getbbox()
+                self.assertTrue(128 <= x0 and 128 <= y0 and x1 <= 256 and y1 <= 256, (icon, tier, x0, y0, x1, y1))
 
     def test_committed_sheet_is_current(self):
         # A full build takes most of a minute; build-icons --check in CI covers the registration, this the content.

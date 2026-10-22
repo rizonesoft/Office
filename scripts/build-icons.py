@@ -168,8 +168,8 @@ def build():
             height = round(h * scale)
             out[f"assets/brand/png/{name}-{height}.png"] = render(text, round(w * scale), height)
 
-    palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": v[2][1], "light": v[2][0],
-                            "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},
+    palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": d.APP_COLOR[k],
+                            "light": v[2][0], "dark": v[2][1], "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},
                "suite": {"name": "Rizonesoft Office", "tint": d.SUITE_TINT, "linuxId": LINUX_ID[d.SUITE]},
                "fileTypes": {ext: {"app": k, "mime": m} for ext, (k, _, m) in ft.TYPES.items()}}
     out["assets/icons/palette.json"] = (json.dumps(palette, indent=2) + "\n").encode("utf-8")

@@ -3,43 +3,49 @@
     "write": {
       "name": "Rizonesoft Write",
       "counterpart": "Word",
-      "accent": "#1e4fc2",
+      "accent": "#366edc",
       "light": "#4f8df7",
+      "dark": "#1e4fc2",
       "linuxId": "com.rizonesoft.Write"
     },
     "grid": {
       "name": "Rizonesoft Grid",
       "counterpart": "Excel",
-      "accent": "#0f7a45",
+      "accent": "#229e60",
       "light": "#34c27a",
+      "dark": "#0f7a45",
       "linuxId": "com.rizonesoft.Grid"
     },
     "stage": {
       "name": "Rizonesoft Stage",
       "counterpart": "PowerPoint",
-      "accent": "#d4421b",
+      "accent": "#ea6634",
       "light": "#ff8a4c",
+      "dark": "#d4421b",
       "linuxId": "com.rizonesoft.Stage"
     },
     "flow": {
       "name": "Rizonesoft Flow",
       "counterpart": "Visio",
-      "accent": "#5b35c9",
+      "accent": "#7b58e0",
       "light": "#9b7bf7",
+      "dark": "#5b35c9",
       "linuxId": "com.rizonesoft.Flow"
     },
     "plan": {
       "name": "Rizonesoft Plan",
       "counterpart": "Project",
-      "accent": "#0b7f86",
+      "accent": "#1ca09e",
       "light": "#2dc2b5",
+      "dark": "#0b7f86",
       "linuxId": "com.rizonesoft.Plan"
     },
     "mail": {
       "name": "Rizonesoft Mail",
       "counterpart": "Outlook",
-      "accent": "#0b7cc0",
+      "accent": "#229ed7",
       "light": "#3cc4f0",
+      "dark": "#0b7cc0",
       "linuxId": "com.rizonesoft.Mail"
     }
   },

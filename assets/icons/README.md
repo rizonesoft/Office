@@ -45,7 +45,7 @@ On high-density displays the drawing follows the displayed size: the macOS 16 pt
 | `macos/` | `<key>.icns` with every slot from 16 to 512 @2x |
 | `linux/hicolor/` | Freedesktop theme PNGs (16 to 512) and `scalable/apps/<app id>.svg` |
 | `web/` | `favicon.ico` (16, 32, 48), `favicon.svg`, `apple-touch-icon.png` (180, white), `icon-192.png`, `icon-512.png` |
-| `palette.json` | Each app's accent and light colour, display name and Linux app id |
+| `palette.json` | Each app's accent, its gradient's light and dark ends, display name and Linux app id |
 
 ## Colours
 
