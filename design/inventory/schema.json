@@ -66,7 +66,7 @@
         "label": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^\\s*\\S",
+          "pattern": "\\S",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
@@ -74,7 +74,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "description": "the visible label, at least one non-space character"
         },
         "parent": {
           "type": "string",
@@ -141,7 +142,7 @@
         "shortcut": {
           "type": "string",
           "minLength": 1,
-          "description": "key chord, for example Ctrl+B",
+          "description": "key chord, for example Ctrl+B, at least one non-space character",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
@@ -149,7 +150,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "pattern": "\\S"
         },
         "target": {
           "type": "string",
@@ -205,7 +207,7 @@
         "captureProfile": {
           "type": "string",
           "minLength": 1,
-          "description": "profile id in design/inventory/REFERENCE.md",
+          "description": "profile id recorded in design/inventory/REFERENCE.md (checked by scripts/check-inventory.py)",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
@@ -270,7 +272,7 @@
         "capturedFrom": {
           "type": "string",
           "minLength": 1,
-          "description": "Office build string, for example 16.0.20430.20182",
+          "description": "Office build recorded in design/inventory/REFERENCE.md, for example 16.0.20430.20182 (checked by scripts/check-inventory.py)",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
@@ -329,9 +331,9 @@
       ]
     },
     "noLink": {
-      "description": "Owner rule 2026-10-20: no record holds a web address.",
+      "description": "Owner rule 2026-10-20: no record holds a web address: a URL with any scheme, a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Endings that are also inventory words (app, dev, io, info) are left out, since ids such as word.command.app-restore and Backstage's Info page use them.",
       "not": {
-        "pattern": "[Hh][Tt][Tt][Pp][Ss]?://|[Ww][Ww][Ww]\\.",
+        "pattern": "[A-Za-z][A-Za-z0-9+.-]*://|[Ww][Ww][Ww]\\.|[Mm][Aa][Ii][Ll][Tt][Oo]:|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+/|[A-Za-z0-9-]+\\.([Cc][Oo][Mm]|[Oo][Rr][Gg]|[Nn][Ee][Tt]|[Gg][Oo][Vv]|[Ee][Dd][Uu])(?![A-Za-z0-9-])",
         "description": "link"
       }
     },

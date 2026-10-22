@@ -203,6 +203,74 @@ class Inventory(unittest.TestCase):
         self.assertTrue(any("[0].order: expected integer" in p for p in problems), problems)
         self.assertTrue(any("[1].order: expected integer" in p for p in problems), problems)
 
+    def test_a_record_cannot_contain_itself(self):
+        # Audit D02 T01 section 23, finding 1: a parent chain that loops names no real containment.
+        self.write("word/ribbon.json", [dict(TAB, parent="word.home")])
+        self.assertTrue(any("parent chain loops: word.home -> word.home" in p for p in self.problems()))
+        self.write("word/ribbon.json", [dict(TAB, parent="word.home.font"), GROUP])
+        self.assertTrue(any("parent chain loops" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB, GROUP, BOLD])
+        self.assertEqual(self.problems(), [])
+
+    def test_a_blank_shortcut_is_refused(self):
+        # Audit finding 2: a chord of spaces records no key.
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
+        for chord in (" ", "  "):
+            self.write("word/shortcuts.json", [dict(sc, shortcut=chord)])
+            self.assertTrue(any(".shortcut" in p for p in self.problems()), repr(chord))
+
+    def test_web_addresses_without_http_are_refused(self):
+        # Audit finding 3: the no-link rule covers any scheme, mailto:, a dotted host with a path, and common domains.
+        for text in ("support.microsoft.com/en-us/office", "mailto:help@example.org", "ftp://files.example",
+                     "see example.com", "Office.NET"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("link" in p for p in self.problems()), text)
+        # Words that look like hosts but are ordinary labels and ids stay valid.
+        self.write("word/ribbon.json", [dict(TAB, label="Info"), dict(GROUP, id="word.command.app-restore",
+                                                                         parent="word.home", label="Restore")])
+        self.assertEqual(self.problems(), [])
+
+    def test_a_repeated_member_is_unreadable(self):
+        # Audit finding 4: json keeps the last of two equal keys, so the first (here a link) would vanish unchecked.
+        path = self.inv / "word" / "ribbon.json"
+        path.write_text('[{"id": "word.home", "app": "word", "kind": "tab", "label": "https://example.com", '
+                        '"label": "Home", "order": 1}]', encoding="utf-8")
+        with self.assertRaises(ci.Unreadable) as raised:
+            self.problems()
+        self.assertIn("repeated member label", str(raised.exception))
+
+    def test_a_malformed_outlook_window_cell_is_a_problem_not_a_crash(self):
+        # Audit finding 5: a window cell that is not a string reached a set lookup and raised TypeError.
+        real = ci.INVENTORY
+        data = json.loads((real / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"][0][0] = {}
+        sources = ci.load(real / ci.SOURCES)
+        problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA), sources)
+        self.assertTrue(any("$.rows[0].window" in p and "not a window name" in p for p in problems))
+        (self.inv / "outlook").mkdir()
+        (self.inv / "outlook" / "baseline.json").write_text(json.dumps(data), encoding="utf-8")
+        (self.inv / ci.SOURCES).write_text((real / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
+        whole = ci.check([str(self.inv)], inventory=self.inv)  # the whole-inventory window gate must not crash either
+        self.assertTrue(any("not a window name" in p for p in whole))
+
+    def test_capture_provenance_must_be_recorded_in_the_reference(self):
+        # Audit finding 6: captureProfile and capturedFrom name what design/inventory/REFERENCE.md records.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, captureProfile="does-not-exist")])
+        self.assertTrue(any("captureProfile does-not-exist is not a profile" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, capturedFrom="not-a-build")])
+        self.assertTrue(any("capturedFrom not-a-build is not a build" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, source="uia:16.0.1.2")])
+        self.assertTrue(any("source build 16.0.1.2 is not capturedFrom" in p for p in self.problems()))
+
+    def test_a_target_defined_twice_is_ambiguous(self):
+        # Audit finding 7: the ambiguous-target branch had no test of its own.
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold", "shortcut": "Ctrl+B",
+              "target": "word.home.font.bold"}
+        self.write("word/ribbon.json", [TAB, GROUP, BOLD])
+        self.write("word/more.json", [dict(BOLD, parent="word.home")])
+        self.write("word/shortcuts.json", [sc])
+        self.assertTrue(any("target word.home.font.bold is ambiguous" in p for p in self.problems()))
+
     def test_shortcut_target_must_be_a_command_or_control(self):
         sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold", "shortcut": "Ctrl+B"}
         self.write("word/ribbon.json", [TAB, GROUP, BOLD])

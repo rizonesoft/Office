@@ -10,8 +10,10 @@
 
 Rules: each file is a JSON array of records valid against the schema; ids are unique across the whole inventory and the
 named files; every parent names an existing record (resolved across all of design/inventory/, so one file can be
-checked alone); no string anywhere in a record holds a link, since the inventory keeps facts and our own words, never
-web pages. With --require-behaviour every control also needs a non-blank behaviour sentence. A file named
+checked alone) and no parent chain loops back; no string anywhere in a record holds a link (the schema's noLink rule),
+since the inventory keeps facts and our own words, never web pages; captureProfile and capturedFrom name a profile and
+a build that design/inventory/REFERENCE.md records, and a source stamped with a build matches capturedFrom. A file
+that repeats a member inside one object is unreadable, since JSON would silently keep only the last value. With --require-behaviour every control also needs a non-blank behaviour sentence. A file named
 baseline.json is the imported control identifier baseline (scripts/import-office-ids.py) and is checked against
 baseline.schema.json instead: its columns, and every cell's type (identifier, placement, policy id or null).
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
@@ -30,8 +32,7 @@ BASELINE_SCHEMA = INVENTORY / "baseline.schema.json"
 BASELINE = "baseline.json"
 SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
 APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
-# Owner rule 2026-10-20: the repository holds no Microsoft text and no Microsoft links, so no record holds a link at all.
-LINK = re.compile(r"https?://|www\.", re.IGNORECASE)
+REFERENCE = "REFERENCE.md"  # the builds and capture profiles records are measured against
 TARGET_KINDS = ("command", "control")
 
 
@@ -131,21 +132,55 @@ def validate(value, schema, root, path="$"):
     return problems
 
 
-def links(value, path):
-    """Problems for every string inside a record (nested values included) that holds a link."""
+def links(value, path, link):
+    """Problems for every string inside a record (nested values included) that holds a link. link is the schema's own
+    noLink pattern (owner rule 2026-10-20: the repository holds no Microsoft text and no links), so the typed fields and
+    every other string are held to one rule."""
     if isinstance(value, str):
-        return [f"{path}: link {LINK.search(value).group(0)!r} in a record"] if LINK.search(value) else []
+        found = link.search(value)
+        return [f"{path}: link {found.group(0)!r} in a record"] if found else []
     if isinstance(value, dict):
-        return [p for key, item in value.items() for p in links(item, f"{path}.{key}")]
+        return [p for key, item in value.items() for p in links(item, f"{path}.{key}", link)]
     if isinstance(value, list):
-        return [p for i, item in enumerate(value) for p in links(item, f"{path}[{i}]")]
+        return [p for i, item in enumerate(value) for p in links(item, f"{path}[{i}]", link)]
     return []
+
+
+def reference(inventory):
+    """The capture profiles and Office builds design/inventory/REFERENCE.md records, from the inventory's own copy or
+    the repository's. Returns (profile ids, builds)."""
+    path = Path(inventory) / REFERENCE
+    path = path if path.is_file() else INVENTORY / REFERENCE
+    text = path.read_text(encoding="utf-8")
+    profiles = set(re.findall(r"Profile `([A-Za-z0-9-]+)`", text))
+    builds = set(re.findall(r"^\| [^|]+ \| [^|]+ \| (\d+\.\d+\.\d+\.\d+) \|", text, flags=re.M))
+    return profiles, builds
+
+
+def parent_loop(rid, parents):
+    """The chain from rid back to rid when following parents loops, else None."""
+    chain, node = [rid], parents.get(rid)
+    while node is not None:
+        if node == rid or node in chain:
+            return chain + [node]
+        chain.append(node)
+        node = parents.get(node)
+    return None
+
+
+def unique_pairs(pairs):
+    """A JSON object hook that refuses a repeated member: json would keep the last value and silently drop the first."""
+    keys = [k for k, _ in pairs]
+    repeated = sorted({k for k in keys if keys.count(k) > 1})
+    if repeated:
+        raise ValueError(f"repeated member {', '.join(repeated)}")
+    return dict(pairs)
 
 
 def load(path):
     try:
         # Decimal keeps JSON numbers exact: 1.0000000000000001 stays non-integral and -1e-400 stays negative.
-        data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal)
+        data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal, object_pairs_hook=unique_pairs)
     # ValueError covers malformed JSON and integers past the conversion limit; RecursionError covers deep nesting.
     except (OSError, UnicodeDecodeError, ValueError, RecursionError, InvalidOperation) as exc:
         raise Unreadable(f"{path}: cannot read ({exc})") from None
@@ -189,6 +224,9 @@ def check_baseline(f, data, schema, sources=None):
             problems.append(f"{f}: $.rows[{i}]: {len(row)} cells, expected {len(expected)}")
             continue
         for name, cell in zip(expected, row):
+            if name == "window" and not isinstance(cell, str):  # checked before any set lookup, which needs a string
+                problems.append(f"{f}: $.rows[{i}].window: {cell!r} is not a window name")
+                continue
             if name == "window" and sources and cell not in windows:
                 problems.append(f"{f}: $.rows[{i}].window: {cell!r} is not a window in the manifest")
                 continue
@@ -218,6 +256,15 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
                 kinds[rec["id"]] = rec.get("kind")
     named_resolved = [f.resolve() for f in named]
+    # A parent chain is followed only through ids defined once; an ambiguous parent is reported on its own.
+    parents = {}
+    for resolved, f in universe.items():
+        for rec in records[resolved]:
+            if isinstance(rec, dict) and isinstance(rec.get("id"), str) and isinstance(rec.get("parent"), str):
+                if len(seen.get(rec["id"], [])) == 1:
+                    parents[rec["id"]] = rec["parent"]
+    link = ecma(schema["$defs"]["noLink"]["not"]["pattern"])
+    profiles, builds = reference(inventory)
     inventory = Path(inventory)
     sources_path = inventory / SOURCES
     sources = load(sources_path) if sources_path.is_file() else None
@@ -232,7 +279,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             elif app == "outlook" and sources:
                 data = load(path)
                 rows = data.get("rows", []) if isinstance(data, dict) else []
-                windows_seen = {r[0] for r in rows if isinstance(r, list) and r}
+                windows_seen = {r[0] for r in rows if isinstance(r, list) and r and isinstance(r[0], str)}
                 absent = [w for w in outlook_windows(sources) if w not in windows_seen]
                 if absent:
                     problems.append(f"{path}: no rows for the windows {absent}")
@@ -253,13 +300,26 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             where = f"{f}[{i}]"
             # The schema refuses links in its typed fields; links() covers every other string and reports once.
             reported = {p.split(": ", 1)[0] for p in schema_problems}
-            problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]") if p.split(": ", 1)[0] not in reported]
+            problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]", link) if p.split(": ", 1)[0] not in reported]
             rid = rec.get("id")
             if isinstance(rid, str):
                 if len(seen.get(rid, [])) > 1:
                     problems.append(f"{where}: duplicate id {rid} (also {', '.join(x for x in seen[rid] if x != where)})")
                 if isinstance(rec.get("app"), str) and rid.split(".", 1)[0] != rec["app"]:
                     problems.append(f"{where}: id {rid} does not start with its app {rec['app']}")
+            if isinstance(rid, str) and rid in parents:
+                loop = parent_loop(rid, parents)
+                if loop:
+                    problems.append(f"{where}: parent chain loops: {' -> '.join(loop)}")
+            profile, build = rec.get("captureProfile"), rec.get("capturedFrom")
+            if isinstance(profile, str) and profile not in profiles:
+                problems.append(f"{where}: captureProfile {profile} is not a profile in {REFERENCE}")
+            if isinstance(build, str) and build not in builds:
+                problems.append(f"{where}: capturedFrom {build} is not a build in {REFERENCE}")
+            source = rec.get("source")
+            stamped = re.fullmatch(r"[a-z]+:(\d+\.\d+\.\d+\.\d+)", source) if isinstance(source, str) else None
+            if stamped and isinstance(build, str) and stamped.group(1) != build:
+                problems.append(f"{where}: source build {stamped.group(1)} is not capturedFrom {build}")
             parent = rec.get("parent")
             if isinstance(parent, str) and parent not in seen:
                 problems.append(f"{where}: orphan, parent {parent} names no record")
