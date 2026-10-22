@@ -120,6 +120,9 @@ class GlassPane(unittest.TestCase):
             self.assertLessEqual(max(abs(a - b) for a, b in zip(on_black, on_white)), 6, icon)
 
 
+STROKE_WEIGHT = {"lg": (4.9, 9.1), "md": (8, 12), "sm": (11, 15)}  # symbol stroke widths per tier, in units
+
+
 def render_rgb(svg):
     return Image.open(io.BytesIO(build_icons.render(svg, 128, background="#ffffff"))).convert("RGB")
 
@@ -173,12 +176,20 @@ class Palette(unittest.TestCase):
                         self.assertGreaterEqual(d.contrast("#ffffff", symbol), 3)
                     else:
                         self.assertLessEqual(set(paints), {col, "none"}, (key, tier, name))
+                    if paints[1] != "none":
+                        # The documented weights (docs/brand/icon-language.md, Accessibility); the flap is 8.
+                        low, high = (8, 8) if paints[1] == "#ffffff" else STROKE_WEIGHT[tier]
+                        self.assertTrue(low <= float(pairs["stroke-width"]) <= high, (key, tier, name, pairs))
                     if name == "rect":
                         x, y, w, h = (float(pairs[a]) for a in ("x", "y", "width", "height"))
                         edges = [x, y, x + w, y + h]
+                        if paints[0] != "none":
+                            self.assertGreaterEqual(min(w, h), 16, (key, tier, name, pairs))
                     elif name == "circle":
                         cx, cy, r = (float(pairs[a]) for a in ("cx", "cy", "r"))
                         edges = [cx - r, cy - r, cx + r, cy + r]
+                        if paints[0] != "none":
+                            self.assertGreaterEqual(r, 8, (key, tier, name, pairs))
                     else:
                         self.assertRegex(pairs["d"], r"^[MLHVZ0-9.,\s-]+$", (key, tier))
                         edges = [float(v) for v in re.findall(r"-?[\d.]+", pairs["d"])]

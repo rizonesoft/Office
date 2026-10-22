@@ -81,7 +81,7 @@ The suite mark appears on the splash screen, the Backstage account page, the web
 1. Draw `design/brand/suite-mark.svg` on the grid from `docs/brand/icon-language.md`. Done when: `python scripts/check-image-asset.py design/brand/suite-mark.svg --format svg` exits 0.
 2. Build `design/brand/wordmark.svg` with outlined text. Done when: the file contains no `<text>` element.
 
-- [ ] Draw the suite mark in `design/brand/suite-mark.svg` with a `viewBox="0 0 256 256"`. Done when: it renders legibly at 32 pixels in a browser preview. Cheaper substitute: a recoloured app icon.
+- [ ] Draw the suite mark in `design/brand/suite-mark.svg` with a `viewBox="0 0 128 128"`. **Corrected 2026-10-22:** said 256; every icon master is on the 128-unit grid that §1 records in `docs/brand/icon-language.md`. Done when: it renders legibly at 32 pixels in a browser preview. Cheaper substitute: a recoloured app icon.
 - [ ] Choose the wordmark typeface and record its name and licence in `docs/brand/icon-language.md` under `## Wordmark`. Done when: the licence is OFL 1.1 or another licence permitting logo use. Cheaper substitute: Segoe UI or any Microsoft font.
 - [ ] Outline the suite name in `design/brand/wordmark.svg`. Done when: `Select-String -Path design/brand/wordmark.svg -Pattern "<text"` finds nothing. Cheaper substitute: live text that renders differently without the font installed.
 - [ ] Add a monochrome variant `design/brand/suite-mark-mono.svg` for single-colour contexts. Done when: the file uses one fill colour. Cheaper substitute: a CSS filter at render time.
