@@ -30,7 +30,7 @@ Checked with `gh api <path>`, authenticated as `rizonesoft`, a user account, wit
 | Name | Result | Status |
 | --- | --- | --- |
 | Account `rizonesoft` (a user account) | 200 | owned (hosts this repository) |
-| Repository `rizonesoft/Office` | 200 | owned (this repository, a working codename) |
+| Repository `rizonesoft/Office` | 200 | owned (this repository, which keeps the name) |
 | Repository `rizonesoft/rizonesoft-office` | 404 | does not exist |
 | Account or organisation `rizonesoft-office` | 404 | no account |
 
