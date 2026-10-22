@@ -735,3 +735,39 @@ All five findings verified and fixed in the next commit; the first three tests f
 python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 101 tests in 10.409s OK
 python scripts/check-inventory.py                                          -> exit 0
 ```
+
+## Round 19: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T13:04:24Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 29c368e9c40f2ff2
+
+## source-defect: needs-attention
+
+1. **[P1] Compatibility full stops bypass address rejection.** `design/inventory/schema.json:422` misses U+2024 and U+FE52. Set a valid tab’s `label` to `"support\u2024microsoft\u2024com"` or `"support\ufe52microsoft\ufe52com"`: schema validation returns `[]`, and the CLI exits **0**. Python’s `label.encode("idna")` produces `support.microsoft.com`; its standard HTTP client likewise generates `Host: support.microsoft.com`. Prohibited addresses therefore survive normalization.
+
+## adversarial: needs-attention
+
+2. **[P1] Directory symlinks silently hide inventory files.** `scripts/check-inventory.py:315` excludes directory symlinks through `follow_symlinks=False`, without rejecting them. If `word` is a directory symlink, its captures disappear from discovery, while baseline presence checks still follow the link. Reproduced through read-only metadata overrides modeling that symlink, with a malformed Word command file: `main([])` returns **0** without diagnostics; checking the file explicitly returns **1**.
+
+## consistency: needs-attention
+
+3. **[P1] Baseline provenance is checked against itself, without enforcing the recorded reference commit.** `scripts/check-inventory.py:435` trusts the manifest’s syntactically valid commit without comparing it with `design/inventory/REFERENCE.md:60`. Override the manifest commit to `"0"*40` and all six baseline envelope sources to `"baseline:" + "0"*40`, leaving `REFERENCE.md` unchanged: `main([])` returns **0**. Agreement among the modified files passes despite contradicting the pinned reference.
+
+## record: needs-attention
+
+4. **[P3] The ticked every-rule sensitivity claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` requires tests to fail when any rule is disabled. Disable only the unknown-Outlook-window guard at `scripts/check-inventory.py:367`: **all 101 tests still pass**. Change the first committed Outlook baseline row’s window to `"inventedwindow"`: the original reports an invalid window; the mutant returns `[]`. Both checks used in-memory changes, with fixture writes redirected to memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 19
+
+All four findings verified and fixed in the next commit; four tests fail against the round 18 checker (fixes stashed), and the fifth fails when the window guard is removed:
+
+1. P1 compatibility full stops (U+2024, U+FE52) passed, though IDNA normalises them to a dot. The text rule's dot and colon classes are now generated from Unicode's compatibility mappings: every character whose NFKC form is a full stop or a colon, plus the ideographic and halfwidth full stops IDNA treats as separators. A test checks the classes against this Python's Unicode data (`test_compatibility_full_stops_and_colons_are_address_marks`). On the identifier side, `idMso` is now ASCII letters, digits and underscores (all 219 committed values are), and `uiaId` printable ASCII with single spaces, so no look-alike reaches either (`test_identifier_fields_are_ascii`).
+2. P1 a directory symlink hid its files from discovery: the inventory holds only plain files and folders, so a symbolic link or Windows junction anywhere in it makes the run unreadable (`test_a_link_in_the_inventory_is_unreadable`).
+3. P1 the manifest's commit was only checked against the baselines, not the reference: it must equal the commit `design/inventory/REFERENCE.md`'s Baseline table pins (`test_the_manifest_commit_is_the_reference_commit`).
+4. P3 the unknown-Outlook-window guard was untested: `test_an_unknown_outlook_window_is_refused`.

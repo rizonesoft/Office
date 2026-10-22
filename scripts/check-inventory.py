@@ -214,7 +214,7 @@ def links(value, path, link):
 
 def reference(inventory):
     """The capture profiles and Office builds design/inventory/REFERENCE.md records, from the inventory's own copy or
-    the repository's. Returns (profile ids, builds)."""
+    the repository's. Returns (profile ids, builds, the baseline commit its Baseline table pins, or None)."""
     path = Path(inventory) / REFERENCE
     path = path if path.is_file() else INVENTORY / REFERENCE
     try:
@@ -223,7 +223,8 @@ def reference(inventory):
         raise Unreadable(f"{path}: cannot read ({exc})") from None
     profiles = set(re.findall(r"Profile `([A-Za-z0-9-]+)`", text))
     builds = set(re.findall(r"^\| [^|]+ \| [^|]+ \| (\d+\.\d+\.\d+\.\d+) \|", text, flags=re.M))
-    return profiles, builds
+    pinned = re.findall(r"^\| Commit \| `([0-9a-f]{40})` \|", text, flags=re.M)
+    return profiles, builds, (pinned[0] if len(pinned) == 1 else None)
 
 
 LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
@@ -312,6 +313,11 @@ def json_files(folder):
         try:
             with os.scandir(here) as entries:
                 for entry in entries:
+                    # A link (or Windows junction) would either hide what it points to or bring in files from
+                    # outside the inventory; the inventory holds neither, so one is refused.
+                    if entry.is_symlink() or (hasattr(entry, "is_junction") and entry.is_junction()):
+                        raise Unreadable(f"{entry.path}: a link in the inventory, which holds only plain files and "
+                                         "folders")
                     if entry.is_dir(follow_symlinks=False):
                         pending.append(Path(entry.path))
                     elif entry.name.lower().endswith(".json") and entry.is_file():
@@ -403,7 +409,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                     parents[rec["id"]] = rec["parent"]
     link = ecma(schema["$defs"]["noLink"]["not"]["pattern"])
     loops = parent_loops(parents)
-    profiles, builds = reference(inventory)
+    profiles, builds, reference_commit = reference(inventory)
     inventory = Path(inventory)
     sources_path = inventory / SOURCES
     manifest = sources_path.is_file()
@@ -420,6 +426,11 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
         bad = [name for name, blob in sources["blobs"].items()
                if not (re.fullmatch(r"[a-z]+controls\.xlsx", name, re.ASCII) and isinstance(blob, str)
                        and hex40.fullmatch(blob))]
+        if reference_commit and sources["commit"] != reference_commit:
+            # The manifest and the baselines agreeing with each other is not enough: they must name the commit the
+            # reference records.
+            raise Unreadable(f"{sources_path}: commit {sources['commit']} is not the commit {REFERENCE} pins "
+                             f"({reference_commit})")
         if bad or not hex40.fullmatch(sources["commit"]):
             raise Unreadable(f"{sources_path}: not a manifest: commit or blob ids malformed ({', '.join(sorted(bad))})")
         # The upstream folder has one workbook per app and one per Outlook window: each of the five single-workbook

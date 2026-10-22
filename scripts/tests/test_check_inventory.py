@@ -407,6 +407,93 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_compatibility_full_stops_and_colons_are_address_marks(self):
+        # Audit round 19, finding 1: IDNA normalises U+2024 and U+FE52 to a full stop, so they separate a host too.
+        for dot in (0x2024, 0xFE52, 0xFF0E, 0x3002):
+            label = "support" + chr(dot) + "microsoft" + chr(dot) + "com"
+            self.write("word/ribbon.json", [dict(TAB, label=label)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), hex(dot))
+        for colon in (0xFE13, 0xFE55):
+            self.write("word/ribbon.json", [dict(TAB, label="https" + chr(colon) + "x")])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), hex(colon))
+        # The classes hold every character whose compatibility form is a full stop or a colon.
+        import unicodedata
+        pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
+        for target in (".", ":"):
+            forms = [c for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF
+                     and unicodedata.normalize("NFKC", chr(c)) == target]
+            missed = [hex(c) for c in forms if not pattern.search("https" + chr(c) + "x" if target == ":"
+                                                                  else "a" + chr(c) + "b")]
+            self.assertEqual(missed, [], target)
+
+    def test_identifier_fields_are_ascii(self):
+        # Audit round 19, finding 1, identifier side: no look-alike reaches idMso or uiaId.
+        for field, text in (("idMso", "File" + chr(0xFF0E) + "Save"), ("uiaId", "Ribbon" + chr(0x3002) + "x"),
+                            ("idMso", "File Save"), ("uiaId", "two  spaces")):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: text})])
+            self.assertTrue(any(f".{field}" in p for p in self.problems()), (field, ascii(text)))
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, uiaId="Ribbon Tab Home")])
+        self.assertEqual(self.problems(), [])
+
+    def test_a_link_in_the_inventory_is_unreadable(self):
+        # Audit round 19, finding 2: a symbolic link (or junction) would hide files or bring in outside ones.
+        import os
+        self.write("word/ribbon.json", [TAB])
+        real_scandir = os.scandir
+        word = (self.inv / "word").resolve()
+
+        class Entry:
+            def __init__(self, entry):
+                self._entry, self.name, self.path = entry, entry.name, entry.path
+
+            def is_symlink(self):
+                return Path(self.path).resolve() == word
+
+            def is_junction(self):
+                return False
+
+            def is_dir(self, **kwargs):
+                return self._entry.is_dir(**kwargs)
+
+            def is_file(self, **kwargs):
+                return self._entry.is_file(**kwargs)
+
+        class Listing:
+            def __init__(self, path):
+                self._it = real_scandir(path)
+
+            def __enter__(self):
+                return (Entry(e) for e in self._it)
+
+            def __exit__(self, *exc):
+                self._it.close()
+
+        os.scandir = Listing
+        try:
+            with self.assertRaises(ci.Unreadable) as raised:
+                ci.check([str(self.inv)], inventory=self.inv)
+            self.assertIn("a link in the inventory", str(raised.exception))
+        finally:
+            os.scandir = real_scandir
+
+    def test_the_manifest_commit_is_the_reference_commit(self):
+        # Audit round 19, finding 3: manifest and baselines agreeing among themselves is not enough.
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        real["commit"] = "0" * 40
+        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        named = self.write("word/ribbon.json", [TAB])
+        with self.assertRaises(ci.Unreadable) as raised:
+            ci.check([str(named)], inventory=self.inv)
+        self.assertIn("is not the commit REFERENCE.md pins", str(raised.exception))
+
+    def test_an_unknown_outlook_window_is_refused(self):
+        # Audit round 19, finding 4: the window guard, on its own.
+        data = json.loads((ci.INVENTORY / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"][0][0] = "inventedwindow"
+        problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA),
+                                     ci.load(ci.INVENTORY / ci.SOURCES))
+        self.assertTrue(any("is not a window in the manifest" in p for p in problems), problems[:3])
+
     def test_every_format_character_is_refused(self):
         # Audit round 18, finding 1: the interlinear annotation controls, and every other BMP format character.
         import unicodedata
@@ -448,6 +535,12 @@ class Inventory(unittest.TestCase):
 
             def is_file(self, **kwargs):
                 return self._entry.is_file(**kwargs)
+
+            def is_symlink(self):
+                return self._entry.is_symlink()
+
+            def is_junction(self):
+                return False
 
         class Listing:
             def __init__(self, path):
