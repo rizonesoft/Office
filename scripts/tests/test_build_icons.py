@@ -74,15 +74,42 @@ class Packers(unittest.TestCase):
         self.assertTrue(any("write.ico" in p and "sizes" in p for p in problems))
 
     def test_verify_decodes_every_entry_and_parses_svg(self):
+        # Same-length damage to the first entry, which Pillow does not open (it opens the largest), so only the
+        # per-entry decoding can catch it.
+        signature = b"\x89PNG\r\n\x1a\n"
         ico = build_icons.pack_ico([(px, png(px)) for px in build_icons.ICO_SIZES])
-        broken_ico = ico.replace(b"\x89PNG", b"BROKEN!!", 1)
+        broken_ico = ico.replace(signature, b"BROKEN!!", 1)
         icns = build_icons.pack_icns([("ic07", png(128)), ("ic10", png(1024))])
-        broken_icns = icns.replace(b"\x89PNG", b"BROKEN!!", 1)
+        broken_icns = icns.replace(signature, b"BROKEN!!", 1)
+        self.assertEqual((len(broken_ico), len(broken_icns)), (len(ico), len(icns)))
         self.assertEqual(build_icons.verify({"assets/icons/windows/write.ico": ico}), [])
         for rel, data in (("assets/icons/windows/write.ico", broken_ico), ("assets/icons/macos/write.icns", broken_icns),
                           ("design/icons/apps/write-lg.svg", b"not an SVG"),
                           ("design/icons/apps/write-sm.svg", b'<html xmlns="http://www.w3.org/1999/xhtml"/>')):
             self.assertTrue(build_icons.verify({rel: data}), rel)
+
+    def test_build_rasterises_apps_from_the_selected_drawing(self):
+        # The real build() with a stand-in renderer that tags each output with the drawing and size it was given.
+        real = build_icons.render
+        tags = {}
+
+        def fake(svg, width, height=None, background=None):
+            tag = tags.setdefault((svg, width), len(tags))
+            return png(1) + f"tag{tag}".encode()
+        build_icons.render = fake
+        try:
+            out = build_icons.build()
+        finally:
+            build_icons.render = real
+        for key in d.APPS:
+            for px in (16, 24, 32):
+                want = png(1) + f"tag{tags[(d.pixel_svg(key, px), px)]}".encode()
+                self.assertEqual(out[f"assets/icons/png/{key}/{key}-{px}.png"], want, (key, px))
+                self.assertIn(want, out[f"assets/icons/windows/{key}.ico"], (key, px))
+            at_2x = png(1) + f"tag{tags[(d.pixel_svg(key, 16), 32)]}".encode()  # the 16 pt @2x slot
+            self.assertIn(b"ic11" + struct.pack(">I", len(at_2x) + 8) + at_2x, out[f"assets/icons/macos/{key}.icns"])
+            tier = png(1) + f"tag{tags[(d.icon_svg(key, 'sm'), 20)]}".encode()
+            self.assertEqual(out[f"assets/icons/png/{key}/{key}-20.png"], tier, key)
 
     def test_drawing_for_picks_the_variant_only_at_its_sizes(self):
         for key in d.APPS:
