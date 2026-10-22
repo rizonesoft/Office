@@ -216,6 +216,13 @@ def icon_svg(icon, tier):
             f'<title>{name}</title><defs>{defs}</defs>{body}{content}</svg>\n')
 
 
+def app_master_svg(key, tier):
+    """An app master as committed in design/icons/apps/: the icon with its Microsoft counterpart noted in a comment,
+    the only place the counterpart is named in the artwork (todo/01-brand/TODO-02-icon-system.md section 3)."""
+    head, rest = icon_svg(key, tier).split(">", 1)
+    return f"{head}><!-- Counterpart: Microsoft {APPS[key][1]} -->{rest}"
+
+
 def keylines_svg():
     """The keyline sheet: each app tier's pane, orb, glyph box and (lg) block, drawn from the same constants as the
     icons, side by side on 128-unit cells (docs/brand/icon-language.md, Grid)."""

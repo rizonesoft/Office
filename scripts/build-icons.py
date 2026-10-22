@@ -4,6 +4,7 @@
 """Build every Rizonesoft Office icon and brand asset from the design modules in scripts/lib/.
 
     python scripts/build-icons.py           # write design/icons/ masters and assets/ outputs, then verify
+    python scripts/build-icons.py --contact-sheet build/icons/contact-sheet.png   # review sheet, nothing else
     python scripts/build-icons.py --check   # rebuild in memory and fail if any committed file differs or is missing
 
 Outputs:
@@ -116,7 +117,8 @@ def build():
     # App and suite icons.
     svg = {(i, t): d.icon_svg(i, t) for i in icons() for t in d.TIERS}
     for (icon, tier), text in svg.items():
-        out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = text.encode("utf-8")
+        master = text if icon == d.SUITE else d.app_master_svg(icon, tier)
+        out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = master.encode("utf-8")
     out["design/icons/keylines.svg"] = d.keylines_svg().encode("utf-8")
     out["design/icons/suite/rizonesoft-office-mono.svg"] = d.suite_mono_svg().encode("utf-8")
     for icon in icons():
@@ -175,6 +177,22 @@ def build():
                "fileTypes": {ext: {"app": k, "mime": m} for ext, (k, _, m) in ft.TYPES.items()}}
     out["assets/icons/palette.json"] = (json.dumps(palette, indent=2) + "\n").encode("utf-8")
     return out
+
+
+def contact_sheet():
+    """PNG of the six app icons in a row at 256, 48 and 32 pixels, each drawn with the tier its size uses."""
+    from PIL import Image
+    sizes, pad = (256, 48, 32), 16
+    sheet = Image.new("RGBA", (pad + len(d.APPS) * (256 + pad), pad + sum(s + pad for s in sizes)), "white")
+    y = pad
+    for size in sizes:
+        for i, key in enumerate(d.APPS):
+            icon = Image.open(io.BytesIO(render(d.icon_svg(key, d.tier_for(size)), size))).convert("RGBA")
+            sheet.alpha_composite(icon, (pad + i * (256 + pad), y))
+        y += size + pad
+    buf = io.BytesIO()
+    sheet.save(buf, "PNG")
+    return buf.getvalue()
 
 
 def verify(files):
@@ -247,9 +265,15 @@ def existing_managed(root):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="fail if committed outputs differ from a fresh build")
+    parser.add_argument("--contact-sheet", type=Path, metavar="PNG",
+                        help="write a review sheet of the six app icons at 256, 48 and 32 px and stop")
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
+        if args.contact_sheet:
+            atomic_write(args.contact_sheet, contact_sheet())
+            print(f"contact sheet: {args.contact_sheet}")
+            return 0
         files = build()
     except SetupRequired as exc:
         print(f"setup required: {exc}", file=sys.stderr)

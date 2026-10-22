@@ -319,6 +319,27 @@ class Keylines(unittest.TestCase):
         self.assertEqual(committed, d.keylines_svg())
 
 
+class AppMasters(unittest.TestCase):
+    def test_counterpart_is_named_only_in_the_master_comment(self):
+        for key, (_, counterpart, _) in d.APPS.items():
+            for tier in d.TIERS:
+                master = (SCRIPTS.parent / f"design/icons/apps/{key}-{tier}.svg").read_text(encoding="utf-8")
+                self.assertEqual(master, d.app_master_svg(key, tier))
+                self.assertEqual(re.findall(r"<!--(.*?)-->", master), [f" Counterpart: Microsoft {counterpart} "])
+                self.assertNotIn("Microsoft", re.sub(r"<!--.*?-->", "", master), (key, tier))
+                self.assertNotIn("Microsoft", d.icon_svg(key, tier), (key, tier))  # shipped icons never name it
+
+    def test_contact_sheet_shows_each_app_at_each_size(self):
+        sheet = Image.open(io.BytesIO(build_icons.contact_sheet())).convert("RGB")
+        self.assertEqual(sheet.size, (16 + 6 * (256 + 16), 16 + (256 + 16) + (48 + 16) + (32 + 16)))
+        y = 16
+        for size in (256, 48, 32):
+            for i in range(6):
+                cell = sheet.crop((16 + i * 272, y, 16 + i * 272 + size, y + size))
+                self.assertNotEqual(cell.getextrema(), ((255, 255), (255, 255), (255, 255)), (size, i))
+            y += size + 16
+
+
 class MonoMark(unittest.TestCase):
     def test_one_paint_and_no_live_text(self):
         svg = d.suite_mono_svg()
