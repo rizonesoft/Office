@@ -93,7 +93,7 @@ Each rule is one line the D01 T02 §7 review can tick:
 
 ## Wordmark
 
-The wordmark is "Rizonesoft Office" set in **Plus Jakarta Sans**, the owner's choice of 2026-10-20: "Rizonesoft" in weight 700 and "Office" in weight 400 in a quieter colour, 40 units high with 10 units between the words and tracking of -0.6 units (`scripts/lib/brand_design.py`).
+The wordmark is "Rizonesoft Office" set in **Plus Jakarta Sans**, the owner's choice of 2026-10-20: "Rizonesoft" in weight 700 and "Office" in weight 400 in a quieter colour, at a font size of 40 units (on a canvas 42 units high) with 10 units between the words and tracking of -0.6 units (`scripts/lib/brand_design.py`).
 
 - Licence: SIL Open Font License 1.1, which permits use in a logo; the font is bundled unmodified at `design/fonts/plus-jakarta-sans/PlusJakartaSans[wght].ttf`, with its licence beside it (`OFL.txt`, and `LICENSES/OFL-1.1.txt` for REUSE) and an entry in `THIRD-PARTY-NOTICES.md`.
 - Outlined: every glyph is shaped with HarfBuzz (so kerning applies) and converted to SVG paths by `scripts/lib/text_outline.py`. No wordmark or lockup file contains a `<text>` element, so it looks the same where the font is not installed; `build-icons` refuses live text in any SVG it writes.
