@@ -22,6 +22,7 @@ Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parse
 import argparse
 from decimal import Decimal, InvalidOperation
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -69,6 +70,22 @@ _PATTERNS = {}
 ECMA_SPACE = ("\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
               "\u2028\u2029\u202f\u205f\u3000\ufeff")
 _SPACE_CLASS = "".join(f"\\u{ord(c):04x}" for c in ECMA_SPACE)
+
+
+def utf16(text):
+    """text as an ECMA-262 pattern without the u flag sees it: each character outside the Basic Multilingual Plane as
+    its two surrogate code units, so the schema's surrogate class matches it here as it does there."""
+    if all(ord(ch) < 0x10000 for ch in text):
+        return text
+    out = []
+    for ch in text:
+        code = ord(ch)
+        if code < 0x10000:
+            out.append(ch)
+        else:
+            code -= 0x10000
+            out.append(chr(0xD800 + (code >> 10)) + chr(0xDC00 + (code & 0x3FF)))
+    return "".join(out)
 
 
 def ecma(pattern):
@@ -121,7 +138,7 @@ def validate(value, schema, root, path="$"):
         if len(value) > schema.get("maxLength", len(value)):
             # Too long already; its patterns are not searched, which keeps their cost bounded by maxLength.
             return problems + [f"{path}: longer than {schema['maxLength']} characters"]
-        if "pattern" in schema and not ecma(schema["pattern"]).search(value):
+        if "pattern" in schema and not ecma(schema["pattern"]).search(utf16(value)):
             problems.append(f"{path}: {value!r} does not match {schema['pattern']}")
     if isinstance(value, (int, Decimal)) and not isinstance(value, bool) and value < schema.get("minimum", value):
         problems.append(f"{path}: below {schema['minimum']}")
@@ -176,7 +193,7 @@ def links(value, path, link):
         if isinstance(item, str):
             if len(item) > MAX_STRING:  # longer than any field allows: refused by the schema, and not worth a search
                 continue
-            hit = link.search(item)
+            hit = link.search(utf16(item))
             if hit:
                 found += 1
                 if found <= LINKS_SHOWN:
@@ -294,7 +311,14 @@ def inventory_files(paths, manifest=INVENTORY / SOURCES):
         p = Path(p)
         if p.is_dir():
             skip = (SCHEMA.resolve(), BASELINE_SCHEMA.resolve(), Path(manifest).resolve())
-            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in skip)
+
+            def unreadable(exc):
+                # rglob would skip a folder it cannot list and report nothing; a folder that cannot be read must not
+                # pass for an empty one.
+                raise Unreadable(f"{exc.filename}: cannot list ({exc})") from None
+            found = [Path(folder) / name for folder, _, names in os.walk(p, onerror=unreadable)
+                     for name in names if name.lower().endswith(".json")]
+            files += sorted(f for f in found if f.resolve() not in skip)
         else:
             files.append(p)
     return files

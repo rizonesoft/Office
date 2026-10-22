@@ -407,6 +407,41 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_characters_outside_the_bmp_are_refused(self):
+        # Audit round 17, finding 1: supplementary ignorables (variation selectors, tags) and anything else astral.
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
+        for code in (0xE0100, 0xE0001, 0x1F600):
+            self.write("word/ribbon.json", [dict(TAB, label=chr(code))])
+            self.assertTrue(any(".label" in p and "control character" in p for p in self.problems()), hex(code))
+            self.write("word/ribbon.json", [TAB])
+            self.write("word/shortcuts.json", [dict(sc, shortcut="Ctrl+B" + chr(code))])
+            self.assertTrue(any(".shortcut" in p for p in self.problems()), hex(code))
+        self.assertEqual(ci.utf16(chr(0xE0100)), chr(0xDB40) + chr(0xDD00))
+
+    def test_an_unreadable_folder_is_unreadable_not_empty(self):
+        # Audit round 17, finding 2: a folder that cannot be listed must not pass for an empty one.
+        import os
+        self.write("word/ribbon.json", [TAB])
+        real_scandir = os.scandir
+
+        def refusing(path=".", *args):
+            if Path(path).resolve() == (self.inv / "word").resolve():
+                raise PermissionError(13, "Access is denied", str(path))
+            return real_scandir(path, *args)
+        os.scandir = refusing
+        try:
+            with self.assertRaises(ci.Unreadable):
+                ci.check([str(self.inv)], inventory=self.inv)
+        finally:
+            os.scandir = real_scandir
+
+    def test_a_baseline_with_no_rows_is_refused(self):
+        # Audit round 17, finding 3: the empty-row rule, on its own.
+        data = json.loads((ci.INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"] = []
+        problems = ci.check_baseline(Path("word/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA))
+        self.assertTrue(any("no rows" in p for p in problems), problems)
+
     def test_invisible_characters_cannot_hide_an_address(self):
         # Audit round 16, finding 1: URL parsers drop U+FEFF and other default-ignorables, so they are refused.
         self.write("word/ribbon.json", [dict(TAB, label="https:\ufeffsupport.\ufeffmicrosoft.\ufeffcom/x")])

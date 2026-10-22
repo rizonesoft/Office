@@ -654,3 +654,38 @@ All four findings verified and fixed in the next commit; the tests for findings 
 2. P1 naming a folder above the inventory (`design`, the repository) skipped the whole-inventory gate: the gate runs when any named path is the inventory root or one of its ancestors (`test_naming_a_folder_above_the_inventory_runs_the_whole_inventory_gate`; `python scripts/check-inventory.py design` checks clean on the committed inventory).
 3. P3 the `noHost` description still said identifier fields carry `noLink` only: it now names `noColon` too.
 4. P3 the manifest commit guard was untested: `test_a_malformed_manifest_commit_is_unreadable`.
+
+## Round 17: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T12:28:09Z
+- Effort: xhigh
+- Lines: 18
+- Digest: e623367ed5f0ed9b
+
+### source-defect: needs-attention
+
+1. **[P1] Supplementary invisible characters bypass text validation.** `design/inventory/schema.json:415` omits supplementary default-ignorable characters, including U+E0100 (a variation selector). Set a valid tab’s `label` or shortcut’s `shortcut` to `chr(0xE0100)`: schema validation and `check()` return `[]`. A control’s `behaviour` containing only that character also passes `require_behaviour=True`. Invisible content therefore satisfies required readable text.
+
+### adversarial: needs-attention
+
+2. **[P1] Unreadable directories silently pass.** `scripts/check-inventory.py:297` uses `rglob()`, which suppresses directory traversal errors. On Python 3.14.4, intercept `os.scandir` to raise `PermissionError` only for `design/inventory/word`, delegating other calls normally. Both `main([])` and `main([str(INVENTORY / "word")])` return **0**, without diagnostics. All three Word JSON files escape validation. Discovery failures must produce an error rather than appear as empty directories.
+
+### consistency: needs-attention
+
+Finding **1** also contradicts `design/inventory/schema.json:413`: its description promises to reject Unicode default-ignorable code points, while its pattern covers only BMP ranges. The U+E0100 reproduction demonstrates the mismatch.
+
+### record: needs-attention
+
+3. **[P3] The every-rule test claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` claims disabling any rule fails the suite. Remove only the empty-row rejection at `scripts/check-inventory.py:313-314` in memory: **all 94 tests still pass**. Clone the committed Word baseline envelope and set `rows=[]`: the original reports `no rows`; the mutant returns `[]`. Verification redirected fixture mutations entirely into memory.
+
+HIGHEST: P1  
+OVERALL: needs-attention
+
+## Dispositions after audit round 17
+
+All three findings verified and fixed in the next commit; the first two tests fail against the round 16 checker (fixes stashed), and the third fails when the empty-row rule is removed:
+
+1. P1 supplementary-plane invisible characters (U+E0100 and the like) passed, because `noControl`'s class covered the BMP only. A JSON Schema pattern without the `u` flag sees a character outside the BMP as two surrogate code units, so `noControl` now refuses any surrogate code unit. That means any character outside the BMP, emoji included; no Office text needs one. The checker searches every pattern over the UTF-16 view of the string (`utf16()`), so it agrees with an ECMA validator (`test_characters_outside_the_bmp_are_refused`).
+2. P1 a folder that could not be listed passed as empty, since `rglob` swallows the error: discovery walks with `os.walk`, whose error hook raises `Unreadable`, exit 2 (`test_an_unreadable_folder_is_unreadable_not_empty`).
+3. P3 the empty-row rule was untested: `test_a_baseline_with_no_rows_is_refused`.
