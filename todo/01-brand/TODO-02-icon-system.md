@@ -36,7 +36,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Icon design language brief | D01 T01 §3 | [ ] |
+| 1 | §1 | Icon design language brief | D01 T01 §3 | [x] |
 | 2 | §2 | Suite mark and wordmark masters | §1 | [ ] |
 | 3 | §3 | Six app icon masters | §1 | [ ] |
 | 4 | §4 | Small-size app icon variants | §3 | [ ] |
@@ -64,9 +64,12 @@ Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five 
 - [x] Define the per-app palette in `docs/brand/icon-language.md` with hex values and a contrast check against white and `#1f1f1f` backgrounds. Done when: each app colour reaches at least 3:1 against both backgrounds. Cheaper substitute: reusing Microsoft's blue, green, orange, teal and purple app colours one for one.
 - [x] Record the owner's chosen concept from the review in this section in `docs/brand/icon-language.md`: the concept, how the suite logo is built, and each app's object or glyph. Done when: the concept and date are recorded and each of the six apps has one sentence naming its glyph. Cheaper substitute: a letter on a tile.
 - [x] Write the Distinctness rules in `docs/brand/icon-language.md`: no single letter as the main glyph, no letter tile, no Microsoft app or file icon artwork in any form (the MIT-licensed Fluent UI System Icons chosen for ribbon commands on 2026-10-20 are allowed). Done when: the rules are a numbered list the §7 review can tick. Cheaper substitute: "make it look different".
-- [ ] Commit: `brand: add icon design language`
+- [x] Commit: `brand: add icon design language`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/icon-language.md --require Grid --require Palette --require Motif --require "Distinctness rules" --require Accessibility` exits 0.
+
+> **Verified:** 2026-10-22 | §1 | bc9d6f4a1f394f90eeaa657328537735d11a9ff4
+> **Review:** `docs/reviews/d01-t02-s1.json`
 
 ## 2. Suite Mark and Wordmark Masters
 

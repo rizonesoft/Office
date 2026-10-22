@@ -1,0 +1,61 @@
+{
+  "ref": "D01 T02 \u00a71",
+  "title": "Icon Design Language Brief",
+  "implementation_sha": "bc9d6f4a1f394f90eeaa657328537735d11a9ff4",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/01-brand/D01-T02-s1.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py docs/brand/icon-language.md --require Grid --require Palette --require Motif --require \"Distinctness rules\" --require Accessibility -> exit 0",
+    "python -m unittest scripts.tests.test_build_icons -> OK (26 tests); every reviewer mutation from rounds 2 to 8 fails at least one test",
+    "python scripts/build-icons.py --check -> icons current",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at bc9d6f4"
+  ],
+  "rounds_spent": 9,
+  "round_cap": 22
+}
