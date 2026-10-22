@@ -106,7 +106,7 @@ class Notice(GitRepo):
 
 class Proposal(GitRepo):
     """`pin_proposal.propose` on a neutral pin file: a branch from main, checks, an email, never main or the checkout.
-    Moved here from the retired WinUI 3 pin tests on 2026-10-22 (D00 T03 §10); the C++ toolchain pins reuse it."""
+    Moved here from the retired pin tests on 2026-10-22 (D00 T03 §10); the C++ toolchain pins reuse it."""
     FILES = {"pin.txt": "1.0.0\n"}
     BRANCH = "pins/demo-2.0.0"
 
