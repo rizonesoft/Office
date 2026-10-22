@@ -191,6 +191,9 @@ class Palette(unittest.TestCase):
                         if paints[0] != "none":
                             self.assertGreaterEqual(r, 8, (key, tier, name, pairs))
                     else:
+                        # Paths are strokes only, so the stroke weights above bound them; a filled shape is a rect or
+                        # circle, whose minimum size is checked.
+                        self.assertEqual(paints[0], "none", (key, tier, pairs))
                         self.assertRegex(pairs["d"], r"^[MLHVZ0-9.,\s-]+$", (key, tier))
                         edges = [float(v) for v in re.findall(r"-?[\d.]+", pairs["d"])]
                     self.assertTrue(all(-32 <= v <= 32 for v in edges), (key, tier, name, edges))
