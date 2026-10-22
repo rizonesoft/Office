@@ -217,8 +217,12 @@ class Banner(unittest.TestCase):
         # and the card's gradient stops, against GitHub's canvas, written out here (white, and #0d1117 for dark).
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
             svg = bd.banner_svg(theme)
+            gradient = re.findall(r'<linearGradient id="([^"]+)"', svg.split("</defs>")[0])
             grounds = re.findall(r'<stop offset="[01]" stop-color="(#[0-9a-f]{6})"/>', svg.split("</defs>")[0])
-            self.assertEqual(len(grounds), 2, theme)
+            self.assertEqual((len(gradient), len(grounds)), (1, 2), theme)
+            # The card, the first shape after the definitions and under all the text, is painted with that gradient.
+            card = re.match(r'<rect [^>]*fill="([^"]+)"', svg.split("</defs>", 1)[1])
+            self.assertEqual(card and card.group(1), f"url(#{gradient[0]})", theme)
             grounds.append(canvas)
             fills = re.findall(r'<path d="[^"]*" fill="([^"]*)"/>', svg.rsplit("</svg>", 2)[1])
             self.assertEqual(len(fills), 4, theme)
