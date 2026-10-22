@@ -123,19 +123,23 @@ A strip of the six app icons with their names, so a visitor sees the whole suite
 
 ## 4. README Brand Presentation
 
+> **Started:** 2026-10-22T16:10:00Z
+
 The README shows the banner and lineup with `<picture>` so they match the visitor's GitHub theme, then lists each app with its Microsoft counterpart and current status.
 
 **Phase:** 1
 **Needs:** none
 **Surface:** no
 
+**Verified 2026-10-22:** on github.com in a dark GitHub theme the dark banner, the live CI badge (passing) and the dark lineup render; GitHub's rendered README (`gh api repos/rizonesoft/Office/readme` as HTML) keeps both `prefers-color-scheme` sources of each picture, which is how the light variants are served to a light theme.
+
 **Build order:**
 
 1. Add the banner and lineup `<picture>` blocks to `README.md`. Done when: both render on github.com in light and dark themes.
 
-- [ ] Add a `<picture>` block to `README.md` with `prefers-color-scheme: dark` and light `source` elements for the banner and an `alt` naming the suite. Done when: the rendered README on github.com switches banner with the theme. Cheaper substitute: one image with a transparent background.
-- [ ] Add the lineup `<picture>` block and an app table (name, Microsoft counterpart, status) to `README.md`, rows at most 100 characters. Done when: the table lists six apps matching `docs/brand/NAMES.md`. Cheaper substitute: an image-only lineup with no text for screen readers.
-- [ ] Add a CI status badge for `.github/workflows/ci.yml` to `README.md`. Done when: the badge renders the current run state. Cheaper substitute: a static "passing" badge.
+- [x] Add a `<picture>` block to `README.md` with `prefers-color-scheme: dark` and light `source` elements for the banner and an `alt` naming the suite. Done when: the rendered README on github.com switches banner with the theme. Cheaper substitute: one image with a transparent background.
+- [x] Add the lineup `<picture>` block and an app table (name, Microsoft counterpart, status) to `README.md`, rows at most 100 characters. Done when: the table lists six apps matching `docs/brand/NAMES.md`. Cheaper substitute: an image-only lineup with no text for screen readers.
+- [x] Add a CI status badge for `.github/workflows/ci.yml` to `README.md`. Done when: the badge renders the current run state. Cheaper substitute: a static "passing" badge.
 - [ ] Commit: `docs: present suite branding in README`
 
 **Test checkpoint:** `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses), and `(Select-String -Path README.md -Pattern "prefers-color-scheme").Count` is at least 2.
