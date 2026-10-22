@@ -160,17 +160,19 @@ class Palette(unittest.TestCase):
                 elements = re.findall(r"<(\w+)((?:\s+[\w-]+=\"[^\"]*\")*)\s*/>", svg)
                 self.assertEqual("".join(f"<{n}{a}/>" for n, a in elements).replace(" ", ""), svg.replace(" ", ""),
                                  (key, tier))
+                flaps = 0
                 for name, attrs in elements:
                     pairs = dict(re.findall(r'([\w-]+)="([^"]*)"', attrs))
                     self.assertLessEqual(set(pairs), allowed.get(name, set()) | paint, (key, tier, name))
                     self.assertIn("fill", pairs, (key, tier, name))  # an unstated fill would paint black
-                    for attr in ("fill", "stroke"):
-                        value = pairs.get(attr, "none")
-                        if (key, tier, value) == ("mail", "sm", "#ffffff"):
-                            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
-                            self.assertGreaterEqual(d.contrast(value, symbol), 3)
-                        else:
-                            self.assertIn(value, (col, "none"), (key, tier, name, attr))
+                    paints = (pairs.get("fill", "none"), pairs.get("stroke", "none"))
+                    if (key, tier) == ("mail", "sm") and paints == ("none", "#ffffff") and name == "path":
+                        # The flap: one white stroked path, whose surface test_mail_flap_sits_on_the_envelope checks.
+                        flaps += 1
+                        symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+                        self.assertGreaterEqual(d.contrast("#ffffff", symbol), 3)
+                    else:
+                        self.assertLessEqual(set(paints), {col, "none"}, (key, tier, name))
                     if name == "rect":
                         x, y, w, h = (float(pairs[a]) for a in ("x", "y", "width", "height"))
                         edges = [x, y, x + w, y + h]
@@ -181,6 +183,7 @@ class Palette(unittest.TestCase):
                         self.assertRegex(pairs["d"], r"^[MLHVZ0-9.,\s-]+$", (key, tier))
                         edges = [float(v) for v in re.findall(r"-?[\d.]+", pairs["d"])]
                     self.assertTrue(all(-32 <= v <= 32 for v in edges), (key, tier, name, edges))
+                self.assertEqual(flaps, 1 if (key, tier) == ("mail", "sm") else 0, (key, tier))
 
     def test_mail_flap_sits_on_the_envelope(self):
         # The flap is held to 3:1 against the envelope, so every pixel it changes must have the envelope under it.
