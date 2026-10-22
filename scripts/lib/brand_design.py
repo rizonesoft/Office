@@ -133,3 +133,31 @@ def social_preview_svg():
             f'x2="0" y2="1"><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/>'
             f'</linearGradient></defs><rect id="card" width="{SOCIAL_W}" height="{SOCIAL_H}" fill="url(#social-bg)"/>'
             f'{"".join(parts)}</svg>\n')
+
+
+# App lineup strip (todo/01-brand/TODO-03-github-graphics.md section 3): the six app icons with their names and the
+# Microsoft app each stands in for, on a transparent ground so it sits on the README in either GitHub theme.
+LINEUP_ICON, LINEUP_GAP, LINEUP_PAD = 96, 56, 24
+
+
+def lineup_svg(theme):
+    """The six apps in a row: icon, name, and "like <counterpart>" beneath, outlined, for one GitHub theme."""
+    ink, sub = THEMES[theme]
+    o = outliner()
+    width = 2 * LINEUP_PAD + 6 * LINEUP_ICON + 5 * LINEUP_GAP
+    height = LINEUP_PAD + LINEUP_ICON + 70
+    parts = []
+    for i, key in enumerate(d.APPS):
+        x = LINEUP_PAD + i * (LINEUP_ICON + LINEUP_GAP)
+        centre = x + LINEUP_ICON / 2
+        name, counterpart = d.APPS[key][0], f"like {d.APPS[key][1]}"
+        parts.append(_nested(key, x, LINEUP_PAD, LINEUP_ICON))
+        nw, cw = o.path(name, 24, 600)[1], o.path(counterpart, 17, 400)[1]
+        parts.append(f'<path d="{o.path(name, 24, 600, centre - nw / 2, LINEUP_PAD + LINEUP_ICON + 34)[0]}" fill="{ink}"/>')
+        parts.append(f'<path d="{o.path(counterpart, 17, 400, centre - cw / 2, LINEUP_PAD + LINEUP_ICON + 60)[0]}" '
+                     f'fill="{sub}"/>')
+    canvas = GITHUB_CANVAS[theme]
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">'
+            f'<!-- Contrast on the GitHub {theme} canvas ({canvas}): names {d.contrast(ink, canvas):.2f}:1, '
+            f'counterparts {d.contrast(sub, canvas):.2f}:1 --><title>Rizonesoft Office apps</title>'
+            f'{"".join(parts)}</svg>\n')

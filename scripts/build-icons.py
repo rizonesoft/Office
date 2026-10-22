@@ -21,6 +21,7 @@ Outputs:
     assets/brand/{svg,png}/                     wordmark and suite and app lockups, light and dark
     design/github/banner-{light,dark}.svg, docs/assets/github/banner-{light,dark}.png (2560x640)   README banner
     design/github/social-preview.svg, docs/assets/github/social-preview.png (1280x640)   social preview
+    design/github/lineup-{light,dark}.svg, docs/assets/github/lineup-{light,dark}.png (2x)   app lineup strip
 
 Requires the packages pinned in scripts/requirements.txt: resvg_py (rasteriser), uharfbuzz and fontTools (text
 outlines), Pillow (verification).
@@ -185,6 +186,12 @@ def build():
         text = bd.banner_svg(theme)
         out[f"design/github/banner-{theme}.svg"] = text.encode("utf-8")
         out[f"docs/assets/github/banner-{theme}.png"] = render(text, bd.BANNER_W * 2, bd.BANNER_H * 2)
+    # App lineup strip, light and dark: the SVG and a 2x PNG for the README.
+    for theme in bd.THEMES:
+        text = bd.lineup_svg(theme)
+        w, h = (int(v) for v in text.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
+        out[f"design/github/lineup-{theme}.svg"] = text.encode("utf-8")
+        out[f"docs/assets/github/lineup-{theme}.png"] = render(text, 2 * w, 2 * h)
     # Social preview: GitHub shows it when the repository link is shared (uploaded by hand in the repository settings).
     social = bd.social_preview_svg()
     out["design/github/social-preview.svg"] = social.encode("utf-8")

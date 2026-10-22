@@ -96,7 +96,11 @@ The social preview is what shows on X, LinkedIn, Slack and Discord when the repo
 
 ## 3. App Lineup Strip in Light and Dark
 
+> **Started:** 2026-10-22T14:10:00Z
+
 A strip of the six app icons with their names, so a visitor sees the whole suite and which Microsoft app each one replaces.
+
+**Corrected 2026-10-22:** generated like the banner: `lineup_svg(theme)` in `scripts/lib/brand_design.py` draws the six icons with each name and a "like <counterpart>" line beneath, outlined, on a transparent ground so the strip sits on the README in either GitHub theme; `scripts/build-icons.py` writes both SVGs and 2x PNGs under its `--check` gate.
 
 **Phase:** 1
 **Needs:** none
@@ -107,9 +111,9 @@ A strip of the six app icons with their names, so a visitor sees the whole suite
 1. Compose `design/github/lineup-light.svg` and `lineup-dark.svg`. Done when: both pass the checker.
 2. Export both to `docs/assets/github/`. Done when: each PNG passes the size check.
 
-- [ ] Compose `design/github/lineup-light.svg` with six icons at 96 pixels and outlined names beneath. Done when: the six names match `docs/brand/NAMES.md` exactly. Cheaper substitute: names typed from memory.
-- [ ] Compose `design/github/lineup-dark.svg` with name colours holding 4.5:1 on `#0d1117`. Done when: the contrast ratio is recorded in the SVG comment. Cheaper substitute: one strip used on both themes.
-- [ ] Add lineup targets to `scripts/build-icons.py` exporting 2x PNGs to `docs/assets/github/`. Done when: `python scripts/check-image-asset.py docs/assets/github/lineup-light.png --max-bytes 300000` exits 0. Cheaper substitute: hand-exported PNGs.
+- [x] Compose `design/github/lineup-light.svg` with six icons at 96 pixels and outlined names beneath. Done when: the six names match `docs/brand/NAMES.md` exactly. Cheaper substitute: names typed from memory.
+- [x] Compose `design/github/lineup-dark.svg` with name colours holding 4.5:1 on `#0d1117`. Done when: the contrast ratio is recorded in the SVG comment. Cheaper substitute: one strip used on both themes.
+- [x] Add lineup targets to `scripts/build-icons.py` exporting 2x PNGs to `docs/assets/github/`. Done when: `python scripts/check-image-asset.py docs/assets/github/lineup-light.png --max-bytes 300000` exits 0. Cheaper substitute: hand-exported PNGs.
 - [ ] Commit: `brand: add app lineup strip`
 
 **Test checkpoint:** `python scripts/check-image-asset.py docs/assets/github/lineup-dark.png --max-bytes 300000` exits 0.

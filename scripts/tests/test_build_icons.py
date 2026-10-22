@@ -225,28 +225,8 @@ class Banner(unittest.TestCase):
             tail = svg.rpartition("</svg>")[0].rpartition("</svg>")[2]
             lines = re.findall(r'<path d="[^"]*" fill="[^"]*"/>', tail)
             self.assertEqual(len(lines), 4, theme)  # wordmark, product name, tagline, app names
-
-            def without(*drop):
-                kept = svg
-                for line in drop:
-                    kept = kept.replace(line, "", 1)
-                return kept
-
-            def rendered(text):
-                data = build_icons.render(text, 1280, 320, background=canvas)
-                return Image.open(io.BytesIO(data)).convert("RGB").tobytes()
-            bare = rendered(without(*lines))
-            final = rendered(svg)
-            for line in lines:
-                # Where the line's glyphs are, from the line alone on a transparent canvas (whatever its colour), so
-                # a pixel the finished banner hides or recolours is still checked.
-                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">'
-                         f'{line}</svg>')
-                alpha = Image.open(io.BytesIO(build_icons.render(alone, 1280, 320))).getchannel("A").tobytes()
-                glyphs = [i for i, a in enumerate(alpha) if a == 255]
-                self.assertGreater(len(glyphs), 200, (theme, line[-30:]))
-                worst = min(d.contrast("#" + final[3 * i:3 * i + 3].hex(), "#" + bare[3 * i:3 * i + 3].hex())
-                            for i in glyphs)
+            for line, glyphs, worst in text_contrast(svg, lines, canvas, 1280, 320):
+                self.assertGreater(glyphs, 200, (theme, line[-30:]))
                 self.assertGreaterEqual(worst, 4.5, (theme, line[-30:]))
 
     def test_tagline_contrast_is_recorded_and_holds(self):
@@ -305,35 +285,57 @@ class SocialPreview(unittest.TestCase):
         top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</defs>", 1)[1], flags=re.S)
         paths = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
         self.assertEqual(len(paths), len(texts))
-        def points(d):
-            # Every point the path visits as (command, x, y), following M, L, Q, C, H and V, with each Z (a contour's
-            # end) kept as its own entry, so a changed command or contour fails as surely as a moved point.
-            out, x, y, cmd = [], 0.0, 0.0, None
-            tokens = re.findall(r"[MLQCHVZ]|-?\d+(?:\.\d+)?", d)
-            i = 0
-            while i < len(tokens):
-                if tokens[i].isalpha():
-                    cmd, i = tokens[i], i + 1
-                    if cmd == "Z":
-                        out.append(("Z", x, y))
-                    continue
-                if cmd == "H":
-                    x, i = float(tokens[i]), i + 1
-                elif cmd == "V":
-                    y, i = float(tokens[i]), i + 1
-                else:
-                    x, y, i = float(tokens[i]), float(tokens[i + 1]), i + 2
-                out.append((cmd, x, y))
-            return out
-
         for path, (text, size, weight, track) in zip(paths, texts):
             # The glyph outlines must be the literal text's, up to where the line was placed.
-            got = points(re.search(r'd="([^"]+)"', path).group(1))
-            want = points(bd.outliner().path(text, size, weight, 0, 0, track)[0])
-            self.assertEqual([c for c, _, _ in got], [c for c, _, _ in want], text)
-            dx, dy = got[0][1] - want[0][1], got[0][2] - want[0][2]
-            drift = max(max(abs(gx - wx - dx), abs(gy - wy - dy)) for (_, gx, gy), (_, wx, wy) in zip(got, want))
-            self.assertLess(drift, .05, text)
+            self.assertTrue(same_outline(re.search(r'd="([^"]+)"', path).group(1), text, size, weight, track), text)
+
+
+class Lineup(unittest.TestCase):
+    def names_from_the_record(self):
+        # The six full names and counterparts as docs/brand/NAMES.md's Apps table records them, read from the file.
+        text = (SCRIPTS.parent / "docs/brand/NAMES.md").read_text(encoding="utf-8")
+        rows = re.findall(r"^\| (\w+) \| Rizonesoft \1 \| (\w+) \|$", text, flags=re.M)
+        self.assertEqual(len(rows), 6)
+        return rows
+
+    def test_current_and_within_budget(self):
+        root = SCRIPTS.parent
+        for theme in ("light", "dark"):
+            svg = bd.lineup_svg(theme)
+            self.assertEqual((root / f"design/github/lineup-{theme}.svg").read_text(encoding="utf-8"), svg)
+            self.assertNotIn("<text", svg)
+            data = (root / f"docs/assets/github/lineup-{theme}.png").read_bytes()
+            w, h = (int(v) for v in svg.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
+            self.assertEqual(Image.open(io.BytesIO(data)).size, (2 * w, 2 * h), theme)
+            self.assertLess(len(data), 300_000, theme)
+
+    def test_names_and_counterparts_match_the_record(self):
+        rows = self.names_from_the_record()
+        for theme in ("light", "dark"):
+            svg = bd.lineup_svg(theme)
+            top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</title>", 1)[1], flags=re.S)
+            paths = re.findall(r'<path d="([^"]+)" fill="#[0-9a-f]{6}"/>', top)
+            self.assertEqual(len(paths), 12, theme)
+            for (name, counterpart), shown, under in zip(rows, paths[0::2], paths[1::2]):
+                self.assertTrue(same_outline(shown, name, 24, 600), (theme, name))
+                self.assertTrue(same_outline(under, f"like {counterpart}", 17, 400), (theme, counterpart))
+
+    def test_text_reads_on_each_github_canvas(self):
+        for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
+            svg = bd.lineup_svg(theme)
+            w, h = (int(v) for v in svg.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
+            top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</title>", 1)[1], flags=re.S)
+            lines = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
+            self.assertEqual(len(lines), 12, theme)
+            results = text_contrast(svg, lines, canvas, w, h)
+            for line, glyphs, worst in results:
+                self.assertGreater(glyphs, 40, (theme, line[-30:]))
+                self.assertGreaterEqual(worst, 4.5, (theme, line[-30:]))
+            # The comment records the names' and counterparts' ratios on that canvas, recomputed here.
+            recorded = [float(v) for v in re.findall(r"([\d.]+):1", svg.split("-->", 1)[0])]
+            names = min(r for i, (_, _, r) in enumerate(results) if i % 2 == 0)
+            unders = min(r for i, (_, _, r) in enumerate(results) if i % 2 == 1)
+            self.assertEqual(recorded, [round(names, 2), round(unders, 2)], theme)
 
 
 class GlassPane(unittest.TestCase):
@@ -354,6 +356,62 @@ STROKE_WEIGHT = {"lg": (4.9, 9.1), "md": (8, 12), "sm": (11, 15)}  # symbol stro
 # Each tier's symbol shade as decided (docs/brand/icon-language.md, Palette), written out here rather than read from
 # icon_design so a changed shade fails the tests.
 SYMBOL_SHADE = {"lg": .35, "md": .15, "sm": .15}
+
+
+def text_contrast(svg, lines, canvas, width, height):
+    """The lowest contrast of each text line, rendered: every pixel the line alone covers fully (found on a
+    transparent canvas, whatever its colour) in the finished image against the same pixel with no text, on the given
+    canvas, so a layer under or over the text counts. Returns [(line, glyph pixels, lowest ratio)]."""
+    def without(*drop):
+        kept = svg
+        for line in drop:
+            kept = kept.replace(line, "", 1)
+        return kept
+
+    def rendered(text):
+        data = build_icons.render(text, width, height, background=canvas)
+        return Image.open(io.BytesIO(data)).convert("RGB").tobytes()
+    bare, final, out = rendered(without(*lines)), rendered(svg), []
+    for line in lines:
+        alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" '
+                 f'height="{height}">{line}</svg>')
+        alpha = Image.open(io.BytesIO(build_icons.render(alone, width, height))).getchannel("A").tobytes()
+        glyphs = [i for i, a in enumerate(alpha) if a == 255]
+        worst = min((d.contrast("#" + final[3 * i:3 * i + 3].hex(), "#" + bare[3 * i:3 * i + 3].hex())
+                     for i in glyphs), default=0)
+        out.append((line, len(glyphs), worst))
+    return out
+
+
+def outline_points(path_data):
+    """Every point an outline visits as (command, x, y), following M, L, Q, C, H and V, with each Z (a contour's
+    end) kept as its own entry, so a changed command or contour fails as surely as a moved point."""
+    out, x, y, cmd = [], 0.0, 0.0, None
+    tokens = re.findall(r"[MLQCHVZ]|-?\d+(?:\.\d+)?", path_data)
+    i = 0
+    while i < len(tokens):
+        if tokens[i].isalpha():
+            cmd, i = tokens[i], i + 1
+            if cmd == "Z":
+                out.append(("Z", x, y))
+            continue
+        if cmd == "H":
+            x, i = float(tokens[i]), i + 1
+        elif cmd == "V":
+            y, i = float(tokens[i]), i + 1
+        else:
+            x, y, i = float(tokens[i]), float(tokens[i + 1]), i + 2
+        out.append((cmd, x, y))
+    return out
+
+
+def same_outline(path_data, text, size, weight, track=0.0):
+    """True when an outlined line is the literal text set in the brand face, up to where it was placed."""
+    got, want = outline_points(path_data), outline_points(bd.outliner().path(text, size, weight, 0, 0, track)[0])
+    if [c for c, _, _ in got] != [c for c, _, _ in want]:
+        return False
+    dx, dy = got[0][1] - want[0][1], got[0][2] - want[0][2]
+    return all(abs(gx - wx - dx) < .05 and abs(gy - wy - dy) < .05 for (_, gx, gy), (_, wx, wy) in zip(got, want))
 
 
 def render_rgb(svg):
