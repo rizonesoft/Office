@@ -425,3 +425,44 @@ All five findings verified and fixed in the next commit; the four tests for find
 3. P2 repeated-member detection was quadratic: one pass with a set (`test_repeated_member_detection_is_linear`, 30000 members under 3 seconds).
 4. P1 malformed blob ids passed: the manifest's commit must be a 40-hex Git id, and every blob a workbook name with a 40-hex blob id, or the manifest is unreadable (`test_manifest_blob_ids_are_git_ids`, five malformed values).
 5. P3 a field's control-character rule could be removed unnoticed: `test_every_string_field_refuses_a_control_character` lists all thirteen string fields.
+
+## Round 11: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T10:55:15Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 2733f485b14e4082
+
+### source-defect: needs-attention
+
+1. **P1: Incomplete or invented workbook provenance passes.** `scripts/check-inventory.py:318` validates entry syntax without checking which workbooks must exist. Remove `blobs["wordcontrols.xlsx"]` from the otherwise unchanged manifest, or rename it to `notepadcontrols.xlsx` while retaining its hash. Both whole-inventory runs return **0**, without diagnostics. This accepts missing or extra source workbooks despite `design/inventory/REFERENCE.md:66` requiring the manifest to identify every upstream workbook. Reproduced with in-memory read overrides.
+
+### adversarial: needs-attention
+
+2. **P2: Unreadable reference metadata crashes the CLI.** `scripts/check-inventory.py:175` reads `REFERENCE.md` outside the loader’s exception handling; `main()` catches only `Unreadable`. Override that read to raise `UnicodeDecodeError`, equivalent to invalid UTF-8 on disk, then call `main([])`. The exception escapes instead of producing the documented diagnostic and exit **2**. File-access errors escape through the same path.
+
+3. **P2: Link detection remains quadratic.** `design/inventory/schema.json:373` contains unanchored, greedy alternatives that repeatedly scan long strings without finding a delimiter. Reproduce with `ci.ecma(schema["$defs"]["noLink"]["not"]["pattern"]).search("a" * n)`. For **4,000, 8,000 and 16,000** characters, single searches took **0.19, 0.76 and 3.67 seconds**. The checker repeats this scan during schema validation and whole-record scanning, with no string-length limit.
+
+4. **P2: Parent-cycle detection scales cubically across a chain.** `scripts/check-inventory.py:185` searches the growing `chain` list on every step, and `:366` repeats traversal for every record. Build an acyclic parent chain and call `parent_loop()` for each ID. Chains of **300, 600 and 1,200** records took **0.058, 0.528 and 3.185 seconds** respectively. Hostile deep containment can stall validation even without a cycle.
+
+### consistency: approve
+
+### record: needs-attention
+
+5. **P3: The ticked every-rule sensitivity claim remains unsupported.** `scripts/tests/test_check_inventory.py:163` does not exercise invalid coordinate types, despite `todo/02-interface/TODO-01-parity-inventory.md:89` claiming disabling any rule fails the suite. Remove only `bounds.properties.x.type` at `design/inventory/schema.json:207` in memory: all **74 tests pass**, while bounds containing `"x": "not pixels"` become accepted. Verified with fixture operations redirected into memory and no filesystem writes.
+
+HIGHEST: P1  
+OVERALL: needs-attention
+
+## Dispositions after audit round 11
+
+All five findings verified and fixed in the next commit; the four tests for findings 1 to 4 fail against the round 10 checker (fixes stashed), and the fifth fails when any bounds member's type is removed:
+
+1. P1 a manifest missing a workbook or naming an invented one passed: the manifest must list exactly one workbook for each of Word, Excel, PowerPoint, Visio and Project, at least one Outlook window workbook, and nothing else, or it is unreadable. A dropped Outlook window is already caught, since the Outlook baseline's rows name windows the manifest must list (`test_the_manifest_lists_the_upstream_workbook_set`).
+2. P2 an unreadable `REFERENCE.md` crashed the run: its read raises `Unreadable`, exit 2 (`test_an_unreadable_reference_exits_2`).
+3. P2 the link patterns took quadratic time on long strings: lookbehind guards cannot make every alternative linear in ECMA-262, which has no possessive quantifiers. So every string field now has a `maxLength`, set from the real data (the longest committed value is 72 characters; a behaviour sentence may take 1000). The checker does not search a string's patterns once it is over its field's limit, nor any string over 1000 in the whole-record scan (`test_long_strings_cost_bounded_time`, 40000-character values in three fields).
+4. P2 parent-loop detection was cubic on a long chain: `parent_loops()` walks each id once and keeps every answer, and a diagnostic names at most 20 ids before eliding the rest; small loops print exactly as before (`test_parent_loops_cost_linear_time`, a 20000-record chain and cycle).
+5. P3 bounds member types could be removed unnoticed: `test_every_bounds_member_is_an_integer` lists `x`, `y`, `width` and `height`.
+
+The round 5 address test now uses addresses short enough for a keytip (16 characters), so the address rule, not the new length rule, is what refuses them.

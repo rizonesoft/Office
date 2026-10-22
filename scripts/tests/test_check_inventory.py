@@ -334,7 +334,9 @@ class Inventory(unittest.TestCase):
 
     def test_any_address_in_text_is_refused(self):
         # Audit round 5, findings 1 and 3: punycode hosts and URI schemes other than scheme:// in text a person reads.
-        for text in ("xn--e1afmkfd.xn--p1ai", "data:text/plain,hello", "javascript:alert(1)", "tel:+27110000000"):
+        # Each address fits the shortest text field (a keytip, 16 characters), so the address rule, not the length
+        # rule, is what refuses it.
+        for text in ("xn--e1a.xn--p1ai", "data:text/plain", "javascript:x()", "tel:+2711000000"):
             for field in ("label", "behaviour", "menuPath", "keytip", "shortcut"):
                 rec = dict(BOLD, **{field: text})
                 self.write("word/ribbon.json", [TAB, GROUP, rec])
@@ -372,6 +374,55 @@ class Inventory(unittest.TestCase):
         out.flush()
         self.assertEqual(code, 1)
         self.assertIn(b"\\ud800", out.buffer.getvalue())
+
+    def test_the_manifest_lists_the_upstream_workbook_set(self):
+        # Audit round 11, finding 1: one workbook per single-workbook app, at least one Outlook window, nothing else.
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        word = real["blobs"]["wordcontrols.xlsx"]
+        removed = json.loads(json.dumps(real)); del removed["blobs"]["wordcontrols.xlsx"]
+        invented = json.loads(json.dumps(removed)); invented["blobs"]["notepadcontrols.xlsx"] = word
+        no_outlook = json.loads(json.dumps(real))
+        no_outlook["blobs"] = {k: v for k, v in real["blobs"].items() if not k.startswith("outlook")}
+        for name, manifest in (("removed", removed), ("invented", invented), ("no Outlook", no_outlook)):
+            (self.inv / ci.SOURCES).write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaises(ci.Unreadable, msg=name):
+                ci.check([str(self.inv)], inventory=self.inv)
+
+    def test_an_unreadable_reference_exits_2(self):
+        # Audit round 11, finding 2: REFERENCE.md that cannot be read is a controlled failure.
+        # (main turns Unreadable into exit 2; test_hostile_files_exit_2_with_a_diagnostic covers that step.)
+        self.write("word/ribbon.json", [TAB])
+        (self.inv / ci.REFERENCE).write_bytes(b"\xff\xfe not utf-8 \x80")
+        with self.assertRaises(ci.Unreadable) as raised:
+            ci.check([str(self.inv)], inventory=self.inv)
+        self.assertIn("REFERENCE.md: cannot read", str(raised.exception))
+
+    def test_long_strings_cost_bounded_time(self):
+        # Audit round 11, finding 3: the link and address patterns never search past a field's maxLength.
+        import time
+        for field in ("label", "behaviour", "uiaId"):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "a" * 40000})])
+            start = time.perf_counter()
+            problems = self.problems()
+            self.assertLess(time.perf_counter() - start, 3.0, field)
+            self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
+
+    def test_parent_loops_cost_linear_time(self):
+        # Audit round 11, finding 4: a 20000-record chain or cycle is resolved in one pass.
+        import time
+        for parents in ({f"n{i}": f"n{i + 1}" for i in range(20000)},
+                        {**{f"n{i}": f"n{i + 1}" for i in range(20000)}, "n20000": "n0"}):
+            start = time.perf_counter()
+            ci.parent_loops(parents)
+            self.assertLess(time.perf_counter() - start, 2.0)
+
+    def test_every_bounds_member_is_an_integer(self):
+        # Audit round 11, finding 5: each bounds member below must refuse a non-integer on its own, written out here.
+        for member in ("x", "y", "width", "height"):
+            rec = json.loads(json.dumps(BOLD))
+            rec["bounds"][member] = "not pixels"
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertTrue(any(f"bounds.{member}: expected integer" in p for p in self.problems()), member)
 
     def test_a_network_path_is_refused(self):
         # Audit round 10, finding 1: // followed by a host is a link with no scheme and no dot.

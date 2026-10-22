@@ -34,6 +34,7 @@ BASELINE = "baseline.json"
 SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
 APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
 REFERENCE = "REFERENCE.md"  # the builds and capture profiles records are measured against
+MAX_STRING = 1000  # the longest maxLength in schema.json (a behaviour sentence); longer strings are refused unsearched
 TARGET_KINDS = ("command", "control")
 
 
@@ -117,6 +118,9 @@ def validate(value, schema, root, path="$"):
     if isinstance(value, str):
         if len(value) < schema.get("minLength", 0):
             problems.append(f"{path}: empty")
+        if len(value) > schema.get("maxLength", len(value)):
+            # Too long already; its patterns are not searched, which keeps their cost bounded by maxLength.
+            return problems + [f"{path}: longer than {schema['maxLength']} characters"]
         if "pattern" in schema and not ecma(schema["pattern"]).search(value):
             problems.append(f"{path}: {value!r} does not match {schema['pattern']}")
     if isinstance(value, (int, Decimal)) and not isinstance(value, bool) and value < schema.get("minimum", value):
@@ -157,6 +161,8 @@ def links(value, path, link):
     while stack:
         item, where = stack.pop()
         if isinstance(item, str):
+            if len(item) > MAX_STRING:  # longer than any field allows: refused by the schema, and not worth a search
+                continue
             found = link.search(item)
             if found:
                 problems.append(f"{where}: link {found.group(0)!r} in a record")
@@ -172,21 +178,50 @@ def reference(inventory):
     the repository's. Returns (profile ids, builds)."""
     path = Path(inventory) / REFERENCE
     path = path if path.is_file() else INVENTORY / REFERENCE
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise Unreadable(f"{path}: cannot read ({exc})") from None
     profiles = set(re.findall(r"Profile `([A-Za-z0-9-]+)`", text))
     builds = set(re.findall(r"^\| [^|]+ \| [^|]+ \| (\d+\.\d+\.\d+\.\d+) \|", text, flags=re.M))
     return profiles, builds
 
 
-def parent_loop(rid, parents):
-    """The chain from rid back to rid when following parents loops, else None."""
-    chain, node = [rid], parents.get(rid)
-    while node is not None:
-        if node == rid or node in chain:
-            return chain + [node]
-        chain.append(node)
-        node = parents.get(node)
-    return None
+LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
+
+
+def parent_loops(parents):
+    """For every id whose parent chain loops: (the first ids of that chain, the id it repeats, the chain's length
+    before the repeat), as in a -> b -> c -> b. Each id is walked once and each answer holds at most LOOP_SHOWN ids,
+    so the whole inventory costs time linear in its size, however long the chains or cycles."""
+    loops, settled = {}, set()
+    for start in parents:
+        if start in settled:
+            continue
+        path, index, node = [], {}, start
+        while node in parents and node not in settled and node not in index:
+            index[node] = len(path)
+            path.append(node)
+            node = parents[node]
+        for i, n in enumerate(path):
+            head = path[i:i + LOOP_SHOWN]
+            if node in index and i >= index[node]:  # n is on the cycle: once round it and back to n
+                c = index[node]
+                head += path[c:c + min(LOOP_SHOWN - len(head), i - c)]
+                loops[n] = (head, n, len(path) - c)
+            elif node in index:  # n leads into the cycle
+                loops[n] = (head, node, len(path) - i)
+            elif node in loops:  # this walk runs into a chain already known to loop
+                later, repeat, size = loops[node]
+                loops[n] = (head + later[:LOOP_SHOWN - len(head)], repeat, len(path) - i + size)
+        settled.update(path)
+    return loops
+
+
+def loop_text(loop):
+    """a -> b -> c -> b, with the middle elided past LOOP_SHOWN ids."""
+    head, repeat, size = loop
+    return " -> ".join(head) + (" -> ..." if size > len(head) else "") + f" -> {repeat}"
 
 
 def printable(text):
@@ -301,6 +336,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 if len(seen.get(rec["id"], [])) == 1:
                     parents[rec["id"]] = rec["parent"]
     link = ecma(schema["$defs"]["noLink"]["not"]["pattern"])
+    loops = parent_loops(parents)
     profiles, builds = reference(inventory)
     inventory = Path(inventory)
     sources_path = inventory / SOURCES
@@ -320,6 +356,15 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                        and hex40.fullmatch(blob))]
         if bad or not hex40.fullmatch(sources["commit"]):
             raise Unreadable(f"{sources_path}: not a manifest: commit or blob ids malformed ({', '.join(sorted(bad))})")
+        # The upstream folder has one workbook per app and one per Outlook window: each of the five single-workbook
+        # apps exactly once, at least one Outlook window, and nothing else.
+        names = set(sources["blobs"])
+        single = {f"{app}controls.xlsx" for app in APPS if app != "outlook"}
+        windows = {n for n in names if re.fullmatch(r"outlook[a-z]+controls\.xlsx", n, re.ASCII)}
+        missing, extra = sorted(single - names), sorted(names - single - windows)
+        if missing or extra or not windows:
+            raise Unreadable(f"{sources_path}: not the upstream workbook set (missing {missing or 'none'}, "
+                             f"unexpected {extra or 'none'}, Outlook windows {len(windows)})")
     # The baseline every baseline: source must name: this inventory's manifest, or the repository's when it has none.
     baseline_commit = (sources if manifest else load(INVENTORY / SOURCES))["commit"]
     # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must
@@ -363,9 +408,9 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 if isinstance(rec.get("app"), str) and rid.split(".", 1)[0] != rec["app"]:
                     problems.append(f"{where}: id {rid} does not start with its app {rec['app']}")
             if isinstance(rid, str) and rid in parents:
-                loop = parent_loop(rid, parents)
+                loop = loops.get(rid)
                 if loop:
-                    problems.append(f"{where}: parent chain loops: {' -> '.join(loop)}")
+                    problems.append(f"{where}: parent chain loops: {loop_text(loop)}")
             profile, build = rec.get("captureProfile"), rec.get("capturedFrom")
             if isinstance(profile, str) and profile not in profiles:
                 problems.append(f"{where}: captureProfile {profile} is not a profile in {REFERENCE}")

@@ -29,7 +29,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 200
         },
         "app": {
           "enum": [
@@ -78,7 +79,8 @@
               "$ref": "#/$defs/noHost"
             }
           ],
-          "description": "the visible label, at least one non-space character"
+          "description": "the visible label, at least one non-space character",
+          "maxLength": 200
         },
         "parent": {
           "type": "string",
@@ -91,7 +93,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 200
         },
         "order": {
           "type": "integer",
@@ -144,7 +147,8 @@
               "$ref": "#/$defs/noHost"
             }
           ],
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "maxLength": 16
         },
         "shortcut": {
           "type": "string",
@@ -161,7 +165,8 @@
               "$ref": "#/$defs/noHost"
             }
           ],
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "maxLength": 64
         },
         "target": {
           "type": "string",
@@ -174,7 +179,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 200
         },
         "menuPath": {
           "type": "string",
@@ -190,7 +196,8 @@
             }
           ],
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "maxLength": 500
         },
         "bounds": {
           "type": "object",
@@ -230,7 +237,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 64
         },
         "behaviour": {
           "type": "string",
@@ -247,7 +255,8 @@
             {
               "$ref": "#/$defs/noHost"
             }
-          ]
+          ],
+          "maxLength": 1000
         },
         "idMso": {
           "type": "string",
@@ -260,7 +269,8 @@
               "$ref": "#/$defs/noControl"
             }
           ],
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "maxLength": 200
         },
         "uiaId": {
           "type": "string",
@@ -274,7 +284,8 @@
               "$ref": "#/$defs/noControl"
             }
           ],
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "maxLength": 200
         },
         "source": {
           "type": "string",
@@ -287,7 +298,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 100
         },
         "capturedFrom": {
           "type": "string",
@@ -300,7 +312,8 @@
             {
               "$ref": "#/$defs/noControl"
             }
-          ]
+          ],
+          "maxLength": 64
         },
         "baselineMissing": {
           "type": "boolean",
@@ -365,7 +378,8 @@
             ]
           }
         }
-      ]
+      ],
+      "description": "Every string field has a maxLength (at most 1000 characters, for a behaviour sentence), which also bounds the time the link and address patterns take."
     },
     "noLink": {
       "description": "Owner rule 2026-10-20: no record holds a web address. In every string field: a scheme followed by ://, a network path (// followed by a host), a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Text a person reads is held to the stricter noHost rule as well.",
