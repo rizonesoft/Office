@@ -319,5 +319,26 @@ class Keylines(unittest.TestCase):
         self.assertEqual(committed, d.keylines_svg())
 
 
+class MonoMark(unittest.TestCase):
+    def test_one_paint_and_no_live_text(self):
+        svg = d.suite_mono_svg()
+        self.assertEqual(set(re.findall(r'fill="([^"]*)"', svg)), {"currentColor"})
+        self.assertNotIn("stroke=", svg)
+        self.assertNotIn("<text", svg)
+        self.assertEqual((SCRIPTS.parent / "design/icons/suite/rizonesoft-office-mono.svg").read_text(encoding="utf-8"),
+                         svg)
+
+    def test_squares_are_knocked_out_and_orb_stands_clear_of_the_pane(self):
+        img = render_rgb(d.suite_mono_svg())
+        black, white = (0, 0, 0), (255, 255, 255)
+        px, py, pw, ph, _ = d.SUITE_PANE["md"]
+        for x, y, s, _ in d._six_square_boxes(px + pw / 2, py + ph / 2, pw * d.SUITE_SQUARES_SHARE["md"]):
+            self.assertEqual(img.getpixel((int(x + s / 2), int(y + s / 2))), white)  # each square is a hole
+        self.assertEqual(img.getpixel((px + pw // 2, py + ph - 4)), black)  # the pane is solid below the squares
+        cx, cy, r = d.SUITE_ORB["md"]
+        self.assertEqual(img.getpixel((cx, cy - r + 6)), black)  # the orb above the pane
+        self.assertEqual(img.getpixel((cx, py - d.MONO_GAP // 2 - 1)), white)  # the gap between orb and pane
+
+
 if __name__ == "__main__":
     unittest.main()

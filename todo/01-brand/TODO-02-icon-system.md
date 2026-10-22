@@ -24,7 +24,7 @@ title: "TODO-02 -- Suite and App Icon System"
 
 ## Outcome
 
-- `design/brand/` holds `suite-mark.svg` and `wordmark.svg`; `design/icons/apps/` holds one master SVG per app plus 16, 24 and 32 pixel variants; `design/icons/files/` holds one SVG per supported file type.
+- `design/icons/suite/` holds the suite mark (`rizonesoft-office-lg.svg`, `-md`, `-sm`, `-mono`) and `assets/brand/svg/` the outlined wordmark and lockups (corrected 2026-10-22 from `design/brand/`); `design/icons/apps/` holds one master SVG per app plus 16, 24 and 32 pixel variants; `design/icons/files/` holds one SVG per supported file type.
 - `python scripts/build-icons.py` regenerates `build/icons/` (PNG sets, `.ico`, `.icns`) from the masters, and every output passes `scripts/check-image-asset.py`.
 - `docs/brand/icon-distinctness.md` records the side-by-side review against Microsoft's icons and the owner's sign-off.
 
@@ -73,7 +73,11 @@ Motif status, 2026-10-20: the owner rejected the interlocking-tile drafts (five 
 
 ## 2. Suite Mark and Wordmark Masters
 
+> **Started:** 2026-10-22T05:45:00Z
+
 The suite mark appears on the splash screen, the Backstage account page, the website and GitHub graphics. The wordmark uses an open-licensed typeface whose licence permits logo use (SIL OFL 1.1 or equivalent), converted to outlines. Decision, 2026-10-20 (owner): Plus Jakarta Sans, "Rizonesoft" in weight 700 and the product name in weight 400 in a quieter colour; lockups pair it with the suite or app icon, in light and dark versions.
+
+**Corrected 2026-10-22:** the plan named hand-drawn files in `design/brand/`. The owner-approved marks are generated (`scripts/lib/icon_design.py`, `scripts/lib/brand_design.py`) by `python scripts/build-icons.py`, which writes the suite mark with the other icon masters in `design/icons/suite/` and the wordmark and lockups in `assets/brand/svg/`; the paths below follow it rather than adding copies.
 
 **Phase:** 1
 **Needs:** none
@@ -81,16 +85,16 @@ The suite mark appears on the splash screen, the Backstage account page, the web
 
 **Build order:**
 
-1. Draw `design/brand/suite-mark.svg` on the grid from `docs/brand/icon-language.md`. Done when: `python scripts/check-image-asset.py design/brand/suite-mark.svg --format svg` exits 0.
-2. Build `design/brand/wordmark.svg` with outlined text. Done when: the file contains no `<text>` element.
+1. Generate the suite mark on the grid from `docs/brand/icon-language.md` as `design/icons/suite/rizonesoft-office-lg.svg`. Done when: `python scripts/check-image-asset.py design/icons/suite/rizonesoft-office-lg.svg --format svg` exits 0.
+2. Generate the outlined wordmark `assets/brand/svg/rizonesoft-office-wordmark-light.svg` (and `-dark.svg`). Done when: the file contains no `<text>` element.
 
-- [ ] Draw the suite mark in `design/brand/suite-mark.svg` with a `viewBox="0 0 128 128"`. **Corrected 2026-10-22:** said 256; every icon master is on the 128-unit grid that §1 records in `docs/brand/icon-language.md`. Done when: it renders legibly at 32 pixels in a browser preview. Cheaper substitute: a recoloured app icon.
-- [ ] Choose the wordmark typeface and record its name and licence in `docs/brand/icon-language.md` under `## Wordmark`. Done when: the licence is OFL 1.1 or another licence permitting logo use. Cheaper substitute: Segoe UI or any Microsoft font.
-- [ ] Outline the suite name in `design/brand/wordmark.svg`. Done when: `Select-String -Path design/brand/wordmark.svg -Pattern "<text"` finds nothing. Cheaper substitute: live text that renders differently without the font installed.
-- [ ] Add a monochrome variant `design/brand/suite-mark-mono.svg` for single-colour contexts. Done when: the file uses one fill colour. Cheaper substitute: a CSS filter at render time.
+- [x] Draw the suite mark in `design/icons/suite/rizonesoft-office-lg.svg` with a `viewBox="0 0 128 128"`. **Corrected 2026-10-22:** said 256; every icon master is on the 128-unit grid that §1 records in `docs/brand/icon-language.md`. Done when: it renders legibly at 32 pixels in a resvg rendering (the rasteriser every exported icon uses; the browser extension was not connected). **Corrected 2026-10-22:** said a browser preview, and `design/brand/suite-mark.svg`. Cheaper substitute: a recoloured app icon.
+- [x] Choose the wordmark typeface and record its name and licence in `docs/brand/icon-language.md` under `## Wordmark`. Done when: the licence is OFL 1.1 or another licence permitting logo use. Cheaper substitute: Segoe UI or any Microsoft font.
+- [x] Outline the suite name in `assets/brand/svg/rizonesoft-office-wordmark-light.svg` and `-dark.svg`. Done when: `Select-String -Path assets/brand/svg/*.svg -Pattern "<text"` finds nothing. **Corrected 2026-10-22:** said `design/brand/wordmark.svg`. Cheaper substitute: live text that renders differently without the font installed.
+- [x] Add a monochrome variant `design/icons/suite/rizonesoft-office-mono.svg` for single-colour contexts, generated by `suite_mono_svg()`. Done when: the file uses one fill colour. **Corrected 2026-10-22:** said `design/brand/suite-mark-mono.svg`. Cheaper substitute: a CSS filter at render time.
 - [ ] Commit: `brand: add suite mark and wordmark`
 
-**Test checkpoint:** `python scripts/check-image-asset.py design/brand/suite-mark.svg --format svg` and the same for `design/brand/wordmark.svg` both exit 0.
+**Test checkpoint:** `python scripts/check-image-asset.py design/icons/suite/rizonesoft-office-lg.svg --format svg`, the same for `design/icons/suite/rizonesoft-office-mono.svg` and for `assets/brand/svg/rizonesoft-office-wordmark-light.svg` all exit 0. **Corrected 2026-10-22:** named the `design/brand/` paths.
 
 ## 3. Six App Icon Masters
 

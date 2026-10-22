@@ -90,3 +90,14 @@ Each rule is one line the D01 T02 §7 review can tick:
 - Small sizes trade detail for weight: `md` symbols use strokes of 8 to 12 units and `sm` symbols are solid or 11 to 15 units (the white flap on Mail's solid envelope is 8), before the tier's 1.12 or 1.25 scale, so no stroke is thinner than about 1 pixel at 16 pixels.
 - Every SVG master carries a `<title>` with the product's full name ("Rizonesoft Write"), which screen readers announce when the SVG is shown inline.
 - The icons are images, so Windows high-contrast themes do not recolour them; inside the apps, every place an app icon appears also shows the app's name.
+
+## Wordmark
+
+The wordmark is "Rizonesoft Office" set in **Plus Jakarta Sans**, the owner's choice of 2026-10-20: "Rizonesoft" in weight 700 and "Office" in weight 400 in a quieter colour, 40 units high with 10 units between the words and tracking of -0.6 units (`scripts/lib/brand_design.py`).
+
+- Licence: SIL Open Font License 1.1, which permits use in a logo; the font is bundled unmodified at `design/fonts/plus-jakarta-sans/PlusJakartaSans[wght].ttf`, with its licence beside it (`OFL.txt`, and `LICENSES/OFL-1.1.txt` for REUSE) and an entry in `THIRD-PARTY-NOTICES.md`.
+- Outlined: every glyph is shaped with HarfBuzz (so kerning applies) and converted to SVG paths by `scripts/lib/text_outline.py`. No wordmark or lockup file contains a `<text>` element, so it looks the same where the font is not installed; `build-icons` refuses live text in any SVG it writes.
+- Colours: on light backgrounds `#1f2a44` for "Rizonesoft" (14.3:1 on white) and `#5b6780` for the product name (5.7:1); on dark, `#f2f4f8` (15.0:1 on `#1f1f1f`) and `#aab4c8` (7.9:1).
+- Files: `assets/brand/svg/rizonesoft-office-wordmark-light.svg` and `-dark.svg`, and a lockup per product (`rizonesoft-<product>-lockup-light.svg` and `-dark.svg`) pairing the `lg` icon with the words, each also as PNG at 1x and 2x in `assets/brand/png/`.
+
+The suite mark itself is `design/icons/suite/rizonesoft-office-lg.svg` (with the `md` and `sm` drawings beside it). For single-colour use (engraving, embossing, a one-colour print or a favicon mask) there is `design/icons/suite/rizonesoft-office-mono.svg`: the `md` geometry in `currentColor`, the orb cut clear of the pane by 5 units of space and the six app squares knocked out of the pane, so it reads in any one colour.

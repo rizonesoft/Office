@@ -118,6 +118,7 @@ def build():
     for (icon, tier), text in svg.items():
         out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = text.encode("utf-8")
     out["design/icons/keylines.svg"] = d.keylines_svg().encode("utf-8")
+    out["design/icons/suite/rizonesoft-office-mono.svg"] = d.suite_mono_svg().encode("utf-8")
     for icon in icons():
         draw = lambda shown, icon=icon: svg[(icon, d.tier_for(shown))]
         for px in PNG_SIZES:

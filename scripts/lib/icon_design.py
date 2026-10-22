@@ -119,6 +119,11 @@ APP_ORB = {"lg": (80, 44, 38), "md": (82, 42, 36), "sm": (86, 40, 38)}  # cx, cy
 APP_PANE = {"lg": (18, 30, 92, 80, 20), "md": (14, 34, 92, 80, 20), "sm": (8, 36, 96, 84, 22)}  # x, y, w, h, rx
 APP_GLYPH_AT = {"lg": (64, 70, .95), "md": (60, 74, 1.12), "sm": (56, 78, 1.25)}  # centre x, y, scale of 64 box
 APP_BLOCK = (10, 62, 58, 56, 16)  # the dark block behind the lg pane: x, y, w, h, rx
+# The suite logo takes the md geometry at lg (Variation A at every size).
+SUITE_ORB = {"lg": APP_ORB["md"], "md": APP_ORB["md"], "sm": APP_ORB["sm"]}
+SUITE_PANE = {"lg": APP_PANE["md"], "md": APP_PANE["md"], "sm": APP_PANE["sm"]}
+SUITE_SQUARES_SHARE = {"lg": .62, "md": .7, "sm": .78}  # the six squares' width as a share of the pane's
+MONO_GAP = 5  # units of clear space between the one-colour mark's orb and pane
 
 
 def _app_parts(key, tier, ids):
@@ -141,17 +146,20 @@ def _app_parts(key, tier, ids):
     return defs, pane, tint, mix(a, "#000000", .1), back, content
 
 
-def six_squares(cx, cy, width, color_of):
+def _six_square_boxes(cx, cy, width):
+    """(x, y, side, corner radius) of the suite's six app squares, two rows of three, in APPS order."""
     g = width * .1
     s = (width - 2 * g) / 3
     h = 2 * s + g
-    return "".join(rect(cx - width / 2 + (i % 3) * (s + g), cy - h / 2 + (i // 3) * (s + g), s, s, s * .28, color_of(k))
-                   for i, k in enumerate(APPS))
+    return [(cx - width / 2 + (i % 3) * (s + g), cy - h / 2 + (i // 3) * (s + g), s, s * .28) for i in range(len(APPS))]
+
+
+def six_squares(cx, cy, width, color_of):
+    return "".join(rect(x, y, s, s, r, color_of(k)) for (x, y, s, r), k in zip(_six_square_boxes(cx, cy, width), APPS))
 
 
 def _suite_parts(tier, ids):
-    orb = (86, 40, 38) if tier == "sm" else (82, 42, 36)
-    pane = (8, 36, 96, 84, 22) if tier == "sm" else (14, 34, 92, 80, 20)
+    orb, pane = SUITE_ORB[tier], SUITE_PANE[tier]
     clip = ids("o")
     defs = f'<clipPath id="{clip}"><circle cx="{orb[0]}" cy="{orb[1]}" r="{orb[2]}"/></clipPath>'
 
@@ -164,7 +172,7 @@ def _suite_parts(tier, ids):
                        f'L{n(orb[0] + 80 * math.cos(a1))},{n(orb[1] + 80 * math.sin(a1))} Z" fill="{fill}"/>')
         return f'<g clip-path="url(#{clip})">{"".join(out)}</g>'
 
-    share = {"lg": .62, "md": .7, "sm": .78}[tier]
+    share = SUITE_SQUARES_SHARE[tier]
     content = six_squares(pane[0] + pane[2] / 2, pane[1] + pane[3] / 2, pane[2] * share, lambda k: APPS[k][2][1])
     tint = mix(SUITE_TINT, "#ffffff", .8 if tier == "sm" else .84)
     return defs, pane, tint, mix(SUITE_TINT, "#000000", .1), back, content
@@ -232,3 +240,27 @@ def keylines_svg():
     width = 144 * len(TIERS) - 16
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 {width + 4} 132" width="{width + 4}" '
             f'height="132"><title>Rizonesoft Office icon keylines (lg, md, sm)</title>{"".join(cells)}</svg>\n')
+
+
+def rounded_rect_path(x, y, w, h, r):
+    """A rounded rectangle as path data, so it can join other subpaths under one fill rule."""
+    return (f"M{n(x + r)},{n(y)} H{n(x + w - r)} A{n(r)},{n(r)} 0 0 1 {n(x + w)},{n(y + r)} V{n(y + h - r)} "
+            f"A{n(r)},{n(r)} 0 0 1 {n(x + w - r)},{n(y + h)} H{n(x + r)} A{n(r)},{n(r)} 0 0 1 {n(x)},{n(y + h - r)} "
+            f"V{n(y + r)} A{n(r)},{n(r)} 0 0 1 {n(x + r)},{n(y)} Z")
+
+
+def suite_mono_svg():
+    """The suite mark in one colour (currentColor) for single-colour use, on the md geometry: the orb cut clear of
+    the pane by MONO_GAP units, and the pane with the six app squares knocked out."""
+    cx, cy, r = SUITE_ORB["md"]
+    px, py, pw, ph, prx = SUITE_PANE["md"]
+    gap = MONO_GAP
+    cut = f"M-1,-1 H129 V129 H-1 Z {rounded_rect_path(px - gap, py - gap, pw + 2 * gap, ph + 2 * gap, prx + gap)}"
+    holes = " ".join(rounded_rect_path(x, y, s, s, rr)
+                     for x, y, s, rr in _six_square_boxes(px + pw / 2, py + ph / 2, pw * SUITE_SQUARES_SHARE["md"]))
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">'
+            '<title>Rizonesoft Office</title>'
+            f'<defs><clipPath id="mono-cut"><path clip-rule="evenodd" d="{cut}"/></clipPath></defs>'
+            f'<circle cx="{n(cx)}" cy="{n(cy)}" r="{n(r)}" fill="currentColor" clip-path="url(#mono-cut)"/>'
+            f'<path fill="currentColor" fill-rule="evenodd" d="{rounded_rect_path(px, py, pw, ph, prx)} {holes}"/>'
+            '</svg>\n')
