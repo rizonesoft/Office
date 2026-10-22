@@ -339,11 +339,13 @@ class Lineup(unittest.TestCase):
                 self.assertEqual((float(iw), float(ih)), (96, 96), (theme, name))
                 self.assertIn(f'id="{name.lower()}-lg-g1"', inner, (theme, name))  # that app's large drawing
                 # Nothing else belongs in the icon's box, so in the finished strip it must look exactly like the
-                # icon drawn alone on the same canvas: a layer that hides, fades or tints it fails.
+                # app's own large icon rendered by itself at 96 px on the same canvas: a layer that hides, fades or
+                # tints it fails, and so does a box that is not wholly on the canvas.
                 box = (int(float(x)), int(float(y)), int(float(x)) + 96, int(float(y)) + 96)
-                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
-                         f'height="{h}">{whole}</svg>')
-                got, want = final.crop(box).tobytes(), rendered(alone).crop(box).tobytes()
+                self.assertTrue(box[0] >= 0 and box[1] >= 0 and box[2] <= w and box[3] <= h, (theme, name, box))
+                canonical = build_icons.render(d.icon_svg(name.lower(), "lg"), 96, background=canvas)
+                want = Image.open(io.BytesIO(canonical)).convert("RGB").tobytes()
+                got = final.crop(box).tobytes()
                 self.assertLessEqual(max(abs(g - v) for g, v in zip(got, want)), 2, (theme, name))
             # Laid out left to right without overlap, each icon centred over its own name.
             lefts = [float(x) for x, *_ in icons]
