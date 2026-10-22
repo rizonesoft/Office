@@ -69,7 +69,11 @@ The banner is the first thing a visitor sees: suite mark, wordmark and a one-lin
 
 ## 2. Social Preview Image
 
+> **Started:** 2026-10-22T13:00:00Z
+
 The social preview is what shows on X, LinkedIn, Slack and Discord when the repository link is shared. It must read at thumbnail size and keep important content inside a 40 pixel safe margin.
+
+**Corrected 2026-10-22:** generated like the banner: `social_preview_svg()` in `scripts/lib/brand_design.py` composes it (suite lockup, tagline, the six app icons with their names, on one dark card that reads in light and dark feeds), and `scripts/build-icons.py` writes the SVG and PNG under its `--check` gate. Uploading it as the repository's social preview is §5, done in the repository settings, which have no API.
 
 **Phase:** 1
 **Needs:** none
@@ -80,9 +84,9 @@ The social preview is what shows on X, LinkedIn, Slack and Discord when the repo
 1. Compose `design/github/social-preview.svg` at 1280 by 640. Done when: the checker passes on the SVG.
 2. Export `docs/assets/github/social-preview.png`. Done when: it is exactly 1280x640 and under 1 MB.
 
-- [ ] Compose `design/github/social-preview.svg` with the wordmark, the six app icons and the tagline inside a 40 pixel safe margin. Done when: no element's bounding box crosses the margin. Cheaper substitute: the README banner stretched to 2:1.
-- [ ] Add a social preview target to `scripts/build-icons.py` exporting `docs/assets/github/social-preview.png`. Done when: `python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000` exits 0. Cheaper substitute: a JPEG with visible compression artefacts.
-- [ ] Review the PNG at 400 by 200 pixels in `R:\scratch`. Done when: the suite name is legible at that size. Cheaper substitute: reviewing only at full size.
+- [x] Compose `design/github/social-preview.svg` with the wordmark, the six app icons and the tagline inside a 40 pixel safe margin. Done when: no element's bounding box crosses the margin. Cheaper substitute: the README banner stretched to 2:1.
+- [x] Add a social preview target to `scripts/build-icons.py` exporting `docs/assets/github/social-preview.png`. Done when: `python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000` exits 0. Cheaper substitute: a JPEG with visible compression artefacts.
+- [x] Review the PNG at 400 by 200 pixels in `R:\scratch`. Done when: the suite name is legible at that size. Cheaper substitute: reviewing only at full size.
 - [ ] Commit: `brand: add social preview image`
 
 **Test checkpoint:** `python scripts/check-image-asset.py docs/assets/github/social-preview.png --size 1280x640 --max-bytes 1000000` exits 0.

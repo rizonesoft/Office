@@ -91,3 +91,45 @@ def banner_svg(theme):
             f'stroke="{rim}" stroke-width="2"/>'
             f'<svg x="{x0}" y="{(BANNER_H - mark) // 2}" width="{mark}" height="{mark}" viewBox="0 0 128 128">{inner}</svg>'
             f'{words}</svg>\n')
+
+
+# Social preview (todo/01-brand/TODO-03-github-graphics.md section 2): 1280 by 640, everything inside a 40-unit
+# margin, on one dark card that reads in light and dark feeds alike.
+SOCIAL_W, SOCIAL_H, SOCIAL_MARGIN = 1280, 640, 40
+SOCIAL_CARD = ("#16203a", "#0d1117")  # top, bottom
+
+
+def _nested(icon, x, y, size, tier="lg"):
+    src = d.icon_svg(icon, tier).strip()
+    inner = src[src.index("</title>") + len("</title>"):-len("</svg>")]
+    return f'<svg x="{d.n(x)}" y="{d.n(y)}" width="{d.n(size)}" height="{d.n(size)}" viewBox="0 0 128 128">{inner}</svg>'
+
+
+def social_preview_svg():
+    """The repository's social preview: suite lockup, tagline, and the six app icons with their names."""
+    ink, sub = THEMES["dark"]
+    o = outliner()
+    mark, gap, word_gap, track = 112, 28, 22, TRACK * 2
+    w1 = o.path("Rizonesoft", 88, 700, 0, 0, track)[1]
+    w2 = o.path("Office", 88, 400, 0, 0, track)[1]
+    x0 = (SOCIAL_W - (mark + gap + w1 + word_gap + w2)) / 2
+    tx = x0 + mark + gap
+    parts = [_nested(d.SUITE, x0, 108, mark),
+             f'<path d="{o.path("Rizonesoft", 88, 700, tx, 196, track)[0]}" fill="{ink}"/>',
+             f'<path d="{o.path("Office", 88, 400, tx + w1 + word_gap, 196, track)[0]}" fill="{sub}"/>']
+    tag_w = o.path(TAGLINE, 36, 500)[1]
+    parts.append(f'<path d="{o.path(TAGLINE, 36, 500, (SOCIAL_W - tag_w) / 2, 282)[0]}" fill="{ink}"/>')
+    size, step = 128, 128 + 48
+    left = (SOCIAL_W - (6 * size + 5 * 48)) / 2
+    for i, key in enumerate(d.APPS):
+        x = left + i * step
+        parts.append(_nested(key, x, 350, size))
+        name = d.APPS[key][0]
+        nw = o.path(name, 26, 600)[1]
+        parts.append(f'<path d="{o.path(name, 26, 600, x + (size - nw) / 2, 520)[0]}" fill="{sub}"/>')
+    top, bottom = SOCIAL_CARD
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SOCIAL_W} {SOCIAL_H}" width="{SOCIAL_W}" '
+            f'height="{SOCIAL_H}"><title>Rizonesoft Office</title><defs><linearGradient id="social-bg" x1="0" y1="0" '
+            f'x2="0" y2="1"><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/>'
+            f'</linearGradient></defs><rect id="card" width="{SOCIAL_W}" height="{SOCIAL_H}" fill="url(#social-bg)"/>'
+            f'{"".join(parts)}</svg>\n')

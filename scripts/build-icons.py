@@ -20,6 +20,7 @@ Outputs:
     assets/icons/palette.json                   app colours for the interface
     assets/brand/{svg,png}/                     wordmark and suite and app lockups, light and dark
     design/github/banner-{light,dark}.svg, docs/assets/github/banner-{light,dark}.png (2560x640)   README banner
+    design/github/social-preview.svg, docs/assets/github/social-preview.png (1280x640)   social preview
 
 Requires the packages pinned in scripts/requirements.txt: resvg_py (rasteriser), uharfbuzz and fontTools (text
 outlines), Pillow (verification).
@@ -184,6 +185,10 @@ def build():
         text = bd.banner_svg(theme)
         out[f"design/github/banner-{theme}.svg"] = text.encode("utf-8")
         out[f"docs/assets/github/banner-{theme}.png"] = render(text, bd.BANNER_W * 2, bd.BANNER_H * 2)
+    # Social preview: GitHub shows it when the repository link is shared (uploaded by hand in the repository settings).
+    social = bd.social_preview_svg()
+    out["design/github/social-preview.svg"] = social.encode("utf-8")
+    out["docs/assets/github/social-preview.png"] = render(social, bd.SOCIAL_W, bd.SOCIAL_H)
 
     palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": d.APP_COLOR[k],
                             "light": v[2][0], "dark": v[2][1], "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},

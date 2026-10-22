@@ -269,6 +269,34 @@ class Banner(unittest.TestCase):
             self.assertEqual(recorded, [round(tagline, 2), round(worst, 2)], theme)
 
 
+class SocialPreview(unittest.TestCase):
+    def test_current_and_within_budget(self):
+        root = SCRIPTS.parent
+        svg = bd.social_preview_svg()
+        self.assertEqual((root / "design/github/social-preview.svg").read_text(encoding="utf-8"), svg)
+        self.assertNotIn("<text", svg)
+        data = (root / "docs/assets/github/social-preview.png").read_bytes()
+        self.assertEqual(Image.open(io.BytesIO(data)).size, (1280, 640))
+        self.assertLess(len(data), 1_000_000)
+
+    def test_content_stays_inside_the_40_pixel_margin(self):
+        # Rendered with the card made empty, on a canvas three times the size, so anything near or past an edge
+        # shows instead of being clipped.
+        svg = bd.social_preview_svg()
+        card = re.search(r'<rect id="card"[^>]*/>', svg).group(0)
+        bare = svg.replace(card, "").replace('viewBox="0 0 1280 640" width="1280" height="640"',
+                                             'viewBox="-1280 -640 3840 1920" width="3840" height="1920"', 1)
+        alpha = Image.open(io.BytesIO(build_icons.render(bare, 3840, 1920))).getchannel("A")
+        x0, y0, x1, y1 = alpha.point(lambda v: 255 if v > 8 else 0).getbbox()
+        self.assertTrue(1280 + 40 <= x0 and 640 + 40 <= y0 and x1 <= 2560 - 40 and y1 <= 1280 - 40, (x0, y0, x1, y1))
+
+    def test_every_app_and_the_suite_name_are_shown(self):
+        svg = bd.social_preview_svg()
+        for key in d.APPS:
+            self.assertIn(f'id="{key}-lg-g1"', svg, key)  # each app's large icon
+        self.assertIn('id="rizonesoft-office-lg-o1"', svg)  # the suite mark
+
+
 class GlassPane(unittest.TestCase):
     def pane_pixel(self, icon, background):
         data = build_icons.render(d.icon_svg(icon, "lg"), 128, background=background)
