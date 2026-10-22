@@ -320,6 +320,22 @@ class Lineup(unittest.TestCase):
                 self.assertTrue(same_outline(shown, name, 24, 600), (theme, name))
                 self.assertTrue(same_outline(under, f"like {counterpart}", 17, 400), (theme, counterpart))
 
+    def test_six_icons_in_order_at_96_units_and_visible(self):
+        rows = self.names_from_the_record()
+        for theme in ("light", "dark"):
+            svg = bd.lineup_svg(theme)
+            icons = re.findall(r'<svg x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" '
+                               r'viewBox="0 0 128 128">(.*?)</svg>', svg, flags=re.S)
+            self.assertEqual(len(icons), 6, theme)
+            w, h = (int(v) for v in svg.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
+            alpha = Image.open(io.BytesIO(build_icons.render(svg, w, h))).getchannel("A")
+            for (name, _), (x, y, iw, ih, inner) in zip(rows, icons):
+                self.assertEqual((float(iw), float(ih)), (96, 96), (theme, name))
+                self.assertIn(f'id="{name.lower()}-lg-g1"', inner, (theme, name))  # that app's large drawing
+                box = alpha.crop((int(float(x)), int(float(y)), int(float(x)) + 96, int(float(y)) + 96))
+                covered = sum(1 for a in box.tobytes() if a > 200)
+                self.assertGreater(covered, 96 * 96 // 2, (theme, name))  # it is drawn, not merely present
+
     def test_text_reads_on_each_github_canvas(self):
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
             svg = bd.lineup_svg(theme)
