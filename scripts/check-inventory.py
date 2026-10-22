@@ -188,6 +188,7 @@ def reference(inventory):
 
 
 LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
+DUPLICATES_SHOWN = 5  # other places a duplicate-id diagnostic names before counting the rest
 
 
 def parent_loops(parents):
@@ -405,7 +406,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             rid = rec.get("id")
             if isinstance(rid, str):
                 if len(seen.get(rid, [])) > 1:
-                    problems.append(f"{where}: duplicate id {rid} (also {', '.join(x for x in seen[rid] if x != where)})")
+                    others = [x for x in seen[rid][:DUPLICATES_SHOWN + 1] if x != where][:DUPLICATES_SHOWN]
+                    more = len(seen[rid]) - 1 - len(others)  # a bounded message, however many copies there are
+                    problems.append(f"{where}: duplicate id {rid} (also {', '.join(others)}"
+                                    f"{f' and {more} more' if more > 0 else ''})")
                 if isinstance(rec.get("app"), str) and rid.split(".", 1)[0] != rec["app"]:
                     problems.append(f"{where}: id {rid} does not start with its app {rec['app']}")
             if isinstance(rid, str) and rid in parents:

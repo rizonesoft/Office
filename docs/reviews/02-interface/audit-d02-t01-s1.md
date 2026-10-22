@@ -496,3 +496,42 @@ Round 12 is the first with no P1 (HIGHEST P2; source-defect and consistency appr
 
 1. P2 every record rebuilt the set of locations the schema had reported, so a large malformed file took quadratic time: the set is gathered once per file (`test_many_malformed_records_cost_linear_time`, 8000 records each missing a label; it fails against the round 11 checker).
 2. P3 a field's length limit could be removed unnoticed: `test_every_string_field_has_its_length_limit` lists all thirteen string fields with their limits; removing the limit from any field tried in memory fails it.
+
+## Round 13: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T11:22:56Z
+- Effort: xhigh
+- Lines: 22
+- Digest: ac01f838108ff1ef
+
+### source-defect: needs-attention
+
+1. **[P1] IPv4 shorthand bypasses the address prohibition.** `design/inventory/schema.json:401` recognizes only four dotted numbers. This record passes schema validation and `check()`; `main()` returns **0**:
+
+   ```json
+   {"id":"word.probe","app":"word","kind":"tab","label":"Visit 127.0.1"}
+   ```
+
+   Windows `socket.inet_aton("127.0.1")` resolves it to `127.0.0.1`. A prohibited address therefore survives in readable text.
+
+### adversarial: needs-attention
+
+2. **[P2] Duplicate-ID diagnostics still grow quadratically.** `scripts/check-inventory.py:408` lists every other occurrence for every duplicate. Reproduce with arrays containing 200, 400 and 800 copies of `{"id":"word.home","app":"word","kind":"tab","label":"Home"}`. In-memory checks generated **2,663,600**, **10,687,200** and **42,814,400** diagnostic characters respectively. Small malformed inputs cause disproportionate memory use and terminal output. The round 12 performance test uses unique IDs and misses this path.
+
+### consistency: approve
+
+### record: needs-attention
+
+3. **[P3] Fundamental type constraints remain unprotected by tests.** `scripts/tests/test_check_inventory.py:630` leaves the ticked rule-disable claim at `todo/02-interface/TODO-01-parity-inventory.md:89` unsupported. Remove either `schema["type"]` or `schema["$defs"]["record"]["type"]` in memory: **all 81 tests still pass**. The respective mutants accept `{}` or `[null]` as clean inventory files. Verified with fixture writes redirected entirely to memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 13
+
+All three findings verified and fixed in the next commit; the first two tests fail against the round 12 checker (fixes stashed), and the third fails when either type rule is removed:
+
+1. P1 IPv4 shorthand passed: three or more dotted numbers are refused in readable text, so `127.0.1` (127.0.0.1 to a resolver) and `10.1.1` are caught (`test_ipv4_shorthand_in_text_is_refused`). A limit, recorded: a two-part number such as `127.1` is also shorthand to a resolver, but it cannot be told from a decimal such as Word's "1.5" line spacing, so two-part numbers stay valid. The same holds for a bare integer. Neither is a link a reader could follow without knowing the convention.
+2. P2 duplicate-id diagnostics grew quadratically: each names at most five other places and counts the rest ("and 794 more"), so 800 copies produce 800 bounded lines (`test_duplicate_id_diagnostics_are_bounded`).
+3. P3 the file and record types could be removed unnoticed: `test_the_file_and_record_types_hold` refuses `{}`, `[null]`, `[1]` and a bare string.

@@ -407,6 +407,29 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_ipv4_shorthand_in_text_is_refused(self):
+        # Audit round 13, finding 1: three dotted numbers is an address too (127.0.1 is 127.0.0.1 to a resolver).
+        for text in ("Visit 127.0.1", "10.1.1 or 192.168.1.1"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), text)
+        self.write("word/ribbon.json", [dict(TAB, label="1.5")])  # a decimal, as in Word's line spacing
+        self.assertEqual(self.problems(), [])
+
+    def test_duplicate_id_diagnostics_are_bounded(self):
+        # Audit round 13, finding 2: 800 copies of one id produced 43 million characters of diagnostics.
+        self.write("word/ribbon.json", [dict(TAB)] * 800)
+        problems = [p for p in self.problems() if "duplicate id" in p]
+        self.assertEqual(len(problems), 800)
+        self.assertLess(max(len(p) for p in problems), 600)
+        self.assertTrue(problems[0].endswith("and 794 more)"), problems[0][-40:])
+
+    def test_the_file_and_record_types_hold(self):
+        # Audit round 13, finding 3: a file is an array of objects, so {} and [null] are refused.
+        for data in ({}, [None], [1], "x"):
+            path = self.inv / "word" / "ribbon.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            self.assertTrue(any("expected" in p for p in self.problems()), repr(data))
+
     def test_every_string_field_has_its_length_limit(self):
         # Audit round 12, finding 2: each field below must refuse one character over its limit, written out here.
         limits = {"id": 200, "label": 200, "parent": 200, "keytip": 16, "shortcut": 64, "target": 200, "menuPath": 500,
