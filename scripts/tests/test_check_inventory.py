@@ -373,6 +373,47 @@ class Inventory(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn(b"\\ud800", out.buffer.getvalue())
 
+    def test_ipv6_addresses_in_text_are_refused(self):
+        # Audit round 8, finding 1: colon-joined hexadecimal groups, :: included.
+        for text in ("[2001:4860:4860::8888]", "::1", "fe80::1"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), text)
+        self.write("word/ribbon.json", [dict(TAB, label="Ratio 1:2")])
+        self.assertEqual(self.problems(), [])
+
+    def test_a_file_named_like_the_manifest_elsewhere_is_checked(self):
+        # Audit round 8, finding 2: only the manifest at the inventory's root is left out.
+        self.write("word/ribbon.json", [TAB])
+        self.write("word/baseline-sources.json", [{"label": "https://example.com"}])
+        problems = self.problems()
+        self.assertTrue(any("baseline-sources.json" in p for p in problems), problems)
+
+    def test_unreadable_diagnostics_do_not_crash_on_unencodable_text(self):
+        # Audit round 8, finding 3: an unreadable file's report carries its text too.
+        path = self.inv / "word" / "ribbon.json"
+        path.write_text('[{"\\ud800": 1, "\\ud800": 2}]', encoding="utf-8")
+        err = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        with contextlib.redirect_stderr(err):
+            code = ci.main([str(path)])
+        err.flush()
+        self.assertEqual(code, 2)
+        self.assertIn(b"\\ud800", err.buffer.getvalue())
+
+    def test_patterns_use_ecma_ascii_digits(self):
+        # Audit round 8, finding 4: \d in the schema means 0 to 9 only, as in ECMA-262.
+        for text in ("1.٥", "1.５"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
+        self.assertFalse(ci.ecma(r"\d").search("٥５"))
+
+    def test_every_bounds_member_is_required(self):
+        # Audit round 8, finding 5: each member below must be required on its own, written out here.
+        for member in ("x", "y", "width", "height"):
+            rec = json.loads(json.dumps(BOLD))
+            del rec["bounds"][member]
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertTrue(any(f"bounds: missing {member}" in p for p in self.problems()), member)
+
     def test_every_base_field_is_required(self):
         # Audit round 7, finding 4: each base field below must be required on its own, written out here.
         for field in ("id", "app", "kind", "label"):

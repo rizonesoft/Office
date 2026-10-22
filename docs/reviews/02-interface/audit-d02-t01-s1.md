@@ -309,3 +309,42 @@ All four findings verified and fixed in the next commit. Classifying characters 
 1. P1 a supplementary-plane host and an IPv4 address passed. 3. P2 an en space after a sentence was refused. In readable text, a full stop (any of the four forms) may now be followed only by whitespace (ECMA's, through `ecma()`), another full stop, closing punctuation, the end of the text, or a digit when a digit precedes it (decimals such as Word's "1.5" line spacing). That refuses every host name in any script without naming letters. Four dotted numbers and the scheme colon stay refused. Checked first against every text value in the committed inventory: no hits, including "Ctrl+Shift+." and "Save As..." (`test_any_host_name_or_address_in_text_is_refused_by_its_dots`; it fails against the round 6 rule).
 2. P2 a lone surrogate in a record crashed the report: `main` sets both output streams to escape what they cannot encode, which also covers the Windows console's legacy code page (`test_unencodable_record_text_is_reported_not_a_crash`, printing to cp1252; it fails against the round 6 checker).
 4. P3 a base field could leave `required` unnoticed: `test_every_base_field_is_required` lists `id`, `app`, `kind` and `label`; removing any one from the schema's `required` in memory fails it.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T10:05:05Z
+- Effort: xhigh
+- Lines: 20
+- Digest: cb6f602f20f81d86
+
+### source-defect: needs-attention
+
+1. **P1: IPv6 addresses bypass the address prohibition.** `design/inventory/schema.json:387` detects dots and letter-led URI schemes, but misses numeric IPv6 addresses. Give an otherwise valid tab `label: "[2001:4860:4860::8888]"` or `label: "::1"`. Schema validation and `check()` return `[]`; `main()` returns **0**.
+
+### adversarial: needs-attention
+
+2. **P1: A nested filename bypasses validation entirely.** `scripts/check-inventory.py:216` excludes every file named `baseline-sources.json`, although the manifest is loaded only from the inventory root. Reproduce with `design/inventory/word/baseline-sources.json` containing `[{"label":"https://example.com"}]`. The whole-inventory check never reads it and returns **0**, despite missing required fields and prohibited content. Verified through in-memory directory discovery and read overrides.
+
+3. **P2: Unreadable-input diagnostics still crash on unencodable content.** `scripts/check-inventory.py:384` prints the exception before stream reconfiguration at line 388. Supply an otherwise valid JSON record containing duplicate keys `"\ud800":1,"\ud800":2`, then invoke `main()` with strict UTF-8 or CP1252 stderr. Duplicate detection raises `Unreadable`, but reporting it raises uncaught **`UnicodeEncodeError`** instead of returning **2**. The round-7 fix covers validation diagnostics only.
+
+### consistency: needs-attention
+
+4. **P1: Python digit semantics admit values the schema rejects.** `scripts/check-inventory.py:89` preserves `\d` unchanged, so the new pattern at `design/inventory/schema.json:387` uses Python Unicode digits instead of ECMAScript ASCII digits. Set a valid tab’s label to `"1.\u0665"` or `"1.\uff15"`. The checker returns `[]` and `main()` returns **0**; the schema’s ECMAScript pattern rejects both because the character after the dot is outside `[0-9]`.
+
+### record: needs-attention
+
+5. **P3: The every-rule test claim remains unsupported.** `scripts/tests/test_check_inventory.py:190` tests only missing `bounds.height`, leaving other required bounds members unprotected. Remove `"x"` from `bounds.required` in the schema **in memory**: all **61 tests still pass**, while bounds lacking `x` become accepted. This contradicts the ticked rule-disable requirement at `todo/02-interface/TODO-01-parity-inventory.md:89`. Verified with fixture writes intercepted in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 8
+
+All five findings verified and fixed in the next commit; four tests fail against the round 7 checker (fixes stashed), and the fifth fails when any bounds member leaves `required`:
+
+1. P1 IPv6 addresses passed: three or more hexadecimal groups joined by colons, `::` included, are refused in readable text, while "Ratio 1:2" stays valid (`test_ipv6_addresses_in_text_are_refused`).
+2. P1 any file named `baseline-sources.json` was skipped: only the manifest at the inventory's root is left out now, so a file of that name elsewhere is checked like any other (`test_a_file_named_like_the_manifest_elsewhere_is_checked`).
+3. P2 unreadable-file diagnostics could still crash: the output streams take their escaping at the start of `main`, before any report (`test_unreadable_diagnostics_do_not_crash_on_unencodable_text`).
+4. P1 `\d` matched any script's digits: patterns compile with `re.ASCII`, so `\d`, `\w` and `\b` mean what ECMA-262 means (ASCII), while `\s` and `\S` keep the explicit ECMA whitespace class (`test_patterns_use_ecma_ascii_digits`).
+5. P3 `bounds` members could leave `required` unnoticed: `test_every_bounds_member_is_required` lists `x`, `y`, `width` and `height`.

@@ -98,7 +98,8 @@ def ecma(pattern):
                 c = "\\Z"
             out.append(c)
             i += 1
-        _PATTERNS[pattern] = re.compile("".join(out))
+        # re.ASCII gives \d, \w and \b their ECMA-262 meaning (ASCII only); \s and \S were made ECMA's above.
+        _PATTERNS[pattern] = re.compile("".join(out), re.ASCII)
     return _PATTERNS[pattern]
 
 
@@ -207,13 +208,15 @@ def load(path):
     return data
 
 
-def inventory_files(paths):
+def inventory_files(paths, manifest=INVENTORY / SOURCES):
+    """Every inventory file under the named folders, and the named files. Only the source manifest itself (at the
+    inventory's root) is left out; a file of that name anywhere else is checked like any other."""
     files = []
     for p in paths:
         p = Path(p)
         if p.is_dir():
-            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in (SCHEMA.resolve(), BASELINE_SCHEMA.resolve())
-                            and f.name != SOURCES)
+            skip = (SCHEMA.resolve(), BASELINE_SCHEMA.resolve(), Path(manifest).resolve())
+            files += sorted(f for f in p.rglob("*.json") if f.resolve() not in skip)
         else:
             files.append(p)
     return files
@@ -261,8 +264,9 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     """Return problems for the named files, resolving ids and parents across the whole inventory plus those files."""
     schema = load(SCHEMA)
     baseline_schema = None
-    named = [Path(f) for f in inventory_files(paths)]
-    universe = {f.resolve(): f for f in inventory_files([inventory])} if Path(inventory).is_dir() else {}
+    manifest = Path(inventory) / SOURCES
+    named = [Path(f) for f in inventory_files(paths, manifest)]
+    universe = {f.resolve(): f for f in inventory_files([inventory], manifest)} if Path(inventory).is_dir() else {}
     universe.update({f.resolve(): f for f in named})
     records = {}
     for resolved, f in universe.items():
@@ -374,6 +378,11 @@ def main(argv=None):
     parser.add_argument("--require-behaviour", action="store_true",
                         help="every control must have a non-blank behaviour sentence")
     args = parser.parse_args(argv)
+    # A record's own text appears in every diagnostic, the unreadable-file ones included: escape what the console
+    # cannot encode (a lone surrogate, or anything outside a legacy code page) instead of crashing on the report.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="backslashreplace")
     missing = [p for p in args.paths if not Path(p).exists()]
     if missing:
         print("\n".join(f"{p}: no such file or folder" for p in missing), file=sys.stderr)
@@ -383,11 +392,6 @@ def main(argv=None):
     except Unreadable as exc:
         print(exc, file=sys.stderr)
         return 2
-    # A record's own text appears in diagnostics: escape what the console cannot encode (a lone surrogate, or anything
-    # outside a legacy code page) instead of crashing on the report.
-    for stream in (sys.stdout, sys.stderr):
-        if hasattr(stream, "reconfigure"):
-            stream.reconfigure(errors="backslashreplace")
     for problem in problems:
         print(problem)
     return 1 if problems else 0
