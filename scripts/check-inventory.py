@@ -197,17 +197,24 @@ def printable(text):
 
 def unique_pairs(pairs):
     """A JSON object hook that refuses a repeated member: json would keep the last value and silently drop the first."""
-    keys = [k for k, _ in pairs]
-    repeated = sorted({k for k in keys if keys.count(k) > 1})
+    seen, repeated = set(), set()
+    for key, _ in pairs:  # one pass, so a large object costs linear time
+        (repeated if key in seen else seen).add(key)
     if repeated:
-        raise ValueError(f"repeated member {', '.join(repeated)}")
+        raise ValueError(f"repeated member {', '.join(sorted(repeated))}")
     return dict(pairs)
+
+
+def no_constant(name):
+    """A JSON parse_constant hook: NaN, Infinity and -Infinity are not JSON, though Python's decoder accepts them."""
+    raise ValueError(f"{name} is not a JSON value")
 
 
 def load(path):
     try:
         # Decimal keeps JSON numbers exact: 1.0000000000000001 stays non-integral and -1e-400 stays negative.
-        data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal, object_pairs_hook=unique_pairs)
+        data = json.loads(Path(path).read_text(encoding="utf-8"), parse_float=Decimal, object_pairs_hook=unique_pairs,
+                          parse_constant=no_constant)
     # ValueError covers malformed JSON and integers past the conversion limit; RecursionError covers deep nesting.
     except (OSError, UnicodeDecodeError, ValueError, RecursionError, InvalidOperation) as exc:
         raise Unreadable(f"{path}: cannot read ({exc})") from None
@@ -304,6 +311,15 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     if manifest and not (isinstance(sources, dict) and isinstance(sources.get("commit"), str)
                          and isinstance(sources.get("blobs"), dict)):
         raise Unreadable(f"{sources_path}: not a manifest (an object with a commit string and a blobs object)")
+    # Each blob is a workbook name and the 40-hex Git blob id design/inventory/REFERENCE.md records for it, and the
+    # commit is a 40-hex Git commit id: anything else cannot identify what the baselines were imported from.
+    if manifest:
+        hex40 = re.compile(r"[0-9a-f]{40}", re.ASCII)
+        bad = [name for name, blob in sources["blobs"].items()
+               if not (re.fullmatch(r"[a-z]+controls\.xlsx", name, re.ASCII) and isinstance(blob, str)
+                       and hex40.fullmatch(blob))]
+        if bad or not hex40.fullmatch(sources["commit"]):
+            raise Unreadable(f"{sources_path}: not a manifest: commit or blob ids malformed ({', '.join(sorted(bad))})")
     # The baseline every baseline: source must name: this inventory's manifest, or the repository's when it has none.
     baseline_commit = (sources if manifest else load(INVENTORY / SOURCES))["commit"]
     # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must

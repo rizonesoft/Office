@@ -386,3 +386,42 @@ Round 9 declared HIGHEST P1, so it cannot stop the loop on severity. All four fi
 4. P3 a text field's address rule could be removed unnoticed: `test_any_address_in_text_is_refused` now covers all five text fields; removing `noHost` from any one of them in memory fails it.
 
 The three tests for findings 1 to 3 fail against the round 8 checker (fixes stashed).
+
+## Round 10: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T10:35:00Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 503cebd0ea82a316
+
+### source-defect: needs-attention
+
+1. **P1: Network-path links bypass the address prohibition.** `design/inventory/schema.json:373` and `:387` miss authorities without dots or schemes. Append `{"id":"word.review-probe","app":"word","kind":"tab","label":"//localhost/help"}` to an inventory file. Schema validation returns `[]`; whole-inventory `main([])` returns **0**. This is a web reference resolving to `https://localhost/help` against an HTTPS base.
+
+### adversarial: needs-attention
+
+2. **P1: Invalid JSON constants pass through the source manifest.** `scripts/check-inventory.py:210` leaves Python’s permissive `parse_constant` behavior enabled. Add `"extra": NaN` to the otherwise unchanged root `baseline-sources.json`. The whole-inventory check returns `[]`, although `NaN` is not JSON. Reproduced with an in-memory read override.
+
+3. **P2: Duplicate-member detection takes quadratic time.** `scripts/check-inventory.py:201` calls `keys.count(k)` for every key. Reproduce by decoding objects containing 4,000, 8,000 and 16,000 distinct `field{i}` members with `object_pairs_hook=ci.unique_pairs`. Measured decoding times were **0.152, 0.652 and 2.469 seconds**. Large malformed objects consume minutes before schema rejection; the loader needs linear duplicate detection.
+
+### consistency: needs-attention
+
+4. **P1: Malformed workbook blob IDs pass as trusted sources.** `scripts/check-inventory.py:304` validates only that `blobs` is an object. Replace `blobs["wordcontrols.xlsx"]` with `{}`, `null`, `123` or `"https://example.com"`, preserving everything else. Each whole-inventory run returns **0** without diagnostics. These values cannot be the Git blob IDs required by `design/inventory/REFERENCE.md:66`.
+
+### record: needs-attention
+
+5. **P3: The every-rule test claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` claims disabling any rule fails the suite. Remove only the `noControl` reference from `uiaId.allOf` at `design/inventory/schema.json:274`: all **69 tests still pass**, while `uiaId:"\u0001"` becomes accepted. Verified using an in-memory schema mutation and virtual fixture I/O. The test at `scripts/tests/test_check_inventory.py:135` exercises control characters only in `label`.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 10
+
+All five findings verified and fixed in the next commit; the four tests for findings 1 to 4 fail against the round 9 checker (fixes stashed), and the fifth fails when `noControl` is removed from any of the fields tried:
+
+1. P1 a network-path link (`//localhost/help`) passed: `noLink` now also refuses `//` followed by a host, in every string field (`test_a_network_path_is_refused`; no string in the committed inventory holds `//`).
+2. P1 `NaN` and `Infinity` were accepted: the loader refuses JSON's non-constants in every file it reads, the manifest included (`test_non_json_constants_are_unreadable`).
+3. P2 repeated-member detection was quadratic: one pass with a set (`test_repeated_member_detection_is_linear`, 30000 members under 3 seconds).
+4. P1 malformed blob ids passed: the manifest's commit must be a 40-hex Git id, and every blob a workbook name with a 40-hex blob id, or the manifest is unreadable (`test_manifest_blob_ids_are_git_ids`, five malformed values).
+5. P3 a field's control-character rule could be removed unnoticed: `test_every_string_field_refuses_a_control_character` lists all thirteen string fields.

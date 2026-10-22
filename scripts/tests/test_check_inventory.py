@@ -373,6 +373,47 @@ class Inventory(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn(b"\\ud800", out.buffer.getvalue())
 
+    def test_a_network_path_is_refused(self):
+        # Audit round 10, finding 1: // followed by a host is a link with no scheme and no dot.
+        for field, text in (("label", "//localhost/help"), ("behaviour", "See //intranet/docs."), ("uiaId", "//x")):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: text})])
+            self.assertTrue(any(f".{field}" in p and "link" in p for p in self.problems()), field)
+
+    def test_non_json_constants_are_unreadable(self):
+        # Audit round 10, finding 2: NaN and Infinity are not JSON, in an inventory file or the manifest.
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            path = self.inv / "word" / "ribbon.json"
+            path.write_text(f'[{{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "order": {constant}}}]',
+                            encoding="utf-8")
+            with self.assertRaises(ci.Unreadable, msg=constant):
+                self.problems()
+
+    def test_repeated_member_detection_is_linear(self):
+        # Audit round 10, finding 3: a large object decodes in linear time (30000 members took minutes before).
+        import time
+        text = "{" + ", ".join(f'"field{i}": {i}' for i in range(30000)) + "}"
+        start = time.perf_counter()
+        json.loads(text, object_pairs_hook=ci.unique_pairs)
+        self.assertLess(time.perf_counter() - start, 3.0)
+
+    def test_manifest_blob_ids_are_git_ids(self):
+        # Audit round 10, finding 4: every blob is a known workbook name with a 40-hex Git blob id.
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        for blob in ({}, None, 123, "https://example.com", "abc"):
+            manifest = json.loads(json.dumps(real))
+            manifest["blobs"]["wordcontrols.xlsx"] = blob
+            (self.inv / ci.SOURCES).write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaises(ci.Unreadable, msg=repr(blob)):
+                ci.check([str(self.inv)], inventory=self.inv)
+
+    def test_every_string_field_refuses_a_control_character(self):
+        # Audit round 10, finding 5: each string field below must refuse U+0001 on its own, written out here.
+        fields = ("id", "label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
+                  "idMso", "uiaId", "source", "capturedFrom")
+        for field in fields:
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: BOLD.get(field, "x") + "\u0001"})])
+            self.assertTrue(any(f".{field}" in p for p in self.problems()), field)
+
     def test_a_baseline_source_names_the_pinned_baseline(self):
         # Audit round 9, finding 1: baseline: names the commit the manifest pins (a prefix of it), not any hex.
         for bad in ("0" * 40, "b230a0e", "deadbeef"):
