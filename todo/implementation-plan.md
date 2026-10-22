@@ -30,29 +30,30 @@ Sections: 15 | Checklist items: 88
 
 ### Phase 1: Brand, icons and GitHub graphics
 
-Sections: 19 | Checklist items: 93
+Sections: 20 | Checklist items: 96
 
-| Status | Reference  | Deliverable                                  | Needs           | Items |
-| ------ | ---------- | -------------------------------------------- | --------------- | ----- |
-| [x]    | D01 T01 §1 | Naming Brief and Constraints                 | none            | 5     |
-| [x]    | D01 T01 §2 | Collision Screen for the Chosen Names        | none            | 6     |
-| [x]    | D01 T01 §3 | Owner Selection of Suite and App Names       | none            | 4     |
-| [ ]    | D01 T01 §4 | Knockout Trademark Screen for Chosen Names   | display-session | 5     |
-| [ ]    | D01 T01 §5 | Domain, GitHub and Package Name Availability | none            | 4     |
-| [ ]    | D01 T01 §6 | Apply Names Across the Repository            | none            | 4     |
-| [ ]    | D01 T01 §8 | GitHub Repository Rename                     | operator        | 4     |
-| [ ]    | D01 T02 §1 | Icon Design Language Brief                   | none            | 5     |
-| [ ]    | D01 T02 §2 | Suite Mark and Wordmark Masters              | none            | 5     |
-| [ ]    | D01 T02 §3 | Six App Icon Masters                         | none            | 8     |
-| [ ]    | D01 T02 §4 | Small-Size App Icon Variants                 | none            | 4     |
-| [ ]    | D01 T02 §5 | Document File-Type Icons                     | none            | 7     |
-| [ ]    | D01 T02 §6 | Icon Export Pipeline                         | none            | 8     |
-| [ ]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off       | owner-decision  | 5     |
-| [ ]    | D01 T03 §1 | README Hero Banner in Light and Dark         | none            | 4     |
-| [ ]    | D01 T03 §2 | Social Preview Image                         | none            | 4     |
-| [ ]    | D01 T03 §3 | App Lineup Strip in Light and Dark           | none            | 4     |
-| [ ]    | D01 T03 §4 | README Brand Presentation                    | none            | 4     |
-| [ ]    | D01 T03 §5 | Upload Social Preview and Avatar             | operator        | 3     |
+| Status | Reference  | Deliverable                             | Needs                   | Items |
+| ------ | ---------- | --------------------------------------- | ----------------------- | ----- |
+| [x]    | D01 T01 §1 | Naming Brief and Constraints            | none                    | 5     |
+| [x]    | D01 T01 §2 | Collision Screen for the Chosen Names   | none                    | 6     |
+| [x]    | D01 T01 §3 | Owner Selection of Suite and App Names  | none                    | 4     |
+| [ ]    | D01 T01 §4 | Knockout Trademark Screen               | display-session         | 5     |
+| [ ]    | D01 T01 §5 | Domain, GitHub and Package Availability | none                    | 4     |
+| [ ]    | D01 T01 §6 | Apply Names Across the Repository       | none                    | 4     |
+| [ ]    | D01 T01 §8 | GitHub Repository Rename                | operator                | 4     |
+| [ ]    | D01 T01 §9 | Microsoft Store Name Reservation        | store-account, operator | 3     |
+| [ ]    | D01 T02 §1 | Icon Design Language Brief              | none                    | 5     |
+| [ ]    | D01 T02 §2 | Suite Mark and Wordmark Masters         | none                    | 5     |
+| [ ]    | D01 T02 §3 | Six App Icon Masters                    | none                    | 8     |
+| [ ]    | D01 T02 §4 | Small-Size App Icon Variants            | none                    | 4     |
+| [ ]    | D01 T02 §5 | Document File-Type Icons                | none                    | 7     |
+| [ ]    | D01 T02 §6 | Icon Export Pipeline                    | none                    | 8     |
+| [ ]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | owner-decision          | 5     |
+| [ ]    | D01 T03 §1 | README Hero Banner in Light and Dark    | none                    | 4     |
+| [ ]    | D01 T03 §2 | Social Preview Image                    | none                    | 4     |
+| [ ]    | D01 T03 §3 | App Lineup Strip in Light and Dark      | none                    | 4     |
+| [ ]    | D01 T03 §4 | README Brand Presentation               | none                    | 4     |
+| [ ]    | D01 T03 §5 | Upload Social Preview and Avatar        | operator                | 3     |
 
 ### Phase 2: Interface inventory and specification
 
@@ -132,6 +133,6 @@ Sections: 3 | Checklist items: 13
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 24/91 verified sections, 9 ready to run now.
+Progress: 24/92 verified sections, 9 ready to run now.
 
-Checklist: 148/521 items completed (includes Commit items).
+Checklist: 148/524 items completed (includes Commit items).

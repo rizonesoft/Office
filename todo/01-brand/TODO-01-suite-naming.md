@@ -38,11 +38,12 @@ title: "TODO-01 -- Suite and App Naming"
 | 1 | §1 | Naming brief and constraints | D00 T01 §1 | [x] |
 | 2 | §2 | Collision screen for the chosen names | §1 | [x] |
 | 3 | §3 | Owner selection of suite and app names | §2 | [x] |
-| 4 | §4 | Knockout trademark screen for chosen names | §3 | [ ] |
-| 5 | §5 | Domain, GitHub and package name availability | §3 | [ ] |
+| 4 | §4 | Knockout trademark screen | §3 | [ ] |
+| 5 | §5 | Domain, GitHub and package availability | §3 | [ ] |
 | 6 | §6 | Apply names across the repository | §4, §5 | [ ] |
 | 7 | §7 | Attorney clearance and filing | §4 | [ ] |
 | 8 | §8 | GitHub repository rename | §6 | [ ] |
+| 9 | §9 | Microsoft Store name reservation | §3 | [ ] |
 
 ## 1. Naming Brief and Constraints
 
@@ -130,7 +131,7 @@ Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizoneso
 > **Verified:** 2026-10-22 | §3 | 831b35c0536a55845ef4bd1092b854f437fe244c
 > **Review:** `docs/reviews/d01-t01-s3.json`
 
-## 4. Knockout Trademark Screen for Chosen Names
+## 4. Knockout Trademark Screen
 
 A knockout screen catches identical or near-identical live marks in classes 9 and 42 before money is spent on graphics. It is not legal clearance; §7 owns that.
 
@@ -152,11 +153,13 @@ A knockout screen catches identical or near-identical live marks in classes 9 an
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require USPTO --require EUIPO --require WIPO --require Verdicts` exits 0.
 
-## 5. Domain, GitHub and Package Name Availability
+## 5. Domain, GitHub and Package Availability
 
 > **Started:** 2026-10-22T01:30:00Z
 
 The product needs a home domain, a GitHub repository or organisation name, and package identifiers (winget, Microsoft Store, Homebrew cask, Flathub, npm scope if the stack uses one). This section checks and records availability; buying anything is the owner's call.
+
+> **Deferred:** the Microsoft Store name check, which only Partner Center under the owner's account can make -> XREF: D01 T01 §9
 
 **Phase:** 1
 **Needs:** none
@@ -229,6 +232,24 @@ Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL,
 - [ ] Commit: `brand: update repository URLs after rename`
 
 **Test checkpoint:** `gh repo view --json name,url` prints the new name and `git ls-remote origin HEAD` exits 0.
+
+## 9. Microsoft Store Name Reservation
+
+The Microsoft Store is where a Windows-only suite is found, and an app's Store name is checked and reserved only in Partner Center, under the publisher's developer account, so no unattended run can check it. Filed 2026-10-22 from §5, whose context names the Store among the package identifiers but whose checks could not reach it.
+
+**Phase:** 1
+**Needs:** store-account, operator
+**Surface:** no
+
+**Build order:**
+
+1. Check each name in Partner Center's reserve-a-name step. Done when: `docs/brand/naming-clearance.md` has a Microsoft Store row per name with the result and date.
+
+- [ ] Check "Rizonesoft Office" and the six full app names in Partner Center (Apps and games, New product, Reserve your app's name) and record each result in `docs/brand/naming-clearance.md` under `### Microsoft Store`. Done when: seven rows each read `reserved`, `available` or `taken` with the date. Cheaper substitute: reading the Store's search results, which miss reserved but unpublished names.
+- [ ] Reserve the names the owner decides to reserve, and record which. Done when: each reserved name's row says so with the date. Cheaper substitute: leaving every name unreserved until release.
+- [ ] Commit: `brand: record Microsoft Store name availability`
+
+**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require "Microsoft Store"` exits 0.
 
 ## Verification
 
