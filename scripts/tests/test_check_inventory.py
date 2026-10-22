@@ -481,6 +481,9 @@ class Inventory(unittest.TestCase):
         real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
         real["commit"] = "0" * 40
         (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        # The inventory's own reference pins the commit (a scratch inventory without one is not bound to the
+        # repository's).
+        (self.inv / ci.REFERENCE).write_text((ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8"), encoding="utf-8")
         named = self.write("word/ribbon.json", [TAB])
         with self.assertRaises(ci.Unreadable) as raised:
             ci.check([str(named)], inventory=self.inv)

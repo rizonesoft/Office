@@ -214,9 +214,12 @@ def links(value, path, link):
 
 def reference(inventory):
     """The capture profiles and Office builds design/inventory/REFERENCE.md records, from the inventory's own copy or
-    the repository's. Returns (profile ids, builds, the baseline commit its Baseline table pins, or None)."""
+    the repository's. Returns (profile ids, builds, the baseline commit its Baseline table pins, or None). The pinned
+    commit binds only the inventory's own reference: an inventory without one (a scratch capture's) borrows the
+    repository's profiles and builds, but its manifest is its own."""
     path = Path(inventory) / REFERENCE
-    path = path if path.is_file() else INVENTORY / REFERENCE
+    own = path.is_file()
+    path = path if own else INVENTORY / REFERENCE
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -224,7 +227,7 @@ def reference(inventory):
     profiles = set(re.findall(r"Profile `([A-Za-z0-9-]+)`", text))
     builds = set(re.findall(r"^\| [^|]+ \| [^|]+ \| (\d+\.\d+\.\d+\.\d+) \|", text, flags=re.M))
     pinned = re.findall(r"^\| Commit \| `([0-9a-f]{40})` \|", text, flags=re.M)
-    return profiles, builds, (pinned[0] if len(pinned) == 1 else None)
+    return profiles, builds, (pinned[0] if own and len(pinned) == 1 else None)
 
 
 LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
