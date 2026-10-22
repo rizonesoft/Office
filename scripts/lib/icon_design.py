@@ -279,6 +279,14 @@ def suite_mono_svg():
 PIXEL_SIZES = {16: "sm", 24: "sm", 32: "md"}
 
 
+def drawing_for(icon, shown):
+    """The SVG an icon is drawn from when shown at `shown` px (or points): an app's pixel-grid variant at 16, 24 and
+    32, otherwise the tier for that size. Every raster of an app icon picks its drawing here."""
+    if icon in APPS and shown in PIXEL_SIZES:
+        return pixel_svg(icon, shown)
+    return icon_svg(icon, tier_for(shown))
+
+
 def _on_grid(v, width):
     """A coordinate snapped so a stroke of a whole number of pixels covers whole pixels."""
     return math.floor(v) + .5 if width % 2 else round(v)

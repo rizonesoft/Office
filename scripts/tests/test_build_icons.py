@@ -73,6 +73,25 @@ class Packers(unittest.TestCase):
         self.assertTrue(any("write-16.png" in p and "is not 16x16" in p for p in problems))
         self.assertTrue(any("write.ico" in p and "sizes" in p for p in problems))
 
+    def test_verify_decodes_every_entry_and_parses_svg(self):
+        ico = build_icons.pack_ico([(px, png(px)) for px in build_icons.ICO_SIZES])
+        broken_ico = ico.replace(b"\x89PNG", b"BROKEN!!", 1)
+        icns = build_icons.pack_icns([("ic07", png(128)), ("ic10", png(1024))])
+        broken_icns = icns.replace(b"\x89PNG", b"BROKEN!!", 1)
+        self.assertEqual(build_icons.verify({"assets/icons/windows/write.ico": ico}), [])
+        for rel, data in (("assets/icons/windows/write.ico", broken_ico), ("assets/icons/macos/write.icns", broken_icns),
+                          ("design/icons/apps/write-lg.svg", b"not an SVG"),
+                          ("design/icons/apps/write-sm.svg", b'<html xmlns="http://www.w3.org/1999/xhtml"/>')):
+            self.assertTrue(build_icons.verify({rel: data}), rel)
+
+    def test_drawing_for_picks_the_variant_only_at_its_sizes(self):
+        for key in d.APPS:
+            for px in (16, 24, 32):
+                self.assertEqual(d.drawing_for(key, px), d.pixel_svg(key, px))
+            for px in (20, 22, 40, 48, 256):
+                self.assertEqual(d.drawing_for(key, px), d.icon_svg(key, d.tier_for(px)))
+        self.assertEqual(d.drawing_for(d.SUITE, 16), d.icon_svg(d.SUITE, "sm"))  # the suite has no variants
+
 
 class FileTypes(unittest.TestCase):
     def test_badge_uses_large_drawing_only_from_40_px(self):
@@ -373,22 +392,28 @@ class AppMasters(unittest.TestCase):
             for i, key in enumerate(d.APPS):
                 cell = sheet.crop((16 + i * 272, y, 16 + i * 272 + size, y + size))
                 want = Image.new("RGBA", (size, size), "white")
-                want.alpha_composite(Image.open(io.BytesIO(build_icons.render(d.icon_svg(key, d.tier_for(size)),
-                                                                              size))).convert("RGBA"))
+                # The committed raster at that size, so the sheet shows what ships.
+                shipped = SCRIPTS.parent / f"assets/icons/png/{key}/{key}-{size}.png"
+                want.alpha_composite(Image.open(shipped).convert("RGBA"))
                 self.assertEqual(cell.tobytes(), want.convert("RGB").tobytes(), (size, key))
             y += size + 16
 
     def test_missing_rasteriser_is_a_setup_error(self):
-        def missing():
-            raise build_icons.SetupRequired("resvg_py is not installed")
-        real, build_icons.rasteriser = build_icons.rasteriser, missing
+        # The import itself fails, as it does where the package is not installed.
+        saved = sys.modules.get("resvg_py")
+        sys.modules["resvg_py"] = None
         try:
+            with self.assertRaises(build_icons.SetupRequired):
+                build_icons.rasteriser()
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
                 self.assertEqual(build_icons.main(["--check"]), 2)
             self.assertIn("setup required: resvg_py is not installed", err.getvalue())
         finally:
-            build_icons.rasteriser = real
+            if saved is None:
+                sys.modules.pop("resvg_py", None)
+            else:
+                sys.modules["resvg_py"] = saved
 
     def test_contact_sheet_is_its_own_mode(self):
         with self.assertRaises(SystemExit) as refused, contextlib.redirect_stderr(io.StringIO()):

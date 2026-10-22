@@ -31,6 +31,7 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
@@ -125,10 +126,9 @@ def build():
         for size in d.PIXEL_SIZES:
             out[f"design/icons/apps/{key}-{size}.svg"] = d.pixel_svg(key, size).encode("utf-8")
     out["design/icons/suite/rizonesoft-office-mono.svg"] = d.suite_mono_svg().encode("utf-8")
-    pixel = {(k, s): d.pixel_svg(k, s) for k in d.APPS for s in d.PIXEL_SIZES}
     for icon in icons():
         # An app shown at 16, 24 or 32 px (or points, on a @2x slot) uses its pixel-grid variant; otherwise its tier.
-        draw = lambda shown, icon=icon: pixel.get((icon, shown)) or svg[(icon, d.tier_for(shown))]
+        draw = lambda shown, icon=icon: d.drawing_for(icon, shown)
         for px in PNG_SIZES:
             out[f"assets/icons/png/{icon}/{icon}-{px}.png"] = raster(draw, px)
         out[f"assets/icons/windows/{icon}.ico"] = pack_ico([(px, raster(draw, px)) for px in ICO_SIZES])
@@ -193,7 +193,7 @@ def contact_sheet():
     y = pad
     for size in sizes:
         for i, key in enumerate(d.APPS):
-            icon = Image.open(io.BytesIO(render(d.icon_svg(key, d.tier_for(size)), size))).convert("RGBA")
+            icon = Image.open(io.BytesIO(render(d.drawing_for(key, size), size))).convert("RGBA")
             sheet.alpha_composite(icon, (pad + i * (256 + pad), y))
         y += size + pad
     buf = io.BytesIO()
@@ -229,6 +229,13 @@ def verify(files):
                 want = {(16, 16), (32, 32), (48, 48)} if "favicon" in rel else {(p, p) for p in ICO_SIZES}
                 if set(img.info.get("sizes", ())) != want:
                     problems.append(f"{rel}: sizes {sorted(img.info.get('sizes', ()))}")
+                count = struct.unpack("<H", data[4:6])[0]
+                for i in range(count):  # decode every entry, not only the one Pillow opens
+                    side, _, _, _, _, _, size, offset = struct.unpack("<BBBBHHII", data[6 + 16 * i:22 + 16 * i])
+                    entry = Image.open(io.BytesIO(data[offset:offset + size]))
+                    entry.load()
+                    if entry.size != (side or 256, side or 256):
+                        problems.append(f"{rel}: entry {i} is {entry.size}, its directory says {side or 256}")
             elif rel.endswith(".icns"):
                 img = Image.open(io.BytesIO(data))
                 img.load()
@@ -236,8 +243,17 @@ def verify(files):
                     problems.append(f"{rel}: largest image {img.size}")
                 if struct.unpack(">I", data[4:8])[0] != len(data):
                     problems.append(f"{rel}: header length mismatch")
+                at = 8
+                while at < len(data):  # decode every slot's PNG
+                    kind, length = data[at:at + 4].decode("ascii"), struct.unpack(">I", data[at + 4:at + 8])[0]
+                    if length < 8:
+                        raise ValueError(f"slot {kind} has length {length}")
+                    Image.open(io.BytesIO(data[at + 8:at + length])).load()
+                    at += length
             elif rel.endswith(".svg"):
                 text = data.decode("utf-8")
+                if ET.fromstring(text).tag != "{http://www.w3.org/2000/svg}svg":
+                    problems.append(f"{rel}: not an SVG document")
                 if "<image" in text or "<script" in text or "href=\"http" in text or "<text" in text:
                     problems.append(f"{rel}: forbidden content (raster, script, remote link or live text)")
         except Exception as exc:  # a decoder failure is a finding, not a crash
