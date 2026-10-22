@@ -154,6 +154,8 @@ A knockout screen catches identical or near-identical live marks in classes 9 an
 
 ## 5. Domain, GitHub and Package Name Availability
 
+> **Started:** 2026-10-22T01:30:00Z
+
 The product needs a home domain, a GitHub repository or organisation name, and package identifiers (winget, Microsoft Store, Homebrew cask, Flathub, npm scope if the stack uses one). This section checks and records availability; buying anything is the owner's call.
 
 **Phase:** 1
@@ -164,9 +166,9 @@ The product needs a home domain, a GitHub repository or organisation name, and p
 
 1. Check availability for each identifier and record it in `docs/brand/naming-clearance.md` under `## Availability`. Done when: every identifier row has `available`, `taken` or `owned` with the date.
 
-- [ ] Check `.com`, `.app` and `.dev` availability for the suite name with `whois` and record it in `docs/brand/naming-clearance.md`. Done when: three rows exist with dates. Cheaper substitute: a registrar search page that hides premium pricing.
-- [ ] Check the GitHub organisation and repository names with `gh api users/<name>` and record the result. Done when: the row shows the HTTP status. Cheaper substitute: assuming availability because the name is unusual.
-- [ ] Check winget (`winget search`), Homebrew (`brew search` or formulae.brew.sh) and Flathub for each app identifier and record results. Done when: each app has a row per registry. Cheaper substitute: checking the suite name only.
+- [x] Check `.com`, `.app` and `.dev` availability for the suite name by RDAP and record it in `docs/brand/naming-clearance.md`. Done when: three rows exist with dates. **Corrected 2026-10-22:** said `whois`, which Windows does not ship; RDAP is the registries' successor protocol and answers per domain. Cheaper substitute: a registrar search page that hides premium pricing.
+- [x] Check the GitHub organisation and repository names with `gh api users/<name>` and record the result. Done when: the row shows the HTTP status. Cheaper substitute: assuming availability because the name is unusual.
+- [x] Check winget (`winget search`), Homebrew (`brew search` or formulae.brew.sh) and Flathub for each app identifier and record results. Done when: each app has a row per registry. Cheaper substitute: checking the suite name only.
 - [ ] Commit: `brand: record name availability`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require Availability` exits 0.
