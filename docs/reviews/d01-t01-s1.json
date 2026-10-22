@@ -1,0 +1,24 @@
+{
+  "ref": "D01 T01 \u00a71",
+  "title": "Naming Brief and Constraints",
+  "implementation_sha": "559951e458dc31e5f2000e062a5a312e92cdcfa8",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T01-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T01-s1.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py docs/brand/naming-brief.md --require Exclusions --require \"Structure options\" --require Criteria --require Scoring -> exit 0",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success (run 39696910087 at 559951e)"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 22
+}

@@ -35,7 +35,7 @@ title: "TODO-01 -- Suite and App Naming"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Naming brief and constraints | D00 T01 §1 | [ ] |
+| 1 | §1 | Naming brief and constraints | D00 T01 §1 | [x] |
 | 2 | §2 | Collision screen for the chosen names | §1 | [ ] |
 | 3 | §3 | Owner selection of suite and app names | §2 | [ ] |
 | 4 | §4 | Knockout trademark screen for chosen names | §3 | [ ] |
@@ -62,9 +62,12 @@ The brief fixes what a good name must do before anyone argues about taste. It st
 - [x] Write the Structure options in `docs/brand/naming-brief.md`: house brand plus descriptive app names versus standalone app names, each with its clearance cost. Done when: both options carry one advantage and one cost. Cheaper substitute: presenting only the option already preferred.
 - [x] Write the Criteria in `docs/brand/naming-brief.md`: pronounceable in English, at most 3 syllables per app name, no negative meaning in the 10 most spoken languages, available `.com` or `.app` for the suite, icon motif potential. Done when: each criterion is a yes or no test. Cheaper substitute: subjective adjectives such as "modern" or "catchy".
 - [x] Write the Scoring rubric in `docs/brand/naming-brief.md` as a table with weights summing to 100. Done when: the weights sum to 100 and every row is at most 100 characters. Cheaper substitute: unweighted gut ranking.
-- [ ] Commit: `brand: add naming brief`
+- [x] Commit: `brand: add naming brief`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-brief.md --require Exclusions --require "Structure options" --require Criteria --require Scoring` exits 0.
+
+> **Verified:** 2026-10-22 | §1 | 559951e458dc31e5f2000e062a5a312e92cdcfa8
+> **Review:** `docs/reviews/d01-t01-s1.json`
 
 ## 2. Collision Screen for the Chosen Names
 
