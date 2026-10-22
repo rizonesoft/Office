@@ -1,0 +1,31 @@
+{
+  "ref": "D01 T03 \u00a74",
+  "title": "README Brand Presentation",
+  "implementation_sha": "fdb567c7fc838f595e102efec4d5f7ddd71128df",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T03-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T03-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T03-s4.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py README.md --require \"Rizonesoft Office\" -> exit 0",
+    "(Select-String -Path README.md -Pattern \"prefers-color-scheme\").Count -> 4",
+    "github.com/rizonesoft/Office in headless Chrome, forced light and dark schemes -> light and dark banner and lineup shown",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at fdb567c"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}

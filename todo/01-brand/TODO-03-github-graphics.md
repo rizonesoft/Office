@@ -37,7 +37,7 @@ title: "TODO-03 -- GitHub Graphics"
 | 1 | §1 | README hero banner in light and dark | D01 T02 §2 | [x] |
 | 2 | §2 | Social preview image | D01 T02 §3 | [x] |
 | 3 | §3 | App lineup strip in light and dark | D01 T02 §3 | [x] |
-| 4 | §4 | README brand presentation | §1, §3, D01 T01 §6 | [ ] |
+| 4 | §4 | README brand presentation | §1, §3, D01 T01 §6 | [x] |
 | 5 | §5 | Upload social preview and avatar | §2 | [ ] |
 
 ## 1. README Hero Banner in Light and Dark
@@ -140,9 +140,12 @@ The README shows the banner and lineup with `<picture>` so they match the visito
 - [x] Add a `<picture>` block to `README.md` with `prefers-color-scheme: dark` and light `source` elements for the banner and an `alt` naming the suite. Done when: the rendered README on github.com switches banner with the theme. Cheaper substitute: one image with a transparent background.
 - [x] Add the lineup `<picture>` block and an app table (name, Microsoft counterpart, status) to `README.md`, rows at most 100 characters. Done when: the table lists six apps matching `docs/brand/NAMES.md`. Cheaper substitute: an image-only lineup with no text for screen readers.
 - [x] Add a CI status badge for `.github/workflows/ci.yml` to `README.md`. Done when: the badge renders the current run state. Cheaper substitute: a static "passing" badge.
-- [ ] Commit: `docs: present suite branding in README`
+- [x] Commit: `docs: present suite branding in README`
 
 **Test checkpoint:** `python scripts/check-design-doc.py README.md --require "Rizonesoft Office"` exits 0 (**Corrected 2026-10-20:** the command had no value after `--require`, which the checker refuses), and `(Select-String -Path README.md -Pattern "prefers-color-scheme").Count` is at least 2.
+
+> **Verified:** 2026-10-22 | §4 | fdb567c7fc838f595e102efec4d5f7ddd71128df
+> **Review:** `docs/reviews/d01-t03-s4.json`
 
 ## 5. Upload Social Preview and Avatar
 
