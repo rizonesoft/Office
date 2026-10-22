@@ -1,0 +1,30 @@
+{
+  "ref": "D01 T01 \u00a75",
+  "title": "Domain, GitHub and Package Availability",
+  "implementation_sha": "caa3ef4c79635d1add15ab7de7e118c3c65904b4",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T01-s5.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py docs/brand/naming-clearance.md --require Availability -> exit 0",
+    "RDAP, gh api, winget, Homebrew and Flathub lookups 2026-10-22, each method proven on a known-taken control (200)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at caa3ef4"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}

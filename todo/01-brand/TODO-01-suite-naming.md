@@ -39,7 +39,7 @@ title: "TODO-01 -- Suite and App Naming"
 | 2 | §2 | Collision screen for the chosen names | §1 | [x] |
 | 3 | §3 | Owner selection of suite and app names | §2 | [x] |
 | 4 | §4 | Knockout trademark screen | §3 | [ ] |
-| 5 | §5 | Domain, GitHub and package availability | §3 | [ ] |
+| 5 | §5 | Domain, GitHub and package availability | §3 | [x] |
 | 6 | §6 | Apply names across the repository | §4, §5 | [ ] |
 | 7 | §7 | Attorney clearance and filing | §4 | [ ] |
 | 8 | §8 | GitHub repository rename | §6 | [ ] |
@@ -172,9 +172,12 @@ The product needs a home domain, a GitHub repository or organisation name, and p
 - [x] Check `.com`, `.app` and `.dev` availability for the suite name by RDAP and record it in `docs/brand/naming-clearance.md`. Done when: three rows exist with dates. **Corrected 2026-10-22:** said `whois`, which Windows does not ship; RDAP is the registries' successor protocol and answers per domain. Cheaper substitute: a registrar search page that hides premium pricing.
 - [x] Check the GitHub organisation and repository names with `gh api users/<name>` and record the result. Done when: the row shows the HTTP status. Cheaper substitute: assuming availability because the name is unusual.
 - [x] Check winget (`winget search`), Homebrew (`brew search` or formulae.brew.sh) and Flathub for each app identifier and record results. Done when: each app has a row per registry. Cheaper substitute: checking the suite name only.
-- [ ] Commit: `brand: record name availability`
+- [x] Commit: `brand: record name availability`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require Availability` exits 0.
+
+> **Verified:** 2026-10-22 | §5 | caa3ef4c79635d1add15ab7de7e118c3c65904b4
+> **Review:** `docs/reviews/d01-t01-s5.json`
 
 ## 6. Apply Names Across the Repository
 

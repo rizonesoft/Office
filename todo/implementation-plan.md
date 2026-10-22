@@ -38,7 +38,7 @@ Sections: 20 | Checklist items: 96
 | [x]    | D01 T01 §2 | Collision Screen for the Chosen Names   | none                    | 6     |
 | [x]    | D01 T01 §3 | Owner Selection of Suite and App Names  | none                    | 4     |
 | [ ]    | D01 T01 §4 | Knockout Trademark Screen               | display-session         | 5     |
-| [ ]    | D01 T01 §5 | Domain, GitHub and Package Availability | none                    | 4     |
+| [x]    | D01 T01 §5 | Domain, GitHub and Package Availability | none                    | 4     |
 | [ ]    | D01 T01 §6 | Apply Names Across the Repository       | none                    | 4     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename                | operator                | 4     |
 | [ ]    | D01 T01 §9 | Microsoft Store Name Reservation        | store-account, operator | 3     |
@@ -133,6 +133,6 @@ Sections: 3 | Checklist items: 13
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 24/92 verified sections, 9 ready to run now.
+Progress: 25/92 verified sections, 8 ready to run now.
 
-Checklist: 148/524 items completed (includes Commit items).
+Checklist: 149/524 items completed (includes Commit items).
