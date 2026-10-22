@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
 """scripts/build-icons.py and scripts/lib/icon_design.py: tiers, packers, verification and the glass pane base."""
+import contextlib
 import importlib.util
 import io
 import json
@@ -334,10 +335,17 @@ class AppMasters(unittest.TestCase):
         self.assertEqual(sheet.size, (16 + 6 * (256 + 16), 16 + (256 + 16) + (48 + 16) + (32 + 16)))
         y = 16
         for size in (256, 48, 32):
-            for i in range(6):
+            for i, key in enumerate(d.APPS):
                 cell = sheet.crop((16 + i * 272, y, 16 + i * 272 + size, y + size))
-                self.assertNotEqual(cell.getextrema(), ((255, 255), (255, 255), (255, 255)), (size, i))
+                want = Image.new("RGBA", (size, size), "white")
+                want.alpha_composite(Image.open(io.BytesIO(build_icons.render(d.icon_svg(key, d.tier_for(size)),
+                                                                              size))).convert("RGBA"))
+                self.assertEqual(cell.tobytes(), want.convert("RGB").tobytes(), (size, key))
             y += size + 16
+
+    def test_contact_sheet_is_its_own_mode(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            build_icons.main(["--check", "--contact-sheet", "unused.png"])
 
 
 class MonoMark(unittest.TestCase):

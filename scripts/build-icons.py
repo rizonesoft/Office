@@ -264,9 +264,10 @@ def existing_managed(root):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="fail if committed outputs differ from a fresh build")
-    parser.add_argument("--contact-sheet", type=Path, metavar="PNG",
-                        help="write a review sheet of the six app icons at 256, 48 and 32 px and stop")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="fail if committed outputs differ from a fresh build")
+    mode.add_argument("--contact-sheet", type=Path, metavar="PNG",
+                      help="write a review sheet of the six app icons at 256, 48 and 32 px and stop")
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
