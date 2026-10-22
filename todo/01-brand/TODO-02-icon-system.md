@@ -39,7 +39,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | 1 | §1 | Icon design language brief | D01 T01 §3 | [x] |
 | 2 | §2 | Suite mark and wordmark masters | §1 | [x] |
 | 3 | §3 | Six app icon masters | §1 | [x] |
-| 4 | §4 | Small-size app icon variants | §3 | [ ] |
+| 4 | §4 | Small-size app icon variants | §3 | [x] |
 | 5 | §5 | Document file-type icons | §3 | [ ] |
 | 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [ ] |
 | 7 | §7 | Distinctness review and owner sign-off | §6 | [ ] |
@@ -149,9 +149,12 @@ Detail that reads at 256 pixels turns to mud at 16. Each app gets hand-simplifie
 - [x] Draw the 32 pixel variant for each app with `viewBox="0 0 32 32"` and integer-aligned edges. Done when: six `-32.svg` files exist. Cheaper substitute: the master with a smaller `width`.
 - [x] Draw the 24 pixel variant for each app with `viewBox="0 0 24 24"`. Done when: six `-24.svg` files exist. Cheaper substitute: downscaling the 32 pixel variant.
 - [x] Draw the 16 pixel variant for each app with `viewBox="0 0 16 16"`, keeping only the primary glyph. Done when: six `-16.svg` files exist. Cheaper substitute: downscaling the master.
-- [ ] Commit: `brand: add small-size app icon variants`
+- [x] Commit: `brand: add small-size app icon variants`
 
 **Test checkpoint:** `(Get-ChildItem design/icons/apps/*-16.svg, design/icons/apps/*-24.svg, design/icons/apps/*-32.svg).Count` returns 18 and each passes `python scripts/check-image-asset.py <file> --format svg`.
+
+> **Verified:** 2026-10-22 | §4 | b34a0e85d225b3d8d26871b39d5f39107cbe8d80
+> **Review:** `docs/reviews/d01-t02-s4.json`
 
 ## 5. Document File-Type Icons
 

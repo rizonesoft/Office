@@ -1,0 +1,31 @@
+{
+  "ref": "D01 T02 \u00a74",
+  "title": "Small-Size App Icon Variants",
+  "implementation_sha": "b34a0e85d225b3d8d26871b39d5f39107cbe8d80",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T02-s4.md",
+      "verdict": "clean"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T02-s4.md",
+      "verdict": "clean"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T02-s4.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "(Get-ChildItem design/icons/apps/*-16.svg, *-24.svg, *-32.svg).Count -> 18, each check-image-asset --format svg ok",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (35 tests); PixelVariants mutations fail",
+    "python scripts/build-icons.py --check -> icons current",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at b34a0e8"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}
