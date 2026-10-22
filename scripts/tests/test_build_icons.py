@@ -328,13 +328,23 @@ class Lineup(unittest.TestCase):
                                r'viewBox="0 0 128 128">(.*?)</svg>', svg, flags=re.S)
             self.assertEqual(len(icons), 6, theme)
             w, h = (int(v) for v in svg.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
-            alpha = Image.open(io.BytesIO(build_icons.render(svg, w, h))).getchannel("A")
-            for (name, _), (x, y, iw, ih, inner) in zip(rows, icons):
+            canvas = bd.GITHUB_CANVAS[theme]
+
+            def rendered(text):
+                return Image.open(io.BytesIO(build_icons.render(text, w, h, background=canvas))).convert("RGB")
+            final = rendered(svg)
+            nested = re.findall(r'<svg x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+" '
+                                r'viewBox="0 0 128 128">.*?</svg>', svg, flags=re.S)
+            for (name, _), (x, y, iw, ih, inner), whole in zip(rows, icons, nested):
                 self.assertEqual((float(iw), float(ih)), (96, 96), (theme, name))
                 self.assertIn(f'id="{name.lower()}-lg-g1"', inner, (theme, name))  # that app's large drawing
-                box = alpha.crop((int(float(x)), int(float(y)), int(float(x)) + 96, int(float(y)) + 96))
-                covered = sum(1 for a in box.tobytes() if a > 200)
-                self.assertGreater(covered, 96 * 96 // 2, (theme, name))  # it is drawn, not merely present
+                # Nothing else belongs in the icon's box, so in the finished strip it must look exactly like the
+                # icon drawn alone on the same canvas: a layer that hides, fades or tints it fails.
+                box = (int(float(x)), int(float(y)), int(float(x)) + 96, int(float(y)) + 96)
+                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
+                         f'height="{h}">{whole}</svg>')
+                got, want = final.crop(box).tobytes(), rendered(alone).crop(box).tobytes()
+                self.assertLessEqual(max(abs(g - v) for g, v in zip(got, want)), 2, (theme, name))
             # Laid out left to right without overlap, each icon centred over its own name.
             lefts = [float(x) for x, *_ in icons]
             self.assertTrue(all(b - a >= 96 for a, b in zip(lefts, lefts[1:])), (theme, lefts))
