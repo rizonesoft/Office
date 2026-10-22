@@ -134,8 +134,10 @@ Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizoneso
 
 A knockout screen catches identical or near-identical live marks in classes 9 and 42 before money is spent on graphics. It is not legal clearance; §7 owns that.
 
+**Corrected 2026-10-22:** Needs said `none`. The USPTO, EUIPO and WIPO searches are interactive web applications with no public search API (a POST to the USPTO search endpoint is refused), so the section needs a browser session: a person at the registers, or the Claude in Chrome extension connected. An unattended run without one takes it as a leftover.
+
 **Phase:** 1
-**Needs:** none
+**Needs:** display-session
 **Surface:** no
 
 **Build order:**
