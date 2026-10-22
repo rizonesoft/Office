@@ -213,15 +213,21 @@ class Banner(unittest.TestCase):
             self.assertLess(len(data), 500_000, theme)
 
     def test_tagline_contrast_is_recorded_and_holds(self):
-        # The README shows the dark banner on GitHub's #0d1117 and the light one on white.
+        # Read from the drawn file itself: the four text paths after the mark (wordmark, product, tagline, app line)
+        # and the card's gradient stops, against GitHub's canvas, written out here (white, and #0d1117 for dark).
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
             svg = bd.banner_svg(theme)
-            tagline, worst = (float(v) for v in re.findall(r"at least ([\d.]+):1", svg))
-            self.assertGreaterEqual(min(tagline, worst), 4.5, theme)
-            ink, sub = bd.THEMES[theme]
-            self.assertGreaterEqual(min(d.contrast(ink, canvas), d.contrast(sub, canvas)), 4.5, theme)
-            self.assertAlmostEqual(tagline, min(d.contrast(ink, c) for c in (*bd.BANNER_CARD[theme][:2], canvas)),
-                                   places=2)
+            grounds = re.findall(r'<stop offset="[01]" stop-color="(#[0-9a-f]{6})"/>', svg.split("</defs>")[0])
+            self.assertEqual(len(grounds), 2, theme)
+            grounds.append(canvas)
+            fills = re.findall(r'<path d="[^"]*" fill="([^"]*)"/>', svg.rsplit("</svg>", 2)[1])
+            self.assertEqual(len(fills), 4, theme)
+            self.assertTrue(all(re.fullmatch(r"#[0-9a-f]{6}", f) for f in fills), fills)
+            tagline = min(d.contrast(fills[2], g) for g in grounds)
+            worst = min(d.contrast(f, g) for f in fills for g in grounds)
+            self.assertGreaterEqual(worst, 4.5, theme)
+            recorded = [float(v) for v in re.findall(r"at least ([\d.]+):1", svg)]
+            self.assertEqual(recorded, [round(tagline, 2), round(worst, 2)], theme)
 
 
 class GlassPane(unittest.TestCase):
