@@ -234,15 +234,18 @@ class Banner(unittest.TestCase):
                 data = build_icons.render(text, 1280, 320, background=canvas)
                 return Image.open(io.BytesIO(data)).convert("RGB").tobytes()
             bare = rendered(without(*lines))
+            final = rendered(svg)
             for line in lines:
-                fill = re.search(r'fill="#([0-9a-f]{6})"', line).group(1)
-                rgb = bytes.fromhex(fill)
-                drawn = rendered(without(*(other for other in lines if other != line)))
-                behind = [bare[i:i + 3] for i in range(0, len(drawn), 3)
-                          if drawn[i:i + 3] == rgb and bare[i:i + 3] != rgb]  # pixels the line itself paints
-                self.assertGreater(len(behind), 200, (theme, fill))
-                worst = min(d.contrast("#" + fill, "#" + b.hex()) for b in set(behind))
-                self.assertGreaterEqual(worst, 4.5, (theme, fill))
+                # Where the line's glyphs are, from the line alone on a transparent canvas (whatever its colour), so
+                # a pixel the finished banner hides or recolours is still checked.
+                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">'
+                         f'{line}</svg>')
+                alpha = Image.open(io.BytesIO(build_icons.render(alone, 1280, 320))).getchannel("A").tobytes()
+                glyphs = [i for i, a in enumerate(alpha) if a == 255]
+                self.assertGreater(len(glyphs), 200, (theme, line[-30:]))
+                worst = min(d.contrast("#" + final[3 * i:3 * i + 3].hex(), "#" + bare[3 * i:3 * i + 3].hex())
+                            for i in glyphs)
+                self.assertGreaterEqual(worst, 4.5, (theme, line[-30:]))
 
     def test_tagline_contrast_is_recorded_and_holds(self):
         # Read from the drawn file itself: the four text paths after the mark (wordmark, product, tagline, app line)
