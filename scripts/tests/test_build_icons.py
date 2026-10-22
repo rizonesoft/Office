@@ -212,6 +212,38 @@ class Banner(unittest.TestCase):
             self.assertEqual(Image.open(io.BytesIO(data)).size, (2560, 640), theme)
             self.assertLess(len(data), 500_000, theme)
 
+    def test_text_reads_on_what_is_rendered_behind_it(self):
+        # Rendered, so any layer between the card and the text counts: each text line drawn alone over the banner
+        # without its text, on GitHub's canvas, and every pixel fully in the line's colour held to 4.5:1 against
+        # the same pixel with no text.
+        for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
+            svg = bd.banner_svg(theme)
+            # The text lines are the paths after the mark's closing tag; everything else stays where it is, so a
+            # layer anywhere (under the text or over it) is rendered in both images.
+            tail = svg.rpartition("</svg>")[0].rpartition("</svg>")[2]
+            lines = re.findall(r'<path d="[^"]*" fill="[^"]*"/>', tail)
+            self.assertEqual(len(lines), 4, theme)  # wordmark, product name, tagline, app names
+
+            def without(*drop):
+                kept = svg
+                for line in drop:
+                    kept = kept.replace(line, "", 1)
+                return kept
+
+            def rendered(text):
+                data = build_icons.render(text, 1280, 320, background=canvas)
+                return Image.open(io.BytesIO(data)).convert("RGB").tobytes()
+            bare = rendered(without(*lines))
+            for line in lines:
+                fill = re.search(r'fill="#([0-9a-f]{6})"', line).group(1)
+                rgb = bytes.fromhex(fill)
+                drawn = rendered(without(*(other for other in lines if other != line)))
+                behind = [bare[i:i + 3] for i in range(0, len(drawn), 3)
+                          if drawn[i:i + 3] == rgb and bare[i:i + 3] != rgb]  # pixels the line itself paints
+                self.assertGreater(len(behind), 200, (theme, fill))
+                worst = min(d.contrast("#" + fill, "#" + b.hex()) for b in set(behind))
+                self.assertGreaterEqual(worst, 4.5, (theme, fill))
+
     def test_tagline_contrast_is_recorded_and_holds(self):
         # Read from the drawn file itself: the four text paths after the mark (wordmark, product, tagline, app line)
         # and the card's gradient stops, against GitHub's canvas, written out here (white, and #0d1117 for dark).
