@@ -38,7 +38,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Icon design language brief | D01 T01 §3 | [x] |
 | 2 | §2 | Suite mark and wordmark masters | §1 | [x] |
-| 3 | §3 | Six app icon masters | §1 | [ ] |
+| 3 | §3 | Six app icon masters | §1 | [x] |
 | 4 | §4 | Small-size app icon variants | §3 | [ ] |
 | 5 | §5 | Document file-type icons | §3 | [ ] |
 | 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [ ] |
@@ -123,9 +123,12 @@ One master SVG per app, drawn on the shared grid with the motif from §1. File n
 - [x] Draw the project-scheduling icon (counterpart of Project) in `design/icons/apps/plan-<tier>.svg`. Done when: it follows the grid and palette. Cheaper substitute: three stacked green bars.
 - [x] Draw the mail and calendar icon (counterpart of Outlook) in `design/icons/apps/mail-<tier>.svg`. Done when: it follows the grid and palette. Cheaper substitute: a blue envelope with a letter tile.
 - [x] Render `build/icons/contact-sheet.png` with `resvg` (the rasteriser §6 adopts) and review it at 32 pixels. Done when: each icon is distinguishable from the other five at 32 pixels. Cheaper substitute: reviewing only at 256 pixels.
-- [ ] Commit: `brand: add six app icon masters`
+- [x] Commit: `brand: add six app icon masters`
 
 **Test checkpoint:** `Get-ChildItem design/icons/apps/*.svg | ForEach-Object { python scripts/check-image-asset.py $_.FullName --format svg }` exits 0 for 18 files. **Corrected 2026-10-22:** said six files; each app has three tier masters.
+
+> **Verified:** 2026-10-22 | §3 | 84e31a1a6f1b068ac12bb3eaaab50b9bffdcdf32
+> **Review:** `docs/reviews/d01-t02-s3.json`
 
 ## 4. Small-Size App Icon Variants
 

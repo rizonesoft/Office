@@ -1,0 +1,31 @@
+{
+  "ref": "D01 T02 \u00a73",
+  "title": "Six App Icon Masters",
+  "implementation_sha": "84e31a1a6f1b068ac12bb3eaaab50b9bffdcdf32",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T02-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T02-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T02-s3.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "Get-ChildItem design/icons/apps/*.svg | check-image-asset --format svg -> 18 files, 0 nonzero",
+    "python scripts/build-icons.py --contact-sheet build/icons/contact-sheet.png -> six icons told apart at 32 px",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (32 tests)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at 84e31a1"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}
