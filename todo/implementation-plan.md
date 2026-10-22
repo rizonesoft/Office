@@ -54,7 +54,7 @@ Sections: 17 | Checklist items: 85
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 40 | Checklist items: 255
+Sections: 41 | Checklist items: 260
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -84,6 +84,7 @@ Sections: 40 | Checklist items: 255
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
 | [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
+| [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 5     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter      | none                                  | 6     |
@@ -140,6 +141,6 @@ Sections: 5 | Checklist items: 22
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename       | operator, owner-decision        | 4     |
 
-Progress: 36/92 verified sections, 7 ready to run now.
+Progress: 36/93 verified sections, 7 ready to run now.
 
-Checklist: 207/526 items completed (includes Commit items).
+Checklist: 207/531 items completed (includes Commit items).

@@ -64,6 +64,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 24 | §24 | Audit capture tool | §3 | [ ] |
 | 25 | §25 | Audit control ID baseline | §19 | [ ] |
 | 26 | §26 | Audit Microsoft-free rule | §21 | [ ] |
+| 27 | §27 | Checker mutation sweep | §23 | [ ] |
 
 ## 1. Inventory Schema Checker
 
@@ -694,6 +695,28 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [ ] Commit: `review: audit D02 T01 §21 under the current review process`
 
 **Test checkpoint:** `python scripts/todo-graph.py resolve "D02 T01 §21"` exits 3 (still verified) or shows the `Unstamped:` note with its repair, and `docs/reviews/02-interface/audit-d02-t01-s21.md` ends in an approving round or a recorded stop with every finding fixed or filed.
+
+## 27. Checker Mutation Sweep
+
+`D02 T01 §23` audited the inventory checker to its 22-round cap. Its record lens found one more untested guard in each of rounds 18 to 22, so the claim that every rule's removal fails a test is proven one rule at a time, and its round 22 fixes (hexadecimal address components, the compatibility-character class, case-insensitive baseline names) had no independent round left. This section proves the claim systematically and gives those fixes their review. Source: `docs/reviews/02-interface/audit-d02-t01-s1.md` (`## Cap reached`).
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. List every rule. Done when: `docs/reviews/02-interface/inventory-mutation-sweep.md` names each guard in `scripts/check-inventory.py` and each pattern alternative and keyword in `design/inventory/schema.json`.
+2. Disable each rule on its own and run the checker tests. Done when: every listed rule has a test that fails without it, or a new test was added that does.
+3. Review the result and the round 22 fixes independently. Done when: a round through `scripts/review-dispatch.py` approves, or the cap stops it with every finding owned.
+
+- [ ] Write `scripts/mutation-sweep-inventory.py` that enumerates the guards in `scripts/check-inventory.py` (each `if` that appends a problem or raises `Unreadable`) and the alternatives of every `pattern` in `design/inventory/schema.json`, disables each one in memory, runs `scripts/tests/test_check_inventory.py`, and prints the survivors. Done when: it runs with `python -B` and prints one line per rule with the number of failing tests. Cheaper substitute: a hand-picked list of mutations, which is what rounds 18 to 22 kept finding gaps in; refused.
+- [ ] Record the sweep's output in `docs/reviews/02-interface/inventory-mutation-sweep.md`. Done when: the file quotes the full run and the survivor count.
+- [ ] Add a regression test to `scripts/tests/test_check_inventory.py` for every survivor. Done when: a re-run of the sweep reports zero survivors.
+- [ ] Run independent review rounds on the round 22 fix commit and this section's changes, recording each with `--record docs/reviews/02-interface/D02-T01-s27.md`. Done when: a round approves, or the severity cutoff or the 22-round cap stops the loop with every finding fixed or filed.
+- [ ] Commit: `inventory: prove every checker rule with a mutation sweep (D02 T01 §27)`
+
+**Test checkpoint:** `python -B scripts/mutation-sweep-inventory.py` exits 0 and prints `survivors: 0`; `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes.
 
 ## Verification
 
