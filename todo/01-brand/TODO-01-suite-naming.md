@@ -167,7 +167,7 @@ The product needs a home domain, a GitHub repository or organisation name, and p
 
 **Build order:**
 
-1. Check availability for each identifier and record it in `docs/brand/naming-clearance.md` under `## Availability`. Done when: every identifier row has `available`, `taken` or `owned` with the date.
+1. Check availability for each identifier and record it in `docs/brand/naming-clearance.md` under `## Availability`. Done when: every identifier row records what its registry showed with the date (owned, registered or taken, or no record), and the file says a name with no record is claimable only once the owner reserves it. **Corrected 2026-10-22:** asked for `available`, which no lookup can establish: registries reserve and premium-price names they hold no record of.
 
 - [x] Check `.com`, `.app` and `.dev` availability for the suite name by RDAP and record it in `docs/brand/naming-clearance.md`. Done when: three rows exist with dates. **Corrected 2026-10-22:** said `whois`, which Windows does not ship; RDAP is the registries' successor protocol and answers per domain. Cheaper substitute: a registrar search page that hides premium pricing.
 - [x] Check the GitHub organisation and repository names with `gh api users/<name>` and record the result. Done when: the row shows the HTTP status. Cheaper substitute: assuming availability because the name is unusual.

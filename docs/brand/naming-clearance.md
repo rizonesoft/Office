@@ -23,7 +23,7 @@ The suite already lives under the owned `rizonesoft.com`, which lists Rizonesoft
 
 ### GitHub
 
-Checked with `gh api <path>`, authenticated as `rizonesoft`, a user account with admin rights on its repositories, so a private repository under it would answer 200, not 404.
+Checked with `gh api <path>`, authenticated as `rizonesoft`, a user account, with a classic OAuth token whose scopes include `repo` (the `X-OAuth-Scopes` response header lists `delete_repo, gist, read:org, repo, workflow`). The `repo` scope covers every private repository the account owns, and the same token lists 4 of them (`gh api user/repos?visibility=private`), so a private `rizonesoft/rizonesoft-office` would answer 200, not 404.
 
 | Name | Result | Status |
 | --- | --- | --- |
