@@ -43,7 +43,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 8 | §8 | Agent tier verifier YAML strictness | -- | [x] |
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [x] |
 | 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [x] |
-| 11 | §11 | C++ toolchain pins | §10, D03 T01 §12 | [ ] |
+| 11 | §11 | C++ toolchain pins | §10, D03 T01 §17 | [ ] |
 | 12 | §12 | Campaign host readiness check | §10 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
@@ -319,9 +319,9 @@ Owner decision 2026-10-22 (D03 T01 §2): the suite moves from WinUI 3 in C# on .
 
 ## 11. C++ Toolchain Pins
 
-The owner's pin rule (2026-10-20 for WinUI 3, 2026-10-21 for .NET and NuGet) carries over to the native C++ stack decided on 2026-10-22 (D03 T01 §2): every toolchain pin is the newest stable release, proposed on a branch by a daily task and merged by the owner. The pins are the C++ standard flag (C++23 through `/std:c++23preview` today, moving to a stable C++23 flag and then to C++26 as MSVC ships them), the MSVC toolset (through Visual Studio, already watched by `office-visual-studio`), the Windows SDK, CMake and the vcpkg baseline, held in the files the foundation plan's Toolchain section creates (D03 T01 §12).
+The owner's pin rule (2026-10-20 for WinUI 3, 2026-10-21 for .NET and NuGet) carries over to the native C++ stack decided on 2026-10-22 (D03 T01 §2): every toolchain pin is the newest stable release, proposed on a branch by a daily task and merged by the owner. The pins are the C++ standard flag (C++23 through `/std:c++23preview` today, moving to a stable C++23 flag and then to C++26 as MSVC ships them), the MSVC toolset (through Visual Studio, already watched by `office-visual-studio`), the Windows SDK, CMake and the vcpkg baseline, held in the files the foundation plan's Toolchain section names (D03 T01 §12). **Groomed 2026-10-23:** those files (`CMakePresets.json`, `vcpkg.json`, `vcpkg-configuration.json`) are created by the first section of `todo/04-platform/TODO-01-build-foundation.md`, which D03 T01 §17 authors and adds to this section's `Depends On`, so the section moved from Phase 3 to Phase 4.
 
-**Phase:** 3
+**Phase:** 4
 **Needs:** none
 **Surface:** no
 
@@ -352,7 +352,7 @@ Owner decision 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, dec
 
 - [ ] Check the interactive session in `scripts/check-campaign-host.py`: a console session is active and unlocked (`WTSQuerySessionInformationW` with `WTSSessionInfoEx`). Done when: a fake locked session fails naming "screen locked" and an unlocked one passes. Cheaper substitute: assuming the screen is unlocked because the session exists.
 - [ ] Check the power settings: sleep and hibernate after `0` (never) on AC for the active scheme (`powercfg /query SCHEME_CURRENT SUB_SLEEP`), and the screen lock timeout off. Done when: a fixture with a 30 minute sleep timeout fails naming the `powercfg` command that fixes it. Cheaper substitute: telling the owner in prose only.
-- [ ] Check the Office reference build for Phase 2: Word, Excel, PowerPoint, Outlook (classic), Visio and Project executables are present under the Click-to-Run root, and report the build number. Done when: a fixture missing `VISIO.EXE` fails naming it, and the check is skipped once Phase 2 is closed. Cheaper substitute: checking Word only.
+- [ ] Check the Office reference build for Phase 2: Word, Excel, PowerPoint, Outlook (classic), Visio and Project executables are present under the Click-to-Run root, and report the build number. Done when: a fixture missing `VISIO.EXE` fails naming it, and the check runs while any unstamped section carries the `office` Need (Phase 2 captures, the D03 T01 §3 page counts, Phase 6 interoperability and the VBA object-model capture) and is skipped once none does; the script first runs `python scripts/todo-graph.py build` so `build/todo-cache.json` matches the TODO files, and fixtures prove a missing cache, a stale cache (fewer sections than the files hold) and the moment the last Phase 2 capture stamps while D03 T01 §3 is still open each still check Office. Cheaper substitute: checking Word only, or only during Phase 2. **Corrected 2026-10-23:** skipped the check once Phase 2 closed.
 - [ ] Check the C++ toolchain through `vswhere.exe -requires`: the desktop C++ workload, the x64 and Arm64 MSVC tools, CMake, vcpkg, the LLVM clang tools and a Windows 11 SDK. Done when: a fixture without `Microsoft.VisualStudio.Component.VC.Llvm.Clang` fails and prints the one elevated install command. Cheaper substitute: discovering a missing tool when a build fails.
 - [ ] Check the services the campaign calls: `gh auth status` succeeds, the pinned reviewer's CLI from `.conclave/reviewers.toml` is on PATH, and at least 50 GB is free on the repository drive. Done when: each failing fixture exits 1 naming what to fix. Cheaper substitute: a run that stalls at its first review round.
 - [ ] Print one line per check and exit 0 only when every required check passes, 1 with the list of fixes, 2 when a check cannot run. Done when: `python scripts/check-campaign-host.py` on this PC prints every line and its exit code matches. Cheaper substitute: a single pass or fail with no fix named.

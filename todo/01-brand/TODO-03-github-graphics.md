@@ -149,9 +149,9 @@ The README shows the banner and lineup with `<picture>` so they match the visito
 
 ## 5. Upload Social Preview and Avatar
 
-GitHub accepts the social preview only through repository Settings, and the organisation avatar through organisation Settings. Both are owner actions on a public profile.
+GitHub accepts the social preview only through repository Settings, and the organisation avatar through organisation Settings. Both are owner actions on a public profile. **Groomed 2026-10-23:** moved from Phase 1 to Phase 99, since GitHub's settings page is the only way to upload them and an unattended campaign never takes an operator section (`docs/specs/2026-10-23-campaign-scope-design.md`).
 
-**Phase:** 1
+**Phase:** 99
 **Needs:** operator
 **Surface:** no
 

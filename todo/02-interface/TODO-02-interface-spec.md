@@ -256,6 +256,7 @@ The Visio chapter specifies the diagramming surface: tabs and contextual tabs, S
 - [ ] Specify the Shapes pane and the drag-to-canvas interaction (drop preview, AutoConnect arrows, Quick Shapes mini toolbar). Done when: each interaction state has tokens. Cheaper substitute: a click-to-insert list.
 - [ ] Specify the drawing page chrome: rulers, grid, guides, page tabs, connection point and glue highlights. Done when: each element has tokens and sizes. Cheaper substitute: a blank canvas.
 - [ ] Specify every Visio pane and dialog. Done when: pane and dialog citations reach 100 percent. Cheaper substitute: names only.
+- [ ] Specify the modernised Visio surface under `### Modernisation` in its chapter of `design/SPEC.md`: every inventoried tab, group and command keeps its place, drawn with the Word, Excel and PowerPoint shell (title bar with search, Fluent glyphs, rounded controls, Mica, light and dark themes, the Simplified Ribbon option, Backstage, task panes, dialogs and status bar), and a table lists each layout change from the classic app (for example the Shapes window as a task pane, the ruler and grid colours, and the status bar page tabs) with the Word, Excel or PowerPoint pattern it follows and the inventory ids it moves. Done when: the table has a row per changed region and `python scripts/inventory-report.py --cited-in design/SPEC.md --app visio` still reports 100 percent. Cheaper substitute: copying the classic app's dated layout, or redesigning beyond patterns Word, Excel and PowerPoint already use. Owner request 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 5).
 - [ ] Commit: `spec: add Visio surface chapter`
 
 **Test checkpoint:** `python scripts/inventory-report.py --cited-in design/SPEC.md --app visio` reports 100 percent of `tab`, `pane` and `dialog` records cited.
@@ -276,6 +277,7 @@ The Project chapter specifies the scheduling surface: tabs and contextual Format
 - [ ] Specify the Gantt view: sheet columns, chart timescale tiers, bar styles, link lines, today line, progress, critical path colouring and divider behaviour. Done when: each element has tokens. Cheaper substitute: a static bar chart.
 - [ ] Specify the other built-in views from `design/inventory/project/panes.json`. Done when: view citations reach 100 percent. Cheaper substitute: Gantt only.
 - [ ] Specify every Project dialog. Done when: dialog citations reach 100 percent. Cheaper substitute: names only.
+- [ ] Specify the modernised Project surface under `### Modernisation` in its chapter of `design/SPEC.md`: every inventoried tab, group and command keeps its place, drawn with the Word, Excel and PowerPoint shell (title bar with search, Fluent glyphs, rounded controls, Mica, light and dark themes, the Simplified Ribbon option, Backstage, task panes, dialogs and status bar), and a table lists each layout change from the classic app (for example the Gantt bar styles, the timeline, the view bar, and grid headers matching Excel's) with the Word, Excel or PowerPoint pattern it follows and the inventory ids it moves. Done when: the table has a row per changed region and `python scripts/inventory-report.py --cited-in design/SPEC.md --app project` still reports 100 percent. Cheaper substitute: copying the classic app's dated layout, or redesigning beyond patterns Word, Excel and PowerPoint already use. Owner request 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 5).
 - [ ] Commit: `spec: add Project surface chapter`
 
 **Test checkpoint:** `python scripts/inventory-report.py --cited-in design/SPEC.md --app project` reports 100 percent of `tab`, `view` and `dialog` records cited.
@@ -296,6 +298,7 @@ The Outlook chapter specifies the mail and calendar surface for the client chose
 - [ ] Specify the Mail layout: navigation bar, folder pane, message list rows (single and compact), conversation threading, reading pane positions, unread and flagged states. Done when: each element has tokens and sizes. Cheaper substitute: a two-column list and preview.
 - [ ] Specify the compose and read windows, including inline replies in the reading pane. Done when: both cite their ids. Cheaper substitute: compose as a modal dialog only.
 - [ ] Specify calendar, People and Tasks views and every Outlook dialog. Done when: view and dialog citations reach 100 percent. Cheaper substitute: Month view only.
+- [ ] Specify the modernised Outlook surface under `### Modernisation` in its chapter of `design/SPEC.md`: every inventoried tab, group and command keeps its place, drawn with the Word, Excel and PowerPoint shell (title bar with search, Fluent glyphs, rounded controls, Mica, light and dark themes, the Simplified Ribbon option, Backstage, task panes, dialogs and status bar), and a table lists each layout change from the classic app (for example the navigation bar, folder pane, message list density, reading pane and compose window) with the Word, Excel or PowerPoint pattern it follows and the inventory ids it moves. Done when: the table has a row per changed region and `python scripts/inventory-report.py --cited-in design/SPEC.md --app outlook` still reports 100 percent. Cheaper substitute: copying the classic app's dated layout, or redesigning beyond patterns Word, Excel and PowerPoint already use. Owner request 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 5).
 - [ ] Commit: `spec: add Outlook surface chapter`
 
 **Test checkpoint:** `python scripts/inventory-report.py --cited-in design/SPEC.md --app outlook` reports 100 percent of `tab`, `view` and `dialog` records cited.
@@ -322,21 +325,21 @@ Parity includes keyboard and assistive technology: KeyTips, F6 region cycling, s
 
 ## 14. Mockups and Sign-Off
 
-A static mockup per app, built from the tokens, glyph set and chapters, lets the owner judge "same place, different look" before code exists. Mockups contain no Microsoft artwork.
+A static mockup per app, built from the tokens, glyph set and chapters, lets the owner judge "same place, different look" before code exists. Mockups contain no Microsoft artwork. **Groomed 2026-10-23:** the pinned independent reviewer signs off each mockup and the owner audits later (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 3); the `owner-decision` Need is removed.
 
 **Phase:** 2
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
 1. Draw `design/mockups/<app-id>.svg` for each app at 1920 by 1080. Done when: six mockups pass the image-asset checker.
-2. Record the owner's sign-off per app in `design/SPEC.md` under `## Sign-off`. Done when: six dated rows exist and the Need is removed.
+2. Record the reviewer's sign-off per app in `design/SPEC.md` under `## Sign-off`. Done when: six dated rows exist. **Corrected 2026-10-23:** was the owner's sign-off.
 
 - [ ] Draw the word-processor mockup in `design/mockups/<writer-id>.svg` with the Home tab, a page and the status bar. Done when: region sizes match the Shell chapter within 1 pixel. Cheaper substitute: a traced screenshot of Word.
 - [ ] Draw the spreadsheet, presentation, diagram, project and mail mockups in `design/mockups/`. Done when: five more SVGs exist at 1920x1080. Cheaper substitute: one mockup with swapped titles.
-- [ ] Overlay each mockup on its Microsoft reference capture in `R:\scratch\mockup-overlay\` and record region offsets in `design/SPEC.md` under `## Mockup review`. Done when: every region offset is at most 2 pixels. Cheaper substitute: committing the overlay with Microsoft pixels in it.
-- [ ] Record the owner's per-app sign-off in `design/SPEC.md` under `## Sign-off`, then remove `owner-decision` from this section. Done when: six rows carry a date and decision. Cheaper substitute: one blanket approval.
+- [ ] Overlay each mockup on its Microsoft reference capture in `R:\scratch\mockup-overlay\` and record region offsets in `design/SPEC.md` under `## Mockup review`. Done when: every region the `### Modernisation` tables leave unchanged is within 2 pixels of the capture, and every region they change matches its row's specified position and size within 2 pixels. Cheaper substitute: committing the overlay with Microsoft pixels in it, or holding a modernised region to the classic capture. **Corrected 2026-10-23:** held every region to the capture, which a modernised Outlook, Visio or Project region cannot meet.
+- [ ] Record the independent reviewer's per-app sign-off in `design/SPEC.md` under `## Sign-off`: date, reviewer and model, verdict against the chapter (and, for Outlook, Visio and Project, against its `### Modernisation` table), and the review record path, with a line that the owner audits it later (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 3). Done when: six rows carry a date, reviewer, verdict and record. Cheaper substitute: one blanket approval, or the writer signing its own mockups. **Corrected 2026-10-23:** was the owner's sign-off.
 - [ ] Commit: `spec: add app mockups and record sign-off`
 
 **Test checkpoint:** `Get-ChildItem design/mockups/*.svg | ForEach-Object { python scripts/check-image-asset.py $_.FullName --format svg }` exits 0 for six files and `python scripts/check-design-doc.py design/SPEC.md --require Sign-off` exits 0.

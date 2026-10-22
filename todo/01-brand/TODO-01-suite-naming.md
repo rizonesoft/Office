@@ -253,21 +253,21 @@ Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL,
 
 The Microsoft Store is where a Windows-only suite is found, and an app's Store name is checked and reserved only in Partner Center, under the publisher's developer account, so no unattended run can check it. Filed 2026-10-22 from §5, whose context names the Store among the package identifiers but whose checks could not reach it.
 
-**Owner decision 2026-10-22:** no Store for now; the name check moves to the release phase, and winget is the Windows channel until then.
+**Owner decision 2026-10-22:** no Store for now; the name check moves to the release phase, and winget is the Windows channel until then. **Owner decision 2026-10-22 (later the same day):** no Microsoft Store at all; the Inno Setup installer is the channel and the MSIX package waits on signing (`docs/specs/2026-10-23-campaign-scope-design.md`, decisions 11 and 14). **Groomed 2026-10-23:** the section now records that decision instead of checking names in Partner Center.
 
 **Phase:** 7
-**Needs:** store-account, operator
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
-1. Check each name in Partner Center's reserve-a-name step. Done when: `docs/brand/naming-clearance.md` has a Microsoft Store row per name with the result and date.
+1. Record the no-Store decision. Done when: `docs/brand/naming-clearance.md` has a `### Microsoft Store` subsection saying no name is checked or reserved, with the date and the record it comes from.
 
-- [ ] Check "Rizonesoft Office" and the six full app names in Partner Center (Apps and games, New product, Reserve your app's name) and record each result in `docs/brand/naming-clearance.md` under `### Microsoft Store`. Done when: seven rows each read `reserved`, `available` or `taken` with the date. Cheaper substitute: reading the Store's search results, which miss reserved but unpublished names.
-- [ ] Reserve the names the owner decides to reserve, and record which. Done when: each reserved name's row says so with the date. Cheaper substitute: leaving every name unreserved until release.
-- [ ] Commit: `brand: record Microsoft Store name availability`
+- [ ] Write `### Microsoft Store` in `docs/brand/naming-clearance.md`: no Store listing (owner decision 2026-10-22), so no Partner Center check or reservation is made, citing `docs/specs/2026-10-23-campaign-scope-design.md`. Done when: the subsection names the decision, the date and the record. Cheaper substitute: deleting the Store row silently. **Corrected 2026-10-23:** checked and reserved the seven names in Partner Center.
+- [ ] Record in `docs/brand/NAMES.md` under `## Channels` that releases ship as the Inno Setup installer on GitHub Releases and that a Store listing would need a new owner decision. Done when: `python scripts/check-design-doc.py docs/brand/NAMES.md --require Channels` exits 0. Cheaper substitute: leaving the channel to the release notes. **Corrected 2026-10-23:** reserved the names the owner chose.
+- [ ] Commit: `brand: record that there is no Microsoft Store listing`
 
-**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require "Microsoft Store"` exits 0.
+**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require "Microsoft Store"` exits 0 and `python scripts/check-design-doc.py docs/brand/NAMES.md --require Channels` exits 0.
 
 ## Verification
 

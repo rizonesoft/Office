@@ -22,6 +22,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 - Legal boundary: the inventory records names, positions and behaviour as text and numbers only. It never commits Microsoft icons, screenshots or artwork; screenshots stay in `R:\scratch`.
 - -> XREF: D02 T02 §3 -- the shell layout spec is measured from the shell chrome inventory in §4
 - -> XREF: D03 T01 §13 -- application TODO domains are authored from this inventory, every inventory record owned by exactly one section (1:1), proven by §22
+- -> XREF: D03 T01 §14 -- decides each cloud-backed record's disposition, the field §28 adds
 
 ## Outcome
 
@@ -65,6 +66,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 25 | §25 | Audit control ID baseline | §19 | [ ] |
 | 26 | §26 | Audit Microsoft-free rule | §21 | [ ] |
 | 27 | §27 | Checker mutation sweep | §23 | [ ] |
+| 28 | §28 | Record dispositions | §18, §22, §23 | [ ] |
 
 ## 1. Inventory Schema Checker
 
@@ -717,6 +719,28 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [ ] Commit: `inventory: prove every checker rule with a mutation sweep (D02 T01 §27)`
 
 **Test checkpoint:** `python -B scripts/mutation-sweep-inventory.py` exits 0 and prints `survivors: 0`; `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes.
+
+## 28. Record Dispositions
+
+Owner decision 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 6): every inventoried control that depends on a Microsoft cloud service (Copilot, Designer, Editor, Translator, cloud dictation, stock images and icons, Loop, Teams meetings, Stocks and Geography data types, Researcher, AppSource add-ins and the like) gets a working equivalent of our own, and one with no possible equivalent is excluded with a reason, never left as a dead control. The inventory therefore needs a field saying which records are built as captured, built as an equivalent, or excluded, and the coverage and ownership checks need to honour it. D03 T01 §14 decides each record's value; this section adds the field and the checks.
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add `disposition` to `design/inventory/schema.json` with its rules. Done when: `python scripts/check-inventory.py` refuses an `excluded` record with no reason.
+2. Teach `scripts/inventory-report.py` the three dispositions. Done when: coverage and `--owners` treat each as below, under test.
+
+- [ ] Add an optional `disposition` field to the record definition in `design/inventory/schema.json` with the values `build` (the default when absent), `equivalent` and `excluded`. Done when: a fixture record with `"disposition": "unknown"` fails `python scripts/check-inventory.py`. Cheaper substitute: a free-text note field, which no check can read.
+- [ ] Require `dispositionReason` (one sentence, no web address, under the schema's `noLink` rule) when `disposition` is `equivalent` or `excluded`, naming the cloud service and, for `equivalent`, what replaces it. Done when: fixtures without a reason fail and with one pass in `scripts/tests/test_check_inventory.py`. Cheaper substitute: allowing a bare `excluded`.
+- [ ] Count dispositions in `scripts/inventory-report.py`: coverage reports `build`, `equivalent` and `excluded` separately per app, and an `excluded` record counts as accounted for. Done when: a test over a three-record fixture prints each count. Cheaper substitute: dropping excluded records from the totals, which hides them.
+- [ ] Make `python scripts/inventory-report.py --owners --check` (§22) refuse an `excluded` record that a section claims on an `> **Implements:**` line, and require every `build` or `equivalent` record to be owned. Done when: a test with a claimed excluded record and one with an unowned equivalent record each exit 1 naming the id. Cheaper substitute: letting excluded records be claimed, which reopens dead controls.
+- [ ] Document the field in `design/inventory/REFERENCE.md` with the owner decision and the rule that only D03 T01 §14 sets it. Done when: `python scripts/check-design-doc.py design/inventory/REFERENCE.md --require Disposition` exits 0. Cheaper substitute: the schema description alone.
+- [ ] Commit: `inventory: add record dispositions for cloud features`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` and `python -m unittest discover -s scripts/tests -p "test_inventory_report*.py"` pass, and `python scripts/check-inventory.py` exits 0 on the committed inventory.
 
 ## Verification
 

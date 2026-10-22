@@ -221,22 +221,22 @@ One command turns the SVG masters into every platform format, so icons are never
 
 ## 7. Distinctness Review and Owner Sign-Off
 
-The family is compared side by side with Microsoft's current app and file icons so the owner can confirm nothing could be mistaken for Microsoft's. The comparison sheet is built in `R:\scratch` and never committed, because it contains Microsoft artwork.
+The family is compared side by side with Microsoft's current app and file icons so the owner can confirm nothing could be mistaken for Microsoft's. **Groomed 2026-10-23:** the owner delegated the sign-off to the pinned independent reviewer, recorded with its evidence for the owner to audit later (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 3); the `owner-decision` Need is removed. The comparison sheet is built in `R:\scratch` and never committed, because it contains Microsoft artwork.
 
 **Phase:** 1
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
 1. Build the comparison sheet in `R:\scratch` and tick each Distinctness rule from `docs/brand/icon-language.md`. Done when: `docs/brand/icon-distinctness.md` records a pass or fail per rule per icon.
-2. Record the owner's sign-off. Done when: `docs/brand/icon-distinctness.md` has `## Sign-off` with the date.
+2. Record the reviewer's sign-off. Done when: `docs/brand/icon-distinctness.md` has `## Sign-off` with the date, the reviewer and the review record. **Corrected 2026-10-23:** was the owner's sign-off.
 
 - [ ] Build the side-by-side comparison sheet in `R:\scratch\icon-review\` from `build/icons/` and Microsoft's icons. Done when: the sheet exists outside the repository and `git status --short` shows no image from it. Cheaper substitute: committing Microsoft icons for reference.
 - [ ] Record a pass or fail per Distinctness rule per icon in `docs/brand/icon-distinctness.md`. Done when: every app and file icon has a row and no cell is empty. Cheaper substitute: one overall verdict.
 - [ ] Redraw any failed icon in its §3, §4 or §5 file and re-run `python scripts/build-icons.py`. Done when: every row in `docs/brand/icon-distinctness.md` reads pass. Cheaper substitute: changing only the colour of a failed icon.
 - [x] (Owner decision 2026-10-22: decided ahead of the sign-off, choosing B, the symbol 35% toward black, over a whiter frost and the approved drawing.) Put the measured `lg` symbol contrast from `docs/brand/icon-language.md` (Accessibility: 46% to 100% of symbol pixels at 3:1 or more) to the owner with a darker-symbol variant beside the approved one, and record the choice in `docs/brand/icon-distinctness.md`. Done when: the choice and date are recorded, and a darker symbol, if chosen, is built and the `Palette` test extended to `lg`. Cheaper substitute: leaving the measured contrast unmentioned at sign-off.
-- [ ] Record the owner's sign-off with date in `docs/brand/icon-distinctness.md` under `## Sign-off`, then remove the `owner-decision` Need. Done when: the section names the date and the decision. Cheaper substitute: treating silence as approval.
+- [ ] Record the independent reviewer's sign-off in `docs/brand/icon-distinctness.md` under `## Sign-off`: the date, the reviewer and model from `.conclave/reviewers.toml`, its verdict per icon, the review record path, and a line that the owner audits it later (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 3). Done when: the section names the date, the reviewer, the verdict and the record. Cheaper substitute: treating silence as approval, or the writer signing its own work. **Corrected 2026-10-23:** was the owner's sign-off, then removing the `owner-decision` Need.
 - [ ] Commit: `brand: record icon distinctness review`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/icon-distinctness.md --require Sign-off` exits 0 and `Select-String -Path docs/brand/icon-distinctness.md -Pattern "\| fail \|"` finds nothing.

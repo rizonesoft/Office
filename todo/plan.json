@@ -1,6 +1,6 @@
 {
   "title": "Rizonesoft Office implementation plan",
-  "acceptance": "Every element in design/inventory works in its app at its inventoried position, and OOXML files round-trip.",
+  "acceptance": "Every element in design/inventory works in its app at its inventoried position (for Outlook, Visio and Project, its modernised position in design/SPEC.md) or is excluded with a recorded reason, OOXML files round-trip, and each app ships as a draft release.",
   "phases": {
     "0": "Repository and tooling",
     "1": "Brand, icons and GitHub graphics",
