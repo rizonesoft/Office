@@ -269,7 +269,8 @@ class Inventory(unittest.TestCase):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name" in p for p in self.problems()), text)
         # Ordinary text with dots stays valid, and dotted ids are not host names.
-        self.write("word/ribbon.json", [dict(TAB, label="e.g. Save As..."), dict(GROUP, behaviour="Version 16.0 only.")])
+        self.write("word/ribbon.json", [dict(TAB, label="e.g. Save As..."),
+                                        dict(GROUP, behaviour="Version 16.0 only.")])
         self.assertEqual(self.problems(), [])
 
     def test_a_host_name_ending_a_sentence_is_refused(self):
@@ -318,7 +319,8 @@ class Inventory(unittest.TestCase):
         # Audit round 2, finding 3: a source stamped with a build needs capturedFrom, and the build must be recorded.
         rec = {k: v for k, v in PASTE.items() if k != "capturedFrom"}
         self.write("word/ribbon.json", [TAB, rec])
-        self.assertTrue(any("source requires capturedFrom" in p or "missing capturedFrom" in p for p in self.problems()))
+        problems = self.problems()
+        self.assertTrue(any("source requires capturedFrom" in p or "missing capturedFrom" in p for p in problems))
         self.write("word/ribbon.json", [TAB, dict(PASTE, source="uia:1.2.3.4", capturedFrom="1.2.3.4")])
         problems = self.problems()
         self.assertTrue(any("source build 1.2.3.4 is not a build" in p for p in problems), problems)

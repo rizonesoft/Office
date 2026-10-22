@@ -13,7 +13,8 @@ named files; every parent names an existing record (resolved across all of desig
 checked alone) and no parent chain loops back; no string anywhere in a record holds a link (the schema's noLink rule),
 since the inventory keeps facts and our own words, never web pages; captureProfile and capturedFrom name a profile and
 a build that design/inventory/REFERENCE.md records, and a source stamped with a build matches capturedFrom. A file
-that repeats a member inside one object is unreadable, since JSON would silently keep only the last value. With --require-behaviour every control also needs a non-blank behaviour sentence. A file named
+that repeats a member inside one object is unreadable, since JSON would silently keep only the last value.
+With --require-behaviour every control also needs a non-blank behaviour sentence. A file named
 baseline.json is the imported control identifier baseline (scripts/import-office-ids.py) and is checked against
 baseline.schema.json instead: its columns, and every cell's type (identifier, placement, policy id or null).
 Exit 0 clean, 1 with one line per problem, 2 when a file cannot be read or parsed. Stdlib only.
