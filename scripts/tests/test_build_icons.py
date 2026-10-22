@@ -344,8 +344,9 @@ class AppMasters(unittest.TestCase):
             y += size + 16
 
     def test_contact_sheet_is_its_own_mode(self):
-        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+        with self.assertRaises(SystemExit) as refused, contextlib.redirect_stderr(io.StringIO()):
             build_icons.main(["--check", "--contact-sheet", "unused.png"])
+        self.assertEqual(refused.exception.code, 2)  # argparse's usage error, not a success
 
 
 class MonoMark(unittest.TestCase):
