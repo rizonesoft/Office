@@ -377,9 +377,9 @@
       }
     },
     "noHost": {
-      "description": "No host name in text a person reads: any dotted name ending in a label of two or more letters, such as support.microsoft.co.uk. Identifier fields carry noLink only, since ids such as word.command.about are dotted names too.",
+      "description": "No host name in text a person reads: any dotted name ending in a label of two or more letters, such as support.microsoft.co.uk, including one followed by the full stop that ends a sentence. Identifier fields carry noLink only, since ids such as word.command.about are dotted names too.",
       "not": {
-        "pattern": "(^|[^A-Za-z0-9.-])[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}(?![A-Za-z0-9.-])",
+        "pattern": "(^|[^A-Za-z0-9.-])[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}(?![A-Za-z0-9-]|\\.[A-Za-z0-9])",
         "description": "host name"
       }
     }

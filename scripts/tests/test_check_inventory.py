@@ -272,6 +272,37 @@ class Inventory(unittest.TestCase):
         self.write("word/ribbon.json", [dict(TAB, label="e.g. Save As..."), dict(GROUP, behaviour="Version 16.0 only.")])
         self.assertEqual(self.problems(), [])
 
+    def test_a_host_name_ending_a_sentence_is_refused(self):
+        # Audit round 3, finding 1: the full stop that ends a sentence does not hide the host before it.
+        for text in ("Visit support.microsoft.co.uk.", "See office.microsoft.ie. Then return."):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name" in p for p in self.problems()), text)
+
+    def test_ecma_whitespace_is_blank_text(self):
+        # Audit round 3, finding 2: U+FEFF is whitespace to the schema (ECMA-262), so it is no label, chord or
+        # behaviour, and the behaviour gate agrees with the schema.
+        sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
+        self.write("word/ribbon.json", [dict(TAB, label="﻿")])
+        self.assertTrue(any(".label" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB])
+        self.write("word/shortcuts.json", [dict(sc, shortcut="﻿")])
+        self.assertTrue(any(".shortcut" in p for p in self.problems()))
+        self.write("word/shortcuts.json", [dict(sc, shortcut="Ctrl+B")])
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="﻿　")])
+        self.assertTrue(any("behaviour" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB, GROUP, BOLD])
+        self.assertTrue(any("has no behaviour" in p for p in self.problems(behaviour=True)))
+        # The behaviour gate strips the schema's whitespace: a sentence padded with U+FEFF still counts.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="﻿Makes the text bold.")])
+        self.assertEqual(self.problems(behaviour=True), [])
+
+    def test_ecma_translates_whitespace_classes(self):
+        self.assertFalse(ci.ecma(r"\S").search("﻿  "))
+        self.assertTrue(ci.ecma(r"\S").search("\x1c"))  # a C0 separator is not whitespace to ECMA
+        self.assertTrue(ci.ecma(r"^\s*\S").search("﻿ x"))
+        with self.assertRaises(ValueError):
+            ci.ecma(r"[^\S]")
+
     def test_malformed_outlook_rows_are_a_problem_not_a_crash(self):
         # Audit round 2, finding 2: rows that are not a list reached the whole-inventory window gate.
         real = ci.INVENTORY

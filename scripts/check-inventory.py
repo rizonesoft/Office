@@ -62,6 +62,11 @@ def type_ok(value, expected):
 
 
 _PATTERNS = {}
+# ECMA-262 whitespace and line terminators, which JSON Schema's \s and \S mean. Python's differ both ways: U+FEFF is
+# whitespace to ECMA but not to Python, and U+001C to U+001F are whitespace to Python but not to ECMA.
+ECMA_SPACE = ("\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
+              "\u2028\u2029\u202f\u205f\u3000\ufeff")
+_SPACE_CLASS = "".join(f"\\u{ord(c):04x}" for c in ECMA_SPACE)
 
 
 def ecma(pattern):
@@ -72,7 +77,16 @@ def ecma(pattern):
         while i < len(pattern):
             c = pattern[i]
             if c == "\\":
-                out.append(pattern[i:i + 2])
+                escape = pattern[i:i + 2]
+                if escape in ("\\s", "\\S"):  # ECMA's whitespace, not Python's
+                    if in_class:
+                        if escape == "\\S":
+                            raise ValueError(f"unsupported \\S inside a class in {pattern}")
+                        out.append(_SPACE_CLASS)
+                    else:
+                        out.append(f"[{'^' if escape == '\\S' else ''}{_SPACE_CLASS}]")
+                else:
+                    out.append(escape)
                 i += 2
                 continue
             if in_class:
@@ -337,7 +351,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 elif kinds[target] not in TARGET_KINDS:
                     problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
             if require_behaviour and rec.get("kind") == "control":
-                if not str(rec.get("behaviour", "")).strip():
+                if not str(rec.get("behaviour", "")).strip(ECMA_SPACE):  # the schema's whitespace, not Python's
                     problems.append(f"{where}: control {rid} has no behaviour")
     return problems
 

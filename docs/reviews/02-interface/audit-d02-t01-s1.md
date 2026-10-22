@@ -111,3 +111,47 @@ All three findings verified and fixed in the next commit, each with a test that 
 3. P1 a live capture could omit `capturedFrom`: the schema requires `capturedFrom` whenever `source` is stamped with a build, and the checker requires that build to be recorded in `design/inventory/REFERENCE.md` whether or not `capturedFrom` is present (`test_a_live_capture_records_a_recorded_build`). The `PASTE` test fixture, a live capture without `capturedFrom`, broke exactly this rule and now records its build.
 
 The committed inventory still checks clean (exit 0); the checker tests run 47 and pass.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T08:42:36Z
+- Effort: medium
+- Lines: 26
+- Digest: 0af31f37aa7a8af3
+
+### source-defect: needs-attention
+
+1. **P1: Sentence-ending punctuation bypasses the host prohibition.** `design/inventory/schema.json:382` excludes a following dot from the permitted boundary. This record returns `[]` from `check()`:
+
+   ```json
+   {"id":"word.probe","app":"word","kind":"tab","label":"Visit support.microsoft.co.uk."}
+   ```
+
+   The same address without the final period is rejected. Ordinary punctuation therefore defeats the round-2 fix and allows prohibited Microsoft links.
+
+### adversarial: approve
+
+No additional findings beyond the bypasses reported under the other lenses.
+
+### consistency: needs-attention
+
+2. **P1: Python whitespace semantics allow blank text that the schema forbids.** `scripts/check-inventory.py:93` compiles schema patterns with Python `re` without translating ECMAScript whitespace semantics. U+FEFF is whitespace in ECMAScript but matches Python’s `\S`. Set an otherwise valid record’s `label`, `shortcut` or `behaviour` to `"\ufeff"`: each returns `[]`. A control with that behaviour also passes `--require-behaviour`, because the additional check at `scripts/check-inventory.py:340` uses Python `strip()`. Thus invisible whitespace satisfies the required meaningful text and behaviour checks.
+
+### record: approve
+
+No additional receipt or checklist finding.
+
+Both findings were reproduced with in-memory fixtures without modifying files. The committed inventory check returned no problems.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 3
+
+Both findings verified and fixed in the next commit, each with tests that fail against the round 2 checker (fixes stashed). This round was the last by GPT-6 Astra at medium; from round 4 the reviewer is GPT-6.1 Sol at xhigh, the owner's change of 2026-10-22.
+
+1. P1 a host followed by a sentence's full stop passed. `noHost` now ends at anything but a name character or a dot that continues a name, so "Visit support.microsoft.co.uk." is refused (`test_a_host_name_ending_a_sentence_is_refused`).
+2. P1 Python's whitespace stood in for the schema's. `ecma()` now translates `\s` and `\S` to ECMA-262's whitespace and line terminators, which includes U+FEFF and excludes U+001C to U+001F, and refuses `\S` inside a class. The behaviour gate strips that same set (`ECMA_SPACE`), so a label, chord or behaviour of U+FEFF is blank, while a sentence padded with it still counts (`test_ecma_whitespace_is_blank_text`, `test_ecma_translates_whitespace_classes`).
+
+The committed inventory still checks clean; the checker tests run 50 and pass.
