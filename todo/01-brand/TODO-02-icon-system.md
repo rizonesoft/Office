@@ -42,7 +42,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | 3 | §3 | Six app icon masters | §1 | [x] |
 | 4 | §4 | Small-size app icon variants | §3 | [x] |
 | 5 | §5 | Document file-type icons | §3 | [x] |
-| 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [ ] |
+| 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [x] |
 | 7 | §7 | Distinctness review and owner sign-off | §6 | [ ] |
 
 ## 1. Icon Design Language Brief
@@ -212,9 +212,12 @@ One command turns the SVG masters into every platform format, so icons are never
 - [x] Rasterise the file-type icons to PNGs from 16 to 512 and ICOs in `scripts/build-icons.py`. Done when: `assets/icons/files/windows/` holds one ICO per type in `design/icons/files/`. **Corrected 2026-10-22:** said `build/icons/files/` and one ICO per SVG; each type has five drawings and one ICO. Cheaper substitute: exporting only 256 pixels.
 - [x] Verify every output in `scripts/build-icons.py` (`verify()` decodes each PNG, ICO, ICNS and SVG back) and refuse drift with `--check`. Done when: corrupting one committed PNG makes `--check` exit 1 naming the file. **Corrected 2026-10-22:** named `scripts/check-image-asset.py` and the plain build, which rewrites a corrupted file. Cheaper substitute: checking only that files exist.
 - [x] Add `build/` to `.gitignore` if it is not already ignored. Done when: `git check-ignore build/icons/apps` prints the path. Cheaper substitute: committing generated rasters with no drift gate. **Corrected 2026-10-22:** the rasters are committed on purpose, under the `--check` gate in CI; `build/` holds only the contact sheet.
-- [ ] Commit: `brand: add icon export pipeline`
+- [x] Commit: `brand: add icon export pipeline`
 
 **Test checkpoint:** `python scripts/build-icons.py --check` exits 0 on a clean checkout, and exits 1 naming the file after `Set-Content assets/icons/png/<app>/<app>-32.png "x"` (run on a scratch copy with `--root`). **Corrected 2026-10-22:** named `build/` and the plain build.
+
+> **Verified:** 2026-10-22 | §6 | c68c65f8bff1a1d8a3bea86c2b652821cc191231
+> **Review:** `docs/reviews/d01-t02-s6.json`
 
 ## 7. Distinctness Review and Owner Sign-Off
 

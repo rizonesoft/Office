@@ -1,0 +1,32 @@
+{
+  "ref": "D01 T02 \u00a76",
+  "title": "Icon Export Pipeline",
+  "implementation_sha": "c68c65f8bff1a1d8a3bea86c2b652821cc191231",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T02-s6.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T02-s6.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T02-s6.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/build-icons.py --check -> icons current: 981 files",
+    "scratch copy with assets/icons/png/write/write-32.png set to \"x\": build-icons --check --root -> exit 1, out of date: assets/icons/png/write/write-32.png",
+    "python scripts/check-image-asset.py assets/icons/windows/write.ico --format ico --size 16x16 --size 256x256 -> ok",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (42 tests)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at c68c65f"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}
