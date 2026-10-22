@@ -351,12 +351,15 @@ class Lineup(unittest.TestCase):
             lefts = [float(x) for x, *_ in icons]
             self.assertTrue(all(b - a >= 96 for a, b in zip(lefts, lefts[1:])), (theme, lefts))
             top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</title>", 1)[1], flags=re.S)
-            names = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)[0::2]
-            for (name, _), left, label in zip(rows, lefts, names):
-                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
-                         f'height="{h}">{label}</svg>')
-                x0, _, x1, _ = Image.open(io.BytesIO(build_icons.render(alone, w, h))).getchannel("A").getbbox()
-                self.assertLess(abs((x0 + x1) / 2 - (left + 48)), 3, (theme, name))
+            labels = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
+            # Both lines under an icon (its name, then its counterpart) are centred in that icon's column.
+            for (name, _), left, pair in zip(rows, lefts, zip(labels[0::2], labels[1::2])):
+                for label in pair:
+                    alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
+                             f'height="{h}">{label}</svg>')
+                    box = Image.open(io.BytesIO(build_icons.render(alone, w, h))).getchannel("A").getbbox()
+                    self.assertIsNotNone(box, (theme, name))
+                    self.assertLess(abs((box[0] + box[2]) / 2 - (left + 48)), 3, (theme, name))
 
     def test_text_reads_on_each_github_canvas(self):
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
