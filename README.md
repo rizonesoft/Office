@@ -1,17 +1,29 @@
-<p align="center"><img src="assets/brand/svg/rizonesoft-office-lockup-light.svg" alt="Rizonesoft Office" height="72"></p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/github/banner-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/github/banner-light.png">
+  <img src="docs/assets/github/banner-light.png" alt="Rizonesoft Office: the open-source office suite for Windows" width="100%">
+</picture>
+
+[![CI](https://github.com/rizonesoft/Office/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rizonesoft/Office/actions/workflows/ci.yml)
 
 # Rizonesoft Office
 
-Rizonesoft Office is an office suite that matches Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is a Windows desktop suite built with WinUI 3 in C# on .NET, shipped as an MSIX package and a classic installer.
+Rizonesoft Office is an open-source office suite for Windows, being built to match Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is planned as a Windows desktop suite in WinUI 3 with C# on .NET, to ship as an MSIX package and a classic installer.
 
-| App | For the work of |
-| --- | --------------- |
-| Rizonesoft Write | Microsoft Word |
-| Rizonesoft Grid | Microsoft Excel |
-| Rizonesoft Stage | Microsoft PowerPoint |
-| Rizonesoft Flow | Microsoft Visio |
-| Rizonesoft Plan | Microsoft Project |
-| Rizonesoft Mail | Microsoft Outlook |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/github/lineup-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/github/lineup-light.png">
+  <img src="docs/assets/github/lineup-light.png" alt="The six apps: Write, Grid, Stage, Flow, Plan and Mail" width="100%">
+</picture>
+
+| App | For the work of | Status |
+| --- | --------------- | ------ |
+| Rizonesoft Write | Microsoft Word | Planned |
+| Rizonesoft Grid | Microsoft Excel | Planned |
+| Rizonesoft Stage | Microsoft PowerPoint | Planned |
+| Rizonesoft Flow | Microsoft Visio | Planned |
+| Rizonesoft Plan | Microsoft Project | Planned |
+| Rizonesoft Mail | Microsoft Outlook | Planned |
 
 Rizonesoft Office is not affiliated with or endorsed by Microsoft. Microsoft, Word, Excel, PowerPoint, Visio, Project and Outlook are trademarks of Microsoft Corporation, named here only to describe compatibility.
 
