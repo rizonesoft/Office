@@ -35,7 +35,7 @@ Sections: 19 | Checklist items: 93
 | Status | Reference  | Deliverable                                  | Needs          | Items |
 | ------ | ---------- | -------------------------------------------- | -------------- | ----- |
 | [x]    | D01 T01 §1 | Naming Brief and Constraints                 | none           | 5     |
-| [ ]    | D01 T01 §2 | Collision Screen for the Chosen Names        | none           | 6     |
+| [x]    | D01 T01 §2 | Collision Screen for the Chosen Names        | none           | 6     |
 | [ ]    | D01 T01 §3 | Owner Selection of Suite and App Names       | none           | 4     |
 | [ ]    | D01 T01 §4 | Knockout Trademark Screen for Chosen Names   | none           | 5     |
 | [ ]    | D01 T01 §5 | Domain, GitHub and Package Name Availability | none           | 4     |
@@ -132,6 +132,6 @@ Sections: 3 | Checklist items: 13
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 22/91 verified sections, 7 ready to run now.
+Progress: 23/91 verified sections, 7 ready to run now.
 
-Checklist: 140/520 items completed (includes Commit items).
+Checklist: 141/520 items completed (includes Commit items).

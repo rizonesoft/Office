@@ -36,7 +36,7 @@ title: "TODO-01 -- Suite and App Naming"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Naming brief and constraints | D00 T01 §1 | [x] |
-| 2 | §2 | Collision screen for the chosen names | §1 | [ ] |
+| 2 | §2 | Collision screen for the chosen names | §1 | [x] |
 | 3 | §3 | Owner selection of suite and app names | §2 | [ ] |
 | 4 | §4 | Knockout trademark screen for chosen names | §3 | [ ] |
 | 5 | §5 | Domain, GitHub and package name availability | §3 | [ ] |
@@ -94,9 +94,12 @@ The owner chose on 2026-10-20, ahead of a longlist: the suite is Rizonesoft Offi
 - [x] Web-search "Rizonesoft" and record other companies, products and domains using it in `docs/brand/naming-candidates.md` under `## Collisions`. Done when: the row names sources or `none found` with the search date. Cheaper substitute: assuming the owner's own brand is clear everywhere.
 - [x] Record precedent for "<house brand> Office" suite names (WPS Office, SoftMaker Office, ONLYOFFICE, Polaris Office, LibreOffice) with their register entries under `## Collisions`. Done when: at least three precedents name a register record or source URL. Cheaper substitute: assuming "Office" is free to use without precedent.
 - [x] Web-search each app name as a software product (for example "Grid spreadsheet", "Flow diagram app", "Stage presentation app") and record prominent conflicts, including Microsoft Flow (renamed Power Automate in 2019) and Microsoft Planner. Done when: six rows each name sources or `none found` with the date. Cheaper substitute: relying on memory, as the seeds in this section did.
-- [ ] Commit: `brand: record chosen names and collision screen`
+- [x] Commit: `brand: record chosen names and collision screen`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-candidates.md --require Chosen --require "Alternatives considered" --require Collisions --require "Rizonesoft Office"` exits 0.
+
+> **Verified:** 2026-10-22 | §2 | c2f121ad413b05ba56a296a4b16be56c062edd03
+> **Review:** `docs/reviews/d01-t01-s2.json`
 
 ## 3. Owner Selection of Suite and App Names
 
