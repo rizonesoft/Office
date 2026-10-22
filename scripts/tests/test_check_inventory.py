@@ -409,7 +409,9 @@ class Inventory(unittest.TestCase):
 
     def test_compatibility_characters_with_an_ascii_form_are_refused_in_text(self):
         # Audit round 22, re-think of the text rule: fullwidth digits spell 127.0.0.1 to IDNA, so every compatibility
-        # character whose normalised form holds a visible ASCII character is refused, not one family per round.
+        # character whose normalised form holds a visible ASCII character is refused, not one family per round. The
+        # class is generated from the Unicode data of the Python CI pins; a newer Python fails here until it is
+        # regenerated, which is the signal to do so.
         import unicodedata
         one = chr(0xFF11)
         for text in (one + "27" + ".0.0.1", "127.0.0." + one, chr(0x2460) + "com", chr(0xFB01) + "le"):

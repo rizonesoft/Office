@@ -912,3 +912,5 @@ python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> R
 python scripts/check-inventory.py                                          -> exit 0
 python -m unittest discover -s scripts/tests                               -> Ran 622 tests, OK (skipped=2)
 ```
+
+CI on the round 22 fix commit failed: CI pins Python 3.15 (Unicode 17.0), whose data adds U+A7F1, a compatibility character with an ASCII form that the class generated under the local Python 3.14 (Unicode 16.0) lacked. The class is now generated from the CI pin's Unicode 17.0 data (779 characters), its description names the version, and the checker tests pass under both 3.14 and 3.15. The full suite now runs under the CI pin before every push.
