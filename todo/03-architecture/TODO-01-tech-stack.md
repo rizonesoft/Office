@@ -23,6 +23,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 - -> XREF: D02 T01 §22 -- the record-level ownership check that holds every inventory record to exactly one owning section
 - -> XREF: D01 T01 §3 -- `docs/brand/NAMES.md` records Plan's own native format; §5 names its extension
 - -> XREF: D00 T02 §2 -- the dependency licence policy decided in §11 is enforced through the third-party notices file
+- -> XREF: D01 T02 §5 -- Plan's native file-type icon waits on the extension §5 names
 
 ## Outcome
 
@@ -152,6 +153,7 @@ The suite reads and writes Microsoft's formats as first-class: `.docx`, `.xlsx`,
 - [ ] Assemble round-trip corpora (20 files each for `.docx`, `.xlsx`, `.pptx`, `.vsdx`) in `R:\scratch\corpus\`. Done when: corpus lists are in the record. Cheaper substitute: files created by our own writer.
 - [ ] Record the `.mpp` decision (MPXJ, LGPL, read-only versus own reader) and the `.pst` decision. Done when: each states read and write scope. Cheaper substitute: silently excluding Project and Outlook stores.
 - [ ] Name Plan's native file extension and its format, and record it in `docs/brand/NAMES.md` under `## File formats`. Done when: the Plan row names the extension and `python scripts/check-design-doc.py docs/brand/NAMES.md` exits 0. Cheaper substitute: saving Plan's projects only as Project XML, which loses what Project XML cannot hold. (Deferred from D01 T01 §3 on 2026-10-22.)
+- [ ] Add Plan's native extension to `TYPES` in `scripts/lib/filetype_design.py` (app `plan`, its MIME type) and run `python scripts/build-icons.py`, so its file-type icon is drawn (deferred from D01 T02 §5). Done when: `design/icons/files/<ext>-lg.svg` exists and passes `python scripts/check-image-asset.py <file> --format svg`, and the `FileTypes` test lists the extension. Cheaper substitute: reusing the `mpp` icon.
 - [ ] Commit: `arch: record file format strategy`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/specs/<dated>-file-formats-design.md --require Decision --require "Round-trip"` exits 0.

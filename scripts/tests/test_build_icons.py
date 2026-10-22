@@ -91,6 +91,20 @@ class FileTypes(unittest.TestCase):
         self.assertIn("stroke-dasharray", ft.filetype_svg("dotx", "lg"))
         self.assertNotIn("#f59f0b", ft.filetype_svg("docx", "lg"))
 
+    def test_every_type_the_plan_names_is_drawn_and_marked_by_kind(self):
+        # The 26 types of todo/01-brand/TODO-02-icon-system.md section 5; Plan's native format waits on its extension
+        # (D03 T01 section 5).
+        named = ("docx docm dotx doc rtf odt xlsx xlsm xltx xls csv ods pptx pptm potx ppt odp vsdx vsdm vstx mpp mpt "
+                 "eml msg ics vcf").split()
+        self.assertEqual(list(ft.TYPES), named)
+        for ext, (_, kind, _) in ft.TYPES.items():
+            for variant in ("lg", "lg-badge-md", "lg-badge-sm", "md", "sm"):
+                svg = (SCRIPTS.parent / f"design/icons/files/{ext}-{variant}.svg").read_text(encoding="utf-8")
+                self.assertEqual(svg, ft.filetype_svg(ext, variant), (ext, variant))
+            large = ft.filetype_svg(ext, "lg")
+            self.assertEqual("#f59f0b" in large, kind == "macro", ext)  # the amber macro mark
+            self.assertEqual("stroke-dasharray" in large, kind == "template", ext)  # the dashed template page
+
     def test_verify_refuses_live_text(self):
         problems = build_icons.verify({"design/icons/files/x-lg.svg": b'<svg><text>DOCX</text></svg>'})
         self.assertTrue(any("live text" in p for p in problems))
