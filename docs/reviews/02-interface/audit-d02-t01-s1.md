@@ -854,3 +854,61 @@ Both findings verified and fixed in the next commit; the first test fails agains
 2. P3 noLink's dotted-host-with-path alternative was untested on its own: `test_a_dotted_host_with_a_path_is_a_link_in_identifier_fields` (`uiaId: microsoft.de/help`).
 
 The full tooling suite (618 tests) passes locally before the push.
+
+## Round 22: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T14:20:06Z
+- Effort: xhigh
+- Lines: 24
+- Digest: b9a601a5ae5d5de2
+
+### source-defect: needs-attention
+
+1. **[P1] Hexadecimal IPv4 components bypass address rejection.** `design/inventory/schema.json:423` accepts a valid tab with `label:"127.0x0.1"`. Schema validation and `check()` return `[]`; the CLI returns **0**. On Windows, `socket.inet_ntoa(socket.inet_aton("127.0x0.1"))` returns `"127.0.0.1"`. This three-part address falls outside the documented two-part decimal exception.
+
+### adversarial: needs-attention
+
+2. **[P1] Filename casing bypasses baseline validation on Windows.** `scripts/check-inventory.py:475` selects the baseline schema using a case-sensitive filename comparison. Using in-memory content overrides, place this array in Word’s baseline:
+
+   ```json
+   [{"id":"word.round22probe","app":"word","kind":"tab","label":"Probe"}]
+   ```
+
+   Checking `design/inventory/word/baseline.json` returns **1**, reporting `expected object`. Checking the same file as `design/inventory/word/BASELINE.JSON` returns **0**. Modeling its directory entry as `BASELINE.JSON` also makes the whole-inventory check return **0**, bypassing baseline envelope, source, columns and row validation.
+
+### consistency: needs-attention
+
+1. **[P1, shared with source-defect]** `design/inventory/schema.json:421` promises rejection of three or more dotted numbers, including IPv4 shorthand. The `127.0x0.1` reproduction passes despite being a three-part IPv4 address. The pattern does not enforce its stated address prohibition.
+
+### record: needs-attention
+
+3. **[P3] The ticked every-rule sensitivity claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` requires disabling any rule to fail the suite. Remove only the row-length guard at `scripts/check-inventory.py:373` in memory: **all 111 tests still pass**. Then remove the last cell from the first committed Word baseline row. The original reports `8 cells, expected 9`; the mutant returns `[]`. Both suite runs redirected fixture writes entirely to memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 22
+
+Round 22 is the last the 22-round cap allows. All three findings were verified and fixed in the next commit, with regression tests: three fail against the round 21 checker (fixes stashed), and the fourth fails when the row-length guard is removed. No independent round reviews these fixes under this audit's cap; that review is owned by `D02 T01 §27` (below).
+
+1. P1 a hexadecimal IPv4 component (`127.0x0.1`, `0x7f.1`) passed. A hexadecimal number beside a full stop is now refused (`test_a_hexadecimal_number_beside_a_full_stop_is_an_address`). The text rule had been patched in rounds 18 to 21 one look-alike family at a time, so it was re-thought rather than patched again: readable text now refuses every compatibility character whose normalised form holds a visible ASCII character (778 BMP characters, generated from Unicode's data: fullwidth letters and digits, circled and superscript numbers, ligatures, the round 20 and 21 characters among them). Only the ellipsis U+2026 stays, under the full stop rules. Characters with no compatibility form (accented letters, dashes) and those whose form is only a space (no-break space) are untouched. No committed inventory text holds any non-ASCII character, and a test checks the class against this Python's Unicode data (`test_compatibility_characters_with_an_ascii_form_are_refused_in_text`). Trade-off: a future label that needs a character such as the trade mark sign U+2122 (normalised TM) is refused and needs a deliberate exception.
+2. P1 a baseline spelled `BASELINE.JSON` skipped the baseline checks on a case-insensitive file system: `is_baseline()` compares the case-folded name, used by both discovery and validation (`test_a_baseline_in_any_case_takes_the_baseline_checks`).
+3. P3 the row-length guard was untested on its own: `test_a_baseline_row_of_the_wrong_length_is_refused`.
+
+## Cap reached
+
+Rounds spent: 22 (Astra 6 medium rounds 1 to 3, GPT-6.1 Sol xhigh rounds 4 to 22; no outage rounds). Every round found real defects, all fixed in their own commits with regression tests proven against the code before the fix. Leftovers:
+
+- The round 22 fixes have no independent review round: owned by `D02 T01 §27`.
+- The record lens found an untested guard in each of rounds 18 to 22, so the ticked claim that every rule's removal fails a test (`D02 T01 §1`) is proven rule by rule rather than systematically: `D02 T01 §27` runs a mutation sweep over every rule in `scripts/check-inventory.py` and every pattern in `design/inventory/schema.json`.
+
+No leftover is a safety, data-integrity or stamp-invalidating defect: the checker refuses more than before at every round, the committed inventory passes it unchanged, and no finding was a regression of `D02 T01 §1`'s stamped behaviour, so the audit confirms its stamp.
+
+## Checkpoint after round 22
+
+```text
+python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 115 tests in 8.186s OK
+python scripts/check-inventory.py                                          -> exit 0
+python -m unittest discover -s scripts/tests                               -> Ran 622 tests, OK (skipped=2)
+```

@@ -32,6 +32,12 @@ INVENTORY = ROOT / "design" / "inventory"
 SCHEMA = INVENTORY / "schema.json"
 BASELINE_SCHEMA = INVENTORY / "baseline.schema.json"
 BASELINE = "baseline.json"
+
+
+def is_baseline(path):
+    """Whether a file is an app's baseline. Windows and macOS file systems ignore case, so BASELINE.JSON is the same
+    file and must take the same checks."""
+    return Path(path).name.casefold() == BASELINE
 SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
 APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
 REFERENCE = "REFERENCE.md"  # the builds and capture profiles records are measured against
@@ -397,7 +403,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     universe.update({f.resolve(): f for f in named})
     records = {}
     for resolved, f in universe.items():
-        data = None if f.name == BASELINE else load(f)  # a baseline holds no records
+        data = None if is_baseline(f) else load(f)  # a baseline holds no records
         records[resolved] = data if isinstance(data, list) else []
     problems = []
     seen, kinds = {}, {}
@@ -472,7 +478,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     for resolved in named_resolved:
         f = universe[resolved]
         data = load(f)
-        if f.name == BASELINE:
+        if is_baseline(f):
             baseline_schema = baseline_schema or load(BASELINE_SCHEMA)
             problems += check_baseline(f, data, baseline_schema, sources)
             continue

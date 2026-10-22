@@ -407,6 +407,49 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_compatibility_characters_with_an_ascii_form_are_refused_in_text(self):
+        # Audit round 22, re-think of the text rule: fullwidth digits spell 127.0.0.1 to IDNA, so every compatibility
+        # character whose normalised form holds a visible ASCII character is refused, not one family per round.
+        import unicodedata
+        one = chr(0xFF11)
+        for text in (one + "27" + ".0.0.1", "127.0.0." + one, chr(0x2460) + "com", chr(0xFB01) + "le"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
+        pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
+        missed = [hex(c) for c in range(0x80, 0x10000) if not 0xD800 <= c <= 0xDFFF and c != 0x2026
+                  and unicodedata.normalize("NFKC", chr(c)) != chr(c)
+                  and any(0x21 <= ord(x) < 0x7F for x in unicodedata.normalize("NFKC", chr(c)))
+                  and not pattern.search(chr(c))]
+        self.assertEqual(missed, [])
+        # Text with no compatibility form, or one that is only a space, is untouched.
+        for text in ("R" + chr(0xE9) + "sum" + chr(0xE9), "Page" + chr(0xA0) + "1", chr(0x2014) + " Gallery"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertEqual(self.problems(), [], ascii(text))
+
+    def test_a_hexadecimal_number_beside_a_full_stop_is_an_address(self):
+        # Audit round 22, finding 1: inet_aton reads 127.0x0.1 and 0x7f.1 as addresses.
+        for text in ("127.0x0.1", "0x7f.1", "1.0X1"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), text)
+
+    def test_a_baseline_in_any_case_takes_the_baseline_checks(self):
+        # Audit round 22, finding 2: on a case-insensitive file system BASELINE.JSON is the baseline.
+        self.assertTrue(ci.is_baseline(Path("word") / "BASELINE.JSON"))
+        self.assertTrue(ci.is_baseline("word/Baseline.Json"))
+        self.assertFalse(ci.is_baseline("word/baseline.json.bak"))
+        self.write("word/ribbon.json", [TAB])
+        named = self.inv / "word" / "BASELINE.JSON"
+        named.write_text(json.dumps([dict(TAB, id="word.probe")]), encoding="utf-8")
+        problems = ci.check([str(named)], inventory=self.inv)
+        self.assertTrue(any("expected object" in p or "is not of type 'object'" in p for p in problems), problems[:3])
+
+    def test_a_baseline_row_of_the_wrong_length_is_refused(self):
+        # Audit round 22, finding 3: the row-length guard, on its own.
+        data = json.loads((ci.INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"][0] = data["rows"][0][:-1]
+        problems = ci.check_baseline(Path("word/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA))
+        self.assertTrue(any("cells, expected" in p for p in problems), problems)
+
     def test_compatibility_expansions_cannot_spell_an_address(self):
         # Audit round 21, finding 1: U+33C2 U+33C7 is a.m.Co. once normalised, an address its raw spelling hides.
         import unicodedata
