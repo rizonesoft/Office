@@ -137,7 +137,7 @@ PowerPoint slides, Visio drawings, Excel charts, shapes in every app, and print 
 
 ## 5. File Format Strategy Decision
 
-The suite reads and writes Microsoft's formats as first-class: `.docx`, `.xlsx`, `.pptx`, `.vsdx` (OOXML), legacy `.doc`, `.xls`, `.ppt`, `.vsd`, Project `.mpp` and `.xml`, Outlook `.msg`, `.eml`, `.pst` and `.ics`, plus ODF, CSV, RTF and PDF export. This record decides per format: own implementation from the open specifications, an existing library, or read-only support.
+The suite reads and writes Microsoft's formats as first-class: `.docx`, `.xlsx`, `.pptx` (OOXML), `.vsdx` (Visio XML, OOXML packaging; **Corrected 2026-10-22:** was listed as OOXML), legacy `.doc`, `.xls`, `.ppt`, `.vsd`, Project `.mpp` and `.xml`, Outlook `.msg`, `.eml`, `.pst` and `.ics`, plus ODF, CSV, RTF and PDF export. This record decides per format: own implementation from the open specifications, an existing library, or read-only support.
 
 **Phase:** 3
 **Needs:** none

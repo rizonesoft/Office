@@ -35,14 +35,14 @@ The bundle ids sit under the owner's domain, rizonesoft.com, reversed.
 
 ## File formats
 
-Where Microsoft's app saves an open, standardised format, the app keeps it as its default: no proprietary format replaces OOXML. Where the counterpart's own format is closed, the app saves its own native format under its own extension, and reads and writes Microsoft's format for exchange. The read and write scope of every format is decided in D03 T01 §5.
+Where Microsoft's app saves an open, documented format, the app keeps it as its default: OOXML (ECMA-376) for Write, Grid and Stage, and Visio's documented `.vsdx` package for Flow (it uses OOXML's packaging, OPC, but a Visio schema that is not part of ECMA-376). Where the counterpart's own format is closed, the app saves its own native format under its own extension. Exchange with Microsoft's formats is within the scope D03 T01 §5 decides per format, which may be read-only (as it may be for `.mpp` and `.pst`).
 
-| App | Default save format | Exchange formats |
+| App | Default save format | Exchange formats (scope set in D03 T01 §5) |
 | --- | --- | --- |
 | Write | `.docx` (OOXML) | `.doc`, `.rtf`, `.odt`, PDF export |
 | Grid | `.xlsx` (OOXML) | `.xls`, `.csv`, `.ods`, PDF export |
 | Stage | `.pptx` (OOXML) | `.ppt`, `.odp`, PDF export |
-| Flow | `.vsdx` (OOXML) | `.vsd`, SVG and PDF export |
+| Flow | `.vsdx` (Visio XML) | `.vsd`, SVG and PDF export |
 | Plan | Its own native format; extension named in D03 T01 §5 | `.mpp`, Project XML (`.xml`) |
 | Mail | `.eml` (RFC 5322) for a saved message | `.msg`, `.pst`, `.ics` |
 
