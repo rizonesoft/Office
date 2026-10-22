@@ -131,7 +131,7 @@ The README shows the banner and lineup with `<picture>` so they match the visito
 **Needs:** none
 **Surface:** no
 
-**Verified 2026-10-22:** on github.com in a dark GitHub theme the dark banner, the live CI badge (passing) and the dark lineup render; GitHub's rendered README (`gh api repos/rizonesoft/Office/readme` as HTML) keeps both `prefers-color-scheme` sources of each picture, which is how the light variants are served to a light theme. The light rendering itself was not viewed: that needs the viewer's OS or browser colour scheme set to light, a setting this session does not change. GitHub serves both light images (`banner-light.png` 104134 bytes and `lineup-light.png` 129380 bytes, status 200, `image/png`), and their markup is the same as the dark pair's, which switched as expected.
+**Verified 2026-10-22:** on github.com in a dark GitHub theme the dark banner, the live CI badge (passing) and the dark lineup render; GitHub's rendered README (`gh api repos/rizonesoft/Office/readme` as HTML) keeps both `prefers-color-scheme` sources of each picture, which is how the light variants are served to a light theme. Both themes were then observed on the public page, logged out, in headless Chrome with its preferred colour scheme forced (`--blink-settings=preferredColorScheme=1` for light, `0` for dark; no user setting changed): the light scheme shows the light banner and light lineup on GitHub's white page, the dark scheme the dark pair.
 
 **Build order:**
 
