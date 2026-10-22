@@ -344,6 +344,24 @@ class Inventory(unittest.TestCase):
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Zoom: sets 1.5 line spacing.")])
         self.assertEqual(self.problems(), [])
 
+    def test_unicode_host_names_are_refused(self):
+        # Audit round 6, finding 1: host names with the full-stop forms IDNA normalises, and in other scripts.
+        for text in ("support。microsoft。com", "office．microsoft．com", "a｡example｡org",
+                     "пример.рф", "data：text/plain,hello"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
+
+    def test_every_numeric_minimum_holds(self):
+        # Audit round 6, finding 3: each bounded number below must refuse -1 on its own, written out here.
+        for field in ("order", "bounds.width", "bounds.height"):
+            rec = json.loads(json.dumps(BOLD))
+            if field.startswith("bounds."):
+                rec["bounds"][field.split(".", 1)[1]] = -1
+            else:
+                rec[field] = -1
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertTrue(any(f".{field}: below 0" in p for p in self.problems()), field)
+
     def test_every_text_and_reference_field_refuses_a_blank_value(self):
         # Audit round 5, finding 4: each field below must refuse a value of spaces on its own, written out here.
         fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
@@ -356,7 +374,7 @@ class Inventory(unittest.TestCase):
     def test_a_malformed_manifest_is_unreadable_not_a_crash(self):
         # Audit round 5, finding 2: the source manifest must be an object with a commit and a blobs object.
         real = ci.INVENTORY
-        for manifest in ([1], {"commit": "x", "blobs": None}, {"blobs": {}}):
+        for manifest in ([1], {"commit": "x", "blobs": None}, {"blobs": {}}, None):
             (self.inv / ci.SOURCES).write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaises(ci.Unreadable, msg=repr(manifest)):
                 ci.check([str(self.inv)], inventory=self.inv)

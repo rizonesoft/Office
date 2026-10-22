@@ -229,3 +229,42 @@ All four findings verified. The link rule had been patched four rounds running, 
 1. P1 a punycode host and 3. P1 a `data:` URL passed. Instead of listing host and URL shapes, text a person reads (`label`, `keytip`, `shortcut`, `menuPath`, `behaviour`) now refuses the two marks every address has. One is a letter or digit joined to a letter by a dot: every host name has one, punycode included. The other is a word followed directly by a colon and a non-space character: every URI scheme has one (`data:`, `mailto:`, `javascript:`, `tel:`). No text in the committed inventory has either, checked before the change. The cost is that an abbreviation with inner dots, such as "e.g.", is refused in our own sentences; the schema says to write "for example". Identifier fields keep `noLink`, since ids are dotted and sources carry a colon (`test_any_address_in_text_is_refused`, four addresses in three fields, with "Zoom: sets 1.5 line spacing." still valid).
 2. P2 a malformed source manifest crashed: the manifest must be an object with a commit string and a blobs object, else the run is unreadable, exit 2 (`test_a_malformed_manifest_is_unreadable_not_a_crash`, three malformed manifests).
 4. P3 a field's whitespace rule could be removed unnoticed: `keytip`, `menuPath`, `idMso` and `uiaId` now need a visible character like the other text fields, and `test_every_text_and_reference_field_refuses_a_blank_value` requires each of thirteen fields, listed in the test, to refuse a value of spaces on its own.
+
+## Round 6: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T09:40:53Z
+- Effort: xhigh
+- Lines: 22
+- Digest: b1c6f596622ee9f6
+
+## source-defect: needs-attention
+
+1. **P1:** `design/inventory/schema.json:387` detects only ASCII hostname characters and literal dots. This record passes both schema validation and `check()`:
+
+   ```json
+   {"id":"word.probe","app":"word","kind":"tab","label":"support\u3002microsoft\u3002com"}
+   ```
+
+   IDNA normalization produces `support.microsoft.com`, so a prohibited Microsoft address passes. The Unicode hostname `пример.рф` also passes.
+
+## adversarial: needs-attention
+
+2. **P1:** `scripts/check-inventory.py:292` treats a manifest containing JSON `null` as an absent manifest. Reproduce by mocking `Path.read_text()` to return `"null"` for `baseline-sources.json`: whole-inventory `main([])` returns **0**, without diagnostics. The same override, with the Excel baseline omitted from discovery, still returns no problems. This bypasses manifest validation, baseline presence, commit matching and Outlook window checks.
+
+## consistency: approve
+
+## record: needs-attention
+
+3. **P3:** `scripts/tests/test_check_inventory.py:163` leaves the every-rule sensitivity claim at `todo/02-interface/TODO-01-parity-inventory.md:89` unsupported. Remove only `bounds.properties.height.minimum` from the schema in memory: all **56 tests pass**, while an otherwise valid control with `height: -1` now validates successfully. Verified with all fixture writes intercepted in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 6
+
+All three findings verified and fixed in the next commit:
+
+1. P1 Unicode host names passed. The text rule's name characters are now any letter or digit of any script (an ASCII letter or digit, or anything from U+00AA up), and its dots include the ideographic (U+3002), fullwidth (U+FF0E) and halfwidth (U+FF61) full stops that IDNA normalises to a dot. The scheme mark also takes the fullwidth colon (U+FF1A). The schema stores the pattern as ASCII escapes (`test_unicode_host_names_are_refused`: the reviewer's two cases plus fullwidth and halfwidth dots and a fullwidth-colon scheme; it fails against the round 5 rule).
+2. P1 a manifest of JSON `null` passed for an absent one and skipped every baseline gate: a manifest file that exists is now always validated, so `null` is unreadable, exit 2 (`test_a_malformed_manifest_is_unreadable_not_a_crash` now includes `null`; it fails against the round 5 checker).
+3. P3 a numeric minimum could be removed unnoticed: `test_every_numeric_minimum_holds` lists `order`, `bounds.width` and `bounds.height`, each required to refuse -1 on its own. Removing any one of the three minimums from the schema in memory fails it.

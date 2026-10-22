@@ -382,9 +382,9 @@
       }
     },
     "noHost": {
-      "description": "No address of any kind in text a person reads (label, keytip, shortcut, menuPath, behaviour): no letter or digit joined to a letter by a dot, which every host name has (punycode such as xn--p1ai included), and no word followed directly by a colon and a non-space character, which every URI scheme has (data:, mailto:, javascript:, http: and the rest). Office's own labels have neither. Identifier fields carry noLink only, since ids are dotted and sources such as uia:16.0.20430.20182 carry a colon. Abbreviations with inner dots are refused too, so write \"for example\", not \"e.g.\".",
+      "description": "No address of any kind in text a person reads (label, keytip, shortcut, menuPath, behaviour): no letter or digit of any script joined to a letter by a full stop (., or the ideographic, fullwidth or halfwidth full stops that host names normalise to), which every host name has, punycode and Unicode names included, and no word followed directly by a colon (or a fullwidth colon) and a non-space character, which every URI scheme has (data:, mailto:, javascript:, http: and the rest). Office's own labels have neither. Identifier fields carry noLink only, since ids are dotted and sources such as uia:16.0.20430.20182 carry a colon. Abbreviations with inner dots are refused too, so write \"for example\", not \"e.g.\".",
       "not": {
-        "pattern": "[A-Za-z0-9]\\.[A-Za-z]|[A-Za-z][A-Za-z0-9+.-]*:\\S",
+        "pattern": "[0-9A-Za-z\\u00aa-\\u3001\\u3003-\\uff0d\\uff0f-\\uff60\\uff62-\\uffff][.\\u3002\\uff0e\\uff61][A-Za-z\\u00aa-\\u3001\\u3003-\\uff0d\\uff0f-\\uff60\\uff62-\\uffff]|[A-Za-z][A-Za-z0-9+.-]*[:\\uff1a]\\S",
         "description": "host name or address"
       }
     }
