@@ -190,6 +190,16 @@ class Brand(unittest.TestCase):
         self.assertNotAlmostEqual(o.path("AV", 40, 700)[1], o.path("A", 40, 700)[1] + o.path("V", 40, 700)[1], places=2)
 
 
+class Checkout(unittest.TestCase):
+    def test_every_managed_folder_keeps_lf_on_checkout(self):
+        # --check compares bytes, so a folder Git may rewrite to CRLF on a Windows checkout fails CI.
+        import subprocess
+        probes = [f"{folder.as_posix()}/probe.svg" for folder in build_icons.MANAGED]
+        attrs = subprocess.run(["git", "check-attr", "eol", "--", *probes], cwd=SCRIPTS.parent, capture_output=True,
+                               text=True, check=True).stdout.splitlines()
+        self.assertEqual(attrs, [f"{p}: eol: lf" for p in probes])
+
+
 class Banner(unittest.TestCase):
     def test_banners_are_current_outlined_and_within_budget(self):
         root = SCRIPTS.parent
