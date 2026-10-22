@@ -83,7 +83,8 @@ class Packers(unittest.TestCase):
         broken_icns = icns.replace(signature, b"BROKEN!!", 1)
         self.assertEqual((len(broken_ico), len(broken_icns)), (len(ico), len(icns)))
         self.assertEqual(build_icons.verify({"assets/icons/windows/write.ico": ico}), [])
-        for rel, data in (("assets/icons/windows/write.ico", broken_ico), ("assets/icons/macos/write.icns", broken_icns),
+        for rel, data in (("assets/icons/windows/write.ico", broken_ico),
+                          ("assets/icons/macos/write.icns", broken_icns),
                           ("design/icons/apps/write-lg.svg", b"not an SVG"),
                           ("design/icons/apps/write-sm.svg", b'<html xmlns="http://www.w3.org/1999/xhtml"/>')):
             self.assertTrue(build_icons.verify({rel: data}), rel)
@@ -146,7 +147,8 @@ class FileTypes(unittest.TestCase):
         self.assertEqual(list(ft.TYPES), named)
         # The kinds as the owner decided them (the section's context), written out here rather than read from TYPES,
         # so a wrong classification in the generator cannot pass.
-        macro, template, plain = {"docm", "xlsm", "pptm", "vsdm"}, {"dotx", "xltx", "potx", "vstx", "mpt"}, {"rtf", "csv"}
+        macro, template = {"docm", "xlsm", "pptm", "vsdm"}, {"dotx", "xltx", "potx", "vstx", "mpt"}
+        plain = {"rtf", "csv"}
         for ext in named:
             for variant in ("lg", "lg-badge-md", "lg-badge-sm", "md", "sm"):
                 svg = ft.filetype_svg(ext, variant)
@@ -295,6 +297,21 @@ class SocialPreview(unittest.TestCase):
         for key in d.APPS:
             self.assertIn(f'id="{key}-lg-g1"', svg, key)  # each app's large icon
         self.assertIn('id="rizonesoft-office-lg-o1"', svg)  # the suite mark
+        # The outlined text, written out here: each top-level path (outside the nested icons) rendered alone must be
+        # as wide as its text set in the brand face, in this order.
+        texts = [("Rizonesoft", 88, 700, bd.TRACK * 2), ("Office", 88, 400, bd.TRACK * 2),
+                 ("The open-source office suite for Windows.", 36, 500, 0)]
+        texts += [(name, 26, 600, 0) for name in ("Write", "Grid", "Stage", "Flow", "Plan", "Mail")]
+        top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</defs>", 1)[1], flags=re.S)
+        paths = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
+        self.assertEqual(len(paths), len(texts))
+        for path, (text, size, weight, track) in zip(paths, texts):
+            alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">'
+                     f'{path}</svg>')
+            box = Image.open(io.BytesIO(build_icons.render(alone, 1280, 640))).getchannel("A").getbbox()
+            self.assertIsNotNone(box, text)
+            want = bd.outliner().path(text, size, weight, 0, 0, track)[1]
+            self.assertAlmostEqual(box[2] - box[0], want, delta=want * .05 + 4, msg=text)
 
 
 class GlassPane(unittest.TestCase):
