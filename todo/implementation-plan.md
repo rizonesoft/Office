@@ -8,25 +8,26 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 15 | Checklist items: 88
+Sections: 16 | Checklist items: 98
 
-| Status | Reference  | Deliverable                              | Needs                  | Items |
-| ------ | ---------- | ---------------------------------------- | ---------------------- | ----- |
-| [x]    | D00 T01 §1 | Design Document Checker                  | none                   | 7     |
-| [x]    | D00 T01 §2 | Image Asset Checker                      | none                   | 6     |
-| [x]    | D00 T01 §3 | Continuous Integration Workflow          | none                   | 7     |
-| [x]    | D00 T02 §1 | SPDX Headers and Checker                 | none                   | 7     |
-| [x]    | D00 T02 §2 | Third-Party Notices File                 | none                   | 3     |
-| [x]    | D00 T02 §5 | Contributing Guide                       | none                   | 4     |
-| [x]    | D00 T03 §1 | Automation Runner, Alert and Installer   | none                   | 7     |
-| [x]    | D00 T03 §2 | Run Guard and Stop Hook                  | none                   | 7     |
-| [x]    | D00 T03 §3 | Keep-Alive Task and Session Observer     | none                   | 6     |
-| [x]    | D00 T03 §4 | Run Skills Create and Check the Guard    | none                   | 6     |
-| [x]    | D00 T03 §5 | Install the Tasks and Verify on This PC  | windows-host, attended | 5     |
-| [x]    | D00 T03 §6 | Adopt the Guard for the Open Phase 2 Run | attended               | 4     |
-| [x]    | D00 T03 §7 | Run Guard Robustness Fixes               | none                   | 5     |
-| [x]    | D00 T03 §8 | Agent Tier Verifier YAML Strictness      | none                   | 4     |
-| [x]    | D00 T03 §9 | Dependency PR Merges at Boundaries       | none                   | 10    |
+| Status | Reference   | Deliverable                              | Needs                  | Items |
+| ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
+| [x]    | D00 T01 §1  | Design Document Checker                  | none                   | 7     |
+| [x]    | D00 T01 §2  | Image Asset Checker                      | none                   | 6     |
+| [x]    | D00 T01 §3  | Continuous Integration Workflow          | none                   | 7     |
+| [x]    | D00 T02 §1  | SPDX Headers and Checker                 | none                   | 7     |
+| [x]    | D00 T02 §2  | Third-Party Notices File                 | none                   | 3     |
+| [x]    | D00 T02 §5  | Contributing Guide                       | none                   | 4     |
+| [x]    | D00 T03 §1  | Automation Runner, Alert and Installer   | none                   | 7     |
+| [x]    | D00 T03 §2  | Run Guard and Stop Hook                  | none                   | 7     |
+| [x]    | D00 T03 §3  | Keep-Alive Task and Session Observer     | none                   | 6     |
+| [x]    | D00 T03 §4  | Run Skills Create and Check the Guard    | none                   | 6     |
+| [x]    | D00 T03 §5  | Install the Tasks and Verify on This PC  | windows-host, attended | 5     |
+| [x]    | D00 T03 §6  | Adopt the Guard for the Open Phase 2 Run | attended               | 4     |
+| [x]    | D00 T03 §7  | Run Guard Robustness Fixes               | none                   | 5     |
+| [x]    | D00 T03 §8  | Agent Tier Verifier YAML Strictness      | none                   | 4     |
+| [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries       | none                   | 10    |
+| [ ]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -102,24 +103,25 @@ Sections: 41 | Checklist items: 260
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 14 | Checklist items: 78
+Sections: 15 | Checklist items: 84
 
-| Status | Reference   | Deliverable                                    | Needs | Items |
-| ------ | ----------- | ---------------------------------------------- | ----- | ----- |
-| [ ]    | D03 T01 §1  | Platform Targets Decision                      | none  | 5     |
-| [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype | none  | 12    |
-| [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision     | none  | 5     |
-| [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision         | none  | 5     |
-| [ ]    | D03 T01 §5  | File Format Strategy Decision                  | none  | 7     |
-| [ ]    | D03 T01 §6  | Spreadsheet Calculation Engine Decision        | none  | 5     |
-| [ ]    | D03 T01 §7  | Mail, Calendar and Contacts Protocol Decision  | none  | 5     |
-| [ ]    | D03 T01 §8  | Storage, AutoSave and Co-Authoring Decision    | none  | 4     |
-| [ ]    | D03 T01 §9  | Extensibility and Macro Decision               | none  | 4     |
-| [ ]    | D03 T01 §10 | Font Strategy Decision                         | none  | 4     |
-| [ ]    | D03 T01 §11 | Product Licence and Dependency Policy          | none  | 4     |
-| [ ]    | D03 T01 §12 | Foundation Plan                                | none  | 7     |
-| [ ]    | D00 T02 §6  | Runtime and Icon Notices                       | none  | 3     |
-| [ ]    | D03 T01 §13 | Platform and App TODO Domains                  | none  | 8     |
+| Status | Reference   | Deliverable                                   | Needs | Items |
+| ------ | ----------- | --------------------------------------------- | ----- | ----- |
+| [ ]    | D03 T01 §1  | Platform Targets Decision                     | none  | 5     |
+| [ ]    | D03 T01 §2  | GUI Toolkit Decision with Ribbon Prototype    | none  | 13    |
+| [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision    | none  | 5     |
+| [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision        | none  | 5     |
+| [ ]    | D03 T01 §5  | File Format Strategy Decision                 | none  | 7     |
+| [ ]    | D03 T01 §6  | Spreadsheet Calculation Engine Decision       | none  | 5     |
+| [ ]    | D03 T01 §7  | Mail, Calendar and Contacts Protocol Decision | none  | 5     |
+| [ ]    | D03 T01 §8  | Storage, AutoSave and Co-Authoring Decision   | none  | 4     |
+| [ ]    | D03 T01 §9  | Extensibility and Macro Decision              | none  | 4     |
+| [ ]    | D03 T01 §10 | Font Strategy Decision                        | none  | 4     |
+| [ ]    | D03 T01 §11 | Product Licence and Dependency Policy         | none  | 4     |
+| [ ]    | D03 T01 §12 | Foundation Plan                               | none  | 7     |
+| [ ]    | D00 T02 §6  | Runtime and Icon Notices                      | none  | 3     |
+| [ ]    | D00 T03 §11 | C++ Toolchain Pins                            | none  | 5     |
+| [ ]    | D03 T01 §13 | Platform and App TODO Domains                 | none  | 8     |
 
 ### Phase 7: Release
 
@@ -141,6 +143,6 @@ Sections: 5 | Checklist items: 22
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename       | operator, owner-decision        | 4     |
 
-Progress: 36/93 verified sections, 7 ready to run now.
+Progress: 36/95 verified sections, 8 ready to run now.
 
-Checklist: 211/536 items completed (includes Commit items).
+Checklist: 211/552 items completed (includes Commit items).

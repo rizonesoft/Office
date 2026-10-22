@@ -50,4 +50,4 @@ Rizonesoft Office is licensed under GPL-3.0-or-later. This file lists the third-
 
 - Every component the repository carries or the product redistributes has one entry here before it lands, with what it is, its pinned version or commit, upstream, copyright, licence (as an SPDX identifier on a `- Licence:` line, which `scripts/check-spdx.py --allow` reads) and obligations.
 - The gate for a new entry is the dependency licence policy D03 T01 §11 writes in `docs/specs/<date>-licensing-design.md`: a component whose licence that policy does not allow does not land.
-- The Fluent UI System Icons, Windows App SDK and .NET runtime entries arrive with D00 T02 §6, once each is pinned and redistributed.
+- The Fluent UI System Icons, MSVC runtime and C++ library entries arrive with D00 T02 §6, once each is pinned and redistributed.

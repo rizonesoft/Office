@@ -21,7 +21,7 @@ title: "TODO-02 -- Interface Specification"
 - WCAG 2.2 level AA: the accessibility bar for §13.
 - -> XREF: D02 T01 §4 -- the shell layout is measured from the shell chrome inventory
 - -> XREF: D01 T02 §1 -- command glyphs must sit visually with the app icon language
-- -> XREF: D03 T01 §2 -- the shell framework is chosen against the ribbon component spec in §4
+- -> XREF: D03 T01 §2 -- the GUI toolkit is chosen against the ribbon component spec in §4
 
 ## Outcome
 

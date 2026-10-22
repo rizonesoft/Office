@@ -19,7 +19,7 @@ Outside contributions also need a signed contributor licence agreement, which ke
 
 ## Build and test
 
-Rizonesoft Office runs on Windows. There is no application to build yet: the WinUI 3 projects arrive with the foundation plan. Today a clone carries the design tooling and its checks, and every pull request must pass them. From a clean clone, with Python 3.15, Git and PowerShell 7 (`pwsh`, which the automation installer tests need) on the path:
+Rizonesoft Office runs on Windows. There is no application to build yet: the C++ projects arrive with the foundation plan. Today a clone carries the design tooling and its checks, and every pull request must pass them. From a clean clone, with Python 3.15, Git and PowerShell 7 (`pwsh`, which the automation installer tests need) on the path:
 
 ```powershell
 git config core.hooksPath scripts/hooks          # the pre-commit hook refuses a TODO change with a stale plan

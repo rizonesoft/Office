@@ -10,13 +10,13 @@ title: "TODO-02 -- Licensing and Contributions"
 
 > **Goal:** Rizonesoft Office is cleanly licensed as GPL-3.0-or-later with a contributor agreement that keeps a commercial edition possible. Every source file carries an SPDX identifier and CI refuses one without it; every bundled third-party component has its licence and obligations recorded in one notices file and shipped with the app; outside pull requests cannot merge until the contributor agreement is signed.
 
-> **Current state:** Measured 2026-10-20. On 2026-10-20 the owner chose GPL-3.0-or-later (first to match Qt's open-source edition, kept after the same-day move to WinUI 3), a contributor licence agreement rather than a DCO sign-off, and Windows only. `LICENSE` holds the verbatim GPLv3 text (SHA-256 `3972dc97...b36986`) and `README.md` states the "or later" grant. Not yet present: SPDX headers on `scripts/`, `THIRD-PARTY-NOTICES.md`, the agreement text, a CLA check on pull requests, and `CONTRIBUTING.md`. Bundled today: Plus Jakarta Sans (SIL OFL 1.1) in `design/fonts/plus-jakarta-sans/`. Bundled since D02 T01 §19: the Office control identifier baseline (MIT, data only). Planned: the Windows App SDK with WinUI 3 (MIT), the .NET runtime (MIT), Fluent UI System Icons (MIT) for ribbon commands. **Corrected 2026-10-20:** planned Qt 6 (LGPLv3 or GPLv3 parts).
+> **Current state:** Measured 2026-10-20. On 2026-10-20 the owner chose GPL-3.0-or-later (first to match Qt's open-source edition, kept after the same-day move to WinUI 3), a contributor licence agreement rather than a DCO sign-off, and Windows only. `LICENSE` holds the verbatim GPLv3 text (SHA-256 `3972dc97...b36986`) and `README.md` states the "or later" grant. Not yet present: SPDX headers on `scripts/`, `THIRD-PARTY-NOTICES.md`, the agreement text, a CLA check on pull requests, and `CONTRIBUTING.md`. Bundled today: Plus Jakarta Sans (SIL OFL 1.1) in `design/fonts/plus-jakarta-sans/`. Bundled since D02 T01 §19: the Office control identifier baseline (MIT, data only). Planned: the MSVC runtime (Microsoft's redistribution terms), the C++ libraries the foundation plan pins through vcpkg, Fluent UI System Icons (MIT) for ribbon commands. **Corrected 2026-10-20:** planned Qt 6 (LGPLv3 or GPLv3 parts). **Corrected 2026-10-22:** planned the Windows App SDK with WinUI 3 (MIT) and the .NET runtime (MIT), dropped with the move to native C++ (D03 T01 §2).
 
 ## Inputs
 
 - GNU GPLv3 text https://www.gnu.org/licenses/gpl-3.0.txt and the FSF guidance "How to use GNU licenses for your own software" https://www.gnu.org/licenses/gpl-howto.html: the notice wording for README and file headers.
 - SPDX License List https://spdx.org/licenses/ and REUSE specification 3.3 https://reuse.software/spec/: the per-file identifier convention.
-- The licence files inside the pinned Windows App SDK and .NET runtime packages: the MIT notices the installer and the MSIX package must carry. **Corrected 2026-10-20:** cited Qt's licensing page.
+- The MSVC runtime redistribution terms of the pinned Visual Studio (its licence and `redist.txt`) and the licence files of every C++ library the foundation plan pins through vcpkg: the notices the installer and the MSIX package must carry. **Corrected 2026-10-20:** cited Qt's licensing page. **Corrected 2026-10-22:** cited the Windows App SDK and .NET runtime packages.
 - Project Harmony contributor agreement templates https://www.harmonyagreements.org/: a standard starting point for the agreement, reviewed by a lawyer before use.
 - -> XREF: D03 T01 §11 -- the product licence decision and the dependency licence policy this file enforces
 
@@ -170,7 +170,7 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 ## 6. Runtime and Icon Notices
 
-The components the product will redistribute get their notices once each is pinned: the Fluent UI System Icons glyph set chosen in D02 T02 §2, and the Windows App SDK (with WinUI 3) and .NET runtime packages the foundation plan's Toolchain section names (D03 T01 §12). Moved from §2 on 2026-10-21, when none of them was redistributed (the Windows App SDK was already pinned, the glyph set was not).
+The components the product will redistribute get their notices once each is pinned: the Fluent UI System Icons glyph set chosen in D02 T02 §2, and the MSVC runtime and C++ libraries the foundation plan's Toolchain section names (D03 T01 §12). Moved from §2 on 2026-10-21, when none of them was redistributed (the Windows App SDK was already pinned, the glyph set was not). **Corrected 2026-10-22:** named the Windows App SDK (with WinUI 3) and .NET runtime packages, dropped with the move to native C++.
 
 **Phase:** 3
 **Needs:** none
@@ -181,10 +181,10 @@ The components the product will redistribute get their notices once each is pinn
 1. Add one `THIRD-PARTY-NOTICES.md` entry per redistributed component, from its pinned version. Done when: every package the Toolchain section redistributes has an entry with all fields.
 
 - [ ] Add the Fluent UI System Icons entry (MIT, Microsoft's `fluentui-system-icons` repository, the version D02 T02 §2 pins) with the MIT notice text. Done when: the entry carries the copyright line from the upstream LICENSE. Cheaper substitute: "MIT" with no copyright notice, which MIT requires.
-- [ ] Add the Windows App SDK (with WinUI 3) and .NET runtime entries, each with its pinned version, MIT notice text and the packages the product redistributes. Done when: every redistributed package in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Microsoft runtime, MIT", which drops the required notices. **Corrected 2026-10-20:** was a Qt 6 entry. (Moved from §2 on 2026-10-21.)
+- [ ] Add the MSVC runtime entry (its redistribution terms and whether it ships statically or app-local) and one entry per C++ library the product links, each with its pinned version, licence and notice text. Done when: every redistributed component in the foundation plan's Toolchain section is listed. Cheaper substitute: one line saying "Microsoft runtime and open-source libraries", which drops the required notices. **Corrected 2026-10-20:** was a Qt 6 entry. **Corrected 2026-10-22:** was the Windows App SDK (with WinUI 3) and .NET runtime entries. (Moved from §2 on 2026-10-21.)
 - [ ] Commit: `legal: add runtime and icon notices`
 
-**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Fluent UI System Icons" --require "Windows App SDK" --require ".NET runtime"` exits 0.
+**Test checkpoint:** `python scripts/check-design-doc.py THIRD-PARTY-NOTICES.md --require "Fluent UI System Icons" --require "MSVC runtime"` exits 0.
 
 ## Verification
 

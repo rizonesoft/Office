@@ -2,7 +2,7 @@
 schema_version: 1
 id: automations-and-keep-alive
 domain: 00-workspace
-status: done
+status: active
 title: "TODO-03 -- Automations and Campaign Keep-Alive"
 ---
 
@@ -10,7 +10,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 
 > **Goal:** Office runs its scheduled jobs from `.conclave/automations/`, as Isotone does: a task list, a runner that logs every run, an email alert on failure, and a Task Scheduler installer. Long `process-plan` and `process-phase` runs are protected by a run guard, a Stop hook that keeps the owning session working while a run is open, the in-session heartbeat, and a keep-alive task that resumes the exact session headless when its process has died. Every piece has a self-test or unit test, and the operator can see what the keep-alive would do with one command.
 
-> **Current state:** Measured 2026-10-20. `.conclave/` holds only `reviewers.toml`; there is no `.claude/settings.json`, no hook, no guard, and no scheduled task. The phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`) has an in-session `CronCreate` heartbeat whose prompt reads the run file, but nothing survives the session ending. The source to port is Isotone (`R:\GitHub\Isotone`), itself adapted from Rizonetech: `.conclave/automations/{run.py,alert.py,install.ps1,tasks.json,README.md}` (337 lines), `scripts/campaign_guard.py` (1,515 lines with a built-in `--self-test`), `scripts/campaign_keepalive.py` (656 lines with `--self-test`), `.claude/hooks/campaign-stop.ps1` (273 lines), and `scripts/tests/test_automations.py`. Three Isotone assumptions do not hold here: `todo-graph.py query ready` prints JSON, not an `N runnable now` line; the writer model comes from `.conclave/panel.toml`, which this repository does not have; and Isotone's other tasks (.NET SDK, NuGet, panel probe) do not apply. **Renamed 2026-10-20 (owner):** the repository Office-2028 became Office (GitHub `rizonesoft/Office`, local `R:\GitHub\Office`); the Task Scheduler folder is now `\Office\` and the task names `office-*`. Review records under `docs/reviews/` and the phase run files keep the names they verified. **Revised 2026-10-21 (operator):** Office adopted the Conclave-SDK todo and reviewer kits as shipped. The run guard is now the kit's `scripts/campaign_guard.py` with its Python Stop hook (`campaign_guard.py stop-hook` in `.claude/settings.json`) and the in-session heartbeat, tested by `scripts/tests/test_campaign_guard.py`; the keep-alive (§3: `scripts/campaign_keepalive.py`, `.conclave/keepalive.toml`, the SessionStart observer and the `office-claude-keepalive` task), `.claude/hooks/campaign-stop.ps1`, the guard's `--self-test` and CI repair ledger, and the Codex and Antigravity `acquire --runner` guard steps were retired. The sections below record what was built and verified on 2026-10-20.
+> **Current state:** Measured 2026-10-20. `.conclave/` holds only `reviewers.toml`; there is no `.claude/settings.json`, no hook, no guard, and no scheduled task. The phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`) has an in-session `CronCreate` heartbeat whose prompt reads the run file, but nothing survives the session ending. The source to port is Isotone (`R:\GitHub\Isotone`), itself adapted from Rizonetech: `.conclave/automations/{run.py,alert.py,install.ps1,tasks.json,README.md}` (337 lines), `scripts/campaign_guard.py` (1,515 lines with a built-in `--self-test`), `scripts/campaign_keepalive.py` (656 lines with `--self-test`), `.claude/hooks/campaign-stop.ps1` (273 lines), and `scripts/tests/test_automations.py`. Three Isotone assumptions do not hold here: `todo-graph.py query ready` prints JSON, not an `N runnable now` line; the writer model comes from `.conclave/panel.toml`, which this repository does not have; and Isotone's other tasks (.NET SDK, NuGet, panel probe) do not apply. **Renamed 2026-10-20 (owner):** the repository Office-2028 became Office (GitHub `rizonesoft/Office`, local `R:\GitHub\Office`); the Task Scheduler folder is now `\Office\` and the task names `office-*`. Review records under `docs/reviews/` and the phase run files keep the names they verified. **Revised 2026-10-21 (operator):** Office adopted the Conclave-SDK todo and reviewer kits as shipped. The run guard is now the kit's `scripts/campaign_guard.py` with its Python Stop hook (`campaign_guard.py stop-hook` in `.claude/settings.json`) and the in-session heartbeat, tested by `scripts/tests/test_campaign_guard.py`; the keep-alive (§3: `scripts/campaign_keepalive.py`, `.conclave/keepalive.toml`, the SessionStart observer and the `office-claude-keepalive` task), `.claude/hooks/campaign-stop.ps1`, the guard's `--self-test` and CI repair ledger, and the Codex and Antigravity `acquire --runner` guard steps were retired. The sections below record what was built and verified on 2026-10-20. **Revised 2026-10-22 (owner):** the move to native C++ (D03 T01 §2) retires the WinUI 3, .NET SDK and NuGet pin tasks (§10) and replaces them with C++ toolchain pins (§11).
 
 ## Inputs
 
@@ -42,6 +42,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 7 | §7 | Run guard robustness fixes | §2 | [x] |
 | 8 | §8 | Agent tier verifier YAML strictness | -- | [x] |
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [x] |
+| 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [ ] |
+| 11 | §11 | C++ toolchain pins | §10, D03 T01 §12 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -284,6 +286,52 @@ Owner request 2026-10-21 (replacing "nothing merges by itself" for dependency pu
 
 > **Verified:** 2026-10-22 | §9 | a89d8abf44813692c3b08c6955c20957f025c96d
 > **Review:** `docs/reviews/d00-t03-s9.json`
+
+## 10. Retire the .NET and WinUI 3 Pins
+
+Owner decision 2026-10-22 (D03 T01 §2): the suite moves from WinUI 3 in C# on .NET 11 to native C++ with its own GUI toolkit, so the WinUI 3, .NET SDK and NuGet pin tooling built on 2026-10-20 and 2026-10-21 guards pins that no longer exist, and its daily tasks keep proposing releases nobody will merge. This section removes that tooling and the .NET assumptions in the shared scripts; the C++ toolchain pins that replace it are §11.
+
+**Phase:** 0
+**Needs:** windows-host, attended
+**Surface:** no
+
+**Build order:**
+
+1. Remove the retired tasks, scripts, tests and pin files, and the .NET assumptions in the scripts that stay. Done when: `python -m unittest discover -s scripts/tests` passes without them.
+2. Unregister the retired tasks on this PC and clear the retired proposal branches. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists exactly the tasks in `tasks.json`.
+
+- [ ] Remove `office-winui-pin`, `office-dotnet-pin`, `office-nuget-pins`, `office-vulnerable-packages` and `office-dotnet-local` from `.conclave/automations/tasks.json`, with their rows, lines and the WinUI 3 and .NET 11 pin sections in `.conclave/automations/README.md`. Done when: `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes and neither file names a retired task. Cheaper substitute: disabling the tasks, which the next install re-enables.
+- [ ] Delete `scripts/check-winui-pin.py`, `scripts/check-dotnet-pin.py`, `scripts/check-nuget-pins.py`, `scripts/check-vulnerable-packages.py`, `scripts/lib/package_versions.py`, their tests, `Directory.Packages.props` and `global.json`. Done when: the files are gone and `python -m unittest discover -s scripts/tests` passes. Cheaper substitute: leaving the scripts in place unscheduled, where a later session runs them and pins .NET again.
+- [ ] Remove the `dotnet build` step from `scripts/lib/pin_proposal.py` and its tests. Done when: no `dotnet` call remains and `python -m unittest discover -s scripts/tests -p "test_pin_automations.py"` passes. Cheaper substitute: a step that finds no solution and passes without building anything.
+- [ ] Remove the `global.json` refusal from `scripts/merge_prs.py` and its tests, since no SDK pin file remains; §11 adds the refusal for the C++ toolchain pin files. Done when: `python -m unittest discover -s scripts/tests -p "test_merge_prs.py"` passes and the script no longer names `global.json`. Cheaper substitute: a rule guarding a deleted file, which reads as protection that does not exist.
+- [ ] Replace `.cs` and `.xaml` in `scripts/check-spdx.py` with the C++ sources (`.cpp`, `.h`, `.hpp`, `.ixx`, `.rc`) and the CMake files (`CMakeLists.txt`, `.cmake`), and update the header instructions in `CONTRIBUTING.md` to match. Done when: a fixture of each new kind fails without its header and passes with it in `scripts/tests/test_check_spdx.py`. Cheaper substitute: adding the C++ kinds when the first file lands, by which point unheaded files exist.
+- [ ] Rewrite the reason in `scripts/check-visual-studio.py` from .NET 11 to the C++ toolchain: the newest stable Visual Studio 2026 carries the MSVC toolset the C++ standard pin needs. Done when: no docstring or message names .NET and its tests pass. Cheaper substitute: keeping a reason that no longer holds.
+- [ ] Update the merge rule in `AGENTS.md` and the `process-plan` mirrors in `.claude/skills/`, `.agents/skills/` and `.codex/skills/` (drop the `winui/*` and `dotnet/*` branches and the `global.json` exclusion), and the comment in `.github/dependabot.yml`. Done when: `git grep -n -i -E "winui|dotnet|nuget|Directory\.Packages|global\.json" -- AGENTS.md CONTRIBUTING.md scripts .conclave .github .claude .agents .codex` prints nothing. Cheaper substitute: instructions that point at deleted files.
+- [ ] Run `pwsh .conclave/automations/install.ps1` on this PC, which unregisters every `\Office\` task `tasks.json` no longer lists. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists exactly the tasks in `tasks.json`. Cheaper substitute: leaving the retired tasks to fail every morning once their scripts are gone.
+- [ ] List the local `winui/*` and `dotnet/*` proposal branches and the `refs/office-pin/winui-*` and `refs/office-pin/dotnet-*` markers, and delete them with the operator's confirmation. Done when: `git branch --list "winui/*" "dotnet/*"` and `git for-each-ref refs/office-pin/` print no WinUI 3 or .NET entry. Cheaper substitute: leaving proposals that look ready to merge.
+- [ ] Commit: `automations: retire the .NET and WinUI 3 pins`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests` passes, `python scripts/check-spdx.py` exits 0 and `git grep -n -i -E "winui|dotnet|nuget|Directory\.Packages|global\.json" -- AGENTS.md CONTRIBUTING.md scripts .conclave .github .claude .agents .codex` prints nothing.
+
+## 11. C++ Toolchain Pins
+
+The owner's pin rule (2026-10-20 for WinUI 3, 2026-10-21 for .NET and NuGet) carries over to the native C++ stack decided on 2026-10-22 (D03 T01 §2): every toolchain pin is the newest stable release, proposed on a branch by a daily task and merged by the owner. The pins are the C++ standard flag (C++23 through `/std:c++23preview` today, moving to a stable C++23 flag and then to C++26 as MSVC ships them), the MSVC toolset (through Visual Studio, already watched by `office-visual-studio`), the Windows SDK, CMake and the vcpkg baseline, held in the files the foundation plan's Toolchain section creates (D03 T01 §12).
+
+**Phase:** 3
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add one latest-stable check per pin, each with a fixture test and a daily task. Done when: every pin the Toolchain section names has a check that fails on an older fixture.
+
+- [ ] Add `scripts/check-cpp-standard.py`, which compiles a probe with the newest installed stable MSVC and exits 1 when it accepts a stable flag newer than the pinned one (`/std:c++23` while `/std:c++23preview` is pinned, then `/std:c++26`), with an `office-cpp-standard` task that emails the operator once per new flag. Done when: a fake compiler accepting `/std:c++26` fails, the installed toolset passes, and `test_automations.py` passes. Cheaper substitute: watching the MSVC release notes by hand.
+- [ ] Add `scripts/check-vcpkg-baseline.py`, which compares the `builtin-baseline` in `vcpkg.json` with the newest vcpkg release tag and proposes a newer one on a `pins/vcpkg-<tag>` branch through `scripts/lib/pin_proposal.py`, building the CMake preset in the proposal worktree, with an `office-vcpkg-baseline` task. Done when: a fixture on an older baseline proposes a branch, the current baseline passes, and `test_automations.py` passes. Cheaper substitute: bumping the baseline by hand when a port is missing.
+- [ ] Add latest-stable checks for the Windows SDK and CMake versions the Toolchain section pins, in a new script or in `scripts/check-visual-studio.py`. Done when: an older pinned fixture fails and the current pin passes for each. Cheaper substitute: building with whatever SDK and CMake the machine has.
+- [ ] Refuse in `scripts/merge_prs.py` any pull request that changes a toolchain pin file (`vcpkg.json`, `CMakePresets.json` or the files the Toolchain section names), since those move only through their own proposals. Done when: a test with such a pull request, including a rename away from the file, refuses it. Cheaper substitute: letting Dependabot move a pin past the proposal checks.
+- [ ] Commit: `automations: add the C++ toolchain pins`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests` passes and `python scripts/check-cpp-standard.py` exits 0 on this host.
 
 ## Verification
 

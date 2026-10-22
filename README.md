@@ -8,7 +8,7 @@
 
 # Rizonesoft Office
 
-Rizonesoft Office is an open-source office suite for Windows, being built to match Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is planned as a Windows desktop suite in WinUI 3 with C# on .NET, to ship as an MSIX package and a classic installer.
+Rizonesoft Office is an open-source office suite for Windows, being built to match Microsoft 365 feature by feature and control by control, with its own name, icons and artwork. It is planned as a native Windows desktop suite in C++ with its own GUI toolkit (Win32, Direct2D and DirectWrite), to ship as an MSIX package and a classic installer.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/github/lineup-dark.png">
