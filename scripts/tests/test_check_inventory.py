@@ -383,8 +383,8 @@ class Inventory(unittest.TestCase):
         # Audit round 10, finding 2: NaN and Infinity are not JSON, in an inventory file or the manifest.
         for constant in ("NaN", "Infinity", "-Infinity"):
             path = self.inv / "word" / "ribbon.json"
-            path.write_text(f'[{{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "order": {constant}}}]',
-                            encoding="utf-8")
+            record = f'{{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "order": {constant}}}'
+            path.write_text(f"[{record}]", encoding="utf-8")
             with self.assertRaises(ci.Unreadable, msg=constant):
                 self.problems()
 
