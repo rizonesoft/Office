@@ -355,11 +355,15 @@ class Lineup(unittest.TestCase):
             # Both lines under an icon (its name, then its counterpart) are centred in that icon's column.
             for (name, _), left, pair in zip(rows, lefts, zip(labels[0::2], labels[1::2])):
                 for label in pair:
-                    alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
-                             f'height="{h}">{label}</svg>')
-                    box = Image.open(io.BytesIO(build_icons.render(alone, w, h))).getchannel("A").getbbox()
+                    # Rendered on a canvas three times the size, so a part past the strip's edge shows, not clips.
+                    alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{-w} {-h} {3 * w} {3 * h}" '
+                             f'width="{3 * w}" height="{3 * h}">{label}</svg>')
+                    box = Image.open(io.BytesIO(build_icons.render(alone, 3 * w, 3 * h))).getchannel("A").getbbox()
                     self.assertIsNotNone(box, (theme, name))
-                    self.assertLess(abs((box[0] + box[2]) / 2 - (left + 48)), 3, (theme, name))
+                    x0, y0, x1, y1 = box[0] - w, box[1] - h, box[2] - w, box[3] - h
+                    self.assertTrue(0 <= x0 and x1 <= w and y1 <= h, (theme, name, (x0, y0, x1, y1)))
+                    self.assertGreater(y0, float(icons[0][1]) + 96, (theme, name))  # beneath the icons
+                    self.assertLess(abs((x0 + x1) / 2 - (left + 48)), 3, (theme, name))
 
     def test_text_reads_on_each_github_canvas(self):
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
