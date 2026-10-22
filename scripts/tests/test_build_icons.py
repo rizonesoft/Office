@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import math
 from pathlib import Path
 import re
 import struct
@@ -108,7 +109,22 @@ class FileTypes(unittest.TestCase):
                 self.assertEqual("#f59f0b" in svg, ext in macro, (ext, variant))  # the amber macro mark
                 self.assertEqual("stroke-dasharray" in svg, ext in template, (ext, variant))  # the dashed page
                 if variant != "sm":  # the 16 px page has no content hint
-                    self.assertEqual(ft.PLAIN_GREY in svg, ext in plain, (ext, variant))  # the grey hint
+                    self.assertEqual("#c3cad6" in svg, ext in plain, (ext, variant))  # the grey hint
+
+    def test_macro_mark_shows_at_every_size(self):
+        # Rendered at the size each drawing is shown, so a mark moved off the page or hidden still fails.
+        def amber_pixels(svg, px):
+            rgb = Image.open(io.BytesIO(build_icons.render(svg, px, background="#ffffff"))).convert("RGB").tobytes()
+            return sum(1 for i in range(0, len(rgb), 3)
+                       if abs(rgb[i] - 245) < 30 and abs(rgb[i + 1] - 159) < 30 and rgb[i + 2] < 60)
+        # Each drawing's shown size and the mark radius it must keep, in 128-unit canvas units; at least half the
+        # mark's area must render amber (the rest is the white exclamation and antialiasing).
+        for variant, px, radius in (("lg", 128, 10), ("lg-badge-md", 64, 10), ("lg-badge-sm", 48, 10), ("md", 32, 16),
+                                    ("sm", 16, 22)):
+            least = math.pi * (radius * px / 128) ** 2 / 2
+            for ext in ("docm", "xlsm", "pptm", "vsdm"):
+                self.assertGreaterEqual(amber_pixels(ft.filetype_svg(ext, variant), px), least, (ext, variant))
+            self.assertEqual(amber_pixels(ft.filetype_svg("docx", variant), px), 0, variant)
 
     def test_verify_refuses_live_text(self):
         problems = build_icons.verify({"design/icons/files/x-lg.svg": b'<svg><text>DOCX</text></svg>'})
