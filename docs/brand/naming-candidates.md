@@ -31,7 +31,7 @@ Concepts from the 2026-10-19 brainstorm and the 2026-10-20 decision, kept as the
 
 ## Collisions
 
-Searched 2026-10-22 with a general web search, one query per name. Prominent conflicts only; the register search is D01 T01 §4.
+Searched 2026-10-22 with a general web search, one query per name. Prominent conflicts only. The register search (D01 T01 §4) was not run: the owner decided on 2026-10-22 that the names stand and a conflict is handled if a mark holder raises one.
 
 ### Rizonesoft
 

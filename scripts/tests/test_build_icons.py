@@ -284,6 +284,11 @@ class GlassPane(unittest.TestCase):
 STROKE_WEIGHT = {"lg": (4.9, 9.1), "md": (8, 12), "sm": (11, 15)}  # symbol stroke widths per tier, in units
 
 
+# Each tier's symbol shade as decided (docs/brand/icon-language.md, Palette), written out here rather than read from
+# icon_design so a changed shade fails the tests.
+SYMBOL_SHADE = {"lg": .35, "md": .15, "sm": .15}
+
+
 def render_rgb(svg):
     return Image.open(io.BytesIO(build_icons.render(svg, 128, background="#ffffff"))).convert("RGB")
 
@@ -333,7 +338,7 @@ class Palette(unittest.TestCase):
                     if (key, tier) == ("mail", "sm") and paints == ("none", "#ffffff") and name == "path":
                         # The flap: one white stroked path, whose surface test_mail_flap_sits_on_the_envelope checks.
                         flaps += 1
-                        symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+                        symbol = d.mix(d.APPS[key][2][1], "#000000", SYMBOL_SHADE[tier])
                         self.assertGreaterEqual(d.contrast("#ffffff", symbol), 3)
                     else:
                         self.assertLessEqual(set(paints), {col, "none"}, (key, tier, name))
@@ -379,12 +384,12 @@ class Palette(unittest.TestCase):
     def test_every_symbol_part_shows(self):
         # Each part of each symbol rendered on its own, so a part made too thin or small to see cannot hide behind the
         # rest: at least 100 pixels fully in the symbol colour (the smallest real part has 254), each at 3:1 or more
-        # against the icon without its symbol at md and sm. Mail's flap has its own test.
+        # against the icon without its symbol. Mail's flap has its own test.
         real = d.glyph
         for key in d.APPS:
-            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
-            rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
             for tier in d.TIERS:
+                symbol = d.mix(d.APPS[key][2][1], "#000000", SYMBOL_SHADE[tier])
+                rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
                 try:
                     d.glyph = lambda *_: ""
                     bare = render_rgb(d.icon_svg(key, tier))
@@ -395,21 +400,19 @@ class Palette(unittest.TestCase):
                         painted = [xy for xy in ((x, y) for y in range(128) for x in range(128))
                                    if alone.getpixel(xy) == rgb]
                         self.assertGreaterEqual(len(painted), 100, (key, tier, part))
-                        if tier != "lg":
-                            worst = min(d.contrast(symbol, "#%02x%02x%02x" % bare.getpixel(xy)) for xy in painted)
-                            self.assertGreaterEqual(worst, 3, (key, tier, part))
+                        worst = min(d.contrast(symbol, "#%02x%02x%02x" % bare.getpixel(xy)) for xy in painted)
+                        self.assertGreaterEqual(worst, 3, (key, tier, part))
                 finally:
                     d.glyph = real
 
-    def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
+    def test_symbols_reach_3_to_1_on_what_is_behind_them(self):
         # Rendered, not computed: each pixel drawn fully in the symbol colour (antialiased edges excluded) against the
-        # same pixel with the symbol left out. The lg symbols cross the blurred orb and block; their contrast is the
-        # owner's call at D01 T02 section 7.
+        # same pixel with the symbol left out, at every tier (lg included since the owner's choice of 2026-10-22).
         real = d.glyph
         for key in d.APPS:
-            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
-            rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
-            for tier in ("md", "sm"):
+            for tier in d.TIERS:
+                symbol = d.mix(d.APPS[key][2][1], "#000000", SYMBOL_SHADE[tier])
+                rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
                 drawn = render_rgb(d.icon_svg(key, tier))
                 try:
                     d.glyph = lambda *_: ""

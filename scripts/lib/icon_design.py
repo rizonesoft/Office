@@ -120,6 +120,9 @@ APP_ORB = {"lg": (80, 44, 38), "md": (82, 42, 36), "sm": (86, 40, 38)}  # cx, cy
 APP_PANE = {"lg": (18, 30, 92, 80, 20), "md": (14, 34, 92, 80, 20), "sm": (8, 36, 96, 84, 22)}  # x, y, w, h, rx
 APP_GLYPH_AT = {"lg": (64, 70, .95), "md": (60, 74, 1.12), "sm": (56, 78, 1.25)}  # centre x, y, scale of 64 box
 APP_BLOCK = (10, 62, 58, 56, 16)  # the dark block behind the lg pane: x, y, w, h, rx
+# How far each tier's symbol colour goes from the gradient's dark end toward black. lg is darker because its symbol
+# crosses the blurred orb and block; 35% puts every symbol pixel at 3:1 or more (owner's choice, 2026-10-22).
+SYMBOL_DARKEN = {"lg": .35, "md": .15, "sm": .15}
 # The suite logo takes the md geometry at lg (Variation A at every size).
 SUITE_ORB = {"lg": APP_ORB["md"], "md": APP_ORB["md"], "sm": APP_ORB["sm"]}
 SUITE_PANE = {"lg": APP_PANE["md"], "md": APP_PANE["md"], "sm": APP_PANE["sm"]}
@@ -141,7 +144,7 @@ def _app_parts(key, tier, ids):
             s += rect(*APP_BLOCK, mix(b, "#000000", .1) if mode == "solid" else mix(b, "#ffffff", .42))
         return s
 
-    deep = mix(b, "#000000", .15)
+    deep = mix(b, "#000000", SYMBOL_DARKEN[tier])
     content = f'<g transform="translate({n(at[0])},{n(at[1])}) scale({n(at[2])})">{glyph(key, tier, deep)}</g>'
     tint = mix(a, "#ffffff", .8 if tier == "sm" else .84)
     return defs, pane, tint, mix(a, "#000000", .1), back, content
@@ -366,4 +369,4 @@ def pixel_svg(key, size):
             f'<rect x="{x0 + .5}" y="{y0 + .5}" width="{x1 - x0 - 1}" height="{y1 - y0 - 1}" rx="{n(rr - .5)}" '
             f'fill="none" stroke="{mix(a, "#000000", .1)}" stroke-opacity="{".6" if tier == "sm" else ".4"}" '
             f'stroke-width="1"/>'
-            f'{_pixel_glyph(glyph(key, tier, mix(b, "#000000", .15)), APP_GLYPH_AT[tier], k)}</svg>\n')
+            f'{_pixel_glyph(glyph(key, tier, mix(b, "#000000", SYMBOL_DARKEN[tier])), APP_GLYPH_AT[tier], k)}</svg>\n')

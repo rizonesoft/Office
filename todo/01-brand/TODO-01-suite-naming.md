@@ -40,7 +40,7 @@ title: "TODO-01 -- Suite and App Naming"
 | 3 | §3 | Owner selection of suite and app names | §2 | [x] |
 | 4 | §4 | Knockout trademark screen | §3 | [ ] |
 | 5 | §5 | Domain, GitHub and package availability | §3 | [x] |
-| 6 | §6 | Apply names across the repository | §4, §5 | [ ] |
+| 6 | §6 | Apply names across the repository | §5 | [ ] |
 | 7 | §7 | Attorney clearance and filing | §4 | [ ] |
 | 8 | §8 | GitHub repository rename | §6 | [ ] |
 | 9 | §9 | Microsoft Store name reservation | §3 | [ ] |
@@ -137,8 +137,10 @@ A knockout screen catches identical or near-identical live marks in classes 9 an
 
 **Corrected 2026-10-22:** Needs said `none`. The USPTO, EUIPO and WIPO searches are interactive web applications with no public search API (a POST to the USPTO search endpoint is refused), so the section needs a browser session: a person at the registers, or the Claude in Chrome extension connected. An unattended run without one takes it as a leftover.
 
-**Phase:** 1
-**Needs:** display-session
+**Owner decision 2026-10-22:** not pursued. The names stand without register searches: the project is open source, and a conflict is handled if a mark holder raises one (the likely worst case is a request to change a name). Parked in Phase 99 so it can be reopened by setting its phase back.
+
+**Phase:** 99
+**Needs:** display-session, owner-decision
 **Surface:** no
 
 **Build order:**
@@ -183,6 +185,8 @@ The product needs a home domain, a GitHub repository or organisation name, and p
 
 Once names are clear, contributor-facing documents stop calling the product "Office 2028". The repository folder and remote keep their codename until §8.
 
+**Corrected 2026-10-22:** the owner dropped the trademark screen (§4) and the repository rename (§8), so this section waits only on §5, and the repository stays `rizonesoft/Office` for good rather than until §8.
+
 **Phase:** 1
 **Needs:** none
 **Surface:** no
@@ -202,6 +206,8 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 
 A full clearance opinion and any trademark filing need a trademark attorney and money, so this is operator work. It does not block engineering, but it must close before the first public release.
 
+**Owner decision 2026-10-22:** not pursued. No clearance opinion or filing either: the project is open source, and a conflict is handled if a mark holder raises one (the likely worst case is a request to change a name). It stays in Phase 99, and the release no longer waits on it.
+
 **Phase:** 99
 **Needs:** third-party, owner-decision
 **Surface:** no
@@ -220,8 +226,10 @@ A full clearance opinion and any trademark filing need a trademark attorney and 
 
 Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL, but local clones, CI badges and links need updating. The owner performs or approves the rename.
 
-**Phase:** 1
-**Needs:** operator
+**Owner decision 2026-10-22:** not pursued: the repository stays `rizonesoft/Office`. Parked in Phase 99 so it can be reopened by setting its phase back.
+
+**Phase:** 99
+**Needs:** operator, owner-decision
 **Surface:** no
 
 **Build order:**
@@ -240,7 +248,9 @@ Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL,
 
 The Microsoft Store is where a Windows-only suite is found, and an app's Store name is checked and reserved only in Partner Center, under the publisher's developer account, so no unattended run can check it. Filed 2026-10-22 from §5, whose context names the Store among the package identifiers but whose checks could not reach it.
 
-**Phase:** 1
+**Owner decision 2026-10-22:** no Store for now; the name check moves to the release phase, and winget is the Windows channel until then.
+
+**Phase:** 7
 **Needs:** store-account, operator
 **Surface:** no
 

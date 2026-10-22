@@ -2,6 +2,8 @@
 
 Per chosen name, the register searches (the knockout screen, D01 T01 §4) and the availability of its domain, GitHub and package identifiers (D01 T01 §5). It is a screen, not legal clearance; buying or reserving anything is the owner's call.
 
+No register search was run: on 2026-10-22 the owner decided the names stand without one (the project is open source, and a conflict is handled if a mark holder raises one), so D01 T01 §4 and the attorney clearance in §7 are parked.
+
 ## Availability
 
 Checked 2026-10-22. Each method was proven on a known-taken name first (`google.app` and `google.dev` by RDAP, the `firefox` Homebrew cask and LibreOffice's Flathub id each answered 200), so a 404 here means the registry holds no record of the name. That is not a promise it can be claimed: a registry may reserve or premium-price a name it has no record of, so each "not registered" below is confirmed only when the owner reserves it.
