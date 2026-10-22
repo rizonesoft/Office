@@ -407,6 +407,25 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_compatibility_expansions_cannot_spell_an_address(self):
+        # Audit round 21, finding 1: U+33C2 U+33C7 is a.m.Co. once normalised, an address its raw spelling hides.
+        import unicodedata
+        self.write("word/ribbon.json", [dict(TAB, label=chr(0x33C2) + chr(0x33C7))])
+        self.assertTrue(any("host name or address" in p for p in self.problems()))
+        pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
+        missed = [hex(c) for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF and c not in (0x2E, 0x3A, 0x2026)
+                  and any(m in unicodedata.normalize("NFKC", chr(c)) for m in ".:") and not pattern.search(chr(c))]
+        self.assertEqual(missed, [])
+        # The plain full stop and the ellipsis still end a label.
+        for text in ("Save As...", "Save As" + chr(0x2026)):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertEqual(self.problems(), [], ascii(text))
+
+    def test_a_dotted_host_with_a_path_is_a_link_in_identifier_fields(self):
+        # Audit round 21, finding 2: the host-and-path alternative of noLink, on its own.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, uiaId="microsoft.de/help")])
+        self.assertTrue(any(".uiaId" in p and "link" in p for p in self.problems()))
+
     def test_characters_containing_a_full_stop_are_address_marks(self):
         # Audit round 20, finding 1: U+2488 normalises to "1.", so "<U+2488>com" is 1.com to IDNA.
         import unicodedata
@@ -425,7 +444,8 @@ class Inventory(unittest.TestCase):
         real["commit"] = "0" * 40
         (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
         named = self.write("word/ribbon.json", [TAB])
-        spaced, missing = text.replace("| Commit | ", "|  Commit  |   ", 1), text.replace("| Commit |", "| Revision |", 1)
+        spaced = text.replace("| Commit | ", "|  Commit  |   ", 1)
+        missing = text.replace("| Commit |", "| Revision |", 1)
         for reference in (spaced, missing):
             (self.inv / ci.REFERENCE).write_text(reference, encoding="utf-8")
             with self.assertRaises(ci.Unreadable):

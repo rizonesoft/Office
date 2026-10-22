@@ -810,3 +810,47 @@ All three findings verified and fixed in the next commit; the first two tests fa
 3. P3 the column-layout guard was untested: `test_a_baseline_with_the_wrong_columns_is_refused`.
 
 The full tooling suite (616 tests) passes locally before the push.
+
+## Round 21: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T13:53:50Z
+- Effort: xhigh
+- Lines: 26
+- Digest: 63b337f183c6fb43
+
+## source-defect: needs-attention
+
+1. **P1: Compatibility expansions still conceal hostnames.** `design/inventory/schema.json:423` treats each compatibility character as one dot, missing letters and dots inside its expansion. Append this record to an inventory array:
+
+   ```json
+   {"id":"word.round21probe","app":"word","kind":"tab","label":"\u33c2\u33c7"}
+   ```
+
+   Schema validation returns `[]`; the whole-inventory CLI exits **0** without diagnostics. NFKC produces `a.m.Co.`, and Python IDNA produces `a.m.co.`. Without connecting, `HTTPConnection(label).putrequest("GET", "/")` prepares `Host: a.m.co.`. The normalized label is correctly rejected, demonstrating that the raw spelling bypasses the prohibition.
+
+## adversarial: needs-attention
+
+Finding **1** permits an address through ordinary escaped JSON, without malformed syntax or unknown fields.
+
+## consistency: needs-attention
+
+Finding **1** contradicts `design/inventory/schema.json:421`, which promises to refuse every hostname and abbreviations containing inner dots. The pattern checks neighboring raw characters while ignoring content inside their compatibility expansions.
+
+## record: needs-attention
+
+2. **P3: The ticked rule-disable claim remains unsupported.** `scripts/tests/test_check_inventory.py:223` does not independently exercise the dotted-host/path alternative, contrary to `todo/02-interface/TODO-01-parity-inventory.md:89`.
+
+   Remove only `[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/|` from `$defs.noLink.not.pattern` in memory: **all 109 tests still pass**, while an otherwise valid record with `uiaId:"microsoft.de/help"` becomes accepted. The original rejects it with `.uiaId: link`. Both suite runs intercepted fixture writes entirely in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 21
+
+Both findings verified and fixed in the next commit; the first test fails against the round 20 schema (fix stashed), and the second fails when the host-and-path alternative is removed:
+
+1. P1 compatibility characters whose expansion holds several characters (U+33C2 U+33C7 is a.m.Co. once normalised) could spell an address their raw neighbours do not show. In readable text, every compatibility character whose normalised form holds a full stop or a colon (33 in the BMP) is now refused outright. The plain full stop, the plain colon and the ellipsis U+2026 stay, under the dot and colon rules. A test checks the set against this Python's Unicode data and confirms that "Save As..." and "Save As" followed by U+2026 are still valid (`test_compatibility_expansions_cannot_spell_an_address`).
+2. P3 noLink's dotted-host-with-path alternative was untested on its own: `test_a_dotted_host_with_a_path_is_a_link_in_identifier_fields` (`uiaId: microsoft.de/help`).
+
+The full tooling suite (618 tests) passes locally before the push.
