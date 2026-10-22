@@ -303,6 +303,24 @@ def load(path):
     return data
 
 
+def json_files(folder):
+    """Every .json file under folder. rglob and os.walk both skip what they cannot list or classify and report nothing,
+    so a folder that cannot be read would pass for an empty one; here any such error makes the run unreadable."""
+    found, pending = [], [Path(folder)]
+    while pending:
+        here = pending.pop()
+        try:
+            with os.scandir(here) as entries:
+                for entry in entries:
+                    if entry.is_dir(follow_symlinks=False):
+                        pending.append(Path(entry.path))
+                    elif entry.name.lower().endswith(".json") and entry.is_file():
+                        found.append(Path(entry.path))
+        except OSError as exc:
+            raise Unreadable(f"{here}: cannot list ({exc})") from None
+    return found
+
+
 def inventory_files(paths, manifest=INVENTORY / SOURCES):
     """Every inventory file under the named folders, and the named files. Only the source manifest itself (at the
     inventory's root) is left out; a file of that name anywhere else is checked like any other."""
@@ -312,13 +330,7 @@ def inventory_files(paths, manifest=INVENTORY / SOURCES):
         if p.is_dir():
             skip = (SCHEMA.resolve(), BASELINE_SCHEMA.resolve(), Path(manifest).resolve())
 
-            def unreadable(exc):
-                # rglob would skip a folder it cannot list and report nothing; a folder that cannot be read must not
-                # pass for an empty one.
-                raise Unreadable(f"{exc.filename}: cannot list ({exc})") from None
-            found = [Path(folder) / name for folder, _, names in os.walk(p, onerror=unreadable)
-                     for name in names if name.lower().endswith(".json")]
-            files += sorted(f for f in found if f.resolve() not in skip)
+            files += sorted(f for f in json_files(p) if f.resolve() not in skip)
         else:
             files.append(p)
     return files

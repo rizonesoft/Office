@@ -2,7 +2,7 @@
 
 Audit stance under the current review process (D02 T01 §23). Candidate: the stamped implementation `602f9dd` and every later change to the files it owns, up to `179ec01`: `scripts/check-inventory.py`, `scripts/tests/test_check_inventory.py`, `design/inventory/schema.json`.
 
-## Checkpoint at the current tip
+## Checkpoint at the audit's start
 
 ```text
 python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 37 tests ... OK
@@ -689,3 +689,49 @@ All three findings verified and fixed in the next commit; the first two tests fa
 1. P1 supplementary-plane invisible characters (U+E0100 and the like) passed, because `noControl`'s class covered the BMP only. A JSON Schema pattern without the `u` flag sees a character outside the BMP as two surrogate code units, so `noControl` now refuses any surrogate code unit. That means any character outside the BMP, emoji included; no Office text needs one. The checker searches every pattern over the UTF-16 view of the string (`utf16()`), so it agrees with an ECMA validator (`test_characters_outside_the_bmp_are_refused`).
 2. P1 a folder that could not be listed passed as empty, since `rglob` swallows the error: discovery walks with `os.walk`, whose error hook raises `Unreadable`, exit 2 (`test_an_unreadable_folder_is_unreadable_not_empty`).
 3. P3 the empty-row rule was untested: `test_a_baseline_with_no_rows_is_refused`.
+
+## Round 18: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T12:46:31Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 7ba8a21c313ab643
+
+## source-defect: needs-attention
+
+1. **[P1] Invisible annotation controls satisfy required readable text.** `design/inventory/schema.json:415` omits U+FFF9, U+FFFA and U+FFFB. Set an otherwise valid control’s `label` and `behaviour` to `"\ufff9"`. Schema validation and `check(..., require_behaviour=True)` return `[]`; the CLI returns **0**. The other two characters also pass. Formatting controls alone therefore count as a label and behaviour sentence.
+
+## adversarial: needs-attention
+
+2. **[P1] Directory metadata errors still silently bypass validation.** `scripts/check-inventory.py:319` relies on `os.walk`’s error callback, but `os.walk` suppresses errors from `DirEntry.is_dir()`. Reproduce by wrapping `os.scandir` entries so only `is_dir()` for `design/inventory/word` raises `PermissionError`, delegating everything else normally. Discovery omits all Word JSON files, and `main([])` returns **0** without diagnostics. The round-17 regression test covers opening a directory, not classifying its entries.
+
+## consistency: needs-attention
+
+3. **[P1] The supplementary-character fix disagrees with Unicode-mode schema evaluation.** `design/inventory/schema.json:415` matches surrogate code units, while `scripts/check-inventory.py:141` manufactures those units with `utf16()`. JSON Schema 2020-12 recommends Unicode-mode regular expressions. In Node, `new RegExp(schema.$defs.noControl.not.pattern, "u").test(String.fromCodePoint(0xE0100))` returns **false**. A valid tab whose label is U+E0100 consequently satisfies every label constraint under that evaluation, while the checker rejects it. The schema’s claimed supplementary-character prohibition remains ineffective for Unicode-mode consumers. See [Draft 2020-12 §6.4](https://json-schema.org/draft/2020-12/json-schema-core#section-6.4).
+
+## record: needs-attention
+
+4. **[P3] The ticked rule-disable claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` claims disabling any rule fails the suite. Disable only the baseline source comparison at `scripts/check-inventory.py:339`: **all 97 tests still pass**. Clone the committed Word baseline, set `source` to `"baseline:" + "0"*40`, and call `check_baseline` with the real manifest. The original reports a source mismatch; the mutant returns `[]`. Both suite runs used fixture I/O redirected entirely to memory.
+
+5. **[P3] The quoted current checkpoint is stale.** `docs/reviews/02-interface/audit-d02-t01-s1.md:8` reports **37 tests** under “Checkpoint at the current tip”; the current suite runs **97**. The quoted evidence does not describe this candidate’s checkpoint.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 18
+
+All five findings verified and fixed in the next commit; the first three tests fail against the round 17 checker (fixes stashed), and the fourth fails when the baseline source comparison is removed:
+
+1. P1 the interlinear annotation controls (U+FFF9 to U+FFFB) passed as text. Rather than another hand-written list, `noControl`'s class is now generated from Unicode's own data: every BMP character classed Cc or Cf, plus the other default-ignorable code points. A test checks the class against this Python's Unicode data, so no format character can be left out (`test_every_format_character_is_refused`).
+2. P1 `os.walk` skipped an entry whose kind could not be read: discovery now walks with `os.scandir` itself, and any error listing a folder or classifying an entry raises `Unreadable` (`test_an_unclassifiable_entry_is_unreadable`).
+3. P1 a JSON Schema consumer in Unicode mode does not see the surrogate class match an astral character: `noControl` adds a negated class of the whole BMP, which matches any character outside it as a code point. Without the `u` flag the surrogate range still catches it as code units, so both modes refuse it (`test_astral_characters_are_refused_in_both_regex_modes`).
+4. P3 the baseline envelope's source comparison was untested: `test_a_baseline_source_must_name_the_manifest_commit`.
+5. P3 the quoted checkpoint described the start of the audit: it is now labelled so, and the current one follows.
+
+## Checkpoint after round 18
+
+```text
+python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 101 tests in 10.409s OK
+python scripts/check-inventory.py                                          -> exit 0
+```

@@ -410,9 +410,9 @@
       }
     },
     "noControl": {
-      "description": "No control character and no invisible format character in any string: C0 and C1 controls, and Unicode's default-ignorable code points (zero-width spaces and joiners, the byte order mark, the soft hyphen, bidi controls, variation selectors), which URL and IDNA processing drop, so they could hide an address inside readable text. Any character outside the Basic Multilingual Plane is refused too (emoji, and the supplementary ignorables such as variation selectors U+E0100 to U+E01EF and tags U+E0000 to U+E007F): a pattern without the u flag sees such a character as two surrogate code units, which this class covers, and no Office text needs one.",
+      "description": "No control character and no invisible format character in any string, and nothing outside the Basic Multilingual Plane. The class is every BMP character Unicode (16.0.0) classes as a control (Cc) or format (Cf) character, such as the byte order mark, zero-width spaces and joiners, the soft hyphen, bidi controls and the interlinear annotation controls, plus the other default-ignorable code points (variation selectors, Hangul fillers), which URL and IDNA processing drop, so they could hide an address or pass for text. Characters outside the BMP (emoji, tags, supplementary variation selectors) are refused in both regular expression modes: the surrogate range catches them as code units without the u flag, and a negated class of the whole BMP catches them as code points with it. No Office text needs any of these.",
       "not": {
-        "pattern": "[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u034F\\u061C\\u115F\\u1160\\u17B4\\u17B5\\u180B-\\u180F\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u206F\\u3164\\uFE00-\\uFE0F\\uFEFF\\uFFA0\\uFFF0-\\uFFF8\\uD800-\\uDFFF]",
+        "pattern": "[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u034F\\u0600-\\u0605\\u061C\\u06DD\\u070F\\u0890-\\u0891\\u08E2\\u115F-\\u1160\\u17B4-\\u17B5\\u180B-\\u180F\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u206F\\u3164\\uFE00-\\uFE0F\\uFEFF\\uFFA0\\uFFF0-\\uFFFB\\uD800-\\uDFFF]|[^\\u0000-\\uFFFF]",
         "description": "control character (or an invisible one)"
       }
     },

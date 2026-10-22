@@ -407,6 +407,73 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_every_format_character_is_refused(self):
+        # Audit round 18, finding 1: the interlinear annotation controls, and every other BMP format character.
+        import unicodedata
+        for code in (0xFFF9, 0xFFFA, 0xFFFB, 0x0600, 0x06DD, 0x2066):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label=chr(code), behaviour=chr(code))])
+            self.assertTrue(any(".label" in p and "control character" in p for p in self.problems()), hex(code))
+        # The class covers every BMP format and control character this Python's Unicode data knows.
+        pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noControl"]["not"]["pattern"])
+        missed = [hex(c) for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF
+                  and unicodedata.category(chr(c)) in ("Cc", "Cf") and not pattern.search(chr(c))]
+        self.assertEqual(missed, [])
+
+    def test_astral_characters_are_refused_in_both_regex_modes(self):
+        # Audit round 18, finding 3: without the u flag a character outside the BMP is two surrogate code units; with
+        # it, one code point. The pattern refuses it either way.
+        import re
+        source = ci.load(ci.SCHEMA)["$defs"]["noControl"]["not"]["pattern"]
+        pattern = ci.ecma(source)
+        for code in (0xE0100, 0x1F600):
+            self.assertTrue(pattern.search(ci.utf16(chr(code))), hex(code))  # code units, as without the u flag
+            self.assertTrue(pattern.search(chr(code)), hex(code))  # code points, as with it
+
+    def test_an_unclassifiable_entry_is_unreadable(self):
+        # Audit round 18, finding 2: an entry whose kind cannot be read must not drop out of discovery.
+        import os
+        self.write("word/ribbon.json", [TAB])
+        real_scandir = os.scandir
+        word = (self.inv / "word").resolve()
+
+        class Entry:
+            def __init__(self, entry):
+                self._entry = entry
+                self.name, self.path = entry.name, entry.path
+
+            def is_dir(self, **kwargs):
+                if Path(self.path).resolve() == word:
+                    raise PermissionError(13, "Access is denied", self.path)
+                return self._entry.is_dir(**kwargs)
+
+            def is_file(self, **kwargs):
+                return self._entry.is_file(**kwargs)
+
+        class Listing:
+            def __init__(self, path):
+                self._it = real_scandir(path)
+
+            def __enter__(self):
+                return (Entry(e) for e in self._it)
+
+            def __exit__(self, *exc):
+                self._it.close()
+
+        os.scandir = Listing
+        try:
+            with self.assertRaises(ci.Unreadable):
+                ci.check([str(self.inv)], inventory=self.inv)
+        finally:
+            os.scandir = real_scandir
+
+    def test_a_baseline_source_must_name_the_manifest_commit(self):
+        # Audit round 18, finding 4: the baseline envelope's source is compared with the manifest's commit.
+        data = json.loads((ci.INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+        data["source"] = "baseline:" + "0" * 40
+        problems = ci.check_baseline(Path("word/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA),
+                                     ci.load(ci.INVENTORY / ci.SOURCES))
+        self.assertTrue(any("is not the manifest commit" in p for p in problems), problems)
+
     def test_characters_outside_the_bmp_are_refused(self):
         # Audit round 17, finding 1: supplementary ignorables (variation selectors, tags) and anything else astral.
         sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
