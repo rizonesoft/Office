@@ -4,7 +4,7 @@ The rules every Rizonesoft Office icon is drawn to, so the suite logo and six ap
 
 ## Grid
 
-Every icon is drawn on a 128-unit square canvas, `viewBox="0 0 128 128"`, and rasterised to each size the platforms ask for (16 to 1024 pixels). Edges are not snapped to the pixel grid at small sizes: at 16 pixels a unit is an eighth of a pixel. Small sizes stay crisp instead through their own drawings, which use larger shapes and heavier strokes.
+Every icon is drawn on a 128-unit square canvas, `viewBox="0 0 128 128"`, and rasterised to each size the platforms ask for (16 to 1024 pixels). These drawings are not snapped to the pixel grid at small sizes (at 16 pixels a unit is an eighth of a pixel); they stay legible through their own larger shapes and heavier strokes. Pixel-aligned 16, 24 and 32 pixel variants, on their own 16, 24 and 32 unit canvases and drawn to the `sm` and `md` designs, are D01 T02 §4.
 
 Three drawings share the canvas, picked by the size the icon is shown at (`tier_for` in `icon_design.py`):
 
@@ -84,7 +84,7 @@ Each rule is one line the D01 T02 §7 review can tick:
 ## Accessibility
 
 - Every app colour reaches 3:1 against white and `#1f1f1f` (Palette).
-- Symbol contrast, measured on the rendered icons pixel by pixel against the same icon rendered without its symbol: at `md` and `sm` every symbol pixel reaches at least 3.89:1 against what is behind it (Stage, the lowest), and the `Palette` tests hold every app to 3:1 there. At `lg` the symbol crosses the blurred orb and dark block, and the share of its pixels at 3:1 or more ranges from 46% (Stage, lowest 2.29:1) to 100% (Flow): Write 84%, Grid 75%, Plan 82%, Mail 64%. Whether to darken the `lg` symbols is the owner's call at the §7 sign-off (D01 T02 §7), since it changes the approved drawing.
+- Symbol contrast, measured on each icon rendered at 128 pixels: every pixel drawn fully in the symbol colour (antialiased edge pixels excluded) against the same pixel of the icon rendered without its symbol. At `md` and `sm` every such pixel reaches at least 3.89:1 (Stage, the lowest), and the `Palette` tests hold every app to 3:1 there. Every part of every symbol is painted in the symbol colour, which a test also checks, except the white flap on Mail's solid `sm` envelope: it is drawn on the envelope, not on the pane, and reaches 5.9:1 against it. At `lg` the symbol crosses the blurred orb and dark block, and the share of its symbol-colour pixels at 3:1 or more ranges from 46% (Stage, lowest 2.29:1) to 100% (Flow): Write 84%, Grid 75%, Plan 82%, Mail 64%. Whether to darken the `lg` symbols is the owner's call at the §7 sign-off (D01 T02 §7), since it changes the approved drawing.
 - Colour is never the only thing that tells the apps apart: each has its own symbol shape, so the icons stay distinct in greyscale and for people with a colour vision deficiency.
 - Small sizes trade detail for weight: `md` symbols use strokes of 8 to 12 units and `sm` symbols are solid or 11 to 15 units (the white flap on Mail's solid envelope is 8), before the tier's 1.12 or 1.25 scale, so no stroke is thinner than about 1 pixel at 16 pixels.
 - Every SVG master carries a `<title>` with the product's full name ("Rizonesoft Write"), which screen readers announce when the SVG is shown inline.

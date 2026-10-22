@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import struct
 import sys
 import unittest
@@ -145,9 +146,26 @@ class Palette(unittest.TestCase):
             light, dark = d.APPS[key][2]
             self.assertIn(color, {d.mix(light, dark, i / 100) for i in range(101)}, key)
 
+    def test_every_symbol_part_is_painted_in_the_symbol_colour(self):
+        # What lets the rendered test below sample by colour: no part of a symbol is painted in anything else. The one
+        # exception is the white flap drawn on Mail's solid small envelope, held to 3:1 against the envelope.
+        col = "#123456"
+        for key in d.APPS:
+            for tier in d.TIERS:
+                paints = re.findall(r'(?:fill|stroke)="([^"]*)"', d.glyph(key, tier, col))
+                others = [p for p in paints if p not in (col, "none")]
+                if (key, tier) == ("mail", "sm"):
+                    self.assertEqual(others, ["#ffffff"])
+                    symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+                    self.assertGreaterEqual(d.contrast("#ffffff", symbol), 3)
+                else:
+                    self.assertEqual(others, [], (key, tier))
+                self.assertIn(col, paints, (key, tier))
+
     def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
-        # Rendered, not computed: each symbol pixel against the same pixel with the symbol left out. The lg symbols
-        # cross the blurred orb and block; their contrast is the owner's call at D01 T02 section 7.
+        # Rendered, not computed: each pixel drawn fully in the symbol colour (antialiased edges excluded) against the
+        # same pixel with the symbol left out. The lg symbols cross the blurred orb and block; their contrast is the
+        # owner's call at D01 T02 section 7.
         real = d.glyph
         for key in d.APPS:
             symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
@@ -177,6 +195,20 @@ class Keylines(unittest.TestCase):
                           f'rx="{d.n(prx)}"', svg, tier)
             cx, cy, r = d.APP_ORB[tier]
             self.assertIn(f'cx="{d.n(i * 144 + cx)}" cy="{d.n(cy)}" r="{d.n(r)}"', svg, tier)
+
+    def test_every_shape_is_placed_on_the_canvas(self):
+        # The geometry itself, so a shape moved far enough to miss the rendered check below still fails.
+        def inside(x0, y0, x1, y1):
+            return 0 <= x0 <= x1 <= 128 and 0 <= y0 <= y1 <= 128
+        for tier in d.TIERS:
+            px, py, pw, ph, _ = d.APP_PANE[tier]
+            cx, cy, r = d.APP_ORB[tier]
+            gx, gy, gs = d.APP_GLYPH_AT[tier]
+            self.assertTrue(inside(px, py, px + pw, py + ph), ("pane", tier))
+            self.assertTrue(inside(cx - r, cy - r, cx + r, cy + r), ("orb", tier))
+            self.assertTrue(inside(gx - 32 * gs, gy - 32 * gs, gx + 32 * gs, gy + 32 * gs), ("symbol box", tier))
+        bx, by, bw, bh, _ = d.APP_BLOCK
+        self.assertTrue(inside(bx, by, bx + bw, by + bh), "block")
 
     def test_every_drawing_fits_the_canvas(self):
         # Rendered on a canvas three times the size, so a shape, stroke or shadow past the edge shows, not clipped.
