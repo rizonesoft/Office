@@ -97,13 +97,18 @@ class FileTypes(unittest.TestCase):
         named = ("docx docm dotx doc rtf odt xlsx xlsm xltx xls csv ods pptx pptm potx ppt odp vsdx vsdm vstx mpp mpt "
                  "eml msg ics vcf").split()
         self.assertEqual(list(ft.TYPES), named)
-        for ext, (_, kind, _) in ft.TYPES.items():
+        # The kinds as the owner decided them (the section's context), written out here rather than read from TYPES,
+        # so a wrong classification in the generator cannot pass.
+        macro, template, plain = {"docm", "xlsm", "pptm", "vsdm"}, {"dotx", "xltx", "potx", "vstx", "mpt"}, {"rtf", "csv"}
+        for ext in named:
             for variant in ("lg", "lg-badge-md", "lg-badge-sm", "md", "sm"):
-                svg = (SCRIPTS.parent / f"design/icons/files/{ext}-{variant}.svg").read_text(encoding="utf-8")
-                self.assertEqual(svg, ft.filetype_svg(ext, variant), (ext, variant))
-            large = ft.filetype_svg(ext, "lg")
-            self.assertEqual("#f59f0b" in large, kind == "macro", ext)  # the amber macro mark
-            self.assertEqual("stroke-dasharray" in large, kind == "template", ext)  # the dashed template page
+                svg = ft.filetype_svg(ext, variant)
+                committed = (SCRIPTS.parent / f"design/icons/files/{ext}-{variant}.svg").read_text(encoding="utf-8")
+                self.assertEqual(committed, svg, (ext, variant))
+                self.assertEqual("#f59f0b" in svg, ext in macro, (ext, variant))  # the amber macro mark
+                self.assertEqual("stroke-dasharray" in svg, ext in template, (ext, variant))  # the dashed page
+                if variant != "sm":  # the 16 px page has no content hint
+                    self.assertEqual(ft.PLAIN_GREY in svg, ext in plain, (ext, variant))  # the grey hint
 
     def test_verify_refuses_live_text(self):
         problems = build_icons.verify({"design/icons/files/x-lg.svg": b'<svg><text>DOCX</text></svg>'})

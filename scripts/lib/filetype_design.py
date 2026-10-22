@@ -40,6 +40,10 @@ TYPES = {
     "ics": ("mail", "calendar", "text/calendar"),
     "vcf": ("mail", "contact", "text/vcard"),
 }
+PLAIN_GREY = "#c3cad6"  # the content hint of plain files (CSV, RTF)
+MACRO_AMBER = "#f59f0b"  # the mark on macro-enabled files, at every size
+# Macro mark per page tier: centre x, centre y, radius; the white exclamation is drawn only where it can be read.
+MACRO_MARK = {"lg": (100, 102, 10), "md": (98, 100, 16), "sm": (100, 100, 22)}
 PAGE = "M36,6 H90 L114,30 V116 Q114,122 108,122 H36 Q30,122 30,116 V12 Q30,6 36,6 Z"
 FOLD = "M90,6 V24 Q90,30 96,30 H114 Z"
 # Badge placement per page tier: x, y, size on the 128-unit canvas.
@@ -78,13 +82,14 @@ def _badge(key, tier, x, y, size):
 def _hint(key, kind, page_tier):
     a, b = d.APPS[key][2]
     soft, mid = d.mix(a, "#ffffff", .55), d.mix(b, "#ffffff", .25)
-    if page_tier == "md":
-        return f'<path d="M66,42 H104 M76,54 H104" stroke="{mid}" stroke-width="6" stroke-linecap="round"/>'
+    if page_tier == "md":  # two lines; grey for plain files, as on the large page
+        return (f'<path d="M66,42 H104 M76,54 H104" stroke="{PLAIN_GREY if kind == "plain" else mid}" stroke-width="6" '
+                'stroke-linecap="round"/>')
 
     def line(y, x1, x2, c=soft, w=5):
         return f'<path d="M{x1},{y} H{x2}" stroke="{c}" stroke-width="{w}" stroke-linecap="round"/>'
     if kind == "plain":
-        grey = "#c3cad6"
+        grey = PLAIN_GREY
         if key == "grid":
             return (f'<path d="M44,40 H106 M44,52 H106 M44,64 H106 M44,76 H106 M44,88 H106 M65,40 V88 M86,40 V88" '
                     f'stroke="{grey}" stroke-width="2"/>')
@@ -120,6 +125,17 @@ def _hint(key, kind, page_tier):
             + "".join(line(y, 44, x2, soft) for y, x2 in ((62, 104), (72, 104), (82, 90))))
 
 
+def _macro_mark(page_tier):
+    """The amber macro mark, with its white exclamation scaled to the mark; at 16 px the dot alone reads."""
+    mx, my, mr = MACRO_MARK[page_tier]
+    mark = f'<circle cx="{mx}" cy="{my}" r="{mr}" fill="{MACRO_AMBER}"/>'
+    if page_tier != "sm":
+        s = mr / 10
+        mark += (f'<path d="M{mx},{d.n(my - 6 * s)} V{d.n(my + s)}" stroke="#ffffff" stroke-width="{d.n(3.2 * s)}" '
+                 f'stroke-linecap="round"/><circle cx="{mx}" cy="{d.n(my + 6 * s)}" r="{d.n(1.9 * s)}" fill="#ffffff"/>')
+    return mark
+
+
 def _label(ext, kind, color):
     text, width = outliner().path(ext.upper(), 10, 800, tracking=.4)
     w = width + 9
@@ -140,7 +156,9 @@ def filetype_svg(ext, variant):
     template = kind == "template"
     if page_tier == "sm":
         edge = d.mix(b, "#ffffff", .1) if template else "#9aa5b8"
-        body = (f'<path d="{PAGE}" fill="#ffffff" stroke="{edge}" stroke-width="5"/><path d="{FOLD}" fill="#dfe4ec"/>')
+        dash = ' stroke-dasharray="12 8"' if template else ""  # 1.5 px dashes with 1 px gaps at 16 px
+        body = (f'<path d="{PAGE}" fill="#ffffff" stroke="{edge}" stroke-width="5"{dash}/>'
+                f'<path d="{FOLD}" fill="#dfe4ec"/>')
     else:
         stroke = (f'stroke="{d.mix(b, "#ffffff", .2)}" stroke-width="2.5" stroke-dasharray="6 4"' if template
                   else 'stroke="#cdd4df" stroke-width="1.5"')
@@ -154,11 +172,9 @@ def filetype_svg(ext, variant):
                 f'<path d="{FOLD}" fill="url(#{pid}-fd)"/>'
                 '<path d="M90,6 V24 Q90,30 96,30 H114" fill="none" stroke="#c2cad6" stroke-width="1"/>'
                 + _hint(key, kind, page_tier))
-        if page_tier == "lg":
-            if kind == "macro":
-                body += ('<circle cx="100" cy="102" r="10" fill="#f59f0b"/><path d="M100,96 V103" stroke="#ffffff" '
-                         'stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="108" r="1.9" fill="#ffffff"/>')
-            body += _label(ext, kind, b)
+    body += _macro_mark(page_tier) if kind == "macro" else ""  # under the tag, which it meets at 48 px
+    if page_tier == "lg":
+        body += _label(ext, kind, b)
     bx, by, bs = BADGE[page_tier]
     body += _badge(key, badge_tier, bx, by, bs)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">'
