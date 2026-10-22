@@ -37,7 +37,7 @@ title: "TODO-01 -- Suite and App Naming"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Naming brief and constraints | D00 T01 §1 | [x] |
 | 2 | §2 | Collision screen for the chosen names | §1 | [x] |
-| 3 | §3 | Owner selection of suite and app names | §2 | [ ] |
+| 3 | §3 | Owner selection of suite and app names | §2 | [x] |
 | 4 | §4 | Knockout trademark screen for chosen names | §3 | [ ] |
 | 5 | §5 | Domain, GitHub and package name availability | §3 | [ ] |
 | 6 | §6 | Apply names across the repository | §4, §5 | [ ] |
@@ -123,9 +123,12 @@ Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizoneso
 - [x] Record the owner's chosen concept and any per-app swaps in `docs/brand/NAMES.md` under `## Suite` and `## Apps`. Done when: six app rows each name the Microsoft counterpart. Cheaper substitute: recording only the suite name and leaving app names implied.
 - [x] Add the identifier forms to `docs/brand/NAMES.md` under `## Identifiers`: display name, `kebab-case`, `PascalCase`, and reverse-DNS bundle id under the owner's domain. Done when: all four forms exist for the suite and each app. Cheaper substitute: deriving identifiers ad hoc in each later file.
 - [x] Add the file extension policy to `docs/brand/NAMES.md` under `## File formats`: the documented XML formats (OOXML `.docx`, `.xlsx`, `.pptx`, and Visio's `.vsdx`) are kept, and any native project format gets its own extension. **Corrected 2026-10-22:** called `.vsdx` OOXML; it shares OOXML's packaging but its schema is Visio's, outside ECMA-376. Done when: each app lists its default save format (Plan's as its own native format, the extension's name owned by D03 T01 §5, which decides the `.mpp` scope). Cheaper substitute: inventing proprietary formats for apps whose OOXML format is standard.
-- [ ] Commit: `brand: record chosen suite and app names`
+- [x] Commit: `brand: record chosen suite and app names`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/NAMES.md --require Suite --require Apps --require Identifiers --require "File formats"` exits 0.
+
+> **Verified:** 2026-10-22 | §3 | 831b35c0536a55845ef4bd1092b854f437fe244c
+> **Review:** `docs/reviews/d01-t01-s3.json`
 
 ## 4. Knockout Trademark Screen for Chosen Names
 

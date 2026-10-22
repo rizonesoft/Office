@@ -1,0 +1,24 @@
+{
+  "ref": "D01 T01 \u00a73",
+  "title": "Owner Selection of Suite and App Names",
+  "implementation_sha": "831b35c0536a55845ef4bd1092b854f437fe244c",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T01-s3.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-design-doc.py docs/brand/NAMES.md --require Suite --require Apps --require Identifiers --require \"File formats\" -> exit 0",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at 831b35c"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 22
+}
