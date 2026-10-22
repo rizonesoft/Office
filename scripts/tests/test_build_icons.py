@@ -374,13 +374,20 @@ class PixelVariants(unittest.TestCase):
                     self.assertEqual(width, int(width), (key, size, a))
                     offset = .5 if int(width) % 2 else 0
                     if name == "rect":
-                        values = [float(a["x"]) - offset, float(a["y"]) - offset, float(a["width"]), float(a["height"])]
+                        x, y, w, h = (float(a[v]) for v in ("x", "y", "width", "height"))
+                        values = [x - offset, y - offset, w, h]
+                        extent = [x, y, x + w, y + h]
                     elif name == "circle":
-                        values = [float(a[v]) - float(a["r"]) for v in ("cx", "cy")] + [2 * float(a["r"])]
+                        cx, cy, r = (float(a[v]) for v in ("cx", "cy", "r"))
+                        values = [cx - r, cy - r, 2 * r]
+                        extent = [cx - r, cy - r, cx + r, cy + r]
                     else:
-                        values = [float(v) - offset for v in re.findall(r"-?[\d.]+", a["d"])]
+                        points = [float(v) for v in re.findall(r"-?[\d.]+", a["d"])]
+                        values = [v - offset for v in points]
+                        extent = points
                     self.assertTrue(all(v == int(v) for v in values), (key, size, name, a))
-                    self.assertTrue(all(0 <= v <= size for v in values), (key, size, name, a))
+                    # Every edge, with half the stroke on either side, lies on the canvas.
+                    self.assertTrue(all(width / 2 <= v <= size - width / 2 for v in extent), (key, size, name, a))
 
     def test_separate_shapes_stay_separate(self):
         # Filled shapes apart on the 128-unit drawing keep at least a pixel between them.
