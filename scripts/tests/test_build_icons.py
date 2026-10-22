@@ -163,8 +163,9 @@ class Palette(unittest.TestCase):
                 for name, attrs in elements:
                     pairs = dict(re.findall(r'([\w-]+)="([^"]*)"', attrs))
                     self.assertLessEqual(set(pairs), allowed.get(name, set()) | paint, (key, tier, name))
+                    self.assertIn("fill", pairs, (key, tier, name))  # an unstated fill would paint black
                     for attr in ("fill", "stroke"):
-                        value = pairs.get(attr, col if attr == "fill" else "none")
+                        value = pairs.get(attr, "none")
                         if (key, tier, value) == ("mail", "sm", "#ffffff"):
                             symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
                             self.assertGreaterEqual(d.contrast(value, symbol), 3)
@@ -180,6 +181,22 @@ class Palette(unittest.TestCase):
                         self.assertRegex(pairs["d"], r"^[MLHVZ0-9.,\s-]+$", (key, tier))
                         edges = [float(v) for v in re.findall(r"-?[\d.]+", pairs["d"])]
                     self.assertTrue(all(-32 <= v <= 32 for v in edges), (key, tier, name, edges))
+
+    def test_mail_flap_sits_on_the_envelope(self):
+        # The flap is held to 3:1 against the envelope, so every pixel it changes must have the envelope under it.
+        real = d.glyph
+        symbol = d.mix(d.APPS["mail"][2][1], "#000000", .15)
+        rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
+        drawn = render_rgb(d.icon_svg("mail", "sm"))
+        try:
+            d.glyph = lambda *a: re.sub(r'<path stroke="#ffffff"[^>]*/>', "", real(*a))
+            plain = render_rgb(d.icon_svg("mail", "sm"))
+        finally:
+            d.glyph = real
+        grid = [(x, y) for y in range(128) for x in range(128)]
+        flap = [xy for xy in grid if drawn.getpixel(xy) != plain.getpixel(xy)]
+        self.assertGreater(len(flap), 100)
+        self.assertEqual({plain.getpixel(xy) for xy in flap}, {rgb})
 
     def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
         # Rendered, not computed: each pixel drawn fully in the symbol colour (antialiased edges excluded) against the
