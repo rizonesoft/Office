@@ -335,6 +335,16 @@ class Lineup(unittest.TestCase):
                 box = alpha.crop((int(float(x)), int(float(y)), int(float(x)) + 96, int(float(y)) + 96))
                 covered = sum(1 for a in box.tobytes() if a > 200)
                 self.assertGreater(covered, 96 * 96 // 2, (theme, name))  # it is drawn, not merely present
+            # Laid out left to right without overlap, each icon centred over its own name.
+            lefts = [float(x) for x, *_ in icons]
+            self.assertTrue(all(b - a >= 96 for a, b in zip(lefts, lefts[1:])), (theme, lefts))
+            top = re.sub(r"<svg x=.*?</svg>", "", svg.split("</title>", 1)[1], flags=re.S)
+            names = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)[0::2]
+            for (name, _), left, label in zip(rows, lefts, names):
+                alone = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
+                         f'height="{h}">{label}</svg>')
+                x0, _, x1, _ = Image.open(io.BytesIO(build_icons.render(alone, w, h))).getchannel("A").getbbox()
+                self.assertLess(abs((x0 + x1) / 2 - (left + 48)), 3, (theme, name))
 
     def test_text_reads_on_each_github_canvas(self):
         for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
