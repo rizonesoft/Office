@@ -618,3 +618,39 @@ All three findings verified and fixed in the next commit; the first two tests fa
 1. P1 a scheme with no slashes (`https:localhost`, which URL parsers resolve) passed in an identifier field. Patching address shapes one at a time keeps losing, so the class is closed instead: a new `noColon` rule gives the identifier fields (`id`, `parent`, `target`, `captureProfile`, `capturedFrom`, `idMso`, `uiaId`) no colon at all, fullwidth included. Every address begins with a scheme and a colon. None of these fields holds a colon in the committed inventory, and `source` keeps its own anchored pattern, whose colon is part of the format (`test_identifier_fields_hold_no_colon`).
 2. P2 long keys multiplied into every descendant's diagnostic: the whole-record scan keeps only each node's parent and its own label, truncates a key past 40 characters, and spells a path out only for a reported link, at most 20 per record, then counts the rest at its own location (`$[i].*`) so a schema problem at the record does not hide it (`test_long_keys_do_not_amplify_the_report`: a 4000-character key over 400 links now reports under 20000 characters).
 3. P3 two rules could be removed unnoticed: `test_a_boolean_is_not_an_integer` (`order: true`) and `test_an_uncompressed_ipv6_address_is_refused` (the full eight-group form).
+
+## Round 16: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T12:11:44Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 553f24b6498901ee
+
+### source-defect: needs-attention
+
+1. **[P1] Unicode whitespace conceals prohibited links.** `design/inventory/schema.json:422` permits U+FEFF after colons and dots, while `:408` misses the resulting address. Set a valid tab’s `label` to `"https:\ufeffsupport.\ufeffmicrosoft.\ufeffcom/en-us/office"`. Schema validation and `check()` return `[]`; the CLI exits **0**. Node’s `new URL(label).href` resolves it to `https://support.microsoft.com/en-us/office`.
+
+### adversarial: needs-attention
+
+2. **[P1] Checking an ancestor directory bypasses baseline completeness.** `scripts/check-inventory.py:402` enables completeness checks only when an argument resolves exactly to the inventory root. With `design/inventory/excel/baseline.json` absent, `python scripts/check-inventory.py design` exits **0**, although it scans the whole inventory. Checking `design/inventory` instead exits **1** with `missing baseline`. Reproduced using read-only discovery overrides. This violates `design/inventory/REFERENCE.md:66`.
+
+### consistency: needs-attention
+
+3. **[P3] Identifier documentation contradicts the new constraint.** `design/inventory/schema.json:420` says identifier fields carry “noLink only”, but they now also carry `noColon`. Reproduce with `uiaId:"https:localhost"`: `noLink` permits it, while the property rejects it specifically for its colon.
+
+### record: needs-attention
+
+4. **[P3] The every-rule test claim remains unsupported.** `scripts/tests/test_check_inventory.py:550` tests malformed blob IDs but leaves the commit-format guard unprotected. Remove only `or not hex40.fullmatch(sources["commit"])` at `scripts/check-inventory.py:387` in memory: **all 91 tests pass**. The mutant then accepts a valid tab checked individually against a manifest whose commit is `"not-a-git-id"`; the original raises `Unreadable`. This contradicts the ticked rule-disable claim at `todo/02-interface/TODO-01-parity-inventory.md:89`.
+
+HIGHEST: P1  
+OVERALL: needs-attention
+
+## Dispositions after audit round 16
+
+All four findings verified and fixed in the next commit; the tests for findings 1 and 2 fail against the round 15 checker (fixes stashed), and the test for finding 4 fails when the commit guard is removed:
+
+1. P1 U+FEFF between an address's parts hid it, since URL and IDNA processing drop it: `noControl`, which every string field carries, now refuses C1 controls and Unicode's default-ignorable code points too (zero-width spaces and joiners, the byte order mark, the soft hyphen, bidi controls, variation selectors) (`test_invisible_characters_cannot_hide_an_address`). Two earlier tests used U+FEFF as valid padding or blank text; a sentence padded with U+3000, a real space, still counts. The test file's invisible literals, left by earlier edits, are now written as escapes.
+2. P1 naming a folder above the inventory (`design`, the repository) skipped the whole-inventory gate: the gate runs when any named path is the inventory root or one of its ancestors (`test_naming_a_folder_above_the_inventory_runs_the_whole_inventory_gate`; `python scripts/check-inventory.py design` checks clean on the committed inventory).
+3. P3 the `noHost` description still said identifier fields carry `noLink` only: it now names `noColon` too.
+4. P3 the manifest commit guard was untested: `test_a_malformed_manifest_commit_is_unreadable`.

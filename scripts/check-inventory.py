@@ -398,8 +398,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     # The baseline every baseline: source must name: this inventory's manifest, or the repository's when it has none.
     baseline_commit = (sources if manifest else load(INVENTORY / SOURCES))["commit"]
     # A run over the whole inventory is the acceptance gate: once the manifest declares a baseline, every app's must
-    # exist and Outlook's must hold every window it lists. Checking one file stays a check of that file alone.
-    whole = inventory.is_dir() and inventory.resolve() in [Path(p).resolve() for p in paths]
+    # exist and Outlook's must hold every window it lists. Naming the inventory or any folder that contains it (design,
+    # the repository) is such a run; checking one file or one app's folder stays a check of that alone.
+    root = inventory.resolve()
+    whole = inventory.is_dir() and any(Path(p).resolve() == root or Path(p).resolve() in root.parents for p in paths)
     if whole and sources is not None:
         for app in APPS:
             path = inventory / app / BASELINE

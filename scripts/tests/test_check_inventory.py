@@ -216,7 +216,7 @@ class Inventory(unittest.TestCase):
     def test_a_blank_shortcut_is_refused(self):
         # Audit finding 2: a chord of spaces records no key.
         sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
-        for chord in (" ", "  "):
+        for chord in (" ", "\u00a0\u2003"):
             self.write("word/shortcuts.json", [dict(sc, shortcut=chord)])
             self.assertTrue(any(".shortcut" in p for p in self.problems()), repr(chord))
 
@@ -283,24 +283,24 @@ class Inventory(unittest.TestCase):
         # Audit round 3, finding 2: U+FEFF is whitespace to the schema (ECMA-262), so it is no label, chord or
         # behaviour, and the behaviour gate agrees with the schema.
         sc = {"id": "word.shortcuts.bold", "app": "word", "kind": "shortcut", "label": "Bold"}
-        self.write("word/ribbon.json", [dict(TAB, label="﻿")])
+        self.write("word/ribbon.json", [dict(TAB, label="\ufeff")])
         self.assertTrue(any(".label" in p for p in self.problems()))
         self.write("word/ribbon.json", [TAB])
-        self.write("word/shortcuts.json", [dict(sc, shortcut="﻿")])
+        self.write("word/shortcuts.json", [dict(sc, shortcut="\ufeff")])
         self.assertTrue(any(".shortcut" in p for p in self.problems()))
         self.write("word/shortcuts.json", [dict(sc, shortcut="Ctrl+B")])
-        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="﻿　")])
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="\ufeff\u3000")])
         self.assertTrue(any("behaviour" in p for p in self.problems()))
         self.write("word/ribbon.json", [TAB, GROUP, BOLD])
         self.assertTrue(any("has no behaviour" in p for p in self.problems(behaviour=True)))
-        # The behaviour gate strips the schema's whitespace: a sentence padded with U+FEFF still counts.
-        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="﻿Makes the text bold.")])
+        # The behaviour gate strips the schema's whitespace: a sentence padded with U+3000 (a real space) still counts.
+        self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="\u3000Makes the text bold.")])
         self.assertEqual(self.problems(behaviour=True), [])
 
     def test_ecma_translates_whitespace_classes(self):
-        self.assertFalse(ci.ecma(r"\S").search("﻿  "))
+        self.assertFalse(ci.ecma(r"\S").search("\ufeff\u2028\u00a0"))
         self.assertTrue(ci.ecma(r"\S").search("\x1c"))  # a C0 separator is not whitespace to ECMA
-        self.assertTrue(ci.ecma(r"^\s*\S").search("﻿ x"))
+        self.assertTrue(ci.ecma(r"^\s*\S").search("\ufeff x"))
         with self.assertRaises(ValueError):
             ci.ecma(r"[^\S]")
 
@@ -359,7 +359,7 @@ class Inventory(unittest.TestCase):
         for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
-        for text in ("Opens the dialog. ", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)"):
+        for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
 
@@ -406,6 +406,33 @@ class Inventory(unittest.TestCase):
             problems = self.problems()
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
+
+    def test_invisible_characters_cannot_hide_an_address(self):
+        # Audit round 16, finding 1: URL parsers drop U+FEFF and other default-ignorables, so they are refused.
+        self.write("word/ribbon.json", [dict(TAB, label="https:\ufeffsupport.\ufeffmicrosoft.\ufeffcom/x")])
+        self.assertTrue(any("control character" in p for p in self.problems()))
+        for ch in ("\u200b", "\u00ad", "\u2060", "\ufe0f", "\u202e"):
+            self.write("word/ribbon.json", [dict(TAB, label=f"Ho{ch}me")])
+            self.assertTrue(any("control character" in p for p in self.problems()), ascii(ch))
+
+    def test_naming_a_folder_above_the_inventory_runs_the_whole_inventory_gate(self):
+        # Audit round 16, finding 2: checking design/ (or the repository) must require every baseline too.
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        self.write("word/ribbon.json", [TAB])
+        above = self.inv.parent
+        problems = ci.check([str(above)], inventory=self.inv)
+        self.assertTrue(any("missing baseline" in p for p in problems), problems[:3])
+        self.assertFalse(any("missing baseline" in p for p in ci.check([str(self.inv / "word")], inventory=self.inv)))
+
+    def test_a_malformed_manifest_commit_is_unreadable(self):
+        # Audit round 16, finding 4: the commit must be a 40-hex Git id, even when one file is checked alone.
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        real["commit"] = "not-a-git-id"
+        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        named = self.write("word/ribbon.json", [TAB])
+        with self.assertRaises(ci.Unreadable):
+            ci.check([str(named)], inventory=self.inv)
 
     def test_identifier_fields_hold_no_colon(self):
         # Audit round 15, finding 1: a scheme with no slashes (https:localhost) resolves too; identifiers take no colon.
@@ -576,13 +603,13 @@ class Inventory(unittest.TestCase):
     def test_diagnostics_escape_control_characters(self):
         # Audit round 9, finding 2: a record's text cannot send control or bidi characters to the terminal.
         path = self.inv / "word" / "ribbon.json"
-        path.write_text(json.dumps([dict(TAB, captureProfile="\u001b[2JFORGED‮")]), encoding="utf-8")
+        path.write_text(json.dumps([dict(TAB, captureProfile="\u001b[2JFORGED\u202e")]), encoding="utf-8")
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = ci.main([str(path)])
         self.assertEqual(code, 1)
         self.assertNotIn("\u001b", out.getvalue())
-        self.assertNotIn("‮", out.getvalue())
+        self.assertNotIn("\u202e", out.getvalue())
         self.assertIn("\\x1b[2JFORGED\\u202e", out.getvalue())
 
     def test_a_time_is_not_an_ipv6_address(self):

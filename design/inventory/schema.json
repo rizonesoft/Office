@@ -410,14 +410,14 @@
       }
     },
     "noControl": {
-      "description": "No C0 control character: a label is text someone can read.",
+      "description": "No control character and no invisible format character in any string: C0 and C1 controls, and Unicode's default-ignorable code points (zero-width spaces and joiners, the byte order mark, the soft hyphen, bidi controls, variation selectors), which URL and IDNA processing drop, so they could hide an address inside readable text.",
       "not": {
-        "pattern": "[\\u0000-\\u001F]",
-        "description": "control character"
+        "pattern": "[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u034F\\u061C\\u115F\\u1160\\u17B4\\u17B5\\u180B-\\u180F\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u206F\\u3164\\uFE00-\\uFE0F\\uFEFF\\uFFA0\\uFFF0-\\uFFF8]",
+        "description": "control character (or an invisible one)"
       }
     },
     "noHost": {
-      "description": "No address of any kind in text a person reads (label, keytip, shortcut, menuPath, behaviour). A full stop (., or the ideographic, fullwidth or halfwidth full stop that host names normalise to) may be followed only by whitespace, another full stop, closing punctuation, the end of the text, or a digit when a digit precedes it, as in a decimal such as 1.5. That refuses every host name, in any script and punycode included, whatever its letters. Three or more dotted numbers (an IPv4 address, shorthand such as 127.0.1 included; a two-part number such as 1.5 is a decimal and stays valid, though resolvers also read it as an address), an IPv6 address (a :: between hexadecimal groups, or four or more hexadecimal groups joined by colons; a time such as 12:30:45, with three groups, stays valid) and a word followed directly by a colon, or a fullwidth colon, and a non-space character (any URI scheme) are refused too. Office's own labels have none of these; abbreviations with inner dots are refused as well, so write \"for example\", not \"e.g.\". Identifier fields carry noLink only, since ids are dotted and sources such as uia:16.0.20430.20182 carry a colon.",
+      "description": "No address of any kind in text a person reads (label, keytip, shortcut, menuPath, behaviour). A full stop (., or the ideographic, fullwidth or halfwidth full stop that host names normalise to) may be followed only by whitespace, another full stop, closing punctuation, the end of the text, or a digit when a digit precedes it, as in a decimal such as 1.5. That refuses every host name, in any script and punycode included, whatever its letters. Three or more dotted numbers (an IPv4 address, shorthand such as 127.0.1 included; a two-part number such as 1.5 is a decimal and stays valid, though resolvers also read it as an address), an IPv6 address (a :: between hexadecimal groups, or four or more hexadecimal groups joined by colons; a time such as 12:30:45, with three groups, stays valid) and a word followed directly by a colon, or a fullwidth colon, and a non-space character (any URI scheme) are refused too. Office's own labels have none of these; abbreviations with inner dots are refused as well, so write \"for example\", not \"e.g.\". Identifier fields carry noLink and noColon instead, since ids are dotted; source keeps its own anchored pattern, whose colon is part of the format.",
       "not": {
         "pattern": "[.\\u3002\\uff0e\\uff61](?![\\s.\\u3002\\uff0e\\uff61)\\]\"'\\u201d\\u2019]|\\d|$)|(?<![0-9])[.\\u3002\\uff0e\\uff61](?=\\d)|\\d+[.\\u3002\\uff0e\\uff61]\\d+[.\\u3002\\uff0e\\uff61]\\d+|[A-Za-z][A-Za-z0-9+.-]*[:\\uff1a]\\S|[0-9A-Fa-f]{0,4}::[0-9A-Fa-f]{0,4}|[0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){3,}",
         "description": "host name or address"
