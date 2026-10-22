@@ -6,25 +6,15 @@ Every scheduled job for Office lives here: the task list in `tasks.json`, the ru
 
 | Task | When (local time) | Runs |
 | --- | --- | --- |
-| `office-winui-pin` | Daily 06:23 | `scripts/check-winui-pin.py update` |
-| `office-dotnet-pin` | Daily 06:33 | `scripts/check-dotnet-pin.py update` |
-| `office-nuget-pins` | Monday 07:00 | `scripts/check-nuget-pins.py update` |
-| `office-vulnerable-packages` | Monday 07:15 | `scripts/check-vulnerable-packages.py` |
-| `office-dotnet-local` | Monday 07:20 | `scripts/check-dotnet-pin.py local` |
 | `office-visual-studio` | Monday 07:25 | `scripts/check-visual-studio.py notify` |
 | `office-python-pin` | Monday 07:30 | `scripts/check-python-pin.py notify` |
 | `office-pr-merge` | Daily 07:43 | `scripts/merge_prs.py --skip-unsafe` |
 
 What each one emails you about, and when it fails (which sends the failure alert instead):
 
-- `office-winui-pin`: emails when a newer stable WinUI 3 release is on branch `winui/<version>`, ready to merge. Fails when a proposal's checks fail, the pin on main is not an exact stable version on NuGet, or the releases or NuGet cannot be read.
-- `office-dotnet-pin`: emails when a newer .NET 11 SDK is on branch `dotnet/<version>`, ready to merge. Fails when a proposal's checks fail, the pin on main is not a .NET 11 SDK the release feed lists, `global.json` does not disable roll-forward, or the feed cannot be read.
-- `office-nuget-pins`: emails when the other NuGet pins at their latest stable releases are on branch `pins/nuget-<key>`. Fails when a proposal's checks fail, a pin is not an exact stable version on nuget.org, or nuget.org cannot be read. With no other pin yet, it checks nothing and succeeds.
-- `office-vulnerable-packages`: never emails; fails when a NuGet package in the solution, direct or transitive, has a published advisory, or the restore or the report fails. No solution yet (until D03 T01 §12 creates it) is a success.
-- `office-dotnet-local`: emails once when this machine lacks the .NET SDK that `global.json` pins. Fails when `global.json` cannot be read or `dotnet` is not on PATH.
-- `office-visual-studio`: emails once per release when this machine's Visual Studio 2026 is behind its latest servicing release. Fails when none is installed, or vswhere or the release channel cannot be read.
+- `office-visual-studio`: emails once per release when this machine's Visual Studio 2026 (the MSVC toolset the C++ build uses) is behind its latest servicing release. Fails when none is installed, or vswhere or the release channel cannot be read.
 - `office-python-pin`: emails once when this machine's Python is behind the newest stable CPython (minor or patch). Fails when python.org cannot be read.
-- `office-pr-merge`: never emails on success; merges green Dependabot and pins pull requests (labelled `dependencies` or `pins`, every check green, cleanly mergeable, no `global.json` change) one at a time by rebase, then pulls and validates. It skips quietly (exit 0, the reason in its log) while a campaign run is open (the campaign merges at its own section boundaries) or while the checkout is dirty, off `main`, behind or ahead of `origin/main`, or mid-section. Each pull request is read again and judged again just before its merge, under the run guard's lock. Fails when a merge, pull or validate fails (exit 1), leaving the rest open (a pull request already merged when its pull or validate failed is reported as merged), or when git or gh cannot be run or read (exit 3).
+- `office-pr-merge`: never emails on success; merges green Dependabot and pins pull requests (labelled `dependencies` or `pins`, every check green, cleanly mergeable) one at a time by rebase, then pulls and validates. It skips quietly (exit 0, the reason in its log) while a campaign run is open (the campaign merges at its own section boundaries) or while the checkout is dirty, off `main`, behind or ahead of `origin/main`, or mid-section. Each pull request is read again and judged again just before its merge, under the run guard's lock. Fails when a merge, pull or validate fails (exit 1), leaving the rest open (a pull request already merged when its pull or validate failed is reported as merged), or when git or gh cannot be run or read (exit 3).
 
 Every task starts when available: a run missed while this PC was off fires at the next chance. A start while the task still runs is ignored, the execution limit is five minutes past the task's timeout, and daily and weekly tasks carry a five-minute random delay. Tasks run only while the operator is logged on, so no password is stored. Everything in this folder is Office's own, for the fixed-time daily trigger and the per-run alert record. Office takes nothing from the Conclave SDK (operator, 2026-10-21): the `office-conclave-kits` drift check and `.conclave/kits.json` were removed that day.
 
@@ -32,31 +22,19 @@ Every task starts when available: a run missed while this PC was off fires at th
 
 Every email goes to `rizonetech@gmail.com` from "Office automations" (`website@rizonetech.com`, through SMTP2GO), and there are exactly three kinds:
 
-- **"Office: ... is ready to merge"**: a pin moved on a branch. The WinUI 3, .NET and NuGet tasks change pins only on a new branch from main, after its checks pass, and the email names the branch and the `git merge` command. Nothing changes on main or in your checkout until you merge, and nothing is pushed.
-- **"Office: ... is available", "install ..." or "has drifted"**: something on this PC is behind (Visual Studio, Python, the pinned .NET SDK). The task succeeds and sends this once per new version or state.
+- **"Office: ... is ready to merge"**: a pin moved on a branch. A pin task changes a pin only on a new branch from main, after its checks pass, and the email names the branch and the `git merge` command. Nothing changes on main or in your checkout until you merge, and nothing is pushed. No task proposes pins today; the C++ toolchain pins (D00 T03 §11) will.
+- **"Office: ... is available", "install ..." or "has drifted"**: something on this PC is behind (Visual Studio, Python). The task succeeds and sends this once per new version or state.
 - **"Office automation failed: <task> on <host>"**: a check could not run or found a broken pin. It repeats on every failing run until fixed, with the log tail.
 
-Each new version or state is emailed once, so no new email means nothing new, not that every pin is current: a proposal you have not merged stays on its branch without another email, and a machine finding you have not acted on is not sent again. `python scripts/check-<name>.py check` (exit 1 while main is behind or this PC needs an update) and `git branch --list winui/* dotnet/* pins/*` show what is still open. Each finished proposal and announcement is a git ref (`refs/office-pin/<key>`, `refs/office-notice/<key>`); `git for-each-ref refs/office-pin refs/office-notice` lists them, and deleting one makes its task propose or announce again. A proposal branch without its ref is an unfinished attempt (an email that failed, a run cut short), which the next run discards and redoes. The shared code is `scripts/lib/pin_proposal.py`, `scripts/lib/pin_sources.py` and `scripts/lib/package_versions.py`, ported from RectoPDF on 2026-10-21.
+Each new version or state is emailed once, so no new email means nothing new, not that every pin is current: a proposal you have not merged stays on its branch without another email, and a machine finding you have not acted on is not sent again. `python scripts/check-<name>.py check` (exit 1 while main is behind or this PC needs an update) and `git branch --list "pins/*"` show what is still open. Each finished proposal and announcement is a git ref (`refs/office-pin/<key>`, `refs/office-notice/<key>`); `git for-each-ref refs/office-pin refs/office-notice` lists them, and deleting one makes its task propose or announce again. A proposal branch without its ref is an unfinished attempt (an email that failed, a run cut short), which the next run discards and redoes. The shared code is `scripts/lib/pin_proposal.py` and `scripts/lib/pin_sources.py`, ported from RectoPDF on 2026-10-21.
 
 ## Campaign runs
 
 There is no keep-alive task. Retired 2026-10-21 (operator: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules.
 
-## The WinUI 3 pin
+## Retired pins
 
-Owner rule (2026-10-20): the repository always pins the latest stable WinUI 3 release, the newest `winui3/release/<version>` GitHub release of the microsoft-ui-xaml repository that is neither a prerelease, a draft nor experimental, and NuGet must publish it. The pin is the `Microsoft.WindowsAppSDK` version in `Directory.Packages.props`.
-
-Each morning `scripts/check-winui-pin.py update` compares the newest stable release with the pin on main (never the checkout). When a newer one exists, it adds a temporary git worktree on a new branch `winui/<version>` from main, rewrites only the pin there, runs the checks (the file parses, NuGet has the version, and once a solution exists every solution builds with `dotnet build`), commits, removes the worktree and emails the branch to merge. A finished release (its `refs/office-pin/winui-<version>`) is never proposed again, even after you delete its branch.
-
-`python scripts/check-winui-pin.py check` exits 1 while a newer stable release is pending, and `update --dry-run` says what the task would do.
-
-## The .NET 11 pin
-
-Owner rule (2026-10-21): the repository always pins the newest .NET 11 SDK, at any stage: the release candidate now, the release once it ships, then each later patch or feature band. The pin is `sdk.version` in `global.json`, with roll-forward disabled so every build uses exactly that SDK. The target is `latest-sdk` in the .NET 11 release metadata (`https://builds.dotnet.microsoft.com/dotnet/release-metadata/11.0/releases.json`, the feed `dotnet-install` reads).
-
-Each morning `scripts/check-dotnet-pin.py update` proposes a newer SDK on `dotnet/<version>` the same way as the WinUI 3 pin. Once a solution exists, the proposal is built only when this PC has that SDK installed, so the failure alert asks you to install it first. Weekly, `check-dotnet-pin.py local` emails you once when this PC lacks the SDK the checkout pins. This replaces `check-sdk-ga.py`, which only reported the release; moving the pin to the release is now a proposal like any other.
-
-`python scripts/check-dotnet-pin.py check` exits 1 while a newer SDK is pending, and `update --dry-run` says what the task would do.
+Retired 2026-10-22 (owner): the suite moved from WinUI 3 in C# on .NET 11 to native C++ with its own GUI toolkit (D03 T01 §2), so the WinUI 3 pin (`office-winui-pin`), the .NET 11 SDK pin (`office-dotnet-pin`, `office-dotnet-local`), the NuGet pins (`office-nuget-pins`) and the NuGet advisory check (`office-vulnerable-packages`) were removed with their scripts, `Directory.Packages.props` and `global.json` (D00 T03 §10). The latest-stable rule they followed carries over to the C++ toolchain pins in D00 T03 §11.
 
 ## When a run fails
 

@@ -21,7 +21,7 @@ This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) 
 - Ask the operator once before anything that sends, deletes, or changes something outside the repository: mail, production systems, cloud changes, SQL writes, dropping data, credentials.
 - When a command needs sudo, give the operator the exact command to run with `! sudo ...`. Never store the sudo password.
 - Never print, log, or commit a secret value.
-- Green dependency pull requests merge by themselves (owner decision 2026-10-21): `scripts/merge_prs.py` merges Dependabot and pins pull requests that are labelled `dependencies` or `pins`, have every check green and leave `global.json` alone, one at a time by rebase, at a campaign section boundary or through the `office-pr-merge` task, and never into a dirty, unpushed or mid-section clone. Local pin proposal branches (`winui/*`, `dotnet/*`, `pins/*`) still wait for the owner's merge.
+- Green dependency pull requests merge by themselves (owner decision 2026-10-21): `scripts/merge_prs.py` merges Dependabot and pins pull requests that are labelled `dependencies` or `pins`, have every check green and leave the C++ toolchain pin files (`vcpkg.json`, `vcpkg-configuration.json`, `CMakePresets.json`) alone, one at a time by rebase, at a campaign section boundary or through the `office-pr-merge` task, and never into a dirty, unpushed or mid-section clone. Local pin proposal branches (`pins/*`) still wait for the owner's merge.
 
 ## Skills
 

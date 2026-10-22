@@ -12,7 +12,7 @@ redoes, and a branch that cannot be discarded fails the run.
 as the ref `refs/office-notice/<key>`; deleting the ref sends it again.
 
 Both send through `.conclave/automations/alert.py` (the same vault key, SMTP2GO path and From line as the failure
-alerts). Ported from RectoPDF's `scripts/lib/pin_proposal.py` (2026-10-21), with Office's solution build as the check.
+alerts). Ported from RectoPDF's `scripts/lib/pin_proposal.py` (2026-10-21); each caller supplies its own checks.
 
 Stdlib only.
 """
@@ -73,25 +73,6 @@ def notice(*, root, key, subject, body, dry_run=False, mail=notify):
         return 1
     print(f"announced {key} to the operator")
     return 0
-
-
-def solutions(tree):
-    """The solution files a proposal builds: every .sln or .slnx outside build/."""
-    tree = Path(tree)
-    return sorted(p for p in tree.rglob("*.sln*")
-                  if p.suffix in (".sln", ".slnx") and "build" not in p.relative_to(tree).parts)
-
-
-def build_problems(tree, build=subprocess.run):
-    """The problems from `dotnet build` of each solution in the worktree; empty when every one passed, or there is
-    none yet (until D03 T01 §12 creates the solution)."""
-    problems = []
-    for solution in solutions(tree):
-        result = build(["dotnet", "build", str(solution), "-c", "Release"], cwd=tree, capture_output=True, text=True,
-                       creationflags=NO_WINDOW)
-        if result.returncode != 0:
-            problems.append(f"dotnet build {solution.relative_to(tree).as_posix()} failed: {(result.stdout or '')[-400:]}")
-    return problems
 
 
 def _worktrees_on(branch, root):

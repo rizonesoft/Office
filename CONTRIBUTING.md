@@ -6,7 +6,7 @@ Rizonesoft Office is built in the open. This guide covers the licence your work 
 
 Rizonesoft Office is licensed under the GNU General Public License, version 3 or (at your option) any later version (`GPL-3.0-or-later`); the full text is in [LICENSE](./LICENSE). By contributing, you release your work under the same licence.
 
-Every source file states its licence in its first lines. Add these two lines at the top of each new `.py`, `.ps1` or `.sh` file (after a `#!` line when there is one), with `//` in place of `#` for `.mjs` and `.cs` files and an XML comment for `.xaml`:
+Every source file states its licence in its first lines. Add these two lines at the top of each new `.py`, `.ps1`, `.sh`, `.cmake` or `CMakeLists.txt` file (after a `#!` line when there is one), with `//` in place of `#` for `.mjs` files and the C++ sources (`.cpp`, `.cppm`, `.ixx`, `.h`, `.hpp`, `.rc`, `.hlsl`), and an XML comment for `.manifest` files:
 
 ```text
 # SPDX-License-Identifier: GPL-3.0-or-later

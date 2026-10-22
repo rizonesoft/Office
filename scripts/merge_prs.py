@@ -13,8 +13,8 @@ branch `main`; no open TODO section carries a `Started:` line (a section in prog
 
 A pull request is eligible when it is open, not a draft, based on `main`, by Dependabot or the GitHub Actions bot,
 labelled `dependencies` or `pins`, mergeable with a clean merge state, every check green (at least one), and none of
-its files (all of them, read page by page from the API, both sides of a rename) is a `global.json` (the .NET SDK pin
-moves only through its own proposal, scripts/check-dotnet-pin.py).
+its files (all of them, read page by page from the API, both sides of a rename) is a C++ toolchain pin file
+(`PIN_FILES`: those pins move only through their own proposals, D00 T03 §11).
 
 Pull requests merge one at a time. Each one is handled under the run guard's lock, so no campaign starts mid-merge:
 the clone's safety is checked again, the files are read, the pull request is read again and judged from that fresh
@@ -180,9 +180,12 @@ def ineligibility(pr):
     return None
 
 
+PIN_FILES = {"vcpkg.json", "vcpkg-configuration.json", "CMakePresets.json"}  # the C++ toolchain pins (D03 T01 §12)
+
+
 def file_problem(runner, root, repo, number, changed):
     """Why the pull request's files forbid it, read in full (the API pages them; `gh pr list` stops at 100). A rename
-    counts on both sides, so moving `global.json` away is a change to it."""
+    counts on both sides, so moving a pin file away is a change to it."""
     out = checked(runner, root, ["gh", "api", "--hostname", HOST, "--paginate",
                                  f"repos/{repo}/pulls/{number}/files",
                                  "--jq", ".[] | [.filename, (.previous_filename // \"\")] | @json"],
@@ -193,8 +196,9 @@ def file_problem(runner, root, repo, number, changed):
         raise Unreadable(f"gh api pulls/{number}/files gave no JSON lines") from None
     if len(files) != changed:
         return f"the API listed {len(files)} of its {changed} changed files"
-    if any(Path(name).name == "global.json" for pair in files for name in pair if name):
-        return "changes global.json (the .NET SDK pin moves only through its own proposal)"
+    pinned = sorted({Path(name).name for pair in files for name in pair if name and Path(name).name in PIN_FILES})
+    if pinned:
+        return f"changes {', '.join(pinned)} (a C++ toolchain pin moves only through its own proposal)"
     return None
 
 

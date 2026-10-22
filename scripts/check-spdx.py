@@ -6,7 +6,8 @@
     python scripts/check-spdx.py                 # every tracked source file in this repository
     python scripts/check-spdx.py --allow MIT     # also accept MIT, which THIRD-PARTY-NOTICES.md must record
 
-Source files are the tracked `.py`, `.mjs`, `.ps1`, `.sh`, `.cs` and `.xaml` files, and every tracked file under
+Source files are the tracked `.py`, `.mjs`, `.ps1` and `.sh` files, the C++ sources (`.cpp`, `.cppm`, `.ixx`, `.h`,
+`.hpp`, `.rc`, `.hlsl`, `.manifest`), the CMake files (`CMakeLists.txt`, `.cmake`), and every tracked file under
 `scripts/hooks/` (git hooks have no extension). Each must carry exactly one SPDX licence identifier line in its first
 10 lines, naming one licence (a compound expression such as `A AND B` is refused), and must exist in the working tree.
 Rizonesoft code is `GPL-3.0-or-later`. A vendored third-party file keeps its own identifier, accepted only when it is
@@ -24,7 +25,9 @@ import subprocess
 import sys
 
 OWN = "GPL-3.0-or-later"
-EXTENSIONS = {".py", ".mjs", ".ps1", ".sh", ".cs", ".xaml"}
+EXTENSIONS = {".py", ".mjs", ".ps1", ".sh", ".cpp", ".cppm", ".ixx", ".h", ".hpp", ".rc", ".hlsl", ".manifest",
+              ".cmake"}
+NAMES = {"CMakeLists.txt"}
 HOOKS = "scripts/hooks/"
 HEAD_LINES = 10
 NOTICES = "THIRD-PARTY-NOTICES.md"
@@ -44,7 +47,8 @@ def tracked(root):
     if listed.returncode != 0:
         raise OSError(listed.stderr.decode(errors="replace").strip() or "git ls-files failed")
     paths = [p for p in listed.stdout.decode("utf-8").split("\0") if p]
-    return [p for p in paths if Path(p).suffix.lower() in EXTENSIONS or p.startswith(HOOKS)]
+    return [p for p in paths
+            if Path(p).suffix.lower() in EXTENSIONS or Path(p).name in NAMES or p.startswith(HOOKS)]
 
 
 def recorded_licences(root):

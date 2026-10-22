@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""The pin automations: the shared libraries, the .NET 11 and NuGet pins, and the checks of this machine."""
+"""The pin automations: the shared proposal and notice library, and the checks of this machine."""
 import contextlib
 import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,9 +14,7 @@ import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
-import package_versions as pv
 import pin_proposal
-import pin_sources
 
 
 def load(name, file):
@@ -25,28 +24,8 @@ def load(name, file):
     return module
 
 
-dotnet = load("check_dotnet_pin", "check-dotnet-pin.py")
-nuget = load("check_nuget_pins", "check-nuget-pins.py")
 python_pin = load("check_python_pin", "check-python-pin.py")
 vs = load("check_visual_studio", "check-visual-studio.py")
-
-RC1 = "11.0.100-rc.1.26425.128"
-RC2 = "11.0.100-rc.2.26504.105"
-GLOBAL = '{\n  "sdk": {\n    "version": "%s",\n    "allowPrerelease": true,\n    "rollForward": "disable"\n  }\n}\n'
-PROPS = """<Project>
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageVersion Version='4.3.0' Include='Serilog' />
-  </ItemGroup>
-</Project>
-"""
-
-
-def feed(latest, *sdks):
-    return {"latest-sdk": latest, "releases": [
-        {"release-version": "11.0.0-x", "release-date": "2026-10-13", "release-notes": "https://example.invalid/notes",
-         "sdk": {"version": v}, "sdks": [{"version": v}]} for v in sdks]}
-
 
 def quiet(fn, *args, **kwargs):
     out = io.StringIO()
@@ -125,159 +104,135 @@ class Notice(GitRepo):
         self.assertEqual(sent, [("api-key", "s", "b")])
 
 
-class PackageVersions(unittest.TestCase):
-    def test_pins_read_every_live_package(self):
-        self.assertEqual(pv.pins(PROPS), {"Microsoft.WindowsAppSDK": "2.5.1", "Serilog": "4.3.0"})
+class Proposal(GitRepo):
+    """`pin_proposal.propose` on a neutral pin file: a branch from main, checks, an email, never main or the checkout.
+    Moved here from the retired WinUI 3 pin tests on 2026-10-22 (D00 T03 §10); the C++ toolchain pins reuse it."""
+    FILES = {"pin.txt": "1.0.0\n"}
+    BRANCH = "pins/demo-2.0.0"
 
-    def test_a_package_pinned_twice_is_refused(self):
-        twice = PROPS.replace("</ItemGroup>", '<PackageVersion Include="Serilog" Version="4.0.0" /></ItemGroup>')
+    def propose(self, *, checks=lambda tree: [], rewrite=None, dry_run=False, mail=None):
+        def bump(tree):
+            (tree / "pin.txt").write_text("2.0.0\n", encoding="utf-8", newline="")
+            return ["pin.txt"]
+
+        return quiet(pin_proposal.propose, root=self.root, key="demo-2.0.0", branch=self.BRANCH,
+                     rewrite=rewrite or bump, checks=checks, message=["deps: pin demo 2.0.0"],
+                     subject="Office: demo 2.0.0 is ready to merge", body=lambda commit: f"git merge {self.BRANCH}",
+                     dry_run=dry_run, mail=mail or self.mail)
+
+    def test_proposes_on_a_branch_and_leaves_main_and_the_checkout_alone(self):
+        code, out = self.propose()
+        self.assertEqual(code, 0, out)
+        self.assertEqual((self.root / "pin.txt").read_text(encoding="utf-8"), "1.0.0\n")
+        self.assertEqual(self.git("show", "main:pin.txt"), "1.0.0")
+        self.assertEqual(self.git("show", f"{self.BRANCH}:pin.txt"), "2.0.0")
+        self.assertEqual(self.git("worktree", "list").count("\n"), 0)  # the temporary worktree is gone
+        self.assertEqual(len(self.mails), 1)
+        self.assertIn(f"git merge {self.BRANCH}", self.mails[0][1])
+        self.assertTrue(self.git("rev-parse", "--verify", "refs/office-pin/demo-2.0.0"))
+        self.assertEqual(self.propose()[0], 0)  # finished: nothing is redone or re-sent
+        self.run_git("branch", "-D", self.BRANCH)
+        self.assertEqual(self.propose()[0], 0)  # even after the operator deletes the branch
+        self.assertEqual(len(self.mails), 1)
+
+    def test_main_is_the_baseline_not_the_checkout(self):
+        (self.root / "pin.txt").write_text("9.9.9\n", encoding="utf-8")
+        seen = []
+
+        def bump(tree):
+            seen.append((tree / "pin.txt").read_text(encoding="utf-8"))
+            (tree / "pin.txt").write_text("2.0.0\n", encoding="utf-8", newline="")
+            return ["pin.txt"]
+
+        self.assertEqual(self.propose(rewrite=bump)[0], 0)
+        self.assertEqual(seen, ["1.0.0\n"])
+
+    def test_nothing_to_propose_when_main_holds_the_target(self):
+        code, out = self.propose(rewrite=lambda tree: [])
+        self.assertEqual(code, 0, out)
+        self.assertIn("nothing to propose", out)
+        self.assertEqual((self.git("branch", "--list", "pins/*"), self.mails), ("", []))
+
+    def test_an_unfinished_branch_is_discarded_and_redone(self):
+        self.run_git("branch", self.BRANCH)  # a branch with no done ref: a run cut short
+        code, out = self.propose()
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"discarded the unfinished {self.BRANCH}", out)
+        self.assertEqual(self.git("show", f"{self.BRANCH}:pin.txt"), "2.0.0")
+        self.assertEqual(len(self.mails), 1)
+
+    def test_a_killed_run_whose_folder_is_gone_is_recovered(self):
+        abandoned = self.root / "build" / "office-pin-killed" / "tree"
+        self.run_git("worktree", "add", "-b", self.BRANCH, str(abandoned), "main")
+        shutil.rmtree(abandoned.parent)  # the run died and its temporary folder was cleaned up
+        code, out = self.propose()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.git("show", f"{self.BRANCH}:pin.txt"), "2.0.0")
+
+    def test_a_worktree_holding_the_branch_is_never_removed_whatever_its_path(self):
+        for name in ("office-pin-killed", "office-pin-review", "review"):
+            with self.subTest(name=name):
+                held = self.root.parent / f"{name}-{self.root.name}" / "tree"
+                self.run_git("worktree", "add", "-b", self.BRANCH, str(held), "main")
+                (held / "notes.txt").write_text("my uncommitted work", encoding="utf-8")
+                try:
+                    code, out = self.propose()
+                    self.assertEqual(code, 1)
+                    self.assertIn("git worktree remove --force", out)  # the alert says how to release it
+                    self.assertEqual((held / "notes.txt").read_text(encoding="utf-8"), "my uncommitted work")
+                    self.assertEqual(self.mails, [])
+                finally:
+                    self.run_git("worktree", "remove", "--force", str(held))
+                    self.run_git("branch", "-D", self.BRANCH)
+        self.assertEqual(self.propose()[0], 0)  # released, the next run proposes as usual
+
+    def test_an_unsent_email_leaves_no_proposal(self):
+        def refuse(*_a):
+            raise RuntimeError("SMTP2GO refused")
+
+        code, out = self.propose(mail=refuse)
+        self.assertEqual(code, 1)
+        self.assertIn("next run proposes it again", out)
+        self.assertEqual(self.git("branch", "--list", "pins/*"), "")
+        self.assertEqual(self.git("for-each-ref", "refs/office-pin"), "")
+
+    def test_a_failed_check_proposes_nothing(self):
+        code, out = self.propose(checks=lambda tree: ["the build failed"])
+        self.assertEqual(code, 1)
+        self.assertIn("the build failed", out)
+        self.assertEqual(self.git("branch", "--list", "pins/*"), "")
+        self.assertEqual(self.mails, [])
+
+    def test_a_rewrite_that_raises_leaves_no_branch_or_worktree(self):
+        def broken(tree):
+            raise ValueError("the pin was not found")
+
         with self.assertRaises(ValueError):
-            pv.pins(twice)
+            self.propose(rewrite=broken)
+        self.assertEqual((self.git("branch", "--list", "pins/*"), self.git("worktree", "list").count("\n")), ("", 0))
 
-    def test_repinning_handles_attribute_order_and_quotes(self):
-        out = pv.repinned(PROPS, "Serilog", "4.3.0", "4.4.0")
-        self.assertIn("<PackageVersion Version='4.4.0' Include='Serilog' />", out)
-        self.assertIn('Include="Microsoft.WindowsAppSDK" Version="2.5.1"', out)
-
-    def test_a_zero_fourth_part_is_the_same_version(self):
-        self.assertEqual(pv.stable_key("4.3.0.0"), pv.stable_key("4.3.0"))
-        self.assertTrue(pv.published("4.3.0.0", ["4.3.0", "4.4.0"]))
-        self.assertFalse(pv.published("4.3.0.1", ["4.3.0", "4.4.0"]))
-        self.assertGreater(pv.stable_key("4.3.0.1"), pv.stable_key("4.3.0"))
-
-    def test_latest_stable_skips_prereleases(self):
-        self.assertEqual(pv.latest_stable(["4.3.0", "4.10.0", "5.0.0-rc.1", "4.9.1.2"]), "4.10.0")
-        self.assertIsNone(pv.stable_key("5.0.0-rc.1"))
-
-    def test_unreadable_nuget_is_typed(self):
-        with self.assertRaises(pin_sources.Unreadable):
-            pin_sources.nuget_versions("Serilog", fetch=lambda url: {"versions": "4.3.0"})
-
-
-class DotnetVersions(unittest.TestCase):
-    def test_sdk_versions_order_by_stage_then_number(self):
-        order = ["11.0.100-preview.7.26381.103", RC1, RC2, "11.0.100", "11.0.101", "11.0.200-preview.1.1.1", "11.0.200"]
-        self.assertEqual(sorted(reversed(order), key=dotnet.sdk_key), order)
-        self.assertIsNone(dotnet.sdk_key("11.0.100-alpha.1"))
-
-    def test_latest_must_be_an_sdk_the_feed_lists(self):
-        self.assertEqual(dotnet.latest(feed(RC2, RC2, RC1))[0], RC2)
-        with self.assertRaises(pin_sources.Unreadable):
-            dotnet.latest(feed("11.0.100", RC2))
-        with self.assertRaises(pin_sources.Unreadable):  # a feed that names another channel never moves the pin
-            dotnet.latest(feed("12.0.100", "12.0.100", RC2))
-
-    def test_only_the_sdk_version_changes(self):
-        self.assertEqual(dotnet.repinned(GLOBAL % RC1, RC1, RC2), GLOBAL % RC2)
-        with self.assertRaises(ValueError):
-            dotnet.repinned(GLOBAL % RC1, RC2, "11.0.100")
-
-
-class DotnetPin(GitRepo):
-    FILES = {"global.json": GLOBAL % RC1}
-
-    def main(self, *argv, data=None, run=None):
-        return quiet(dotnet.main, list(argv), fetch=lambda url: data or feed(RC2, RC2, RC1), root=self.root,
-                     run=run or self.sdks(RC1, RC2), mail=self.mail)
-
-    @staticmethod
-    def sdks(*versions):
-        def run(cmd, **_kw):
-            return subprocess.CompletedProcess(cmd, 0, stdout="".join(f"{v} [C:\\dotnet\\sdk]\n" for v in versions))
-        return run
-
-    def test_check_fails_while_a_newer_sdk_is_out(self):
-        self.assertEqual(self.main("check")[0], 1)
-        self.assertEqual(self.main("check", data=feed(RC1, RC1))[0], 0)
-
-    def test_update_proposes_the_newest_sdk_on_a_branch(self):
-        code, out = self.main("update")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(json.loads(self.git("show", f"dotnet/{RC2}:global.json"))["sdk"]["version"], RC2)
-        self.assertEqual(json.loads(self.git("show", "main:global.json"))["sdk"]["version"], RC1)
-        self.assertIn(f"git merge dotnet/{RC2}", self.mails[0][1])
-        self.assertEqual(self.main("update")[0], 0)
-        self.assertEqual(len(self.mails), 1)
-
-    def test_the_release_replaces_the_release_candidate(self):
-        code, out = self.main("update", data=feed("11.0.100", "11.0.100", RC2, RC1))
-        self.assertEqual(code, 0, out)
-        self.assertIn('"version": "11.0.100"', self.git("show", "dotnet/11.0.100:global.json"))
-
-    def test_a_solution_needs_the_sdk_installed_here_before_it_is_built(self):
-        self.commit({"Office.slnx": "<Solution />"})
-        code, out = self.main("update", run=self.sdks(RC1))
+    def test_dry_run_changes_and_sends_nothing(self):
+        code, out = self.propose(dry_run=True)
         self.assertEqual(code, 1)
-        self.assertIn(f".NET SDK {RC2} is not installed on this machine", out)
-        self.assertEqual((self.git("branch", "--list", "dotnet/*"), self.mails), ("", []))
+        self.assertIn(f"would create {self.BRANCH}", out)
+        self.assertEqual((self.git("branch", "--list", "pins/*"), self.mails), ("", []))
 
-    def test_a_broken_pin_on_main_fails(self):
-        self.commit({"global.json": GLOBAL % "10.0.402"})
-        self.assertIn("not a .NET 11.0 SDK", self.main("check")[1])
-        self.commit({"global.json": GLOBAL % "11.0.100-rc.3.1.1"})
-        self.assertIn("does not list", self.main("check")[1])
-        self.commit({"global.json": GLOBAL % RC2})
-        self.assertIn("ahead of the newest", self.main("check", data=feed(RC1, RC1, RC2))[1])
+    def test_git_opens_no_console(self):
+        seen = []
 
-    def test_a_pin_that_may_roll_forward_fails(self):
-        self.commit({"global.json": (GLOBAL % RC1).replace('"disable"', '"latestMajor"')})
-        code, out = self.main("update")
-        self.assertEqual(code, 1)
-        self.assertIn('rollForward must be "disable"', out)
-        self.assertEqual(self.git("branch", "--list", "dotnet/*"), "")
+        def fake_run(cmd, **kwargs):
+            seen.append((cmd[0], kwargs.get("creationflags")))
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
-    def test_a_feed_naming_another_channel_cannot_check(self):
-        self.assertEqual(self.main("update", data=feed("12.0.100", "12.0.100", RC1))[0], 2)
-        self.assertEqual(self.git("branch", "--list", "dotnet/*"), "")
-
-    def test_local_announces_a_missing_sdk_once(self):
-        args = dict(root=self.root, run=self.sdks(RC2), mail=self.mail, host="TestPC")
-        self.assertEqual(quiet(dotnet.local, **args)[0], 0)
-        self.assertEqual(quiet(dotnet.local, **args)[0], 0)
-        self.assertEqual(len(self.mails), 1)
-        self.assertIn(f"install .NET SDK {RC1} on TestPC", self.mails[0][0])
-        self.assertEqual(quiet(dotnet.local, self.root, self.sdks(RC1), self.mail, "TestPC")[0], 0)
-        self.assertEqual(len(self.mails), 1)
-
-    def test_local_without_dotnet_cannot_check(self):
-        def missing(*_a, **_kw):
-            raise FileNotFoundError("dotnet")
-
-        self.assertEqual(quiet(dotnet.local, self.root, missing, self.mail, "TestPC")[0], 2)
-
-
-class NugetPins(GitRepo):
-    FILES = {"Directory.Packages.props": PROPS}
-
-    def main(self, *argv, versions=("4.3.0", "4.4.0", "5.0.0-rc.1")):
-        def fetch(url):
-            assert "windowsappsdk" not in url, "the WinUI 3 pin belongs to check-winui-pin.py"
-            return {"versions": list(versions)}
-        return quiet(nuget.main, list(argv), fetch=fetch, root=self.root, mail=self.mail)
-
-    def test_a_behind_pin_is_proposed_and_winui_is_left_alone(self):
-        self.assertEqual(self.main("check")[0], 1)
-        code, out = self.main("update")
-        self.assertEqual(code, 0, out)
-        branch = self.git("branch", "--list", "pins/nuget-*").strip(" *")
-        props = self.git("show", f"{branch}:Directory.Packages.props")
-        self.assertIn("Version='4.4.0' Include='Serilog'", props)
-        self.assertIn('Include="Microsoft.WindowsAppSDK" Version="2.5.1"', props)
-        self.assertIn("Serilog 4.3.0 -> 4.4.0", self.mails[0][1])
-
-    def test_a_four_part_pin_is_compared_as_nuget_normalizes_it(self):
-        self.commit({"Directory.Packages.props": PROPS.replace("4.3.0", "4.3.0.0")})
-        code, out = self.main("check")
-        self.assertEqual(code, 1)
-        self.assertIn("Serilog 4.3.0.0 is behind 4.4.0", out)
-
-    def test_current_pins_pass(self):
-        self.assertEqual(self.main("check", versions=("4.3.0",))[0], 0)
-
-    def test_a_prerelease_or_unpublished_pin_fails(self):
-        self.assertIn("not published", self.main("check", versions=("4.4.0",))[1])
-        self.commit({"Directory.Packages.props": PROPS.replace("4.3.0", "5.0.0-rc.1")})
-        self.assertIn("not an exact stable version", self.main("check")[1])
+        real = pin_proposal.subprocess.run
+        pin_proposal.subprocess.run = fake_run
+        try:
+            pin_proposal.git("status", cwd=self.root)
+        finally:
+            pin_proposal.subprocess.run = real
+        self.assertEqual([c for c, _ in seen], ["git"])
+        if sys.platform == "win32":
+            self.assertEqual(seen[0][1], 0x08000000)
 
 
 class PythonPin(GitRepo):

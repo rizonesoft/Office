@@ -40,7 +40,6 @@ FIXTURE_TASK = {"name": "office-fixture", "description": "Fixture check", "comma
                 "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}
 
 
-vulnerable = load("check_vulnerable_packages", REPO / "scripts" / "check-vulnerable-packages.py")
 
 
 class Manifest(unittest.TestCase):
@@ -195,8 +194,7 @@ class Runner(unittest.TestCase):
 
     def test_every_nested_launch_opens_no_console(self):
         scripts = REPO / "scripts"
-        for path in (AUTO / "run.py", AUTO / "alert.py", scripts / "check-vulnerable-packages.py",
-                     scripts / "check-dotnet-pin.py", scripts / "check-visual-studio.py",
+        for path in (AUTO / "run.py", AUTO / "alert.py", scripts / "check-visual-studio.py",
                      scripts / "merge_prs.py", scripts / "lib" / "pin_proposal.py"):
             text = path.read_text(encoding="utf-8")
             calls = text.count("subprocess.run(") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
@@ -666,49 +664,6 @@ class LastJsonLocking(unittest.TestCase):
             run._record_alert(tmp, str(folder), gone, {'email_id': 'E2'})
             self.assertEqual(list(folder.glob("*.alert.json")), [])
 
-
-class Vulnerable(unittest.TestCase):
-    CLEAN = {"version": 1, "projects": [{"path": "R:/x/A.csproj"}, {"path": "R:/x/B.csproj", "frameworks": [
-        {"framework": "net11.0", "topLevelPackages": [{"id": "Serilog", "resolvedVersion": "4.4.0"}]}]}]}
-
-    def test_a_clean_report_passes(self):
-        self.assertEqual(vulnerable.verdict(self.CLEAN), (0, "no vulnerable package in 2 project(s)"))
-
-    def test_a_vulnerable_transitive_package_fails(self):
-        report = json.loads(json.dumps(self.CLEAN))
-        report["projects"][1]["frameworks"][0]["transitivePackages"] = [{
-            "id": "System.Text.Json", "resolvedVersion": "8.0.0",
-            "vulnerabilities": [{"severity": "High", "advisoryurl": "https://github.com/advisories/GHSA-x"}]}]
-        code, line = vulnerable.verdict(report)
-        self.assertEqual(code, 1)
-        self.assertIn("B.csproj (net11.0): System.Text.Json 8.0.0 High https://github.com/advisories/GHSA-x "
-                      "(transitive)", line)
-
-    def test_problems_or_no_projects_are_unverified(self):
-        self.assertEqual(vulnerable.verdict({**self.CLEAN, "problems": [{"text": "not restored"}]})[0], 2)
-        self.assertEqual(vulnerable.verdict({"version": 1, "projects": []})[0], 2)
-
-    def test_no_solution_yet_passes_and_says_so(self):
-        out = io.StringIO()
-        real = vulnerable.REPO
-        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(out):
-            vulnerable.REPO = tmp
-            try:
-                self.assertEqual(vulnerable.main([]), 0)
-            finally:
-                vulnerable.REPO = real
-        self.assertIn("no solution in the repository yet", out.getvalue())
-
-    def test_two_solutions_are_refused(self):
-        real = vulnerable.REPO
-        with tempfile.TemporaryDirectory() as tmp, redirect_stderr(io.StringIO()):
-            for name in ("A.slnx", "B.slnx"):
-                (Path(tmp) / name).write_text("<Solution />", encoding="utf-8")
-            vulnerable.REPO = tmp
-            try:
-                self.assertEqual(vulnerable.main([]), 2)
-            finally:
-                vulnerable.REPO = real
 
 if __name__ == "__main__":
     unittest.main()

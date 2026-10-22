@@ -262,7 +262,7 @@ class Eligibility(unittest.TestCase):
                pr(5, mergeable="CONFLICTING"), pr(6, mergeStateStatus="BLOCKED"), pr(7, statusCheckRollup=[]),
                pr(8, statusCheckRollup=[{"name": "gates", "conclusion": "FAILURE"}]),
                pr(9, statusCheckRollup=[{"name": "gates", "conclusion": None, "status": "IN_PROGRESS"}]),
-               pr(10, files=["global.json"]), pr(11, author={"login": "app/github-actions"}, labels=[{"name": "pins"}]),
+               pr(10, files=["vcpkg.json"]), pr(11, author={"login": "app/github-actions"}, labels=[{"name": "pins"}]),
                pr(12, statusCheckRollup=[{"context": "legacy", "state": "SUCCESS"}]), pr(13, baseRefName="release")]
         fake = Fake(prs=prs)
         code, out = run_main(fake)
@@ -271,18 +271,18 @@ class Eligibility(unittest.TestCase):
         for number in (2, 3, 4, 5, 6, 7, 8, 9, 10, 13):
             self.assertIn(f"skipping #{number}:", out)
 
-    def test_every_file_is_read_so_a_late_global_json_is_seen(self):
-        files = [f"src/f{i}.cs" for i in range(150)] + ["sdk/global.json"]
+    def test_every_file_is_read_so_a_late_pin_file_is_seen(self):
+        files = [f"src/f{i}.cpp" for i in range(150)] + ["ports/CMakePresets.json"]
         fake = Fake(prs=[pr(1, changedFiles=len(files), files=files)])
         code, out = run_main(fake)
         self.assertEqual(fake.merged, [])
-        self.assertIn("changes global.json", out)
+        self.assertIn("changes CMakePresets.json", out)
 
-    def test_renaming_global_json_away_is_a_change_to_it(self):
-        fake = Fake(prs=[pr(1, files=[("sdk-pin.json", "global.json")])])
+    def test_renaming_a_pin_file_away_is_a_change_to_it(self):
+        fake = Fake(prs=[pr(1, files=[("old-pins.json", "vcpkg-configuration.json")])])
         _, out = run_main(fake)
         self.assertEqual(fake.merged, [])
-        self.assertIn("changes global.json", out)
+        self.assertIn("changes vcpkg-configuration.json", out)
 
     def test_a_label_removed_while_the_files_are_read_stops_the_merge(self):
         def unlabel(f):

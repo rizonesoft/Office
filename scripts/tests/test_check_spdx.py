@@ -58,14 +58,18 @@ class Identifiers(Repo):
         self.assertEqual(self.run_main()[0], 1)
 
     def test_every_source_kind_and_extensionless_hooks_are_checked(self):
-        for rel in ("a.mjs", "b.ps1", "c.sh", "d.cs", "e.xaml", "scripts/hooks/pre-commit"):
+        kinds = ("a.mjs", "b.ps1", "c.sh", "d.cpp", "e.cppm", "f.ixx", "g.h", "h.hpp", "i.rc", "j.hlsl",
+                 "k.manifest", "l.cmake", "src/CMakeLists.txt", "scripts/hooks/pre-commit")
+        for rel in kinds:
             self.add(rel, "nothing\n")
         self.add("notes.md", "prose is not source\n")
+        self.add("CMakeLists.txt.bak", "a backup is not source\n")
         code, out = self.run_main()
         self.assertEqual(code, 1)
-        for rel in ("a.mjs", "b.ps1", "c.sh", "d.cs", "e.xaml", "scripts/hooks/pre-commit"):
+        for rel in kinds:
             self.assertIn(f"{rel}: no", out)
         self.assertNotIn("notes.md", out)
+        self.assertNotIn("CMakeLists.txt.bak", out)
 
     def test_only_a_whole_single_declaration_counts(self):
         cases = {"compound.py": f"# {TAG} GPL-3.0-or-later AND Apache-2.0\n",
@@ -76,14 +80,16 @@ class Identifiers(Repo):
                  "twice.py": f"# {TAG} GPL-3.0-or-later\n# {TAG} Apache-2.0\n"}
         for rel, text in cases.items():
             self.add(rel, text)
-        self.add("xaml.xaml", f"<!-- {TAG} GPL-3.0-or-later -->\n")
+        self.add("app.manifest", f"<!-- {TAG} GPL-3.0-or-later -->\n")
+        self.add("main.cpp", f"// {TAG} GPL-3.0-or-later\n")
         code, out = self.run_main()
         self.assertEqual(code, 1)
         self.assertIn("compound.py: 'GPL-3.0-or-later AND Apache-2.0' is not a single licence identifier", out)
         for rel in ("prefixed.py", "underscored.py", "accented.py", "trailing.py"):
             self.assertIn(f"{rel}: no", out)
         self.assertIn("twice.py: 2 ", out)
-        self.assertNotIn("xaml.xaml", out)
+        self.assertNotIn("app.manifest", out)
+        self.assertNotIn("main.cpp", out)
 
     def test_a_header_after_a_byte_order_mark_and_with_crlf_passes(self):
         path = self.root / "tools/install.ps1"

@@ -35,12 +35,3 @@ def version_key(text):
     match = re.fullmatch(r"v?(\d+(?:\.\d+)*)", str(text).strip())
     return tuple(int(part) for part in match[1].split(".")) if match else None
 
-
-def nuget_versions(package, fetch=fetch_json):
-    """Every version nuget.org publishes for a package, as the flat container lists them."""
-    url = f"https://api.nuget.org/v3-flatcontainer/{package.lower()}/index.json"
-    feed = fetch(url)
-    versions = feed.get("versions") if isinstance(feed, dict) else None
-    if not isinstance(versions, list) or not all(isinstance(v, str) for v in versions):
-        raise Unreadable(f"{url}: no list of version strings")
-    return versions

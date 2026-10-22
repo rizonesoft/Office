@@ -6,7 +6,8 @@
     python scripts/check-visual-studio.py check     # exit 0 current, 1 behind or missing, 2 cannot check
     python scripts/check-visual-studio.py notify    # as check, but being behind is emailed once per release, exit 0
 
-Office builds WinUI 3 in C# on .NET 11, which needs Visual Studio 2026 (version 18). The installed versions come from
+Office is native C++ (C++23) built with the MSVC toolset of Visual Studio 2026 (version 18), and the owner's rule is
+the newest stable release (D03 T01 §2). The installed versions come from
 `vswhere.exe`; the latest servicing release comes from version 18's stable release channel manifest
 (`https://aka.ms/vs/18/stable/channel`). Visual Studio is installed per machine, not pinned in the repository, so this
 check alerts and never changes anything: the Visual Studio Installer applies the update. Ported from RectoPDF
@@ -24,7 +25,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import pin_proposal
 from pin_sources import Unreadable, fetch_json, version_key
 
-MAJOR = 18  # Visual Studio 2026, the first that builds .NET 11
+MAJOR = 18  # Visual Studio 2026, whose MSVC toolset (14.5x) builds the C++23 code
 CHANNEL = "https://aka.ms/vs/{major}/stable/channel"
 VSWHERE = (Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Microsoft Visual Studio"
            / "Installer" / "vswhere.exe")
@@ -65,7 +66,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run=subprocess.run, vswhere=VSW
         print(f"check-visual-studio: could not read {exc}", file=sys.stderr)
         return 2
     if not have:
-        print(f"no stable Visual Studio {MAJOR} (2026) is installed, but .NET 11 needs it")
+        print(f"no stable Visual Studio {MAJOR} (2026) is installed, but the C++ build needs its MSVC toolset")
         return 1
     behind = [(v, name) for v, name in have if version_key(v) < version_key(newest)]
     if not behind:
