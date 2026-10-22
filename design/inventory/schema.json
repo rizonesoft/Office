@@ -382,9 +382,9 @@
       "description": "Every string field has a maxLength (at most 1000 characters, for a behaviour sentence), which also bounds the time the link and address patterns take."
     },
     "noLink": {
-      "description": "Owner rule 2026-10-20: no record holds a web address. In every string field: a scheme followed by ://, a network path (// followed by a host), a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Text a person reads is held to the stricter noHost rule as well.",
+      "description": "Owner rule 2026-10-20: no record holds a web address. In every string field: a scheme followed by ://, a network path (two slashes, or two backslashes, followed by a host), a scheme followed by a single slash or backslash (which URL parsers still resolve to the address), a mailto: address, a www. name, a dotted host followed by a path, or a name ending in .com, .org, .net, .gov or .edu. Text a person reads is held to the stricter noHost rule as well.",
       "not": {
-        "pattern": "[A-Za-z][A-Za-z0-9+.-]*://|[Ww][Ww][Ww]\\.|[Mm][Aa][Ii][Ll][Tt][Oo]:|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+/|[A-Za-z0-9-]+\\.([Cc][Oo][Mm]|[Oo][Rr][Gg]|[Nn][Ee][Tt]|[Gg][Oo][Vv]|[Ee][Dd][Uu])(?![A-Za-z0-9-])|//[^\\s/]",
+        "pattern": "[A-Za-z][A-Za-z0-9+.-]*://|[Ww][Ww][Ww]\\.|[Mm][Aa][Ii][Ll][Tt][Oo]:|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+/|[A-Za-z0-9-]+\\.([Cc][Oo][Mm]|[Oo][Rr][Gg]|[Nn][Ee][Tt]|[Gg][Oo][Vv]|[Ee][Dd][Uu])(?![A-Za-z0-9-])|[\\\\/][\\\\/][^\\s\\\\/]|[A-Za-z][A-Za-z0-9+.-]*:[\\\\/]",
         "description": "link"
       }
     },

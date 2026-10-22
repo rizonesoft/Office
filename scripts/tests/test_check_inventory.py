@@ -407,6 +407,37 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_noncanonical_links_are_refused(self):
+        # Audit round 14, finding 1: backslash network paths and single-slash schemes still resolve to addresses.
+        for field, text in (("label", "\\\\localhost\\help"), ("uiaId", "https:/localhost/help"),
+                            ("uiaId", "\\\\server\\share"), ("idMso", "file:\\c")):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: text})])
+            self.assertTrue(any(f".{field}" in p and "link" in p for p in self.problems()), (field, text))
+        # Sources keep their colon, which no slash follows.
+        self.write("word/ribbon.json", [TAB, GROUP, BOLD])
+        self.assertEqual(self.problems(), [])
+
+    def test_ambiguous_reference_diagnostics_are_bounded(self):
+        # Audit round 14, finding 2: 400 copies of a parent named by 400 children made 10 million characters.
+        children = [dict(GROUP, id=f"word.home.g{i}") for i in range(400)]
+        self.write("word/ribbon.json", [dict(TAB)] * 400 + children)
+        problems = [p for p in self.problems() if "is ambiguous" in p]
+        self.assertEqual(len(problems), 400)
+        self.assertLess(max(len(p) for p in problems), 600)
+        self.assertTrue(problems[0].endswith("and 395 more"), problems[0][-40:])
+
+    def test_a_chain_into_a_loop_in_another_file_is_reported(self):
+        # Audit round 14, finding 3: a named file whose child leads into a two-record cycle defined elsewhere.
+        a = {"id": "word.a", "app": "word", "kind": "group", "label": "A", "parent": "word.b"}
+        b = {"id": "word.b", "app": "word", "kind": "group", "label": "B", "parent": "word.a"}
+        child = {"id": "word.c", "app": "word", "kind": "group", "label": "C", "parent": "word.a"}
+        # The cycle's file sorts first, so its ids are settled before the child is walked: the child's answer must
+        # come from the known loop, not from finding the cycle again.
+        self.write("word/a-cycle.json", [a, b])
+        named = self.write("word/z-child.json", [child])
+        problems = self.problems(named)
+        self.assertTrue(any("word.c -> word.a -> word.b -> word.a" in p for p in problems), problems)
+
     def test_ipv4_shorthand_in_text_is_refused(self):
         # Audit round 13, finding 1: three dotted numbers is an address too (127.0.1 is 127.0.0.1 to a resolver).
         for text in ("Visit 127.0.1", "10.1.1 or 192.168.1.1"):

@@ -219,6 +219,12 @@ def parent_loops(parents):
     return loops
 
 
+def places(where):
+    """The first DUPLICATES_SHOWN of a list of places, then a count of the rest, so a message stays bounded."""
+    more = len(where) - DUPLICATES_SHOWN
+    return ", ".join(where[:DUPLICATES_SHOWN]) + (f" and {more} more" if more > 0 else "")
+
+
 def loop_text(loop):
     """a -> b -> c -> b, with the middle elided past LOOP_SHOWN ids."""
     head, repeat, size = loop
@@ -435,13 +441,13 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if isinstance(parent, str) and parent not in seen:
                 problems.append(f"{where}: orphan, parent {parent} names no record")
             elif isinstance(parent, str) and len(seen[parent]) > 1:
-                problems.append(f"{where}: parent {parent} is ambiguous, defined at {', '.join(seen[parent])}")
+                problems.append(f"{where}: parent {parent} is ambiguous, defined at {places(seen[parent])}")
             target = rec.get("target")
             if isinstance(target, str):
                 if target not in kinds:
                     problems.append(f"{where}: target {target} names no record")
                 elif len(seen[target]) > 1:
-                    problems.append(f"{where}: target {target} is ambiguous, defined at {', '.join(seen[target])}")
+                    problems.append(f"{where}: target {target} is ambiguous, defined at {places(seen[target])}")
                 elif kinds[target] not in TARGET_KINDS:
                     problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
             if require_behaviour and rec.get("kind") == "control":

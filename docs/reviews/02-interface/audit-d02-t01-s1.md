@@ -535,3 +535,42 @@ All three findings verified and fixed in the next commit; the first two tests fa
 1. P1 IPv4 shorthand passed: three or more dotted numbers are refused in readable text, so `127.0.1` (127.0.0.1 to a resolver) and `10.1.1` are caught (`test_ipv4_shorthand_in_text_is_refused`). A limit, recorded: a two-part number such as `127.1` is also shorthand to a resolver, but it cannot be told from a decimal such as Word's "1.5" line spacing, so two-part numbers stay valid. The same holds for a bare integer. Neither is a link a reader could follow without knowing the convention.
 2. P2 duplicate-id diagnostics grew quadratically: each names at most five other places and counts the rest ("and 794 more"), so 800 copies produce 800 bounded lines (`test_duplicate_id_diagnostics_are_bounded`).
 3. P3 the file and record types could be removed unnoticed: `test_the_file_and_record_types_hold` refuses `{}`, `[null]`, `[1]` and a bare string.
+
+## Round 14: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T11:38:12Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 60e1157c92ce66b4
+
+## source-defect: needs-attention
+
+1. **[P1] Noncanonical web links bypass rejection.** `design/inventory/schema.json:387` and `:401` accept this inventory array:
+
+   ```json
+   [{"id":"word.probe","app":"word","kind":"tab","label":"\\\\localhost\\help"}]
+   ```
+
+   Schema validation and `check()` return `[]`; the CLI returns **0**. Node’s URL parser resolves the label against an HTTPS base to `https://localhost/help`. Separately, `uiaId:"https:/localhost/help"` passes every check, while `new URL("https:/localhost/help").href` produces that same absolute URL. The no-link contract remains bypassable.
+
+## adversarial: needs-attention
+
+2. **[P2] Ambiguous-reference diagnostics still grow quadratically.** `scripts/check-inventory.py:438` prints every duplicate parent location for every referring record; `:444` does likewise for targets. Reproduce with N copies of one valid tab and N uniquely identified children naming it as parent. For N = **100, 200, 400**, checks produced approximately **670,790, 2,601,890, 10,243,890** diagnostic characters. Bounding duplicate-ID messages at `:409` leaves these paths unbounded.
+
+## consistency: approve
+
+## record: needs-attention
+
+3. **[P3] Cycle-propagation coverage does not support the ticked rule-disable claim.** `scripts/tests/test_check_inventory.py:452` checks traversal timing without checking its result. Remove only the propagation branch at `scripts/check-inventory.py:215` through `:217` in memory: **all 84 tests still pass**, contradicting `todo/02-interface/TODO-01-parity-inventory.md:89`. The mutant then accepts a single named file whose child points into an existing two-record cycle defined in another inventory file. The current implementation correctly rejects that fixture. Verified with all fixture writes intercepted in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 14
+
+All three findings verified and fixed in the next commit; the first two tests fail against the round 13 checker (fixes stashed), and the third fails when the loop-propagation branch is removed:
+
+1. P1 a backslash network path (`\localhost\help`) and a single-slash scheme (`https:/localhost/help`), which URL parsers still resolve, passed. `noLink`, which every string field carries, now refuses two slashes or backslashes followed by a host, and any scheme followed by a slash or backslash. Sources keep their colon, which no slash follows (`test_noncanonical_links_are_refused`, in a label, `uiaId` and `idMso`).
+2. P2 ambiguous-parent and ambiguous-target diagnostics grew quadratically: they name at most five places and count the rest, like duplicate ids (`test_ambiguous_reference_diagnostics_are_bounded`, 400 copies and 400 children).
+3. P3 loop propagation across walks was untested: `test_a_chain_into_a_loop_in_another_file_is_reported` names a file whose child leads into a two-record cycle in another file. The cycle's file sorts first, so the child's answer must come from the known loop. A first draft passed with the branch removed (the child sorted first and found the cycle itself), and the file order was fixed so the test fails without it.
