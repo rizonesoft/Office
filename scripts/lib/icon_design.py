@@ -21,6 +21,10 @@ APPS = {
     "plan": ("Plan", "Project", ["#2dc2b5", "#0b7f86"]),
     "mail": ("Mail", "Outlook", ["#3cc4f0", "#0b7cc0"]),
 }
+# Each app's single colour (taskbar badges, accents, the palette in docs/brand/icon-language.md): the point on its
+# gradient nearest the middle that keeps 3:1 against both a white and a #1f1f1f background.
+APP_COLOR = {"write": "#366edc", "grid": "#229e60", "stage": "#ea6634", "flow": "#7b58e0", "plan": "#1ca09e",
+             "mail": "#229ed7"}
 SUITE = "rizonesoft-office"
 SUITE_TINT = "#7c8db5"
 TIERS = ("lg", "md", "sm")
@@ -39,6 +43,16 @@ def mix(hex_color, other, t):
     a = [int(hex_color[i:i + 2], 16) for i in (1, 3, 5)]
     b = [int(other[i:i + 2], 16) for i in (1, 3, 5)]
     return "#" + "".join(f"{round(v + (w - v) * t):02x}" for v, w in zip(a, b))
+
+
+def contrast(c1, c2):
+    """WCAG 2 contrast ratio of two #rrggbb colours."""
+    def lum(c):
+        lin = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4
+               for v in (int(c[i:i + 2], 16) / 255 for i in (1, 3, 5))]
+        return .2126 * lin[0] + .7152 * lin[1] + .0722 * lin[2]
+    hi, lo = sorted((lum(c1), lum(c2)), reverse=True)
+    return (hi + .05) / (lo + .05)
 
 
 def n(x):
@@ -100,11 +114,16 @@ def glyph(key, tier, col):
     return table[tier][key]
 
 
+# App icon geometry on the 128-unit canvas, per tier. The drawings and the keyline sheet both read these.
+APP_ORB = {"lg": (80, 44, 38), "md": (82, 42, 36), "sm": (86, 40, 38)}  # cx, cy, r
+APP_PANE = {"lg": (18, 30, 92, 80, 20), "md": (14, 34, 92, 80, 20), "sm": (8, 36, 96, 84, 22)}  # x, y, w, h, rx
+APP_GLYPH_AT = {"lg": (64, 70, .95), "md": (60, 74, 1.12), "sm": (56, 78, 1.25)}  # centre x, y, scale of 64 box
+APP_BLOCK = (10, 62, 58, 56, 16)  # the dark block behind the lg pane: x, y, w, h, rx
+
+
 def _app_parts(key, tier, ids):
     a, b = APPS[key][2]
-    orb = {"lg": (80, 44, 38), "md": (82, 42, 36), "sm": (86, 40, 38)}[tier]
-    pane = {"lg": (18, 30, 92, 80, 20), "md": (14, 34, 92, 80, 20), "sm": (8, 36, 96, 84, 22)}[tier]
-    at = {"lg": (64, 70, .95), "md": (60, 74, 1.12), "sm": (56, 78, 1.25)}[tier]
+    orb, pane, at = APP_ORB[tier], APP_PANE[tier], APP_GLYPH_AT[tier]
     grad = ids("g")
     defs = (f'<linearGradient id="{grad}" x1="0" y1="0" x2="1" y2="1">'
             f'<stop offset="0" stop-color="{a}"/><stop offset="1" stop-color="{b}"/></linearGradient>')
@@ -113,7 +132,7 @@ def _app_parts(key, tier, ids):
         fill = f"url(#{grad})" if mode == "solid" else mix(a, "#ffffff", .5)
         s = f'<circle cx="{orb[0]}" cy="{orb[1]}" r="{orb[2]}" fill="{fill}"/>'
         if tier == "lg":
-            s += rect(10, 62, 58, 56, 16, mix(b, "#000000", .1) if mode == "solid" else mix(b, "#ffffff", .42))
+            s += rect(*APP_BLOCK, mix(b, "#000000", .1) if mode == "solid" else mix(b, "#ffffff", .42))
         return s
 
     deep = mix(b, "#000000", .15)
@@ -187,3 +206,29 @@ def icon_svg(icon, tier):
     name = "Rizonesoft Office" if icon == SUITE else f"Rizonesoft {APPS[icon][0]}"
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">'
             f'<title>{name}</title><defs>{defs}</defs>{body}{content}</svg>\n')
+
+
+def keylines_svg():
+    """The keyline sheet: each app tier's pane, orb, glyph box and (lg) block, drawn from the same constants as the
+    icons, side by side on 128-unit cells (docs/brand/icon-language.md, Grid)."""
+    colors = {"pane": "#1e4fc2", "orb": "#d4421b", "glyph": "#0f7a45", "block": "#5b35c9"}
+    cells = []
+    for i, tier in enumerate(TIERS):
+        x0 = i * 144
+        px, py, pw, ph, prx = APP_PANE[tier]
+        cx, cy, r = APP_ORB[tier]
+        gx, gy, gs = APP_GLYPH_AT[tier]
+        half = 32 * gs
+        parts = [rect(x0, 0, 128, 128, 0, "none", 'stroke="#9aa3b5" stroke-width="1" stroke-dasharray="4 4"'),
+                 f'<circle cx="{n(x0 + cx)}" cy="{n(cy)}" r="{n(r)}" fill="none" stroke="{colors["orb"]}" '
+                 'stroke-width="1.5"/>',
+                 rect(x0 + px, py, pw, ph, prx, "none", f'stroke="{colors["pane"]}" stroke-width="1.5"'),
+                 rect(x0 + gx - half, gy - half, 2 * half, 2 * half, 0, "none",
+                      f'stroke="{colors["glyph"]}" stroke-width="1.5" stroke-dasharray="3 3"')]
+        if tier == "lg":
+            bx, by, bw, bh, brx = APP_BLOCK
+            parts.append(rect(x0 + bx, by, bw, bh, brx, "none", f'stroke="{colors["block"]}" stroke-width="1.5"'))
+        cells.append("".join(parts))
+    width = 144 * len(TIERS) - 16
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 {width + 4} 132" width="{width + 4}" '
+            f'height="132"><title>Rizonesoft Office icon keylines (lg, md, sm)</title>{"".join(cells)}</svg>\n')

@@ -118,5 +118,53 @@ class GlassPane(unittest.TestCase):
             self.assertLessEqual(max(abs(a - b) for a, b in zip(on_black, on_white)), 6, icon)
 
 
+class Palette(unittest.TestCase):
+    def test_contrast_matches_wcag_reference_values(self):
+        self.assertAlmostEqual(d.contrast("#000000", "#ffffff"), 21.0, places=6)
+        self.assertAlmostEqual(d.contrast("#767676", "#ffffff"), 4.54, places=2)
+
+    def test_app_colours_reach_3_to_1_on_light_and_dark(self):
+        self.assertEqual(set(d.APP_COLOR), set(d.APPS))
+        for key, color in [*d.APP_COLOR.items(), (d.SUITE, d.SUITE_TINT)]:
+            for background in ("#ffffff", "#1f1f1f"):
+                self.assertGreaterEqual(d.contrast(color, background), 3, (key, background))
+
+    def test_app_colour_lies_on_its_gradient(self):
+        for key, color in d.APP_COLOR.items():
+            light, dark = d.APPS[key][2]
+            self.assertIn(color, {d.mix(light, dark, i / 100) for i in range(101)}, key)
+
+    def test_symbol_reads_on_its_pane(self):
+        for key in d.APPS:
+            light, dark = d.APPS[key][2]
+            symbol = d.mix(dark, "#000000", .15)
+            for tier in d.TIERS:
+                tint = d.mix(light, "#ffffff", .8 if tier == "sm" else .84)
+                self.assertGreaterEqual(d.contrast(symbol, tint), 4.5, (key, tier))
+
+
+class Keylines(unittest.TestCase):
+    def test_sheet_draws_the_icon_constants(self):
+        svg = d.keylines_svg()
+        for i, tier in enumerate(d.TIERS):
+            px, py, pw, ph, prx = d.APP_PANE[tier]
+            self.assertIn(f'x="{d.n(i * 144 + px)}" y="{d.n(py)}" width="{d.n(pw)}" height="{d.n(ph)}" '
+                          f'rx="{d.n(prx)}"', svg, tier)
+            cx, cy, r = d.APP_ORB[tier]
+            self.assertIn(f'cx="{d.n(i * 144 + cx)}" cy="{d.n(cy)}" r="{d.n(r)}"', svg, tier)
+
+    def test_every_tier_fits_the_canvas(self):
+        for tier in d.TIERS:
+            px, py, pw, ph, _ = d.APP_PANE[tier]
+            cx, cy, r = d.APP_ORB[tier]
+            self.assertTrue(0 <= px and px + pw <= 128 and 0 <= py and py + ph <= 128, tier)
+            self.assertTrue(0 <= cx - r and cx + r <= 128 and 0 <= cy - r and cy + r <= 128, tier)
+
+    def test_committed_sheet_is_current(self):
+        # A full build takes most of a minute; build-icons --check in CI covers the registration, this the content.
+        committed = (SCRIPTS.parent / "design/icons/keylines.svg").read_text(encoding="utf-8")
+        self.assertEqual(committed, d.keylines_svg())
+
+
 if __name__ == "__main__":
     unittest.main()
