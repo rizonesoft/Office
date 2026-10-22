@@ -58,7 +58,7 @@ Glass, chosen by the owner on 2026-10-20 after two rejected rounds (interlocking
 
 Every app icon is a gradient orb rising behind a frosted glass pane, with the app's symbol on the glass in a deep tone of the app's colour. At `lg` a dark block sits behind the pane's lower left corner, the pane blurs what is behind it, and a white rim and soft shadow lift it; the pane has a solid tinted base under the frost, so the icon reads the same on any desktop colour. At `md` and `sm` the orb keeps its gradient outside the pane, but the pane shows it as a flat lighter tint instead of a blur and carries a darker rim, which stays crisp at a few pixels.
 
-The suite logo takes the `md` and `sm` geometry at every size (no dark block; at `lg` it uses the `md` orb and pane), with the same glass treatment as the app icons at each tier, so its `lg` drawing has the blur, rim and shadow. The orb is split into six wedges in the six app colours, and the glass carries six rounded squares, one per app in its dark colour, in two rows of three.
+The suite logo takes the `md` and `sm` geometry at every size (no dark block; at `lg` it uses the `md` orb and pane), with the same glass treatment as the app icons at each tier, so its `lg` drawing has the blur, rim and shadow. The orb is split into six wedges, each in one app's gradient light end, and the glass carries six rounded squares, one per app in its gradient dark end, in two rows of three.
 
 Each app's symbol:
 

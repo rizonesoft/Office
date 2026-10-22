@@ -201,6 +201,31 @@ class Palette(unittest.TestCase):
         self.assertGreater(len(flap), 100)
         self.assertEqual({plain.getpixel(xy) for xy in flap}, {rgb})
 
+    def test_every_symbol_part_shows(self):
+        # Each part of each symbol rendered on its own, so a part made too thin or small to see cannot hide behind the
+        # rest: at least 100 pixels fully in the symbol colour (the smallest real part has 254), each at 3:1 or more
+        # against the icon without its symbol at md and sm. Mail's flap has its own test.
+        real = d.glyph
+        for key in d.APPS:
+            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+            rgb = tuple(int(symbol[i:i + 2], 16) for i in (1, 3, 5))
+            for tier in d.TIERS:
+                try:
+                    d.glyph = lambda *_: ""
+                    bare = render_rgb(d.icon_svg(key, tier))
+                    parts = re.findall(r"<\w+[^>]*/>", real(key, tier, symbol))
+                    for part in (p for p in parts if 'stroke="#ffffff"' not in p):
+                        d.glyph = lambda *_, part=part: part
+                        alone = render_rgb(d.icon_svg(key, tier))
+                        painted = [xy for xy in ((x, y) for y in range(128) for x in range(128))
+                                   if alone.getpixel(xy) == rgb]
+                        self.assertGreaterEqual(len(painted), 100, (key, tier, part))
+                        if tier != "lg":
+                            worst = min(d.contrast(symbol, "#%02x%02x%02x" % bare.getpixel(xy)) for xy in painted)
+                            self.assertGreaterEqual(worst, 3, (key, tier, part))
+                finally:
+                    d.glyph = real
+
     def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
         # Rendered, not computed: each pixel drawn fully in the symbol colour (antialiased edges excluded) against the
         # same pixel with the symbol left out. The lg symbols cross the blurred orb and block; their contrast is the
