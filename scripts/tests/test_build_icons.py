@@ -306,13 +306,16 @@ class SocialPreview(unittest.TestCase):
         paths = re.findall(r'<path d="[^"]+" fill="#[0-9a-f]{6}"/>', top)
         self.assertEqual(len(paths), len(texts))
         def points(d):
-            # Every coordinate the path visits, as (x, y), following M, L, Q, C, H and V; Z adds none.
+            # Every point the path visits as (command, x, y), following M, L, Q, C, H and V, with each Z (a contour's
+            # end) kept as its own entry, so a changed command or contour fails as surely as a moved point.
             out, x, y, cmd = [], 0.0, 0.0, None
             tokens = re.findall(r"[MLQCHVZ]|-?\d+(?:\.\d+)?", d)
             i = 0
             while i < len(tokens):
                 if tokens[i].isalpha():
                     cmd, i = tokens[i], i + 1
+                    if cmd == "Z":
+                        out.append(("Z", x, y))
                     continue
                 if cmd == "H":
                     x, i = float(tokens[i]), i + 1
@@ -320,16 +323,16 @@ class SocialPreview(unittest.TestCase):
                     y, i = float(tokens[i]), i + 1
                 else:
                     x, y, i = float(tokens[i]), float(tokens[i + 1]), i + 2
-                out.append((x, y))
+                out.append((cmd, x, y))
             return out
 
         for path, (text, size, weight, track) in zip(paths, texts):
             # The glyph outlines must be the literal text's, up to where the line was placed.
             got = points(re.search(r'd="([^"]+)"', path).group(1))
             want = points(bd.outliner().path(text, size, weight, 0, 0, track)[0])
-            self.assertEqual(len(got), len(want), text)
-            dx, dy = got[0][0] - want[0][0], got[0][1] - want[0][1]
-            drift = max(max(abs(gx - wx - dx), abs(gy - wy - dy)) for (gx, gy), (wx, wy) in zip(got, want))
+            self.assertEqual([c for c, _, _ in got], [c for c, _, _ in want], text)
+            dx, dy = got[0][1] - want[0][1], got[0][2] - want[0][2]
+            drift = max(max(abs(gx - wx - dx), abs(gy - wy - dy)) for (_, gx, gy), (_, wx, wy) in zip(got, want))
             self.assertLess(drift, .05, text)
 
 
