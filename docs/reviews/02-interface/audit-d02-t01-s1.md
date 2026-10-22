@@ -155,3 +155,42 @@ Both findings verified and fixed in the next commit, each with tests that fail a
 2. P1 Python's whitespace stood in for the schema's. `ecma()` now translates `\s` and `\S` to ECMA-262's whitespace and line terminators, which includes U+FEFF and excludes U+001C to U+001F, and refuses `\S` inside a class. The behaviour gate strips that same set (`ECMA_SPACE`), so a label, chord or behaviour of U+FEFF is blank, while a sentence padded with it still counts (`test_ecma_whitespace_is_blank_text`, `test_ecma_translates_whitespace_classes`).
 
 The committed inventory still checks clean; the checker tests run 50 and pass.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T09:14:31Z
+- Effort: xhigh
+- Lines: 22
+- Digest: d53dafb0162bb875
+
+## source-defect: needs-attention
+
+1. **P1: Leading punctuation still bypasses the host prohibition.** `design/inventory/schema.json:382` prevents matching a host immediately after a dot. This record passes `check()` and makes `main()` return `0`:
+
+   ```json
+   {"id":"word.review-probe","app":"word","kind":"tab","label":"Visit ...support.microsoft.co.uk"}
+   ```
+
+   The prohibited address survives simply by following an ellipsis.
+
+## adversarial: needs-attention
+
+2. **P2: Parsed nested input crashes the recursive link scan.** `scripts/check-inventory.py:160` recursively scans values even after schema validation rejects their field. Add `"extra"` to an otherwise valid record, containing `2000` nested arrays around `0`. On Python 3.14.4, `load()` accepts this JSON, but `main()` raises uncaught `RecursionError` instead of returning a validation failure. The exception occurs outside the loader’s recursion handler.
+
+## consistency: approve
+
+## record: needs-attention
+
+3. **P3: The ticked every-rule test claim remains unsupported.** `todo/02-interface/TODO-01-parity-inventory.md:89` claims disabling any rule fails the tests. Removing only `uiaId.minLength` at `design/inventory/schema.json:263` leaves all **50 tests passing**, while permitting an empty UI Automation identifier. Verified through an in-memory schema mutation with every temporary fixture operation intercepted, without filesystem writes.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 4
+
+Round 4 was the first by GPT-6.1 Sol at xhigh (about eight and a half minutes). All three findings verified and fixed in the next commit, each with a test that fails against the round 3 checker (fixes stashed):
+
+1. P1 a host after an ellipsis passed: `noHost` no longer needs a particular character before the host; any dotted name ending in a label of two or more letters is a host wherever it starts (`test_a_host_after_an_ellipsis_is_refused`, after "...", "(" and "-").
+2. P2 deep nesting in an unknown field crashed the link scan with `RecursionError`: `links()` now walks with an explicit stack in document order, so any depth the loader accepts is scanned (`test_deep_nesting_is_a_problem_not_a_crash`, 5000 levels, with a link found at the bottom).
+3. P3 removing a field's empty-value rule failed no test: `test_every_text_and_reference_field_refuses_an_empty_value` lists thirteen fields in the test itself (label, parent, keytip, shortcut, target, menuPath, captureProfile, behaviour, idMso, uiaId, source, capturedFrom, id), each required to refuse "" on its own. It found a gap the review had not: `menuPath` accepted an empty string, and the schema now requires a non-blank value there too.

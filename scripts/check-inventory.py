@@ -150,15 +150,20 @@ def validate(value, schema, root, path="$"):
 def links(value, path, link):
     """Problems for every string inside a record (nested values included) that holds a link. link is the schema's own
     noLink pattern (owner rule 2026-10-20: the repository holds no Microsoft text and no links), so the typed fields and
-    every other string are held to one rule."""
-    if isinstance(value, str):
-        found = link.search(value)
-        return [f"{path}: link {found.group(0)!r} in a record"] if found else []
-    if isinstance(value, dict):
-        return [p for key, item in value.items() for p in links(item, f"{path}.{key}", link)]
-    if isinstance(value, list):
-        return [p for i, item in enumerate(value) for p in links(item, f"{path}[{i}]", link)]
-    return []
+    every other string are held to one rule. Walked with an explicit stack, in document order, so no depth of nesting
+    can exhaust the interpreter's recursion limit."""
+    problems, stack = [], [(value, path)]
+    while stack:
+        item, where = stack.pop()
+        if isinstance(item, str):
+            found = link.search(item)
+            if found:
+                problems.append(f"{where}: link {found.group(0)!r} in a record")
+        elif isinstance(item, dict):
+            stack.extend(reversed([(v, f"{where}.{k}") for k, v in item.items()]))
+        elif isinstance(item, list):
+            stack.extend(reversed([(v, f"{where}[{i}]") for i, v in enumerate(item)]))
+    return problems
 
 
 def reference(inventory):

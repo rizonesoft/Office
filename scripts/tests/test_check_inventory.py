@@ -304,6 +304,34 @@ class Inventory(unittest.TestCase):
         with self.assertRaises(ValueError):
             ci.ecma(r"[^\S]")
 
+    def test_a_host_after_an_ellipsis_is_refused(self):
+        # Audit round 4, finding 1: punctuation before a host does not hide it.
+        for text in ("Visit ...support.microsoft.co.uk", "(learn.microsoft.de)", "-office.microsoft.ie"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name" in p for p in self.problems()), text)
+
+    def test_deep_nesting_is_a_problem_not_a_crash(self):
+        # Audit round 4, finding 2: the link scan walks any depth the loader accepts without recursing.
+        nested = 0
+        for _ in range(5000):
+            nested = [nested]
+        self.write("word/ribbon.json", [dict(TAB, extra=nested)])
+        self.assertTrue(any("unknown field extra" in p for p in self.problems()))
+        deep_link = "https://example.com"
+        for _ in range(5000):
+            deep_link = [deep_link]
+        self.assertEqual(len(ci.links({"extra": deep_link}, "$[0]", ci.ecma(r"https?://"))), 1)
+
+    def test_every_text_and_reference_field_refuses_an_empty_value(self):
+        # Audit round 4, finding 3: each field below must refuse "" on its own, so removing any one field's rule fails
+        # this test. The list is written out here, not read from the schema.
+        fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
+                  "idMso", "uiaId", "source", "capturedFrom", "id")
+        for field in fields:
+            rec = dict(BOLD, **{field: ""})
+            self.write("word/ribbon.json", [TAB, GROUP, rec])
+            self.assertTrue(any(f".{field}" in p for p in self.problems()), field)
+
     def test_malformed_outlook_rows_are_a_problem_not_a_crash(self):
         # Audit round 2, finding 2: rows that are not a list reached the whole-inventory window gate.
         real = ci.INVENTORY
