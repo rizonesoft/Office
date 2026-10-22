@@ -180,7 +180,8 @@ def ineligibility(pr):
     return None
 
 
-PIN_FILES = {"vcpkg.json", "vcpkg-configuration.json", "CMakePresets.json"}  # the C++ toolchain pins (D03 T01 §12)
+# The C++ toolchain pins (D03 T01 §12), compared casefolded: Windows resolves VCPKG.JSON to vcpkg.json.
+PIN_FILES = {"vcpkg.json", "vcpkg-configuration.json", "CMakePresets.json"}
 
 
 def file_problem(runner, root, repo, number, changed):
@@ -196,7 +197,9 @@ def file_problem(runner, root, repo, number, changed):
         raise Unreadable(f"gh api pulls/{number}/files gave no JSON lines") from None
     if len(files) != changed:
         return f"the API listed {len(files)} of its {changed} changed files"
-    pinned = sorted({Path(name).name for pair in files for name in pair if name and Path(name).name in PIN_FILES})
+    folded = {pin.casefold() for pin in PIN_FILES}
+    pinned = sorted({Path(name).name for pair in files for name in pair
+                     if name and Path(name).name.casefold() in folded})
     if pinned:
         return f"changes {', '.join(pinned)} (a C++ toolchain pin moves only through its own proposal)"
     return None

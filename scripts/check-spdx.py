@@ -27,7 +27,7 @@ import sys
 OWN = "GPL-3.0-or-later"
 EXTENSIONS = {".py", ".mjs", ".ps1", ".sh", ".cpp", ".cppm", ".ixx", ".h", ".hpp", ".rc", ".hlsl", ".manifest",
               ".cmake"}
-NAMES = {"CMakeLists.txt"}
+NAMES = {"cmakelists.txt"}  # compared casefolded, as Windows resolves file names
 HOOKS = "scripts/hooks/"
 HEAD_LINES = 10
 NOTICES = "THIRD-PARTY-NOTICES.md"
@@ -48,7 +48,7 @@ def tracked(root):
         raise OSError(listed.stderr.decode(errors="replace").strip() or "git ls-files failed")
     paths = [p for p in listed.stdout.decode("utf-8").split("\0") if p]
     return [p for p in paths
-            if Path(p).suffix.lower() in EXTENSIONS or Path(p).name in NAMES or p.startswith(HOOKS)]
+            if Path(p).suffix.lower() in EXTENSIONS or Path(p).name.casefold() in NAMES or p.startswith(HOOKS)]
 
 
 def recorded_licences(root):

@@ -278,6 +278,14 @@ class Eligibility(unittest.TestCase):
         self.assertEqual(fake.merged, [])
         self.assertIn("changes CMakePresets.json", out)
 
+    def test_a_pin_file_in_another_case_is_still_a_pin_file(self):
+        for name in ("VCPKG.JSON", "src/cmakepresets.json", ("x.json", "Vcpkg-Configuration.json")):
+            with self.subTest(name=name):
+                fake = Fake(prs=[pr(1, files=[name])])
+                _, out = run_main(fake)
+                self.assertEqual(fake.merged, [])
+                self.assertIn("a C++ toolchain pin moves only through its own proposal", out)
+
     def test_renaming_a_pin_file_away_is_a_change_to_it(self):
         fake = Fake(prs=[pr(1, files=[("old-pins.json", "vcpkg-configuration.json")])])
         _, out = run_main(fake)

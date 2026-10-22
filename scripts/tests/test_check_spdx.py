@@ -18,6 +18,8 @@ spec.loader.exec_module(spdx)
 TAG = "SPDX-" + "License-Identifier:"  # in parts, so this file's own licence is the only tag REUSE reads here
 
 
+SLASH_KINDS = (".mjs", ".cpp", ".cppm", ".ixx", ".h", ".hpp", ".rc", ".hlsl")
+
 class Repo(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -59,7 +61,7 @@ class Identifiers(Repo):
 
     def test_every_source_kind_and_extensionless_hooks_are_checked(self):
         kinds = ("a.mjs", "b.ps1", "c.sh", "d.cpp", "e.cppm", "f.ixx", "g.h", "h.hpp", "i.rc", "j.hlsl",
-                 "k.manifest", "l.cmake", "src/CMakeLists.txt", "scripts/hooks/pre-commit")
+                 "k.manifest", "l.cmake", "src/CMakeLists.txt", "lib/cmakelists.txt", "scripts/hooks/pre-commit")
         for rel in kinds:
             self.add(rel, "nothing\n")
         self.add("notes.md", "prose is not source\n")
@@ -70,6 +72,12 @@ class Identifiers(Repo):
             self.assertIn(f"{rel}: no", out)
         self.assertNotIn("notes.md", out)
         self.assertNotIn("CMakeLists.txt.bak", out)
+        for rel in kinds:
+            marker = "<!--" if rel.endswith(".manifest") else "//" if rel.endswith(SLASH_KINDS) else "#"
+            closing = " -->" if marker == "<!--" else ""
+            self.add(rel, f"{marker} {TAG} GPL-3.0-or-later{closing}\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
 
     def test_only_a_whole_single_declaration_counts(self):
         cases = {"compound.py": f"# {TAG} GPL-3.0-or-later AND Apache-2.0\n",
