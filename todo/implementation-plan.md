@@ -43,7 +43,7 @@ Sections: 20 | Checklist items: 97
 | [ ]    | D01 T01 §8 | GitHub Repository Rename                | operator                | 4     |
 | [ ]    | D01 T01 §9 | Microsoft Store Name Reservation        | store-account, operator | 3     |
 | [x]    | D01 T02 §1 | Icon Design Language Brief              | none                    | 5     |
-| [ ]    | D01 T02 §2 | Suite Mark and Wordmark Masters         | none                    | 5     |
+| [x]    | D01 T02 §2 | Suite Mark and Wordmark Masters         | none                    | 5     |
 | [ ]    | D01 T02 §3 | Six App Icon Masters                    | none                    | 8     |
 | [ ]    | D01 T02 §4 | Small-Size App Icon Variants            | none                    | 4     |
 | [ ]    | D01 T02 §5 | Document File-Type Icons                | none                    | 7     |
@@ -133,6 +133,6 @@ Sections: 3 | Checklist items: 13
 | [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision | 3     |
 
-Progress: 26/92 verified sections, 10 ready to run now.
+Progress: 27/92 verified sections, 10 ready to run now.
 
-Checklist: 158/525 items completed (includes Commit items).
+Checklist: 159/525 items completed (includes Commit items).
