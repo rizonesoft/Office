@@ -342,5 +342,14 @@ class MonoMark(unittest.TestCase):
         self.assertEqual(img.getpixel((cx, py - d.MONO_GAP // 2 - 1))[3], clear)  # the gap between orb and pane
         self.assertEqual(img.getpixel((2, 126))[3], clear)  # and nothing behind the mark
 
+    def test_every_shape_takes_the_given_colour(self):
+        # An unset fill would paint black whatever colour the mark is given.
+        svg = d.suite_mono_svg().replace("<svg ", '<svg color="#ff0000" ', 1)
+        img = Image.open(io.BytesIO(build_icons.render(svg, 128))).convert("RGBA")
+        px, py, pw, ph, _ = d.SUITE_PANE["md"]
+        cx, cy, r = d.SUITE_ORB["md"]
+        for xy in ((px + pw // 2, py + ph - 4), (cx, cy - r + 6)):  # the pane, then the orb
+            self.assertEqual(img.getpixel(xy), (255, 0, 0, 255), xy)
+
 if __name__ == "__main__":
     unittest.main()
