@@ -36,7 +36,7 @@ title: "TODO-03 -- GitHub Graphics"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | README hero banner in light and dark | D01 T02 §2 | [x] |
 | 2 | §2 | Social preview image | D01 T02 §3 | [x] |
-| 3 | §3 | App lineup strip in light and dark | D01 T02 §3 | [ ] |
+| 3 | §3 | App lineup strip in light and dark | D01 T02 §3 | [x] |
 | 4 | §4 | README brand presentation | §1, §3, D01 T01 §6 | [ ] |
 | 5 | §5 | Upload social preview and avatar | §2 | [ ] |
 
@@ -114,9 +114,12 @@ A strip of the six app icons with their names, so a visitor sees the whole suite
 - [x] Compose `design/github/lineup-light.svg` with six icons at 96 pixels and outlined names beneath. Done when: the six names match `docs/brand/NAMES.md` exactly. Cheaper substitute: names typed from memory.
 - [x] Compose `design/github/lineup-dark.svg` with name colours holding 4.5:1 on `#0d1117`. Done when: the contrast ratio is recorded in the SVG comment. Cheaper substitute: one strip used on both themes.
 - [x] Add lineup targets to `scripts/build-icons.py` exporting 2x PNGs to `docs/assets/github/`. Done when: `python scripts/check-image-asset.py docs/assets/github/lineup-light.png --max-bytes 300000` exits 0. Cheaper substitute: hand-exported PNGs.
-- [ ] Commit: `brand: add app lineup strip`
+- [x] Commit: `brand: add app lineup strip`
 
 **Test checkpoint:** `python scripts/check-image-asset.py docs/assets/github/lineup-dark.png --max-bytes 300000` exits 0.
+
+> **Verified:** 2026-10-22 | §3 | bc88274ab981e323be154f4e2ca2846438b64913
+> **Review:** `docs/reviews/d01-t03-s3.json`
 
 ## 4. README Brand Presentation
 

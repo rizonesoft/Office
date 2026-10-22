@@ -1,0 +1,55 @@
+{
+  "ref": "D01 T03 \u00a73",
+  "title": "App Lineup Strip in Light and Dark",
+  "implementation_sha": "bc88274ab981e323be154f4e2ca2846438b64913",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/01-brand/D01-T03-s3.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-image-asset.py docs/assets/github/lineup-dark.png --max-bytes 300000 -> ok, png 1808x380 130113 bytes",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (53 tests)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at bc88274"
+  ],
+  "rounds_spent": 8,
+  "round_cap": 22
+}
