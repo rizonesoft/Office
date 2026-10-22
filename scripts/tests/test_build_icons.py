@@ -377,10 +377,12 @@ class PixelVariants(unittest.TestCase):
                         x, y, w, h = (float(a[v]) for v in ("x", "y", "width", "height"))
                         values = [x - offset, y - offset, w, h]
                         extent = [x, y, x + w, y + h]
+                        self.assertTrue(w > 0 and h > 0, (key, size, a))
                     elif name == "circle":
                         cx, cy, r = (float(a[v]) for v in ("cx", "cy", "r"))
                         values = [cx - r, cy - r, 2 * r]
                         extent = [cx - r, cy - r, cx + r, cy + r]
+                        self.assertGreater(r, 0, (key, size, a))
                     else:
                         points = [float(v) for v in re.findall(r"-?[\d.]+", a["d"])]
                         values = [v - offset for v in points]
