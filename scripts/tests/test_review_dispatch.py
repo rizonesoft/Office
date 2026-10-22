@@ -712,6 +712,17 @@ class RepositoryPin(unittest.TestCase):
         for writer, chain in routes.items():
             self.assertEqual(len(chain), 1, f"route {writer!r} names a fallback: {chain}")
 
+    def test_the_repository_pin_is_the_owners_choice(self):
+        # Owner decision 2026-10-22: GPT-6.1 Sol at xhigh reviews Claude and Gemini work; Sonnet keeps Codex work.
+        spec = importlib.util.spec_from_file_location("dispatch_pin_owner", SCRIPTS / "review-dispatch.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        pin = module.load_pin(REPO_PIN)
+        for writer in ("claude", "gemini"):
+            (name,) = pin["routes"][writer]
+            self.assertEqual({k: pin["reviewers"][name][k] for k in ("cli", "model", "effort")},
+                             {"cli": "codex", "model": "gpt-6.1-sol", "effort": "xhigh"}, writer)
+
 
 if __name__ == "__main__":
     unittest.main()

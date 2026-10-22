@@ -13,11 +13,12 @@
 
 schema_version = 1
 
-# GPT-6 Astra through the Codex CLI, read-only sandbox.
-[reviewers.astra]
+# GPT-6.1 Sol through the Codex CLI at xhigh effort, read-only sandbox (owner decision 2026-10-22, replacing
+# GPT-6 Astra at medium).
+[reviewers.sol]
 cli = "codex"
-model = "gpt-6-astra"
-effort = "medium"
+model = "gpt-6.1-sol"
+effort = "xhigh"
 
 # Sonnet 5.5 through Claude Code in plan mode.
 [reviewers.sonnet]
@@ -25,9 +26,9 @@ cli = "claude"
 model = "claude-sonnet-5-5"
 effort = "high"
 
-# Astra reviews wherever it may; Sonnet reviews Codex work (owner decision
-# 2026-10-21: one reviewer per writer, no fallback).
+# Sol reviews wherever it may; Sonnet reviews Codex work (owner decision
+# 2026-10-21: one reviewer per writer, no fallback; Sol since 2026-10-22).
 [routes]
-claude = ["astra"]
+claude = ["sol"]
 codex = ["sonnet"]
-gemini = ["astra"]
+gemini = ["sol"]
