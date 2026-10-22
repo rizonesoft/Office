@@ -8,7 +8,7 @@ The single record of the suite's and the apps' names. Every other file takes nam
 
 ## Apps
 
-Each app's full name is "Rizonesoft <App>", used everywhere outside the app; inside the app, the bare word is its label. No app swaps were made.
+Each app's official product name is "Rizonesoft <App>", as "Microsoft Word" is Microsoft's. It is used where the product is named formally: titles, store and package listings, installers, legal notices, and the first mention in a document. Everywhere else the bare word is enough, as people write "Word": a later mention, a list beside the suite name, and the app's own label. The words alone (Write, Grid, Stage, Flow, Plan, Mail) are common words no one can own, which is why the house brand Rizonesoft carries the protection (owner's clarification, 2026-10-22). No app swaps were made.
 
 | App | Full name | Microsoft counterpart |
 | --- | --- | --- |

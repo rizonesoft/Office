@@ -31,8 +31,8 @@ Checked with `gh api <path>`, authenticated as `rizonesoft`, a user account, wit
 | --- | --- | --- |
 | Account `rizonesoft` (a user account) | 200 | owned (hosts this repository) |
 | Repository `rizonesoft/Office` | 200 | owned (this repository, which keeps the name) |
-| Repository `rizonesoft/rizonesoft-office` | 404 | does not exist |
-| Account or organisation `rizonesoft-office` | 404 | no account |
+| Repository `rizonesoft/rizonesoft-office` | 404 | not used: the repository stays `Office` |
+| Account or organisation `rizonesoft-office` | 404 | not used: no separate account is needed |
 
 ### Packages
 
