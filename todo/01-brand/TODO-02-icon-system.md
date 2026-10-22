@@ -41,7 +41,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | 2 | §2 | Suite mark and wordmark masters | §1 | [x] |
 | 3 | §3 | Six app icon masters | §1 | [x] |
 | 4 | §4 | Small-size app icon variants | §3 | [x] |
-| 5 | §5 | Document file-type icons | §3 | [ ] |
+| 5 | §5 | Document file-type icons | §3 | [x] |
 | 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [ ] |
 | 7 | §7 | Distinctness review and owner sign-off | §6 | [ ] |
 
@@ -181,9 +181,12 @@ File Explorer, Finder and the Backstage recent list show file-type icons. Decisi
 - [x] Draw the diagram types `vsdx`, `vsdm` and `vstx`. Done when: three types' drawings exist. Cheaper substitute: reusing the app icon unchanged.
 - [x] Draw the project types `mpp` and `mpt`; the native project format icon is deferred to D03 T01 §5, which names its extension. Done when: two types' drawings exist and the deferral names its owner. **Corrected 2026-10-22:** asked for three, including the native format, which has no extension yet. Cheaper substitute: reusing the app icon unchanged.
 - [x] Draw the mail types `eml`, `msg`, `ics` and `vcf`. Done when: four types' drawings exist. Cheaper substitute: one envelope for all four.
-- [ ] Commit: `brand: add document file-type icons`
+- [x] Commit: `brand: add document file-type icons`
 
 **Test checkpoint:** `(Get-ChildItem design/icons/files/*.svg).Count` returns 130 (26 types, five drawings each) and each passes `python scripts/check-image-asset.py <file> --format svg`. **Corrected 2026-10-22:** said at least 27 files, one per type.
+
+> **Verified:** 2026-10-22 | §5 | 3223a272eb18958337d574f287554ebfffa79acd
+> **Review:** `docs/reviews/d01-t02-s5.json`
 
 ## 6. Icon Export Pipeline
 

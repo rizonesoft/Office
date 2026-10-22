@@ -1,0 +1,31 @@
+{
+  "ref": "D01 T02 \u00a75",
+  "title": "Document File-Type Icons",
+  "implementation_sha": "3223a272eb18958337d574f287554ebfffa79acd",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T02-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T02-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T02-s5.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "(Get-ChildItem design/icons/files/*.svg).Count -> 130, each check-image-asset --format svg ok",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (37 tests); kind and macro-visibility mutations fail",
+    "python scripts/build-icons.py --check -> icons current",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at 3223a27"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 22
+}
