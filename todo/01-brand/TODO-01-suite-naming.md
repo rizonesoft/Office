@@ -103,9 +103,13 @@ The owner chose on 2026-10-20, ahead of a longlist: the suite is Rizonesoft Offi
 
 ## 3. Owner Selection of Suite and App Names
 
+> **Started:** 2026-10-22T00:55:00Z
+
 The owner picks the concept, can swap individual app names, and the choice is recorded once in `docs/brand/NAMES.md`. Every other file reads names from there. Remove the `owner-decision` Need when the choice is recorded in this section as `Decision: <concept>, <date>`.
 
 Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizonesoft Office"; apps Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook); in-app names are the bare app names and full names are "Rizonesoft Write" and so on. The house brand carries the trademark protection, because the bare app names and "Office" are generic words and "Flow" was Microsoft's product name until 2019.
+
+> **Deferred:** the name of Plan's native file extension (Plan saves its own format, as Project's `.mpp` is closed) -> XREF: D03 T01 §5
 
 **Phase:** 1
 **Needs:** none
@@ -116,9 +120,9 @@ Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizoneso
 1. Confirm the decision line in this section matches `## Chosen` in `docs/brand/naming-candidates.md`. Done when: both name the same suite and six apps.
 2. Write `docs/brand/NAMES.md`. Done when: the design-doc checker passes with the required headings.
 
-- [ ] Record the owner's chosen concept and any per-app swaps in `docs/brand/NAMES.md` under `## Suite` and `## Apps`. Done when: six app rows each name the Microsoft counterpart. Cheaper substitute: recording only the suite name and leaving app names implied.
-- [ ] Add the identifier forms to `docs/brand/NAMES.md` under `## Identifiers`: display name, `kebab-case`, `PascalCase`, and reverse-DNS bundle id under the owner's domain. Done when: all four forms exist for the suite and each app. Cheaper substitute: deriving identifiers ad hoc in each later file.
-- [ ] Add the file extension policy to `docs/brand/NAMES.md` under `## File formats`: native OOXML extensions (`.docx`, `.xlsx`, `.pptx`, `.vsdx`) are kept, and any native project format gets its own extension. Done when: each app lists its default save format. Cheaper substitute: inventing proprietary formats for apps whose OOXML format is standard.
+- [x] Record the owner's chosen concept and any per-app swaps in `docs/brand/NAMES.md` under `## Suite` and `## Apps`. Done when: six app rows each name the Microsoft counterpart. Cheaper substitute: recording only the suite name and leaving app names implied.
+- [x] Add the identifier forms to `docs/brand/NAMES.md` under `## Identifiers`: display name, `kebab-case`, `PascalCase`, and reverse-DNS bundle id under the owner's domain. Done when: all four forms exist for the suite and each app. Cheaper substitute: deriving identifiers ad hoc in each later file.
+- [x] Add the file extension policy to `docs/brand/NAMES.md` under `## File formats`: native OOXML extensions (`.docx`, `.xlsx`, `.pptx`, `.vsdx`) are kept, and any native project format gets its own extension. Done when: each app lists its default save format (Plan's as its own native format, the extension's name owned by D03 T01 §5, which decides the `.mpp` scope). Cheaper substitute: inventing proprietary formats for apps whose OOXML format is standard.
 - [ ] Commit: `brand: record chosen suite and app names`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/NAMES.md --require Suite --require Apps --require Identifiers --require "File formats"` exits 0.

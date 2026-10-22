@@ -103,7 +103,7 @@ Sections: 40 | Checklist items: 255
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 14 | Checklist items: 71
+Sections: 14 | Checklist items: 72
 
 | Status | Reference   | Deliverable                                    | Needs | Items |
 | ------ | ----------- | ---------------------------------------------- | ----- | ----- |
@@ -111,7 +111,7 @@ Sections: 14 | Checklist items: 71
 | [ ]    | D03 T01 §2  | Shell Framework Decision with Ribbon Prototype | none  | 7     |
 | [ ]    | D03 T01 §3  | Text Layout and Pagination Engine Decision     | none  | 5     |
 | [ ]    | D03 T01 §4  | Graphics and Canvas Rendering Decision         | none  | 5     |
-| [ ]    | D03 T01 §5  | File Format Strategy Decision                  | none  | 5     |
+| [ ]    | D03 T01 §5  | File Format Strategy Decision                  | none  | 6     |
 | [ ]    | D03 T01 §6  | Spreadsheet Calculation Engine Decision        | none  | 5     |
 | [ ]    | D03 T01 §7  | Mail, Calendar and Contacts Protocol Decision  | none  | 5     |
 | [ ]    | D03 T01 §8  | Storage, AutoSave and Co-Authoring Decision    | none  | 4     |
@@ -134,4 +134,4 @@ Sections: 3 | Checklist items: 13
 
 Progress: 23/91 verified sections, 7 ready to run now.
 
-Checklist: 141/520 items completed (includes Commit items).
+Checklist: 144/521 items completed (includes Commit items).
