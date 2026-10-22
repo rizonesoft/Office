@@ -407,6 +407,37 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_characters_containing_a_full_stop_are_address_marks(self):
+        # Audit round 20, finding 1: U+2488 normalises to "1.", so "<U+2488>com" is 1.com to IDNA.
+        import unicodedata
+        for code in (0x2488, 0x33C2, 0x2025):
+            self.write("word/ribbon.json", [dict(TAB, label=chr(code) + "com")])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), hex(code))
+        pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
+        missed = [hex(c) for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF
+                  and "." in unicodedata.normalize("NFKC", chr(c)) and not pattern.search(chr(c) + "com")]
+        self.assertEqual(missed, [])
+
+    def test_the_reference_commit_row_is_read_in_any_spacing_and_required(self):
+        # Audit round 20, finding 2: extra spaces in the row must not switch the comparison off; no row is unreadable.
+        text = (ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8")
+        real = json.loads((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"))
+        real["commit"] = "0" * 40
+        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        named = self.write("word/ribbon.json", [TAB])
+        spaced, missing = text.replace("| Commit | ", "|  Commit  |   ", 1), text.replace("| Commit |", "| Revision |", 1)
+        for reference in (spaced, missing):
+            (self.inv / ci.REFERENCE).write_text(reference, encoding="utf-8")
+            with self.assertRaises(ci.Unreadable):
+                ci.check([str(named)], inventory=self.inv)
+
+    def test_a_baseline_with_the_wrong_columns_is_refused(self):
+        # Audit round 20, finding 3: the column-layout guard, on its own.
+        data = json.loads((ci.INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+        data["columns"][0] = "tab"
+        problems = ci.check_baseline(Path("word/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA))
+        self.assertTrue(any("columns" in p and "are not" in p for p in problems), problems)
+
     def test_compatibility_full_stops_and_colons_are_address_marks(self):
         # Audit round 19, finding 1: IDNA normalises U+2024 and U+FE52 to a full stop, so they separate a host too.
         for dot in (0x2024, 0xFE52, 0xFF0E, 0x3002):
@@ -483,7 +514,8 @@ class Inventory(unittest.TestCase):
         (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
         # The inventory's own reference pins the commit (a scratch inventory without one is not bound to the
         # repository's).
-        (self.inv / ci.REFERENCE).write_text((ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8"), encoding="utf-8")
+        reference = (ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8")
+        (self.inv / ci.REFERENCE).write_text(reference, encoding="utf-8")
         named = self.write("word/ribbon.json", [TAB])
         with self.assertRaises(ci.Unreadable) as raised:
             ci.check([str(named)], inventory=self.inv)

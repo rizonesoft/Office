@@ -773,3 +773,40 @@ All four findings verified and fixed in the next commit; four tests fail against
 4. P3 the unknown-Outlook-window guard was untested: `test_an_unknown_outlook_window_is_refused`.
 
 CI on the round 19 fix commit failed: three `test_import_office_ids` tests build a scratch inventory with its own manifest at an invented commit and no `REFERENCE.md`. The checker borrowed the repository's reference and compared that inventory's commit with the repository's. The pinned commit now binds only an inventory's own `REFERENCE.md`; a scratch inventory without one still borrows the repository's profiles and builds. The round 19 commit test gives its inventory a copy of the reference. The full tooling suite (613 tests) now passes locally; it was not run before the failing push, and is run before every push from here on.
+
+## Round 20: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T13:31:36Z
+- Effort: xhigh
+- Lines: 18
+- Digest: c1485d3ef0eed432
+
+## source-defect: needs-attention
+
+1. **P1:** `design/inventory/schema.json:423` misses compatibility characters that normalize to text containing a dot. Append `{"id":"word.reviewprobe","app":"word","kind":"tab","label":"\u2488com"}` to an inventory array. Schema validation accepts it and the whole-inventory CLI exits **0**, although `label.encode("idna")` produces `b"1.com"`. The round-19 test checks only characters whose entire normalized form equals `"."`.
+
+## adversarial: needs-attention
+
+2. **P1:** `scripts/check-inventory.py:229` fails open when the reference commit row has different Markdown spacing. Change `| Commit | ` to `| Commit |  `, preserving its recorded hash. Set the manifest commit and all six baseline sources to `"0"*40`. The whole-inventory CLI exits **0**, without diagnostics. With the original spacing, the same contradictory sources exit **2**. Line 230 silently returns `None`, disabling the comparison at line 432.
+
+## consistency: needs-attention
+
+2. **P1:** The reproduction above leaves the commit recorded at `design/inventory/REFERENCE.md:60` semantically unchanged, yet permits a different baseline revision. The checker therefore does not reliably enforce agreement with its governing reference.
+
+## record: needs-attention
+
+3. **P3:** `scripts/tests/test_check_inventory.py:492` and the other baseline fixtures leave the exact-column-layout guard unprotected, contrary to the ticked rule-disable claim at `todo/02-interface/TODO-01-parity-inventory.md:89`. Disable only the comparison at `scripts/check-inventory.py:364`: **all 106 tests still pass**. Then replace the Word baseline’s `columns[0]` with `"tab"`: the original reports incorrect columns, while the mutant returns `[]`. Verified with fixture writes redirected entirely to memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 20
+
+All three findings verified and fixed in the next commit; the first two tests fail against the round 19 checker (fixes stashed), and the third fails when the column guard is removed:
+
+1. P1 a character whose compatibility form only contains a full stop (U+2488 is "1.", so "<U+2488>com" is 1.com to IDNA) passed. The dot and colon classes now take every character whose NFKC form contains a full stop or a colon (31 dot forms and 5 colon forms in the BMP, the ellipsis U+2026 among them, which still ends a label validly since it is followed by nothing). A test checks the class against this Python's Unicode data (`test_characters_containing_a_full_stop_are_address_marks`).
+2. P1 extra spaces in the reference's Commit row switched the commit comparison off: the row is read in any spacing, and an inventory's own reference that does not pin exactly one commit makes the run unreadable instead of skipping the comparison (`test_the_reference_commit_row_is_read_in_any_spacing_and_required`).
+3. P3 the column-layout guard was untested: `test_a_baseline_with_the_wrong_columns_is_refused`.
+
+The full tooling suite (616 tests) passes locally before the push.

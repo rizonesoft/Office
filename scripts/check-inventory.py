@@ -226,8 +226,12 @@ def reference(inventory):
         raise Unreadable(f"{path}: cannot read ({exc})") from None
     profiles = set(re.findall(r"Profile `([A-Za-z0-9-]+)`", text))
     builds = set(re.findall(r"^\| [^|]+ \| [^|]+ \| (\d+\.\d+\.\d+\.\d+) \|", text, flags=re.M))
-    pinned = re.findall(r"^\| Commit \| `([0-9a-f]{40})` \|", text, flags=re.M)
-    return profiles, builds, (pinned[0] if own and len(pinned) == 1 else None)
+    # Any spacing in the table row; and an inventory's own reference must pin exactly one commit, or the comparison it
+    # backs would be skipped without a word.
+    pinned = re.findall(r"^\|\s*Commit\s*\|\s*`([0-9a-f]{40})`\s*\|", text, flags=re.M)
+    if own and len(pinned) != 1:
+        raise Unreadable(f"{path}: the Baseline table pins {len(pinned)} commits, not one")
+    return profiles, builds, (pinned[0] if own else None)
 
 
 LOOP_SHOWN = 20  # ids a parent-loop diagnostic names before eliding the rest
