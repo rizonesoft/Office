@@ -1,0 +1,41 @@
+{
+  "ref": "D01 T03 \u00a71",
+  "title": "README Hero Banner in Light and Dark",
+  "implementation_sha": "e1695cf871b0f2e7f7c8c69c7a41b23905a3eed1",
+  "date": "2026-10-22",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-brand/D01-T03-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/01-brand/D01-T03-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/01-brand/D01-T03-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/01-brand/D01-T03-s1.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/01-brand/D01-T03-s1.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-image-asset.py docs/assets/github/banner-dark.png --size 2560x640 --max-bytes 500000 -> ok, png 2560x640 102088 bytes",
+    "python scripts/check-image-asset.py design/github/banner-{light,dark}.svg --format svg -> ok",
+    "python -B -m unittest scripts.tests.test_build_icons -> OK (46 tests)",
+    "gh run list --workflow ci.yml --branch main --limit 1 -> success at e1695cf"
+  ],
+  "rounds_spent": 5,
+  "round_cap": 22
+}

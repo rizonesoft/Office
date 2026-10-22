@@ -34,7 +34,7 @@ title: "TODO-03 -- GitHub Graphics"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | README hero banner in light and dark | D01 T02 §2 | [ ] |
+| 1 | §1 | README hero banner in light and dark | D01 T02 §2 | [x] |
 | 2 | §2 | Social preview image | D01 T02 §3 | [ ] |
 | 3 | §3 | App lineup strip in light and dark | D01 T02 §3 | [ ] |
 | 4 | §4 | README brand presentation | §1, §3, D01 T01 §6 | [ ] |
@@ -60,9 +60,12 @@ The banner is the first thing a visitor sees: suite mark, wordmark and a one-lin
 - [x] Compose `design/github/banner-light.svg` with the suite mark, wordmark and tagline, text outlined. Done when: `python scripts/check-image-asset.py design/github/banner-light.svg --format svg` exits 0. Cheaper substitute: a screenshot of a slide.
 - [x] Compose `design/github/banner-dark.svg` with colours from `docs/brand/icon-language.md` that hold 4.5:1 text contrast on `#0d1117`. Done when: the tagline contrast ratio is recorded in the SVG comment and is at least 4.5. Cheaper substitute: the light banner with inverted colours.
 - [x] Add banner targets to `scripts/build-icons.py` exporting `docs/assets/github/banner-light.png` and `banner-dark.png` at 2560x640. Done when: `python scripts/check-image-asset.py docs/assets/github/banner-light.png --size 2560x640 --max-bytes 500000` exits 0. Cheaper substitute: hand-exported PNGs that drift from the SVG.
-- [ ] Commit: `brand: add README banner`
+- [x] Commit: `brand: add README banner`
 
 **Test checkpoint:** `python scripts/check-image-asset.py docs/assets/github/banner-dark.png --size 2560x640 --max-bytes 500000` exits 0.
+
+> **Verified:** 2026-10-22 | §1 | e1695cf871b0f2e7f7c8c69c7a41b23905a3eed1
+> **Review:** `docs/reviews/d01-t03-s1.json`
 
 ## 2. Social Preview Image
 
