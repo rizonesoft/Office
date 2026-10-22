@@ -611,6 +611,8 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 
 ## 23. Audit Schema Checker
 
+> **Started:** 2026-10-22T08:20:41Z
+
 `D02 T01 §1` (Inventory Schema Checker) was stamped under the earlier review process: a three-round cap. Its receipt `docs/reviews/d02-t01-s1.json` records 3 rounds (fixed, fixed, stopped-at-3), and its round 3 findings were fixed after the cap without being reviewed again. This section re-verifies it under the current process (owner request 2026-10-21) because every capture and the record-level ownership check (§22) trust it to refuse a malformed record: the section's own Test checkpoint re-run at the current tip, and fresh independent rounds by the pinned reviewer in `review-todo-section`'s audit stance, at most 22 rounds with the severity cutoff. A confirmed stamp stays; a regression reopens the section through `unstamp` with a filed repair.
 
 **Phase:** 2
