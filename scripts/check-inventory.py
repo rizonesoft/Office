@@ -394,12 +394,13 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
         problems += [f"{f}: {p}" for p in schema_problems]
         if not isinstance(data, list):
             continue
+        # The schema refuses links in its typed fields; links() covers every other string and reports once. The
+        # locations the schema already reported are gathered once per file, not once per record.
+        reported = {p.split(": ", 1)[0] for p in schema_problems}
         for i, rec in enumerate(data):
             if not isinstance(rec, dict):
                 continue
             where = f"{f}[{i}]"
-            # The schema refuses links in its typed fields; links() covers every other string and reports once.
-            reported = {p.split(": ", 1)[0] for p in schema_problems}
             problems += [f"{f}: {p}" for p in links(rec, f"$[{i}]", link) if p.split(": ", 1)[0] not in reported]
             rid = rec.get("id")
             if isinstance(rid, str):

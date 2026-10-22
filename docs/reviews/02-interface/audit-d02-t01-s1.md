@@ -466,3 +466,33 @@ All five findings verified and fixed in the next commit; the four tests for find
 5. P3 bounds member types could be removed unnoticed: `test_every_bounds_member_is_an_integer` lists `x`, `y`, `width` and `height`.
 
 The round 5 address test now uses addresses short enough for a keytip (16 characters), so the address rule, not the new length rule, is what refuses them.
+
+## Round 12: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T11:10:21Z
+- Effort: xhigh
+- Lines: 14
+- Digest: f8808d7e9e6551a0
+
+### source-defect: approve
+
+### adversarial: needs-attention
+
+1. **P2:** `scripts/check-inventory.py:402` rebuilds the set of all schema-error locations for every record, making malformed-file validation quadratic. Reproduce with an array of uniquely identified records containing valid `id`, `app` and `kind` fields but omitting `label`. In-memory checks of 2,000, 4,000 and 8,000 records took **0.89, 2.95 and 14.21 seconds** respectively. Large malformed captures stall before diagnostics appear. Compute `reported` once outside the record loop.
+
+### consistency: approve
+
+### record: needs-attention
+
+2. **P3:** `scripts/tests/test_check_inventory.py:400` tests excessive lengths only for `label`, `behaviour` and `uiaId`, leaving the every-rule sensitivity claim at `todo/02-interface/TODO-01-parity-inventory.md:89` unsupported. Remove only `idMso.maxLength` at `design/inventory/schema.json:273` in memory: all **79 tests still pass**, while a 201-character `idMso` becomes accepted. Verified with fixture operations intercepted in memory and no filesystem writes.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Dispositions after audit round 12
+
+Round 12 is the first with no P1 (HIGHEST P2; source-defect and consistency approve). Both findings verified and fixed in the next commit:
+
+1. P2 every record rebuilt the set of locations the schema had reported, so a large malformed file took quadratic time: the set is gathered once per file (`test_many_malformed_records_cost_linear_time`, 8000 records each missing a label; it fails against the round 11 checker).
+2. P3 a field's length limit could be removed unnoticed: `test_every_string_field_has_its_length_limit` lists all thirteen string fields with their limits; removing the limit from any field tried in memory fails it.

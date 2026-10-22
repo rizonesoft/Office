@@ -407,6 +407,25 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_every_string_field_has_its_length_limit(self):
+        # Audit round 12, finding 2: each field below must refuse one character over its limit, written out here.
+        limits = {"id": 200, "label": 200, "parent": 200, "keytip": 16, "shortcut": 64, "target": 200, "menuPath": 500,
+                  "captureProfile": 64, "behaviour": 1000, "idMso": 200, "uiaId": 200, "source": 100,
+                  "capturedFrom": 64}
+        for field, limit in limits.items():
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "a" * (limit + 1)})])
+            self.assertTrue(any(f".{field}: longer than {limit}" in p for p in self.problems()), field)
+
+    def test_many_malformed_records_cost_linear_time(self):
+        # Audit round 12, finding 1: 8000 records each missing a label took 14 seconds when every record rebuilt the
+        # set of reported locations.
+        import time
+        self.write("word/ribbon.json", [{"id": f"word.r{i}", "app": "word", "kind": "tab"} for i in range(8000)])
+        start = time.perf_counter()
+        problems = self.problems()
+        self.assertLess(time.perf_counter() - start, 4.0)
+        self.assertEqual(sum("missing label" in p for p in problems), 8000)
+
     def test_parent_loops_cost_linear_time(self):
         # Audit round 11, finding 4: a 20000-record chain or cycle is resolved in one pass.
         import time
