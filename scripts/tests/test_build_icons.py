@@ -190,6 +190,30 @@ class Brand(unittest.TestCase):
         self.assertNotAlmostEqual(o.path("AV", 40, 700)[1], o.path("A", 40, 700)[1] + o.path("V", 40, 700)[1], places=2)
 
 
+class Banner(unittest.TestCase):
+    def test_banners_are_current_outlined_and_within_budget(self):
+        root = SCRIPTS.parent
+        for theme in ("light", "dark"):
+            svg = bd.banner_svg(theme)
+            self.assertEqual((root / f"design/github/banner-{theme}.svg").read_text(encoding="utf-8"), svg)
+            self.assertIn('viewBox="0 0 1280 320"', svg)
+            self.assertNotIn("<text", svg)
+            data = (root / f"docs/assets/github/banner-{theme}.png").read_bytes()
+            self.assertEqual(Image.open(io.BytesIO(data)).size, (2560, 640), theme)
+            self.assertLess(len(data), 500_000, theme)
+
+    def test_tagline_contrast_is_recorded_and_holds(self):
+        # The README shows the dark banner on GitHub's #0d1117 and the light one on white.
+        for theme, canvas in (("light", "#ffffff"), ("dark", "#0d1117")):
+            svg = bd.banner_svg(theme)
+            tagline, worst = (float(v) for v in re.findall(r"at least ([\d.]+):1", svg))
+            self.assertGreaterEqual(min(tagline, worst), 4.5, theme)
+            ink, sub = bd.THEMES[theme]
+            self.assertGreaterEqual(min(d.contrast(ink, canvas), d.contrast(sub, canvas)), 4.5, theme)
+            self.assertAlmostEqual(tagline, min(d.contrast(ink, c) for c in (*bd.BANNER_CARD[theme][:2], canvas)),
+                                   places=2)
+
+
 class GlassPane(unittest.TestCase):
     def pane_pixel(self, icon, background):
         data = build_icons.render(d.icon_svg(icon, "lg"), 128, background=background)

@@ -18,7 +18,7 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 # Generated output of scripts/build-icons.py and the icon designs it renders.
 [[annotations]]
-path = ["assets/**", "design/icons/**"]
+path = ["assets/**", "design/icons/**", "design/github/**", "docs/assets/**"]
 SPDX-FileCopyrightText = "2026 Rizonesoft"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 

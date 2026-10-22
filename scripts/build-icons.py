@@ -19,6 +19,7 @@ Outputs:
     assets/icons/web/                           favicon.ico, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png
     assets/icons/palette.json                   app colours for the interface
     assets/brand/{svg,png}/                     wordmark and suite and app lockups, light and dark
+    design/github/banner-{light,dark}.svg, docs/assets/github/banner-{light,dark}.png (2560x640)   README banner
 
 Requires the packages pinned in scripts/requirements.txt: resvg_py (rasteriser), uharfbuzz and fontTools (text
 outlines), Pillow (verification).
@@ -49,7 +50,8 @@ ICNS_SLOTS = (("icp4", 16, 16), ("ic11", 32, 16), ("icp5", 32, 32), ("ic12", 64,
               ("ic09", 512, 512), ("ic10", 1024, 512))
 MANAGED = (Path("design/icons/apps"), Path("design/icons/suite"), Path("design/icons/files"), Path("assets/icons/png"),
            Path("assets/icons/windows"), Path("assets/icons/macos"), Path("assets/icons/files"),
-           Path("assets/icons/linux"), Path("assets/icons/web"), Path("assets/brand"))
+           Path("assets/icons/linux"), Path("assets/icons/web"), Path("assets/brand"), Path("design/github"),
+           Path("docs/assets/github"))
 LINUX_ID = {d.SUITE: "com.rizonesoft.Office", **{k: f"com.rizonesoft.{v[0]}" for k, v in d.APPS.items()}}
 
 
@@ -176,6 +178,12 @@ def build():
         for scale in (1, 2):
             height = round(h * scale)
             out[f"assets/brand/png/{name}-{height}.png"] = render(text, round(w * scale), height)
+
+    # README banner, light and dark: the SVG and a 2x PNG for the README.
+    for theme in bd.THEMES:
+        text = bd.banner_svg(theme)
+        out[f"design/github/banner-{theme}.svg"] = text.encode("utf-8")
+        out[f"docs/assets/github/banner-{theme}.png"] = render(text, bd.BANNER_W * 2, bd.BANNER_H * 2)
 
     palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": d.APP_COLOR[k],
                             "light": v[2][0], "dark": v[2][1], "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},
