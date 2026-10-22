@@ -42,7 +42,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 7 | §7 | Run guard robustness fixes | §2 | [x] |
 | 8 | §8 | Agent tier verifier YAML strictness | -- | [x] |
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [x] |
-| 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [ ] |
+| 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [x] |
 | 11 | §11 | C++ toolchain pins | §10, D03 T01 §12 | [ ] |
 | 12 | §12 | Campaign host readiness check | §10 | [ ] |
 
@@ -310,9 +310,12 @@ Owner decision 2026-10-22 (D03 T01 §2): the suite moves from WinUI 3 in C# on .
 - [x] Update the merge rule in `AGENTS.md` and the `process-plan` mirrors in `.claude/skills/`, `.agents/skills/` and `.codex/skills/` (drop the `winui/*` and `dotnet/*` branches and the `global.json` exclusion), and the comment in `.github/dependabot.yml`. Done when: `git grep -n -i -E "winui|dotnet|nuget|Directory\.Packages|global\.json" -- AGENTS.md CONTRIBUTING.md scripts .github .claude .agents .codex .conclave/automations/tasks.json ".conclave/automations/*.py" ".conclave/automations/*.ps1"` prints nothing. Cheaper substitute: instructions that point at deleted files. The automations README names the retired tasks only in its dated `## Retired pins` record and its read-back history. **Corrected 2026-10-23:** the grep covered all of `.conclave/`, whose README keeps those records.
 - [x] Run `pwsh .conclave/automations/install.ps1` on this PC, which unregisters every `\Office\` task `tasks.json` no longer lists. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists exactly the tasks in `tasks.json`. Cheaper substitute: leaving the retired tasks to fail every morning once their scripts are gone.
 - [x] List the local `winui/*` and `dotnet/*` proposal branches and the `refs/office-pin/winui-*` and `refs/office-pin/dotnet-*` markers, and delete them (owner instruction 2026-10-22: "clean out all the C# and WinUI3 stuff"). Done when: `git branch --list "winui/*" "dotnet/*"` and `git for-each-ref refs/office-pin/` print no WinUI 3 or .NET entry. Cheaper substitute: leaving proposals that look ready to merge.
-- [ ] Commit: `automations: retire the .NET and WinUI 3 pins`
+- [x] Commit: `automations: retire the .NET and WinUI 3 pins`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests` passes, `python scripts/check-spdx.py` exits 0 and `git grep -n -i -E "winui|dotnet|nuget|Directory\.Packages|global\.json" -- AGENTS.md CONTRIBUTING.md scripts .github .claude .agents .codex .conclave/automations/tasks.json ".conclave/automations/*.py" ".conclave/automations/*.ps1"` prints nothing. **Corrected 2026-10-23:** the grep covered all of `.conclave/`, including the README's dated records.
+
+> **Verified:** 2026-10-23 | §10 | f8cc83c6ec870fdd1fe92bcb25408299e8f3c9b3
+> **Review:** `docs/reviews/d00-t03-s10.json`
 
 ## 11. C++ Toolchain Pins
 

@@ -27,7 +27,7 @@ Sections: 17 | Checklist items: 107
 | [x]    | D00 T03 §7  | Run Guard Robustness Fixes               | none                   | 5     |
 | [x]    | D00 T03 §8  | Agent Tier Verifier YAML Strictness      | none                   | 4     |
 | [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries       | none                   | 10    |
-| [ ]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
+| [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
 | [ ]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 9     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -144,6 +144,6 @@ Sections: 5 | Checklist items: 22
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing  | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename       | operator, owner-decision        | 4     |
 
-Progress: 36/96 verified sections, 8 ready to run now.
+Progress: 37/96 verified sections, 8 ready to run now.
 
-Checklist: 220/561 items completed (includes Commit items).
+Checklist: 221/561 items completed (includes Commit items).

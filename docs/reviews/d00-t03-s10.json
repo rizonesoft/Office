@@ -1,0 +1,26 @@
+{
+  "ref": "D00 T03 \u00a710",
+  "title": "Retire the .NET and WinUI 3 Pins",
+  "implementation_sha": "f8cc83c6ec870fdd1fe92bcb25408299e8f3c9b3",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s10.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s10.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -> Ran 589 tests OK (skipped=2) on the tip; the one failure seen with uncommitted grooming edits came from a widened Phase 2 table outside this candidate and passes once fixed",
+    "python scripts/check-spdx.py -> spdx: every tracked source file states its licence (44 files)",
+    "git grep -n -i -E \"winui|dotnet|nuget|Directory\\.Packages|global\\.json\" -- AGENTS.md CONTRIBUTING.md scripts .github .claude .agents .codex .conclave/automations/tasks.json \".conclave/automations/*.py\" \".conclave/automations/*.ps1\" -> no output (exit 1)",
+    "Get-ScheduledTask -TaskPath '\\Office\\' -> office-pr-merge, office-python-pin, office-visual-studio (exactly tasks.json)"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 22
+}
