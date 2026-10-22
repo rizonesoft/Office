@@ -146,21 +146,40 @@ class Palette(unittest.TestCase):
             light, dark = d.APPS[key][2]
             self.assertIn(color, {d.mix(light, dark, i / 100) for i in range(101)}, key)
 
-    def test_every_symbol_part_is_painted_in_the_symbol_colour(self):
-        # What lets the rendered test below sample by colour: no part of a symbol is painted in anything else. The one
-        # exception is the white flap drawn on Mail's solid small envelope, held to 3:1 against the envelope.
+    def test_symbols_use_a_closed_vocabulary(self):
+        # What lets the rendered tests sample by colour and trust the box: a symbol is plain rects, circles and paths
+        # with absolute coordinates inside its 64-unit box, painted only in the symbol colour, with nothing that could
+        # fade, move or hide a part (no opacity, transform, style, filter, clip or mask). The one other paint is the
+        # white flap on Mail's solid small envelope, held to 3:1 against the envelope.
         col = "#123456"
+        allowed = {"rect": {"x", "y", "width", "height", "rx"}, "circle": {"cx", "cy", "r"}, "path": {"d"}}
+        paint = {"fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"}
         for key in d.APPS:
             for tier in d.TIERS:
-                paints = re.findall(r'(?:fill|stroke)="([^"]*)"', d.glyph(key, tier, col))
-                others = [p for p in paints if p not in (col, "none")]
-                if (key, tier) == ("mail", "sm"):
-                    self.assertEqual(others, ["#ffffff"])
-                    symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
-                    self.assertGreaterEqual(d.contrast("#ffffff", symbol), 3)
-                else:
-                    self.assertEqual(others, [], (key, tier))
-                self.assertIn(col, paints, (key, tier))
+                svg = d.glyph(key, tier, col)
+                elements = re.findall(r"<(\w+)((?:\s+[\w-]+=\"[^\"]*\")*)\s*/>", svg)
+                self.assertEqual("".join(f"<{n}{a}/>" for n, a in elements).replace(" ", ""), svg.replace(" ", ""),
+                                 (key, tier))
+                for name, attrs in elements:
+                    pairs = dict(re.findall(r'([\w-]+)="([^"]*)"', attrs))
+                    self.assertLessEqual(set(pairs), allowed.get(name, set()) | paint, (key, tier, name))
+                    for attr in ("fill", "stroke"):
+                        value = pairs.get(attr, col if attr == "fill" else "none")
+                        if (key, tier, value) == ("mail", "sm", "#ffffff"):
+                            symbol = d.mix(d.APPS[key][2][1], "#000000", .15)
+                            self.assertGreaterEqual(d.contrast(value, symbol), 3)
+                        else:
+                            self.assertIn(value, (col, "none"), (key, tier, name, attr))
+                    if name == "rect":
+                        x, y, w, h = (float(pairs[a]) for a in ("x", "y", "width", "height"))
+                        edges = [x, y, x + w, y + h]
+                    elif name == "circle":
+                        cx, cy, r = (float(pairs[a]) for a in ("cx", "cy", "r"))
+                        edges = [cx - r, cy - r, cx + r, cy + r]
+                    else:
+                        self.assertRegex(pairs["d"], r"^[MLHVZ0-9.,\s-]+$", (key, tier))
+                        edges = [float(v) for v in re.findall(r"-?[\d.]+", pairs["d"])]
+                    self.assertTrue(all(-32 <= v <= 32 for v in edges), (key, tier, name, edges))
 
     def test_small_symbols_reach_3_to_1_on_what_is_behind_them(self):
         # Rendered, not computed: each pixel drawn fully in the symbol colour (antialiased edges excluded) against the
@@ -209,6 +228,21 @@ class Keylines(unittest.TestCase):
             self.assertTrue(inside(gx - 32 * gs, gy - 32 * gs, gx + 32 * gs, gy + 32 * gs), ("symbol box", tier))
         bx, by, bw, bh, _ = d.APP_BLOCK
         self.assertTrue(inside(bx, by, bx + bw, by + bh), "block")
+
+    def test_every_symbol_stays_in_its_box(self):
+        # Each symbol rendered alone: finely, inside its 64-unit box, and coarsely on a canvas 128 times as wide, so a
+        # part moved anywhere off the icon still shows.
+        for key in d.APPS:
+            for tier in d.TIERS:
+                for half, px in ((64, 512), (4096, 1024)):
+                    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{-half} {-half} {2 * half} {2 * half}" '
+                           f'width="{px}" height="{px}">{d.glyph(key, tier, "#000000")}</svg>')
+                    alpha = Image.open(io.BytesIO(build_icons.render(svg, px))).getchannel("A")
+                    box = alpha.point(lambda v: 255 if v > 8 else 0).getbbox()
+                    self.assertIsNotNone(box, (key, tier))
+                    unit = 2 * half / px
+                    x0, y0, x1, y1 = (v * unit - half for v in box)
+                    self.assertTrue(-32 - unit <= min(x0, y0) and max(x1, y1) <= 32 + unit, (key, tier, half, box))
 
     def test_every_drawing_fits_the_canvas(self):
         # Rendered on a canvas three times the size, so a shape, stroke or shadow past the edge shows, not clipped.
