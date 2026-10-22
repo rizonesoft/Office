@@ -268,3 +268,44 @@ All three findings verified and fixed in the next commit:
 1. P1 Unicode host names passed. The text rule's name characters are now any letter or digit of any script (an ASCII letter or digit, or anything from U+00AA up), and its dots include the ideographic (U+3002), fullwidth (U+FF0E) and halfwidth (U+FF61) full stops that IDNA normalises to a dot. The scheme mark also takes the fullwidth colon (U+FF1A). The schema stores the pattern as ASCII escapes (`test_unicode_host_names_are_refused`: the reviewer's two cases plus fullwidth and halfwidth dots and a fullwidth-colon scheme; it fails against the round 5 rule).
 2. P1 a manifest of JSON `null` passed for an absent one and skipped every baseline gate: a manifest file that exists is now always validated, so `null` is unreadable, exit 2 (`test_a_malformed_manifest_is_unreadable_not_a_crash` now includes `null`; it fails against the round 5 checker).
 3. P3 a numeric minimum could be removed unnoticed: `test_every_numeric_minimum_holds` lists `order`, `bounds.width` and `bounds.height`, each required to refuse -1 on its own. Removing any one of the three minimums from the schema in memory fails it.
+
+## Round 7: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T09:52:25Z
+- Effort: xhigh
+- Lines: 24
+- Digest: 74717af1efc0244b
+
+## source-defect: needs-attention
+
+1. **P1:** `design/inventory/schema.json:387` still permits prohibited addresses. This record passes `check()` and makes `main()` return `0`:
+
+   ```json
+   {"id":"word.probe","app":"word","kind":"tab","label":"\ud801\udc28.com"}
+   ```
+
+   Its hostname normalizes through IDNA to `xn--hj8c.com`. The character ranges stop at U+FFFF, so supplementary-plane letters escape detection. Changing the label to `"8.8.8.8"` also passes because numeric addresses match neither address rule.
+
+## adversarial: needs-attention
+
+2. **P2:** `scripts/check-inventory.py:343` embeds untrusted Unicode directly in diagnostics, which `:387` prints without escaping. Add `"captureProfile":"\ud800"` to an otherwise valid tab record and invoke `main()` with UTF-8 stdout. It raises uncaught `UnicodeEncodeError` instead of returning validation exit code `1`. Reproduced against the current interpreter.
+
+## consistency: needs-attention
+
+3. **P2:** `design/inventory/schema.json:387` treats Unicode spaces and punctuation as hostname letters, contradicting its description at `:385`. Give an otherwise valid control `"behaviour":"Opens the dialog.\u2002"`. Validation reports `host name or address`: the trailing EN SPACE falls inside the broad character range. This rejects ordinary whitespace padding that the checker explicitly recognizes as whitespace.
+
+## record: needs-attention
+
+4. **P3:** `scripts/tests/test_check_inventory.py:171` tests missing `kind` but leaves other base requirements unprotected, contradicting the ticked every-rule claim at `todo/02-interface/TODO-01-parity-inventory.md:89`. Remove `app`, `id` or `label` individually from the schema’s record-level `required` array: all **58 tests still pass**, while a record missing that field becomes valid. Verified with schema mutations and fixture writes intercepted entirely in memory.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 7
+
+All four findings verified and fixed in the next commit. Classifying characters as "letters" failed in both directions: supplementary-plane letters were missed, and an en space was taken for a letter. So the text rule was inverted rather than widened again.
+
+1. P1 a supplementary-plane host and an IPv4 address passed. 3. P2 an en space after a sentence was refused. In readable text, a full stop (any of the four forms) may now be followed only by whitespace (ECMA's, through `ecma()`), another full stop, closing punctuation, the end of the text, or a digit when a digit precedes it (decimals such as Word's "1.5" line spacing). That refuses every host name in any script without naming letters. Four dotted numbers and the scheme colon stay refused. Checked first against every text value in the committed inventory: no hits, including "Ctrl+Shift+." and "Save As..." (`test_any_host_name_or_address_in_text_is_refused_by_its_dots`; it fails against the round 6 rule).
+2. P2 a lone surrogate in a record crashed the report: `main` sets both output streams to escape what they cannot encode, which also covers the Windows console's legacy code page (`test_unencodable_record_text_is_reported_not_a_crash`, printing to cp1252; it fails against the round 6 checker).
+4. P3 a base field could leave `required` unnoticed: `test_every_base_field_is_required` lists `id`, `app`, `kind` and `label`; removing any one from the schema's `required` in memory fails it.

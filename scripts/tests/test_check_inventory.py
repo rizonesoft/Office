@@ -351,6 +351,35 @@ class Inventory(unittest.TestCase):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
 
+    def test_any_host_name_or_address_in_text_is_refused_by_its_dots(self):
+        # Audit round 7, findings 1 and 3: hosts in any plane and numeric addresses are refused, and padding with a
+        # Unicode space after a sentence is not mistaken for a host.
+        for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
+        for text in ("Opens the dialog. ", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)"):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
+            self.assertEqual(self.problems(), [], ascii(text))
+
+    def test_unencodable_record_text_is_reported_not_a_crash(self):
+        # Audit round 7, finding 2: a lone surrogate in a record reaches the report; printing it must not raise.
+        path = self.inv / "word" / "ribbon.json"
+        path.write_text('[{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "order": 1, '
+                        '"captureProfile": "\\ud800"}]', encoding="utf-8")
+        out = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        with contextlib.redirect_stdout(out):
+            code = ci.main([str(path)])
+        out.flush()
+        self.assertEqual(code, 1)
+        self.assertIn(b"\\ud800", out.buffer.getvalue())
+
+    def test_every_base_field_is_required(self):
+        # Audit round 7, finding 4: each base field below must be required on its own, written out here.
+        for field in ("id", "app", "kind", "label"):
+            rec = {k: v for k, v in TAB.items() if k != field}
+            self.write("word/ribbon.json", [rec])
+            self.assertTrue(any(f"missing {field}" in p for p in self.problems()), field)
+
     def test_every_numeric_minimum_holds(self):
         # Audit round 6, finding 3: each bounded number below must refuse -1 on its own, written out here.
         for field in ("order", "bounds.width", "bounds.height"):

@@ -383,6 +383,11 @@ def main(argv=None):
     except Unreadable as exc:
         print(exc, file=sys.stderr)
         return 2
+    # A record's own text appears in diagnostics: escape what the console cannot encode (a lone surrogate, or anything
+    # outside a legacy code page) instead of crashing on the report.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="backslashreplace")
     for problem in problems:
         print(problem)
     return 1 if problems else 0
