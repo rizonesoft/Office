@@ -22,7 +22,8 @@ BOLD = {"id": "word.home.font.bold", "app": "word", "kind": "control", "label": 
         "idMso": "Bold",
         "source": "uia:16.0.20430.20182", "capturedFrom": "16.0.20430.20182"}
 PASTE = {"id": "word.home.clipboard.paste", "app": "word", "kind": "control", "label": "Paste", "parent": "word.home",
-         "order": 0, "controlType": "splitButton", "size": "large", "source": "uia:16.0.20430.20182"}
+         "order": 0, "controlType": "splitButton", "size": "large", "source": "uia:16.0.20430.20182",
+         "capturedFrom": "16.0.20430.20182"}  # a live capture records its build (design/inventory/REFERENCE.md)
 
 
 class Inventory(unittest.TestCase):
@@ -261,6 +262,35 @@ class Inventory(unittest.TestCase):
         self.assertTrue(any("capturedFrom not-a-build is not a build" in p for p in self.problems()))
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, source="uia:16.0.1.2")])
         self.assertTrue(any("source build 16.0.1.2 is not capturedFrom" in p for p in self.problems()))
+
+    def test_a_host_name_in_text_is_refused(self):
+        # Audit round 2, finding 1: any dotted host in text a person reads, whatever its ending.
+        for text in ("support.microsoft.co.uk", "Visit office.microsoft.ie today", "learn.microsoft.de"):
+            self.write("word/ribbon.json", [dict(TAB, label=text)])
+            self.assertTrue(any("host name" in p for p in self.problems()), text)
+        # Ordinary text with dots stays valid, and dotted ids are not host names.
+        self.write("word/ribbon.json", [dict(TAB, label="e.g. Save As..."), dict(GROUP, behaviour="Version 16.0 only.")])
+        self.assertEqual(self.problems(), [])
+
+    def test_malformed_outlook_rows_are_a_problem_not_a_crash(self):
+        # Audit round 2, finding 2: rows that are not a list reached the whole-inventory window gate.
+        real = ci.INVENTORY
+        data = json.loads((real / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"] = None
+        (self.inv / "outlook").mkdir()
+        (self.inv / "outlook" / "baseline.json").write_text(json.dumps(data), encoding="utf-8")
+        (self.inv / ci.SOURCES).write_text((real / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
+        whole = ci.check([str(self.inv)], inventory=self.inv)
+        self.assertTrue(any("outlook" in p and "rows" in p for p in whole), whole[:5])
+
+    def test_a_live_capture_records_a_recorded_build(self):
+        # Audit round 2, finding 3: a source stamped with a build needs capturedFrom, and the build must be recorded.
+        rec = {k: v for k, v in PASTE.items() if k != "capturedFrom"}
+        self.write("word/ribbon.json", [TAB, rec])
+        self.assertTrue(any("source requires capturedFrom" in p or "missing capturedFrom" in p for p in self.problems()))
+        self.write("word/ribbon.json", [TAB, dict(PASTE, source="uia:1.2.3.4", capturedFrom="1.2.3.4")])
+        problems = self.problems()
+        self.assertTrue(any("source build 1.2.3.4 is not a build" in p for p in problems), problems)
 
     def test_a_target_defined_twice_is_ambiguous(self):
         # Audit finding 7: the ambiguous-target branch had no test of its own.

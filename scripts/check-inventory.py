@@ -278,7 +278,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 problems.append(f"{path}: missing baseline")
             elif app == "outlook" and sources:
                 data = load(path)
-                rows = data.get("rows", []) if isinstance(data, dict) else []
+                rows = data.get("rows") if isinstance(data, dict) else None
+                rows = rows if isinstance(rows, list) else []  # a malformed envelope is reported by check_baseline
                 windows_seen = {r[0] for r in rows if isinstance(r, list) and r and isinstance(r[0], str)}
                 absent = [w for w in outlook_windows(sources) if w not in windows_seen]
                 if absent:
@@ -318,6 +319,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 problems.append(f"{where}: capturedFrom {build} is not a build in {REFERENCE}")
             source = rec.get("source")
             stamped = re.fullmatch(r"[a-z]+:(\d+\.\d+\.\d+\.\d+)", source) if isinstance(source, str) else None
+            if stamped and stamped.group(1) not in builds:
+                problems.append(f"{where}: source build {stamped.group(1)} is not a build in {REFERENCE}")
             if stamped and isinstance(build, str) and stamped.group(1) != build:
                 problems.append(f"{where}: source build {stamped.group(1)} is not capturedFrom {build}")
             parent = rec.get("parent")

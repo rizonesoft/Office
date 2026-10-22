@@ -68,3 +68,46 @@ All seven findings verified against the checker at the tip and fixed at their ow
 7. P3 the ambiguous-target branch had no test: `test_a_target_defined_twice_is_ambiguous`.
 
 `python scripts/check-inventory.py` over the committed inventory still exits 0; the checker tests run 44 and pass.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T08:33:22Z
+- Effort: medium
+- Lines: 24
+- Digest: 458c0d0f5a37ea38
+
+## source-defect: needs-attention
+
+1. **P1: Web addresses still bypass the no-link rule.** `design/inventory/schema.json:336` recognizes only selected domain endings unless a slash follows the host. Set an otherwise valid record’s `label` to `"support.microsoft.co.uk"`. Both schema validation and `check()` accept it. This remains a Microsoft web address prohibited by the governing contract; documenting a narrower pattern does not satisfy that contract.
+
+## adversarial: needs-attention
+
+2. **P2: Malformed Outlook rows crash before schema validation.** `scripts/check-inventory.py:282` iterates `rows` without checking its type. Replace the Outlook baseline’s `rows` with `null` and run the whole-inventory check. `main([])` raises uncaught `TypeError: 'NoneType' object is not iterable` instead of reporting the schema violation. The round-1 fix guards individual window cells but leaves their enclosing collection unchecked.
+
+## consistency: needs-attention
+
+3. **P1: Omitting `capturedFrom` bypasses build provenance validation.** `scripts/check-inventory.py:321` compares the source build only when `capturedFrom` is a string. This record returns `[]`:
+
+   ```json
+   {"id":"word.probe","app":"word","kind":"control","label":"Probe","controlType":"button","source":"uia:1.2.3.4"}
+   ```
+
+   `design/inventory/REFERENCE.md:18` requires every live capture to carry `capturedFrom` and requires its build to be recorded. Neither requirement is enforced here. Require `capturedFrom` for live-source records and validate the source build even when that field is absent.
+
+## record: approve
+
+All three reproductions were verified using in-memory fixtures without modifying files.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 2
+
+All three findings verified and fixed in the next commit, each with a test that fails against the round 1 checker (fixes stashed):
+
+1. P1 a host name with an uncommon ending (`support.microsoft.co.uk`) passed. A new schema rule, `noHost`, refuses any dotted name ending in a label of two or more letters. It applies to the fields a person reads (`label`, `keytip`, `shortcut`, `menuPath`, `behaviour`). Identifier fields keep `noLink` only, because ids such as `word.command.about` are dotted names too and cannot be told from host names by their letters (`test_a_host_name_in_text_is_refused`; "e.g." and "Version 16.0" stay valid).
+2. P2 an Outlook baseline whose `rows` is not a list crashed the whole-inventory window gate: the gate now reads rows only when they are a list, and the envelope problem is reported by `check_baseline` (`test_malformed_outlook_rows_are_a_problem_not_a_crash`).
+3. P1 a live capture could omit `capturedFrom`: the schema requires `capturedFrom` whenever `source` is stamped with a build, and the checker requires that build to be recorded in `design/inventory/REFERENCE.md` whether or not `capturedFrom` is present (`test_a_live_capture_records_a_recorded_build`). The `PASTE` test fixture, a live capture without `capturedFrom`, broke exactly this rule and now records its build.
+
+The committed inventory still checks clean (exit 0); the checker tests run 47 and pass.
