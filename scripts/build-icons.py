@@ -121,12 +121,14 @@ def build():
         master = text if icon == d.SUITE else d.app_master_svg(icon, tier)
         out[f"design/icons/{'suite' if icon == d.SUITE else 'apps'}/{icon}-{tier}.svg"] = master.encode("utf-8")
     out["design/icons/keylines.svg"] = d.keylines_svg().encode("utf-8")
-    for key in d.APPS:  # the pixel-aligned small variants (section 4); section 6 rasterises from them
+    for key in d.APPS:  # the pixel-aligned small variants, which the app rasters below use at those sizes
         for size in d.PIXEL_SIZES:
             out[f"design/icons/apps/{key}-{size}.svg"] = d.pixel_svg(key, size).encode("utf-8")
     out["design/icons/suite/rizonesoft-office-mono.svg"] = d.suite_mono_svg().encode("utf-8")
+    pixel = {(k, s): d.pixel_svg(k, s) for k in d.APPS for s in d.PIXEL_SIZES}
     for icon in icons():
-        draw = lambda shown, icon=icon: svg[(icon, d.tier_for(shown))]
+        # An app shown at 16, 24 or 32 px (or points, on a @2x slot) uses its pixel-grid variant; otherwise its tier.
+        draw = lambda shown, icon=icon: pixel.get((icon, shown)) or svg[(icon, d.tier_for(shown))]
         for px in PNG_SIZES:
             out[f"assets/icons/png/{icon}/{icon}-{px}.png"] = raster(draw, px)
         out[f"assets/icons/windows/{icon}.ico"] = pack_ico([(px, raster(draw, px)) for px in ICO_SIZES])

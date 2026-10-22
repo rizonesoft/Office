@@ -190,7 +190,11 @@ File Explorer, Finder and the Backstage recent list show file-type icons. Decisi
 
 ## 6. Icon Export Pipeline
 
+> **Started:** 2026-10-22T09:20:00Z
+
 One command turns the SVG masters into every platform format, so icons are never exported by hand. The rasteriser is `resvg` (deterministic, no browser), installed per AGENTS.md tool rules: global install preferred, discovered by capability, never a hardcoded path.
+
+**Corrected 2026-10-22:** the pipeline was built before this section ran, to a different shape that stays: `scripts/build-icons.py` rasterises with the `resvg_py` binding pinned in `scripts/requirements.txt` (discovered by import, so no PATH or `RESVG` lookup), writes committed outputs to `assets/icons/` and `assets/brand/` rather than `build/`, so a checkout has the icons without the toolchain, and `python scripts/build-icons.py --check` in CI refuses any committed output that differs from a fresh build. Every output is decoded back with Pillow before anything is written. The paths and checks below follow it; this section added the pixel-grid variants (§4) to the app rasters at 16, 24 and 32 px.
 
 **Phase:** 1
 **Needs:** none
@@ -198,19 +202,19 @@ One command turns the SVG masters into every platform format, so icons are never
 
 **Build order:**
 
-1. Write `scripts/build-icons.py` that rasterises masters and size variants into `build/icons/`. Done when: a clean run produces every output listed in the micro-steps.
-2. Verify every output with `scripts/check-image-asset.py`. Done when: the script exits non-zero on any failed check.
+1. `scripts/build-icons.py` rasterises masters and size variants into `assets/icons/`. Done when: a run produces every output listed in the micro-steps.
+2. Verify every output by decoding it back, and refuse drift with `--check`. Done when: the script exits non-zero on any failed check.
 
-- [ ] Add tool discovery for `resvg` in `scripts/build-icons.py` (PATH lookup, then `RESVG` env var, then a setup-required error). Done when: running without `resvg` prints a setup message and exits 2. Cheaper substitute: a hardcoded `C:\Tools\resvg.exe` path.
-- [ ] Rasterise each app icon to 16, 20, 24, 32, 40, 48, 64, 96, 128, 256, 512 and 1024 PNGs in `scripts/build-icons.py`, using the hand-drawn variant for 16, 24 and 32. Done when: `build/icons/apps/<app-id>/` holds 12 PNGs. Cheaper substitute: rasterising the master at every size.
-- [ ] Pack Windows `.ico` files (16, 24, 32, 48, 64, 256) in `scripts/build-icons.py` with the standard library `struct` module. Done when: `python scripts/check-image-asset.py build/icons/apps/<app-id>.ico --size 16x16 --size 256x256` exits 0. Cheaper substitute: a single 256 pixel ICO entry.
-- [ ] Pack macOS `.icns` files in `scripts/build-icons.py` from the 16 to 1024 PNGs. Done when: the file starts with the `icns` magic and lists the `ic07` to `ic10` types. Cheaper substitute: shipping PNGs and skipping macOS.
-- [ ] Rasterise the file-type icons to 16, 32, 48 and 256 PNGs and ICOs in `scripts/build-icons.py`. Done when: `build/icons/files/` holds one ICO per SVG in `design/icons/files/`. Cheaper substitute: exporting only 256 pixels.
-- [ ] Run `scripts/check-image-asset.py` on every output at the end of `scripts/build-icons.py`. Done when: corrupting one PNG makes the build exit 1 naming the file. Cheaper substitute: checking only that files exist.
-- [ ] Add `build/` to `.gitignore` if it is not already ignored. Done when: `git check-ignore build/icons/apps` prints the path. Cheaper substitute: committing generated rasters.
+- [x] Add discovery for the rasteriser in `scripts/build-icons.py` (`rasteriser()` imports the pinned `resvg_py`, else a setup-required error). Done when: running without it prints a setup message and exits 2 (`test_missing_rasteriser_is_a_setup_error`). **Corrected 2026-10-22:** named a `resvg` executable on PATH or in `RESVG`. Cheaper substitute: a hardcoded `C:\Tools\resvg.exe` path.
+- [x] Rasterise each app icon to 16, 20, 24, 32, 40, 48, 64, 96, 128, 256, 512 and 1024 PNGs in `scripts/build-icons.py`, using the hand-drawn variant for 16, 24 and 32. Done when: `assets/icons/png/<app>/` holds 12 PNGs and the 16, 24 and 32 px ones are the variants (`test_app_rasters_use_the_variant_at_its_size`). **Corrected 2026-10-22:** said `build/icons/apps/<app-id>/`. Cheaper substitute: rasterising the master at every size.
+- [x] Pack Windows `.ico` files (16, 20, 24, 32, 40, 48, 64, 96, 128, 256) in `scripts/build-icons.py` with the standard library `struct` module. Done when: `python scripts/check-image-asset.py assets/icons/windows/<app>.ico --size 16x16 --size 256x256` exits 0. **Corrected 2026-10-22:** said `build/icons/apps/<app-id>.ico` and six sizes; the ICO holds ten. Cheaper substitute: a single 256 pixel ICO entry.
+- [x] Pack macOS `.icns` files in `scripts/build-icons.py` from the 16 to 1024 PNGs. Done when: the file starts with the `icns` magic and lists the `ic07` to `ic10` types. Cheaper substitute: shipping PNGs and skipping macOS.
+- [x] Rasterise the file-type icons to PNGs from 16 to 512 and ICOs in `scripts/build-icons.py`. Done when: `assets/icons/files/windows/` holds one ICO per type in `design/icons/files/`. **Corrected 2026-10-22:** said `build/icons/files/` and one ICO per SVG; each type has five drawings and one ICO. Cheaper substitute: exporting only 256 pixels.
+- [x] Verify every output in `scripts/build-icons.py` (`verify()` decodes each PNG, ICO, ICNS and SVG back) and refuse drift with `--check`. Done when: corrupting one committed PNG makes `--check` exit 1 naming the file. **Corrected 2026-10-22:** named `scripts/check-image-asset.py` and the plain build, which rewrites a corrupted file. Cheaper substitute: checking only that files exist.
+- [x] Add `build/` to `.gitignore` if it is not already ignored. Done when: `git check-ignore build/icons/apps` prints the path. Cheaper substitute: committing generated rasters with no drift gate. **Corrected 2026-10-22:** the rasters are committed on purpose, under the `--check` gate in CI; `build/` holds only the contact sheet.
 - [ ] Commit: `brand: add icon export pipeline`
 
-**Test checkpoint:** `python scripts/build-icons.py` exits 0 on a clean `build/`, and exits 1 after `Set-Content build/icons/apps/<app-id>/32.png "x"` followed by the verification pass.
+**Test checkpoint:** `python scripts/build-icons.py --check` exits 0 on a clean checkout, and exits 1 naming the file after `Set-Content assets/icons/png/<app>/<app>-32.png "x"` (run on a scratch copy with `--root`). **Corrected 2026-10-22:** named `build/` and the plain build.
 
 ## 7. Distinctness Review and Owner Sign-Off
 

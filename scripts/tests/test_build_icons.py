@@ -378,6 +378,18 @@ class AppMasters(unittest.TestCase):
                 self.assertEqual(cell.tobytes(), want.convert("RGB").tobytes(), (size, key))
             y += size + 16
 
+    def test_missing_rasteriser_is_a_setup_error(self):
+        def missing():
+            raise build_icons.SetupRequired("resvg_py is not installed")
+        real, build_icons.rasteriser = build_icons.rasteriser, missing
+        try:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(build_icons.main(["--check"]), 2)
+            self.assertIn("setup required: resvg_py is not installed", err.getvalue())
+        finally:
+            build_icons.rasteriser = real
+
     def test_contact_sheet_is_its_own_mode(self):
         with self.assertRaises(SystemExit) as refused, contextlib.redirect_stderr(io.StringIO()):
             build_icons.main(["--check", "--contact-sheet", "unused.png"])
@@ -388,6 +400,21 @@ class PixelVariants(unittest.TestCase):
     def shapes(self, svg):
         return [(name, dict(re.findall(r'([\w-]+)="([^"]*)"', attrs)))
                 for name, attrs in re.findall(r"<(rect|circle|path)\b([^>]*)/>", svg.split("</defs>", 1)[1])]
+
+    def test_app_rasters_use_the_variant_at_its_size(self):
+        assets = SCRIPTS.parent / "assets/icons"
+        for key in d.APPS:
+            for px in (16, 24, 32):
+                committed = (assets / f"png/{key}/{key}-{px}.png").read_bytes()
+                self.assertEqual(committed, build_icons.render(d.pixel_svg(key, px), px), (key, px))
+            # Sizes with no variant keep their tier's drawing.
+            for px in (20, 40):
+                committed = (assets / f"png/{key}/{key}-{px}.png").read_bytes()
+                self.assertEqual(committed, build_icons.render(d.icon_svg(key, d.tier_for(px)), px), (key, px))
+            # The macOS 16 pt @2x slot is the 16 px variant at 32 pixels.
+            icns = (assets / f"macos/{key}.icns").read_bytes()
+            want = build_icons.render(d.pixel_svg(key, 16), 32)
+            self.assertIn(b"ic11" + struct.pack(">I", len(want) + 8) + want, icns, key)
 
     def test_committed_and_named(self):
         for key, (_, counterpart, _) in d.APPS.items():

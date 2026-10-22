@@ -34,7 +34,7 @@ Each size uses the drawing made for it, not a shrunken large icon.
 | 32 to 40 px | `md` | Orb and pane, flat tint, heavy strokes | Same, flat tint |
 | 16 to 24 px | `sm` | Orb and pane, solid symbol | Same, flat tint |
 
-On high-density displays the drawing follows the displayed size: the macOS 16 pt @2x slot is the `sm` drawing at 32 pixels.
+At exactly 16, 24 and 32 px an app uses its pixel-grid variant (`design/icons/apps/<app>-16.svg`, `-24`, `-32`), the `sm` or `md` drawing redrawn with every edge on a whole pixel. On high-density displays the drawing follows the displayed size: the macOS 16 pt @2x slot is the 16 px variant at 32 pixels.
 
 ## Folders
 
@@ -49,14 +49,16 @@ On high-density displays the drawing follows the displayed size: the macOS 16 pt
 
 ## Colours
 
-| App | Light | Accent |
-| --- | ----- | ------ |
-| Write | `#4f8df7` | `#1e4fc2` |
-| Grid | `#34c27a` | `#0f7a45` |
-| Stage | `#ff8a4c` | `#d4421b` |
-| Flow | `#9b7bf7` | `#5b35c9` |
-| Plan | `#2dc2b5` | `#0b7f86` |
-| Mail | `#3cc4f0` | `#0b7cc0` |
+Each app's gradient runs from its light end to its dark end; the accent, its single colour for the interface, is the point on the gradient nearest the middle that keeps 3:1 contrast on white and on `#1f1f1f` (`docs/brand/icon-language.md`, Palette).
+
+| App | Light | Dark | Accent |
+| --- | ----- | ---- | ------ |
+| Write | `#4f8df7` | `#1e4fc2` | `#366edc` |
+| Grid | `#34c27a` | `#0f7a45` | `#229e60` |
+| Stage | `#ff8a4c` | `#d4421b` | `#ea6634` |
+| Flow | `#9b7bf7` | `#5b35c9` | `#7b58e0` |
+| Plan | `#2dc2b5` | `#0b7f86` | `#1ca09e` |
+| Mail | `#3cc4f0` | `#0b7cc0` | `#229ed7` |
 
 The colours follow the category convention office suites share (documents blue, spreadsheets green, presentations orange) and are not Microsoft's values. No icon uses a letter, which is what makes Microsoft's icons recognisably theirs.
 
@@ -73,7 +75,7 @@ The colours follow the category convention office suites share (documents blue, 
 | Plan | `mpp`, `mpt` |
 | Mail | `eml`, `msg`, `ics`, `vcf` |
 
-Templates have a dashed page, macro-enabled files an amber mark, CSV and RTF a plain grey hint, calendars and contacts their own hint. The extension tag and macro mark appear from 48 px. The app badge uses the app icon drawing for its own displayed size: the large drawing from 40 px, the 32 px drawing from 32 px, the 16 px drawing below that.
+Templates have a dashed page, macro-enabled files an amber mark, CSV and RTF a plain grey hint, calendars and contacts their own hint. The macro mark and dashed page show at every size (at 16 px the mark is a plain amber dot); the extension tag appears from 48 px. The app badge uses the app icon drawing for its own displayed size: the large drawing from 40 px, the 32 px drawing from 32 px, the 16 px drawing below that.
 
 | Folder | Contents |
 | ------ | -------- |
