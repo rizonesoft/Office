@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 17 | Checklist items: 107
+Sections: 18 | Checklist items: 124
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -29,6 +29,7 @@ Sections: 17 | Checklist items: 107
 | [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries       | none                   | 10    |
 | [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
 | [ ]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 9     |
+| [ ]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review | none                   | 17    |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -104,7 +105,7 @@ Sections: 42 | Checklist items: 269
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 28 | Checklist items: 189
+Sections: 29 | Checklist items: 197
 
 | Status | Reference   | Deliverable                                | Needs                | Items |
 | ------ | ----------- | ------------------------------------------ | -------------------- | ----- |
@@ -124,8 +125,9 @@ Sections: 28 | Checklist items: 189
 | [ ]    | D03 T01 §16 | Updates and Diagnostics Decision           | none                 | 5     |
 | [ ]    | D03 T01 §12 | Foundation Plan                            | none                 | 7     |
 | [ ]    | D00 T02 §6  | Runtime and Icon Notices                   | none                 | 3     |
-| [ ]    | D03 T01 §17 | Platform Domain Authoring                  | none                 | 14    |
 | [ ]    | D03 T01 §18 | Document Engines Domain Authoring          | none                 | 8     |
+| [ ]    | D03 T01 §28 | Versioning and Release Identity Decision   | none                 | 8     |
+| [ ]    | D03 T01 §17 | Platform Domain Authoring                  | none                 | 14    |
 | [ ]    | D03 T01 §19 | Write Domain Authoring                     | none                 | 10    |
 | [ ]    | D03 T01 §20 | Grid Domain Authoring                      | none                 | 9     |
 | [ ]    | D03 T01 §21 | Stage Domain Authoring                     | none                 | 9     |
@@ -166,6 +168,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 37/111 verified sections, 10 ready to run now.
+Progress: 37/113 verified sections, 11 ready to run now.
 
-Checklist: 221/680 items completed (includes Commit items).
+Checklist: 221/705 items completed (includes Commit items).

@@ -59,7 +59,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 14 | §14 | Cloud feature equivalents decision | §2, D02 T01 §28 | [ ] |
 | 15 | §15 | Localisation decision | §2 | [ ] |
 | 16 | §16 | Updates and diagnostics decision | §1 | [ ] |
-| 17 | §17 | Platform domain authoring | §12, §14, §15, §16 | [ ] |
+| 17 | §17 | Platform domain authoring | §12, §14, §15, §16, §28 | [ ] |
 | 18 | §18 | Document engines domain authoring | §12 | [ ] |
 | 19 | §19 | Write domain authoring | §17, §18, D02 T02 §14 | [ ] |
 | 20 | §20 | Grid domain authoring | §17, §18, D02 T02 §14 | [ ] |
@@ -69,7 +69,8 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 24 | §24 | Plan domain authoring | §17, §18, D02 T02 §14 | [ ] |
 | 25 | §25 | Interoperability domain authoring | §19, §20, §21, §22, §23, §24 | [ ] |
 | 26 | §26 | VBA domain authoring | §19, §20, §21, §22, §23, §24 | [ ] |
-| 27 | §27 | Release domain authoring | §17 | [ ] |
+| 27 | §27 | Release domain authoring | §17, §28 | [ ] |
+| 28 | §28 | Versioning and release identity decision | §1, §16 | [ ] |
 
 ## 1. Platform Targets Decision
 
@@ -439,7 +440,7 @@ Authoring contract, shared by §17 to §27 (owner request 2026-10-22: a campaign
 - [ ] Author `todo/04-platform/TODO-10-localisation.md`: string resources, the pseudo-locale, right-to-left mirroring and locale formatting per §15. Done when: a section owns each named piece and CI renders the pseudo-locale. Cheaper substitute: translating later by search and replace.
 - [ ] Author `todo/04-platform/TODO-11-help-and-assistant.md`: the Help pane and F1 help framework with our own help content per command, the Tell Me equivalent, and the Assistant pane with its provider settings per §14. Done when: a section owns each named piece and every Help tab record is owned. Cheaper substitute: links to Microsoft's help.
 - [ ] Author `todo/04-platform/TODO-13-microsoft-graph-files.md`: OneDrive and SharePoint open, save and AutoSave through Microsoft Graph, its sign-in, and its offline and conflict paths, the first section carrying the `operator` Need for the owner's Microsoft Entra registration (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 7). Done when: the file validates, no other platform file depends on it at file level, and every Graph failure path (expired token, lost network, conflicting save) has a test. Cheaper substitute: putting Graph in the file-saving file, which holds local saving on the registration.
-- [ ] Author `todo/04-platform/TODO-12-install-update-diagnostics.md`: the unsigned Inno Setup installer, file associations and icons, the update check, crash dumps, the problem report and the diagnostic log per §16, and the script that builds an app's draft preview release. Done when: a section owns each named piece and the draft release script is the one every app domain's last section calls. Cheaper substitute: packaging only at the end.
+- [ ] Author `todo/04-platform/TODO-12-install-update-diagnostics.md`: the unsigned Inno Setup installer, file associations and icons, the update check, crash dumps, the problem report and the diagnostic log per §16, versioning per §28 (the tag-driven version in CMake, `VERSIONINFO` in every binary, the About page, schema versions and migrations for the settings store and recovery files), and the script that builds an app's draft preview release with its notes, bump, SBOM, build attestation and checksums per §28. Done when: a section owns each named piece and the draft release script is the one every app domain's last section calls. Cheaper substitute: packaging only at the end.
 - [ ] Commit: `todo: author the platform domain`
 
 **Test checkpoint:** `python scripts/todo-graph.py validate` exits 0, `Test-Path todo/04-platform/INDEX.md, todo/04-platform/TODO-01-build-foundation.md, todo/04-platform/TODO-02-windowing-and-rendering.md, todo/04-platform/TODO-03-toolkit-core.md, todo/04-platform/TODO-04-controls.md, todo/04-platform/TODO-05-text-input-and-accessibility.md, todo/04-platform/TODO-06-ribbon-and-shell.md, todo/04-platform/TODO-07-commands-undo-settings.md, todo/04-platform/TODO-08-files-recovery-printing.md, todo/04-platform/TODO-09-language-services.md, todo/04-platform/TODO-10-localisation.md, todo/04-platform/TODO-11-help-and-assistant.md, todo/04-platform/TODO-12-install-update-diagnostics.md, todo/04-platform/TODO-13-microsoft-graph-files.md` returns `True` for every path, `todo/TODO-00-INDEX.md` lists `04-platform`. **Corrected 2026-10-23:** ran `validate` and `query stats` only, which pass before the domain exists.
@@ -690,13 +691,36 @@ Follow the authoring contract in §17.
 1. Author `todo/14-release/` with `create-todo`, one TODO file per subject below. Done when: `python scripts/todo-graph.py validate` passes and every subject below is owned by a section.
 2. Run `python scripts/todo-graph.py plan --sync`. Done when: `python scripts/todo-graph.py plan --check` exits 0.
 
-- [ ] Author `todo/14-release/TODO-01-versioning-and-notes.md`: version numbering, the change log and release notes generated from the stamped sections. Done when: a section owns each named piece. Cheaper substitute: hand-written notes.
+- [ ] Author `todo/14-release/TODO-01-versioning-and-notes.md`: the release-notes and bump script from §28 (receipts since the last tag, grouped by app), the preview and stable channels, and the `1.0.0` tag rule. Done when: a section owns each named piece. Cheaper substitute: hand-written notes.
 - [ ] Author `todo/14-release/TODO-02-suite-installer.md`: the suite installer (all six apps, shared runtime, file associations, uninstall and upgrade), first-run experience and the bundled notices from `THIRD-PARTY-NOTICES.md`. Done when: a section owns each named piece with an install, upgrade and uninstall test. Cheaper substitute: per-app installers only.
 - [ ] Author `todo/14-release/TODO-03-signing-and-msix.md`: code signing and the MSIX package, both with the `owner-decision` Need until the owner chooses how to sign (decision 11). Done when: the sections exist and wait on the Need. Cheaper substitute: shipping an MSIX nobody can install.
 - [ ] Author `todo/14-release/TODO-04-one-point-zero.md`: the 1.0 release gate (every section of Phases 0 to 7 stamped except the Phase 99 manual items, the `owner-decision` sections of `todo/14-release/TODO-03-signing-and-msix.md` and the gate file's own sections; inventory coverage 100 percent; interoperability gates green) and the unsigned 1.0 draft GitHub release. Done when: the gate lists each condition as a runnable check. Cheaper substitute: a release because the calendar says so.
 - [ ] Commit: `todo: author the release domain`
 
 **Test checkpoint:** `python scripts/todo-graph.py validate` exits 0, `Test-Path todo/14-release/INDEX.md, todo/14-release/TODO-01-versioning-and-notes.md, todo/14-release/TODO-02-suite-installer.md, todo/14-release/TODO-03-signing-and-msix.md, todo/14-release/TODO-04-one-point-zero.md` returns `True` for every path, `todo/TODO-00-INDEX.md` lists `14-release`. **Corrected 2026-10-23:** ran `validate` and `query stats` only, which pass before the domain exists.
+
+## 28. Versioning and Release Identity Decision
+
+Owner decisions 2026-10-23 (`docs/specs/2026-10-23-campaign-scope-design.md`, decisions 16 to 18): one SemVer 2.0 version for the whole suite, release notes and bumps generated from the stamped TODO sections, and an SBOM, a build attestation and checksums on every draft release. This record turns them into rules the platform's release script (§17) and the release domain (§27) implement, and adds the versioning of what the suite persists, so a newer file or settings store never meets an older reader unannounced.
+
+**Phase:** 3
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `docs/specs/YYYY-MM-DD-versioning-design.md`. Done when: the checker passes with Decision.
+
+- [ ] Decide the source of truth for the version in `docs/specs/<dated>-versioning-design.md`: the release tag `vMAJOR.MINOR.PATCH[-PRERELEASE]` on the commit a release is built from, read by CMake at configure time, with a fallback for a source archive that has no git history. Done when: the record names the tag format, how CMake reads it and the fallback. Cheaper substitute: a version typed into a file by hand.
+- [ ] Decide the Windows four-part mapping in `docs/specs/<dated>-versioning-design.md`: `FileVersion` `MAJOR.MINOR.PATCH.BUILD` with `BUILD` from the CI run number (each part at most 65535), and the full SemVer with the commit SHA as build metadata in `ProductVersion`. Done when: the record shows the mapping for a stable and a pre-release version and the overflow rule. Cheaper substitute: dropping the pre-release tag from the binaries.
+- [ ] Decide where the version appears in `docs/specs/<dated>-versioning-design.md`: each binary's `VERSIONINFO` resource, the About page in Backstage, crash reports and problem reports, the update check's request, and the installer, with build timestamps taken from the commit time so a rebuild of the same commit is identical. Done when: the record names each place and the timestamp rule. Cheaper substitute: the version in the installer name only.
+- [ ] Decide the bump and notes rules in `docs/specs/<dated>-versioning-design.md`: a script reads the receipts stamped since the last tag, groups them by app domain, and proposes minor for a new feature, patch for fixes only, major for a breaking change to a persisted format or the VBA object model (declared by the section, never inferred), and the pre-release counter for previews; below 1.0 a breaking change bumps minor. Done when: the record names the inputs, each rule and how a section declares a breaking change. Cheaper substitute: choosing each version by hand.
+- [ ] Decide the release channels in `docs/specs/<dated>-versioning-design.md`: preview (pre-release tags, GitHub pre-release drafts) and stable, which channel the update check follows by default, how the user switches, and that the check never offers a lower version. Done when: the record names both channels, the default and the downgrade rule. Cheaper substitute: one channel that mixes previews into stable.
+- [ ] Decide the schema versioning of every persisted format in `docs/specs/<dated>-versioning-design.md` (the settings store, recovery files, Plan's native format, the local mail store, the search index): each carries its schema version, an older one is migrated forward with a backup and a temporary-file-then-replace write, and a newer one is refused with a message naming the version that wrote it. Done when: the record lists each format with its version field, migration path and refusal. Cheaper substitute: reading whatever is on disk and hoping.
+- [ ] Decide the provenance attached to each draft release in `docs/specs/<dated>-versioning-design.md`: an SPDX SBOM merged from the vcpkg port SBOMs and our own components, a GitHub build provenance attestation per artifact, and a SHA-256 checksums file, with how a user verifies each. Done when: the record names each artifact, the tool that makes it and the verification command. Cheaper substitute: checksums alone.
+- [ ] Commit: `arch: record versioning and release identity decision`
+
+**Test checkpoint:** `python scripts/check-design-doc.py docs/specs/<dated>-versioning-design.md --require Decision` exits 0.
 
 ## Verification
 

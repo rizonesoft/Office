@@ -29,6 +29,9 @@ Each question was asked with a recommended option first. The options weighed:
 | Cadence | A draft per app with 1.0 at the end; one draft at the end |
 | Store | Store-ready with a manual listing; no Store |
 | Toolchain | The owner runs one elevated install now; park until installed |
+| Version scheme | One SemVer for the suite; calendar versions; per-app versions |
+| Release notes | From the stamped TODO sections; Conventional Commits |
+| Provenance | SBOM and build attestation; checksums only |
 
 ## Decision
 
@@ -50,6 +53,12 @@ Owner, 2026-10-22, in session:
 14. **Store:** no Microsoft Store. The MSIX package waits on signing (11); the Inno Setup installer is the channel.
 15. **Toolchain:** the owner runs one elevated command before the campaign starts, adding the LLVM clang tools to Visual Studio 2026 18.11 (the C++ desktop workload, the Arm64 tools, CMake, vcpkg and the Windows SDK 10.0.26100 were already installed on 2026-10-23).
 
+Owner, 2026-10-23, in session (asked so the unattended run never stops on versioning):
+
+16. **Version scheme:** one Semantic Versioning 2.0 version for the whole suite, shared by all six apps: `0.x` for the per-app previews, `1.0.0` at the 1.0 gate, pre-release tags such as `1.2.0-preview.3`. Windows binaries carry four numbers, `MAJOR.MINOR.PATCH.BUILD`, with `BUILD` from CI; the update check compares SemVer precedence.
+17. **Release notes and bumps:** generated from the TODO sections stamped since the last release tag, grouped by app, with the bump proposed from them (a new feature minor, a fix patch, a breaking file-format or object-model change major). The commit style stays as it is.
+18. **Provenance:** every draft release carries an SPDX software bill of materials built from the vcpkg dependencies, a GitHub build attestation of where and from which commit each artifact was built, and SHA-256 checksums. None of it needs a signing certificate.
+
 ## Consequences
 
 - The plan's acceptance bar names the modernised positions and recorded exclusions (`todo/plan.json`).
@@ -57,4 +66,5 @@ Owner, 2026-10-22, in session:
 - D02 T02 §10, §11 and §12 specify the modernised Visio, Project and Outlook surfaces; D02 T01 §28 adds a disposition to inventory records, and D03 T01 §14 decides each cloud feature's equivalent or exclusion.
 - D03 T01 §1, §7, §8 and §9 carry decisions 7 to 9, 11 and 14; §15 and §16 record decisions 10 and 12; §17 to §27 author the platform, engine, six app, interoperability, VBA and release domains to a written contract, and §13 proves every inventory record is owned.
 - D00 T03 §12 adds a host readiness check the campaign runs before it starts and at each phase, so an unattended run parks with a reason instead of failing on a locked screen or a missing tool.
+- D03 T01 §28 records decisions 16 to 18, including how persisted formats and settings carry and migrate their own schema versions; §17 and §27 build from it, so every per-app draft release is versioned, noted and attested the same way.
 - Sections that need the Entra or Google registration carry the `operator` Need, and signing sections carry `owner-decision`; a campaign takes every other ready row and leaves those for the owner's return.
