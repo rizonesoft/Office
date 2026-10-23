@@ -322,12 +322,19 @@ class ScreenLock(Base):
                     raise FileNotFoundError(path)
                 return present[path]
             return written
-        self.assertEqual(host_check.latest_write(key, stamps({key: 5, parent: 9})), 9)
-        self.assertEqual(host_check.latest_write(key, stamps({key: 9, parent: 5})), 9)
-        self.assertEqual(host_check.latest_write(key, stamps({parent: 7})), 7)  # the key was deleted
-        self.assertEqual(host_check.latest_write(key, stamps({grandparent: 8})), 8)  # its parent was deleted too
+        self.assertEqual(host_check.write_times(key, stamps({key: 5, parent: 9})), [5, 9])
+        self.assertEqual(host_check.write_times(key, stamps({parent: 7})), [7])  # the key was deleted
+        self.assertEqual(host_check.write_times(key, stamps({grandparent: 8})), [8])  # its parent was deleted too
         with self.assertRaises(host_check.Unreadable):
-            host_check.latest_write(key, stamps({}))
+            host_check.write_times(key, stamps({}))
+
+    def test_each_stamp_is_judged_on_its_own(self):
+        # Round 21: the parent stamped 12:00 before a rollback, a reboot at 11:01, the value removed at 11:10.
+        h, m = 3600 * self.S, 60 * self.S
+        boot, now = 11 * h + 1 * m, 11 * h + 30 * m
+        stamps = [11 * h + 10 * m, 12 * h]  # the key, then its parent
+        self.assertTrue(any(host_check.written_since_boot(s, boot, [], now) for s in stamps))
+        self.assertFalse(host_check.written_since_boot(max(stamps), boot, [], now))  # what max() alone would see
 
     def test_clock_steps_are_read_from_the_time_change_events(self):
         def event(new, old):

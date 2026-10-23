@@ -207,10 +207,11 @@ class Host:
         def written(path):  # 100 ns intervals since 1601, in the system clock as it was at the write
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as k:
                 return winreg.QueryInfoKey(k)[2]
-        changed = latest_write(key, written)
+        stamps = write_times(key, written)
         started, steps = self.boot_clock()
         now = (time.time_ns() // 100) + 11644473600 * 10**7
-        return written_since_boot(changed, min(started, written(r"HARDWARE\DESCRIPTION")), steps, now)
+        start = min(started, written(r"HARDWARE\DESCRIPTION"))
+        return any(written_since_boot(stamp, start, steps, now) for stamp in stamps)
 
     def boot_clock(self):
         """The clock as it ran since Windows started: the time this boot's start event (Kernel-General 12) was logged,
@@ -463,15 +464,16 @@ class Containment:
         return False
 
 
-def latest_write(key, written):
-    """The latest write time of a key and of its nearest surviving ancestor: deleting a key updates its parent's write
-    time, so deleting the key, or any key above it, shows there. `written` raises FileNotFoundError for a missing key."""
+def write_times(key, written):
+    """The write times of a key and of its nearest surviving ancestor: deleting a key updates its parent's write time,
+    so deleting the key, or any key above it, shows there. Each is judged on its own, since clock steps make the
+    latest stamp not always the latest write. `written` raises FileNotFoundError for a missing key."""
     times, path = [], key
     while path:
         try:
             times.append(written(path))
             if path != key:
-                return max(times)  # the nearest ancestor that still exists
+                return times  # the key, when it exists, and the nearest ancestor that still exists
         except FileNotFoundError:
             pass
         path = path.rpartition("\\")[0]
