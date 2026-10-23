@@ -853,6 +853,23 @@ class Scale(Pending):
         self.assertEqual(code, 0)
         self.assertEqual(len([c for c in repo.calls if c[1][:2] == ["run", "list"] and b in c[1]]), 1)
 
+    def test_a_malformed_checkpoint_is_rebuilt(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        repo = Repo([sha(2), sha(1)], {sha(1): "success", sha(2): "success"})
+        self.assertEqual(self.pending(repo)[0], 0)
+        path = self.dir / "ci-reconcile.json"
+        good = json.loads(path.read_text(encoding="utf-8"))
+        run_id = next(iter(good["runs"]))
+        for damage in ({"inputs": None}, {"inputs": {"repo": 1}}, {"runs": {run_id: None}},
+                       {"runs": {run_id: dict(good["runs"][run_id], attempt="1")}}, {"next_page": "2"},
+                       {"total": -1}, {"progress": None}, {"results": {sha(2): {"code": 9, "lines": [], "run": None}}},
+                       {"results": {sha(2): {"code": 0, "lines": [], "run": [1]}}}, {"pass": {"checked": None}},
+                       {"pass": []}):
+            with self.subTest(damage=damage):
+                path.write_text(json.dumps(dict(good, **damage)), encoding="utf-8")
+                code, out = self.pending(repo)
+                self.assertEqual(code, 0, out)
+
     def test_a_checkpoint_that_cannot_be_written_is_unknown(self):
         self.record(f"ci-green {sha(1)[:7]}")
         repo = Repo([sha(2), sha(1)], {sha(1): "success", sha(2): "success"})

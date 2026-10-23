@@ -245,9 +245,33 @@ def load_checkpoint(path):
         return None
     except (OSError, UnicodeDecodeError, ValueError):
         return None  # rebuilt from GitHub and git on this try
-    keys = {"inputs", "runs", "next_page", "total", "results", "progress", "pass"}
-    return data if isinstance(data, dict) and set(data) == keys and isinstance(data["runs"], dict) \
-        and isinstance(data["results"], dict) else None
+    return data if well_formed(data) else None
+
+
+RUN_FIELDS = {"headSha": (str, type(None)), "event": (str, type(None)), "headBranch": (str, type(None)),
+              "status": (str, type(None)), "conclusion": (str,), "createdAt": (str,), "attempt": (int,)}
+
+
+def well_formed(data):
+    """Whether a loaded checkpoint has every field, of the type this code reads, so a damaged one is rebuilt."""
+    def number(value, empty=False):
+        return (type(value) is int and value >= 0) or (empty and value is None)
+
+    def result(r):
+        return isinstance(r, dict) and set(r) == {"code", "lines", "run"} and r["code"] in (GREEN, RED, PENDING, UNKNOWN) \
+            and isinstance(r["lines"], list) and all(isinstance(line, str) for line in r["lines"]) \
+            and (r["run"] is None or (isinstance(r["run"], list) and len(r["run"]) == 2 and all(map(number, r["run"]))))
+    return isinstance(data, dict) and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass"} \
+        and isinstance(data["inputs"], dict) and set(data["inputs"]) == {"repo", "head", "records"} \
+        and all(isinstance(v, str) for v in data["inputs"].values()) \
+        and isinstance(data["runs"], dict) and all(
+            isinstance(r, dict) and set(r) == set(RUN_FIELDS) and all(isinstance(r[k], t) for k, t in RUN_FIELDS.items())
+            and type(r["attempt"]) is int for r in data["runs"].values()) \
+        and number(data["next_page"], empty=True) and number(data["total"], empty=True) and number(data["progress"]) \
+        and isinstance(data["results"], dict) and all(result(r) for r in data["results"].values()) \
+        and (data["pass"] is None or (isinstance(data["pass"], dict) and set(data["pass"]) == {"checked"}
+                                      and isinstance(data["pass"]["checked"], list)
+                                      and all(isinstance(s, str) for s in data["pass"]["checked"])))
 
 
 def save_checkpoint(path, cp):
