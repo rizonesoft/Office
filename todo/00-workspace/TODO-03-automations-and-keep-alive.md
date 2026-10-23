@@ -52,7 +52,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 17 | §17 | CI push reconciliation | §15 | [x] |
 | 18 | §18 | CI recovery budget | §15 | [x] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [x] |
-| 20 | §20 | CI reconciliation at scale | §17 | [ ] |
+| 20 | §20 | CI reconciliation at scale | §17 | [x] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
 | 22 | §22 | CI reconciliation past limits | §20 | [ ] |
 
@@ -602,9 +602,12 @@ Filed 2026-10-23 from round 2 of D00 T03 §17's completion review (`docs/reviews
 - [x] Hold the new order in `scripts/tests/test_skill_ci_gate.py`: obligations for newest-first settlement and for superseding earlier red heads only once the newest is green, each with a weakening fixture that fails, and the reconciliation paragraph's pin updated on purpose for the new text. Done when: the suite passes, and copies that settle oldest first, or supersede before the newest is green, fail. Cheaper substitute: a skill edit the gate test rejects, or a pin updated without new obligations. **Groomed 2026-10-23:** completion finding 3.
 - [x] Enumerate every `ci.yml` push run on `main` in `scripts/ci-status.py --pending` by paging the REST API (`gh api --paginate repos/<owner>/<name>/actions/workflows/ci.yml/runs?branch=main&event=push&per_page=100`), so no page cap applies; the enumeration is complete when the API has no further page and the runs collected match its `total_count`, whether or not any run predates the baseline (the baseline may be the workflow's first run, the history may be empty, and with no green run every head is listed, as §17 defines); exit 2 only when a page cannot be read or the count does not match. Done when: fixtures with more than 500 runs find every unchecked head, an earliest-run baseline, an empty workflow history and several pages with no green run each reconcile as defined, and a short page set (fewer runs than `total_count`) exits 2. Cheaper substitute: one capped page that parks a long campaign for good. **Groomed 2026-10-23:** completion finding 2 (was: page `gh run list` until a run older than the baseline, which a first-run baseline never reaches).
 - [x] Remove the git history ceiling: `--pending` reads the whole first-parent history of `origin/main` (no `--max-count`), so a baseline any number of commits back is reached, and `HISTORY_LIMIT` and its cut-off refusals go. Done when: a fixture with more than 5,000 first-parent commits and an unchecked head beyond the former limit reconciles and lists it. Cheaper substitute: a window that parks for good once the baseline falls outside it. **Groomed 2026-10-23:** completion finding 1.
-- [ ] Commit: `automations: reconcile CI from the newest head and across any history length`
+- [x] Commit: `automations: reconcile CI from the newest head and across any history length`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` pass.
+
+> **Verified:** 2026-10-23 | §20 | cc9247770f900e087207e86eb96b5de24aa50d88
+> **Review:** `docs/reviews/d00-t03-s20.json`
 
 ## 21. CI Recovery Closed on Resume
 

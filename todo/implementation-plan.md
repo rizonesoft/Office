@@ -36,7 +36,7 @@ Sections: 27 | Checklist items: 177
 | [x]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 8     |
 | [x]    | D00 T03 §18 | CI Recovery Budget                       | none                   | 6     |
 | [x]    | D00 T03 §19 | CI Gate Checks                           | none                   | 4     |
-| [ ]    | D00 T03 §20 | CI Reconciliation at Scale               | none                   | 5     |
+| [x]    | D00 T03 §20 | CI Reconciliation at Scale               | none                   | 5     |
 | [ ]    | D00 T03 §21 | CI Recovery Closed on Resume             | none                   | 3     |
 | [ ]    | D00 T03 §22 | CI Reconciliation Past Limits            | none                   | 3     |
 
@@ -178,6 +178,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 45/123 verified sections, 12 ready to run now.
+Progress: 46/123 verified sections, 12 ready to run now.
 
-Checklist: 293/775 items completed (includes Commit items).
+Checklist: 294/775 items completed (includes Commit items).
