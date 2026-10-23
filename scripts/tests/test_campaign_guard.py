@@ -96,6 +96,47 @@ class Workspace(unittest.TestCase):
         return guard._read_state(self.root)
 
 
+class CampaignParks(Workspace):
+    """D00 T03 §19: a host-not-ready, ci-red or ci-unknown park ends the campaign in either scope."""
+
+    def test_each_campaign_park_ends_the_turn_in_either_scope(self):
+        for scope in ("plan", "phase"):
+            for reason in guard.CAMPAIGN_PARKS:
+                with self.subTest(scope=scope, reason=reason):
+                    self.write(RUN_FILE, "# Phase run: Phase 0\n\n## Critical events\n")
+                    if guard.read_guard(self.root):  # a fresh guard for each case
+                        os.unlink(os.path.join(self.root, "build", "claude-campaign-guard.json"))
+                    self.acquire(scope=scope)
+                    self.assertIsNotNone(self.hook())  # rows are ready, so the turn is held open
+                    self.write(RUN_FILE, f"PARKED 2026-10-23T12:00:00Z run={self.run_id()} {reason}: why\n", "a")
+                    self.assertIsNone(self.hook())
+                    self.assertIn(f"campaign-parked={reason}", guard.whoami(self.root, SESSION))
+
+    def test_another_runs_campaign_park_does_not_count(self):
+        self.acquire()
+        self.write(RUN_FILE, "PARKED 2026-10-23T12:00:00Z run=abcdef123456 ci-red: old run\n", "a")
+        self.assertNotIn("campaign-parked", guard.whoami(self.root, SESSION))
+        self.assertIsNotNone(self.hook())
+
+    def test_an_ordinary_phase_park_is_not_campaign_ending(self):
+        self.acquire()
+        self.write(RUN_FILE, f"PARKED 2026-10-23T12:00:00Z run={self.run_id()} only owner rows left\n", "a")
+        self.assertNotIn("campaign-parked", guard.whoami(self.root, SESSION))
+        # a re-point to the next phase's run file (the chaining) is still allowed
+        self.write("docs/phase-runs/next.md", "# Phase run: Phase 1\n")
+        guard.acquire(self.root, SESSION, 1, "docs/phase-runs/next.md", "job-2")
+        self.assertEqual(guard.read_guard(self.root)["run_file"], "docs/phase-runs/next.md")
+
+    def test_a_campaign_ending_run_is_never_continued(self):
+        self.acquire()
+        self.write(RUN_FILE, f"PARKED 2026-10-23T12:00:00Z run={self.run_id()} ci-unknown: gh unreadable\n", "a")
+        with self.assertRaises(guard.GuardError) as ctx:  # a re-point of the same run
+            self.acquire(cron_id="job-2")
+        self.assertIn("start a fresh run", str(ctx.exception))
+        with self.assertRaises(guard.GuardError):  # a handover onto the same run file
+            self.acquire(session="another-session", cron_id="job-3", handover="resume after the owner fixed it")
+
+
 class StopHook(Workspace):
     def test_no_guard_another_session_or_an_empty_payload_allows(self):
         self.assertIsNone(self.hook())

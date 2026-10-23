@@ -253,6 +253,13 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
            # this run however the file is edited.
            "run_id": (previous.get("run_id") if (same_run or (handover and previous.get("run_file") == run_file))
                       and previous.get("run_id") else mint_generation())}
+    # A run that ended the campaign (host-not-ready, ci-red, ci-unknown) is never continued, by a re-point or a
+    # handover: the resume is a fresh run with a new run file, so no old marker can end or confuse it (D00 T03 §19).
+    if exists and doc["run_id"] == previous.get("run_id"):
+        parked = campaign_park(root, str(previous.get("run_file", "")), str(previous.get("run_id") or ""))
+        if parked:
+            raise GuardError(f"run {previous.get('run_id')} ended the campaign ({parked}); end it, then start a fresh "
+                             f"run with a new run file instead of continuing it")
     what = "created"
     if exists:
         owner = str(previous.get("session_id", ""))
@@ -453,6 +460,27 @@ def cancel_confirmed(root: str, cron_id: str) -> str:
         return f"cancel-confirmed: job {cron_id} is gone; nothing pending"
 
 
+CAMPAIGN_PARKS = ("host-not-ready", "ci-red", "ci-unknown")  # D00 T03 §12 and §15: these end the whole campaign
+
+
+def campaign_park(root: str, run_rel: str, run_id: str) -> str | None:
+    """The reason of a column-0 `PARKED ... run=<run_id> <reason>:` line that ends the whole campaign, or None. Such a
+    park is terminal in either scope, and the run is never continued: a resume starts a fresh run (D00 T03 §19)."""
+    if not run_rel or not run_id or os.path.isabs(run_rel) or ".." in run_rel.replace("\\", "/").split("/"):
+        return None
+    try:
+        with open(os.path.join(root, run_rel), encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except FileNotFoundError:
+        return None
+    for line in text.splitlines():
+        if line.startswith("PARKED") and marker_run(line) == run_id:
+            for reason in CAMPAIGN_PARKS:
+                if re.search(r"\b" + re.escape(reason) + r":", line):
+                    return reason
+    return None
+
+
 def whoami(root: str, session: str, generation: str | None = None) -> str:
     """What this heartbeat is to the run: OWNER, NOT THE OWNER, NOT THE CURRENT JOB (a replaced job in the owning
     session), NO GUARD, or MALFORMED GUARD."""
@@ -473,7 +501,10 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
         return "NOT THE CURRENT JOB"
     # The run id rides the answer, so the heartbeat reads which markers are this run's.
     scope = guard.get("scope") or "plan"
-    return f"OWNER run={guard.get('run_id')} scope={scope}" if guard.get("run_id") else f"OWNER scope={scope}"
+    parked = campaign_park(root, str(guard.get("run_file", "")), str(guard.get("run_id") or ""))
+    tail = f" campaign-parked={parked}" if parked else ""
+    return (f"OWNER run={guard.get('run_id')} scope={scope}{tail}" if guard.get("run_id")
+            else f"OWNER scope={scope}{tail}")
 
 
 def reset_state(root: str, session: str | None = None, expect_no_guard: bool = False) -> str:
