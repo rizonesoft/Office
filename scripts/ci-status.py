@@ -480,7 +480,7 @@ def reconcile(args, tools, clock, now, checkpoint):
         return now() if now else datetime.now(timezone.utc)
 
     looked = set()  # heads looked up in this try: their results are as current as a read in this try
-    confirming = False
+    confirming, listing, pages = False, None, None
 
     def settle(sha):
         code, lines, run = look_up(tools, sha, moment(), deadline, clock)
@@ -488,6 +488,28 @@ def reconcile(args, tools, clock, now, checkpoint):
         looked.add(sha)
         if run and str(run[0]) in cp["runs"]:  # the page copy takes the attempt read now; a later page read wins
             cp["runs"][str(run[0])]["attempt"] = run[1]
+
+    def confirmed():
+        """Lines for the heads whose green rests on reads made in this try: what the campaign may record now, so a
+        backlog whose reads do not fit in one try still finishes. Once any outcome is recorded the baseline is the
+        oldest recorded head, so a record for a later head never covers an earlier one; with none recorded yet, the
+        first record would become that baseline, so the first-run baseline itself comes first, and only when it too
+        was read green in this try."""
+        if listing is None:
+            return []
+        baseline, listed, runs_of, base_run = listing()
+        lines = []
+        if base_run:
+            if base_run not in pages.now:
+                return []
+            run = cp["runs"][base_run]
+            lines.append(f"green {baseline[:7]} run {base_run} attempt {run['attempt']}")
+        for s in listed:
+            result = cp["results"].get(s)
+            if result and result["code"] == GREEN and current(result, runs_of.get(s), cp["runs"]) \
+                    and (s in looked or runs_of[s] in pages.now):
+                lines += result["lines"]
+        return lines
 
     try:
         pages, listing = unchecked_heads(tools, args.pending, left, cp, save)
@@ -521,9 +543,12 @@ def reconcile(args, tools, clock, now, checkpoint):
             for s in stale:
                 checked.remove(s)
     except DeadlinePassed:
-        if cp and cp["progress"] > before:
+        ready = confirmed()
+        if cp and (cp["progress"] > before or ready):
             save(cp)
             print(f"progressing: {cp['progress'] - before} step(s) saved this try; run again to continue")
+            if ready:  # record these now: the next try then rests on fewer runs
+                print("\n".join(f"confirmed {line}" for line in ready))
             return PROGRESSING
         if confirming:  # a report rests only on reads made in its own try, and these do not fit in one
             print("unknown: the runs the report rests on cannot all be read again within one try")

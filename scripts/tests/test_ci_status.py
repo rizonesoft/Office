@@ -963,23 +963,109 @@ class Scale(Pending):
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
         self.assertEqual(len(self.listed(out)), 2499)
 
-    def test_results_that_cannot_be_confirmed_in_one_try_are_never_reported(self):
-        # 2,499 heads at 1 s a lookup settle over several tries, each progressing; confirming the results of the
-        # earlier tries then needs 25 pages at 30 s, longer than one try. A report rests only on reads made in its own
-        # try, so this ends unknown, with the reason, rather than green on reads a rerun may have overtaken.
+    def recording(self, repo, clock_args, limit=40):
+        """Run tries as the campaign does: after each exit 4, record ci-green for every confirmed green head."""
+        codes = []
+        for _ in range(limit):
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, **clock_args))
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                return codes, out
+            confirmed = re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M)
+            if confirmed:
+                self.record(*(f"ci-green {h}" for h in confirmed))
+        return codes, out
+
+    def test_results_too_many_to_confirm_in_one_try_finish_through_confirmed_records(self):
+        # 2,499 heads at 1 s a lookup settle over several tries; confirming the results of earlier tries needs 25
+        # pages at 30 s, more than one try. A report rests only on reads made in its own try, so each try prints the
+        # oldest heads it confirmed; recording them shrinks the next try's reads until the rest fits.
         heads = [sha(n) for n in range(1, 2501)]
         self.record(f"ci-green {heads[0][:7]}")
         repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
         codes = []
-        for _ in range(12):
-            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30, head_seconds=1))
-            codes.append(code)
-            if code != ci.PROGRESSING:
-                break
-        self.assertEqual(codes[-1], 2)
+        codes, out = self.recording(repo, {"page_seconds": 30, "head_seconds": 1})
+        self.assertEqual(codes[-1], 0)
         self.assertGreaterEqual(len(codes), 3)
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
+
+    def test_a_red_head_is_never_confirmed_and_a_green_one_after_it_is(self):
+        base, a, b, c = sha(1), sha(2), sha(3), sha(4)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, b, a, base], {base: "success", a: "failure", b: "success", c: "success"})
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 140):
+            code, out = self.pending(repo, clock=clock)  # A red and B green settled, C cut short
+        self.assertEqual(code, ci.PROGRESSING)
+        # An outcome is recorded, so the baseline stays the oldest record: B's record cannot cover the red A.
+        self.assertEqual(re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M), [b[:7]])
+
+    def test_with_no_outcome_recorded_the_baseline_must_be_read_in_the_same_try(self):
+        tip, a, b = sha(1), sha(2), sha(3)
+        others = [{"id": 98000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1100 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([b, a, tip], {tip: "success", a: None, b: None}, extra_runs=others)  # no outcome recorded
+        self.assertEqual(self.pending(repo)[0], 3)  # the green tip is the first-run baseline; A and B pending
+        repo.runs[a], repo.runs[b] = "success", "success"
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            code, out = self.pending(repo, clock=clock)  # A looked up green, B cut short; the tip's page not read
+        self.assertEqual(code, ci.PROGRESSING)
+        self.assertNotIn("confirmed", out)  # recording A first would make it the baseline and cover nothing older
+
+    def test_with_no_outcome_recorded_a_baseline_read_in_the_same_try_is_confirmed_first(self):
+        tip, a, b = sha(1), sha(2), sha(3)
+        repo = Repo([b, a, tip], {tip: "success", a: None, b: None})  # no outcome recorded; every run on page 1
+        self.assertEqual(self.pending(repo)[0], 3)
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            code, out = self.pending(repo, clock=clock)  # A looked up (still pending), B cut short; page 1 read again
+        self.assertEqual(code, ci.PROGRESSING)
+        # Recording the baseline first turns the listing to the recorded mode, where no record covers an older head.
+        self.assertEqual(re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M), [tip[:7]])
+
+    def three_heads(self, others):
+        """A, B and C green after a recorded baseline, behind `others` newer runs of another branch; the first try
+        settles A, the second B and C, and is cut short reading A's page again. Returns the repo and that output."""
+        base, a, b, c = sha(1), sha(2), sha(3), sha(4)
+        newer = [{"id": 99000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                  "head_sha": sha(1200 + n), "event": "pull_request", "head_branch": "feature"} for n in range(others)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, b, a, base], {base: "success", a: "success", b: "success", c: "success"}, extra_runs=newer)
+        with mock.patch.object(ci, "PENDING_SECONDS", 120):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10, head_seconds=55))[0],
+                             ci.PROGRESSING)
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10, head_seconds=55))
+        self.assertEqual(code, ci.PROGRESSING)
+        return repo, (a, b, c), out
+
+    def test_a_result_from_an_earlier_try_is_not_confirmed_until_read_again(self):
+        repo, (a, b, c), out = self.three_heads(150)
+        self.assertEqual(re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M), [b[:7], c[:7]])  # not A
+
+    def test_a_try_that_only_confirms_heads_still_progresses(self):
+        repo, (a, b, c), out = self.three_heads(99)  # C's run ends page 1, which every try reads again
+        with mock.patch.object(ci, "PENDING_SECONDS", 15):  # page 1 again, then cut short before page 2
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))
+        self.assertEqual(code, ci.PROGRESSING)
+        self.assertEqual(re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M), [c[:7]])
+
+    def test_a_try_that_can_neither_progress_nor_confirm_names_why(self):
+        repo, heads, out = self.three_heads(150)
+        with mock.patch.object(ci, "PENDING_SECONDS", 15):
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))
+        self.assertEqual(code, 2)
         self.assertIn("cannot all be read again within one try", out)
+
+    def test_a_confirmed_head_is_printed_for_the_campaign_to_record(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"})
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            code, out = self.pending(repo, clock=clock)
+        self.assertEqual(code, ci.PROGRESSING)
+        self.assertEqual(re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M), [a[:7]])
 
     def test_a_rerun_of_a_first_run_baseline_read_in_an_earlier_try_is_seen(self):
         tip = sha(1)

@@ -69,6 +69,8 @@ OBLIGATIONS = [
         "Exit 4 means the try ran out of time but saved its progress in `build/ci-reconcile.json` (D00 T03 §22): run it "
         "again at once, before any row, as often as it returns 4, without spending the one retry for exit 2 or the "
         "recovery budget"]),
+    ("confirmed heads are recorded before the rerun", "plan", [
+        "Before each rerun, record `ci-green` for every head on a `confirmed green` line it printed"]),
     ("the checkpoint is dropped only after the records", "plan", [
         "Once the records it led to (`ci-green`, `ci-superseded`) are written, run "
         "`python scripts/ci-status.py --pending <run file> --ack` to drop the checkpoint."]),
@@ -119,6 +121,8 @@ WEAKENINGS = [
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
     ("a progressing reconciliation is continued before any row", "plan", "run it again at once, before any row, as "
      "often as it returns 4,", "treat it as exit 2,"),
+    ("confirmed heads are recorded before the rerun", "plan", "Before each rerun, record `ci-green` for every head "
+     "on a `confirmed green` line it printed", "Before each rerun, ignore every `confirmed green` line it printed"),
     ("the checkpoint is dropped only after the records", "plan", "Once the records it led to (`ci-green`, "
      "`ci-superseded`) are written, run", "Before the records are written, run"),
     ("the phase continues a progressing reconciliation", "phase", "an exit 4 (progress saved) is run again at once, "
@@ -178,7 +182,7 @@ PINNED = [
     ('plan', 'Every campaign push gets a `ci-pending',
      '70ee904f5ec22338104e4707535a7be043000b7cd11acca69ac58c198ef6cdf6'),
     ('plan', 'Reconcile from the pushed history',
-     '1c62fc52d1bb0775ff01c14b791599479d666959f6502a91a7cf383865bc57ca'),
+     '4e767c7eb7416f6b9add9094cd9dd482291b1a8f1bec3b620a99071706fc293b'),
     ('plan', 'Green is a hard gate in three places',
      '95411b47eb82906b2f147ddba0955e900e15464ca2efc3996793ed01866648e8'),
     ('plan', 'Nothing is written to the run file at a boundary',
