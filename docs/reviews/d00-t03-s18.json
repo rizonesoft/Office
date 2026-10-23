@@ -1,0 +1,37 @@
+{
+  "ref": "D00 T03 \u00a718",
+  "title": "CI Recovery Budget",
+  "implementation_sha": "ec0927a6fba6fc0f8f49e3d7d93711a960278b13",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s18.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s18.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s18.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s18.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_ci_recovery.py\" -> OK (each of 7 rules removed fails a test)",
+    "python -m unittest discover -s scripts/tests -> Ran 780 tests, OK (skipped=2) at b3af483",
+    "python scripts/ci-recovery.py show -> no open recovery"
+  ],
+  "rounds_spent": 4,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s18-completion.md",
+  "completion_rules": 2
+}

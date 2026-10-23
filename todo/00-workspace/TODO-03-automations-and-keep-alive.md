@@ -50,7 +50,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 15 | §15 | CI watch and red-run repair | §13 | [x] |
 | 16 | §16 | Completion evidence adoption boundary | §14 | [x] |
 | 17 | §17 | CI push reconciliation | §15 | [x] |
-| 18 | §18 | CI recovery budget | §15 | [ ] |
+| 18 | §18 | CI recovery budget | §15 | [x] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
 | 20 | §20 | CI reconciliation at scale | §17 | [ ] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
@@ -550,9 +550,12 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 6): �
 - [x] Spend at most four attempts per recovery, any mix of kinds: a repair push, the single flake rerun (one per head, refused a second time), a bounded wait that returns pending again, and a status or log read that is unreadable during the recovery (inside an open recovery these consume the budget instead of §15's one-retry `ci-unknown` park, which still applies to discovery outside one); a green result at any attempt closes the recovery; `reserve` refuses a fifth attempt with exit 1 and prints `exhausted`. Done when: tests cover each kind, a fourth-attempt success, a second rerun refused, repeated pending and unreadable results, and the refusal of a fifth. Cheaper substitute: three repair commits per job, which an outage or alternating jobs never reaches. **Groomed 2026-10-23:** completion finding 3.
 - [x] On `exhausted`, in `.claude/skills/process-plan/SKILL.md`: file the failure through `add-todo` (run link, jobs, steps, every attempt from `python scripts/ci-recovery.py show`), email the owner through `.conclave/automations/alert.py` (record `email not sent` if it fails; the park goes ahead), and park with `ci-red`, even when no useful code change exists. Done when: the skill names `open`, `attach`, `reserve`, `close`, `show`, the exhaustion steps and the park. Cheaper substitute: a budget the skill describes but nothing enforces.
 - [x] Define the single flake rerun: one `gh run rerun <id> --failed --repo github.com/<owner>/<name>` per head, reserved as `rerun` before it runs; a pass closes the recovery, records `ci-flaky <sha> <job>` and files the flake through `add-todo`; a fail continues the recovery. Done when: the skill names the one rerun and both outcomes, and `reserve rerun` refuses a second rerun for the same head in a test. Cheaper substitute: re-running until green.
-- [ ] Commit: `automations: one recovery budget per red main, kept across resumes`
+- [x] Commit: `automations: one recovery budget per red main, kept across resumes`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_recovery.py"` passes, covering alternating failing jobs across repair heads, mixed attempt kinds, an interrupted reservation and a fresh-run resume, a refused second rerun, repeated pending and unreadable results, a fourth-attempt success and exhaustion.
+
+> **Verified:** 2026-10-23 | §18 | ec0927a6fba6fc0f8f49e3d7d93711a960278b13
+> **Review:** `docs/reviews/d00-t03-s18.json`
 
 ## 19. CI Gate Checks
 
