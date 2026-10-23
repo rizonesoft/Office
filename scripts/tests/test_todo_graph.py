@@ -417,8 +417,14 @@ class Stamp(Tree):
         return tg.stamp(root, ref, *args, **kwargs)
 
     def write_completion(self, *reviews, path=None, ref="D00 T01 §1", outcome="", when="2026-10-21T00:00:00Z",
-                         reviewer=("astra", "m", "medium")):
-        """A completion record as process-todo-section leaves it: the heading, the dispatcher's rounds, an outcome."""
+                         reviewer=("astra", "m", "medium"), contract=True):
+        """A completion record as process-todo-section leaves it: the heading, the dispatcher's rounds, an outcome.
+        With `contract`, each completion reply echoes the section's contract digest as its prompt carried it
+        (D00 T03 §14 and §16); a test of a missing or stale echo passes contract=False and writes its own."""
+        if contract:
+            digest = tg.contract_digest(tg.graph(self.root)[ref])
+            reviews = tuple(r.replace("PURPOSE: completion\n", f"PURPOSE: completion\nCONTRACT: {digest}\n", 1)
+                            if isinstance(r, str) and "CONTRACT:" not in r else r for r in reviews)
         target = self.root / (path or self.completion)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(f"# Completion review: {ref}\n", encoding="utf-8")
@@ -617,27 +623,31 @@ class Stamp(Tree):
         before = self.contract()
         self.tick_work()
         self.assertEqual(self.contract(), before)
-        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        self.assertEqual(self.contract(), before)  # the Verified and Review lines and the ticked Commit item
         path = self.root / "todo/00-workspace/TODO-01-a.md"
         text = path.read_text(encoding="utf-8")
         path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Started:** 2026-10-23T10:00:00Z\n\n", 1),
                         encoding="utf-8")
         self.assertEqual(self.contract(), before)
         # review-todo-section turns Started into a Duration note before the stamp: still the same contract.
-        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Duration:** 2026-10-23T10:00:00Z to 11:00:00Z (1 h)\n\n", 1), encoding="utf-8")
+        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Duration:** 2026-10-23T10:00:00Z to 11:00:00Z (1 h)\n\n",
+                                     1), encoding="utf-8")
         self.assertEqual(self.contract(), before)
         path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Deferred:** the export -> XREF: §2\n\n", 1),
                         encoding="utf-8")
         self.assertNotEqual(self.contract(), before)  # a deferral moves scope, so it is a new contract
         path.write_text(text, encoding="utf-8")
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertEqual(self.contract(), before)  # the Verified and Review lines and the ticked Commit item
+        # D00 T03 §16: a receipt that met completion rules 2 stays bound to its contract, so editing it fails validation.
         path.write_text(path.read_text(encoding="utf-8").replace("Work.", "Different work.", 1), encoding="utf-8")
-        self.assertNotEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), before)
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("it changed after its completion review", str(ctx.exception))
 
     def test_a_round_from_the_cutoff_must_echo_the_current_contract(self):
         after = "2026-10-23T10:00:00Z"
         self.tick_work()
-        self.write_completion(COMPLETE_YES, when=after)  # no CONTRACT line
+        self.write_completion(COMPLETE_YES, when=after, contract=False)  # no CONTRACT line
         self.refused(completion=self.completion, contains="'CONTRACT: sha256:<digest>' copied from its prompt")
         self.write_completion(self.reply("sha256:" + "0" * 64), when=after)  # the section changed after dispatch
         self.refused(completion=self.completion, contains="it changed after its completion review")
@@ -656,11 +666,54 @@ class Stamp(Tree):
         self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
                                                 "2026-10-23")).is_file())
 
-    def test_a_digest_free_round_before_the_cutoff_still_stamps(self):
+    def test_a_new_stamp_needs_the_contract_echo_whatever_its_date(self):
+        # D00 T03 §16: genuine digest-free evidence run before CONTRACT_REQUIRED_FROM no longer stamps a section.
         self.tick_work()
-        self.write_completion(COMPLETE_YES, when="2026-10-23T09:39:59Z")
-        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
-                                                "2026-10-23")).is_file())
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:39:59Z", contract=False)
+        self.refused(completion=self.completion, contains="'CONTRACT: sha256:<digest>' copied from its prompt")
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:39:59Z")  # a fresh review that echoes the contract
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-23")
+        self.assertEqual(json.loads(receipt.read_text(encoding="utf-8"))["completion_rules"], 2)
+
+    def test_stored_receipts_keep_the_rules_they_met(self):
+        # D00 T03 §16: a receipt without completion_rules is version 1 when its review ran before the cutoff (no
+        # contract check), version 2 from it on (checked); either way the receipt itself is never rewritten.
+        for when, rules in (("2026-10-23T09:00:00Z", 1), ("2026-10-23T10:00:00Z", 2)):
+            with self.subTest(when=when):
+                self.setUp()
+                self.tick_work()
+                self.write_completion(COMPLETE_YES, when=when)
+                receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                 "2026-10-23")
+                data = json.loads(receipt.read_text(encoding="utf-8"))
+                del data["completion_rules"]  # as receipts stamped before D00 T03 §16 were written
+                receipt.write_text(json.dumps(data), encoding="utf-8")
+                last = tg.completion_ok(self.root, "D00 T01 §1", self.completion)
+                self.assertEqual(tg.completion_rules(data, last), rules)
+                path = self.root / "todo/00-workspace/TODO-01-a.md"
+                path.write_text(path.read_text(encoding="utf-8").replace("Work.", "Changed work.", 1), encoding="utf-8")
+                if rules == 1:
+                    tg.graph(self.root)  # version 1: no contract check
+                else:
+                    with self.assertRaises(tg.Refused):
+                        tg.graph(self.root)
+
+    def test_a_receipt_claiming_rules_2_needs_the_contract_echo(self):
+        self.tick_work()
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:00:00Z")
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-23")
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:00:00Z", contract=False)  # the record loses its echo
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("copied from its prompt", str(ctx.exception))
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        for bad in (3, "2", True):
+            with self.subTest(bad=bad):
+                data["completion_rules"] = bad
+                receipt.write_text(json.dumps(data), encoding="utf-8")
+                with self.assertRaises(tg.Refused) as ctx:
+                    tg.graph(self.root)
+                self.assertIn("completion_rules must be one of", str(ctx.exception))
 
     def test_an_extended_gap_waits_for_its_returned_re_check(self):
         self.tick_work()
@@ -700,6 +753,11 @@ class Stamp(Tree):
             tg.graph(self.root)
         self.assertIn("predates completion records", str(ctx.exception))
         del data["completion"]
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:  # nor completion_rules (D00 T03 §16)
+            tg.graph(self.root)
+        self.assertIn("predates completion records", str(ctx.exception))
+        del data["completion_rules"]
         receipt.write_text(json.dumps(data), encoding="utf-8")
         tg.graph(self.root)
 
@@ -1201,6 +1259,9 @@ class Stamp(Tree):
         self.assertIn("> **Unstamped:** 2026-10-20T12:00:00Z: checkpoint fails", text)
         self.assertIn("- [ ] Commit:", text)
         tg.projections(self.root)  # the plan was synced
+        with self.assertRaises(tg.Refused):  # D00 T03 §16: the old record cannot re-stamp a reopened section
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
+        self.write_completion(COMPLETE_YES, when="2026-10-20T12:30:00Z")  # a fresh round after the reopening
         self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
         self.assertTrue(tg.graph(self.root)["D00 T01 §1"].done)
 

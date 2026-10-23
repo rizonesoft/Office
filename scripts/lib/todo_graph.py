@@ -378,10 +378,14 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
         if cap == REVIEW_ROUND_CAP:
             require(isinstance(data.get("completion"), str),
                     f"a receipt under the {REVIEW_ROUND_CAP}-round cap must name its completion record: {ref}")
+            require("completion_rules" not in data or (type(data["completion_rules"]) is int
+                                                       and data["completion_rules"] in COMPLETION_RULES),
+                    f"completion_rules must be one of {', '.join(map(str, COMPLETION_RULES))}: {ref}")
             if root is not None:
                 completion_ok(root, ref, data["completion"])
         else:
-            require("completion" not in data, f"a receipt under the {cap}-round cap predates completion records: {ref}")
+            require("completion" not in data and "completion_rules" not in data,
+                    f"a receipt under the {cap}-round cap predates completion records: {ref}")
     checks = data.get("checks")
     require(isinstance(checks, list) and checks and all(isinstance(c, str) and c.strip() for c in checks),
             f"receipt has no checks: {ref}")
@@ -627,7 +631,10 @@ def graph(root=ROOT):
         if sec.done and sec.receipt:
             data = json.loads(read_text(Path(root) / sec.receipt))
             if isinstance(data, dict) and isinstance(data.get("completion"), str):
-                completion_ok(root, sec.ref, data["completion"], rows=sections)
+                last = completion_ok(root, sec.ref, data["completion"], rows=sections)
+                # D00 T03 §16: a receipt that met completion rules 2 stays bound to the contract it was reviewed on.
+                if completion_rules(data, last) == 2:
+                    contract_ok(last, sec, data["completion"])
     _index_coverage(root, files)
     visiting, visited = set(), set()
     for start in sections:
@@ -922,6 +929,32 @@ def _instant(text):
     return tuple(int(x) for x in m.groups()) if m else None
 
 
+def contract_ok(last, row, completion):
+    """The last returned completion round echoes `CONTRACT: sha256:<digest>` and it is still the section's contract
+    (D00 T03 §14): an edit after dispatch, or an extension after approval, needs a fresh round."""
+    ref = row.ref
+    lines = [x.strip() for x in last["review"].splitlines() if x.strip()]
+    echoed = CONTRACT_LINE.fullmatch(lines[2]) if len(lines) > 2 else None
+    require(echoed is not None,
+            f"round {last['number']} of {completion} must open with 'SECTION: {ref}', 'PURPOSE: completion' and "
+            f"'CONTRACT: sha256:<digest>' copied from its prompt: {ref}")
+    require(echoed[1] == contract_digest(row),
+            f"round {last['number']} of {completion} reviewed contract {echoed[1]}, but the section is now "
+            f"{contract_digest(row)}; it changed after its completion review, so run a fresh one: {ref}")
+
+
+COMPLETION_RULES = (1, 2)
+
+
+def completion_rules(data, last):
+    """The completion rules a receipt met (D00 T03 §16): the `completion_rules` it records, or, for a receipt written
+    before the field existed, 2 when its completion review ran from CONTRACT_REQUIRED_FROM on and 1 before."""
+    if "completion_rules" in data:
+        return data["completion_rules"]
+    run = _instant(last.get("run"))
+    return 2 if run is not None and run >= _instant(CONTRACT_REQUIRED_FROM) else 1
+
+
 def completion_ok(root, ref, path, rows=None):
     """The section's completion record (D00 T03 §13), or Refused. It is the dispatcher-written file named for the
     section, opening `# Completion review: <ref>`; its last returned round is a review by another model family that
@@ -1063,23 +1096,16 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
         require(_instant(run) is not None and _instant(run) > latest[0],
                 f"the completion review in {completion} ran {run}, not after the section was reopened at {latest[1]}; "
                 f"run a fresh one: {ref}")
-    # D00 T03 §14: a round from CONTRACT_REQUIRED_FROM on echoes the digest of the contract it was given, and that
-    # must still be this section's contract: an edit after dispatch, or an extension after approval, needs a new round.
-    if _instant(run) is not None and _instant(run) >= _instant(CONTRACT_REQUIRED_FROM):
-        lines = [x.strip() for x in last["review"].splitlines() if x.strip()]
-        echoed = CONTRACT_LINE.fullmatch(lines[2]) if len(lines) > 2 else None
-        require(echoed is not None,
-                f"round {last['number']} of {completion} must open with 'SECTION: {ref}', 'PURPOSE: completion' and "
-                f"'CONTRACT: sha256:<digest>' copied from its prompt: {ref}")
-        require(echoed[1] == contract_digest(row),
-                f"round {last['number']} of {completion} reviewed contract {echoed[1]}, but the section is now "
-                f"{contract_digest(row)}; it changed after its completion review, so run a fresh one: {ref}")
+    # D00 T03 §16: every new stamp meets completion rules 2, whatever its round's run date: the round echoes the
+    # digest of the contract it was given, and that must still be this section's contract.
+    contract_ok(last, row, completion)
     # D00 T03 §14: an `extended` gap in the last returned round's outcome means its re-check has not returned yet,
     # whatever outage rounds came after it.
     pending = sorted(g for g, target in (last.get("dispositions") or {}).items() if target is None)
     require(not pending, f"round {last['number']} of {completion} extended gap {', '.join(map(str, pending))}, and its "
                          f"re-check has not returned; run it before the stamp: {ref}")
     data["completion"] = completion
+    data["completion_rules"] = 2
     if stopped:
         data["cap_outcome"] = cap_outcome.strip()
     receipt_data_ok(data, ref, sha, root=root)
