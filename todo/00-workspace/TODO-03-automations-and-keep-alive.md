@@ -636,6 +636,8 @@ Filed 2026-10-23 from round 2 of D00 T03 §18's completion review (`docs/reviews
 
 ## 22. CI Reconciliation Past Limits
 
+> **Started:** 2026-10-23T14:05:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §20's completion review (`docs/reviews/00-workspace/D00-T03-s20-completion.md`): §20 pages the workflow-runs endpoint filtered by `branch` and `event`, which GitHub caps at 1,000 results however it is paged ([List workflow runs for a workflow](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow)); §20's `total_count` check turns the cap into an honest exit 2, but past 1,000 push runs that exit repeats forever. And `--pending` gives discovery one 60-second call and the whole reconciliation 600 seconds, so a long history or a large unchecked backlog can run out of time on every try without making progress.
 
 **Phase:** 0
