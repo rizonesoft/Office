@@ -33,7 +33,7 @@ Sections: 25 | Checklist items: 166
 | [x]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 7     |
 | [x]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 11    |
 | [x]    | D00 T03 §16 | Completion Evidence Adoption Boundary    | none                   | 4     |
-| [ ]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 8     |
+| [x]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 8     |
 | [ ]    | D00 T03 §18 | CI Recovery Budget                       | none                   | 4     |
 | [ ]    | D00 T03 §19 | CI Gate Checks                           | none                   | 3     |
 | [ ]    | D00 T03 §20 | CI Reconciliation at Scale               | none                   | 3     |
@@ -176,6 +176,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 42/121 verified sections, 12 ready to run now.
+Progress: 43/121 verified sections, 12 ready to run now.
 
-Checklist: 278/764 items completed (includes Commit items).
+Checklist: 279/764 items completed (includes Commit items).

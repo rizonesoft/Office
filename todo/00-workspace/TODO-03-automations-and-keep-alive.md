@@ -49,7 +49,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 14 | §14 | Completion evidence hardening | §13 | [x] |
 | 15 | §15 | CI watch and red-run repair | §13 | [x] |
 | 16 | §16 | Completion evidence adoption boundary | §14 | [x] |
-| 17 | §17 | CI push reconciliation | §15 | [ ] |
+| 17 | §17 | CI push reconciliation | §15 | [x] |
 | 18 | §18 | CI recovery budget | §15 | [ ] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
 | 20 | §20 | CI reconciliation at scale | §17 | [ ] |
@@ -522,9 +522,12 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (`docs/reviews
 - [x] Record a red push head whose later push head is green as `ci-superseded <sha> by <later sha>` in `.claude/skills/process-plan/SKILL.md` (no repair: the later green run includes its changes), and repair a red head that is still the newest under §15's rules. Done when: the skill names the record and when it applies. Cheaper substitute: repairing a failure `main` no longer has, or dropping it silently.
 - [x] Record `ci-pending <sha> <UTC>` for every campaign push, not only stamp pushes: dependency merges by `scripts/merge_prs.py`, closeout and park commits, and repair commits, in `.claude/skills/process-plan/SKILL.md`. Done when: the skill names each push kind. Cheaper substitute: watching only the stamp commits.
 - [x] Run `python scripts/ci-status.py --pending <run file>` at campaign start, at every phase start and on every manual or heartbeat resume, before any row is claimed, and act on each listed commit with §15's exit rules, in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`. Done when: both skills name the command and the three moments. Cheaper substitute: losing a red commit when a session dies between its push and its record.
-- [ ] Commit: `automations: reconcile unchecked pushes with CI on start and resume`
+- [x] Commit: `automations: reconcile unchecked pushes with CI on start and resume`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes and `python scripts/ci-status.py --pending docs/phase-runs/2026-10-23-phase-0.md` lists the pushed commits without a `ci-green` record on this PC.
+
+> **Verified:** 2026-10-23 | §17 | 29c5792e03628303041a3410a531c69745afb992
+> **Review:** `docs/reviews/d00-t03-s17.json`
 
 ## 18. CI Recovery Budget
 

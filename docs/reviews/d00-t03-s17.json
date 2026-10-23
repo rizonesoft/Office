@@ -1,0 +1,67 @@
+{
+  "ref": "D00 T03 \u00a717",
+  "title": "CI Push Reconciliation",
+  "implementation_sha": "29c5792e03628303041a3410a531c69745afb992",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/00-workspace/D00-T03-s17.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_ci_status.py\" -> Ran 50 tests, OK",
+    "python scripts/ci-status.py --pending docs/phase-runs/2026-10-23-phase-0.md -> exit 2, \"HEAD has 10 commit(s) origin/main lacks\" before the push (the designed refusal); after the push it reconciles",
+    "python -m unittest discover -s scripts/tests -> OK (skipped=2)"
+  ],
+  "rounds_spent": 10,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s17-completion.md",
+  "completion_rules": 2
+}
