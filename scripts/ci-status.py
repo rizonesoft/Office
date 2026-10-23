@@ -279,6 +279,21 @@ def read_page(tools, owner_name, page, seconds):
     return data["total_count"], data["workflow_runs"]
 
 
+def read_run(tools, owner_name, run_id, seconds):
+    """One workflow run, read by its id, or Unknown."""
+    result = tools.call("gh", ["api", "--hostname", github_origin.HOST, f"repos/{owner_name}/actions/runs/{run_id}"],
+                        seconds)
+    if result.returncode != 0:
+        raise Unknown(f"gh api run {run_id} failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
+    try:
+        run = json.loads(result.stdout)
+    except ValueError:
+        raise Unknown(f"gh api run {run_id} is not JSON") from None
+    if not (isinstance(run, dict) and str(run.get("id")) == str(run_id)):
+        raise Unknown(f"gh api run {run_id} is not that workflow run")
+    return run
+
+
 def keep(cp, runs):
     """Store runs as read, a fresher read replacing an older one (a rerun changes a run's attempt and conclusion).
     Returns how many runs were new or changed."""
@@ -326,19 +341,27 @@ class Pages:
                 return
 
     def confirm(self, needed):
-        """Read, from the newest page, each page not yet read in this try until every run in `needed` has been read in
-        this try; a run no longer listed is unknown. These reads are not progress: they hold only for this try."""
+        """Read again in this try every run in `needed`: page by page from the newest while the runs still missing
+        outnumber the pages left, then each remaining run by its id, so a few runs deep in a long history (an old red
+        head once the greens are recorded) cost one call each. These reads are not progress: they hold only for this
+        try."""
         page, read = 0, False
-        while not needed <= self.now and (self.last is None or page < self.last):
+        pages_total = -(-(self.cp["total"] or 0) // PER_PAGE)
+        while not needed <= self.now:
+            missing = needed - self.now
+            if len(missing) <= pages_total - page or (self.last is not None and page >= self.last) \
+                    or page >= pages_total:
+                for run_id in sorted(missing, key=int):
+                    keep(self.cp, [read_run(self.tools, self.owner_name, run_id, self.left())])
+                    self.now.add(run_id)
+                    read = True
+                break
             page += 1
             if page not in self.pages:
                 self.read(page)
                 read = True
         if read:
             self.save(self.cp)
-        missing = needed - self.now
-        if missing:
-            raise Unknown(f"{len(missing)} run(s) the report rests on could not be read again")
 
     def forward(self):
         """Continue the scan to the workflow's last page, saving every page as it is read. Runs created while the

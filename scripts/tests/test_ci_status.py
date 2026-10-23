@@ -339,6 +339,9 @@ class Repo:
         self.total = total  # the API's total_count, when it should differ from the runs served
         self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
         self.pages_read = []
+        self.runs_read = []  # runs read one by one, by id
+        self.lost_runs = set()  # run ids the by-id endpoint no longer finds
+        self.wrong_ids = {}  # run id -> the id the by-id endpoint answers with instead
         self.older_runs = []  # raw API runs older than every main run (listed after them)
         self.after_page = {}  # page number -> a function run after that page is served (a run created mid-scan)
         self.fail_pages = set()  # page numbers that fail once
@@ -391,6 +394,13 @@ class Repo:
         elif args[:2] == ["run", "list"] and "--commit" in args:
             head = args[args.index("--commit") + 1]
             out = json.dumps([self.run_record(head)] if head in self.runs else [])
+        elif args[0] == "api" and re.search(r"/actions/runs/\d+$", args[-1]):
+            self.runs_read.append(args[-1])
+            run_id = int(args[-1].rsplit("/", 1)[1])
+            found = [r for r in self.api_runs() if r["id"] == run_id and run_id not in self.lost_runs]
+            if not found:
+                return subprocess.CompletedProcess(args, 1, "", "HTTP 404: Not Found")
+            out = json.dumps(dict(found[0], id=self.wrong_ids.get(run_id, run_id)))
         elif args[0] == "api":
             url = args[-1]
             self.pages_read.append(url)
@@ -788,14 +798,16 @@ class Scale(Pending):
         self.assertEqual((len(held["runs"]), held["next_page"]), (400, 5))
 
     def test_a_rerun_read_after_this_try_looked_a_head_up_replaces_the_lookup(self):
-        base, a, b = sha(1), sha(2), sha(3)
+        base, a1, a2, a3, b = sha(1), sha(2), sha(3), sha(4), sha(5)
         others = [{"id": 96000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
                    "head_sha": sha(900 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
         self.record(f"ci-green {base[:7]}")
-        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        repo = Repo([b, a3, a2, a1, base], {base: "success", a1: "success", a2: "success", a3: "success", b: "success"},
+                    extra_runs=others)
         clock = self.slow_clock_repo(repo, head_seconds=55)
-        with mock.patch.object(ci, "PENDING_SECONDS", 100):
-            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # A settled, B cut short
+        with mock.patch.object(ci, "PENDING_SECONDS", 200):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # the A heads settled, B cut short
+        # Three results to confirm outnumber the one page left, so confirmation pages through page 2, B's page too.
         real = repo.call
 
         def call(name, args, seconds):  # B is looked up green, then rerun and failed before page 2 is read again
@@ -807,6 +819,24 @@ class Scale(Pending):
         code, out = self.pending(repo)
         self.assertEqual(code, 1)
         self.assertIn(f"red {b[:7]} run {int(b[:7], 16)} attempt 2", out)
+
+    def test_a_run_that_cannot_be_read_again_is_unknown(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 96500 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(950 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        repo.lost_runs.add(int(a[:7], 16))  # A's run, settled in the first try, cannot be read again by its id
+        code, out = self.pending(repo)
+        self.assertEqual(code, 2)
+        self.assertIn(f"gh api run {int(a[:7], 16)} failed", out)
+        repo.lost_runs.clear()
+        repo.wrong_ids[int(a[:7], 16)] = 1  # and an answer about another run is not taken for it
+        code, out = self.pending(repo)
+        self.assertEqual(code, 2)
+        self.assertIn("is not that workflow run", out)
 
     def test_a_lookup_newer_than_the_page_copy_settles_once(self):
         base, a, b = sha(1), sha(2), sha(3)
@@ -963,17 +993,17 @@ class Scale(Pending):
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
         self.assertEqual(len(self.listed(out)), 2499)
 
-    def recording(self, repo, clock_args, limit=40):
-        """Run tries as the campaign does: after each exit 4, record ci-green for every confirmed green head."""
+    def recording(self, repo, records, clock_args, limit=40):
+        """Run tries as the campaign does: after each exit 4, add ci-green for every confirmed green head to the
+        records already written (`records`, extended in place)."""
         codes = []
         for _ in range(limit):
             code, out = self.pending(repo, clock=self.slow_clock_repo(repo, **clock_args))
             codes.append(code)
             if code != ci.PROGRESSING:
                 return codes, out
-            confirmed = re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M)
-            if confirmed:
-                self.record(*(f"ci-green {h}" for h in confirmed))
+            records += [f"ci-green {h}" for h in re.findall(r"^confirmed green ([0-9a-f]{7})", out, re.M)]
+            self.record(*records)
         return codes, out
 
     def test_results_too_many_to_confirm_in_one_try_finish_through_confirmed_records(self):
@@ -981,13 +1011,27 @@ class Scale(Pending):
         # pages at 30 s, more than one try. A report rests only on reads made in its own try, so each try prints the
         # oldest heads it confirmed; recording them shrinks the next try's reads until the rest fits.
         heads = [sha(n) for n in range(1, 2501)]
-        self.record(f"ci-green {heads[0][:7]}")
+        records = [f"ci-green {heads[0][:7]}"]
+        self.record(*records)
         repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
-        codes = []
-        codes, out = self.recording(repo, {"page_seconds": 30, "head_seconds": 1})
+        codes, out = self.recording(repo, records, {"page_seconds": 30, "head_seconds": 1})
         self.assertEqual(codes[-1], 0)
         self.assertGreaterEqual(len(codes), 3)
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
+        reported = set(re.findall(r"^green ([0-9a-f]{7})", out, re.M))
+        self.assertEqual({r.split()[1] for r in records[1:]} | reported, {h[:7] for h in heads[1:]})  # none omitted
+
+    def test_an_old_red_head_in_a_large_backlog_reaches_the_report(self):
+        heads = [sha(n) for n in range(1, 2501)]
+        records = [f"ci-green {heads[0][:7]}"]
+        self.record(*records)
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        repo.runs[heads[1]] = "failure"  # the oldest unchecked head is red, its run on the last page
+        codes, out = self.recording(repo, records, {"page_seconds": 30, "head_seconds": 1})
+        self.assertEqual(codes[-1], 1)
+        self.assertIn(f"red {heads[1][:7]}", out)
+        self.assertTrue(repo.runs_read)  # read by its id, not by paging to it
+        self.assertNotIn(f"ci-green {heads[1][:7]}", records)
 
     def test_a_red_head_is_never_confirmed_and_a_green_one_after_it_is(self):
         base, a, b, c = sha(1), sha(2), sha(3), sha(4)
