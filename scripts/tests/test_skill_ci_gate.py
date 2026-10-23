@@ -51,6 +51,11 @@ OBLIGATIONS = [
         "the campaign is over until the owner resumes it by hand: run `<python> scripts/campaign_guard.py end "
         "--session $CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, "
         "and reply RUN FINISHED, even when rows are ready and the host check would now pass."]),
+    ("reconciliation settles the newest head first", "plan", [
+        "1, settle the newest listed head first and the earlier ones only after it:"]),
+    ("earlier red heads are superseded only once the newest is green", "plan", [
+        "only once the newest head is green is each earlier red head recorded `ci-superseded <sha> by <newest sha>` and "
+        "never repaired"]),
     ("heartbeat resume reconciles before any row", "plan", [
         "Then run `<python> scripts/ci-status.py --pending <run file>` (it checks `origin/main` and every unchecked push "
         "head before it) and act on it as the skill's CI watch step says before claiming any row."]),
@@ -93,6 +98,10 @@ WEAKENINGS = [
     ("exit 3 pending", "plan", "--wait --timeout 1800` and act on that result.", "--wait --timeout 1800` and claim the next row regardless of that result."),
     ("exit 2 unknown", "plan", "retry once after five minutes; still 2, ", ""),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
+    ("reconciliation settles the newest head first", "plan", "settle the newest listed head first and the earlier ones "
+     "only after it:", "settle the oldest listed head first:"),
+    ("earlier red heads are superseded only once the newest is green", "plan", "only once the newest head is green is "
+     "each earlier red head recorded", "each earlier red head with any later green head is recorded"),
     ("heartbeat closeout ends only on green", "plan", "and unless both exit 0 resume under step 7, whose CI watch "
      "repairs or parks, instead of ending:", "and regardless of either exit:"),
     ("heartbeat plan-done ends only on green", "plan", "On exit 0, run `<python> scripts/campaign_guard.py end",
@@ -134,7 +143,7 @@ PINNED = [
     ('plan', 'Every campaign push gets a `ci-pending',
      '70ee904f5ec22338104e4707535a7be043000b7cd11acca69ac58c198ef6cdf6'),
     ('plan', 'Reconcile from the pushed history',
-     '4a200591f9f06e9b7bbf4f2270cbd8458417832e95ec077519696d7989a07648'),
+     '246fea70fb89ca39358b69557c88028651546480a88002ca4c334f83a8ac6b84'),
     ('plan', 'Green is a hard gate in three places',
      '95411b47eb82906b2f147ddba0955e900e15464ca2efc3996793ed01866648e8'),
     ('plan', 'Nothing is written to the run file at a boundary',

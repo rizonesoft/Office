@@ -199,8 +199,6 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
 # D00 T03 §17: the pushed heads of main whose CI nobody has recorded, rebuilt from the pushed history.
 OUTCOME = re.compile(r"\bci-(?:green|superseded) ([0-9a-f]{7,40})\b")
 PENDING_RECORD = re.compile(r"\bci-pending ([0-9a-f]{7,40})\b")
-RUN_LIMIT = 500  # one gh page; a full page may mean a cut-off history, which is unknown, never complete
-HISTORY_LIMIT = 5000
 PENDING_SECONDS = 600
 
 
@@ -224,22 +222,39 @@ def recorded(prefixes, sha):
 
 
 def push_runs(tools, repo, seconds):
-    """Every ci.yml push run on main as gh lists it, or Unknown when the list cannot be read or may be cut off."""
-    result = tools.call("gh", ["run", "list", "--repo", repo, "--workflow", WORKFLOW, "--event", "push",
-                               "--branch", BRANCH, "--limit", str(RUN_LIMIT), "--json",
-                               "databaseId,status,conclusion,createdAt,headSha,event,headBranch"], seconds)
+    """Every ci.yml push run on main, paged from the REST API until it has no further page (D00 T03 §20), or Unknown
+    when a page cannot be read or the runs collected fall short of the API's total_count (history cut off)."""
+    owner_name = repo.split("/", 1)[1]  # github.com/<owner>/<name> -> <owner>/<name>
+    result = tools.call("gh", ["api", "--paginate", "--hostname", github_origin.HOST,
+                               f"repos/{owner_name}/actions/workflows/{WORKFLOW}/runs?branch={BRANCH}&event=push"
+                               f"&per_page=100"], seconds)
     if result.returncode != 0:
-        raise Unknown(f"gh run list failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
+        raise Unknown(f"gh api failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
+    decoder, text, i, pages = json.JSONDecoder(), result.stdout, 0, []
     try:
-        runs = json.loads(result.stdout or "[]")
+        while True:  # --paginate prints one JSON object per page, back to back
+            while i < len(text) and text[i].isspace():
+                i += 1
+            if i >= len(text):
+                break
+            page, i = decoder.raw_decode(text, i)
+            pages.append(page)
     except ValueError:
-        raise Unknown("gh run list did not print JSON") from None
-    if not isinstance(runs, list) or not all(isinstance(r, dict) for r in runs):
-        raise Unknown("gh run list did not print a list of runs")
-    if len(runs) >= RUN_LIMIT:
-        raise Unknown(f"gh listed {RUN_LIMIT} push runs, so the history may be cut off")
-    return [r for r in runs if r.get("event") == "push" and r.get("headBranch") == BRANCH
-            and isinstance(r.get("headSha"), str)]
+        raise Unknown("gh api did not print the runs as JSON") from None
+    if not pages or not all(isinstance(p, dict) and isinstance(p.get("workflow_runs"), list)
+                            and type(p.get("total_count")) is int for p in pages):
+        raise Unknown("gh api did not print pages of workflow runs")
+    runs = [r for p in pages for r in p["workflow_runs"]]
+    total = pages[0]["total_count"]
+    if len(runs) != total:
+        raise Unknown(f"gh api returned {len(runs)} of {total} push runs, so the history may be cut off")
+    if not all(isinstance(r, dict) for r in runs):
+        raise Unknown("gh api printed a run that is not an object")
+    return [{"databaseId": r.get("id"), "status": r.get("status"), "conclusion": r.get("conclusion") or "",
+             "createdAt": r.get("created_at", ""), "headSha": r.get("head_sha"), "event": r.get("event"),
+             "headBranch": r.get("head_branch")}
+            for r in runs if r.get("event") == "push" and r.get("head_branch") == BRANCH
+            and isinstance(r.get("head_sha"), str)]
 
 
 def unchecked_heads(tools, run_file, left):
@@ -249,12 +264,12 @@ def unchecked_heads(tools, run_file, left):
     itself; a commit that is not one is covered by the first push head after it. The baseline is the oldest head with
     a recorded outcome (history before the records began is covered), or, only when no run file holds any outcome, the
     newest head whose push run is green. After it, a head is listed unless it has an outcome of its own: a later green
-    head never covers it. A baseline that the read history does not reach is Unknown, never a clean result."""
+    head never covers it. The whole first-parent history is read, so a baseline any number of commits back is reached
+    (D00 T03 §20)."""
     fetched = tools.call("git", ["fetch", "--quiet", "origin", BRANCH], left())
     if fetched.returncode != 0:
         raise Unknown("git fetch origin main failed")
-    listed = tools.call("git", ["rev-list", "--first-parent", f"--max-count={HISTORY_LIMIT}", f"origin/{BRANCH}"],
-                        left())
+    listed = tools.call("git", ["rev-list", "--first-parent", f"origin/{BRANCH}"], left())  # the whole history
     history = listed.stdout.split()
     if listed.returncode != 0 or not history or not all(len(c) == 40 for c in history):
         raise Unknown("cannot read the history of origin/main")
@@ -276,15 +291,10 @@ def unchecked_heads(tools, run_file, left):
     heads = [c for c in history if c in run_heads or recorded(pendings, c) or recorded(outcomes, c)
              or c == history[0]]  # newest first
     with_outcome = [c for c in heads if recorded(outcomes, c)]
-    cut_off = len(history) >= HISTORY_LIMIT
     if outcomes:
-        if not with_outcome:  # outcomes are recorded, but none is on the history read
-            raise Unknown("no recorded outcome is on origin/main's history" +
-                          (f" within its last {HISTORY_LIMIT} commits" if cut_off else ""))
+        if not with_outcome:  # outcomes are recorded, but none is on the history of origin/main
+            raise Unknown("no recorded outcome is on origin/main's history")
         baseline = with_outcome[-1]
-        if cut_off and any(not any(c.startswith(o) for c in history) for o in outcomes):
-            # an older recorded head lies beyond the read history, so heads between it and the baseline are unseen
-            raise Unknown(f"recorded outcomes reach past the last {HISTORY_LIMIT} commits of origin/main")
     else:
         governing = {}  # each head's newest push run decides it, as for a single commit
         for r in runs:
@@ -292,8 +302,6 @@ def unchecked_heads(tools, run_file, left):
                 governing[r["headSha"]] = r
         green = {h for h, r in governing.items() if r.get("status") == "completed" and r.get("conclusion") == "success"}
         baseline = next((c for c in heads if c in green), None)
-        if baseline is None and cut_off:
-            raise Unknown(f"no green push head within the last {HISTORY_LIMIT} commits of origin/main")
     newer = heads[:heads.index(baseline)] if baseline else heads
     return baseline, [c for c in reversed(newer) if not recorded(outcomes, c)]
 

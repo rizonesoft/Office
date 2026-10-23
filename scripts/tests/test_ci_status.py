@@ -333,8 +333,10 @@ class Repo:
     """A scripted clone and GitHub for --pending: a first-parent history (newest first), push runs by head, and what
     `git fetch` brings in."""
 
-    def __init__(self, history, runs, fetched=None, fail=None, ahead=0, local=None):
+    def __init__(self, history, runs, fetched=None, fail=None, ahead=0, local=None, total=None, extra_runs=()):
         self.history = list(history)
+        self.total = total  # the API's total_count, when it should differ from the runs served
+        self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
         self.ahead = ahead  # local commits origin/main lacks
         self.local = local  # the clone's HEAD when it is not origin/main
         self.fetched = fetched
@@ -360,7 +362,7 @@ class Repo:
         elif name == "git" and args[:2] == ["rev-list", "--count"]:
             out = f"{self.ahead}\n"
         elif name == "git" and args[0] == "rev-list":
-            limit = next(int(a.split("=")[1]) for a in args if a.startswith("--max-count="))
+            limit = next((int(a.split("=")[1]) for a in args if a.startswith("--max-count=")), None)
             out = "\n".join(self.history[:limit]) + "\n"
         elif name == "git" and args[0] == "rev-parse":
             ref = args[2].split("^")[0]
@@ -375,8 +377,13 @@ class Repo:
         elif args[:2] == ["run", "list"] and "--commit" in args:
             head = args[args.index("--commit") + 1]
             out = json.dumps([self.run_record(head)] if head in self.runs else [])
-        elif args[:2] == ["run", "list"]:
-            out = json.dumps([self.run_record(h) for h in self.runs])
+        elif args[0] == "api":
+            runs = [{"id": int(h[:7], 16), "status": "completed" if c else "in_progress", "conclusion": c,
+                     "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main"}
+                    for h, c in self.runs.items()] + self.extra_runs
+            total = len(runs) if self.total is None else self.total
+            pages = [runs[i:i + 100] for i in range(0, len(runs), 100)] or [[]]
+            out = "".join(json.dumps({"total_count": total, "workflow_runs": page}) for page in pages)
         elif args[:2] == ["run", "view"]:
             out = json.dumps({"jobs": []})
         if out is None:
@@ -450,30 +457,61 @@ class Pending(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("no recorded outcome is on origin/main's history", out)
 
-    def test_a_history_cut_off_before_the_baseline_is_unknown(self):
-        # Review round 1 of D00 T03 §17, finding 1: baseline A and red B lie beyond the commits read; tip C is green.
-        a, b, c = sha(1), sha(2), sha(3)
-        filler = [sha(100 + n) for n in range(5)]
-        self.record(f"ci-green {a[:7]}", f"ci-pending {b[:7]} 2026-10-23T10:00:00Z")
-        with mock.patch.object(ci, "HISTORY_LIMIT", 4):
-            code, out = self.pending(Repo([c, *filler, b, a], {b: "failure", c: "success"}))
-        self.assertEqual(code, 2)
+    def test_more_than_one_page_of_runs_is_read_in_full(self):
+        # D00 T03 §20: no page cap; 650 push runs, the unchecked head among the oldest.
+        heads = [sha(n) for n in range(1, 651)]
+        unchecked = heads[1]
+        self.record(f"ci-green {heads[0][:7]}", *(f"ci-green {h[:7]}" for h in heads[2:]))
+        code, out = self.pending(Repo(list(reversed(heads)), {h: "success" for h in heads}))
+        self.assertEqual(self.listed(out), [unchecked[:7]])
+        self.assertEqual(code, 0)
 
-    def test_an_older_record_beyond_the_cut_off_is_unknown_even_with_a_newer_one_inside(self):
-        # Records A (beyond the commits read) and D (inside): heads between them, such as red B, would go unseen.
-        a, b, d, e = sha(1), sha(2), sha(4), sha(5)
-        fillers = [sha(100 + n) for n in range(2)]
-        self.record(f"ci-green {a[:7]}", f"ci-green {d[:7]}", f"ci-pending {b[:7]} 2026-10-23T10:00:00Z")
-        with mock.patch.object(ci, "HISTORY_LIMIT", 3):
-            code, out = self.pending(Repo([e, d, *fillers, b, a], {b: "failure", d: "success", e: "success"}))
+    def test_runs_short_of_the_total_count_are_unknown(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        code, out = self.pending(Repo([sha(1)], {sha(1): "success"}, total=1001))
         self.assertEqual(code, 2)
-        self.assertIn("reach past the last 3 commits", out)
+        self.assertIn("returned 1 of 1001 push runs", out)
 
-    def test_a_cut_off_history_without_records_needs_a_green_head_inside_it(self):
-        heads = [sha(n) for n in range(1, 8)]
-        with mock.patch.object(ci, "HISTORY_LIMIT", 3):
-            code, _ = self.pending(Repo(list(reversed(heads)), {h: "failure" for h in heads}))
-        self.assertEqual(code, 2)
+    def test_a_history_longer_than_any_window_is_read_to_the_baseline(self):
+        # D00 T03 §20: 5,200 first-parent commits; the baseline and an unchecked head lie beyond the old 5,000 window.
+        base, unchecked, tip = sha(1), sha(2), sha(3)
+        filler = [sha(1000 + n) for n in range(5200)]
+        self.record(f"ci-green {base[:7]}", f"ci-green {tip[:7]}")
+        code, out = self.pending(Repo([tip, *filler, unchecked, base], {base: "success", unchecked: "success",
+                                                                         tip: "success"}))
+        self.assertEqual(self.listed(out), [unchecked[:7]])
+        self.assertEqual(code, 0)
+
+    def test_an_earliest_run_baseline_needs_no_older_run(self):
+        first, later = sha(1), sha(2)  # the workflow's first run is the green baseline
+        code, out = self.pending(Repo([later, first], {first: "success", later: "failure"}))
+        self.assertIn(f"baseline {first[:7]}", out)
+        self.assertEqual(self.listed(out), [later[:7]])
+
+    def test_an_empty_workflow_history_lists_every_head(self):
+        tip = sha(1)
+        code, out = self.pending(Repo([tip], {}))
+        self.assertIn("no baseline", out)
+        self.assertEqual(self.listed(out), [tip[:7]])
+
+    def test_several_pages_with_no_green_run_list_every_head(self):
+        heads = [sha(n) for n in range(1, 251)]
+        code, out = self.pending(Repo(list(reversed(heads)), {h: "failure" for h in heads}))
+        self.assertIn("no baseline", out)
+        self.assertEqual(len(self.listed(out)), 250)
+        self.assertEqual(code, 1)
+
+    def test_red_then_pending_and_red_then_red_report_both_heads(self):
+        # D00 T03 §20: --pending reports each head's state so the skill can settle the newest first.
+        base, a, b = sha(1), sha(2), sha(3)
+        for newest, state, code_wanted in ((None, "pending", 1), ("failure", "red", 1)):
+            with self.subTest(newest=state):
+                self.record(f"ci-green {base[:7]}")
+                code, out = self.pending(Repo([b, a, base], {base: "success", a: "failure", b: newest}))
+                self.assertEqual(self.listed(out), [a[:7], b[:7]])
+                self.assertIn(f"red {a[:7]}", out)
+                self.assertIn(f"{state} {b[:7]}", out)
+                self.assertEqual(code, code_wanted)
 
     def test_every_head_with_an_outcome_lists_nothing(self):
         base, a, b = sha(1), sha(2), sha(3)
@@ -531,18 +569,9 @@ class Pending(unittest.TestCase):
     def test_the_first_run_baseline_uses_each_heads_governing_run(self):
         # Review round 3 of D00 T03 §17, finding 1: an older success under a newer failure is not green.
         a = sha(1)
-        repo = Repo([a], {a: "failure"})
-        real = repo.call
-
-        def with_old_success(name, args, seconds):
-            result = real(name, args, seconds)
-            if args[:2] == ["run", "list"] and "--commit" not in args:
-                runs = json.loads(result.stdout)
-                runs.append(run(headSha=a, databaseId=1, conclusion="success", createdAt="2026-10-23T09:00:00Z"))
-                return subprocess.CompletedProcess(args, 0, json.dumps(runs), "")
-            return result
-        repo.call = with_old_success
-        code, out = self.pending(repo)
+        older = {"id": 1, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
+                 "head_sha": a, "event": "push", "head_branch": "main"}
+        code, out = self.pending(Repo([a], {a: "failure"}, extra_runs=[older]))
         self.assertIn("no baseline", out)
         self.assertEqual(self.listed(out), [a[:7]])
 
@@ -558,17 +587,10 @@ class Pending(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("cannot read the run file", out)
 
-    def test_a_failed_run_list_is_unknown(self):
+    def test_a_page_that_cannot_be_read_is_unknown(self):
         self.record(f"ci-green {sha(1)[:7]}")
-        code, _ = self.pending(Repo([sha(1)], {sha(1): "success"}, fail={"gh run": "HTTP 502"}))
+        code, _ = self.pending(Repo([sha(1)], {sha(1): "success"}, fail={"gh api": "HTTP 502"}))
         self.assertEqual(code, 2)
-
-    def test_a_full_page_of_runs_is_unknown(self):
-        heads = [sha(n) for n in range(1, ci.RUN_LIMIT + 1)]
-        self.record(f"ci-green {heads[0][:7]}")
-        code, out = self.pending(Repo(list(reversed(heads)), {h: "success" for h in heads}))
-        self.assertEqual(code, 2)
-        self.assertIn("may be cut off", out)
 
 
 class Logs(Base):
