@@ -76,7 +76,7 @@ class Clock:
 
 class Base(unittest.TestCase):
     def main(self, fake, *argv, minutes=5):
-        clock = Clock()
+        clock = self.clock = Clock()
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = ci.main(["HEAD", *argv], tools=fake, clock=clock, sleep=clock.sleep,
@@ -178,24 +178,39 @@ class Waiting(Base):
         self.assertEqual(code, 0)
 
     def test_a_run_that_never_ends_is_pending_at_the_timeout(self):
-        code, out = self.main(Fake(runs=[[run(status="in_progress", conclusion="")]]), "--wait", "--timeout", "120")
+        code, out = self.main(Fake(runs=[[run(status="in_progress", conclusion="")]]), "--wait", "--timeout", "100")
         self.assertEqual(code, 3)
-        self.assertIn("still pending after 120 s", out)
+        self.assertIn("still pending after 100 s", out)
+        self.assertEqual(self.clock.t - 1000, 100)  # it waited the whole timeout, not less
 
     def test_every_call_is_bounded_by_sixty_seconds_or_the_time_left(self):
+        # Each call takes 25 s: the last look starts at the 100 s timeout with one 60 s allowance, so its later calls
+        # get only what is left of it.
+        clock = Clock()
         fake = Fake(runs=[[run(status="in_progress", conclusion="")]])
-        self.main(fake, "--wait", "--timeout", "100")
+        real = fake.call
+
+        def slow(name, args, seconds):
+            result = real(name, args, seconds)
+            clock.t += 25
+            return result
+        fake.call = slow
+        with contextlib.redirect_stdout(io.StringIO()):
+            ci.main(["HEAD", "--wait", "--timeout", "100"], tools=fake, clock=clock, sleep=clock.sleep,
+                    now=lambda: COMMITTED + timedelta(minutes=5))
         self.assertTrue(all(0 < seconds <= ci.CALL_SECONDS for _, _, seconds in fake.calls), fake.calls)
         self.assertTrue(any(seconds < ci.CALL_SECONDS for _, _, seconds in fake.calls), "never bounded by time left")
+        self.assertLessEqual(clock.t - 1000, 100 + ci.CALL_SECONDS + 25)
 
-    def test_a_run_turning_green_just_before_the_timeout_is_seen(self):
-        # Polls at 0, 30, 60 and 90 s, then one more at 95 s: a run that turns green at 95 s is green.
+    def test_a_run_turning_green_in_the_last_seconds_is_seen(self):
+        # Polls at 0, 30, 60 and 90 s, then one last at 100 s: a run that turns green at 98 s is green.
         pending = [run(status="in_progress", conclusion="")]
         code, _ = self.main(Fake(runs=[pending] * 4 + [[run()]]), "--wait", "--timeout", "100")
         self.assertEqual(code, 0)
+        self.assertEqual(self.clock.t - 1000, 100)
 
     def test_no_call_is_made_after_the_deadline(self):
-        # Each git call takes 0.75 s against a 1 s wait: the gh call would start after the deadline.
+        # A 1 s wait allows its last look one 60 s allowance; two git calls of 40 s spend it, so gh never starts.
         clock = Clock()
         fake = Fake()
         real = fake.call
@@ -204,7 +219,7 @@ class Waiting(Base):
             self.assertGreater(seconds, 0)
             result = real(name, args, seconds)
             if name == "git":
-                clock.t += 0.75
+                clock.t += 40
             return result
         fake.call = slow
         out = io.StringIO()

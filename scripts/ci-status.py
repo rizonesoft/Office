@@ -10,7 +10,9 @@
 The governing run of a commit is the `ci.yml` run with event `push` on branch `main` whose head is that commit (pull
 request and manual runs never count), the newest by creation when there are several, at its latest attempt. `success`
 is green; every other conclusion is red and named. No push run 10 minutes after the commit's committer date, or a `gh`
-that cannot be read, is unknown. Every `gh` and `git` call has a deadline of 60 seconds or the wait's remaining time.
+that cannot be read, is unknown. With --wait the last look starts at the timeout, and every `gh` and `git` call has a
+deadline of 60 seconds or what is left of the timeout plus one such allowance, so the whole wait ends within
+timeout + 60 seconds.
 """
 import argparse
 from datetime import datetime, timezone
@@ -30,7 +32,6 @@ BRANCH = "main"
 GRACE_SECONDS = 600  # GitHub creates the push run within seconds; ten minutes without one is not a delay
 CALL_SECONDS = 60
 POLL_SECONDS = 30
-CHECK_RESERVE = 5  # the last look at a waited run happens at least this long before the deadline
 LOG_LINES = 400
 GREEN, RED, UNKNOWN, PENDING = 0, 1, 2, 3
 
@@ -180,15 +181,15 @@ def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None
     args = parser.parse_args(argv)
     tools = tools or Tools()
     started = clock()
-    deadline = started + (args.timeout if args.wait else CALL_SECONDS * 4)
+    # The last look starts no later than wait_until; its calls may take one allowance more, never longer.
+    wait_until = started + (args.timeout if args.wait else 0)
+    deadline = wait_until + (CALL_SECONDS if args.wait else CALL_SECONDS * 4)
     while True:
         moment = now() if now else datetime.now(timezone.utc)
         code, lines = status(tools, args.ref, moment, deadline, args.log, clock)
-        remaining = deadline - clock()
-        if code != PENDING or not args.wait or remaining <= CHECK_RESERVE:
+        if code != PENDING or not args.wait or clock() >= wait_until:
             break
-        # Sleep to the next poll, or to just before the deadline, so the last look still falls inside it.
-        sleep(min(POLL_SECONDS, remaining - CHECK_RESERVE))
+        sleep(min(POLL_SECONDS, wait_until - clock()))  # the last sleep ends at the timeout itself
     if code == PENDING and args.wait:
         lines.append(f"still pending after {args.timeout} s")
     print("\n".join(lines))
