@@ -559,6 +559,8 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 6): �
 
 ## 19. CI Gate Checks
 
+> **Started:** 2026-10-23T12:56:00Z
+
 Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 8): the CI gate lives mostly in skill prose, which a test of `scripts/ci-status.py` alone cannot hold to its word. This section adds checks that fail when the skills and the guard stop enforcing it.
 
 **Phase:** 0
