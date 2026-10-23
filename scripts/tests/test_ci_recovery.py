@@ -92,10 +92,12 @@ class Recovery(Base):
         for _ in range(3):
             self.cli("reserve", "repair")
             self.cli("result", "red")
+        self.cli("reserve", "repair")  # the skill's order: reserve, fix, push, then attach the repair head
         self.cli("attach", sha(4))
         self.ancestors[sha(4)] = {sha(1)}
-        self.cli("reserve", "repair")
-        self.assertIn("close the recovery", self.cli("result", "green")[1])
+        guidance = self.cli("result", "green")[1]
+        self.assertIn("close the recovery", guidance)
+        self.assertNotIn(sha(1)[:7], guidance)  # never names the red head as the green one
         code, out = self.cli("close", sha(4))
         self.assertEqual(code, 0)
         self.assertIn("closed", out)

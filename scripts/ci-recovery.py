@@ -158,7 +158,7 @@ def result(state, outcome):
     attempt["result"] = outcome
     if outcome == "green":
         return (f"result: attempt {attempt['n']} green; close the recovery with "
-                f"`ci-recovery.py close {attempt['head'][:7]}...` (the full SHA)")
+                f"`ci-recovery.py close <the full SHA of the head that went green>`")
     left = BUDGET - len(recovery["attempts"])
     return f"result: attempt {attempt['n']} {outcome}; {left} attempt(s) left" + ("" if left else ", exhausted")
 
