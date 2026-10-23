@@ -30,6 +30,11 @@ def envelope(n, reviewer="astra (`m` via `codex`)", overall="approve"):
     return f"## Round {n}: {reviewer}\n\n- Writer: claude\n- Run: 2026-10-21T00:00:00Z\n\nReview text.\n\nOVERALL: {overall}\n\n"
 
 
+COMPLETE_YES = "SECTION: D00 T01 §1\nPURPOSE: completion\n\nNo gap.\n\nCOMPLETE: yes\nHIGHEST: none\nOVERALL: approve"
+GAPS = ("SECTION: D00 T01 §1\nPURPOSE: completion\n\n1. **[P2] extend: the cancel path.** Missing.\n"
+        "2. **[P2] new section: the export dialog.** Missing.\n\nCOMPLETE: no\nHIGHEST: P2\nOVERALL: needs-attention")
+
+
 def todo_file(rows, *, ident="alpha", domain="00-workspace", status="active", depends_on=None,
               table_override=None, inputs="- i"):
     """rows: (number, title, phase, needs, depends) tuples."""
@@ -388,6 +393,8 @@ class Stamp(Tree):
         report_path = self.root / "docs/reviews/00-workspace/D00-T01-s1.md"
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text("# Review findings\n\n" + envelope(1), encoding="utf-8")
+        self.completion = "docs/reviews/00-workspace/D00-T01-s1-completion.md"
+        self.write_completion(COMPLETE_YES)
         for args in (["init", "-q"], ["config", "user.email", "t@example.com"],
                      ["config", "user.name", "T"], ["add", "-A"], ["commit", "-qm", "x"]):
             subprocess.run(["git", "-C", str(self.root), *args], check=True)
@@ -396,6 +403,125 @@ class Stamp(Tree):
         self.reviews = [{"round": 1, "report": "docs/reviews/00-workspace/D00-T01-s1.md",
                          "verdict": "clean"}]
 
+    def stamp(self, root, ref, *args, **kwargs):
+        """tg.stamp with the section's own approving completion record unless a test names another (or None)."""
+        if "completion" not in kwargs:
+            path = f"docs/reviews/00-workspace/{tg.completion_name(ref)}"
+            if not (self.root / path).exists():
+                self.write_completion(COMPLETE_YES.replace("D00 T01 §1", ref), path=path, ref=ref)
+            kwargs["completion"] = path
+        return tg.stamp(root, ref, *args, **kwargs)
+
+    def write_completion(self, *reviews, path=None, ref="D00 T01 §1", outcome="", when="2026-10-21T00:00:00Z"):
+        """A completion record as process-todo-section leaves it: the heading, the dispatcher's rounds, an outcome."""
+        target = self.root / (path or self.completion)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"# Completion review: {ref}\n", encoding="utf-8")
+        dispatch = tg.review_dispatch()
+        for review in reviews:
+            if review is None:  # a round no reviewer returned
+                result = {"writer": "claude", "reviewer": None, "model": None, "cli": None, "effort": None,
+                          "failover": [{"reviewer": "astra", "reason": "exited 1"}], "review": None}
+            else:
+                result = {"writer": "claude", "reviewer": "astra", "model": "m", "cli": "codex", "effort": "medium",
+                          "failover": [], "review": review}
+            dispatch.record(target, result, when)
+        if outcome:
+            target.write_text(target.read_text(encoding="utf-8") + "\n" + outcome, encoding="utf-8")
+
+    def refused(self, *, completion=None, contains):
+        """Stamping §1 with the given completion record is refused, naming `contains`, and changes nothing."""
+        before = self.snapshot()
+        with self.assertRaises(tg.Refused) as ctx:
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13",
+                       completion=completion)
+        self.assertIn(contains, str(ctx.exception))
+        self.assertEqual(self.snapshot(), before)
+
+    def test_a_stamp_needs_the_sections_completion_record(self):
+        # D00 T03 §13: the completion review runs before the build, and stamp refuses a section without its record.
+        self.tick_work()
+        self.refused(completion=None, contains="--completion is required")
+        self.refused(completion="docs/reviews/00-workspace/D00-T01-s2-completion.md",
+                     contains="is not the completion record of D00 T01 §1")
+        (self.root / self.completion).unlink()
+        self.refused(completion=self.completion, contains="missing completion record")
+
+    def test_a_completion_record_must_be_a_completion_review_of_this_section(self):
+        self.tick_work()
+        # A code review saved under the completion record's name: no SECTION and PURPOSE lines.
+        self.write_completion("Looks fine.\n\nHIGHEST: none\nOVERALL: approve")
+        self.refused(completion=self.completion, contains="is not a completion review of D00 T01 §1")
+        # Another section's review copied under this name.
+        self.write_completion(COMPLETE_YES.replace("D00 T01 §1", "D00 T01 §2"))
+        self.refused(completion=self.completion, contains="is not a completion review of D00 T01 §1")
+        # The right review in a file headed for another section.
+        self.write_completion(COMPLETE_YES, ref="D00 T01 §2")
+        self.refused(completion=self.completion, contains="must open with '# Completion review: D00 T01 §1'")
+        # Only an outage: no reviewer returned a review.
+        self.write_completion(None)
+        self.refused(completion=self.completion, contains="holds no completion review returned")
+
+    def test_a_completion_verdict_must_agree_with_its_overall_line(self):
+        self.tick_work()
+        self.write_completion(COMPLETE_YES.replace("OVERALL: approve", "OVERALL: needs-attention"))
+        self.refused(completion=self.completion, contains="pairs COMPLETE: yes with OVERALL: needs-attention")
+        self.write_completion(GAPS.replace("OVERALL: needs-attention", "OVERALL: approve"))
+        self.refused(completion=self.completion, contains="pairs COMPLETE: no with OVERALL: approve")
+        self.write_completion(COMPLETE_YES.replace("COMPLETE: yes", "Complete enough."))
+        self.refused(completion=self.completion, contains="must say COMPLETE: yes or COMPLETE: no exactly once")
+
+    def test_every_gap_needs_a_disposition_that_resolves(self):
+        self.tick_work()
+        self.write_completion(GAPS)
+        self.refused(completion=self.completion, contains="has no '## Outcome (round 1)'")
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n")
+        self.refused(completion=self.completion, contains="gap 2 of round 1")
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D09 T09 §9\n")
+        self.refused(completion=self.completion, contains="filed to D09 T09 §9, which is no section")
+        # An outcome written for another round does not answer this one.
+        self.write_completion(GAPS, outcome="## Outcome (round 2)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+        self.refused(completion=self.completion, contains="has no '## Outcome (round 1)'")
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["completion"], self.completion)
+        tg.graph(self.root)  # and the receipt validates
+
+    def test_the_last_returned_round_decides_and_earlier_rounds_are_history(self):
+        self.tick_work()
+        # Round 1 found gaps and predates the reply format; round 2, the re-check, approved; round 3 was an outage.
+        self.write_completion("1. Something old.\n\nOVERALL: needs-attention", COMPLETE_YES, None)
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertTrue((self.root / receipt).is_file())
+
+    def test_a_reopened_section_needs_a_completion_review_run_since(self):
+        self.tick_work()
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails at abc1234; repair -> XREF: §2", "2026-10-22")
+        self.refused(completion=self.completion, contains="before the section was reopened on 2026-10-22")
+        self.write_completion(COMPLETE_YES, when="2026-10-22T09:00:00Z")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22")
+        self.assertTrue((self.root / receipt).is_file())
+
+    def test_a_receipt_under_the_current_cap_must_name_its_completion_record(self):
+        self.tick_work()
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        del data["completion"]
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("must name its completion record", str(ctx.exception))
+        # A receipt from the 22-round cap predates completion records and carries none.
+        data["round_cap"], data["completion"] = 22, self.completion
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("predates completion records", str(ctx.exception))
+        del data["completion"]
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        tg.graph(self.root)
+
     def tick_work(self):
         path = self.root / "todo/00-workspace/TODO-01-a.md"
         path.write_text(path.read_text(encoding="utf-8").replace("- [ ] Work.", "- [x] Work.", 1),
@@ -403,7 +529,7 @@ class Stamp(Tree):
 
     def test_stamp_writes_receipt_and_validates(self):
         self.tick_work()
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         rows = tg.graph(self.root)
         self.assertTrue(rows["D00 T01 §1"].done)
         self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))
@@ -416,7 +542,7 @@ class Stamp(Tree):
                           + envelope(3), encoding="utf-8")
         reviews = [{"round": 2, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "fixed"},
                    {"round": 3, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "clean"}]
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, reviews, ["true -> ok"], "2026-10-13")
         data = json.loads((self.root / receipt).read_text(encoding="utf-8"))
         self.assertEqual((data["rounds_spent"], data["round_cap"]), (3, tg.REVIEW_ROUND_CAP))
         self.assertNotIn("cap_outcome", data)
@@ -430,18 +556,19 @@ class Stamp(Tree):
 
     def test_a_stopped_review_must_say_what_was_done(self):
         self.tick_work()
-        self.record_rounds(22)
-        stopped = [{"round": 22, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "stopped-at-22"}]
+        cap = tg.REVIEW_ROUND_CAP
+        self.record_rounds(cap)
+        stopped = [{"round": cap, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": f"stopped-at-{cap}"}]
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, stopped, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, stopped, ["true -> ok"], "2026-10-13")
         self.assertIn("--cap-outcome", str(ctx.exception))
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13",
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13",
                      cap_outcome="nothing stopped")
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, stopped, ["true -> ok"], "2026-10-13",
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, stopped, ["true -> ok"], "2026-10-13",
                            cap_outcome="filed two leftovers as D00 T01 §2")
         data = json.loads((self.root / receipt).read_text(encoding="utf-8"))
-        self.assertEqual((data["rounds_spent"], data["cap_outcome"]), (22, "filed two leftovers as D00 T01 §2"))
+        self.assertEqual((data["rounds_spent"], data["cap_outcome"]), (cap, "filed two leftovers as D00 T01 §2"))
         self.assertEqual(tg.review_rounds(self.root)["summary"]["stopped_at_cap"], 1)
         # A receipt that drops the outcome no longer validates.
         del data["cap_outcome"]
@@ -451,7 +578,7 @@ class Stamp(Tree):
 
     def test_a_receipt_without_rounds_spent_holds_only_what_the_old_process_wrote(self):
         self.tick_work()
-        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         data = json.loads(receipt.read_text(encoding="utf-8"))
         del data["rounds_spent"], data["round_cap"]
         receipt.write_text(json.dumps(data), encoding="utf-8")
@@ -483,7 +610,7 @@ class Stamp(Tree):
         (self.root / report).write_text("".join(envelope(n, overall="needs-attention") for n in range(1, last))
                                         + envelope(last), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "clean"}],
+            self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "clean"}],
                      ["true -> ok"], "2026-10-13")
         self.assertIn(f"over the {tg.REVIEW_ROUND_CAP}-round cap", str(ctx.exception))
 
@@ -493,7 +620,7 @@ class Stamp(Tree):
         (self.root / report).write_text("".join(envelope(1, overall="needs-attention") for _ in range(3))
                                         + envelope(1), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("must number its rounds 1 to 4 in order", str(ctx.exception))
 
     def test_a_loop_whose_last_round_returned_no_review_refuses(self):
@@ -501,12 +628,12 @@ class Stamp(Tree):
         report = "docs/reviews/00-workspace/D00-T01-s1.md"
         (self.root / report).write_text(envelope(1) + envelope(2, "none", overall="blocked"), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:  # round 2 ran after the approval and returned nothing
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("ends with round 2, which returned no review", str(ctx.exception))
 
     def test_rounds_spent_must_be_what_the_findings_files_record(self):
         self.tick_work()
-        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         data = json.loads(receipt.read_text(encoding="utf-8"))
         data["rounds_spent"] = 999
         receipt.write_text(json.dumps(data), encoding="utf-8")
@@ -516,7 +643,7 @@ class Stamp(Tree):
 
     def test_a_receipt_names_a_cap_the_process_has_used(self):
         self.tick_work()
-        receipt = self.root / tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         data = json.loads(receipt.read_text(encoding="utf-8"))
         data["round_cap"] = 50
         receipt.write_text(json.dumps(data), encoding="utf-8")
@@ -533,7 +660,7 @@ class Stamp(Tree):
                 f"- Lines: 4\n- Digest: {dispatch.digest(review)}\n\n" + "\n".join(review) + "\n")
         (self.root / "docs/reviews/00-workspace/D00-T01-s1.md").write_bytes(text.encode("utf-8"))
         self.assertIsNotNone(dispatch.read_rounds(text))
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["rounds_spent"], 1)
         tg.graph(self.root)
 
@@ -543,15 +670,15 @@ class Stamp(Tree):
         before = self.snapshot()
         report.write_text(envelope(1, overall="needs-attention"), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:  # a rejecting review claimed as clean
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("verdict matching clean", str(ctx.exception))
         fixed_only = [{"round": 1, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "fixed"}]
         with self.assertRaises(tg.Refused) as ctx:  # fixed, but no later round saw the fixes
-            tg.stamp(self.root, "D00 T01 §1", self.sha, fixed_only, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, fixed_only, ["true -> ok"], "2026-10-13")
         self.assertIn("must end at its last reviewed round", str(ctx.exception))
         report.write_text(envelope(1), encoding="utf-8")
         with self.assertRaises(tg.Refused):  # an approving review claimed as fixed
-            tg.stamp(self.root, "D00 T01 §1", self.sha,
+            self.stamp(self.root, "D00 T01 §1", self.sha,
                      fixed_only + [{"round": 1, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "clean"}],
                      ["true -> ok"], "2026-10-13")
         report.unlink()
@@ -566,7 +693,7 @@ class Stamp(Tree):
         for claimed in ([{"round": 1, "report": report, "verdict": "clean"}, {"round": 2, "report": report, "verdict": "fixed"}],
                         [{"round": 1, "report": report, "verdict": "clean"}]):
             with self.assertRaises(tg.Refused) as ctx:  # a later failing review cannot be left behind an approval
-                tg.stamp(self.root, "D00 T01 §1", self.sha, claimed, ["true -> ok"], "2026-10-13")
+                self.stamp(self.root, "D00 T01 §1", self.sha, claimed, ["true -> ok"], "2026-10-13")
             self.assertIn("must end at its last reviewed round (2)", str(ctx.exception))
         self.assertEqual(self.snapshot(), before)
 
@@ -582,7 +709,7 @@ class Stamp(Tree):
                     "Review text.\n\nOVERALL: approve", f"{finding}\n\nOVERALL: needs-attention"),
                 encoding="utf-8")
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha,
+                self.stamp(self.root, "D00 T01 §1", self.sha,
                          [{"round": last, "report": report, "verdict": "stopped-low-severity"}], ["true -> ok"],
                          "2026-10-13", cap_outcome="filed")
             self.assertIn("does not declare HIGHEST: P3", str(ctx.exception))
@@ -592,20 +719,21 @@ class Stamp(Tree):
         (self.root / "docs/reviews/00-workspace/D00-T01-s1.md").write_text(
             "## Round 1: astra (`m` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-21T00:00:00Z\n- Lines: 2\n\n"
             "## Round 999: none\nOVERALL: approve\n", encoding="utf-8")
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["rounds_spent"], 1)
 
     def test_rounds_spent_add_up_across_review_loops(self):
         self.tick_work()
         first = self.root / "docs/reviews/00-workspace/D00-T01-s1.md"
-        first.write_text("".join(envelope(n, overall="needs-attention") for n in range(1, 23)), encoding="utf-8")
+        cap = tg.REVIEW_ROUND_CAP
+        first.write_text("".join(envelope(n, overall="needs-attention") for n in range(1, cap + 1)), encoding="utf-8")
         second = self.root / "docs/reviews/00-workspace/D00-T01-s1-loop2.md"
         second.write_text(envelope(1) + envelope(2), encoding="utf-8")
-        reviews = [{"round": 22, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "stopped-at-22"},
+        reviews = [{"round": cap, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": f"stopped-at-{cap}"},
                    {"round": 2, "report": "docs/reviews/00-workspace/D00-T01-s1-loop2.md", "verdict": "clean"}]
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, reviews, ["true -> ok"], "2026-10-13",
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, reviews, ["true -> ok"], "2026-10-13",
                            cap_outcome="loop 1 hit the cap; the repair was filed and a second loop ran clean")
-        self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["rounds_spent"], 24)
+        self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["rounds_spent"], cap + 2)
 
     def test_a_severity_stop_records_its_outcome(self):
         self.tick_work()
@@ -616,8 +744,8 @@ class Stamp(Tree):
         low =[{"round": tg.SEVERITY_CUTOFF_ROUND + 1, "report": "docs/reviews/00-workspace/D00-T01-s1.md",
                 "verdict": "stopped-low-severity"}]
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", self.sha, low, ["true -> ok"], "2026-10-13")
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, low, ["true -> ok"], "2026-10-13",
+            self.stamp(self.root, "D00 T01 §1", self.sha, low, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, low, ["true -> ok"], "2026-10-13",
                            cap_outcome="round 9 had two P3 findings, filed as D00 T01 §2")
         data = json.loads((self.root / receipt).read_text(encoding="utf-8"))
         self.assertEqual(data["cap_outcome"], "round 9 had two P3 findings, filed as D00 T01 §2")
@@ -631,7 +759,7 @@ class Stamp(Tree):
         for n, verdict in ((1, f"stopped-at-{tg.REVIEW_ROUND_CAP}"), (3, "stopped-at-3"), (13, "stopped-at-13")):
             early = [{"round": n, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": verdict}]
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha, early, ["true -> ok"], "2026-10-13", cap_outcome="filed")
+                self.stamp(self.root, "D00 T01 §1", self.sha, early, ["true -> ok"], "2026-10-13", cap_outcome="filed")
             self.assertRegex(str(ctx.exception), f"must be stopped-at-{tg.REVIEW_ROUND_CAP}|"
                                                  f"a cap stop is the round that returns review {tg.REVIEW_ROUND_CAP}")
         self.assertEqual(self.snapshot(), before)
@@ -644,7 +772,7 @@ class Stamp(Tree):
             "".join(envelope(n, overall="needs-attention") for n in range(1, last)) + envelope(last).replace(
                 "Review text.\n\nOVERALL: approve", "1. **P3: wording.**\n2. **P3: the comment describing P1 findings.**\n\nHIGHEST: P3\n\nOVERALL: needs-attention"),
             encoding="utf-8")
-        tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "stopped-low-severity"}],
+        self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "stopped-low-severity"}],
                  ["true -> ok"], "2026-10-13", cap_outcome="two P3 findings filed")
 
     def test_outage_rounds_do_not_earn_a_stop(self):
@@ -655,14 +783,14 @@ class Stamp(Tree):
             "".join(envelope(n, "none") for n in range(1, last)) + envelope(last).replace(
                 "Review text.\n\nOVERALL: approve", "1. **P3: wording.**\n\nHIGHEST: P3\n\nOVERALL: needs-attention"), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "stopped-low-severity"}],
+            self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": last, "report": report, "verdict": "stopped-low-severity"}],
                      ["true -> ok"], "2026-10-13", cap_outcome="filed")
         self.assertIn("follows only 1 returned reviews", str(ctx.exception))
         cap = tg.REVIEW_ROUND_CAP
         (self.root / report).write_text(envelope(1, "none") + "".join(
             envelope(n, overall="needs-attention") for n in range(2, cap + 1)), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": cap, "report": report, "verdict": f"stopped-at-{cap}"}],
+            self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": cap, "report": report, "verdict": f"stopped-at-{cap}"}],
                      ["true -> ok"], "2026-10-13", cap_outcome="filed")
         self.assertIn("a cap stop is the round that returns review", str(ctx.exception))
         # Blocked or empty replies are not returned reviews either.
@@ -673,14 +801,14 @@ class Stamp(Tree):
                                                                      "1. **P3: wording.**\n\nHIGHEST: P3\n\nOVERALL: needs-attention"),
                                             encoding="utf-8")
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha,
+                self.stamp(self.root, "D00 T01 §1", self.sha,
                          [{"round": last, "report": report, "verdict": "stopped-low-severity"}],
                          ["true -> ok"], "2026-10-13", cap_outcome="filed")
             self.assertIn("follows only 1 returned reviews", str(ctx.exception))
-        # An outage before the cap moves the cap stop to the round that returns review 22.
+        # An outage before the cap moves the cap stop to the round that returns the cap's last review.
         (self.root / report).write_text(envelope(1, "none") + "".join(
             envelope(n, overall="needs-attention") for n in range(2, cap + 2)), encoding="utf-8")
-        tg.stamp(self.root, "D00 T01 §1", self.sha, [{"round": cap + 1, "report": report, "verdict": f"stopped-at-{cap}"}],
+        self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": cap + 1, "report": report, "verdict": f"stopped-at-{cap}"}],
                  ["true -> ok"], "2026-10-13", cap_outcome="filed")
 
     def test_a_severity_stop_before_the_cutoff_refuses(self):
@@ -691,7 +819,7 @@ class Stamp(Tree):
             early = [{"round": n, "report": "docs/reviews/00-workspace/D00-T01-s1.md",
                       "verdict": "stopped-low-severity"}]
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha, early, ["true -> ok"], "2026-10-13", cap_outcome="filed")
+                self.stamp(self.root, "D00 T01 §1", self.sha, early, ["true -> ok"], "2026-10-13", cap_outcome="filed")
             self.assertIn(f"only after round {tg.SEVERITY_CUTOFF_ROUND}", str(ctx.exception))
         self.assertEqual(self.snapshot(), before)
 
@@ -710,17 +838,17 @@ class Stamp(Tree):
                      "## Round 1: astra (`m` via `codex`)\n\nNo metadata block.\n"):
             report.write_text(text, encoding="utf-8")
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+                self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
             self.assertRegex(str(ctx.exception), "is not a review returned by another model family|"
                                                  "is not a findings file the dispatcher can read|holds no returned review|"
                                                  "must number its rounds")
         for bad in (0, -1, True):
             with self.assertRaises(tg.Refused):
-                tg.stamp(self.root, "D00 T01 §1", self.sha,
+                self.stamp(self.root, "D00 T01 §1", self.sha,
                          [{"round": bad, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "clean"}],
                          ["true -> ok"], "2026-10-13")
         report.write_text("# Review findings\n\n" + envelope(1), encoding="utf-8")
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         # A receipt edited to claim a round its report never recorded no longer validates.
         data = json.loads((self.root / receipt).read_text(encoding="utf-8"))
         data["reviews"][0]["round"] = 999
@@ -730,7 +858,7 @@ class Stamp(Tree):
 
     def test_a_stamped_section_with_a_waiting_need_refuses(self):
         self.tick_work()
-        tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         path = self.root / "todo/00-workspace/TODO-01-a.md"
         path.write_text(path.read_text(encoding="utf-8").replace("**Needs:** none", "**Needs:** owner-decision", 1),
                         encoding="utf-8")
@@ -744,46 +872,46 @@ class Stamp(Tree):
         path.write_text(text.replace(target, target + "\n> **Deferred:** wait on 1 -> XREF: §1\n"),
                         encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("stale deferral", str(ctx.exception))
 
     def test_unticked_items_refuse(self):
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("unticked", str(ctx.exception))
 
     def test_waiting_section_cannot_be_stamped(self):
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §2", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §2", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
 
     def test_unknown_commit_refuses(self):
         self.tick_work()
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", "0" * 40, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", "0" * 40, self.reviews, ["true -> ok"], "2026-10-13")
 
     def test_no_review_round_refuses(self):
         self.tick_work()
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", self.sha, [], ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, [], ["true -> ok"], "2026-10-13")
 
     def test_missing_review_report_refuses(self):
         self.tick_work()
         for bad_path in (r"\Users\outside.md", "../outside.md", "docs/reviews/../outside.md", "outside.md"):
             bad_round = [{"round": 1, "report": bad_path, "verdict": "clean"}]
             with self.assertRaises(tg.Refused) as ctx:
-                tg.stamp(self.root, "D00 T01 §1", self.sha, bad_round, ["true -> ok"], "2026-10-13")
+                self.stamp(self.root, "D00 T01 §1", self.sha, bad_round, ["true -> ok"], "2026-10-13")
             self.assertIn("invalid review report path", str(ctx.exception))
         missing = [{"round": 1, "report": "docs/reviews/00-workspace/missing.md", "verdict": "clean"}]
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T01 §1", self.sha, missing, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, missing, ["true -> ok"], "2026-10-13")
         self.assertIn("missing or empty review report", str(ctx.exception))
-        tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         (self.root / "docs/reviews/00-workspace/D00-T01-s1.md").unlink()
         self.refuses("missing or empty review report")
 
     def test_receipt_for_another_commit_refuses(self):
         self.tick_work()
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         data = json.loads((self.root / receipt).read_text(encoding="utf-8"))
         data["implementation_sha"] = "f" * 40
         (self.root / receipt).write_text(json.dumps(data), encoding="utf-8")
@@ -791,7 +919,7 @@ class Stamp(Tree):
 
     def test_matching_fabricated_sha_in_stamp_and_receipt_refuses(self):
         self.tick_work()
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         fake_sha = "0" * 40
         todo_path = self.root / "todo/00-workspace/TODO-01-a.md"
         todo_path.write_text(todo_path.read_text(encoding="utf-8").replace(self.sha, fake_sha),
@@ -810,7 +938,7 @@ class Stamp(Tree):
         before = self.snapshot()
         bad = [{"round": 1, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "cleen"}]
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", self.sha, bad, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, "D00 T01 §1", self.sha, bad, ["true -> ok"], "2026-10-13")
         self.assertEqual(self.snapshot(), before)
         tg.graph(self.root)
 
@@ -818,7 +946,7 @@ class Stamp(Tree):
         self.tick_work()
         before = self.snapshot()
         with self.assertRaises(tg.Refused):
-            tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "13 Oct")
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "13 Oct")
         self.assertEqual(self.snapshot(), before)
 
     def test_failed_stamp_write_rolls_back_receipt_and_allows_retry(self):
@@ -838,14 +966,14 @@ class Stamp(Tree):
             tg.atomic = fail_on_nth_write
             try:
                 with self.assertRaises(OSError):
-                    tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                    self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
                              "2026-10-13", sync_plan=True)
             finally:
                 tg.atomic = real_atomic
             self.assertEqual(len(calls), 4 if fail_at == 3 else 2)
             self.assertFalse((self.root / "docs/reviews/d00-t01-s1.json").exists())
             self.assertEqual(self.snapshot(), before)
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
                            "2026-10-13", sync_plan=True)
         self.assertTrue((self.root / receipt).is_file())
         tg.projections(self.root)
@@ -866,16 +994,16 @@ class Stamp(Tree):
         tg.atomic = interrupt_on_second_write
         try:
             with self.assertRaises(KeyboardInterrupt):
-                tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+                self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
         finally:
             tg.atomic = real_atomic
         self.assertEqual(self.snapshot(), before)
-        tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
 
     def test_unstamp_reopens_a_regressed_section_and_allows_a_restamp(self):
         self.tick_work()
         tg.projections(self.root, sync=True)
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
         before = self.snapshot()
         for bad in (("D00 T01 §2", "x"), ("D00 T01 §1", ""), ("D00 T01 §1", "two\nlines")):
             with self.assertRaises(tg.Refused):
@@ -891,7 +1019,7 @@ class Stamp(Tree):
         self.assertIn("> **Unstamped:** 2026-10-21: checkpoint fails", text)
         self.assertIn("- [ ] Commit:", text)
         tg.projections(self.root)  # the plan was synced
-        tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
         self.assertTrue(tg.graph(self.root)["D00 T01 §1"].done)
 
     def test_unstamping_a_prerequisite_leaves_its_consumers_stamped_and_suspect(self):
@@ -900,7 +1028,7 @@ class Stamp(Tree):
                                   ident="bravo").replace("- [ ] Work.", "- [x] Work."), encoding="utf-8")
         self.index("TODO-02-b.md")
         for n in (1, 2, 3):
-            tg.stamp(self.root, f"D00 T02 §{n}", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+            self.stamp(self.root, f"D00 T02 §{n}", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         tg.unstamp(self.root, "D00 T02 §1", "checkpoint fails", "2026-10-21")
         rows = tg.graph(self.root)
         self.assertEqual([rows[f"D00 T02 §{n}"].done for n in (1, 2, 3)], [False, True, True])
@@ -913,7 +1041,7 @@ class Stamp(Tree):
         rows = tg.graph(self.root)
         self.assertEqual(tg.disposition(rows["D00 T03 §1"], rows), 4)
         with self.assertRaises(tg.Refused) as ctx:
-            tg.stamp(self.root, "D00 T03 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-21")
+            self.stamp(self.root, "D00 T03 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-21")
         self.assertIn("resting on a reopened section", str(ctx.exception))
         extra.unlink()
         # Without the Unstamped note, a stamped consumer of an open section still refuses.
@@ -923,7 +1051,7 @@ class Stamp(Tree):
     def test_an_interrupted_unstamp_rolls_back(self):
         self.tick_work()
         tg.projections(self.root, sync=True)
-        tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
         before = self.snapshot()
         real_atomic = tg.atomic
         calls = []
@@ -948,13 +1076,13 @@ class Stamp(Tree):
         path.write_text(todo_file([(1, "Only", 0, "none", "--")], ident="bravo")
                         .replace("- [ ] Work.", "- [x] Work."), encoding="utf-8")
         self.index("TODO-02-b.md")
-        tg.stamp(self.root, "D00 T02 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.stamp(self.root, "D00 T02 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertIn("status: done", path.read_text(encoding="utf-8"))
         self.assertTrue(tg.graph(self.root)["D00 T02 §1"].done)
 
     def test_malformed_receipt_refuses_instead_of_crashing(self):
         self.tick_work()
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         unhashable = json.dumps({"ref": "D00 T01 §1", "implementation_sha": self.sha,
                                  "reviews": [{"round": 1, "report": "r", "verdict": []}],
                                  "checks": ["x"], "date": "2026-10-13"})
@@ -966,7 +1094,7 @@ class Stamp(Tree):
 
     def test_missing_receipt_refuses(self):
         self.tick_work()
-        receipt = tg.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         (self.root / receipt).unlink()
         self.refuses("missing receipt")
 
@@ -975,7 +1103,8 @@ class Repository(unittest.TestCase):
     def test_the_authoring_template_copies_are_identical(self):
         # todo/README.md and create-todo name todo/templates/TODO-template.md and the skill copies as the same file.
         canonical = (tg.ROOT / "todo/templates/TODO-template.md").read_bytes()
-        for kit in (".claude", ".codex", ".agents"):
+        # One copy since Claude Code became the only writer (2026-10-23); the .codex and .agents copies went with them.
+        for kit in (".claude",):
             self.assertEqual((tg.ROOT / kit / "skills/create-todo/todo-template.md").read_bytes(), canonical, kit)
 
     def test_the_repository_graph_validates_and_its_plan_is_current(self):

@@ -5,21 +5,15 @@ description: Get an independent review of your own work from the reviewer pinned
 
 # Independent review
 
-Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names who reviews whose work, and `scripts/review-dispatch.py` runs the round. When that reviewer is unavailable there is no review this round: no other reviewer runs.
+Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names the reviewer, and `scripts/review-dispatch.py` runs the round. When that reviewer is unavailable there is no review this round: no other reviewer runs.
 
-| Work written by | Reviewer |
-| --- | --- |
-| Claude | GPT-6 Astra |
-| Codex | Sonnet 5.5 |
-| Gemini | GPT-6 Astra |
-
-A reviewer is never of the writer's own model family, and each route names exactly one reviewer with no fallback (owner decision 2026-10-21): the pin refuses a same-family reviewer, and `scripts/tests/test_review_dispatch.py` refuses a second one.
+Claude Code (Opus 5.5) is the only writer, and its work is reviewed by GPT-6.1 Sol through the Codex CLI at xhigh effort (owner decisions 2026-10-22 and 2026-10-23). The pin accepts only that one route, a reviewer of another model family with no fallback, and `scripts/tests/test_review_dispatch.py` holds it there.
 
 ## Steps
 
 1. Review your own change first and fix what you find.
 2. Write the review prompt to a scratch file, not the repository, from `docs/review-round-prompt.md`: name the candidate commit or range, the governing documents, and the lenses that apply.
-3. Run the round, naming yourself as the writer (`claude`, `codex` or `gemini`):
+3. Run the round; the writer is always `claude`:
 
    ```bash
    python3 scripts/review-dispatch.py --writer claude --prompt <scratch>/review-prompt.md --record docs/reviews/<topic>.md
@@ -27,7 +21,7 @@ A reviewer is never of the writer's own model family, and each route names exact
 
    On Windows use `python` instead of `python3`; the command is otherwise the same.
 4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not.
-5. Commit fixes as new commits and run another round on the new tip, up to 22 rounds; from round 9 on, a round whose findings are all `P3` or advisory ends the loop and its findings are filed as follow-up work. A unit that needs patching three rounds running gets re-thought, not patched again.
+5. Commit fixes as new commits and run another round on the new tip, up to 33 rounds (22 before 2026-10-23); from round 9 on, a round whose findings are all `P3` or advisory ends the loop and its findings are filed as follow-up work. A unit that needs patching three rounds running gets re-thought, not patched again.
 
 ## Rules
 

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) Windows office suite in planning and design, whose six apps are to match their Microsoft counterparts feature by feature: Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook). The names and identifiers are recorded in `docs/brand/NAMES.md`; the plan is `todo/`; brand and icon sources are `scripts/lib/` and `design/`, with generated outputs in `assets/`. The verification commands are `python scripts/todo-graph.py validate`, `python scripts/build-icons.py --check` and `python -m unittest discover -s scripts/tests`, all run in CI (`.github/workflows/ci.yml`). The repository keeps its own 3-agent conventions (Antigravity, Claude Code, Codex) and takes nothing from the Conclave SDK.
+This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) Windows office suite in planning and design, whose six apps are to match their Microsoft counterparts feature by feature: Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook). The names and identifiers are recorded in `docs/brand/NAMES.md`; the plan is `todo/`; brand and icon sources are `scripts/lib/` and `design/`, with generated outputs in `assets/`. The verification commands are `python scripts/todo-graph.py validate`, `python scripts/build-icons.py --check` and `python -m unittest discover -s scripts/tests`, all run in CI (`.github/workflows/ci.yml`). Claude Code (Opus 5.5) is the only writer and GPT-6.1 Sol, through the Codex CLI, the only reviewer (owner decision 2026-10-23); the repository takes nothing from the Conclave SDK.
 
 ## Working rules
 
@@ -25,10 +25,9 @@ This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) 
 
 ## Skills
 
-- Antigravity skills live in `.agents/skills/<name>/`, Claude skills in `.claude/skills/<name>/`, and Codex skills in `.codex/skills/<name>/`, all as real files, never symlinks. Change all three together.
+- Skills live in `.claude/skills/<name>/` as real files, never symlinks. The Antigravity and Codex mirrors were removed on 2026-10-23, when Claude Code became the only writer.
 - Follow [Agent Skills and Rules Structure](./docs/agent-skills-and-rules-structure.md) before adding or moving skills.
 - Name a skill for its capability, not with a project prefix.
-- Each agent reads and runs only its own directory (`.agents/` for Antigravity, `.claude/` for Claude Code, `.codex/` for Codex) and never edits another agent's skills unless asked.
 
 ## Subagents
 
@@ -42,5 +41,6 @@ This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) 
 Plan and build through the TODO system: [docs/todo-workflow.md](./docs/todo-workflow.md).
 
 - Every clone runs `git config core.hooksPath scripts/hooks`: its pre-commit hook refuses a TODO change committed without `python scripts/todo-graph.py plan --sync`.
-- Review rounds go through `scripts/review-dispatch.py` to the one reviewer `.conclave/reviewers.toml` pins per writer, up to 22 rounds; from round 9 on, a round whose findings are all `P3` or advisory ends the loop and its findings are filed (`review-todo-section`).
+- Before a section is built, one completion review (`docs/completion-review-prompt.md`) checks that building it as written gives a whole feature; each gap extends the section or is filed as a new one, and `stamp` refuses a section without that record (`process-todo-section`).
+- Review rounds go through `scripts/review-dispatch.py` to the one reviewer `.conclave/reviewers.toml` pins, up to 33 rounds (22 before 2026-10-23); from round 9 on, a round whose findings are all `P3` or advisory ends the loop and its findings are filed (`review-todo-section`).
 - Tests: `python -m unittest discover -s scripts/tests` (agent tooling, TODO graph, run guard, automations and project scripts).

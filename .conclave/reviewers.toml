@@ -1,15 +1,15 @@
-# Independent reviewers for this repository, read by scripts/review-dispatch.py.
+# The independent reviewer for this repository, read by scripts/review-dispatch.py.
 #
-# A route names exactly one reviewer for work written by one agent, never of
-# the writer's own model family (the CLI names it: codex is OpenAI, agy is
-# Google, claude is Anthropic). A reviewer that is not installed, fails, times
-# out, returns nothing or replies OVERALL: blocked is skipped and the reason
-# recorded: there is no review, never an approval, and no other reviewer runs.
+# Owner decision 2026-10-23: Claude Code (Opus 5.5) is the only writer, and its
+# work has exactly one reviewer, of another model family, with no fallback.
+# The Antigravity and Codex writer routes and the Sonnet reviewer were removed
+# that day. A reviewer that is not installed, fails, times out, returns nothing
+# or replies OVERALL: blocked is recorded as skipped: there is no review, never
+# an approval.
 #
-# Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route
-# naming an undefined reviewer or a same-family reviewer refuses every
-# dispatch. The dispatcher accepts one fallback; this repository allows none,
-# held by scripts/tests/test_review_dispatch.py.
+# Loaded strictly: an unknown key, a CLI other than codex, a malformed model, a
+# route for any writer but claude, a route of more than one reviewer, or one
+# naming an undefined reviewer refuses every dispatch.
 
 schema_version = 1
 
@@ -20,15 +20,5 @@ cli = "codex"
 model = "gpt-6.1-sol"
 effort = "xhigh"
 
-# Sonnet 5.5 through Claude Code in plan mode.
-[reviewers.sonnet]
-cli = "claude"
-model = "claude-sonnet-5-5"
-effort = "high"
-
-# Sol reviews wherever it may; Sonnet reviews Codex work (owner decision
-# 2026-10-21: one reviewer per writer, no fallback; Sol since 2026-10-22).
 [routes]
 claude = ["sol"]
-codex = ["sonnet"]
-gemini = ["sol"]

@@ -31,13 +31,16 @@ NEEDS = {"windows-host", "arm64-host", "display-session", "office", "libreoffice
          "attended", "owner-decision", "third-party", "operator"}
 WAITING = {"owner-decision", "third-party", "operator"}
 STATUSES = {"draft", "active", "blocked", "done", "superseded"}
-# stopped-at-22 is the current review-round cap; stopped-at-13, -8 and -3 stay valid on earlier receipts.
+# stopped-at-33 is the current review-round cap (owner decision 2026-10-23); stopped-at-22, -13, -8 and -3 stay valid
+# on earlier receipts.
 # stopped-low-severity: after SEVERITY_CUTOFF_ROUND, a round whose findings are all P3 or advisory ends the loop and
 # its findings are filed as leftovers (review-todo-section).
-VERDICTS = {"clean", "fixed", "stopped-at-22", "stopped-at-13", "stopped-at-8", "stopped-at-3", "stopped-low-severity"}
-REVIEW_ROUND_CAP = 22
-# Caps a receipt that records round_cap may name: the current one and those Recto's receipts were written under.
-EARLIER_CAPS = {8, 13}
+VERDICTS = {"clean", "fixed", "stopped-at-33", "stopped-at-22", "stopped-at-13", "stopped-at-8", "stopped-at-3",
+            "stopped-low-severity"}
+REVIEW_ROUND_CAP = 33
+# Caps a receipt that records round_cap may name: the current one, this repository's 22 (to 2026-10-23), and those
+# Recto's receipts were written under. A receipt under the current cap also names its completion record.
+EARLIER_CAPS = {8, 13, 22}
 # Receipts older than the rounds_spent field were written under a three-round cap, before severity stops existed.
 # Each is frozen by the digest of its content in LEGACY_RECEIPTS, so a new receipt cannot pass by dropping the field.
 LEGACY_RECEIPTS = "docs/reviews/legacy-receipts.json"
@@ -353,6 +356,15 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
         outcome = data.get("cap_outcome")
         require((isinstance(outcome, str) and bool(outcome.strip())) == stopped,
                 f"receipt needs cap_outcome exactly when a review stopped (at the cap or on severity): {ref}")
+        # Receipts written under the 33-round cap name the completion record the section was built from (D00 T03 §13);
+        # earlier receipts predate the completion review and carry none.
+        if cap == REVIEW_ROUND_CAP:
+            require(isinstance(data.get("completion"), str),
+                    f"a receipt under the {REVIEW_ROUND_CAP}-round cap must name its completion record: {ref}")
+            if root is not None:
+                completion_ok(root, ref, data["completion"])
+        else:
+            require("completion" not in data, f"a receipt under the {cap}-round cap predates completion records: {ref}")
     checks = data.get("checks")
     require(isinstance(checks, list) and checks and all(isinstance(c, str) and c.strip() for c in checks),
             f"receipt has no checks: {ref}")
@@ -830,7 +842,113 @@ def review_rounds(root=ROOT):
                         "stopped_low_severity": sum("stopped-low-severity" in s["verdicts"] for s in sections)}}
 
 
-def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=None):
+def completion_name(ref):
+    """The completion record's file name for a section: D00 T03 §13 -> D00-T03-s13-completion.md."""
+    m = re.fullmatch(r"D(\d+) T(\d+) §(\d+)", ref)
+    require(m is not None, f"not a section reference: {ref}")
+    return f"D{m[1]}-T{m[2]}-s{m[3]}-completion.md"
+
+
+def outside_rounds(text, dispatch):
+    """The lines of a findings file the dispatcher's rounds do not hold: its heading and the outcome blocks written
+    between rounds. Read only after read_rounds accepted the file, so every round is in the format record writes."""
+    lines = [dispatch.canonical(line) for line in dispatch.raw_lines(text)]
+    out, i = [], 0
+    while i < len(lines):
+        if not dispatch.ROUND_HEADING.match(lines[i]):
+            out.append(lines[i])
+            i += 1
+            continue
+        i += 2
+        count = None
+        while i < len(lines) and lines[i] != "":
+            field = dispatch.ROUND_LINE.match(lines[i])
+            if field and field.group(1).lower() == "lines":
+                count = int(field.group(2))
+            i += 1
+        if count is not None:
+            i += 1 + count
+        else:
+            while i < len(lines) and not lines[i].startswith("## Round"):
+                i += 1
+    return out
+
+
+def completion_ok(root, ref, path, rows=None):
+    """The section's completion record (D00 T03 §13), or Refused. It is the dispatcher-written file named for the
+    section, opening `# Completion review: <ref>`; its last returned round is a review by another model family that
+    opens `SECTION: <ref>` and `PURPOSE: completion` and pairs `COMPLETE: yes` with `OVERALL: approve` (or
+    `COMPLETE: no` with `needs-attention`); after `COMPLETE: no`, its `## Outcome (round N)` block gives every
+    numbered gap `N. extended` or `N. filed -> DNN TNN §N`, and with `rows` each filed reference must be a section.
+    Earlier rounds are history. Returns the last returned round's `Run:` time."""
+    root_path = Path(root)
+    report = Path(path) if isinstance(path, str) else None
+    require(report is not None and re.fullmatch(r"docs/reviews/[A-Za-z0-9_./-]+-completion\.md", path) is not None
+            and not report.is_absolute() and ".." not in report.parts,
+            f"invalid completion record path ({path}): {ref}")
+    require(report.name == completion_name(ref),
+            f"{path} is not the completion record of {ref} ({completion_name(ref)}): {ref}")
+    cur = root_path
+    for part in report.parts:
+        cur = cur / part
+        require(not cur.is_symlink(), f"invalid completion record path ({path}): {ref}")
+    file = root_path / report
+    require(file.is_file(), f"missing completion record ({path}): {ref}")
+    text = file.read_bytes().decode("utf-8")
+    dispatch = review_dispatch()
+    recorded = dispatch.read_rounds(text)
+    require(recorded is not None, f"{path} is not a findings file the dispatcher can read: {ref}")
+    outside = outside_rounds(text, dispatch)
+    heading = next((line.strip() for line in outside if line.strip()), "")
+    require(heading == f"# Completion review: {ref}", f"{path} must open with '# Completion review: {ref}': {ref}")
+
+    def last_line(entry):
+        return ([x.strip() for x in entry["review"].splitlines() if x.strip()] or [""])[-1]
+
+    returned = [e for e in recorded if e["reviewer"] and e["writer"] in dispatch.WRITER_FAMILY
+                and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
+                and last_line(e) in ("OVERALL: approve", "OVERALL: needs-attention")]
+    require(returned, f"{path} holds no completion review returned by another model family: {ref}")
+    last = returned[-1]
+    n = last["number"]
+    lines = [x.strip() for x in last["review"].splitlines() if x.strip()]
+    require(lines[:2] == [f"SECTION: {ref}", "PURPOSE: completion"],
+            f"round {n} of {path} is not a completion review of {ref}: it must open with 'SECTION: {ref}' and "
+            f"'PURPOSE: completion': {ref}")
+    verdicts = [line for line in lines if line in ("COMPLETE: yes", "COMPLETE: no")]
+    require(len(verdicts) == 1, f"round {n} of {path} must say COMPLETE: yes or COMPLETE: no exactly once: {ref}")
+    complete = verdicts[0] == "COMPLETE: yes"
+    require(complete == (lines[-1] == "OVERALL: approve"),
+            f"round {n} of {path} pairs {verdicts[0]} with {lines[-1]}; COMPLETE: yes goes with OVERALL: approve and "
+            f"COMPLETE: no with OVERALL: needs-attention: {ref}")
+    if not complete:
+        gaps = sorted({int(m.group(1)) for m in re.finditer(r"^(\d+)\.\s", last["review"], re.M)})
+        require(gaps, f"round {n} of {path} says COMPLETE: no but numbers no gap: {ref}")
+        title = f"## Outcome (round {n})"
+        require(title in [line.strip() for line in outside],
+                f"{path} has no '{title}' giving the gaps of its last round a disposition: {ref}")
+        start = [line.strip() for line in outside].index(title) + 1
+        block = []
+        for line in outside[start:]:
+            if line.startswith("## "):
+                break
+            block.append(line.strip())
+        dispositions = {}
+        for line in block:
+            m = re.fullmatch(r"(\d+)\. (?:extended|filed -> (D\d+ T\d+ §\d+))", line)
+            if m:
+                dispositions[int(m.group(1))] = m.group(2)
+        missing = [g for g in gaps if g not in dispositions]
+        require(not missing, f"gap {', '.join(map(str, missing))} of round {n} in {path} has no disposition "
+                             f"('N. extended' or 'N. filed -> DNN TNN §N'): {ref}")
+        if rows is not None:
+            for gap, target in sorted(dispositions.items()):
+                require(target is None or target in rows,
+                        f"gap {gap} of round {n} in {path} is filed to {target}, which is no section: {ref}")
+    return last["run"]
+
+
+def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=None, completion=None):
     """Close a section: write its receipt, tick its row and checklist, add the Verified and Review lines. The receipt
     records the review rounds spent against the cap and, when a review stopped at the cap, what was done about it."""
     root = Path(root)
@@ -860,6 +978,15 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     receipt_data_ok(data, ref, sha, root=root, building=True)
     data["rounds_spent"] = rounds_recorded(root, reviews)
     data["round_cap"] = REVIEW_ROUND_CAP
+    # The completion review ran before the build (D00 T03 §13); after a reopen it must have run again since.
+    require(isinstance(completion, str) and completion.strip(),
+            f"--completion is required: the section's completion record, docs/reviews/<domain>/{completion_name(ref)}")
+    run = completion_ok(root, ref, completion, rows)
+    reopened = re.findall(r"^> \*\*Unstamped:\*\* (\d{4}-\d{2}-\d{2})", row.body, re.M)
+    require(not reopened or (run or "")[:10] >= max(reopened),
+            f"the completion review in {completion} ran {run}, before the section was reopened on {max(reopened)}; "
+            f"run a fresh one: {ref}" if reopened else "")
+    data["completion"] = completion
     if stopped:
         data["cap_outcome"] = cap_outcome.strip()
     receipt_data_ok(data, ref, sha, root=root)

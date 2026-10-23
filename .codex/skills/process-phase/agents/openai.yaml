@@ -1,4 +1,0 @@
-interface:
-  display_name: "Process Phase"
-  short_description: "Work one plan phase section by section."
-  default_prompt: "Work one plan phase section by section."
