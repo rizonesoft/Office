@@ -463,14 +463,18 @@ def check_screen_lock(host):
     profile, each overridden by the screen saver policy where the policy sets it."""
     live = host.screen_saver()
 
-    def effective(name, current):
+    def effective(name, current, flag=True):
         value = host.registry(HKCU, DESKTOP_POLICY, name)
-        return (value, True) if value is not None else (current, False)
+        if value is None:
+            return current, False
+        if flag and str(value).strip() not in ("0", "1"):
+            raise Unreadable(f"the screen saver policy {name} is {value!r}, not 0 or 1")
+        return value, True
 
     fixes, found = [], []
     active, _ = effective("ScreenSaveActive", "1" if live["active"] else "0")
     secure, by_policy = effective("ScreenSaverIsSecure", "1" if live["secure"] else "0")
-    timeout, _ = effective("ScreenSaveTimeOut", str(live["timeout"]))
+    timeout, _ = effective("ScreenSaveTimeOut", str(live["timeout"]), flag=False)
     saver = host.registry(HKCU, DESKTOP_POLICY, "SCRNSAVE.EXE") or host.registry(HKCU, DESKTOP, "SCRNSAVE.EXE")
     try:
         seconds = int(str(timeout).strip())
@@ -534,9 +538,10 @@ def check_toolchain(host):
     if missing:
         what = [TOOLCHAIN.get(i, "a Windows 11 SDK") for i in missing]
         add = " ".join(f"--add {i}" for i in missing)
+        quote = lambda path: "'" + str(path).replace("'", "''") + "'"  # a PowerShell single-quoted string
         return fail("toolchain", f"{name} lacks {', '.join(what)}",
-                    f"in an elevated PowerShell: & '{SETUP}' modify --installPath "
-                    f"'{newest.get('installationPath')}' {add} --passive")
+                    f"in an elevated PowerShell: & {quote(SETUP)} modify --installPath "
+                    f"{quote(newest['installationPath'])} {add} --passive")
     return ok("toolchain", f"{name} has every C++ component the build needs")
 
 

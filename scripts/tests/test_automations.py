@@ -256,10 +256,10 @@ class Alert(unittest.TestCase):
         # wsl.exe starts systemd-run itself, so nothing (no profile) runs before the bounded unit exists.
         self.assertEqual(argv[1:4], ["-e", "systemd-run", "--user"])
         for flag in ("--pipe", "--wait", "--collect", f"RuntimeMaxSec={alert.LINUX_SECONDS}",
-                     f"MemoryMax={alert.LINUX_MEMORY}"):
+                     f"TimeoutStopSec={alert.LINUX_STOP_SECONDS}", f"MemoryMax={alert.LINUX_MEMORY}"):
             self.assertIn(flag, argv)
         self.assertEqual(argv[argv.index("--") + 1:argv.index("--") + 3], ["bash", "-lc"])
-        self.assertLess(alert.LINUX_SECONDS, 90)
+        self.assertLess(alert.LINUX_SECONDS + alert.LINUX_STOP_SECONDS, 90)
 
     def test_a_dry_run_reads_no_key(self):
         with tempfile.TemporaryDirectory() as tmp:

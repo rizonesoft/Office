@@ -219,6 +219,14 @@ class ScreenLock(Base):
         del self.host.values[(host_check.HKCU, host_check.DESKTOP, "SCRNSAVE.EXE")]
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
+    def test_a_malformed_policy_flag_cannot_check(self):
+        self.host.saver["secure"] = True
+        for name in ("ScreenSaverIsSecure", "ScreenSaveActive"):
+            with self.subTest(name=name):
+                self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, name)] = "invalid"
+                self.assertEqual(self.result("screen lock")["state"], "error")
+                del self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, name)]
+
     def test_an_unreadable_policy_timeout_cannot_check(self):
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "soon"
         self.assertEqual(self.result("screen lock")["state"], "error")
@@ -396,6 +404,13 @@ class Toolchain(Base):
         self.assertIn("modify --installPath", r["fix"])
         self.assertIn("--add Microsoft.VisualStudio.Component.VC.Llvm.Clang", r["fix"])
         self.assertEqual(r["fix"].count("--add"), 1)
+
+    def test_the_install_command_quotes_an_apostrophe_in_the_path(self):
+        self.host.instances[0]["installationPath"] = "D:\\Owner's Tools\\VS"
+        self.host.instances[0]["packages"] = [p for p in self.host.instances[0]["packages"]
+                                              if p["id"] != "Microsoft.VisualStudio.Component.Vcpkg"]
+        fix = self.result("toolchain")["fix"]
+        self.assertIn("--installPath 'D:\\Owner''s Tools\\VS'", fix)
 
     def test_missing_windows_sdk_fails(self):
         self.host.instances[0]["packages"] = [p for p in self.host.instances[0]["packages"]
