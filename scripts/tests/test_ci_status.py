@@ -696,6 +696,18 @@ class Scale(Pending):
         self.assertIn(f"red {a[:7]}", out)
         self.assertIn(f"green {b[:7]}", out)
 
+    def test_heads_settled_between_saves_are_kept_at_the_deadline(self):
+        base, a, b, c = sha(1), sha(2), sha(3), sha(4)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, b, a, base], {base: "success", a: "success", b: "failure", c: "success"})
+        clock = self.slow_clock_repo(repo, head_seconds=1)  # A and B settle within one save interval, C is cut short
+        with mock.patch.object(ci, "PENDING_SECONDS", 2.5):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)
+        lookups = len([c for c in repo.calls if c[1][:2] == ["run", "list"]])
+        code, out = self.pending(repo)
+        self.assertEqual(len([c for c in repo.calls if c[1][:2] == ["run", "list"]]) - lookups, 1)  # only C
+        self.assertEqual(code, 1)
+
     def test_a_rerun_between_interrupted_tries_replaces_a_stored_result(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
@@ -802,6 +814,36 @@ class Scale(Pending):
         self.assertGreaterEqual(codes.count(ci.PROGRESSING), 2)
         self.assertEqual(codes[-1], 0)
         self.assertEqual(self.listed(out), [h[:7] for h in unchecked])
+
+    def test_a_large_backlog_on_slow_pages_completes_over_several_tries(self):
+        # 2,500 runs at 30 s a page (25 pages, 750 s) and every head but the oldest unchecked: the runs the heads rest
+        # on cannot all be read in one 600 s try, so the pass's cursor carries over and every try still progresses.
+        heads = [sha(n) for n in range(1, 2501)]
+        self.record(f"ci-green {heads[0][:7]}")
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        codes = []
+        for _ in range(8):
+            clock = self.slow_clock_repo(repo, page_seconds=30)
+            code, out = self.pending(repo, clock=clock)
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertEqual(codes[-1], 0)
+        self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
+        self.assertEqual(len(self.listed(out)), 2499)
+
+    def test_reading_a_new_pass_across_tries_is_progress(self):
+        # A finished reconciliation of 2,500 pending runs; the next one must read them all again in its own pass, which
+        # takes longer than one try: the pages its cursor reads are progress, though they change nothing.
+        heads = [sha(n) for n in range(1, 2501)]
+        self.record(f"ci-green {heads[0][:7]}")
+        repo = Repo(list(reversed(heads)), {heads[0]: "success", **{h: None for h in heads[1:]}})
+        for _ in range(8):
+            if self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))[0] != ci.PROGRESSING:
+                break
+        code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))
+        self.assertEqual(code, ci.PROGRESSING)
+        self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))[0], 3)
 
     def test_a_try_without_progress_is_unknown(self):
         self.record(f"ci-green {sha(1)[:7]}")
