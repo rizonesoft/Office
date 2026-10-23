@@ -27,7 +27,11 @@ OBLIGATIONS = [
     ("reconciliation at start and resume", "plan", [
         "Reconcile from the pushed history (D00 T03 §17) at campaign start, at every phase start and on every manual "
         "or heartbeat resume", "`python scripts/ci-status.py --pending <run file>`"]),
-    ("recovery budget", "plan", ["`python scripts/ci-recovery.py open <red sha>`",
+    ("recovery budget", "plan", ["the budget is four attempts per recovery, any mix of kinds, a repair that turns "
+                                 "another job red included",
+                                 "When `reserve` refuses with `exhausted` (exit 1), file the failure through `add-todo`",
+                                 "and park with `ci-red` as the reason, even when no useful code change exists.",
+                                 "`python scripts/ci-recovery.py open <red sha>`",
                                  "`python scripts/ci-recovery.py reserve <kind>`",
                                  "`python scripts/ci-recovery.py close <green sha>`", "`exhausted`"]),
     ("heartbeat ends on every campaign park, either scope", "plan", [
@@ -38,6 +42,9 @@ OBLIGATIONS = [
         "the campaign is over until the owner resumes it by hand: run `<python> scripts/campaign_guard.py end "
         "--session $CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, "
         "and reply RUN FINISHED, even when rows are ready and the host check would now pass."]),
+    ("heartbeat resume reconciles before any row", "plan", [
+        "Then run `<python> scripts/ci-status.py --pending <run file>` (it checks `origin/main` and every unchecked push "
+        "head before it) and act on it as the skill's CI watch step says before claiming any row."]),
     ("hard gates proceed only on green", "plan", ["`python scripts/ci-status.py HEAD --wait --timeout 3600` and proceed "
                                                   "only on exit 0."]),
     ("no chaining after a CI park", "plan", ["Never chain to another phase after it."]),
@@ -68,6 +75,12 @@ WEAKENINGS = [
      "$CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN "
      "FINISHED, even when rows are ready and the host check would now pass.", "resume under step 7."),
     ("hard gates proceed only on green", "plan", "and proceed only on exit 0.", "and proceed on any exit."),
+    ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
+    ("recovery budget", "plan", "and park with `ci-red` as the reason, even when no useful code change exists.",
+     "and carry on."),
+    ("heartbeat resume reconciles before any row", "plan",
+     "Then run `<python> scripts/ci-status.py --pending <run file>` (it checks `origin/main` and every unchecked push "
+     "head before it) and act on it as the skill's CI watch step says before claiming any row.", ""),
 ]
 
 
