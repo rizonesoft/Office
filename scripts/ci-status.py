@@ -262,14 +262,14 @@ def well_formed(data):
         return isinstance(r, dict) and set(r) == {"code", "lines", "run"} and r["code"] in (GREEN, RED, PENDING, UNKNOWN) \
             and isinstance(r["lines"], list) and all(isinstance(line, str) for line in r["lines"]) \
             and (r["run"] is None or (isinstance(r["run"], list) and len(r["run"]) == 2 and all(map(number, r["run"]))))
-    def text(value):
-        return value is None or isinstance(value, str)
+    def texts(value):
+        return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
     scan = data.get("scan") if isinstance(data, dict) else None
     return isinstance(data, dict) \
         and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass", "scan"} \
-        and isinstance(scan, dict) and set(scan) == {"anchor", "rewind", "next_anchor"} and text(scan["anchor"]) \
-        and text(scan["next_anchor"]) and (scan["rewind"] is None or (type(scan["rewind"]) is int and scan["rewind"] > 0)) \
+        and isinstance(scan, dict) and set(scan) == {"ids", "rewind", "next_ids"} and texts(scan["ids"]) \
+        and texts(scan["next_ids"]) and (scan["rewind"] is None or (type(scan["rewind"]) is int and scan["rewind"] > 0)) \
         and isinstance(data["inputs"], dict) and set(data["inputs"]) == {"repo", "head", "records"} \
         and all(isinstance(v, str) for v in data["inputs"].values()) \
         and isinstance(data["runs"], dict) and all(
@@ -367,14 +367,16 @@ class Pages:
         above the boundary were deleted, the list moved up, and the runs that crossed the boundary were never read."""
         return anchor in {str(r["id"]) for r in runs} or self.at(PER_PAGE * (page - 1)) == anchor
 
-    def back_to(self, page, anchor):
-        """Read pages from `page` back toward the first until one holds `anchor` again: every run that moved up
-        across the boundary lies between them. Returns the last run of `page` as read now. Used within one try."""
+    def back_to(self, page, ids):
+        """Read pages from `page` back toward the first until one holds any run of `ids`, the runs `page` held when
+        it was read: the runs that moved up across the boundary lie after the last of them, so they are read once it
+        is found, however many were deleted (the boundary run itself among them). Returns `page` as read now. Used
+        within one try."""
         first = None
         for k in range(page, 0, -1):
             runs, _ = self.read(k)
-            first = first if first is not None else (str(runs[-1]["id"]) if runs else None)
-            if anchor in {str(r["id"]) for r in runs}:
+            first = first if first is not None else [str(r["id"]) for r in runs]
+            if set(ids) & {str(r["id"]) for r in runs}:
                 break
         return first
 
@@ -393,17 +395,17 @@ class Pages:
         first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
         an unchanged page cannot end it over runs a deletion moved past. A page that changed nothing is not
         progress."""
-        page, anchor = 0, None
+        page, ids = 0, []
         while True:
             page += 1
             runs, changed = self.read(page)
             self.cp["progress"] += 1 if changed else 0
             self.save(self.cp)
-            if page > 1 and not self.continuous(page, runs, anchor):
-                anchor = self.back_to(page - 1, anchor)
+            if page > 1 and ids and not self.continuous(page, runs, ids[-1]):
+                ids = self.back_to(page - 1, ids)
                 page -= 1  # read this page again after the pages before it
                 continue
-            anchor = str(runs[-1]["id"]) if runs else None
+            ids = [str(r["id"]) for r in runs]
             if not changed or len(runs) < PER_PAGE:
                 return
 
@@ -439,26 +441,27 @@ class Pages:
         """Continue the scan to the workflow's last page, saving every page as it is read. Runs created while the
         pages were read push older runs down a page; reading the newest pages again then finds them. Runs deleted
         while the pages were read move older runs up: each page's boundary with the one before is checked, and a
-        shift is recovered by stepping back until the last run read before it is found again, with the rewind kept in
-        the checkpoint so a recovery cut short goes on in the next try (D00 T03 §23)."""
+        shift is recovered by stepping back until a page holds a run the page before the boundary held when it was
+        read, with the rewind kept in the checkpoint so a recovery cut short goes on in the next try (D00 T03 §23)."""
         scan = self.cp["scan"]
         while self.cp["next_page"] is not None:
             page = self.cp["next_page"]
-            if scan["rewind"] is not None:  # recovering a shift: step back until the anchor is found again
+            if scan["rewind"] is not None:  # recovering a shift: step back until a run of the page before is found
                 k = scan["rewind"]
                 runs, _ = self.read(k)
-                if k == page - 1:  # the boundary is checked again from this page's last run, as read now
-                    scan["next_anchor"] = str(runs[-1]["id"]) if runs else None
-                if scan["anchor"] in {str(r["id"]) for r in runs} or k == 1:
-                    scan.update(anchor=scan["next_anchor"], rewind=None, next_anchor=None)
+                read = [str(r["id"]) for r in runs]
+                if k == page - 1:  # the boundary is checked again against this page, as read now
+                    scan["next_ids"] = read
+                if set(read) & set(scan["ids"]) or k == 1:
+                    scan.update(ids=scan["next_ids"], rewind=None, next_ids=[])
                 else:
                     scan["rewind"] = k - 1
             else:
                 runs, _ = self.read(page)
-                if page > 1 and scan["anchor"] is not None and not self.continuous(page, runs, scan["anchor"]):
+                if page > 1 and scan["ids"] and not self.continuous(page, runs, scan["ids"][-1]):
                     scan["rewind"] = page - 1  # this page is read again once the rewind ends
                 else:
-                    scan["anchor"] = str(runs[-1]["id"]) if runs else None
+                    scan["ids"] = [str(r["id"]) for r in runs]
                     self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
             self.cp["progress"] += 1
             self.save(self.cp)
@@ -504,7 +507,7 @@ def unchecked_heads(tools, run_file, left, cp, save):
     if not cp or cp["inputs"].get("repo") != repo:  # another repository's runs are no use
         cp.clear()
         cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "total": None, "results": {}, "progress": 0,
-                   "pass": None, "scan": {"anchor": None, "rewind": None, "next_anchor": None}})
+                   "pass": None, "scan": {"ids": [], "rewind": None, "next_ids": []}})
     cp["inputs"] = inputs
     if cp["pass"] is None:  # a new reconciliation: the heads it has settled, so a later try goes on past them
         cp["pass"] = {"checked": []}
@@ -541,7 +544,7 @@ def current(stored, run_id, runs):
     """Whether a stored completed result still holds: the head's governing run, as last read, is the run it was
     settled on, on the same attempt (a page read before the run finished still names that attempt, and an attempt
     that finished never runs again)."""
-    return bool(stored and stored["code"] in (GREEN, RED) and stored.get("run") and run_id
+    return bool(stored and stored["code"] in (GREEN, RED) and stored.get("run") and run_id in runs
                 and [int(run_id), runs[run_id]["attempt"]] == stored["run"])
 
 
@@ -624,6 +627,16 @@ def reconcile(args, tools, clock, now, checkpoint):
                 lines += result["lines"]
         return lines
 
+    def owed():
+        """Heads settled again before the report: a green or the newest head whose run changed, and any head whose
+        run was deleted. An earlier red whose run was rerun is settled after the loop, with the time left."""
+        _, listed, runs_of, _ = listing()
+        return [s for s in listed if s in cp["pass"]["checked"] and cp["results"][s]["code"] in (GREEN, RED)
+                and not current(cp["results"][s], runs_of.get(s), cp["runs"])
+                and (cp["results"][s]["code"] == GREEN or s == listed[-1]
+                     or str(cp["results"][s]["run"][0]) not in cp["runs"])]
+
+    reds_read = False
     try:
         pages, listing = unchecked_heads(tools, args.pending, left, cp, save)
         baseline, heads, runs_of, base_run = listing()
@@ -650,13 +663,21 @@ def reconcile(args, tools, clock, now, checkpoint):
             confirming = True
             pages.confirm(relied)
             confirming = False
-            latest = listing()
-            stale = [s for s in latest[1] if s in checked and cp["results"][s]["code"] in (GREEN, RED)
-                     and not current(cp["results"][s], latest[2].get(s), cp["runs"])]  # a deleted run's head too
-            if latest[:2] == (baseline, heads) and not stale:
+            latest, must = listing(), owed()
+            if latest[:2] == (baseline, heads) and not must and not reds_read:
+                # Only once nothing owed is left: earlier reds are read again with the time left. A stale red never
+                # becomes a false green, so a deadline here is not fatal, but a run found deleted changes the listing.
+                reds_read = True
+                try:
+                    pages.confirm({runs_of[s] for s in heads if s in runs_of and s not in looked
+                                   and cp["results"][s]["code"] == RED})
+                except DeadlinePassed:
+                    pass  # the reds not read again are reported as they stand
+                latest, must = listing(), owed()
+            if latest[:2] == (baseline, heads) and not must:
                 break
             baseline, heads, runs_of, base_run = latest
-            for s in stale:
+            for s in must:
                 checked.remove(s)
     except DeadlinePassed:
         ready = confirmed()
@@ -671,11 +692,10 @@ def reconcile(args, tools, clock, now, checkpoint):
         else:
             print("unknown: this try made no progress before its deadline")
         return UNKNOWN
-    # With the time left, earlier red results are read again (a rerun since is settled and reported) and heads still
-    # pending or unknown are looked up again. Neither can leave a green out of date, so a deadline here reports the
-    # rest as they stand: the report never waits on them.
+    # With the time left, earlier reds whose run was rerun are settled again and heads still pending or unknown are
+    # looked up again. Neither can leave a green out of date, so a deadline here reports the rest as they stand: the
+    # report never waits on them.
     try:
-        pages.confirm({runs_of[s] for s in heads if s in runs_of and s not in looked and cp["results"][s]["code"] == RED})
         for sha in [s for s in heads if s not in looked and (cp["results"][s]["code"] in (PENDING, UNKNOWN) or (
                 cp["results"][s]["code"] == RED and not current(cp["results"][s], runs_of.get(s), cp["runs"])))]:
             settle(sha)

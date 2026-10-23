@@ -876,8 +876,8 @@ class Scale(Pending):
                        {"total": -1}, {"progress": None}, {"results": {sha(2): {"code": 9, "lines": [], "run": None}}},
                        {"results": {sha(2): {"code": 0, "lines": [], "run": [1]}}}, {"pass": {"checked": None}},
                        {"pass": []}, {"pass": {"checked": [sha(2)]}, "results": {}}, {"scan": None},
-                       {"scan": {"anchor": 1, "rewind": None, "next_anchor": None}},
-                       {"scan": {"anchor": None, "rewind": 0, "next_anchor": None}}):
+                       {"scan": {"ids": [1], "rewind": None, "next_ids": []}},
+                       {"scan": {"ids": [], "rewind": 0, "next_ids": []}}):
             with self.subTest(damage=damage):
                 path.write_text(json.dumps(dict(good, **damage)), encoding="utf-8")
                 code, out = self.pending(repo)
@@ -1274,6 +1274,29 @@ class Deleted(Pending):
         repo.after_page[100] = delete  # the boundary check reads position 100 as page 100 of one run
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (0, [sha(101)[:7]]))
+
+    def test_a_deleted_boundary_run_costs_one_page_back(self):
+        heads, repo = self.heads(400, {sha(200)})  # sha(200) is at position 201, the first run of page 3
+
+        def delete():  # page 2's last run, the boundary run itself, is deleted once page 2 is read
+            del repo.runs[sha(201)]
+        repo.after_page[2] = delete
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
+        pages = [u.rsplit("=", 1)[1] for u in repo.pages_read]
+        self.assertEqual(pages, ["1", "2", "3", "2", "3", "4"])  # one page back, not back to page 1
+
+    def test_an_earlier_red_heads_deleted_run_changes_the_listing_before_the_report(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 99500 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(2200 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([b, a, base], {base: "success", a: "failure", b: "success"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        del repo.runs[a]  # the red A's only run is deleted: A is now covered by B
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
 
     def test_a_recovery_cut_short_goes_on_in_the_next_try(self):
         heads, repo = self.heads(400, {sha(101)})
