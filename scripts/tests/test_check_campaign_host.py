@@ -78,7 +78,7 @@ class Fake:
     def sections(self):
         if isinstance(self.tree, Exception):
             raise self.tree
-        return self.tree() if callable(self.tree) else self.tree
+        return [s.public() for s in todo_graph.ordered(self.tree)]
 
     def vswhere(self):
         return self.instances
@@ -332,6 +332,23 @@ title: "TODO-01 -- Capture"
         self.assertIsNone(note, note)
         return refs
 
+    def test_the_reader_runs_in_a_contained_child(self):
+        calls = []
+        real = self.host.run
+        self.host.run = lambda argv, seconds=None: calls.append(argv) or real(argv, seconds)
+        self.assertEqual(self.needed(), ["D02 T01 §1"])
+        self.assertEqual(calls[0][:2], [sys.executable, "-c"])
+
+    def test_a_reader_that_fails_falls_back_to_checking_office(self):
+        self.host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 1, "", "Refused: broken tree")
+        refs, note = host_check.office_needed(self.host)
+        self.assertIsNone(refs)
+        self.assertIn("Refused: broken tree", note)
+
+    def test_the_repository_tree_reads(self):
+        rows = host_check.Host().sections()
+        self.assertTrue(any(r["ref"] == "D00 T03 §12" for r in rows))
+
     def test_missing_cache_still_finds_the_office_section(self):
         self.assertFalse((self.root / "build" / "todo-cache.json").exists())
         self.assertEqual(self.needed(), ["D02 T01 §1"])
@@ -364,6 +381,13 @@ class Toolchain(Base):
     def test_no_visual_studio_fails(self):
         self.host.instances = None
         self.assertEqual(self.result("toolchain")["state"], "fail")
+
+    def test_an_instance_without_its_path_cannot_check(self):
+        host = host_check.Host()
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, "[{}]", "")
+        with mock.patch.object(host_check, "VSWHERE", Path(sys.executable)), \
+                self.assertRaises(host_check.Unreadable):
+            host.vswhere()
 
     def test_prerelease_only_fails(self):
         self.host.instances[0]["isPrerelease"] = True
@@ -538,6 +562,12 @@ class Probe(unittest.TestCase):
                 host_check.Host().notify("s", "b")
         self.assertLess(time.monotonic() - started, 20)
         self.assertTrue(self.grandchild_gone(pid_file))
+
+    def test_a_probe_starts_in_a_scratch_folder_not_the_repository(self):
+        r = host_check.Host().run([sys.executable, "-c", "import os; print(os.getcwd())"])
+        where = Path(r.stdout.strip())
+        self.assertEqual(where.name, "work")
+        self.assertNotEqual(where.resolve(), Path.cwd().resolve())
 
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])

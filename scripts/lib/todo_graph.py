@@ -168,17 +168,25 @@ def front_matter(text, relative):
     return front, parts[2]
 
 
+def git():
+    """git from the absolute PATH entries only (review-dispatch's find_cli): a bare name is searched for in the working
+    directory first on Windows, where a repository could hold its own git.exe."""
+    found = review_dispatch().find_cli("git")
+    require(found is not None, "git is not on PATH")
+    return found
+
+
 def commit_ok(root, sha):
-    kind = subprocess.run(["git", "-C", str(root), "cat-file", "-t", sha],
+    kind = subprocess.run([git(), "-C", str(root), "cat-file", "-t", sha],
                           capture_output=True, text=True, timeout=30)
     require(kind.returncode == 0 and kind.stdout.strip() == "commit", "not a commit: " + sha)
-    on_branch = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", sha, "HEAD"],
+    on_branch = subprocess.run([git(), "-C", str(root), "merge-base", "--is-ancestor", sha, "HEAD"],
                                capture_output=True, timeout=30)
     require(on_branch.returncode == 0, "commit is not on this branch: " + sha)
 
 
 def _head_commits(root):
-    res = subprocess.run(["git", "-C", str(root), "rev-list", "HEAD"],
+    res = subprocess.run([git(), "-C", str(root), "rev-list", "HEAD"],
                          capture_output=True, text=True, timeout=30)
     require(res.returncode == 0, f"git repository with HEAD commit required for stamped sections: {root}")
     return set(res.stdout.splitlines())

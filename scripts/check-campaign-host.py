@@ -61,6 +61,11 @@ MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 M
 POLL_SECONDS = 0.1
 KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
+SECTIONS_CODE = """import json, sys
+sys.path.insert(0, sys.argv[1])
+import todo_graph
+print(json.dumps([s.public() for s in todo_graph.ordered(todo_graph.graph(sys.argv[2]))]))
+"""
 NOTIFY_SECONDS = 180  # the vault read (90 s at most) and the send (60 s at most), with room
 NOTICE_CODE = """import json, sys
 sys.path.insert(0, sys.argv[1])
@@ -171,7 +176,15 @@ class Host:
         return Path(path).is_file()
 
     def sections(self):
-        return todo_graph.graph(self.root)
+        """Every section's public fields, in plan order, read from the TODO files by a contained child: the reader runs
+        git, and a hung git must not hold the check past its deadline."""
+        result = self.run([sys.executable, "-c", SECTIONS_CODE, str(ROOT / "scripts" / "lib"), str(self.root)])
+        if result.returncode != 0:
+            raise Unreadable((result.stderr.strip().splitlines() or [f"exit {result.returncode}"])[-1])
+        rows = json.loads(result.stdout)
+        if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
+            raise Unreadable("the TODO reader did not print a list of sections")
+        return rows
 
     def vswhere(self):
         """vswhere's instances of Visual Studio 2026 with their packages, or None when vswhere is not installed."""
@@ -187,6 +200,12 @@ class Host:
             raise Unreadable(f"vswhere output: {exc}") from None
         if not isinstance(instances, list) or not all(isinstance(i, dict) for i in instances):
             raise Unreadable("vswhere output is not a list of instances")
+        for i in instances:
+            if not (isinstance(i.get("installationPath"), str) and i["installationPath"]
+                    and isinstance(i.get("installationVersion"), str) and i["installationVersion"]
+                    and isinstance(i.get("packages"), list)
+                    and all(isinstance(p, dict) and isinstance(p.get("id"), str) for p in i["packages"])):
+                raise Unreadable("vswhere printed an instance without its path, version or packages")
         return instances
 
     def find(self, name):
@@ -209,7 +228,9 @@ class Host:
             paths = Path(scratch) / "out", Path(scratch) / "err"
             too_big = lambda: any(p.stat().st_size > MAX_PROBE_BYTES for p in paths)
             with open(paths[0], "wb") as out, open(paths[1], "wb") as err, Containment() as box:
-                process = box.start(argv, out, err)
+                work = Path(scratch) / "work"
+                work.mkdir()
+                process = box.start(argv, out, err, work)
                 problem, deadline = None, time.monotonic() + limit
                 while process.poll() is None:
                     if too_big():
@@ -299,11 +320,14 @@ class Containment:
                 raise Unreadable(f"SetInformationJobObject failed (error {ctypes.get_last_error()})")
         return self
 
-    def start(self, argv, out, err):
+    def start(self, argv, out, err, cwd):
+        """Start the probe in `cwd`, a scratch folder: Windows looks for a bare program name in the working directory
+        first, so neither the probe nor anything it starts by a bare name runs a program planted in the repository."""
         if os.name != "nt":
-            return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True)
+            return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
+                                    start_new_session=True)
         create_suspended = 0x00000004
-        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
+        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
                                    creationflags=create_suspended | pin_proposal.NO_WINDOW)
         handle = int(process._handle)
         # Joined while suspended, so nothing it starts can be outside the job. NtResumeProcess resumes it: Popen keeps
@@ -442,8 +466,8 @@ def office_needed(host):
         sections = host.sections()
     except Exception as exc:  # any failure to read the tree (a refusal, a git timeout, a bug) falls back to checking
         return None, f"the TODO tree cannot be read ({type(exc).__name__}: {exc}), so Office is checked"
-    refs = [s.ref for s in todo_graph.ordered(sections)
-            if not s.done and s.status != "superseded" and "office" in s.needs]
+    refs = [s["ref"] for s in sections
+            if s.get("done") is not True and s.get("status") != "superseded" and "office" in (s.get("needs") or [])]
     return refs, None
 
 

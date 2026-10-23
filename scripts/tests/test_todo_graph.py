@@ -1188,6 +1188,29 @@ class Repository(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
 
 
+class GitPath(unittest.TestCase):
+    """git is found on the absolute PATH entries only, never in the working directory (D00 T03 §12 review round 7)."""
+
+    def test_a_git_in_the_working_directory_is_never_chosen(self):
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            planted = pathlib.Path(tmp) / ("git.exe" if os.name == "nt" else "git")
+            planted.write_bytes(b"not git")
+            planted.chmod(0o755)
+            here = os.getcwd()
+            os.chdir(tmp)
+            try:
+                found = tg.git()
+            finally:
+                os.chdir(here)
+        self.assertTrue(pathlib.Path(found).is_absolute(), found)
+        self.assertNotEqual(pathlib.Path(found).parent.resolve(), pathlib.Path(tmp).resolve())
+
+    def test_every_git_launch_uses_the_resolved_path(self):
+        source = (REPO / "scripts" / "lib" / "todo_graph.py").read_text(encoding="utf-8")
+        self.assertNotIn('["git"', source)
+
+
 if __name__ == "__main__":
     unittest.main()
 
