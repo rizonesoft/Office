@@ -52,6 +52,8 @@ class Fake:
             (host_check.HKLM, host_check.CLICK_TO_RUN + r"\Configuration", "VersionToReport"): "16.0.20430.20182",
         }
         self.files = {str(Path(OFFICE) / "root" / "Office16" / exe) for _, exe in host_check.OFFICE_APPS}
+        self.files.add(r"C:\WINDOWS\system32\Mystify.scr")
+        self.policy_changed = False
         self.tree = {"D02 T01 §24": section("D02 T01 §24", needs=["office", "display-session"])}
         self.instances = json.loads(json.dumps(FULL_VS))
         self.on_path = {"gh": r"C:\gh\gh.exe", "codex": r"C:\npm\codex.cmd"}
@@ -84,6 +86,10 @@ class Fake:
 
     def is_file(self, path):
         return str(path) in self.files
+
+    def changed_since_boot(self, key):
+        assert key == host_check.SYSTEM_POLICY
+        return self.policy_changed
 
     def sections(self):
         if isinstance(self.tree, Exception):
@@ -258,6 +264,22 @@ class ScreenLock(Base):
     def test_a_failed_live_read_cannot_check(self):
         self.host.saver = host_check.Unreadable("SystemParametersInfoW 0x0076 failed (error 5)")
         self.assertEqual(self.result("screen lock")["state"], "error")
+
+    def test_a_saver_program_that_does_not_exist_never_locks(self):
+        self.host.saver["secure"] = True
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "SCRNSAVE.EXE")] = r"C:\missing.scr"
+        self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_a_removed_inactivity_limit_needs_a_restart(self):
+        self.host.policy_changed = True
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("restart Windows", r["fix"])
+
+    def test_the_real_reader_compares_with_boot_time(self):
+        if host_check.os.name != "nt":
+            self.skipTest("Windows registry")
+        self.assertIsInstance(host_check.Host().changed_since_boot(host_check.SYSTEM_POLICY), bool)
 
     def test_inactivity_policy_fails(self):
         self.host.values[(host_check.HKLM, host_check.SYSTEM_POLICY, "InactivityTimeoutSecs")] = 900

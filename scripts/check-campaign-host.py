@@ -198,6 +198,22 @@ class Host:
             values[name] = value.value
         return {"active": bool(values["active"]), "secure": bool(values["secure"]), "timeout": values["timeout"]}
 
+    def changed_since_boot(self, key):
+        """True when an HKLM key was written after Windows last started, so a value read at sign-in (the machine
+        inactivity limit is one) may not be the one in force."""
+        import ctypes
+        import winreg
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key) as k:
+                written = winreg.QueryInfoKey(k)[2]  # 100 ns intervals since 1601
+        except FileNotFoundError:
+            return False
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.GetTickCount64.restype = ctypes.c_ulonglong
+        now = (int(time.time()) + 11644473600) * 10**7
+        booted = now - kernel32.GetTickCount64() * 10**4
+        return written > booted
+
     def is_file(self, path):
         return Path(path).is_file()
 
@@ -497,7 +513,12 @@ def check_screen_lock(host):
     if not 0 <= seconds <= 86400:  # 0 (off) or 1 to 86400 seconds, as Microsoft's ScreenSaveTimeOut policy allows
         raise Unreadable(f"ScreenSaveTimeOut is {seconds}, outside 0 to 86400 seconds")
     # A timeout of 0 never starts the screen saver, so it never locks (Microsoft's ScreenSaveTimeOut policy).
-    if str(active).strip() == "1" and str(secure).strip() == "1" and saver and seconds > 0:
+    # Windows starts only a saver program that exists; a stale path never runs, so it never locks.
+    if saver:
+        saver = os.path.expandvars(str(saver))
+        if not os.path.isabs(saver):
+            saver = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", saver)
+    if str(active).strip() == "1" and str(secure).strip() == "1" and saver and host.is_file(saver) and seconds > 0:
         found.append(f"the screen saver locks the PC after {seconds} seconds")
         fixes.append("ask the administrator to remove the password-protected screen saver policy" if by_policy else
                      "clear 'On resume, display logon screen' in Screen Saver Settings (control desk.cpl,,@screensaver)")
@@ -505,7 +526,12 @@ def check_screen_lock(host):
     if inactivity:
         found.append(f"the machine inactivity limit locks the PC after {inactivity} seconds")
         fixes.append("in an elevated PowerShell: Remove-ItemProperty "
-                     "'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' InactivityTimeoutSecs")
+                     "'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' InactivityTimeoutSecs, "
+                     "then restart Windows")
+    elif host.changed_since_boot(SYSTEM_POLICY):
+        # The limit is read when Windows starts, so a change since then (its removal included) is not yet in force.
+        found.append("the machine lock policy changed since Windows started, so the inactivity limit in force is unknown")
+        fixes.append("restart Windows so the stored inactivity limit takes effect")
     if fixes:
         return fail("screen lock", "; ".join(found), "; ".join(fixes))
     return ok("screen lock", "no screen saver lock and no inactivity limit")
