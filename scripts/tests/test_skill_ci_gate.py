@@ -55,7 +55,13 @@ OBLIGATIONS = [
                                   "Never `acquire --handover` onto a run parked for host readiness."]),
     ("phase runs the one CI procedure by reference", "phase", ["run `process-plan`'s CI watch (one procedure for both "
                                                                "skills, so they never diverge)"]),
-    ("phase reconciles at start and resume", "phase", ["`python scripts/ci-status.py --pending <run file>`"]),
+    ("phase reconciles at start and resume", "phase", [
+        "At this phase's start and on every manual or heartbeat resume, the one CI step is `process-plan`'s "
+        "reconciliation, `python scripts/ci-status.py --pending <run file>`"]),
+    ("heartbeat closeout ends only on green", "plan", ["and unless both exit 0 resume under step 7, whose CI watch "
+                                                       "repairs or parks, instead of ending:"]),
+    ("heartbeat plan-done ends only on green", "plan", ["unless both exit 0, do not end the run; resume under step 7, "
+                                                        "where the skill's CI watch repairs or parks. On exit 0,"]),
     ("phase closeout gate", "phase", ["require green CI for that pushed closeout commit "
                                       "(`python scripts/ci-status.py HEAD --wait --timeout 3600` exits 0"]),
     ("phase names the three gates", "phase", ["Green CI is a hard gate in three places"]),
@@ -76,6 +82,12 @@ WEAKENINGS = [
      "FINISHED, even when rows are ready and the host check would now pass.", "resume under step 7."),
     ("hard gates proceed only on green", "plan", "and proceed only on exit 0.", "and proceed on any exit."),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
+    ("heartbeat closeout ends only on green", "plan", "and unless both exit 0 resume under step 7, whose CI watch "
+     "repairs or parks, instead of ending:", "and regardless of either exit:"),
+    ("heartbeat plan-done ends only on green", "plan", "On exit 0, run `<python> scripts/campaign_guard.py end",
+     "regardless of either exit, run `<python> scripts/campaign_guard.py end"),
+    ("phase reconciles at start and resume", "phase", "At this phase's start and on every manual or heartbeat resume, "
+     "the one CI step is", "Optionally, the one CI step is"),
     ("recovery budget", "plan", "and park with `ci-red` as the reason, even when no useful code change exists.",
      "and carry on."),
     ("heartbeat resume reconciles before any row", "plan",
