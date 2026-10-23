@@ -584,6 +584,8 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 8): t
 
 ## 20. CI Reconciliation at Scale
 
+> **Started:** 2026-10-23T13:25:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §17's completion review (`docs/reviews/00-workspace/D00-T03-s17-completion.md`): §17 lists unchecked push heads oldest first and treats a full 500-run page as unknown. Two cases remain: an older red head followed by a later head that is pending, unknown or red (supersession needs a later green head, and repair covers only the newest red head), and a workflow history past 500 runs, where retrying the same capped query parks the campaign for good even when every recent push is green.
 
 **Phase:** 0
