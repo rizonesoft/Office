@@ -302,11 +302,13 @@ class Pages:
         self.tools, self.owner_name, self.cp, self.left, self.save = tools, repo.split("/", 1)[1], cp, left, save
         self.p = cp["pass"]
         self.seen = set(self.p["seen"])  # run ids read in this pass
+        self.now = set()  # run ids read in this try
 
     def read(self, page):
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
         changed = keep(self.cp, runs)
         self.seen |= {str(r["id"]) for r in runs}
+        self.now |= {str(r["id"]) for r in runs}
         self.cp["total"] = total
         return runs, changed
 
@@ -336,6 +338,19 @@ class Pages:
             self.cp["progress"] += 1
             self.store()
 
+    def confirm(self, needed):
+        """Read again, from the newest page, the runs that results settled in earlier tries rest on, so a rerun since
+        is seen before they are reported. The cursor is saved, so this ends however many tries it takes; every page is
+        progress."""
+        c = self.p["confirm"] = self.p.get("confirm") or {"seen": [], "top": 1, "ended": False}
+        while not c["ended"] and not needed <= self.now | set(c["seen"]):
+            runs, _ = self.read(c["top"])
+            c["seen"] = sorted(set(c["seen"]) | {str(r["id"]) for r in runs})
+            c["top"] += 1
+            c["ended"] = len(runs) < PER_PAGE
+            self.cp["progress"] += 1
+            self.store()
+
     def forward(self):
         """Continue the scan to the workflow's last page, saving every page as it is read. Runs created while the
         pages were read push older runs down a page; reading the newest pages again then finds them."""
@@ -353,8 +368,8 @@ class Pages:
 
 
 def unchecked_heads(tools, run_file, left, cp, save):
-    """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first, and each
-    listed head's governing run when it was read in this pass).
+    """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first, each
+    listed head's governing run id when that run was read in this pass, and the pass's reader).
 
     A push head is a commit with a ci-pending or outcome record, the head of a ci.yml push run on main, or origin/main
     itself; a commit that is not one is covered by the first push head after it. The baseline is the oldest head with
@@ -389,7 +404,7 @@ def unchecked_heads(tools, run_file, left, cp, save):
                    "pass": None})
     cp["inputs"] = inputs
     if cp["pass"] is None:  # a new reconciliation; on the first, the forward scan reads every run in the pass
-        cp["pass"] = {"seen": [], "top": 1, "ended": not cp["runs"], "checked": []}
+        cp["pass"] = {"seen": [], "top": 1, "ended": not cp["runs"], "checked": [], "confirm": None}
     pages = Pages(tools, repo, cp, left, save)
     if cp["runs"]:  # runs held from an earlier try: find what is new or rerun before trusting them
         last, ended = pages.newest()
@@ -424,22 +439,23 @@ def unchecked_heads(tools, run_file, left, cp, save):
         pages.through(rests_on)
     newer = heads[:heads.index(baseline)] if baseline else heads
     listed = [c for c in reversed(newer) if not recorded(outcomes, c)]
-    return baseline, listed, {c: governing[c] for c in listed if c in governing and governing[c][0] in pages.seen}
+    return baseline, listed, {c: governing[c][0] for c in listed if c in governing and governing[c][0] in pages.seen}, \
+        pages
 
 
-def current(stored, fresh):
-    """Whether a stored completed result still holds: the head's governing run read in this pass is the run it was
+def current(stored, run_id, runs):
+    """Whether a stored completed result still holds: the head's governing run, as last read, is the run it was
     settled on, on the same attempt."""
-    return bool(stored and stored["code"] in (GREEN, RED) and stored.get("run") and fresh
-                and [int(fresh[0]), fresh[1]["attempt"]] == stored["run"])
+    return bool(stored and stored["code"] in (GREEN, RED) and stored.get("run") and run_id
+                and [int(run_id), runs[run_id]["attempt"]] == stored["run"])
 
 
-def settle_head(tools, sha, stored, fresh, now, deadline, clock):
+def settle_head(tools, sha, stored, run_id, runs, now, deadline, clock):
     """(code, lines, run identity) for one head. A stored completed result is reused while the head's governing run,
     read in this pass, is the same run on the same attempt (a rerun or a newer run replaces it; a page read before the
     run finished still names that attempt, and an attempt that finished never runs again); a pending or unknown head,
     or one never settled, is looked up again."""
-    if current(stored, fresh):
+    if current(stored, run_id, runs):
         return stored["code"], stored["lines"], stored["run"]
     code, lines = status(tools, sha, now, deadline, None, clock)
     run = None
@@ -479,7 +495,7 @@ def pending_main(args, tools, clock, now, checkpoint):
         print("unknown: this try made no progress before its deadline")
         return UNKNOWN
     try:
-        baseline, heads, fresh = unchecked_heads(tools, args.pending, left, cp, save)
+        baseline, heads, fresh, pages = unchecked_heads(tools, args.pending, left, cp, save)
     except DeadlinePassed:
         return out_of_time()
     except Unknown as exc:
@@ -489,17 +505,14 @@ def pending_main(args, tools, clock, now, checkpoint):
     # settled is progress. Heads still pending or unknown are then looked up again while the try has time; a deadline
     # in that sweep reports what the pass knows rather than repeating it forever.
     checked = cp["pass"]["checked"]
-    for s in heads:  # a rerun or a newer run seen since a head was settled in this pass settles it again
-        if s in checked and fresh.get(s) and cp["results"][s]["code"] in (GREEN, RED) \
-                and not current(cp["results"][s], fresh[s]):
-            checked.remove(s)
     first = [s for s in heads if s not in checked]
     again = [s for s in heads if s in checked and cp["results"][s]["code"] in (PENDING, UNKNOWN)]
     saved = clock()
     for sha in first + again:
         moment = now() if now else datetime.now(timezone.utc)
         try:
-            code, lines, run = settle_head(tools, sha, cp["results"].get(sha), fresh.get(sha), moment, deadline, clock)
+            code, lines, run = settle_head(tools, sha, cp["results"].get(sha), fresh.get(sha), cp["runs"], moment,
+                                           deadline, clock)
         except DeadlinePassed:
             if sha in checked:
                 break
@@ -511,6 +524,22 @@ def pending_main(args, tools, clock, now, checkpoint):
         if clock() - saved >= SAVE_SECONDS:  # the whole checkpoint is written, so not after every head
             save(cp)
             saved = clock()
+    # A result settled in an earlier try rests on a read that may predate a rerun: read its run again before the
+    # report, and settle again any head whose run changed.
+    earlier = {fresh[s] for s in heads if s in fresh and cp["results"][s]["code"] in (GREEN, RED)} - pages.now
+    try:
+        if earlier:
+            pages.confirm(earlier)
+        for s in heads:
+            if s in fresh and cp["results"][s]["code"] in (GREEN, RED) and not current(cp["results"][s], fresh[s],
+                                                                                         cp["runs"]):
+                code, lines, run = settle_head(tools, s, None, None, cp["runs"], now() if now else
+                                               datetime.now(timezone.utc), deadline, clock)
+                cp["results"][s] = {"code": code, "lines": lines, "run": run}
+                cp["progress"] += 1
+                save(cp)
+    except DeadlinePassed:
+        return out_of_time()
     codes = [cp["results"][s]["code"] for s in heads]
     print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
     print("\n".join(line for s in heads for line in cp["results"][s]["lines"]))
