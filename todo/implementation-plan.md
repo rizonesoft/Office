@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 20 | Checklist items: 141
+Sections: 21 | Checklist items: 146
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -30,8 +30,9 @@ Sections: 20 | Checklist items: 141
 | [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
 | [x]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 11    |
 | [x]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review | none                   | 17    |
-| [ ]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 6     |
+| [ ]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 7     |
 | [ ]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 9     |
+| [ ]    | D00 T03 §16 | Completion Evidence Adoption Boundary    | none                   | 4     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -171,6 +172,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 39/116 verified sections, 12 ready to run now.
+Progress: 39/117 verified sections, 12 ready to run now.
 
-Checklist: 249/739 items completed (includes Commit items).
+Checklist: 249/744 items completed (includes Commit items).

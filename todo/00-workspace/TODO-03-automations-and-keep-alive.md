@@ -48,6 +48,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 13 | §13 | Single writer, cap 33, completion review | §10 | [x] |
 | 14 | §14 | Completion evidence hardening | §13 | [ ] |
 | 15 | §15 | CI watch and red-run repair | §13 | [ ] |
+| 16 | §16 | Completion evidence adoption boundary | §14 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -410,6 +411,8 @@ Owner decisions 2026-10-23: Opus 5.5 (Claude Code) is the only writer from now o
 
 ## 14. Completion Evidence Hardening
 
+> **Started:** 2026-10-23T09:36:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §13's completion review (`docs/reviews/00-workspace/D00-T03-s13-completion.md`): after the one permitted re-check the reviewer still found four gaps, and §13's own rule files such gaps as a new section rather than reviewing a third time. §13 makes `stamp` require a completion record for the section; this section makes that record prove it reviewed the contract that was built, that no required re-check is pending, that a dispatcher refusal cannot leave a silent hole, and that evidence is fresh after a reopen to the second, not the day.
 
 **Phase:** 0
@@ -421,10 +424,11 @@ Filed 2026-10-23 from round 2 of D00 T03 §13's completion review (`docs/reviews
 1. Extend the completion record format and `stamp`'s checks in `scripts/lib/todo_graph.py`. Done when: each refusal below has a test that fails without it.
 2. Teach the skills the new record steps. Done when: `.claude/skills/process-todo-section/SKILL.md` names each.
 
-- [ ] Write the contract digest into each round's outcome in the completion record: `## Outcome (round N)` opens with `Contract: sha256:<digest>`, the SHA-256 of the section's text with every checkbox written unticked and the `Verified:`, `Review:` and `Started:` lines removed, as `python scripts/todo-graph.py contract-digest '<ref>'` prints it. Done when: the command exists, ticking an item leaves the digest unchanged, and editing an item's wording changes it. Cheaper substitute: trusting that an approved section was never edited.
-- [ ] Refuse in `stamp` a section whose current contract digest differs from the digest of the last returned round, so an extension made after the last review needs a fresh round. Done when: a test that extends a section after its approving round is refused, and one re-reviewed after the extension passes. Cheaper substitute: binding the evidence to the section reference only.
-- [ ] Tie each outcome to its round and refuse a pending re-check: an `extended` disposition in `## Outcome (round N)` requires a returned round N+1; `stamp` refuses while it is missing, and accepts `filed ->` dispositions for the re-check's gaps. Done when: tests refuse a session that died after recording `extended` and before the re-check, refuse one whose re-check returned an outage, and pass one whose re-check approved or whose gaps were all filed. Cheaper substitute: one outcome block for the whole file.
-- [ ] Require a recorded and read-back round before building: in `.claude/skills/process-todo-section/SKILL.md`, a dispatch that exits 2 (the review returned but `--record` refused the file) or leaves a record `read_rounds` cannot read parks the section with the reason in the run file, restores the record from its last commit, and retries once at the next phase start. Done when: the skill names exit 2, the read-back check, the restore and the single retry, and a test in `scripts/tests/test_review_dispatch.py` proves exit 2 leaves the record unchanged. Cheaper substitute: building on a review that was never recorded.
+- [ ] Add `python scripts/todo-graph.py contract-digest '<ref>'`, printing `sha256:<hex>` of the section's text with every checkbox written unticked and the `Verified:`, `Review:` and `Started:` lines removed. Done when: the command exists, ticking an item leaves the digest unchanged, and editing an item's wording changes it. Cheaper substitute: trusting that an approved section was never edited.
+- [ ] Bind each completion round to the contract it was given: `docs/completion-review-prompt.md` carries `Contract: sha256:<digest>` (printed by `contract-digest` from the same text the prompt inlines) and asks the reviewer to open its reply with `SECTION: <ref>`, `PURPOSE: completion` and `CONTRACT: sha256:<digest>` copied from the prompt, so the digest is inside the dispatcher's recorded reply, not written after it. Done when: the prompt names the line and `python scripts/check-design-doc.py docs/completion-review-prompt.md` exits 0. Cheaper substitute: a digest written into the record after the review, which can bind approval to text the reviewer never saw. **Groomed 2026-10-23:** completion finding 1 (replaces an outcome-block digest).
+- [ ] Refuse in `stamp` (`completion_ok` in `scripts/lib/todo_graph.py`) a section whose current contract digest differs from the `CONTRACT:` line of the last returned completion round, or whose last returned round has no such line when it ran at or after `CONTRACT_REQUIRED_FROM` (a UTC instant constant in `scripts/lib/todo_graph.py`: when `docs/completion-review-prompt.md` first carried the line; earlier rounds, this section's own included, are judged by the D00 T03 §13 rules, and D00 T03 §16 records which rules each receipt met). Done when: tests refuse an edit made after dispatch (the reply carries the old digest), a section extended after its approving round, and a reply without the line run after `CONTRACT_REQUIRED_FROM`, pass one re-reviewed after the extension, and pass a digest-free round run before it. Cheaper substitute: binding the evidence to the section reference only. **Corrected 2026-10-23:** did not say when the line becomes required, which would have refused every record written before the prompt carried it, this section's own included.
+- [ ] Refuse a pending re-check in `stamp`: when the `## Outcome (round N)` of the last returned completion round gives any gap `extended`, the re-check has not returned yet, whatever outage rounds were recorded after it, and the stamp is refused; a later returned round (the single re-check, or its one retry after an outage at the next phase start) satisfies it, with its own gaps `filed ->`. In `.claude/skills/process-todo-section/SKILL.md` the "never a third time" limit counts returned passes, not attempts, so a retry after an outage is allowed. Done when: tests refuse a session that died after recording `extended`, refuse one whose re-check returned an outage, pass one whose re-check returned after an outage round, and pass one whose re-check gaps were all filed; the skill states the counting rule. Cheaper substitute: one outcome block for the whole file, or counting outage attempts as passes. **Groomed 2026-10-23:** completion finding 2.
+- [ ] Keep the completion record recoverable in `.claude/skills/process-todo-section/SKILL.md`: commit the record with its `# Completion review: <ref>` line before the first dispatch, and commit it again after every returned round and its outcome, before anything else is built; a dispatch that exits 2 leaves the record untouched (nothing to restore), and a record `read_rounds` cannot read is restored from its last commit, which then holds every returned round; either parks the section with the reason in the run file and retries once at the next phase start. Done when: the skill names both commits, exit 2, the read-back check, the restore and the single retry, and a test in `scripts/tests/test_review_dispatch.py` proves an exit 2 on `--record` leaves the record byte for byte unchanged. Cheaper substitute: building on a review that was never recorded, or restoring over uncommitted returned rounds. **Groomed 2026-10-23:** completion finding 3.
 - [ ] Record reopening to the second: `python scripts/todo-graph.py unstamp` writes `> **Unstamped:** <UTC instant>: <reason>` (an ISO 8601 time ending in `Z`), and `stamp` refuses a completion round whose `Run:` time is not after the latest reopening; a date-only note from before this section counts as the end of its day. Done when: tests cover a review before and after a same-day reopen, two reopenings, and a legacy date-only note. Cheaper substitute: comparing dates.
 - [ ] Commit: `automations: bind completion evidence to the reviewed contract and its round`
 
@@ -454,6 +458,26 @@ Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on 
 - [ ] Commit: `automations: watch CI at section boundaries and repair red runs`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes, `python scripts/ci-status.py HEAD` prints the latest pushed commit's run state on this PC, and `python scripts/todo-graph.py validate` exits 0.
+
+## 16. Completion Evidence Adoption Boundary
+
+Filed 2026-10-23 from round 2 of D00 T03 §14's completion review (`docs/reviews/00-workspace/D00-T03-s14-completion.md`): §14 hardens what a completion record must prove (a `CONTRACT:` digest in the reply, no pending re-check, reopening to the second), but completion records written before it, such as D00 T03 §12's and §13's, carry no digest. Rewriting old reviews to add one would forge evidence. This section states and tests the boundary: stored receipts keep validating under the rules they were stamped with, and every stamp from §14 on, re-stamps after a reopen included, meets the hardened rules.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Record the boundary in each receipt and in `todo/README.md`. Done when: new receipts name the completion rules they met.
+2. Test both sides of the boundary. Done when: the tests below pass and fail when the boundary is removed.
+
+- [ ] Record `completion_rules: 2` in every receipt `stamp` writes from §14 on, and accept a receipt without the field as `completion_rules: 1` (the D00 T03 §13 rules) in `receipt_data_ok` in `scripts/lib/todo_graph.py`, never applying the version 2 checks to it. Done when: `python scripts/todo-graph.py validate` passes with the stored D00 T03 §12 and §13 receipts unchanged, and a receipt claiming `completion_rules: 2` whose record lacks a `CONTRACT:` line is refused. Cheaper substitute: adding a digest to an old review by hand.
+- [ ] Refuse in `stamp` any completion evidence that fails the version 2 rules, a re-stamp after `unstamp` included, whatever rules the section's earlier receipt met. Done when: a test unstamps a section stamped under version 1 and refuses its re-stamp with the old digest-free record, then accepts it after a fresh round with the `CONTRACT:` line. Cheaper substitute: letting a reopened section re-stamp on evidence from before the hardening.
+- [ ] State the boundary in the stamps paragraph of `todo/README.md` and in `.claude/skills/review-todo-section/SKILL.md`. Done when: both name `completion_rules`, the two versions and the re-stamp rule. Cheaper substitute: a rule only the code knows.
+- [ ] Commit: `automations: keep stored receipts under their own completion rules and harden every new stamp`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes and `python scripts/todo-graph.py validate` exits 0 with every stored receipt unchanged.
 
 ## Verification
 
