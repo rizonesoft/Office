@@ -292,8 +292,27 @@ class ScreenLock(Base):
         boot = 1000 * s
         # Booted at B, policy removed at B+30, clock moved forward 120 s since: now reads B+720 after 600 s of uptime.
         self.assertTrue(host_check.written_since_boot(boot + 30 * s, boot + 720 * s, 600 * s, boot + 1 * s))
+        # Clock set back 120 s at uptime 60 s, policy removed at uptime 90 s (stamped B-30), clock restored since.
+        self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
+        self.assertTrue(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s, 120 * s))
         # Written before this boot: not a pending change.
         self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
+
+    def test_backward_steps_are_summed_from_the_time_change_events(self):
+        def event(new, old):
+            return f"<Event><EventData><Data Name='NewTime'>{new}</Data><Data Name='OldTime'>{old}</Data></EventData></Event>"
+        xml = (event("2026-10-23T08:00:00.0000000Z", "2026-10-23T08:02:00.0000000Z")      # back 120 s
+               + event("2026-10-23T08:05:00.5000000Z", "2026-10-23T08:05:00.0000000Z")    # forward: ignored
+               + event("2026-10-23T09:00:00.0000000Z", "2026-10-23T09:00:00.2500000Z"))   # back 0.25 s
+        self.assertEqual(host_check.backward_shift(xml), 120 * 10**7 + 2_500_000)
+        self.assertEqual(host_check.backward_shift(""), 0)
+        with self.assertRaises(host_check.Unreadable):
+            host_check.backward_shift(event("yesterday", "2026-10-23T09:00:00Z"))
+
+    def test_the_real_event_reader_runs(self):
+        if host_check.os.name != "nt":
+            self.skipTest("Windows event log")
+        self.assertGreaterEqual(host_check.Host().clock_moved_back(3_600_000), 0)
 
     def test_the_real_reader_compares_with_boot_time(self):
         if host_check.os.name != "nt":

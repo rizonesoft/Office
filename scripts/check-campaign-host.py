@@ -15,6 +15,7 @@ still needs them, the C++ toolchain, `gh`, the pinned reviewer's CLI and the fre
 Exit 2 (a check could not run) outranks exit 1 (a check failed): either parks the campaign, and both print every line.
 """
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -214,7 +215,20 @@ class Host:
         kernel32 = ctypes.WinDLL("kernel32")
         kernel32.GetTickCount64.restype = ctypes.c_ulonglong
         now = (int(time.time()) + 11644473600) * 10**7
-        return written_since_boot(changed, now, kernel32.GetTickCount64() * 10**4, written(r"HARDWARE\DESCRIPTION"))
+        uptime = kernel32.GetTickCount64() * 10**4
+        return written_since_boot(changed, now, uptime, written(r"HARDWARE\DESCRIPTION"),
+                                  self.clock_moved_back(uptime // 10**4 + 86_400_000))
+
+    def clock_moved_back(self, window_ms):
+        """The total time, in 100 ns units, by which the system clock was set back in the last `window_ms`, from the
+        Kernel-General time change events (event 1, with OldTime and NewTime) in the System log."""
+        wevtutil = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wevtutil.exe")
+        query = ("*[System[Provider[@Name='Microsoft-Windows-Kernel-General'] and (EventID=1) and "
+                 f"TimeCreated[timediff(@SystemTime) <= {int(window_ms)}]]]")
+        result = self.run([wevtutil, "qe", "System", f"/q:{query}", "/f:xml", "/c:5000"])
+        if result.returncode != 0:
+            raise Unreadable(f"wevtutil could not read the time change events (exit {result.returncode})")
+        return backward_shift(result.stdout)
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -442,11 +456,27 @@ class Containment:
         return False
 
 
-def written_since_boot(changed, now, uptime, hardware_written):
+def written_since_boot(changed, now, uptime, hardware_written, moved_back=0):
     """Whether a key written at `changed` was written after Windows started (all in 100 ns units). Two boot times, and
     the earlier is used: now less the uptime moves with every clock correction made since, while the volatile
-    HARDWARE\\DESCRIPTION key is written as Windows starts, stamped by the clock as it was then."""
-    return changed > min(now - uptime, hardware_written)
+    HARDWARE\\DESCRIPTION key is written as Windows starts, stamped by the clock as it was then. A write stamped while
+    the clock was set back can sit before both, so the bound is widened by every backward correction since boot."""
+    return changed > min(now - uptime, hardware_written) - moved_back
+
+
+TIME_CHANGE = re.compile(r"<Data Name='NewTime'>([^<]+)</Data><Data Name='OldTime'>([^<]+)</Data>")
+
+
+def backward_shift(events_xml):
+    """The sum of every backward clock step in Kernel-General time change events, in 100 ns units."""
+    def ticks(text):
+        m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z", text.strip())
+        if not m:
+            raise Unreadable(f"a time change event has an unreadable time {text!r}")
+        whole = datetime(*map(int, m.groups()[:6]), tzinfo=timezone.utc)
+        fraction = int(((m[7] or "") + "0000000")[:7])
+        return (int(whole.timestamp()) + 11644473600) * 10**7 + fraction
+    return sum(max(0, ticks(old) - ticks(new)) for new, old in TIME_CHANGE.findall(events_xml))
 
 
 def ok(name, detail):
