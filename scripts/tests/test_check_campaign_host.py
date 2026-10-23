@@ -345,6 +345,14 @@ title: "TODO-01 -- Capture"
         self.assertIsNone(refs)
         self.assertIn("Refused: broken tree", note)
 
+    def test_incomplete_section_records_fall_back_to_checking_office(self):
+        for printed in ("[{}]", "[]", '[{"ref": "D02 T01 §1", "done": false, "status": "active"}]'):
+            with self.subTest(printed=printed):
+                self.host.run = lambda argv, seconds=None, out=printed: subprocess.CompletedProcess(argv, 0, out, "")
+                refs, note = host_check.office_needed(self.host)
+                self.assertIsNone(refs)
+                self.assertIn("cannot be read", note)
+
     def test_the_repository_tree_reads(self):
         rows = host_check.Host().sections()
         self.assertTrue(any(r["ref"] == "D00 T03 §12" for r in rows))
@@ -568,6 +576,15 @@ class Probe(unittest.TestCase):
         where = Path(r.stdout.strip())
         self.assertEqual(where.name, "work")
         self.assertNotEqual(where.resolve(), Path.cwd().resolve())
+
+    @unittest.skipUnless(os.name == "nt", "the job memory limit is the Windows containment")
+    def test_a_nested_capture_is_held_to_the_job_memory_limit(self):
+        grandchild = "x = bytearray(600 * 1024 * 1024); print(len(x))"
+        parent = f"import subprocess, sys; sys.exit(subprocess.run([sys.executable, '-c', {grandchild!r}]).returncode)"
+        with mock.patch.object(host_check, "PROBE_MEMORY_BYTES", 256 * 1024 * 1024):
+            r = host_check.Host().run([sys.executable, "-c", parent], seconds=60)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertNotIn("629145600", r.stdout)
 
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])

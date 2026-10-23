@@ -59,6 +59,7 @@ MIN_FREE_BYTES = 50 * 10**9
 PROBE_SECONDS = 120  # every subprocess probe ends by then, so a hung tool cannot hold the campaign before its park
 MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 MB
 POLL_SECONDS = 0.1
+PROBE_MEMORY_BYTES = 2 * 1024**3  # all of a probe's processes together; the TODO reader needs about 60 MB
 KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
 SECTIONS_CODE = """import json, sys
@@ -182,8 +183,12 @@ class Host:
         if result.returncode != 0:
             raise Unreadable((result.stderr.strip().splitlines() or [f"exit {result.returncode}"])[-1])
         rows = json.loads(result.stdout)
-        if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
-            raise Unreadable("the TODO reader did not print a list of sections")
+        # A record missing a field could otherwise read as "needs no Office" and skip the check.
+        if not isinstance(rows, list) or not rows or not all(
+                isinstance(r, dict) and isinstance(r.get("ref"), str) and isinstance(r.get("done"), bool)
+                and isinstance(r.get("status"), str) and isinstance(r.get("needs"), list)
+                and all(isinstance(n, str) for n in r["needs"]) for r in rows):
+            raise Unreadable("the TODO reader did not print a list of complete section records")
         return rows
 
     def vswhere(self):
@@ -314,7 +319,10 @@ class Containment:
             if not self.job:
                 raise Unreadable(f"CreateJobObjectW failed (error {ctypes.get_last_error()})")
             info = Extended()
-            info.BasicLimitInformation.LimitFlags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_JOB_MEMORY: the memory limit bounds what any member
+            # buffers (a nested capture of git or WSL output included), which the output files alone cannot see.
+            info.BasicLimitInformation.LimitFlags = 0x2000 | 0x200
+            info.JobMemoryLimit = PROBE_MEMORY_BYTES
             if not self.kernel32.SetInformationJobObject(self.job, 9, ctypes.byref(info), ctypes.sizeof(info)):
                 self.kernel32.CloseHandle(self.job)  # 9 = JobObjectExtendedLimitInformation
                 raise Unreadable(f"SetInformationJobObject failed (error {ctypes.get_last_error()})")
@@ -324,8 +332,11 @@ class Containment:
         """Start the probe in `cwd`, a scratch folder: Windows looks for a bare program name in the working directory
         first, so neither the probe nor anything it starts by a bare name runs a program planted in the repository."""
         if os.name != "nt":
+            def limit():  # per process on POSIX, where there is no job: each member is held to the same bound
+                import resource
+                resource.setrlimit(resource.RLIMIT_AS, (PROBE_MEMORY_BYTES, PROBE_MEMORY_BYTES))
             return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
-                                    start_new_session=True)
+                                    start_new_session=True, preexec_fn=limit)
         create_suspended = 0x00000004
         process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
                                    creationflags=create_suspended | pin_proposal.NO_WINDOW)
@@ -466,8 +477,7 @@ def office_needed(host):
         sections = host.sections()
     except Exception as exc:  # any failure to read the tree (a refusal, a git timeout, a bug) falls back to checking
         return None, f"the TODO tree cannot be read ({type(exc).__name__}: {exc}), so Office is checked"
-    refs = [s["ref"] for s in sections
-            if s.get("done") is not True and s.get("status") != "superseded" and "office" in (s.get("needs") or [])]
+    refs = [s["ref"] for s in sections if not s["done"] and s["status"] != "superseded" and "office" in s["needs"]]
     return refs, None
 
 
