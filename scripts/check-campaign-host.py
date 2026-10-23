@@ -480,6 +480,8 @@ def check_screen_lock(host):
         seconds = int(str(timeout).strip())
     except ValueError:
         raise Unreadable(f"ScreenSaveTimeOut is not a number of seconds: {timeout!r}") from None
+    if not 0 <= seconds <= 86400:  # 0 (off) or 1 to 86400 seconds, as Microsoft's ScreenSaveTimeOut policy allows
+        raise Unreadable(f"ScreenSaveTimeOut is {seconds}, outside 0 to 86400 seconds")
     # A timeout of 0 never starts the screen saver, so it never locks (Microsoft's ScreenSaveTimeOut policy).
     if str(active).strip() == "1" and str(secure).strip() == "1" and saver and seconds > 0:
         found.append(f"the screen saver locks the PC after {seconds} seconds")

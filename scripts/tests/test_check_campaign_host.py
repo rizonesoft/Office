@@ -227,6 +227,15 @@ class ScreenLock(Base):
                 self.assertEqual(self.result("screen lock")["state"], "error")
                 del self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, name)]
 
+    def test_a_timeout_out_of_range_cannot_check(self):
+        self.host.saver.update(secure=True, timeout=60)
+        for value in ("-1", "86401"):
+            with self.subTest(value=value):
+                self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = value
+                self.assertEqual(self.result("screen lock")["state"], "error")
+        self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "86400"
+        self.assertEqual(self.result("screen lock")["state"], "fail")
+
     def test_an_unreadable_policy_timeout_cannot_check(self):
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "soon"
         self.assertEqual(self.result("screen lock")["state"], "error")
