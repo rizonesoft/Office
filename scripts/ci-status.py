@@ -389,7 +389,7 @@ def unchecked_heads(tools, run_file, left, cp, save):
                    "pass": None})
     cp["inputs"] = inputs
     if cp["pass"] is None:  # a new reconciliation; on the first, the forward scan reads every run in the pass
-        cp["pass"] = {"seen": [], "top": 1, "ended": not cp["runs"]}
+        cp["pass"] = {"seen": [], "top": 1, "ended": not cp["runs"], "checked": []}
     pages = Pages(tools, repo, cp, left, save)
     if cp["runs"]:  # runs held from an earlier try: find what is new or rerun before trusting them
         last, ended = pages.newest()
@@ -427,20 +427,26 @@ def unchecked_heads(tools, run_file, left, cp, save):
     return baseline, listed, {c: governing[c] for c in listed if c in governing and governing[c][0] in pages.seen}
 
 
+def current(stored, fresh):
+    """Whether a stored completed result still holds: the head's governing run read in this pass is the run it was
+    settled on, on the same attempt."""
+    return bool(stored and stored["code"] in (GREEN, RED) and stored.get("run") and fresh
+                and [int(fresh[0]), fresh[1]["attempt"]] == stored["run"])
+
+
 def settle_head(tools, sha, stored, fresh, now, deadline, clock):
-    """(code, lines, run identity, newly settled) for one head. A stored completed result is reused while the head's
-    governing run, read in this pass, is the same run on the same attempt (a rerun or a newer run replaces it); a
-    pending or unknown head, or one never settled, is checked again."""
-    if stored and stored["code"] in (GREEN, RED) and stored.get("run") and fresh:
-        run_id, run = fresh
-        if [int(run_id), run["attempt"]] == stored["run"] and run["status"] == "completed":
-            return stored["code"], stored["lines"], stored["run"], False
+    """(code, lines, run identity) for one head. A stored completed result is reused while the head's governing run,
+    read in this pass, is the same run on the same attempt (a rerun or a newer run replaces it; a page read before the
+    run finished still names that attempt, and an attempt that finished never runs again); a pending or unknown head,
+    or one never settled, is looked up again."""
+    if current(stored, fresh):
+        return stored["code"], stored["lines"], stored["run"]
     code, lines = status(tools, sha, now, deadline, None, clock)
     run = None
     if code in (GREEN, RED):
         found = re.search(r" run (\d+) attempt (\d+)", lines[0])
         run = [int(found[1]), int(found[2])] if found else None
-    return code, lines, run, code in (GREEN, RED) and stored != {"code": code, "lines": lines, "run": run}
+    return code, lines, run
 
 
 def pending_main(args, tools, clock, now, checkpoint):
@@ -479,23 +485,35 @@ def pending_main(args, tools, clock, now, checkpoint):
     except Unknown as exc:
         print(f"unknown: {exc}")
         return UNKNOWN
-    report, codes, saved = [], [], clock()
-    for sha in heads:
+    # Each head is settled once in a pass, so a try goes on past the heads an earlier try reached, and every head
+    # settled is progress. Heads still pending or unknown are then looked up again while the try has time; a deadline
+    # in that sweep reports what the pass knows rather than repeating it forever.
+    checked = cp["pass"]["checked"]
+    for s in heads:  # a rerun or a newer run seen since a head was settled in this pass settles it again
+        if s in checked and fresh.get(s) and cp["results"][s]["code"] in (GREEN, RED) \
+                and not current(cp["results"][s], fresh[s]):
+            checked.remove(s)
+    first = [s for s in heads if s not in checked]
+    again = [s for s in heads if s in checked and cp["results"][s]["code"] in (PENDING, UNKNOWN)]
+    saved = clock()
+    for sha in first + again:
         moment = now() if now else datetime.now(timezone.utc)
         try:
-            code, lines, run, settled = settle_head(tools, sha, cp["results"].get(sha), fresh.get(sha), moment,
-                                                    deadline, clock)
+            code, lines, run = settle_head(tools, sha, cp["results"].get(sha), fresh.get(sha), moment, deadline, clock)
         except DeadlinePassed:
+            if sha in checked:
+                break
             return out_of_time()
-        cp["progress"] += settled
         cp["results"][sha] = {"code": code, "lines": lines, "run": run}
+        if sha not in checked:
+            checked.append(sha)
+            cp["progress"] += 1
         if clock() - saved >= SAVE_SECONDS:  # the whole checkpoint is written, so not after every head
             save(cp)
             saved = clock()
-        codes.append(code)
-        report += lines
+    codes = [cp["results"][s]["code"] for s in heads]
     print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
-    print("\n".join(report))
+    print("\n".join(line for s in heads for line in cp["results"][s]["lines"]))
     cp["pass"] = None  # reported: the next reconciliation reads what it relies on again
     save(cp)
     for worst in (UNKNOWN, RED, PENDING):

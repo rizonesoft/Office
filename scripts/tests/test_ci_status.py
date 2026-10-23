@@ -708,6 +708,42 @@ class Scale(Pending):
         self.assertEqual(len([c for c in repo.calls if c[1][:2] == ["run", "list"]]) - lookups, 1)  # only C
         self.assertEqual(code, 1)
 
+    def test_pending_heads_do_not_starve_the_heads_after_them(self):
+        base, newest = sha(1), sha(99)
+        pending = [sha(n) for n in range(2, 14)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([newest, *reversed(pending), base], {base: "success", **{h: None for h in pending}, newest: "failure"})
+        codes = []
+        for _ in range(6):
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertEqual(codes[:-1], [ci.PROGRESSING] * (len(codes) - 1))
+        self.assertEqual(codes[-1], 1)  # the red head was reached
+        self.assertIn(f"red {newest[:7]}", out)
+
+    def test_a_result_settled_after_its_page_was_read_is_reused(self):
+        base = sha(1)
+        heads = [sha(n) for n in range(2, 15)]
+        others = [{"id": 80000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(600 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([*reversed(heads), base], {base: "success", **{h: None for h in heads}}, extra_runs=others)
+
+        def finish():  # every main run finishes once page 2, which holds them, has been read
+            repo.runs.update({h: "success" for h in heads})
+        repo.after_page[2] = finish
+        codes = []
+        for _ in range(6):
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertEqual(codes[-1], 0)
+        lookups = [c for c in repo.calls if c[1][:2] == ["run", "list"]]
+        self.assertEqual(len(lookups), len(heads))  # each head looked up once, its result then reused
+
     def test_a_rerun_between_interrupted_tries_replaces_a_stored_result(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
