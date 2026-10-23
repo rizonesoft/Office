@@ -257,6 +257,9 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                     and not report.is_absolute() and not report.drive and not report.root
                     and ".." not in report.parts,
                     f"invalid review report path ({raw_report}): {ref}")
+            # A completion review judges the plan before the build, never the implementation (D00 T03 §13).
+            require(not raw_report.endswith("-completion.md"),
+                    f"{raw_report} is a completion record, not a review of the implementation: {ref}")
             cur = root_path
             for part in report.parts:
                 cur = cur / part
@@ -315,6 +318,10 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                 for r in claimed:
                     e = reviewed.get(r["round"])
                     last = ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1] if e else ""
+                    require(e is None or "PURPOSE: completion" not in
+                            [x.strip() for x in e["review"].splitlines() if x.strip()][:2],
+                            f"round {r['round']} of {report} is a completion review, not a review of the "
+                            f"implementation: {ref}")
                     require(e is not None and e["writer"] in dispatch.WRITER_FAMILY
                             and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
                             and last == ("OVERALL: approve" if r["verdict"] == "clean" else "OVERALL: needs-attention"),
@@ -605,6 +612,12 @@ def graph(root=ROOT):
                 if marker == "Deferred":
                     require(not sections[owner].done,
                             f"stale deferral, owner {owner} shipped; close it as Resolved: {row.ref}")
+    # A stamped completion record's filed references resolve against the whole graph, known only now (D00 T03 §13).
+    for sec in sections.values():
+        if sec.done and sec.receipt:
+            data = json.loads(read_text(Path(root) / sec.receipt))
+            if isinstance(data, dict) and isinstance(data.get("completion"), str):
+                completion_ok(root, sec.ref, data["completion"], rows=sections)
     _index_coverage(root, files)
     visiting, visited = set(), set()
     for start in sections:
@@ -880,7 +893,7 @@ def completion_ok(root, ref, path, rows=None):
     opens `SECTION: <ref>` and `PURPOSE: completion` and pairs `COMPLETE: yes` with `OVERALL: approve` (or
     `COMPLETE: no` with `needs-attention`); after `COMPLETE: no`, its `## Outcome (round N)` block gives every
     numbered gap `N. extended` or `N. filed -> DNN TNN §N`, and with `rows` each filed reference must be a section.
-    Earlier rounds are history. Returns the last returned round's `Run:` time."""
+    Earlier rounds are history. Returns the last returned round as the dispatcher reads it."""
     root_path = Path(root)
     report = Path(path) if isinstance(path, str) else None
     require(report is not None and re.fullmatch(r"docs/reviews/[A-Za-z0-9_./-]+-completion\.md", path) is not None
@@ -922,7 +935,9 @@ def completion_ok(root, ref, path, rows=None):
             f"round {n} of {path} pairs {verdicts[0]} with {lines[-1]}; COMPLETE: yes goes with OVERALL: approve and "
             f"COMPLETE: no with OVERALL: needs-attention: {ref}")
     if not complete:
-        gaps = sorted({int(m.group(1)) for m in re.finditer(r"^(\d+)\.\s", last["review"], re.M)})
+        # Any numbered line counts, indented or not, `N.` or `N)`: a nested list asks for more dispositions, never
+        # fewer, so no gap slips through on its formatting.
+        gaps = sorted({int(m.group(1)) for m in re.finditer(r"^\s*(\d+)[.)]\s", last["review"], re.M)})
         require(gaps, f"round {n} of {path} says COMPLETE: no but numbers no gap: {ref}")
         title = f"## Outcome (round {n})"
         require(title in [line.strip() for line in outside],
@@ -945,7 +960,7 @@ def completion_ok(root, ref, path, rows=None):
             for gap, target in sorted(dispositions.items()):
                 require(target is None or target in rows,
                         f"gap {gap} of round {n} in {path} is filed to {target}, which is no section: {ref}")
-    return last["run"]
+    return last
 
 
 def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=None, completion=None):
@@ -981,7 +996,21 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     # The completion review ran before the build (D00 T03 §13); after a reopen it must have run again since.
     require(isinstance(completion, str) and completion.strip(),
             f"--completion is required: the section's completion record, docs/reviews/<domain>/{completion_name(ref)}")
-    run = completion_ok(root, ref, completion, rows)
+    last = completion_ok(root, ref, completion, rows)
+    run = last["run"]
+    # The completion review is the pinned reviewer's, as pinned now: its name, model and effort (a reviewer of another
+    # family alone could be anyone).
+    dispatch = review_dispatch()
+    try:
+        pin = dispatch.load_pin(Path(root) / ".conclave" / "reviewers.toml")
+    except dispatch.Refused as exc:
+        raise Refused(f"cannot read the reviewer pin to check {completion}: {exc}: {ref}") from None
+    route = pin["routes"].get(last["writer"]) or []
+    pinned = pin["reviewers"].get(route[0]) if route else None
+    require(pinned is not None and last["reviewer"] == route[0] and last["model"] == pinned["model"]
+            and last["effort"] == pinned.get("effort"),
+            f"the completion review in {completion} was run by {last['reviewer']} ({last['model']}, {last['effort']}), "
+            f"not the reviewer the pin names for {last['writer']}: {ref}")
     reopened = re.findall(r"^> \*\*Unstamped:\*\* (\d{4}-\d{2}-\d{2})", row.body, re.M)
     require(not reopened or (run or "")[:10] >= max(reopened),
             f"the completion review in {completion} ran {run}, before the section was reopened on {max(reopened)}; "

@@ -395,6 +395,10 @@ class Stamp(Tree):
         report_path.write_text("# Review findings\n\n" + envelope(1), encoding="utf-8")
         self.completion = "docs/reviews/00-workspace/D00-T01-s1-completion.md"
         self.write_completion(COMPLETE_YES)
+        (self.root / ".conclave").mkdir(exist_ok=True)
+        (self.root / ".conclave/reviewers.toml").write_text(
+            'schema_version = 1\n\n[reviewers.astra]\ncli = "codex"\nmodel = "m"\neffort = "medium"\n\n'
+            '[routes]\nclaude = ["astra"]\n', encoding="utf-8")
         for args in (["init", "-q"], ["config", "user.email", "t@example.com"],
                      ["config", "user.name", "T"], ["add", "-A"], ["commit", "-qm", "x"]):
             subprocess.run(["git", "-C", str(self.root), *args], check=True)
@@ -412,7 +416,8 @@ class Stamp(Tree):
             kwargs["completion"] = path
         return tg.stamp(root, ref, *args, **kwargs)
 
-    def write_completion(self, *reviews, path=None, ref="D00 T01 §1", outcome="", when="2026-10-21T00:00:00Z"):
+    def write_completion(self, *reviews, path=None, ref="D00 T01 §1", outcome="", when="2026-10-21T00:00:00Z",
+                         reviewer=("astra", "m", "medium")):
         """A completion record as process-todo-section leaves it: the heading, the dispatcher's rounds, an outcome."""
         target = self.root / (path or self.completion)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -423,8 +428,8 @@ class Stamp(Tree):
                 result = {"writer": "claude", "reviewer": None, "model": None, "cli": None, "effort": None,
                           "failover": [{"reviewer": "astra", "reason": "exited 1"}], "review": None}
             else:
-                result = {"writer": "claude", "reviewer": "astra", "model": "m", "cli": "codex", "effort": "medium",
-                          "failover": [], "review": review}
+                result = {"writer": "claude", "reviewer": reviewer[0], "model": reviewer[1], "cli": "codex",
+                          "effort": reviewer[2], "failover": [], "review": review}
             dispatch.record(target, result, when)
         if outcome:
             target.write_text(target.read_text(encoding="utf-8") + "\n" + outcome, encoding="utf-8")
@@ -486,6 +491,52 @@ class Stamp(Tree):
         receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["completion"], self.completion)
         tg.graph(self.root)  # and the receipt validates
+
+    def test_the_completion_review_is_the_pinned_reviewers(self):
+        # Review round 1 of D00 T03 §13, finding 1: another family alone could be anyone.
+        self.tick_work()
+        for who in (("impostor", "m", "medium"), ("astra", "other-model", "medium"), ("astra", "m", "low")):
+            with self.subTest(who=who):
+                self.write_completion(COMPLETE_YES, reviewer=who)
+                self.refused(completion=self.completion, contains="not the reviewer the pin names")
+
+    def test_every_numbered_gap_counts_however_it_is_written(self):
+        # Review round 1 of D00 T03 §13, finding 2: an indented `2.` and a `2)` escaped the disposition check.
+        self.tick_work()
+        for second in ("  2. **[P2] new section: the export dialog.** Missing.",
+                       "2) **[P2] new section: the export dialog.** Missing."):
+            with self.subTest(second=second):
+                review = GAPS.replace("2. **[P2] new section: the export dialog.** Missing.", second)
+                self.write_completion(review, outcome="## Outcome (round 1)\n\n1. filed -> D00 T01 §2\n")
+                self.refused(completion=self.completion, contains="gap 2 of round 1")
+
+    def test_a_completion_record_is_never_the_implementation_review(self):
+        # Review round 1 of D00 T03 §13, finding 3: an approving completion record stood in for the code review.
+        self.tick_work()
+        with self.assertRaises(tg.Refused) as ctx:
+            self.stamp(self.root, "D00 T01 §1", self.sha, [{"round": 1, "report": self.completion, "verdict": "clean"}],
+                       ["true -> ok"], "2026-10-13")
+        self.assertIn("is a completion record, not a review of the implementation", str(ctx.exception))
+        # The same reply copied into an ordinary findings file is still not a review of the implementation.
+        report = self.root / "docs/reviews/00-workspace/D00-T01-s1.md"
+        report.write_text("# Review findings\n\n" + envelope(1).replace("Review text.", "SECTION: D00 T01 §1\n"
+                          "PURPOSE: completion\n\nCOMPLETE: yes\nHIGHEST: none"), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertIn("is a completion review, not a review of the implementation", str(ctx.exception))
+
+    def test_a_stamped_completion_records_filed_sections_still_resolve(self):
+        # Review round 1 of D00 T03 §13, finding 4: receipt validation skipped the filed-reference check.
+        self.tick_work()
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        tg.graph(self.root)
+        record = self.root / self.completion
+        record.write_text(record.read_text(encoding="utf-8").replace("filed -> D00 T01 §2", "filed -> D99 T99 §99"),
+                          encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn("filed to D99 T99 §99, which is no section", str(ctx.exception))
 
     def test_the_last_returned_round_decides_and_earlier_rounds_are_history(self):
         self.tick_work()
