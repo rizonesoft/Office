@@ -154,7 +154,7 @@ PINNED = [
     ('plan', '- 2 (unknown',
      '160e3153fb8c7d774fe9d1ca750dcddc0a31515cac2d9098e51fca1cafff0df0'),
     ('plan', 'Repair a red run before the next row',
-     '7f1ff312bf223a0e5a4a3d733ce89612ed953fb5c94cd691e882302bd0db2d22'),
+     '9f0495da0f431ca61a5a4d830f6119212972d736e2daa194a6afd7e8f5bc5a9d'),
     ('plan', 'Bound the repair:',
      '433a2fbcecd02a7dcc4a66e7138944459678464b427b482f8c1447bdbeefdc0f'),
     ('plan', 'A `ci-red` or `ci-unknown` park ends the whole campaign',
