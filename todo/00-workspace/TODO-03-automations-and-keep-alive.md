@@ -476,6 +476,8 @@ Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on 
 
 ## 16. Completion Evidence Adoption Boundary
 
+> **Started:** 2026-10-23T11:21:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §14's completion review (`docs/reviews/00-workspace/D00-T03-s14-completion.md`): §14 hardens what a completion record must prove (a `CONTRACT:` digest in the reply, no pending re-check, reopening to the second), but completion records written before it, such as D00 T03 §12's and §13's, carry no digest. Rewriting old reviews to add one would forge evidence. This section states and tests the boundary: stored receipts keep validating under the rules they were stamped with, and every stamp from §14 on, re-stamps after a reopen included, meets the hardened rules.
 
 **Phase:** 0
