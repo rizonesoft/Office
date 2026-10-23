@@ -323,6 +323,172 @@ class RealCalls(unittest.TestCase):
             ci.Tools().call("gh", ["run", "list"], 5)
 
 
+
+def sha(n):
+    """A distinct SHA whose 7-character prefix, as run files record it, is distinct too."""
+    return f"{n:07x}" + "c" * 33
+
+
+class Repo:
+    """A scripted clone and GitHub for --pending: a first-parent history (newest first), push runs by head, and what
+    `git fetch` brings in."""
+
+    def __init__(self, history, runs, fetched=None, fail=None):
+        self.history = list(history)
+        self.fetched = fetched
+        self.runs = runs  # head -> conclusion ("success", "failure", or None while in progress)
+        self.fail = fail or {}
+        self.calls = []
+
+    def run_record(self, head):
+        conclusion = self.runs[head]
+        return run(headSha=head, databaseId=int(head[:7], 16), status="completed" if conclusion else "in_progress",
+                   conclusion=conclusion or "")
+
+    def call(self, name, args, seconds):
+        self.calls.append((name, list(args)))
+        key = f"{name} {args[0]}"
+        if key in self.fail:
+            return subprocess.CompletedProcess(args, 1, "", self.fail[key])
+        out = None
+        if name == "git" and args[0] == "fetch":
+            if self.fetched is not None:
+                self.history = self.fetched
+            out = ""
+        elif name == "git" and args[0] == "rev-list":
+            out = "\n".join(self.history) + "\n"
+        elif name == "git" and args[0] == "rev-parse":
+            ref = args[2].split("^")[0]
+            out = (self.history[0] if ref in ("HEAD", "origin/main") else ref) + "\n"
+        elif name == "git" and args[0] == "show":
+            out = COMMITTED.isoformat() + "\n"
+        elif name == "git" and args[0] == "remote":
+            out = "https://github.com/rizonesoft/Office.git\n"
+        elif args[:2] == ["run", "list"] and "--commit" in args:
+            head = args[args.index("--commit") + 1]
+            out = json.dumps([self.run_record(head)] if head in self.runs else [])
+        elif args[:2] == ["run", "list"]:
+            out = json.dumps([self.run_record(h) for h in self.runs])
+        elif args[:2] == ["run", "view"]:
+            out = json.dumps({"jobs": []})
+        if out is None:
+            raise AssertionError(f"unexpected call {name} {args}")
+        return subprocess.CompletedProcess(args, 0, out, "")
+
+
+class Pending(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir, ignore_errors=True)
+        self.run_file = self.dir / "2026-10-23-phase-0.md"
+
+    def record(self, *lines, name=None):
+        path = self.dir / (name or self.run_file.name)
+        path.write_text("# Phase run\n\n## Critical events\n\n" + "".join(f"- {line}\n" for line in lines),
+                        encoding="utf-8")
+
+    def pending(self, repo):
+        clock = Clock()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = ci.main(["--pending", str(self.run_file)], tools=repo, clock=clock, sleep=clock.sleep,
+                           now=lambda: COMMITTED + timedelta(minutes=30))
+        return code, out.getvalue()
+
+    def listed(self, out):
+        words = [line.split() for line in out.splitlines() if line.strip()]
+        return [w[1].rstrip(":") for w in words if w[0] in ("green", "red", "pending", "unknown") and len(w) > 1
+                and len(w[1].rstrip(":")) == 7]
+
+    def test_unrecorded_merge_closeout_and_stamp_pushes_are_listed(self):
+        base, merge, closeout, stamp = sha(1), sha(2), sha(3), sha(4)
+        self.record(f"ci-green {base[:7]}")
+        code, out = self.pending(Repo([stamp, closeout, merge, base],
+                                      {base: "success", merge: "success", closeout: "success", stamp: "success"}))
+        self.assertEqual(code, 0)
+        self.assertEqual(self.listed(out), [merge[:7], closeout[:7], stamp[:7]])
+
+    def test_commits_pushed_with_their_stamp_are_covered_by_it(self):
+        base, impl1, impl2, stamp = sha(1), sha(2), sha(3), sha(4)
+        self.record(f"ci-green {base[:7]}")
+        code, out = self.pending(Repo([stamp, impl2, impl1, base], {base: "success", stamp: "success"}))
+        self.assertEqual(self.listed(out), [stamp[:7]])
+
+    def test_a_later_green_head_never_covers_an_earlier_unchecked_one(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}", f"ci-green {b[:7]}")
+        code, out = self.pending(Repo([b, a, base], {base: "success", a: "failure", b: "success"}))
+        self.assertEqual(code, 1)
+        self.assertEqual(self.listed(out), [a[:7]])
+
+    def test_a_recorded_pending_push_is_a_head_even_without_a_run_yet(self):
+        base, stamp = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}", f"ci-pending {stamp[:7]} 2026-10-23T10:00:00Z")
+        code, out = self.pending(Repo([sha(3), stamp, base], {base: "success"}))
+        self.assertIn(stamp[:7], self.listed(out))
+
+    def test_every_head_with_an_outcome_lists_nothing(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}", f"ci-superseded {a[:7]} by {b[:7]}", f"ci-green {b[:7]}")
+        code, out = self.pending(Repo([b, a, base], {base: "success", a: "failure", b: "success"}))
+        self.assertEqual((code, self.listed(out)), (0, []))
+        self.assertIn("0 unchecked push head(s)", out)
+
+    def test_the_remote_is_fetched_before_enumeration(self):
+        base, new = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([base], {base: "success", new: "failure"}, fetched=[new, base])
+        code, out = self.pending(repo)
+        self.assertEqual(code, 1)
+        self.assertEqual(self.listed(out), [new[:7]])
+        self.assertEqual(repo.calls[0][1][:1], ["fetch"])
+
+    def test_a_failed_fetch_is_unknown(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        code, out = self.pending(Repo([sha(1)], {sha(1): "success"}, fail={"git fetch": "network"}))
+        self.assertEqual(code, 2)
+        self.assertIn("git fetch origin main failed", out)
+
+    def test_the_first_run_baseline_is_the_newest_green_push_head(self):
+        old, green, after = sha(1), sha(2), sha(3)
+        repo = lambda: Repo([after, green, old], {old: "failure", green: "success", after: "failure"})
+        for setup in ("no run file", "empty run file", "no outcome recorded"):
+            with self.subTest(setup=setup):
+                for f in self.dir.glob("*.md"):
+                    f.unlink()
+                if setup == "empty run file":
+                    self.run_file.write_text("", encoding="utf-8")
+                elif setup == "no outcome recorded":
+                    self.record("run opened", name="2026-10-22-phase-2.md")
+                code, out = self.pending(repo())
+                self.assertIn(f"baseline {green[:7]}", out)
+                self.assertEqual(self.listed(out), [after[:7]])
+
+    def test_with_no_green_run_every_head_is_listed(self):
+        a, b = sha(1), sha(2)
+        code, out = self.pending(Repo([b, a], {a: "failure", b: "failure"}))
+        self.assertIn("no baseline", out)
+        self.assertEqual(self.listed(out), [a[:7], b[:7]])
+
+    def test_an_unreadable_run_file_is_unknown(self):
+        (self.dir / "2026-10-22-phase-1.md").write_bytes(b"\xff\xfe not utf-8")
+        code, out = self.pending(Repo([sha(1)], {sha(1): "success"}))
+        self.assertEqual(code, 2)
+        self.assertIn("cannot read the run file", out)
+
+    def test_a_failed_run_list_is_unknown(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        code, _ = self.pending(Repo([sha(1)], {sha(1): "success"}, fail={"gh run": "HTTP 502"}))
+        self.assertEqual(code, 2)
+
+    def test_a_full_page_of_runs_is_unknown(self):
+        heads = [sha(n) for n in range(1, ci.RUN_LIMIT + 1)]
+        self.record(f"ci-green {heads[0][:7]}")
+        code, out = self.pending(Repo(list(reversed(heads)), {h: "success" for h in heads}))
+        self.assertEqual(code, 2)
+        self.assertIn("may be cut off", out)
+
+
 class Logs(Base):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())

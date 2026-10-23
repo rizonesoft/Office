@@ -6,6 +6,7 @@
     python scripts/ci-status.py <ref>                                # exit 0 green, 1 red, 3 pending, 2 unknown
     python scripts/ci-status.py <ref> --wait --timeout 3600          # poll every 30 s until the run ends
     python scripts/ci-status.py <ref> --log R:\\scratch\\ci-<sha>.log  # with red: the failed steps' log, last 400 lines
+    python scripts/ci-status.py --pending docs/phase-runs/<run file>  # every pushed head with no recorded outcome
 
 The governing run of a commit is the `ci.yml` run with event `push` on branch `main` whose head is that commit (pull
 request and manual runs never count), the newest by creation when there are several, at its latest attempt. `success`
@@ -19,6 +20,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -194,14 +196,127 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
     return RED, lines
 
 
+# D00 T03 §17: the pushed heads of main whose CI nobody has recorded, rebuilt from the pushed history.
+OUTCOME = re.compile(r"\bci-(?:green|superseded) ([0-9a-f]{7,40})\b")
+PENDING_RECORD = re.compile(r"\bci-pending ([0-9a-f]{7,40})\b")
+RUN_LIMIT = 500  # one gh page; a full page may mean a cut-off history, which is unknown, never complete
+HISTORY_LIMIT = 5000
+PENDING_SECONDS = 600
+
+
+def records(run_file):
+    """(outcome SHAs, pending SHAs) recorded in the run file and every run file beside it (D00 T03 §15 and §17)."""
+    target = Path(run_file).resolve()
+    files = sorted(set(target.parent.glob("*.md")) | ({target} if target.exists() else set()))
+    outcomes, pendings = set(), set()
+    for path in files:
+        try:
+            text = path.read_bytes().decode("utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise Unknown(f"cannot read the run file {path.name}: {getattr(exc, 'strerror', None) or exc}") from None
+        outcomes |= set(OUTCOME.findall(text))
+        pendings |= set(PENDING_RECORD.findall(text))
+    return outcomes, pendings
+
+
+def recorded(prefixes, sha):
+    return any(sha.startswith(p) for p in prefixes)
+
+
+def push_runs(tools, repo, seconds):
+    """Every ci.yml push run on main as gh lists it, or Unknown when the list cannot be read or may be cut off."""
+    result = tools.call("gh", ["run", "list", "--repo", repo, "--workflow", WORKFLOW, "--event", "push",
+                               "--branch", BRANCH, "--limit", str(RUN_LIMIT), "--json",
+                               "databaseId,status,conclusion,createdAt,headSha,event,headBranch"], seconds)
+    if result.returncode != 0:
+        raise Unknown(f"gh run list failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
+    try:
+        runs = json.loads(result.stdout or "[]")
+    except ValueError:
+        raise Unknown("gh run list did not print JSON") from None
+    if not isinstance(runs, list) or not all(isinstance(r, dict) for r in runs):
+        raise Unknown("gh run list did not print a list of runs")
+    if len(runs) >= RUN_LIMIT:
+        raise Unknown(f"gh listed {RUN_LIMIT} push runs, so the history may be cut off")
+    return [r for r in runs if r.get("event") == "push" and r.get("headBranch") == BRANCH
+            and isinstance(r.get("headSha"), str)]
+
+
+def unchecked_heads(tools, run_file, left):
+    """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first).
+
+    A push head is a commit recorded `ci-pending`, the head of a ci.yml push run on main, or origin/main itself; a
+    commit that is not one is covered by the first push head after it. The baseline is the oldest head with a recorded
+    outcome (history before the records began is covered), or, with none recorded, the newest head whose push run is
+    green. After it, a head is listed unless it has an outcome of its own: a later green head never covers it."""
+    fetched = tools.call("git", ["fetch", "--quiet", "origin", BRANCH], left())
+    if fetched.returncode != 0:
+        raise Unknown("git fetch origin main failed")
+    listed = tools.call("git", ["rev-list", "--first-parent", f"--max-count={HISTORY_LIMIT}", f"origin/{BRANCH}"],
+                        left())
+    history = listed.stdout.split()
+    if listed.returncode != 0 or not history or not all(len(c) == 40 for c in history):
+        raise Unknown("cannot read the history of origin/main")
+    repo = origin(tools, left())
+    runs = push_runs(tools, repo, left())
+    outcomes, pendings = records(run_file)
+    run_heads = {r["headSha"] for r in runs}
+    heads = [c for c in history if c in run_heads or recorded(pendings, c) or c == history[0]]  # newest first
+    with_outcome = [c for c in heads if recorded(outcomes, c)]
+    if with_outcome:
+        baseline = with_outcome[-1]
+    else:
+        green = {r["headSha"] for r in runs if r.get("status") == "completed" and r.get("conclusion") == "success"}
+        baseline = next((c for c in heads if c in green), None)
+    newer = heads[:heads.index(baseline)] if baseline else heads
+    return baseline, [c for c in reversed(newer) if not recorded(outcomes, c)]
+
+
+def pending_main(args, tools, clock, now):
+    """--pending: report every unchecked push head's CI; exit 2 if discovery is incomplete or any head is unknown,
+    else 1 if any is red, 3 if any is pending, 0 when every listed head is green (or none is listed)."""
+    deadline = clock() + PENDING_SECONDS
+
+    def left():
+        remaining = deadline - clock()
+        if remaining <= 0:
+            raise DeadlinePassed("the deadline passed before the pushed history could be read")
+        return min(CALL_SECONDS, remaining)
+    try:
+        baseline, heads = unchecked_heads(tools, args.pending, left)
+    except Unknown as exc:
+        print(f"unknown: {exc}")
+        return UNKNOWN
+    print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
+    codes = []
+    for sha in heads:
+        moment = now() if now else datetime.now(timezone.utc)
+        try:
+            code, lines = status(tools, sha, moment, deadline, None, clock)
+        except DeadlinePassed as exc:
+            code, lines = UNKNOWN, [f"unknown {sha[:7]}: {exc}"]
+        codes.append(code)
+        print("\n".join(lines))
+    for worst in (UNKNOWN, RED, PENDING):
+        if worst in codes:
+            return worst
+    return GREEN
+
+
 def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None):
     parser = argparse.ArgumentParser(description="Report the CI result of one pushed commit.")
-    parser.add_argument("ref", help="the commit, as a SHA or a ref such as HEAD")
+    parser.add_argument("ref", nargs="?", help="the commit, as a SHA or a ref such as HEAD")
+    parser.add_argument("--pending", metavar="RUN_FILE",
+                        help="list and check every pushed head of main with no ci-green or ci-superseded record")
     parser.add_argument("--wait", action="store_true", help="poll until the run ends or the timeout passes")
     parser.add_argument("--timeout", type=int, default=3600, help="with --wait: seconds before giving up (exit 3)")
     parser.add_argument("--log", help="with a red run: write the failed steps' log here, outside the repository")
     args = parser.parse_args(argv)
     tools = tools or Tools()
+    if args.pending:
+        return pending_main(args, tools, clock, now)
+    if not args.ref:
+        parser.error("a ref, or --pending RUN_FILE")
     started = clock()
     deadline = started + (args.timeout if args.wait else CALL_SECONDS * 4)
     last = None
