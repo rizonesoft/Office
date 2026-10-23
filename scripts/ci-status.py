@@ -6,7 +6,9 @@
     python scripts/ci-status.py <ref>                                # exit 0 green, 1 red, 3 pending, 2 unknown
     python scripts/ci-status.py <ref> --wait --timeout 3600          # poll every 30 s until the run ends
     python scripts/ci-status.py <ref> --log R:\\scratch\\ci-<sha>.log  # with red: the failed steps' log, last 400 lines
-    python scripts/ci-status.py --pending docs/phase-runs/<run file>  # every pushed head with no recorded outcome
+    python scripts/ci-status.py --pending docs/phase-runs/<run file>  # every pushed head with no recorded outcome;
+                                                                     # exit 4: progress saved, run it again
+    python scripts/ci-status.py --pending <run file> --ack           # the records are written: drop the checkpoint
 
 The governing run of a commit is the `ci.yml` run with event `push` on branch `main` whose head is that commit (pull
 request and manual runs never count), the newest by creation when there are several, at its latest attempt. `success`
@@ -17,6 +19,7 @@ timeout; a look the timeout cuts short leaves the last result standing (still pe
 """
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -221,51 +224,103 @@ def recorded(prefixes, sha):
     return any(sha.startswith(p) for p in prefixes)
 
 
-def push_runs(tools, repo, seconds):
-    """Every ci.yml push run on main, paged from the REST API until it has no further page (D00 T03 §20), or Unknown
-    when a page cannot be read or the runs collected fall short of the API's total_count (history cut off)."""
-    owner_name = repo.split("/", 1)[1]  # github.com/<owner>/<name> -> <owner>/<name>
-    result = tools.call("gh", ["api", "--paginate", "--hostname", github_origin.HOST,
-                               f"repos/{owner_name}/actions/workflows/{WORKFLOW}/runs?branch={BRANCH}&event=push"
-                               f"&per_page=100"], seconds)
-    if result.returncode != 0:
-        raise Unknown(f"gh api failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
-    decoder, text, i, pages = json.JSONDecoder(), result.stdout, 0, []
+# D00 T03 §22: the unfiltered workflow-runs endpoint, read page by page to its end (the filtered search stops at 1,000
+# results), with the progress of a reconciliation kept between tries in a checkpoint bound to its inputs.
+CHECKPOINT = ROOT / "build" / "ci-reconcile.json"
+PER_PAGE = 100
+PROGRESSING = 4
+
+
+def records_digest(outcomes, pendings):
+    return hashlib.sha256(json.dumps([sorted(outcomes), sorted(pendings)]).encode("utf-8")).hexdigest()
+
+
+def load_checkpoint(path):
+    """The saved reconciliation, or None. It is a cache of reads that can always be repeated, so a damaged one is
+    rebuilt rather than trusted."""
     try:
-        while True:  # --paginate prints one JSON object per page, back to back
-            while i < len(text) and text[i].isspace():
-                i += 1
-            if i >= len(text):
-                break
-            page, i = decoder.raw_decode(text, i)
-            pages.append(page)
+        data = json.loads(Path(path).read_bytes().decode("utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None  # rebuilt from GitHub and git on this try
+    keys = {"inputs", "runs", "next_page", "refresh_page", "total", "results", "progress"}
+    return data if isinstance(data, dict) and set(data) == keys and isinstance(data["runs"], dict) \
+        and isinstance(data["results"], dict) else None
+
+
+def save_checkpoint(path, cp):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(json.dumps(cp), encoding="utf-8")
+    os.replace(temp, path)
+
+
+def read_page(tools, owner_name, page, seconds):
+    """(total_count, runs) of one page of the unfiltered workflow-runs endpoint, or Unknown."""
+    result = tools.call("gh", ["api", "--hostname", github_origin.HOST,
+                               f"repos/{owner_name}/actions/workflows/{WORKFLOW}/runs?per_page={PER_PAGE}&page={page}"],
+                        seconds)
+    if result.returncode != 0:
+        raise Unknown(f"gh api page {page} failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
+    try:
+        data = json.loads(result.stdout)
     except ValueError:
-        raise Unknown("gh api did not print the runs as JSON") from None
-    if not pages or not all(isinstance(p, dict) and isinstance(p.get("workflow_runs"), list)
-                            and type(p.get("total_count")) is int for p in pages):
-        raise Unknown("gh api did not print pages of workflow runs")
-    runs = [r for p in pages for r in p["workflow_runs"]]
-    total = pages[0]["total_count"]
-    if len(runs) != total:
-        raise Unknown(f"gh api returned {len(runs)} of {total} push runs, so the history may be cut off")
-    if not all(isinstance(r, dict) for r in runs):
-        raise Unknown("gh api printed a run that is not an object")
-    return [{"databaseId": r.get("id"), "status": r.get("status"), "conclusion": r.get("conclusion") or "",
-             "createdAt": r.get("created_at", ""), "headSha": r.get("head_sha"), "event": r.get("event"),
-             "headBranch": r.get("head_branch")}
-            for r in runs if r.get("event") == "push" and r.get("head_branch") == BRANCH
-            and isinstance(r.get("head_sha"), str)]
+        raise Unknown(f"gh api page {page} is not JSON") from None
+    if not (isinstance(data, dict) and type(data.get("total_count")) is int and isinstance(data.get("workflow_runs"), list)
+            and all(isinstance(r, dict) and r.get("id") is not None for r in data["workflow_runs"])):
+        raise Unknown(f"gh api page {page} does not hold workflow runs")
+    return data["total_count"], data["workflow_runs"]
 
 
-def unchecked_heads(tools, run_file, left):
+def keep(cp, runs):
+    for r in runs:
+        cp["runs"].setdefault(str(r["id"]), {"headSha": r.get("head_sha"), "event": r.get("event"),
+                                             "headBranch": r.get("head_branch"), "status": r.get("status"),
+                                             "conclusion": r.get("conclusion") or "",
+                                             "createdAt": r.get("created_at", "")})
+
+
+def enumerate_runs(tools, repo, cp, left, save):
+    """Read the workflow's runs into the checkpoint: forward to the last page, and, after the inputs changed or when
+    runs arrived meanwhile, from the first page until a run already held, so nothing is read twice on an unchanged
+    try and nothing new is missed. Every page is saved as it is read."""
+    owner_name = repo.split("/", 1)[1]  # github.com/<owner>/<name> -> <owner>/<name>
+    refreshed_at_end = False
+    while True:
+        if cp["refresh_page"] is not None:
+            page = cp["refresh_page"]
+            total, runs = read_page(tools, owner_name, page, left())
+            met = any(str(r["id"]) in cp["runs"] for r in runs)
+            keep(cp, runs)
+            cp["total"], cp["progress"] = total, cp["progress"] + 1
+            cp["refresh_page"] = None if met or len(runs) < PER_PAGE else page + 1
+        elif cp["next_page"] is not None:
+            page = cp["next_page"]
+            total, runs = read_page(tools, owner_name, page, left())
+            keep(cp, runs)
+            cp["total"], cp["progress"] = total, cp["progress"] + 1
+            cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
+        elif cp["total"] is not None and len(cp["runs"]) < cp["total"]:
+            if refreshed_at_end:
+                raise Unknown(f"gh api returned {len(cp['runs'])} of {cp['total']} runs, so the history may be cut off")
+            cp["refresh_page"], refreshed_at_end = 1, True  # runs were created while the pages were read
+            continue
+        else:
+            return
+        save(cp)
+
+
+def unchecked_heads(tools, run_file, left, cp, save):
     """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first).
 
     A push head is a commit with a ci-pending or outcome record, the head of a ci.yml push run on main, or origin/main
     itself; a commit that is not one is covered by the first push head after it. The baseline is the oldest head with
     a recorded outcome (history before the records began is covered), or, only when no run file holds any outcome, the
     newest head whose push run is green. After it, a head is listed unless it has an outcome of its own: a later green
-    head never covers it. The whole first-parent history is read, so a baseline any number of commits back is reached
-    (D00 T03 §20)."""
+    head never covers it. The whole first-parent history is read (D00 T03 §20), and the runs come from the checkpoint,
+    refreshed when the repository, the fetched head or the records changed since it was saved (D00 T03 §22)."""
     fetched = tools.call("git", ["fetch", "--quiet", "origin", BRANCH], left())
     if fetched.returncode != 0:
         raise Unknown("git fetch origin main failed")
@@ -285,8 +340,21 @@ def unchecked_heads(tools, run_file, left):
             raise Unknown(f"HEAD has {count} commit(s) origin/main lacks; push them, then reconcile again")
         raise Unknown("HEAD is not origin/main; fast-forward (git pull --ff-only origin main), then reconcile again")
     repo = origin(tools, left())
-    runs = push_runs(tools, repo, left())
     outcomes, pendings = records(run_file)
+    inputs = {"repo": repo, "head": history[0], "records": records_digest(outcomes, pendings)}
+    if not cp:
+        cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "refresh_page": None, "total": None, "results": {},
+                   "progress": 0})
+    elif cp["inputs"] != inputs:
+        if cp["inputs"].get("repo") != repo:  # another repository's runs are no use
+            cp.update({"runs": {}, "next_page": 1, "refresh_page": None, "total": None, "results": {}})
+        else:
+            cp["refresh_page"] = 1  # keep what was read; find what is new
+        cp["inputs"] = inputs
+        save(cp)
+    enumerate_runs(tools, repo, cp, left, save)
+    runs = [r for r in cp["runs"].values() if r["event"] == "push" and r["headBranch"] == BRANCH
+            and isinstance(r["headSha"], str)]
     run_heads = {r["headSha"] for r in runs}
     heads = [c for c in history if c in run_heads or recorded(pendings, c) or recorded(outcomes, c)
              or c == history[0]]  # newest first
@@ -298,17 +366,46 @@ def unchecked_heads(tools, run_file, left):
     else:
         governing = {}  # each head's newest push run decides it, as for a single commit
         for r in runs:
-            if r["headSha"] not in governing or str(r.get("createdAt", "")) > str(governing[r["headSha"]].get("createdAt", "")):
+            if r["headSha"] not in governing or str(r["createdAt"]) > str(governing[r["headSha"]]["createdAt"]):
                 governing[r["headSha"]] = r
-        green = {h for h, r in governing.items() if r.get("status") == "completed" and r.get("conclusion") == "success"}
+        green = {h for h, r in governing.items() if r["status"] == "completed" and r["conclusion"] == "success"}
         baseline = next((c for c in heads if c in green), None)
     newer = heads[:heads.index(baseline)] if baseline else heads
     return baseline, [c for c in reversed(newer) if not recorded(outcomes, c)]
 
 
-def pending_main(args, tools, clock, now):
-    """--pending: report every unchecked push head's CI; exit 2 if discovery is incomplete or any head is unknown,
-    else 1 if any is red, 3 if any is pending, 0 when every listed head is green (or none is listed)."""
+def settle_head(tools, sha, stored, now, deadline, clock):
+    """(code, lines, run identity, newly settled) for one head. A stored completed result already confirmed in this
+    reconciliation is reused without a call; one not yet confirmed is reused after one look shows its governing run's id
+    and attempt unchanged (a rerun replaces it); a pending or unknown head, or one never settled, is checked again."""
+    if stored and stored["code"] in (GREEN, RED):
+        if stored.get("confirmed"):
+            return stored["code"], stored["lines"], stored["run"], False
+        remaining = deadline - clock()
+        if remaining <= 0:
+            raise DeadlinePassed("the deadline passed before the stored results could be confirmed")
+        run = governing_run(tools, sha, min(CALL_SECONDS, remaining), origin(tools, min(CALL_SECONDS, remaining)))
+        if run and run.get("status") == "completed" and [run.get("databaseId"), run.get("attempt", 1)] == stored["run"]:
+            return stored["code"], stored["lines"], stored["run"], True
+    code, lines = status(tools, sha, now, deadline, None, clock)
+    run = None
+    if code in (GREEN, RED):
+        found = re.search(r" run (\d+) attempt (\d+)", lines[0])
+        run = [int(found[1]), int(found[2])] if found else None
+    return code, lines, run, code in (GREEN, RED)
+
+
+def pending_main(args, tools, clock, now, checkpoint):
+    """--pending: report every unchecked push head's CI. Exit 2 if discovery is incomplete or any head is unknown,
+    else 1 if any is red, 3 if any is pending, 0 when every listed head is green (or none is listed); exit 4 when this
+    try ran out of time but saved progress (D00 T03 §22): run it again, and it continues where it stopped."""
+    path = Path(checkpoint)
+    if args.ack:
+        path.unlink(missing_ok=True)
+        print("acknowledged: the reconciliation's checkpoint is deleted")
+        return GREEN
+    cp = load_checkpoint(path) or {}
+    before = cp.get("progress", 0) if cp else 0
     deadline = clock() + PENDING_SECONDS
 
     def left():
@@ -316,39 +413,62 @@ def pending_main(args, tools, clock, now):
         if remaining <= 0:
             raise DeadlinePassed("the deadline passed before the pushed history could be read")
         return min(CALL_SECONDS, remaining)
+
+    def save(c):
+        save_checkpoint(path, c)
+
+    def out_of_time():
+        if cp and cp["progress"] > before:
+            save(cp)
+            print(f"progressing: {cp['progress'] - before} step(s) saved this try; run again to continue")
+            return PROGRESSING
+        print("unknown: this try made no progress before its deadline")
+        return UNKNOWN
     try:
-        baseline, heads = unchecked_heads(tools, args.pending, left)
+        baseline, heads = unchecked_heads(tools, args.pending, left, cp, save)
+    except DeadlinePassed:
+        return out_of_time()
     except Unknown as exc:
         print(f"unknown: {exc}")
         return UNKNOWN
-    print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
-    codes = []
+    report, codes = [], []
     for sha in heads:
         moment = now() if now else datetime.now(timezone.utc)
+        stored = cp["results"].get(sha)
         try:
-            code, lines = status(tools, sha, moment, deadline, None, clock)
-        except DeadlinePassed as exc:
-            code, lines = UNKNOWN, [f"unknown {sha[:7]}: {exc}"]
+            code, lines, run, settled = settle_head(tools, sha, stored, moment, deadline, clock)
+        except DeadlinePassed:
+            return out_of_time()
+        cp["progress"] += settled
+        cp["results"][sha] = {"code": code, "lines": lines, "run": run, "confirmed": code in (GREEN, RED)}
+        save(cp)
         codes.append(code)
-        print("\n".join(lines))
+        report += lines
+    print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
+    print("\n".join(report))
+    for result in cp["results"].values():  # the report is complete: the next reconciliation confirms each again
+        result["confirmed"] = False
+    save(cp)
     for worst in (UNKNOWN, RED, PENDING):
         if worst in codes:
             return worst
     return GREEN
 
 
-def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None):
+def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None, checkpoint=CHECKPOINT):
     parser = argparse.ArgumentParser(description="Report the CI result of one pushed commit.")
     parser.add_argument("ref", nargs="?", help="the commit, as a SHA or a ref such as HEAD")
     parser.add_argument("--pending", metavar="RUN_FILE",
                         help="list and check every pushed head of main with no ci-green or ci-superseded record")
+    parser.add_argument("--ack", action="store_true",
+                        help="with --pending: the records are written, so delete the reconciliation's checkpoint")
     parser.add_argument("--wait", action="store_true", help="poll until the run ends or the timeout passes")
     parser.add_argument("--timeout", type=int, default=3600, help="with --wait: seconds before giving up (exit 3)")
     parser.add_argument("--log", help="with a red run: write the failed steps' log here, outside the repository")
     args = parser.parse_args(argv)
     tools = tools or Tools()
     if args.pending:
-        return pending_main(args, tools, clock, now)
+        return pending_main(args, tools, clock, now, checkpoint)
     if not args.ref:
         parser.error("a ref, or --pending RUN_FILE")
     started = clock()

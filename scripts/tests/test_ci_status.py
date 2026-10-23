@@ -3,6 +3,7 @@
 """scripts/ci-status.py: the governing push run of a commit decides green, red, pending or unknown (D00 T03 §15)."""
 import contextlib
 from datetime import datetime, timedelta, timezone
+import re
 import importlib.util
 import io
 import json
@@ -337,6 +338,9 @@ class Repo:
         self.history = list(history)
         self.total = total  # the API's total_count, when it should differ from the runs served
         self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
+        self.pages_read = []
+        self.fail_pages = set()  # page numbers that fail once
+        self.attempts = {}  # head -> attempt number, to model a rerun
         self.ahead = ahead  # local commits origin/main lacks
         self.local = local  # the clone's HEAD when it is not origin/main
         self.fetched = fetched
@@ -344,10 +348,17 @@ class Repo:
         self.fail = fail or {}
         self.calls = []
 
+    def api_runs(self):
+        """The workflow's runs as the API lists them, newest first."""
+        runs = [{"id": int(h[:7], 16), "status": "completed" if c else "in_progress", "conclusion": c,
+                 "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main"}
+                for h, c in self.runs.items()] + self.extra_runs
+        return list(reversed(runs))
+
     def run_record(self, head):
         conclusion = self.runs[head]
         return run(headSha=head, databaseId=int(head[:7], 16), status="completed" if conclusion else "in_progress",
-                   conclusion=conclusion or "")
+                   conclusion=conclusion or "", attempt=self.attempts.get(head, 1))
 
     def call(self, name, args, seconds):
         self.calls.append((name, list(args)))
@@ -378,12 +389,17 @@ class Repo:
             head = args[args.index("--commit") + 1]
             out = json.dumps([self.run_record(head)] if head in self.runs else [])
         elif args[0] == "api":
-            runs = [{"id": int(h[:7], 16), "status": "completed" if c else "in_progress", "conclusion": c,
-                     "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main"}
-                    for h, c in self.runs.items()] + self.extra_runs
+            url = args[-1]
+            self.pages_read.append(url)
+            runs = self.api_runs()
+            if "branch=" in url or "event=" in url:  # GitHub caps a filtered search at 1,000 results
+                runs = [r for r in runs if r["event"] == "push" and r["head_branch"] == "main"][:1000]
+            page = int(re.search(r"[?&]page=(\d+)", url)[1]) if "page=" in url else 1
+            if page in self.fail_pages:
+                self.fail_pages.discard(page)
+                return subprocess.CompletedProcess(args, 1, "", "HTTP 502")
             total = len(runs) if self.total is None else self.total
-            pages = [runs[i:i + 100] for i in range(0, len(runs), 100)] or [[]]
-            out = "".join(json.dumps({"total_count": total, "workflow_runs": page}) for page in pages)
+            out = json.dumps({"total_count": total, "workflow_runs": runs[(page - 1) * 100:page * 100]})
         elif args[:2] == ["run", "view"]:
             out = json.dumps({"jobs": []})
         if out is None:
@@ -402,12 +418,12 @@ class Pending(unittest.TestCase):
         path.write_text("# Phase run\n\n## Critical events\n\n" + "".join(f"- {line}\n" for line in lines),
                         encoding="utf-8")
 
-    def pending(self, repo):
-        clock = Clock()
+    def pending(self, repo, *extra, clock=None):
+        clock = clock or Clock()
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            code = ci.main(["--pending", str(self.run_file)], tools=repo, clock=clock, sleep=clock.sleep,
-                           now=lambda: COMMITTED + timedelta(minutes=30))
+            code = ci.main(["--pending", str(self.run_file), *extra], tools=repo, clock=clock, sleep=clock.sleep,
+                           now=lambda: COMMITTED + timedelta(minutes=30), checkpoint=self.dir / "ci-reconcile.json")
         return code, out.getvalue()
 
     def listed(self, out):
@@ -470,7 +486,7 @@ class Pending(unittest.TestCase):
         self.record(f"ci-green {sha(1)[:7]}")
         code, out = self.pending(Repo([sha(1)], {sha(1): "success"}, total=1001))
         self.assertEqual(code, 2)
-        self.assertIn("returned 1 of 1001 push runs", out)
+        self.assertIn("returned 1 of 1001 runs", out)
 
     def test_a_history_longer_than_any_window_is_read_to_the_baseline(self):
         # D00 T03 §20: 5,200 first-parent commits; the baseline and an unchecked head lie beyond the old 5,000 window.
@@ -569,7 +585,7 @@ class Pending(unittest.TestCase):
     def test_the_first_run_baseline_uses_each_heads_governing_run(self):
         # Review round 3 of D00 T03 §17, finding 1: an older success under a newer failure is not green.
         a = sha(1)
-        older = {"id": 1, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
+        older = {"id": 999999, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
                  "head_sha": a, "event": "push", "head_branch": "main"}
         code, out = self.pending(Repo([a], {a: "failure"}, extra_runs=[older]))
         self.assertIn("no baseline", out)
@@ -591,6 +607,141 @@ class Pending(unittest.TestCase):
         self.record(f"ci-green {sha(1)[:7]}")
         code, _ = self.pending(Repo([sha(1)], {sha(1): "success"}, fail={"gh api": "HTTP 502"}))
         self.assertEqual(code, 2)
+
+
+class Scale(Pending):
+    """D00 T03 §22: past the 1,000-result search cap, across tries, with a checkpoint bound to its inputs."""
+
+    def slow_clock_repo(self, repo, page_seconds=0, head_seconds=0):
+        clock = Clock()
+        real = repo.call
+
+        def call(name, args, seconds):
+            cost = page_seconds if args[:1] == ["api"] else head_seconds if args[:2] == ["run", "list"] else 0
+            if cost > seconds:
+                clock.t += seconds
+                raise ci.DeadlinePassed("cut short")
+            clock.t += cost
+            return real(name, args, seconds)
+        repo.call = call
+        return clock
+
+    def test_more_than_a_thousand_runs_are_read_from_the_unfiltered_pages(self):
+        heads = [sha(n) for n in range(1, 1101)]
+        self.record(f"ci-green {heads[0][:7]}", *(f"ci-green {h[:7]}" for h in heads[2:]))
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [heads[1][:7]]))
+        self.assertFalse([u for u in repo.pages_read if "branch=" in u or "event=" in u])
+        self.assertEqual(len(repo.pages_read), 12)  # 1,100 runs, 100 a page, the last page short
+
+    def test_late_pushes_shuffled_dates_and_other_branches_still_find_every_head(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        others = [{"id": 50000 + n, "status": "completed", "conclusion": "success",
+                   "created_at": f"2026-10-2{n % 9}T00:00:00Z", "head_sha": sha(900 + n),
+                   "event": "pull_request" if n % 2 else "push", "head_branch": "main" if n % 2 else "feature"}
+                  for n in range(250)]  # whole pages hold only other branches or events, with dates in any order
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        code, out = self.pending(repo)
+        self.assertEqual(self.listed(out), [a[:7], b[:7]])
+
+    def test_an_unchanged_try_reads_no_page_twice_and_a_push_is_found_on_the_next(self):
+        base, a, new = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([a, base], {base: "success", a: "success"})
+        self.pending(repo)
+        read = len(repo.pages_read)
+        self.pending(repo)  # same inputs: the checkpoint holds every page
+        self.assertEqual(len(repo.pages_read), read)
+        repo.history, repo.runs[new] = [new, a, base], "failure"  # a push and its run land between tries
+        code, out = self.pending(repo)
+        self.assertEqual(self.listed(out), [a[:7], new[:7]])
+        self.assertEqual(code, 1)
+        # Two more pushes land between tries; the first is a head only through its run, which only a refresh finds.
+        first, second = sha(4), sha(5)
+        repo.history = [second, first, new, a, base]
+        repo.runs[first], repo.runs[second] = "failure", "success"
+        code, out = self.pending(repo)
+        self.assertIn(first[:7], self.listed(out))
+
+    def test_pages_read_before_a_failure_are_kept(self):
+        heads = [sha(n) for n in range(1, 701)]
+        self.record(f"ci-green {heads[0][:7]}", *(f"ci-green {h[:7]}" for h in heads[1:]))
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        repo.fail_pages = {5}
+        self.assertEqual(self.pending(repo)[0], 2)  # page 5 failed after pages 1 to 4 were read
+        before = len(repo.pages_read)
+        self.assertEqual(self.pending(repo)[0], 0)
+        self.assertEqual(len(repo.pages_read) - before, 4)  # pages 5 to 8 only
+
+    def test_a_stored_red_result_is_reported_after_an_interruption(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: "failure", b: "success"})
+        # The first try settles A (red), then runs out of time on B.
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            code, out = self.pending(repo, clock=clock)
+        self.assertEqual(code, ci.PROGRESSING)
+        lookups = len([c for c in repo.calls if c[1][:2] == ["run", "list"]])
+        code, out = self.pending(repo)  # the next try reports A from the checkpoint and settles B
+        self.assertEqual(len([c for c in repo.calls if c[1][:2] == ["run", "list"]]) - lookups, 1)  # only B
+        self.assertEqual(code, 1)
+        self.assertIn(f"red {a[:7]}", out)
+        self.assertIn(f"green {b[:7]}", out)
+
+    def test_a_pending_head_is_checked_again_and_a_rerun_replaces_a_stored_result(self):
+        base, a = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([a, base], {base: "success", a: None})
+        self.assertEqual(self.pending(repo)[0], 3)
+        repo.runs[a] = "failure"
+        self.assertEqual(self.pending(repo)[0], 1)  # the pending head was checked again
+        repo.runs[a], repo.attempts[a] = "success", 2  # a rerun turned it green
+        code, out = self.pending(repo)
+        self.assertEqual(code, 0)
+        self.assertIn(f"green {a[:7]} run", out)
+
+    def test_the_checkpoint_survives_until_acknowledged(self):
+        base, a = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([a, base], {base: "success", a: "success"})
+        self.pending(repo)
+        cp = self.dir / "ci-reconcile.json"
+        self.assertTrue(cp.exists())  # the records are not written yet: the work is kept
+        read = len(repo.pages_read)
+        self.assertEqual(self.pending(repo)[0], 0)
+        self.assertEqual(len(repo.pages_read), read)
+        self.assertEqual(self.pending(repo, "--ack")[0], 0)
+        self.assertFalse(cp.exists())
+
+    def test_a_long_reconciliation_completes_over_several_tries(self):
+        # 2,000 runs at 25 s a page (20 pages, 500 s) and 16 unchecked heads at 50 s each (800 s): paging alone takes
+        # longer than a call and settling longer than a 600 s try; each call stays bounded, every try saves progress,
+        # and a head settled in an interrupted try is not looked up again, so the third try completes.
+        heads = [sha(n) for n in range(1, 2001)]
+        unchecked = heads[-16:]
+        self.record(f"ci-green {heads[0][:7]}", *(f"ci-green {h[:7]}" for h in heads[1:-16]))
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        codes = []
+        for _ in range(10):
+            clock = self.slow_clock_repo(repo, page_seconds=25, head_seconds=50)
+            code, out = self.pending(repo, clock=clock)
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertGreaterEqual(codes.count(ci.PROGRESSING), 2)
+        self.assertEqual(codes[-1], 0)
+        self.assertEqual(self.listed(out), [h[:7] for h in unchecked])
+
+    def test_a_try_without_progress_is_unknown(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        repo = Repo([sha(1)], {sha(1): "success"})
+        clock = self.slow_clock_repo(repo, page_seconds=700)  # no page fits in a call, so nothing is ever saved
+        code, out = self.pending(repo, clock=clock)
+        self.assertEqual(code, 2)
+        self.assertIn("no progress", out)
 
 
 class Logs(Base):

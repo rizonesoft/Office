@@ -65,6 +65,16 @@ OBLIGATIONS = [
     ("the phase settles the recovery before any row", "phase", [
         "once it establishes `origin/main`'s head as green, run `python scripts/ci-recovery.py settle <origin/main sha>` "
         "before any row, as `process-plan` says"]),
+    ("a progressing reconciliation is continued before any row", "plan", [
+        "Exit 4 means the try ran out of time but saved its progress in `build/ci-reconcile.json` (D00 T03 §22): run it "
+        "again at once, before any row, as often as it returns 4, without spending the one retry for exit 2 or the "
+        "recovery budget"]),
+    ("the checkpoint is dropped only after the records", "plan", [
+        "Once the records it led to (`ci-green`, `ci-superseded`) are written, run "
+        "`python scripts/ci-status.py --pending <run file> --ack` to drop the checkpoint."]),
+    ("the phase continues a progressing reconciliation", "phase", [
+        "an exit 4 (progress saved) is run again at once, before any row, and `--ack` drops the checkpoint after the "
+        "records are written"]),
     ("heartbeat resume reconciles before any row", "plan", [
         "Then run `<python> scripts/ci-status.py --pending <run file>` (it checks `origin/main` and every unchecked push "
         "head before it) and act on it as the skill's CI watch step says before claiming any row."]),
@@ -107,6 +117,12 @@ WEAKENINGS = [
     ("exit 3 pending", "plan", "--wait --timeout 1800` and act on that result.", "--wait --timeout 1800` and claim the next row regardless of that result."),
     ("exit 2 unknown", "plan", "retry once after five minutes; still 2, ", ""),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
+    ("a progressing reconciliation is continued before any row", "plan", "run it again at once, before any row, as "
+     "often as it returns 4,", "treat it as exit 2,"),
+    ("the checkpoint is dropped only after the records", "plan", "Once the records it led to (`ci-green`, "
+     "`ci-superseded`) are written, run", "Before the records are written, run"),
+    ("the phase continues a progressing reconciliation", "phase", "an exit 4 (progress saved) is run again at once, "
+     "before any row,", "an exit 4 (progress saved) parks the campaign,"),
     ("a green reconciliation settles the recovery before the merge or any row", "plan",
      "`python scripts/ci-recovery.py settle <origin/main sha>` next, before the dependency merge and before any row",
      "`python scripts/ci-recovery.py settle <origin/main sha>` after the dependency merge"),
@@ -162,7 +178,7 @@ PINNED = [
     ('plan', 'Every campaign push gets a `ci-pending',
      '70ee904f5ec22338104e4707535a7be043000b7cd11acca69ac58c198ef6cdf6'),
     ('plan', 'Reconcile from the pushed history',
-     '5e0e6d6bb628159eda93d1ae3e21dc888fb4ec7aa31d4d97a3b9462e8a5cf189'),
+     '1c62fc52d1bb0775ff01c14b791599479d666959f6502a91a7cf383865bc57ca'),
     ('plan', 'Green is a hard gate in three places',
      '95411b47eb82906b2f147ddba0955e900e15464ca2efc3996793ed01866648e8'),
     ('plan', 'Nothing is written to the run file at a boundary',
@@ -178,7 +194,7 @@ PINNED = [
     ('phase', 'Then run the host readiness check',
      'd790d41adb7901713ca29916762cd12f4bfa1676c8eda5fd64b36f4ca1f5de42'),
     ('phase', "In the generated plan's table order, for each open row",
-     'e2b5608da04b32463501fd08575ea92824697eddc2ac2bcd3e1e7a77d76082c4'),
+     '72bbed2b8240b1c2fa2e52a80bb667ab4414a76fa9978b959f703ddda8143544'),
     ('phase', 'When the phase table is all `[x]`',
      'ee4ddf73abbee2baf437dc1a02107c2963465fc845ebfe5db233ebaca378b959'),
 ]
