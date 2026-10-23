@@ -663,7 +663,9 @@ Filed 2026-10-23 from round 2 of D00 T03 §20's completion review (`docs/reviews
 
 ## 23. CI Reconciliation After Deleted Runs
 
-Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-workspace/D00-T03-s22.md`): `scripts/ci-status.py` `Pages.forward` proves the scan complete only by comparing the runs it holds with the API's `total_count`. When a run already read is deleted while the pages are read, every older run moves up one place, the run that crosses a page boundary is never read, and the count still matches because the deleted run stays held, so an unrecorded push head on `main` can be left out of the report. The precondition is rare (someone deletes a workflow run during a reconciliation), but the result is a head reported as covered without being checked.
+> **Started:** 2026-10-23T18:45:00Z
+
+Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-workspace/D00-T03-s22.md`): `scripts/ci-status.py` `Pages.forward` proves the scan complete only by comparing the runs it holds with the API's `total_count`. When a run already read is deleted while the pages are read, every older run moves up one place, the run that crosses a page boundary is never read, and the count still matches because the deleted run stays held, so an unrecorded push head on `main` can be left out of the report. A deleted run also breaks confirmation: `read_run` gets a 404 for a held run a stored result rests on, and every try then exits 2. The precondition is rare (someone deletes a workflow run during a reconciliation, or between its tries), but the results are a head reported as covered without being checked, or a reconciliation that never finishes.
 
 **Phase:** 0
 **Needs:** none
@@ -671,12 +673,12 @@ Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-worksp
 
 **Build order:**
 
-1. Prove the forward scan complete in a way a deletion cannot fool. Done when: a fixture that deletes an already-read run mid-scan still finds every run.
-2. Drop held runs that no longer exist, so the count means what it says. Done when: a fixture's checkpoint holds no deleted run after the scan.
+1. Detect a shift across each page boundary of the forward scan and read again what it skipped. Done when: a fixture that deletes an already-read run mid-scan still finds every run.
+2. Treat a run the API reports gone as gone. Done when: a fixture whose settled head's run is deleted between tries finishes with that head settled again.
 
-- [ ] Read each forward page with one run of overlap with the page before it in `scripts/ci-status.py` `Pages.forward` (the last run of page N must appear on page N+1 or later), and when the overlap is missing (runs moved up), read the page again before going on. Done when: a fixture with 300 runs that deletes a run already read after page 1 finds every remaining run, and a fixture without deletions reads no extra page. Cheaper substitute: the count comparison alone, which a deletion matches.
-- [ ] Remove from the checkpoint, in `scripts/ci-status.py` `Pages.forward`, each held run the completed scan did not see, so `len(cp["runs"])` is compared with `total_count` over runs that exist. Done when: after a scan in which a run was deleted, `build/ci-reconcile.json` no longer holds it and the count check passes on the live runs only. Cheaper substitute: keeping deleted runs, which hides the skipped one.
-- [ ] Keep a deleted run's head correct in the listing in `scripts/ci-status.py` `unchecked_heads`: a head whose only run was deleted is listed only through its records or as `origin/main`, as for any commit without a run. Done when: a fixture deleting a head's only run lists that head exactly as a commit without a run.
+- [ ] After reading forward page N+1 in `scripts/ci-status.py` `Pages.forward`, read the single run at page N's last position (`per_page=1&page=<100 N>`) and, when it is not the run held there, read page N again before going on; keep the id of the last run of the last page read in the checkpoint (`build/ci-reconcile.json`, checked by `well_formed`), so a boundary that spans two tries is checked too. Done when: a fixture with 300 runs that deletes a run already read, between pages and between tries, finds every remaining run, and a fixture without deletions reads one boundary run per page and no page twice. Cheaper substitute: the count comparison alone, which a deletion matches.
+- [ ] Remove a held run from the checkpoint in `scripts/ci-status.py` when `read_run` gets HTTP 404 for it, and settle again every listed head whose stored result rested on it (`look_up`, which reads the head's governing run as it is now); any other failure stays unknown. Done when: a fixture deleting a settled head's only run between tries reports that head as GitHub now does (pending or unknown with no run, or its older run's result) instead of exiting 2 on every try, and a fixture with a 502 still exits 2. Cheaper substitute: exiting 2 forever on a run that no longer exists.
+- [ ] Keep the listing right without the removed run in `scripts/ci-status.py` `unchecked_heads`: a head whose only run was removed is listed only through its records or as `origin/main`, as for any commit without a run, and a head with an older run is decided by that run. Done when: fixtures for both cases list the head as described.
 - [ ] Commit: `automations: reconcile CI through deleted runs`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
