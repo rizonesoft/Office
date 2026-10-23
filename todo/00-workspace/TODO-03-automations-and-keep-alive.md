@@ -56,6 +56,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [x] |
 | 22 | §22 | CI reconciliation past limits | §20 | [x] |
 | 23 | §23 | CI reconciliation after deleted runs | §22 | [ ] |
+| 24 | §24 | Resumable newest-page refresh | §23 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -682,6 +683,25 @@ Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-worksp
 - [ ] Remove a held run from the checkpoint in `scripts/ci-status.py` when `read_run` gets HTTP 404 for it, and settle again every listed head whose stored result rested on it (`look_up`, which reads the head's governing run as it is now); any other failure stays unknown. Done when: a fixture deleting a settled head's only run between tries reports that head as GitHub now does (pending or unknown with no run, or its older run's result) instead of exiting 2 on every try, and a fixture with a 502 still exits 2. Cheaper substitute: exiting 2 forever on a run that no longer exists.
 - [ ] Keep the listing right without the removed run in `scripts/ci-status.py` `unchecked_heads`: a head whose only run was removed is listed only through its records or as `origin/main`, as for any commit without a run, and a head with an older run is decided by that run. Done when: fixtures for both cases list the head as described.
 - [ ] Commit: `automations: reconcile CI through deleted runs`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
+
+## 24. Resumable Newest-Page Refresh
+
+Filed 2026-10-23 from round 2 of D00 T03 §23's completion review (`docs/reviews/00-workspace/D00-T03-s23-completion.md`): `scripts/ci-status.py` `Pages.newest`, the refresh every resumed try runs, keeps no state between tries. When a refresh that has read some pages of new runs is cut short by the deadline, and runs already read are deleted before the next try, that try's first page can hold only runs already held and stop the refresh as unchanged, while the deleted runs still held make the count match `total_count`; the new runs on the unread pages are never found. §23's boundary checks and rewind do not cover it, because no boundary was ever checked.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Keep an unfinished refresh in the checkpoint and finish it before the refresh may stop as unchanged. Done when: a fixture interrupting a refresh and deleting read runs before the next try still finds every new head.
+
+- [ ] Save an unfinished refresh in `build/ci-reconcile.json` from `scripts/ci-status.py` `Pages.newest`: the next page to read and the id of the last run of the last page read (its boundary anchor), written as each page is read and cleared when the refresh ends, and checked by `well_formed`. Done when: after a refresh cut short at page 3, the checkpoint names page 3 and page 2's last run, and after a finished refresh it names none.
+- [ ] Resume a saved refresh in `scripts/ci-status.py` `Pages.newest` before anything else in the next try: check the anchor's boundary as §23 does (recovering a shift by stepping back), then read on from the saved page; a first page with nothing new does not end the refresh while one is saved. Done when: a fixture with a completed checkpoint that gains 300 new runs, reads 200 of them, deletes the first 100 and runs out of time before page 3 finds every remaining head over the following tries. Cheaper substitute: restarting the refresh at page 1, whose unchanged first page ends it early.
+- [ ] Count each saved refresh page as progress in `scripts/ci-status.py`, so a refresh longer than one try exits 4, not 2. Done when: a fixture whose refresh needs more than one try's reads returns 4 until it finishes.
+- [ ] Commit: `automations: resume an unfinished CI refresh`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
 

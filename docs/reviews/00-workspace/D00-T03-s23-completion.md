@@ -24,3 +24,25 @@ OVERALL: needs-attention
 
 1. extended
 2. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T18:43:06Z
+- Effort: medium
+- Lines: 9
+- Digest: c8c2b4cfe078ab7d
+
+SECTION: D00 T03 §23
+PURPOSE: completion
+CONTRACT: sha256:6ac5c2b4c9fd452ec318542b66ba4c602b266328a12f54d432282ad679fc77e4
+
+1. **P2 | extend:** Persist unfinished newest-page refreshes, including when interrupted before a boundary check detects deletion. For example, a completed checkpoint gains 300 new runs; a refresh reads the first 200, then the first 100 are deleted and the deadline expires before page 3. On resume, page 1 contains the already-held second hundred and passes the unchanged-page stop condition. The deleted hundred still held masks the unread hundred in `total_count`, so those remaining heads are never discovered. Saving only the recovery rewind position does not cover this state because recovery never started. Extend the checkpoint to retain an unfinished refresh cursor and its boundary anchor, and prevent an unchanged first page from cancelling that outstanding scan. Require a fixture reproducing this interruption and deletion, proving subsequent tries discover every remaining head.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §24
