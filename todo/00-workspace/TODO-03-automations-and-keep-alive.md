@@ -49,6 +49,9 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 14 | §14 | Completion evidence hardening | §13 | [x] |
 | 15 | §15 | CI watch and red-run repair | §13 | [ ] |
 | 16 | §16 | Completion evidence adoption boundary | §14 | [ ] |
+| 17 | §17 | CI push reconciliation | §15 | [ ] |
+| 18 | §18 | CI recovery budget | §15 | [ ] |
+| 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -452,17 +455,21 @@ Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on 
 1. Write `scripts/ci-status.py` with its tests. Done when: each state has a fixture over a fake `gh`.
 2. Wire it into `process-plan` and `process-phase`. Done when: both skills name the boundary check, the hard gates, the repair rule and the bound.
 
-- [ ] Write `scripts/ci-status.py`, which finds the `ci.yml` run for a commit (`gh run list --workflow ci.yml --commit <sha> --json databaseId,status,conclusion,url`) and exits 0 when it succeeded, 1 when it failed (printing the failing jobs and steps from `gh run view <id> --json jobs`), 3 while it is queued or running, and 2 when there is no run yet past a grace period or `gh` cannot be read. Done when: fixtures for each state exit with their code. Cheaper substitute: reading the newest run on `main`, which may belong to another commit.
-- [ ] Add `--wait --timeout <seconds>` to `scripts/ci-status.py`, polling every 30 seconds until the run ends, and `--log <path>` writing `gh run view <id> --log-failed` to scratch, bounded to the last 400 lines. Done when: a fixture that turns green after two polls exits 0, one that never ends exits 3 at the timeout, and the log lands outside the repository. Cheaper substitute: an unbounded wait, or a full log pasted into the run file.
-- [ ] Record each push in the run file in `.claude/skills/process-plan/SKILL.md`: after a stamp push, append `ci-pending <sha> <UTC>`; at the next section boundary, before the next row is claimed, run `python scripts/ci-status.py <sha>`, and record `ci-green <sha>` or act on red. Done when: the skill names both records and the boundary check. Cheaper substitute: checking CI only at phase ends, when several red commits have stacked.
+- [ ] Write `scripts/ci-status.py`, which resolves its argument (`HEAD` or a ref) to a full SHA with `git rev-parse --verify <ref>^{commit}`, selects the governing run (the `ci.yml` run with event `push` on branch `main` for that `headSha`, the newest by `createdAt` when there are several, its latest attempt as `gh run view` reports it; pull request and manual runs never count), and exits 0 when it concluded `success`, 1 for every other conclusion (`failure`, `cancelled`, `timed_out`, `startup_failure`, `action_required`, `skipped`, `neutral`, `stale`), naming the conclusion and printing the failing jobs and steps from `gh run view <id> --json jobs`, 3 while it is queued or in progress, and 2 when `gh` cannot be read or no push run exists 10 minutes after the commit's committer date (before that, 3). `gh` and `git` are found through `find_cli`. Done when: fixtures for each state exit with their code, including competing push and pull request runs, a rerun attempt that turned green, a cancelled run and a run created late. Cheaper substitute: reading the newest run on `main`, which may belong to another commit. **Groomed 2026-10-23:** completion findings 4 and 7.
+- [ ] Add `--wait --timeout <seconds>` to `scripts/ci-status.py`, polling every 30 seconds until the run ends, and `--log <path>` writing `gh run view <id> --log-failed` to scratch, bounded to the last 400 lines; every `gh` and `git` call has a deadline of 60 seconds or the wait's remaining time, whichever is shorter, and a call past it counts as unreadable. Done when: a fixture that turns green after two polls exits 0, one that never ends exits 3 at the timeout, a hung `gh` exits 2 within its deadline, a log that cannot be read is reported without failing the status, and the log lands outside the repository. Cheaper substitute: an unbounded wait, or a full log pasted into the run file. **Groomed 2026-10-23:** completion finding 7.
+- [ ] Record each push in the run file in `.claude/skills/process-plan/SKILL.md`: after a stamp push, append `ci-pending <sha> <UTC>`; at the next section boundary, before the next row is claimed, run `python scripts/ci-status.py <sha>` and act on its exit: 0 records `ci-green <sha>`; 1 starts the repair below; 3 waits with `--wait --timeout 1800` and acts on the result; 2 is retried once after five minutes and, still 2, parks the campaign with `ci-unknown` as the reason, since green cannot be established. Done when: the skill names both records and the action for each of the four exits. Cheaper substitute: checking CI only at phase ends, when several red commits have stacked, or claiming the next row while CI is pending or unreadable. **Groomed 2026-10-23:** completion finding 1.
 - [ ] Repair a red run before the next row in `.claude/skills/process-plan/SKILL.md`: read the failing jobs and the log from `--log`, reproduce locally where the job can run here, fix at the owning layer in a `ci: <what was fixed> (repair for <sha>, run <id>)` commit, re-run the local gates, push, and `--wait` for green. A failure that passes on one `gh run rerun <id> --failed` is recorded as `ci-flaky <sha> <job>` and filed through `add-todo` as a flake to fix, never ignored. Done when: the skill names each step, the commit format and the flake rule. Cheaper substitute: re-running until green.
 - [ ] Bound the repair in `.claude/skills/process-plan/SKILL.md`: after three repair commits that leave the same job red, the campaign files the failure through `add-todo` (run link, job, step, what was tried), emails the owner through `.conclave/automations/alert.py`, and parks with `ci-red` as the reason. Done when: the skill names the bound, the filing, the email and the park. Cheaper substitute: an endless repair loop, or pushing more work onto a red `main`.
 - [ ] Make green a hard gate in `.claude/skills/process-phase/SKILL.md` and `.claude/skills/process-plan/SKILL.md`: a phase closeout, a draft release and the campaign's end each run `python scripts/ci-status.py HEAD --wait --timeout 3600` and proceed only on exit 0. Done when: both skills name the three gates. Cheaper substitute: closing a phase on local gates alone.
+- [ ] Run the same boundary check in `.claude/skills/process-phase/SKILL.md` for a phase started on its own: after each stamp push and before claiming the next row, and on every manual or heartbeat resume before any row, by reference to the one procedure in `process-plan` so the two never diverge. Done when: `process-phase` names the boundary check, the resume check and the reference. Cheaper substitute: a standalone phase that ships several sections before looking at CI. **Groomed 2026-10-23:** completion finding 2.
+- [ ] Make a `ci-red` or `ci-unknown` park end the whole campaign as a `host-not-ready` park does: in `.claude/skills/process-plan/SKILL.md` it writes the column-0 `PARKED <UTC> run=<run id> ci-red: <job>` (or `ci-unknown:`) line, ends the guard with `--reason park`, deletes and confirms the heartbeat, is never chained past, and the heartbeat prompt's step 5 treats it as terminal in either scope; an owner resume runs `python scripts/ci-status.py HEAD --wait --timeout 3600` before any row and parks again unless it exits 0; a failed email is recorded and never stops the park. Done when: the skill and its heartbeat prompt name both reasons, the no-chain rule and the resume check. Cheaper substitute: a park that the chaining or the heartbeat restarts on a red `main`. **Groomed 2026-10-23:** completion finding 5.
 - [ ] Add a CI line to the readiness check (D00 T03 §12) wiring: `scripts/check-campaign-host.py` confirms `gh run list --workflow ci.yml --limit 1` can be read. Done when: the readiness item names it and a fixture without `gh` access fails. Cheaper substitute: discovering at the first boundary that CI cannot be read.
 - [ ] Write `scripts/tests/test_ci_status.py` with a fake `gh` for every state, the wait, the timeout and the log bound. Done when: the suite passes and fails when any state's exit code is changed. Cheaper substitute: running the script against the live repository only.
 - [ ] Commit: `automations: watch CI at section boundaries and repair red runs`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes, `python scripts/ci-status.py HEAD` prints the latest pushed commit's run state on this PC, and `python scripts/todo-graph.py validate` exits 0.
+
+-> XREF: §17 (pending pushes reconciled on start and resume), §18 (CI recovery budget), §19 (campaign CI gate integration checks)
 
 ## 16. Completion Evidence Adoption Boundary
 
@@ -483,6 +490,65 @@ Filed 2026-10-23 from round 2 of D00 T03 §14's completion review (`docs/reviews
 - [ ] Commit: `automations: keep stored receipts under their own completion rules and harden every new stamp`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes and `python scripts/todo-graph.py validate` exits 0 with every stored receipt unchanged.
+
+## 17. CI Push Reconciliation
+
+Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (`docs/reviews/00-workspace/D00-T03-s15-completion.md`, finding 3): §15 records `ci-pending` only after a stamp push, so a dependency merge, a closeout push, another campaign push, or a session that dies between a push and its record leaves a commit on `main` whose CI nobody checks. This section makes the pending set come from the pushed history, not from notes. **Groomed 2026-10-23:** finding 1 of round 2 of §15's completion review: GitHub runs a push workflow only for the push's tip, so the unit is the push head, not every commit; commits under a green head are covered by it.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Derive the unchecked pushes from git and the run files. Done when: a command lists every commit on `origin/main` since the last `ci-green` that has no `ci-green` record.
+2. Run the reconciliation at campaign start, phase start and every resume. Done when: both skills name it.
+
+- [ ] Add `--pending <run file>` to `scripts/ci-status.py`: list the push heads on `origin/main` after the newest head recorded `ci-green` in that run file or any earlier run file in `docs/phase-runs/` (a push head is a commit recorded `ci-pending`, or the `headSha` of a `ci.yml` push run on `main`, or `origin/main` itself), and report the status of each, oldest first; a commit that is not a push head is covered by the first push head after it and is never checked on its own. Done when: fixtures with a merge commit, a closeout push and an unrecorded stamp push each list the unchecked head, two implementation commits pushed with their stamp list only the stamp, and a history whose head is recorded green lists nothing. Cheaper substitute: trusting the run file's own `ci-pending` notes, or checking every commit and parking on runs GitHub never creates.
+- [ ] Record `ci-pending <sha> <UTC>` for every campaign push, not only stamp pushes: dependency merges by `scripts/merge_prs.py`, closeout and park commits, and repair commits, in `.claude/skills/process-plan/SKILL.md`. Done when: the skill names each push kind. Cheaper substitute: watching only the stamp commits.
+- [ ] Run `python scripts/ci-status.py --pending <run file>` at campaign start, at every phase start and on every manual or heartbeat resume, before any row is claimed, and act on each listed commit with §15's exit rules, in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`. Done when: both skills name the command and the three moments. Cheaper substitute: losing a red commit when a session dies between its push and its record.
+- [ ] Commit: `automations: reconcile unchecked pushes with CI on start and resume`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes and `python scripts/ci-status.py --pending docs/phase-runs/2026-10-23-phase-0.md` lists the pushed commits without a `ci-green` record on this PC.
+
+## 18. CI Recovery Budget
+
+Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 6): §15 bounds the repair at three commits that leave the same job red, which misses an infrastructure outage, an unreadable log, a rerun that fails, and repairs that turn a different job red each time. This section gives the whole recovery one budget that survives a resume.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Persist the budget per red commit. Done when: the run file records each attempt.
+2. Escalate when it is spent, whatever the cause. Done when: the skill names every way the budget is consumed.
+
+- [ ] Record each recovery attempt for a red commit in the run file as `ci-attempt <sha> <n> <kind>` (`repair`, `rerun`, `wait`, `unreadable`), in `.claude/skills/process-plan/SKILL.md`, read back on resume so a resumed session continues the count. Done when: the skill names the record and that resume reads it. Cheaper substitute: a budget that starts again with every session.
+- [ ] Spend at most four attempts on one red `main` (any mix of repair commits, the single flake rerun, a bounded wait, an unreadable result), counting a repair that turns another job red against the same budget; when it is spent, file the failure through `add-todo`, email the owner through `.conclave/automations/alert.py`, and park with `ci-red` even when no useful code change exists. Done when: the skill names the budget, what consumes it, the filing, the email and the park. Cheaper substitute: three repair commits per job, which an outage or alternating jobs never reaches.
+- [ ] Define the single flake rerun: one `gh run rerun <id> --failed` per red commit, counted against the budget; a pass records `ci-flaky <sha> <job>` and files the flake through `add-todo`; a fail continues the repair. Done when: the skill names the one rerun and both outcomes. Cheaper substitute: re-running until green.
+- [ ] Commit: `automations: one recovery budget per red main, kept across resumes`
+
+**Test checkpoint:** `python scripts/check-design-doc.py .claude/skills/process-plan/SKILL.md` exits 0 and `Select-String -Path .claude/skills/process-plan/SKILL.md -Pattern 'ci-attempt'` finds the record.
+
+## 19. CI Gate Checks
+
+Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 8): the CI gate lives mostly in skill prose, which a test of `scripts/ci-status.py` alone cannot hold to its word. This section adds checks that fail when the skills and the guard stop enforcing it.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Teach the run guard the CI parks. Done when: the Stop hook and `whoami` treat a `ci-red` or `ci-unknown` park like `host-not-ready`.
+2. Lint the skills for the gate. Done when: a test fails when a required step is removed.
+
+- [ ] Make `scripts/campaign_guard.py` treat a column-0 `PARKED ... run=<run id> ci-red:`, `ci-unknown:` or `host-not-ready:` line as campaign-ending in either scope (the Stop hook lets the turn end, and a resumed run must start fresh), with tests in `scripts/tests/test_campaign_guard.py`. Done when: tests prove each reason ends the run and a phase park without one still chains. Cheaper substitute: relying on the heartbeat prompt's wording alone.
+- [ ] Add `scripts/tests/test_skill_ci_gate.py`, which reads `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md` and fails unless each names the boundary check, the four exit actions, the three hard gates, the resume check, the pending reconciliation and the recovery budget. Done when: the test passes, and removing any one of those lines from a copy makes it fail. Cheaper substitute: reading the skills by eye.
+- [ ] Commit: `automations: hold the campaign to its CI gate with guard and skill checks`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` pass.
 
 ## Verification
 

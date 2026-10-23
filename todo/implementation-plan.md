@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 21 | Checklist items: 146
+Sections: 24 | Checklist items: 159
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -31,8 +31,11 @@ Sections: 21 | Checklist items: 146
 | [x]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 11    |
 | [x]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review | none                   | 17    |
 | [x]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 7     |
-| [ ]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 9     |
+| [ ]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 11    |
 | [ ]    | D00 T03 §16 | Completion Evidence Adoption Boundary    | none                   | 4     |
+| [ ]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 4     |
+| [ ]    | D00 T03 §18 | CI Recovery Budget                       | none                   | 4     |
+| [ ]    | D00 T03 §19 | CI Gate Checks                           | none                   | 3     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -172,6 +175,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 40/117 verified sections, 12 ready to run now.
+Progress: 40/120 verified sections, 12 ready to run now.
 
-Checklist: 256/744 items completed (includes Commit items).
+Checklist: 256/757 items completed (includes Commit items).
