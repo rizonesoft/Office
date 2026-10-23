@@ -24,3 +24,21 @@ OVERALL: needs-attention
 
 1. extended
 2. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T11:16:00Z
+- Effort: medium
+- Lines: 9
+- Digest: 88d209d4a89ab4f9
+
+SECTION: D00 T03 §16
+PURPOSE: completion
+CONTRACT: sha256:963502c79670d69c73b0eb9436ec6d5af58b807e244e63bfcdf5ddba7c50b0a7
+
+No gaps found. The revised section covers historical classification without rewriting evidence, contract validation for stored version 2 receipts, and mandatory hardened checks for every new stamp, including re-stamps. Its tests distinguish those paths and require refusal without writes. D00 T03 §14 owns reopening freshness, pending re-check refusal and evidence recovery.
+
+COMPLETE: yes
+HIGHEST: none
+OVERALL: approve
