@@ -135,6 +135,10 @@ class CampaignParks(Workspace):
         self.assertIn("start a fresh run", str(ctx.exception))
         with self.assertRaises(guard.GuardError):  # a handover onto the same run file
             self.acquire(session="another-session", cron_id="job-3", handover="resume after the owner fixed it")
+        self.write("docs/phase-runs/next.md", "# Phase run: Phase 1\n")
+        with self.assertRaises(guard.GuardError):  # chaining to the next phase's run file (review round 1 of §19)
+            guard.acquire(self.root, SESSION, 1, "docs/phase-runs/next.md", "job-4")
+        self.assertEqual(guard.read_guard(self.root)["run_file"], RUN_FILE)
 
 
 class StopHook(Workspace):

@@ -253,9 +253,10 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
            # this run however the file is edited.
            "run_id": (previous.get("run_id") if (same_run or (handover and previous.get("run_file") == run_file))
                       and previous.get("run_id") else mint_generation())}
-    # A run that ended the campaign (host-not-ready, ci-red, ci-unknown) is never continued, by a re-point or a
-    # handover: the resume is a fresh run with a new run file, so no old marker can end or confuse it (D00 T03 §19).
-    if exists and doc["run_id"] == previous.get("run_id"):
+    # A run that ended the campaign (host-not-ready, ci-red, ci-unknown) is never continued: not by a re-point to the
+    # same or another run file (the phase chaining), nor by a handover. It is ended first; the resume is then a fresh
+    # run with a new run file, so no old marker can end or confuse it (D00 T03 §19).
+    if exists:
         parked = campaign_park(root, str(previous.get("run_file", "")), str(previous.get("run_id") or ""))
         if parked:
             raise GuardError(f"run {previous.get('run_id')} ended the campaign ({parked}); end it, then start a fresh "

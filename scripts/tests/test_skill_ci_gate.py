@@ -34,6 +34,12 @@ OBLIGATIONS = [
         '"host-not-ready", "ci-red" or "ci-unknown", whatever the scope']),
     ("heartbeat matches the current run", "plan", ['column-0 "PARKED" line carrying "run=<run id>" and '
                                                    '"host-not-ready"']),
+    ("heartbeat ends the run on a campaign park", "plan", [
+        "the campaign is over until the owner resumes it by hand: run `<python> scripts/campaign_guard.py end "
+        "--session $CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, "
+        "and reply RUN FINISHED, even when rows are ready and the host check would now pass."]),
+    ("hard gates proceed only on green", "plan", ["`python scripts/ci-status.py HEAD --wait --timeout 3600` and proceed "
+                                                  "only on exit 0."]),
     ("no chaining after a CI park", "plan", ["Never chain to another phase after it."]),
     ("guard end on a CI park", "plan", ["commit it and push it",
                                         "run `python scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID "
@@ -57,6 +63,11 @@ WEAKENINGS = [
     ("guard end on a CI park", "plan", "--reason park`, `CronDelete` the heartbeat, confirm with `CronList`",
      "--reason park`"),
     ("fresh-run resume", "plan", "An owner resume is a fresh run", "An owner resume continues the run by handover"),
+    ("heartbeat ends the run on a campaign park", "plan",
+     "the campaign is over until the owner resumes it by hand: run `<python> scripts/campaign_guard.py end --session "
+     "$CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN "
+     "FINISHED, even when rows are ready and the host check would now pass.", "resume under step 7."),
+    ("hard gates proceed only on green", "plan", "and proceed only on exit 0.", "and proceed on any exit."),
 ]
 
 
