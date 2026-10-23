@@ -942,9 +942,11 @@ def completion_ok(root, ref, path, rows=None):
         numbers = [int(m.group(1)) for m in re.finditer(r"^\s*(\d+)[.)]\s", last["review"], re.M)]
         # A number used twice (two findings both `1.`, or a nested list restarting at `1)`) would let one disposition
         # answer two gaps, so the gaps must be numbered once each.
-        require(len(numbers) == len(set(numbers)),
-                f"round {n} of {path} numbers more than one line {sorted({x for x in numbers if numbers.count(x) > 1})}; "
-                f"each gap needs its own number: {ref}")
+        seen, repeated = set(), set()
+        for number in numbers:  # one pass: counting each number again would be quadratic on a long reply
+            (repeated if number in seen else seen).add(number)
+        require(not repeated, f"round {n} of {path} numbers more than one line {sorted(repeated)}; "
+                              f"each gap needs its own number: {ref}")
         gaps = sorted(numbers)
         require(gaps, f"round {n} of {path} says COMPLETE: no but numbers no gap: {ref}")
         title = f"## Outcome (round {n})"
