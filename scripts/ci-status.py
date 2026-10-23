@@ -245,10 +245,11 @@ def push_runs(tools, repo, seconds):
 def unchecked_heads(tools, run_file, left):
     """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first).
 
-    A push head is a commit recorded `ci-pending`, the head of a ci.yml push run on main, or origin/main itself; a
-    commit that is not one is covered by the first push head after it. The baseline is the oldest head with a recorded
-    outcome (history before the records began is covered), or, with none recorded, the newest head whose push run is
-    green. After it, a head is listed unless it has an outcome of its own: a later green head never covers it."""
+    A push head is a commit with a ci-pending or outcome record, the head of a ci.yml push run on main, or origin/main
+    itself; a commit that is not one is covered by the first push head after it. The baseline is the oldest head with
+    a recorded outcome (history before the records began is covered), or, only when no run file holds any outcome, the
+    newest head whose push run is green. After it, a head is listed unless it has an outcome of its own: a later green
+    head never covers it. A baseline that the read history does not reach is Unknown, never a clean result."""
     fetched = tools.call("git", ["fetch", "--quiet", "origin", BRANCH], left())
     if fetched.returncode != 0:
         raise Unknown("git fetch origin main failed")
@@ -261,13 +262,23 @@ def unchecked_heads(tools, run_file, left):
     runs = push_runs(tools, repo, left())
     outcomes, pendings = records(run_file)
     run_heads = {r["headSha"] for r in runs}
-    heads = [c for c in history if c in run_heads or recorded(pendings, c) or c == history[0]]  # newest first
+    heads = [c for c in history if c in run_heads or recorded(pendings, c) or recorded(outcomes, c)
+             or c == history[0]]  # newest first
     with_outcome = [c for c in heads if recorded(outcomes, c)]
-    if with_outcome:
+    cut_off = len(history) >= HISTORY_LIMIT
+    if outcomes:
+        if not with_outcome:  # outcomes are recorded, but none is on the history read
+            raise Unknown("no recorded outcome is on origin/main's history" +
+                          (f" within its last {HISTORY_LIMIT} commits" if cut_off else ""))
         baseline = with_outcome[-1]
+        if cut_off and any(not any(c.startswith(o) for c in history) for o in outcomes):
+            # an older recorded head lies beyond the read history, so heads between it and the baseline are unseen
+            raise Unknown(f"recorded outcomes reach past the last {HISTORY_LIMIT} commits of origin/main")
     else:
         green = {r["headSha"] for r in runs if r.get("status") == "completed" and r.get("conclusion") == "success"}
         baseline = next((c for c in heads if c in green), None)
+        if baseline is None and cut_off:
+            raise Unknown(f"no green push head within the last {HISTORY_LIMIT} commits of origin/main")
     newer = heads[:heads.index(baseline)] if baseline else heads
     return baseline, [c for c in reversed(newer) if not recorded(outcomes, c)]
 

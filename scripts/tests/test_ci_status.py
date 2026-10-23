@@ -356,7 +356,8 @@ class Repo:
                 self.history = self.fetched
             out = ""
         elif name == "git" and args[0] == "rev-list":
-            out = "\n".join(self.history) + "\n"
+            limit = next(int(a.split("=")[1]) for a in args if a.startswith("--max-count="))
+            out = "\n".join(self.history[:limit]) + "\n"
         elif name == "git" and args[0] == "rev-parse":
             ref = args[2].split("^")[0]
             out = (self.history[0] if ref in ("HEAD", "origin/main") else ref) + "\n"
@@ -426,6 +427,46 @@ class Pending(unittest.TestCase):
         self.record(f"ci-green {base[:7]}", f"ci-pending {stamp[:7]} 2026-10-23T10:00:00Z")
         code, out = self.pending(Repo([sha(3), stamp, base], {base: "success"}))
         self.assertIn(stamp[:7], self.listed(out))
+
+    def test_an_outcome_record_alone_makes_a_head_and_the_baseline(self):
+        # Review round 1 of D00 T03 §17, finding 2: A's run is no longer returned; its ci-green record still counts.
+        a, b, c = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {a[:7]}")
+        code, out = self.pending(Repo([c, b, a], {b: "failure", c: "success"}))
+        self.assertIn(f"baseline {a[:7]}", out)
+        self.assertEqual(self.listed(out), [b[:7], c[:7]])
+        self.assertEqual(code, 1)
+
+    def test_a_recorded_outcome_off_the_history_is_unknown(self):
+        self.record(f"ci-green {sha(9)[:7]}")
+        code, out = self.pending(Repo([sha(2), sha(1)], {sha(1): "success", sha(2): "success"}))
+        self.assertEqual(code, 2)
+        self.assertIn("no recorded outcome is on origin/main's history", out)
+
+    def test_a_history_cut_off_before_the_baseline_is_unknown(self):
+        # Review round 1 of D00 T03 §17, finding 1: baseline A and red B lie beyond the commits read; tip C is green.
+        a, b, c = sha(1), sha(2), sha(3)
+        filler = [sha(100 + n) for n in range(5)]
+        self.record(f"ci-green {a[:7]}", f"ci-pending {b[:7]} 2026-10-23T10:00:00Z")
+        with mock.patch.object(ci, "HISTORY_LIMIT", 4):
+            code, out = self.pending(Repo([c, *filler, b, a], {b: "failure", c: "success"}))
+        self.assertEqual(code, 2)
+
+    def test_an_older_record_beyond_the_cut_off_is_unknown_even_with_a_newer_one_inside(self):
+        # Records A (beyond the commits read) and D (inside): heads between them, such as red B, would go unseen.
+        a, b, d, e = sha(1), sha(2), sha(4), sha(5)
+        fillers = [sha(100 + n) for n in range(2)]
+        self.record(f"ci-green {a[:7]}", f"ci-green {d[:7]}", f"ci-pending {b[:7]} 2026-10-23T10:00:00Z")
+        with mock.patch.object(ci, "HISTORY_LIMIT", 3):
+            code, out = self.pending(Repo([e, d, *fillers, b, a], {b: "failure", d: "success", e: "success"}))
+        self.assertEqual(code, 2)
+        self.assertIn("reach past the last 3 commits", out)
+
+    def test_a_cut_off_history_without_records_needs_a_green_head_inside_it(self):
+        heads = [sha(n) for n in range(1, 8)]
+        with mock.patch.object(ci, "HISTORY_LIMIT", 3):
+            code, _ = self.pending(Repo(list(reversed(heads)), {h: "failure" for h in heads}))
+        self.assertEqual(code, 2)
 
     def test_every_head_with_an_outcome_lists_nothing(self):
         base, a, b = sha(1), sha(2), sha(3)
