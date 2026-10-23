@@ -21,3 +21,21 @@ OVERALL: needs-attention
 ## Outcome (round 1)
 
 1. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T12:51:40Z
+- Effort: medium
+- Lines: 9
+- Digest: 102195e7ed437466
+
+SECTION: D00 T03 §19
+PURPOSE: completion
+CONTRACT: sha256:4f59c19f0e36cb3f06ecd7b39d4df02eefd1b2db65bd27be87b8819bfac883a6
+
+No remaining gaps. The extension protects the terminal-park decision and cleanup procedure with removal and weakening checks, closing round 1’s finding. Guard tests cover both scopes and preserve ordinary phase chaining. CI reconciliation at scale and recovery settlement on resume are owned by §20 and §21 respectively.
+
+COMPLETE: yes
+HIGHEST: none
+OVERALL: approve
