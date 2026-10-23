@@ -25,6 +25,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import github_origin
 import todo_graph
 
 WORKFLOW = "ci.yml"
@@ -83,9 +84,18 @@ def resolve(tools, ref, left):
     return sha, committed
 
 
-def governing_run(tools, sha, seconds):
+def origin(tools, seconds):
+    """The `--repo` value for `origin`, so GH_REPO or GH_HOST can never point a query at another repository."""
+    result = tools.call("git", ["remote", "get-url", "origin"], seconds)
+    repo = github_origin.parse(result.stdout) if result.returncode == 0 else None
+    if repo is None:  # the URL is never printed: it can carry a token
+        raise Unknown(f"origin is not a {github_origin.HOST} repository")
+    return github_origin.repo_flag(repo)
+
+
+def governing_run(tools, sha, seconds, repo):
     """The push run on main for this exact commit (the newest when there are several), or None."""
-    result = tools.call("gh", ["run", "list", "--workflow", WORKFLOW, "--commit", sha, "--event", "push",
+    result = tools.call("gh", ["run", "list", "--repo", repo, "--workflow", WORKFLOW, "--commit", sha, "--event", "push",
                                "--branch", BRANCH, "--limit", "50", "--json",
                                "databaseId,status,conclusion,url,createdAt,headSha,event,headBranch,attempt"], seconds)
     if result.returncode != 0:
@@ -101,10 +111,10 @@ def governing_run(tools, sha, seconds):
     return max(runs, key=lambda r: str(r.get("createdAt", ""))) if runs else None
 
 
-def failing_steps(tools, run_id, seconds):
+def failing_steps(tools, run_id, seconds, repo):
     """`job: step (conclusion)` for every job that did not succeed, or a note when the jobs cannot be read."""
     try:
-        result = tools.call("gh", ["run", "view", str(run_id), "--json", "jobs"], seconds)
+        result = tools.call("gh", ["run", "view", str(run_id), "--repo", repo, "--json", "jobs"], seconds)
         jobs = json.loads(result.stdout)["jobs"] if result.returncode == 0 else None
     except (Unknown, ValueError, KeyError, TypeError):
         jobs = None
@@ -121,13 +131,13 @@ def failing_steps(tools, run_id, seconds):
     return lines or ["  (no failing job reported)"]
 
 
-def write_log(tools, run_id, path, seconds):
+def write_log(tools, run_id, path, seconds, repo):
     """The failed steps' log, its last LOG_LINES lines, to `path` outside the repository. Returns a note."""
     target = Path(path).resolve()
     if target == ROOT or ROOT in target.parents:
         return f"log not written: {path} is inside the repository"
     try:
-        result = tools.call("gh", ["run", "view", str(run_id), "--log-failed"], seconds)
+        result = tools.call("gh", ["run", "view", str(run_id), "--repo", repo, "--log-failed"], seconds)
     except Unknown as exc:
         return f"log not written: {exc}"
     if result.returncode != 0:
@@ -157,7 +167,8 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
         return min(CALL_SECONDS, remaining)
     try:
         sha, committed = resolve(tools, ref, left)
-        run = governing_run(tools, sha, left())
+        repo = origin(tools, left())
+        run = governing_run(tools, sha, left(), repo)
     except DeadlinePassed:
         raise
     except Unknown as exc:
@@ -175,9 +186,9 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
         return GREEN, [f"green {head}"]
     lines = [f"red {head} ({run.get('conclusion') or 'no conclusion'})"]
     try:
-        lines += failing_steps(tools, run.get("databaseId"), left())
+        lines += failing_steps(tools, run.get("databaseId"), left(), repo)
         if log:
-            lines.append(write_log(tools, run.get("databaseId"), log, left()))
+            lines.append(write_log(tools, run.get("databaseId"), log, left(), repo))
     except Unknown as exc:  # the run is red either way; only its details ran out of time
         lines.append(f"  ({exc})")
     return RED, lines

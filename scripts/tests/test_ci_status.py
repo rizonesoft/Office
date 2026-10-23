@@ -39,10 +39,13 @@ class Fake:
         self.jobs = jobs if jobs is not None else []
         self.log = log
         self.fail = fail or {}
+        self.origin = "https://github.com/rizonesoft/Office.git"
         self.calls = []
+        self.argv = []
 
     def call(self, name, args, seconds):
         self.calls.append((name, args[:2], seconds))
+        self.argv.append((name, list(args)))
         key = f"{name} {args[0]} {args[1] if len(args) > 1 else ''}".strip()
         if key in self.fail:
             failure = self.fail[key]
@@ -53,6 +56,8 @@ class Fake:
             return subprocess.CompletedProcess(args, 0, SHA + "\n", "")
         if name == "git" and args[0] == "show":
             return subprocess.CompletedProcess(args, 0, COMMITTED.isoformat() + "\n", "")
+        if name == "git" and args[0] == "remote":
+            return subprocess.CompletedProcess(args, 0, self.origin + "\n", "")
         if args[:2] == ["run", "list"]:
             current = self.polls[0] if len(self.polls) == 1 else self.polls.pop(0)
             return subprocess.CompletedProcess(args, 0, json.dumps(current), "")
@@ -171,6 +176,27 @@ class Identity(Base):
         self.assertTrue(listed)
 
 
+class Repository(Base):
+    def test_every_gh_call_names_origin_whatever_gh_repo_says(self):
+        jobs = [{"name": "gates", "conclusion": "failure", "steps": []}]
+        fake = Fake(runs=[[run(conclusion="failure")]], jobs=jobs, log="x")
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        with mock.patch.dict("os.environ", {"GH_REPO": "someone/elsewhere", "GH_HOST": "ghe.example"}):
+            self.main(fake, "--log", str(tmp / "ci.log"))
+        gh = [args for name, args in fake.argv if name == "gh"]
+        self.assertEqual(len(gh), 3)  # run list, run view --json jobs, run view --log-failed
+        for args in gh:
+            self.assertEqual(args[args.index("--repo") + 1], "github.com/rizonesoft/Office", args)
+
+    def test_an_origin_that_is_not_github_is_unknown(self):
+        fake = Fake()
+        fake.origin = "https://gitlab.example/rizonesoft/Office.git"
+        code, out = self.main(fake)
+        self.assertEqual(code, 2)
+        self.assertNotIn("gitlab.example/rizonesoft", out)  # never the URL, which can carry a token
+
+
 class Waiting(Base):
     def test_turns_green_after_two_polls(self):
         pending = [run(status="in_progress", conclusion="")]
@@ -184,18 +210,18 @@ class Waiting(Base):
         self.assertEqual(self.clock.t - 1000, 100 - ci.RESERVE)  # its last look started a second before the timeout
 
     def test_every_call_is_bounded_by_sixty_seconds_or_the_time_left(self):
-        # Each call takes 30 s and honours its deadline. The first look ends at 90 s; the wait does not stop there
-        # but looks again at 99 s with 1 s left, which the timeout cuts short: still pending, exactly at 100 s.
+        # Each of a look's four calls takes 20 s and honours its deadline; the fourth gets only the 40 s left. The
+        # first look ends at 80 s; the wait looks again at 99 s with 1 s left, which the timeout cuts short.
         clock = Clock()
         fake = Fake(runs=[[run(status="in_progress", conclusion="")]])
         real = fake.call
 
         def slow(name, args, seconds):
             self.assertLess(clock.t - 1000, 100, "a call started after the timeout")
-            if 30 > seconds:
+            if 20 > seconds:
                 clock.t += seconds
                 raise ci.DeadlinePassed("cut short")
-            clock.t += 30
+            clock.t += 20
             return real(name, args, seconds)
         fake.call = slow
         out = io.StringIO()

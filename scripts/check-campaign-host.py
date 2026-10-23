@@ -31,6 +31,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import github_origin
 import pin_proposal
 import todo_graph
 
@@ -332,6 +333,14 @@ class Host:
                               seconds=NOTIFY_SECONDS)
         if result.returncode != 0:
             raise Unreadable((result.stderr.strip().splitlines() or [f"exit {result.returncode}"])[-1])
+
+    def origin_repo(self):
+        """`owner/name` of origin, or None (the URL is never printed: it can carry a token)."""
+        git = self.find("git")
+        if not git:
+            raise Unreadable("git is not on PATH")
+        result = self.run([git, "remote", "get-url", "origin"], cwd=self.root)
+        return github_origin.parse(result.stdout) if result.returncode == 0 else None
 
     def reviewer_cli(self):
         """(reviewer name, CLI name) the pin routes Claude's work to; review-dispatch's Refused when the pin is bad."""
@@ -757,8 +766,12 @@ def check_ci(host):
     gh = host.find("gh")
     if not gh:
         return fail("ci", "gh is not on PATH, so CI cannot be read", "install the GitHub CLI: winget install GitHub.cli")
-    result = host.run([gh, "run", "list", "--workflow", "ci.yml", "--limit", "1", "--json", "databaseId"],
-                      cwd=host.root)
+    repo = host.origin_repo()
+    if repo is None:
+        return fail("ci", f"origin is not a {github_origin.HOST} repository, so its CI cannot be read",
+                    "point origin at the GitHub repository: git remote set-url origin <url>")
+    result = host.run([gh, "run", "list", "--repo", github_origin.repo_flag(repo), "--workflow", "ci.yml",
+                       "--limit", "1", "--json", "databaseId"], cwd=host.root)
     if result.returncode != 0:
         return fail("ci", "gh cannot read the ci.yml runs", "gh auth status, then gh run list --workflow ci.yml")
     try:

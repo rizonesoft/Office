@@ -104,11 +104,7 @@ def guard_lock(root):
     return campaign_guard._Lock(str(root))
 
 
-HOST = "github.com"
-# The URL forms git writes for a github.com repository, matched whole: the host must be exactly github.com.
-ORIGIN_FORMS = (re.compile(r"https://(?:[^@/]+@)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"),
-                re.compile(r"git@github\.com:([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"),
-                re.compile(r"ssh://git@github\.com(?::22)?/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?"))
+from github_origin import HOST, ORIGIN_FORMS, parse as parse_origin  # noqa: E402  (scripts/lib on the path above)
 
 
 def origin_repo(runner, root):
@@ -116,10 +112,9 @@ def origin_repo(runner, root):
     so neither GH_REPO, GH_HOST nor another default can aim a merge anywhere but the repository whose clone was
     checked."""
     url = checked(runner, root, ["git", "remote", "get-url", "origin"], "git remote get-url").strip()
-    for form in ORIGIN_FORMS:
-        match = form.fullmatch(url)
-        if match:
-            return f"{match.group(1)}/{match.group(2)}"
+    repo = parse_origin(url)
+    if repo:
+        return repo
     # The URL itself is never printed: it can carry a token (https://user:token@host/...), and this message reaches
     # the run log and the failure email.
     raise Unreadable(f"origin is not a {HOST} repository (its URL is not shown, as it may hold credentials)")

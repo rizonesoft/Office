@@ -60,6 +60,7 @@ class Fake:
         self.gh_status = 0
         self.reviewer_status = 0
         self.ci_status, self.ci_output = 0, '[{"databaseId": 7}]'
+        self.origin = "rizonesoft/Office"
         self.probe_error = {}  # program name -> the exception its probe raises
         self.pin = ("sol", "codex")
         self.free = 300 * 10**9
@@ -112,6 +113,9 @@ class Fake:
             return subprocess.CompletedProcess(argv, self.ci_status, self.ci_output, "")
         status = self.gh_status if program == "gh" else self.reviewer_status
         return subprocess.CompletedProcess(argv, status, "Logged in as someone@example.com", "")
+
+    def origin_repo(self):
+        return self.origin
 
     def reviewer_cli(self):
         if isinstance(self.pin, Exception):
@@ -702,6 +706,15 @@ class Services(Base):
         r = self.result("ci")
         self.assertEqual(r["state"], "fail")
         self.assertIn("gh run list --workflow ci.yml", r["fix"])
+
+    def test_the_ci_query_names_origin(self):
+        self.result("ci")
+        listed = [argv for argv in self.host.calls if argv[1:3] == ["run", "list"]]
+        self.assertEqual(listed[0][listed[0].index("--repo") + 1], "github.com/rizonesoft/Office")
+
+    def test_an_origin_that_is_not_github_fails(self):
+        self.host.origin = None
+        self.assertEqual(self.result("ci")["state"], "fail")
 
     def test_ci_without_gh_fails(self):
         del self.host.on_path["gh"]
