@@ -52,7 +52,9 @@ OBLIGATIONS = [
         "--session $CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, "
         "and reply RUN FINISHED, even when rows are ready and the host check would now pass."]),
     ("reconciliation settles the newest head first", "plan", [
-        "1, settle the newest listed head first and the earlier ones only after it:"]),
+        "1, settle from the newest head back: when `origin/main`'s head is already green (listed green, or recorded "
+        "`ci-green`), each listed red head before it is recorded `ci-superseded <sha> by <that sha>` and never repaired; "
+        "otherwise settle the newest listed head first and the earlier ones only after it:"]),
     ("earlier red heads are superseded only once the newest is green", "plan", [
         "only once the newest head is green is each earlier red head recorded `ci-superseded <sha> by <newest sha>` and "
         "never repaired"]),
@@ -100,6 +102,8 @@ WEAKENINGS = [
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
     ("reconciliation settles the newest head first", "plan", "settle the newest listed head first and the earlier ones "
      "only after it:", "settle the oldest listed head first:"),
+    ("reconciliation settles the newest head first", "plan", "when `origin/main`'s head is already green (listed green, "
+     "or recorded `ci-green`)", "when `origin/main`'s head is listed green"),
     ("earlier red heads are superseded only once the newest is green", "plan", "only once the newest head is green is "
      "each earlier red head recorded", "each earlier red head with any later green head is recorded"),
     ("heartbeat closeout ends only on green", "plan", "and unless both exit 0 resume under step 7, whose CI watch "
@@ -143,7 +147,7 @@ PINNED = [
     ('plan', 'Every campaign push gets a `ci-pending',
      '70ee904f5ec22338104e4707535a7be043000b7cd11acca69ac58c198ef6cdf6'),
     ('plan', 'Reconcile from the pushed history',
-     '246fea70fb89ca39358b69557c88028651546480a88002ca4c334f83a8ac6b84'),
+     '53ac635cfa7d6acf54ff1bda6bf2db7006a7583280e4a0160eff4c19e62e963d'),
     ('plan', 'Green is a hard gate in three places',
      '95411b47eb82906b2f147ddba0955e900e15464ca2efc3996793ed01866648e8'),
     ('plan', 'Nothing is written to the run file at a boundary',
