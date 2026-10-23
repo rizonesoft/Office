@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 24 | Checklist items: 159
+Sections: 24 | Checklist items: 163
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -33,7 +33,7 @@ Sections: 24 | Checklist items: 159
 | [x]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 7     |
 | [x]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 11    |
 | [x]    | D00 T03 §16 | Completion Evidence Adoption Boundary    | none                   | 4     |
-| [ ]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 4     |
+| [ ]    | D00 T03 §17 | CI Push Reconciliation                   | none                   | 8     |
 | [ ]    | D00 T03 §18 | CI Recovery Budget                       | none                   | 4     |
 | [ ]    | D00 T03 §19 | CI Gate Checks                           | none                   | 3     |
 
@@ -177,4 +177,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 42/120 verified sections, 12 ready to run now.
 
-Checklist: 271/757 items completed (includes Commit items).
+Checklist: 271/761 items completed (includes Commit items).
