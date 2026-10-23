@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 20 | Checklist items: 139
+Sections: 20 | Checklist items: 141
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -28,7 +28,7 @@ Sections: 20 | Checklist items: 139
 | [x]    | D00 T03 §8  | Agent Tier Verifier YAML Strictness      | none                   | 4     |
 | [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries       | none                   | 10    |
 | [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins         | windows-host, attended | 10    |
-| [ ]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 9     |
+| [ ]    | D00 T03 §12 | Campaign Host Readiness Check            | windows-host           | 11    |
 | [x]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review | none                   | 17    |
 | [ ]    | D00 T03 §14 | Completion Evidence Hardening            | none                   | 6     |
 | [ ]    | D00 T03 §15 | CI Watch and Red-Run Repair              | none                   | 9     |
@@ -173,4 +173,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 38/116 verified sections, 13 ready to run now.
 
-Checklist: 238/737 items completed (includes Commit items).
+Checklist: 238/739 items completed (includes Commit items).
