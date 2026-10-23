@@ -251,11 +251,15 @@ def load_checkpoint(path):
 
 
 def save_checkpoint(path, cp):
+    """Write the checkpoint temp-then-replace; a failure is Unknown, so a local write error never reads as red CI."""
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_name(path.name + ".tmp")
-    temp.write_text(json.dumps(cp), encoding="utf-8")
-    os.replace(temp, path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_text(json.dumps(cp), encoding="utf-8")
+        os.replace(temp, path)
+    except OSError as exc:
+        raise Unknown(f"cannot save the checkpoint {path.name}: {exc.strerror or exc}") from None
 
 
 def read_page(tools, owner_name, page, seconds):
@@ -439,12 +443,24 @@ def look_up(tools, sha, now, deadline, clock):
 
 
 def pending_main(args, tools, clock, now, checkpoint):
-    """--pending: report every unchecked push head's CI. Exit 2 if discovery is incomplete or any head is unknown,
-    else 1 if any is red, 3 if any is pending, 0 when every listed head is green (or none is listed); exit 4 when this
-    try ran out of time but saved progress (D00 T03 §22): run it again, and it continues where it stopped."""
+    """--pending: report every unchecked push head's CI. Exit 2 if discovery is incomplete, any head is unknown or the
+    checkpoint cannot be kept, else 1 if any is red, 3 if any is pending, 0 when every listed head is green (or none is
+    listed); exit 4 when this try ran out of time but saved progress (D00 T03 §22): run it again, and it continues
+    where it stopped."""
+    try:
+        return reconcile(args, tools, clock, now, checkpoint)
+    except Unknown as exc:
+        print(f"unknown: {exc}")
+        return UNKNOWN
+
+
+def reconcile(args, tools, clock, now, checkpoint):
     path = Path(checkpoint)
     if args.ack:
-        path.unlink(missing_ok=True)
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            raise Unknown(f"cannot delete the checkpoint {path.name}: {exc.strerror or exc}") from None
         print("acknowledged: the reconciliation's checkpoint is deleted")
         return GREEN
     cp = load_checkpoint(path) or {}
@@ -470,6 +486,8 @@ def pending_main(args, tools, clock, now, checkpoint):
         code, lines, run = look_up(tools, sha, moment(), deadline, clock)
         cp["results"][sha] = {"code": code, "lines": lines, "run": run}
         looked.add(sha)
+        if run and str(run[0]) in cp["runs"]:  # the page copy takes the attempt read now; a later page read wins
+            cp["runs"][str(run[0])]["attempt"] = run[1]
 
     try:
         pages, listing = unchecked_heads(tools, args.pending, left, cp, save)
@@ -495,9 +513,8 @@ def pending_main(args, tools, clock, now, checkpoint):
             pages.confirm(relied)
             confirming = False
             latest = listing()
-            stale = [s for s in latest[1] if s in checked and s not in looked and s in latest[2]
-                     and cp["results"][s]["code"] in (GREEN, RED) and not current(cp["results"][s], latest[2][s],
-                                                                                   cp["runs"])]
+            stale = [s for s in latest[1] if s in checked and s in latest[2] and cp["results"][s]["code"] in (GREEN, RED)
+                     and not current(cp["results"][s], latest[2][s], cp["runs"])]
             if latest[:2] == (baseline, heads) and not stale:
                 break
             baseline, heads, runs_of, base_run = latest
@@ -513,11 +530,6 @@ def pending_main(args, tools, clock, now, checkpoint):
         else:
             print("unknown: this try made no progress before its deadline")
         return UNKNOWN
-    except Unknown as exc:
-        if cp:
-            save(cp)
-        print(f"unknown: {exc}")
-        return UNKNOWN
     # Heads still pending or unknown are looked up again while the try has time; a deadline here reports them as they
     # stand (a pending head is never reported green).
     for sha in [s for s in heads if cp["results"][s]["code"] in (PENDING, UNKNOWN) and s not in looked]:
@@ -526,10 +538,10 @@ def pending_main(args, tools, clock, now, checkpoint):
         except DeadlinePassed:
             break
     codes = [cp["results"][s]["code"] for s in heads]
-    print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
-    print("\n".join(line for s in heads for line in cp["results"][s]["lines"]))
     cp["pass"] = None  # reported: the next reconciliation settles every head again
     save(cp)
+    print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
+    print("\n".join(line for s in heads for line in cp["results"][s]["lines"]))
     for worst in (UNKNOWN, RED, PENDING):
         if worst in codes:
             return worst

@@ -787,6 +787,57 @@ class Scale(Pending):
         held = json.loads((self.dir / "ci-reconcile.json").read_text(encoding="utf-8"))
         self.assertEqual((len(held["runs"]), held["next_page"]), (400, 5))
 
+    def test_a_rerun_read_after_this_try_looked_a_head_up_replaces_the_lookup(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        others = [{"id": 96000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(900 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # A settled, B cut short
+        real = repo.call
+
+        def call(name, args, seconds):  # B is looked up green, then rerun and failed before page 2 is read again
+            result = real(name, args, seconds)
+            if args[:2] == ["run", "list"] and b in args:
+                repo.runs[b], repo.attempts[b] = "failure", 2
+            return result
+        repo.call = call
+        code, out = self.pending(repo)
+        self.assertEqual(code, 1)
+        self.assertIn(f"red {b[:7]} run {int(b[:7], 16)} attempt 2", out)
+
+    def test_a_lookup_newer_than_the_page_copy_settles_once(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        others = [{"id": 97000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1000 + n), "event": "pull_request", "head_branch": "feature"} for n in range(99)]
+        self.record(f"ci-green {base[:7]}")
+        # A's run ends page 1 (read again every try); B's starts page 2, which the next try has no reason to read.
+        repo = Repo([b, a, base], {base: "success", b: "failure", a: "success"}, extra_runs=others)
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # A settled, B cut short
+        repo.runs[b], repo.attempts[b] = "success", 2  # B, on page 2, is rerun green before the next try
+        code, out = self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=1))
+        self.assertEqual(code, 0)
+        self.assertEqual(len([c for c in repo.calls if c[1][:2] == ["run", "list"] and b in c[1]]), 1)
+
+    def test_a_checkpoint_that_cannot_be_written_is_unknown(self):
+        self.record(f"ci-green {sha(1)[:7]}")
+        repo = Repo([sha(2), sha(1)], {sha(1): "success", sha(2): "success"})
+        with mock.patch.object(ci.os, "replace", side_effect=PermissionError(13, "Access is denied")):
+            code, out = self.pending(repo)
+        self.assertEqual(code, 2)
+        self.assertIn("cannot save the checkpoint", out)
+
+    def test_a_checkpoint_that_cannot_be_deleted_is_unknown(self):
+        (self.dir / "ci-reconcile.json").write_text("{}", encoding="utf-8")
+        with mock.patch.object(ci.Path, "unlink", side_effect=PermissionError(13, "Access is denied")):
+            code, out = self.pending(Repo([sha(1)], {sha(1): "success"}), "--ack")
+        self.assertEqual(code, 2)
+        self.assertIn("cannot delete the checkpoint", out)
+
     def test_a_rerun_between_interrupted_tries_replaces_a_stored_result(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
