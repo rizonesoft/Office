@@ -45,7 +45,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [x] |
 | 11 | §11 | C++ toolchain pins | §10, D03 T01 §17 | [ ] |
 | 12 | §12 | Campaign host readiness check | §10 | [ ] |
-| 13 | §13 | Single writer, cap 33, completion review | §10 | [ ] |
+| 13 | §13 | Single writer, cap 33, completion review | §10 | [x] |
 | 14 | §14 | Completion evidence hardening | §13 | [ ] |
 | 15 | §15 | CI watch and red-run repair | §13 | [ ] |
 
@@ -394,9 +394,12 @@ Owner decisions 2026-10-23: Opus 5.5 (Claude Code) is the only writer from now o
 - [x] Require `completion` on every receipt with `round_cap` 33 in receipt validation, and leave receipts with earlier caps as they are. Done when: a cap-33 receipt without it fails `python scripts/todo-graph.py validate`, and every receipt in `docs/reviews/` still validates. Cheaper substitute: requiring it only at stamp time, so an edited receipt could drop it.
 - [x] Record the adoption rule in `todo/README.md` and the review skills: a section whose review loop began before this section stamps (D02 T01 §23 in the paused run `docs/phase-runs/2026-10-22-phase-2.md` is one) continues under the 33-round cap, and before its stamp runs one completion review of its contract, whose gaps are filed as new sections because its code already exists; a section reopened by `unstamp` gets a fresh completion review. Done when: both documents state the rule and the paused run file names it for D02 T01 §23. Cheaper substitute: leaving in-flight sections unable to stamp under the new rules. **Groomed 2026-10-23:** completion finding 5.
 - [x] Show `--completion` in the stamp example of `.claude/skills/review-todo-section/SKILL.md` and in the stamps paragraph of `todo/README.md`. Done when: both name the flag and the completion file path. Cheaper substitute: a flag only the code knows.
-- [ ] Commit: `automations: one writer, a 33-round cap and a completion review before building`
+- [x] Commit: `automations: one writer, a 33-round cap and a completion review before building`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests` passes, `python scripts/todo-graph.py validate` exits 0, `python scripts/review-dispatch.py --check-pin` exits 0, `Test-Path .agents, .codex, CODEX.md, GEMINI.md` returns `False` four times, and `git grep -n -i -E "\.agents/|\.codex/|CODEX\.md|GEMINI\.md|antigravity|\bastra\b|gemini|sonnet 5\.5|claude\|codex" -- AGENTS.md CLAUDE.md ":(glob)docs/*.md" .claude .conclave scripts/review-dispatch.py` prints only the retirement notes.
+
+> **Verified:** 2026-10-23 | §13 | c663f93d19b3d944939fe4a0724e3893819e28a2
+> **Review:** `docs/reviews/d00-t03-s13.json`
 
 ## 14. Completion Evidence Hardening
 
