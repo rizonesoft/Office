@@ -27,3 +27,28 @@ OVERALL: needs-attention
 1. extended
 2. extended
 3. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T13:26:06Z
+- Effort: medium
+- Lines: 11
+- Digest: 7928f29edf5afc37
+
+SECTION: D00 T03 §20
+PURPOSE: completion
+CONTRACT: sha256:1f8ebe76bdb80d1375e9c1b6725d62bc366dff33990810e5fc7cff1493eac923
+
+1. **P2, extend: the prescribed API query still has a history ceiling.** GitHub limits workflow-run searches using `branch` or `event` to 1,000 results, even with pagination. The specified command therefore replaces the 500-run ceiling with a 1,000-run ceiling. Count validation can detect truncation, but retrying the same query still parks permanently. [GitHub documents this limit](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow). Require an enumeration strategy that avoids the filtered-search ceiling, such as paging the unfiltered workflow endpoint and selecting branch/event locally. Add a fixture exceeding 1,000 matching runs that reproduces the server cap and proves complete discovery.
+
+2. **P2, extend: growing history can still exhaust fixed deadlines without making progress.** The existing `push_runs` call receives at most 60 seconds for the entire paginated subprocess, while `--pending` shares a 600-second deadline across discovery and every head’s status lookup. A sufficiently long history or unchecked backlog can repeatedly exhaust these limits, and neither retry preserves progress. Removing count ceilings alone therefore does not deliver reconciliation across any history length. Require bounded individual requests plus resumable progress, or another strategy that completes large reconciliations without repeatedly restarting the same work. Add simulated-clock fixtures where pagination exceeds 60 seconds and head settlement exceeds 600 seconds, proving eventual completion while individual calls remain bounded. §15 owns retry and park behavior, but does not own progress across these scale limits.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §22
+2. filed -> D00 T03 §22

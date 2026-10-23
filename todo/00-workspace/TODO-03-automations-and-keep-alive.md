@@ -54,6 +54,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 19 | §19 | CI gate checks | §15, §17, §18 | [x] |
 | 20 | §20 | CI reconciliation at scale | §17 | [ ] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
+| 22 | §22 | CI reconciliation past limits | §20 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -623,6 +624,25 @@ Filed 2026-10-23 from round 2 of D00 T03 §18's completion review (`docs/reviews
 - [ ] Commit: `automations: settle an open CI recovery against green found at resume`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_recovery.py"` passes.
+
+## 22. CI Reconciliation Past Limits
+
+Filed 2026-10-23 from round 2 of D00 T03 §20's completion review (`docs/reviews/00-workspace/D00-T03-s20-completion.md`): §20 pages the workflow-runs endpoint filtered by `branch` and `event`, which GitHub caps at 1,000 results however it is paged ([List workflow runs for a workflow](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow)); §20's `total_count` check turns the cap into an honest exit 2, but past 1,000 push runs that exit repeats forever. And `--pending` gives discovery one 60-second call and the whole reconciliation 600 seconds, so a long history or a large unchecked backlog can run out of time on every try without making progress.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Page the unfiltered endpoint and filter locally. Done when: more than 1,000 matching runs are found.
+2. Keep progress between tries. Done when: a reconciliation larger than one try's time completes over several.
+
+- [ ] Page the unfiltered `repos/<owner>/<name>/actions/workflows/ci.yml/runs?per_page=100` endpoint in `scripts/ci-status.py --pending` and keep runs with event `push` on branch `main` locally, stopping once a page's runs are all older than the baseline commit (or the pages end), with every request a bounded call of its own. Done when: a fixture that reproduces the server's 1,000-result cap on filtered queries finds every one of more than 1,000 matching runs through the unfiltered pages, and a page that cannot be read exits 2. Cheaper substitute: the filtered query, which stops at 1,000.
+- [ ] Keep reconciliation progress in `build/ci-reconcile.json` (gitignored, written temp-then-replace): the runs read so far with the page reached, and each head already settled, so the next try continues where the last one stopped instead of starting again, and the state is dropped once a reconciliation completes. Done when: simulated-clock fixtures where paging takes longer than one call's 60 seconds and settling the heads longer than one try's 600 seconds complete over successive tries, each call still bounded. Cheaper substitute: restarting the whole reconciliation each try, which a long history never finishes.
+- [ ] Commit: `automations: reconcile CI past the API's search cap and across tries`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
 
 ## Verification
 
