@@ -181,26 +181,32 @@ class Waiting(Base):
         code, out = self.main(Fake(runs=[[run(status="in_progress", conclusion="")]]), "--wait", "--timeout", "100")
         self.assertEqual(code, 3)
         self.assertIn("still pending at the 100 s timeout", out)
-        self.assertEqual(self.clock.t - 1000, 100 - ci.MIN_RESERVE)  # its last look ran inside the timeout
+        self.assertEqual(self.clock.t - 1000, 100 - ci.RESERVE)  # its last look started a second before the timeout
 
     def test_every_call_is_bounded_by_sixty_seconds_or_the_time_left(self):
-        # Each call takes 30 s, so the third gets only the 40 s left of the 100 s timeout, and none starts after it.
+        # Each call takes 30 s and honours its deadline. The first look ends at 90 s; the wait does not stop there
+        # but looks again at 99 s with 1 s left, which the timeout cuts short: still pending, exactly at 100 s.
         clock = Clock()
         fake = Fake(runs=[[run(status="in_progress", conclusion="")]])
         real = fake.call
 
         def slow(name, args, seconds):
-            result = real(name, args, seconds)
             self.assertLess(clock.t - 1000, 100, "a call started after the timeout")
+            if 30 > seconds:
+                clock.t += seconds
+                raise ci.DeadlinePassed("cut short")
             clock.t += 30
-            return result
+            return real(name, args, seconds)
         fake.call = slow
-        with contextlib.redirect_stdout(io.StringIO()):
-            ci.main(["HEAD", "--wait", "--timeout", "100"], tools=fake, clock=clock, sleep=clock.sleep,
-                    now=lambda: COMMITTED + timedelta(minutes=5))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = ci.main(["HEAD", "--wait", "--timeout", "100"], tools=fake, clock=clock, sleep=clock.sleep,
+                           now=lambda: COMMITTED + timedelta(minutes=5))
+        self.assertEqual(code, 3)
+        self.assertIn("still pending", out.getvalue())
         self.assertTrue(all(0 < seconds <= ci.CALL_SECONDS for _, _, seconds in fake.calls), fake.calls)
         self.assertTrue(any(seconds < ci.CALL_SECONDS for _, _, seconds in fake.calls), "never bounded by time left")
-        self.assertLessEqual(clock.t - 1000, 100 + 30)  # at most the one call running at the timeout
+        self.assertEqual(clock.t - 1000, 100)  # it neither stopped early nor ran past the timeout
 
     def test_a_run_turning_green_in_the_last_seconds_is_seen(self):
         # Polls at 0, 30, 60 and 90 s, then one last at 99 s: a run that turns green at 98 s is green.
@@ -215,19 +221,39 @@ class Waiting(Base):
         fake = Fake()
         real = fake.call
 
-        def slow(name, args, seconds):
+        def slow(name, args, seconds):  # a call that honours its deadline, as subprocess.run's timeout does
             self.assertGreater(seconds, 0)
-            result = real(name, args, seconds)
             if name == "git":
+                if 40 > seconds:
+                    clock.t += seconds
+                    raise ci.DeadlinePassed("cut short")
                 clock.t += 40
-            return result
+            return real(name, args, seconds)
         fake.call = slow
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = ci.main(["HEAD", "--wait", "--timeout", "60"], tools=fake, clock=clock, sleep=clock.sleep,
                            now=lambda: COMMITTED + timedelta(minutes=5))
         self.assertEqual(code, 2)
-        self.assertIn("deadline passed", out.getvalue())
+        self.assertIn("unknown HEAD: cut short", out.getvalue())  # the first look: no earlier result to keep
+        self.assertFalse([c for c in fake.calls if c[0] == "gh"])
+
+    def test_a_call_is_never_given_no_time(self):
+        # Two git calls of 30 s use exactly a 60 s wait: the gh call would get 0 s, so it is never made.
+        clock = Clock()
+        fake = Fake()
+        real = fake.call
+
+        def exact(name, args, seconds):
+            self.assertGreater(seconds, 0, f"{name} {args[0]} was given no time")
+            if name == "git":
+                clock.t += 30
+            return real(name, args, seconds)
+        fake.call = exact
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = ci.main(["HEAD", "--wait", "--timeout", "60"], tools=fake, clock=clock, sleep=clock.sleep,
+                           now=lambda: COMMITTED + timedelta(minutes=5))
+        self.assertEqual(code, 2)
         self.assertFalse([c for c in fake.calls if c[0] == "gh"])
 
     def test_a_hung_gh_is_unknown_within_its_deadline(self):
@@ -243,11 +269,27 @@ class RealCalls(unittest.TestCase):
     def test_a_hung_program_is_unknown_at_its_deadline(self):
         dispatch = ci.todo_graph.review_dispatch()
         started = time.monotonic()
-        with mock.patch.object(dispatch, "find_cli", lambda name: sys.executable):
+        with mock.patch.object(dispatch, "find_cli", lambda name: sys.executable), \
+                mock.patch.object(ci, "CALL_SECONDS", 1):  # its own allowance, not the wait's deadline, runs out
             with self.assertRaises(ci.Unknown) as caught:
                 ci.Tools().call("gh", ["-c", "import time; time.sleep(30)"], 1)
         self.assertLess(time.monotonic() - started, 15)
         self.assertIn("did not answer within 1 seconds", str(caught.exception))
+
+    def test_a_call_gets_exactly_the_time_left(self):
+        dispatch = ci.todo_graph.review_dispatch()
+        with mock.patch.object(dispatch, "find_cli", lambda name: sys.executable), \
+                mock.patch.object(ci.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "", "")) as ran:
+            ci.Tools().call("gh", ["run", "list"], 0.125)
+        self.assertEqual(ran.call_args.kwargs["timeout"], 0.125)
+        with self.assertRaises(ci.DeadlinePassed):
+            ci.Tools().call("gh", ["run", "list"], 0)
+
+    def test_a_call_cut_short_by_the_wait_is_a_passed_deadline(self):
+        dispatch = ci.todo_graph.review_dispatch()
+        with mock.patch.object(dispatch, "find_cli", lambda name: sys.executable), \
+                self.assertRaises(ci.DeadlinePassed):
+            ci.Tools().call("gh", ["-c", "import time; time.sleep(30)"], 0.5)
 
     def test_a_missing_program_is_unknown(self):
         dispatch = ci.todo_graph.review_dispatch()

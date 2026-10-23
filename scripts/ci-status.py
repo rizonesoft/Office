@@ -11,8 +11,8 @@ The governing run of a commit is the `ci.yml` run with event `push` on branch `m
 request and manual runs never count), the newest by creation when there are several, at its latest attempt. `success`
 is green; every other conclusion is red and named. No push run 10 minutes after the commit's committer date, or a `gh`
 that cannot be read, is unknown. Every `gh` and `git` call has a deadline of 60 seconds or what is left of the
-timeout, whichever is shorter, and none starts after it. With --wait the last look starts one look's length (as the
-previous look took, at least a second) before the timeout, so it still ends inside it.
+timeout, whichever is shorter, and none starts after it. With --wait, looks keep starting until a second before the
+timeout; a look the timeout cuts short leaves the last result standing (still pending), never a guess.
 """
 import argparse
 from datetime import datetime, timezone
@@ -32,13 +32,17 @@ BRANCH = "main"
 GRACE_SECONDS = 600  # GitHub creates the push run within seconds; ten minutes without one is not a delay
 CALL_SECONDS = 60
 POLL_SECONDS = 30
-MIN_RESERVE = 1  # the last look starts at least this long before the timeout, so its calls still have time
+RESERVE = 1  # looks keep starting until this long before the timeout
 LOG_LINES = 400
 GREEN, RED, UNKNOWN, PENDING = 0, 1, 2, 3
 
 
 class Unknown(Exception):
     """CI cannot be read for this commit: exit 2."""
+
+
+class DeadlinePassed(Unknown):
+    """The timeout ended a look before it finished; with --wait the previous result stands."""
 
 
 class Tools:
@@ -48,14 +52,18 @@ class Tools:
         self.root = Path(root)
 
     def call(self, name, args, seconds):
+        if seconds <= 0:
+            raise DeadlinePassed(f"the wait's deadline passed before {name} {args[0]}")
         program = todo_graph.review_dispatch().find_cli(name)
         if program is None:
             raise Unknown(f"{name} is not on PATH")
         try:
             result = subprocess.run([program, *args], cwd=self.root, capture_output=True, text=True, encoding="utf-8",
-                                    errors="replace", stdin=subprocess.DEVNULL, timeout=max(1.0, seconds))
+                                    errors="replace", stdin=subprocess.DEVNULL, timeout=seconds)
         except subprocess.TimeoutExpired:
-            raise Unknown(f"{name} {args[0]} did not answer within {max(1, int(seconds))} seconds") from None
+            if seconds < CALL_SECONDS:  # cut short by the wait's deadline, not by its own allowance
+                raise DeadlinePassed(f"the wait's deadline ended {name} {args[0]}") from None
+            raise Unknown(f"{name} {args[0]} did not answer within {int(seconds)} seconds") from None
         except OSError as exc:
             raise Unknown(f"{name} could not start: {exc.strerror or exc}") from None
         return result
@@ -145,11 +153,13 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
         """The time the next call may take: 60 seconds or what is left, and none at all past the deadline."""
         remaining = deadline - clock()
         if remaining <= 0:
-            raise Unknown("the wait's deadline passed before CI could be read")
+            raise DeadlinePassed("the wait's deadline passed before CI could be read")
         return min(CALL_SECONDS, remaining)
     try:
         sha, committed = resolve(tools, ref, left)
         run = governing_run(tools, sha, left())
+    except DeadlinePassed:
+        raise
     except Unknown as exc:
         return UNKNOWN, [f"unknown {ref}: {exc}"]
     short = sha[:7]
@@ -183,15 +193,20 @@ def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None
     tools = tools or Tools()
     started = clock()
     deadline = started + (args.timeout if args.wait else CALL_SECONDS * 4)
+    last = None
     while True:
         moment = now() if now else datetime.now(timezone.utc)
-        looked = clock()
-        code, lines = status(tools, args.ref, moment, deadline, args.log, clock)
-        reserve = max(MIN_RESERVE, clock() - looked)  # what one look takes, so the last one ends inside the timeout
-        remaining = deadline - clock()
-        if code != PENDING or not args.wait or remaining <= reserve:
+        try:
+            code, lines = status(tools, args.ref, moment, deadline, args.log, clock)
+        except DeadlinePassed as exc:
+            # The timeout ended this look: the previous look's result stands; with none, CI could not be read.
+            code, lines = last if last else (UNKNOWN, [f"unknown {args.ref}: {exc}"])
             break
-        sleep(min(POLL_SECONDS, remaining - reserve))
+        last = (code, lines)
+        remaining = deadline - clock()
+        if code != PENDING or not args.wait or remaining <= RESERVE:
+            break
+        sleep(min(POLL_SECONDS, remaining - RESERVE))
     if code == PENDING and args.wait:
         lines.append(f"still pending at the {args.timeout} s timeout")
     print("\n".join(lines))
