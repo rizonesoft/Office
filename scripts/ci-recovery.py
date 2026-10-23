@@ -15,8 +15,9 @@ The state lives in build/ci-recovery.json (gitignored, written temp-then-replace
 a resume and a new run file without dirtying the tree. Every attempt is reserved before its action runs: a reserved
 attempt with no result after a resume counts as spent and is never repeated, and a reserved rerun is never run again.
 At most four attempts per recovery, any mix of kinds; a fifth is refused with `exhausted` (exit 1), and the campaign
-then files, emails and parks with `ci-red`. One flake rerun per head. Only `close <green head>` ends a recovery, and
-only for a head that descends from its first head, so no green result for an unrelated head can reset the budget.
+then files, emails and parks with `ci-red`. One flake rerun per head. Only `close <green head>`, or `settle <green
+head>` at a start or resume (D00 T03 §21), ends a recovery, and only for a head that descends from its first head, so no
+green result for an unrelated head can reset the budget.
 
 Exit 0 done, 1 refused (exhausted, a second rerun, no open recovery, a head that does not descend), 2 unreadable state.
 """
