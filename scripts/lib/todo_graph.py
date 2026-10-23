@@ -906,10 +906,11 @@ INSTANT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
 
 def contract_digest(row):
     """`sha256:<hex>` of a section's contract: its heading and body with every checkbox unticked and the Verified,
-    Review and Started lines removed, so ticking and stamping leave it unchanged and editing any wording changes it."""
+    Review, Started and Duration lines removed, so ticking, timing and stamping leave it unchanged and editing any
+    wording changes it. A Deferred line counts: it moves scope to another section."""
     body = row.body.replace("\r\n", "\n")
     body = re.sub(r"^- \[x\] ", "- [ ] ", body, flags=re.M)
-    body = re.sub(r"^> \*\*(?:Verified|Review|Started):\*\* .*(?:\n|$)", "", body, flags=re.M)
+    body = re.sub(r"^> \*\*(?:Verified|Review|Started|Duration):\*\* .*(?:\n|$)", "", body, flags=re.M)
     body = re.sub(r"\n{3,}", "\n\n", body).strip()
     text = f"## {row.number}. {row.title}\n\n{body}\n"
     return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()

@@ -620,6 +620,17 @@ class Stamp(Tree):
         self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertEqual(self.contract(), before)  # the Verified and Review lines and the ticked Commit item
         path = self.root / "todo/00-workspace/TODO-01-a.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Started:** 2026-10-23T10:00:00Z\n\n", 1),
+                        encoding="utf-8")
+        self.assertEqual(self.contract(), before)
+        # review-todo-section turns Started into a Duration note before the stamp: still the same contract.
+        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Duration:** 2026-10-23T10:00:00Z to 11:00:00Z (1 h)\n\n", 1), encoding="utf-8")
+        self.assertEqual(self.contract(), before)
+        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Deferred:** the export -> XREF: §2\n\n", 1),
+                        encoding="utf-8")
+        self.assertNotEqual(self.contract(), before)  # a deferral moves scope, so it is a new contract
+        path.write_text(text, encoding="utf-8")
         path.write_text(path.read_text(encoding="utf-8").replace("Work.", "Different work.", 1), encoding="utf-8")
         self.assertNotEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), before)
 
