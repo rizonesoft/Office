@@ -1,0 +1,83 @@
+{
+  "ref": "D00 T03 \u00a722",
+  "title": "CI Reconciliation Past Limits",
+  "implementation_sha": "e7ee628ea490a63dec6b9a174a080ec1ed79a9f1",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/00-workspace/D00-T03-s22.md",
+      "verdict": "stopped-low-severity"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_ci_status.py\" -> Ran 118 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_skill_ci_gate.py\" -> Ran 5 tests, OK",
+    "python -m unittest discover -s scripts/tests -> Ran 863 tests, OK (skipped=2) at e7ee628"
+  ],
+  "rounds_spent": 13,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s22-completion.md",
+  "completion_rules": 2,
+  "cap_outcome": "Round 13 returned HIGHEST: P3 (a workflow run deleted mid-scan can hide a skipped run from the count check); filed as D00 T03 \u00a723."
+}

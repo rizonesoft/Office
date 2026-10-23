@@ -54,7 +54,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 19 | §19 | CI gate checks | §15, §17, §18 | [x] |
 | 20 | §20 | CI reconciliation at scale | §17 | [x] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [x] |
-| 22 | §22 | CI reconciliation past limits | §20 | [ ] |
+| 22 | §22 | CI reconciliation past limits | §20 | [x] |
+| 23 | §23 | CI reconciliation after deleted runs | §22 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -653,9 +654,32 @@ Filed 2026-10-23 from round 2 of D00 T03 §20's completion review (`docs/reviews
 - [x] Keep reconciliation progress in `build/ci-reconcile.json` (gitignored, written temp-then-replace), bound to its inputs: the repository, the fetched `origin/main` head, the baseline and a digest of the outcome and pending records. On a later try with the same inputs it continues where it stopped; when the head or the records changed (a push, a merge, a repair, a new record), it keeps the runs already read (they do not change, except reruns, below) and refreshes from the first page until it meets a run it already holds, so new runs and heads are found without discarding the rest. Done when: fixtures with a new push and a new workflow run between tries find every head, omit none and report no early green, and a try with unchanged inputs reads no page twice. Cheaper substitute: a checkpoint reused after the history moved, or thrown away on every change. **Groomed 2026-10-23:** completion finding 2.
 - [x] Store each settled head's result in the checkpoint with its run id, attempt and conclusion: a completed run's result (green or red) is reused while its run id and attempt are unchanged, a pending or unknown head is checked again on every try, and the final report prints every listed head's result, stored or new, with the aggregate exit computed over all of them. The checkpoint is deleted only by `python scripts/ci-status.py --pending <run file> --ack`, which the campaign runs after it has written the `ci-green` and `ci-superseded` records, so an interruption before the records keeps the finished work. Done when: fixtures cover an early red result followed by an interruption (reported and counted at the end), a pending head turning green on a later try, a rerun that changes a stored result, and an interruption before the records (the next try reports without re-reading). Cheaper substitute: settled heads that drop out of the final report or the exit code. **Groomed 2026-10-23:** completion finding 3.
 - [x] Add a progressing result: `--pending` exits 4 when it saved progress (more pages read or more heads settled than the try before) but did not finish within its time, and 2 when a try makes no progress; in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`, at campaign start, phase start and every resume, exit 4 is run again at once, before any row, without spending §15's one retry or §18's recovery budget, which still govern exit 2 and red heads. Done when: both skills name exit 4 and its handling, `scripts/tests/test_skill_ci_gate.py` holds it with a weakening that fails (pins updated on purpose), and a simulated-clock fixture where paging takes longer than one call's 60 seconds and settling the heads longer than one try's 600 seconds completes over at least three tries, each call still bounded. Cheaper substitute: restarting the whole reconciliation each try, or parking after the second. **Groomed 2026-10-23:** completion finding 1.
-- [ ] Commit: `automations: reconcile CI past the API's search cap and across tries`
+- [x] Commit: `automations: reconcile CI past the API's search cap and across tries`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` pass.
+
+> **Verified:** 2026-10-23 | §22 | e7ee628ea490a63dec6b9a174a080ec1ed79a9f1
+> **Review:** `docs/reviews/d00-t03-s22.json`
+
+## 23. CI Reconciliation After Deleted Runs
+
+Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-workspace/D00-T03-s22.md`): `scripts/ci-status.py` `Pages.forward` proves the scan complete only by comparing the runs it holds with the API's `total_count`. When a run already read is deleted while the pages are read, every older run moves up one place, the run that crosses a page boundary is never read, and the count still matches because the deleted run stays held, so an unrecorded push head on `main` can be left out of the report. The precondition is rare (someone deletes a workflow run during a reconciliation), but the result is a head reported as covered without being checked.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Prove the forward scan complete in a way a deletion cannot fool. Done when: a fixture that deletes an already-read run mid-scan still finds every run.
+2. Drop held runs that no longer exist, so the count means what it says. Done when: a fixture's checkpoint holds no deleted run after the scan.
+
+- [ ] Read each forward page with one run of overlap with the page before it in `scripts/ci-status.py` `Pages.forward` (the last run of page N must appear on page N+1 or later), and when the overlap is missing (runs moved up), read the page again before going on. Done when: a fixture with 300 runs that deletes a run already read after page 1 finds every remaining run, and a fixture without deletions reads no extra page. Cheaper substitute: the count comparison alone, which a deletion matches.
+- [ ] Remove from the checkpoint, in `scripts/ci-status.py` `Pages.forward`, each held run the completed scan did not see, so `len(cp["runs"])` is compared with `total_count` over runs that exist. Done when: after a scan in which a run was deleted, `build/ci-reconcile.json` no longer holds it and the count check passes on the live runs only. Cheaper substitute: keeping deleted runs, which hides the skipped one.
+- [ ] Keep a deleted run's head correct in the listing in `scripts/ci-status.py` `unchecked_heads`: a head whose only run was deleted is listed only through its records or as `origin/main`, as for any commit without a run. Done when: a fixture deleting a head's only run lists that head exactly as a commit without a run.
+- [ ] Commit: `automations: reconcile CI through deleted runs`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
 
 ## Verification
 
