@@ -9,7 +9,9 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -218,6 +220,24 @@ class Waiting(Base):
         code, out = self.main(Fake(fail={"gh run list": hung}), "--wait", "--timeout", "600")
         self.assertEqual(code, 2)
         self.assertIn("did not answer", out)
+
+
+class RealCalls(unittest.TestCase):
+    """Tools.call itself: a program that hangs is ended at its deadline and reported as Unknown."""
+
+    def test_a_hung_program_is_unknown_at_its_deadline(self):
+        dispatch = ci.todo_graph.review_dispatch()
+        started = time.monotonic()
+        with mock.patch.object(dispatch, "find_cli", lambda name: sys.executable):
+            with self.assertRaises(ci.Unknown) as caught:
+                ci.Tools().call("gh", ["-c", "import time; time.sleep(30)"], 1)
+        self.assertLess(time.monotonic() - started, 15)
+        self.assertIn("did not answer within 1 seconds", str(caught.exception))
+
+    def test_a_missing_program_is_unknown(self):
+        dispatch = ci.todo_graph.review_dispatch()
+        with mock.patch.object(dispatch, "find_cli", lambda name: None), self.assertRaises(ci.Unknown):
+            ci.Tools().call("gh", ["run", "list"], 5)
 
 
 class Logs(Base):
