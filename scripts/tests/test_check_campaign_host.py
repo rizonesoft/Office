@@ -312,7 +312,31 @@ class ScreenLock(Base):
     def test_the_real_event_reader_runs(self):
         if host_check.os.name != "nt":
             self.skipTest("Windows event log")
-        self.assertGreaterEqual(host_check.Host().clock_moved_back(3_600_000), 0)
+        self.assertGreaterEqual(host_check.Host().clock_moved_back(), 0)
+
+    def reader(self, started, changes):
+        host = host_check.Host()
+        outputs = iter([subprocess.CompletedProcess([], 0, started, ""), subprocess.CompletedProcess([], 0, changes, "")])
+        host.run = lambda argv, seconds=None: next(outputs)
+        return host
+
+    def test_a_log_without_this_boots_start_event_cannot_vouch(self):
+        with self.assertRaises(host_check.Unreadable) as caught:
+            self.reader("", "").clock_moved_back()
+        self.assertIn("start event", str(caught.exception))
+
+    def test_changes_are_read_after_the_boot_record(self):
+        calls = []
+        host = self.reader("<Event><System><EventRecordID>31239</EventRecordID></System></Event>", "")
+        run = host.run
+        host.run = lambda argv, seconds=None: calls.append(argv) or run(argv, seconds)
+        self.assertEqual(host.clock_moved_back(), 0)
+        self.assertIn("EventRecordID > 31239", calls[1][3])
+
+    def test_a_full_page_of_changes_cannot_vouch(self):
+        page = "<Event>x</Event>" * host_check.MAX_TIME_EVENTS
+        with self.assertRaises(host_check.Unreadable):
+            self.reader("<EventRecordID>7</EventRecordID>", page).clock_moved_back()
 
     def test_the_real_reader_compares_with_boot_time(self):
         if host_check.os.name != "nt":
@@ -645,18 +669,26 @@ class Probe(unittest.TestCase):
         grandchild = f"import os, pathlib, time; pathlib.Path({str(pid_file)!r} + '.tmp').write_text(str(os.getpid())); " \
                      f"os.replace({str(pid_file)!r} + '.tmp', {str(pid_file)!r}); time.sleep(60)"
         # The parent waits for the PID file before it sleeps or exits, so the test measures cleanup, not scheduling.
+        # Reading the file while the grandchild replaces it can fail on Windows (a sharing violation), so the parent
+        # retries rather than exiting early, which made this test pass a probe that never hung.
         parent = (f"import pathlib, subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
                   f"p = pathlib.Path({str(pid_file)!r})\n"
-                  f"while not (p.exists() and p.read_text()): time.sleep(0.01)\n"
+                  f"def ready():\n"
+                  f"    try:\n"
+                  f"        return bool(p.read_text())\n"
+                  f"    except OSError:\n"
+                  f"        return False\n"
+                  f"while not ready(): time.sleep(0.01)\n"
                   f"time.sleep({sleep})")
         return [sys.executable, "-c", parent], pid_file
 
     def grandchild_gone(self, pid_file):
         for _ in range(100):
-            if pid_file.exists() and pid_file.read_text():
+            try:
+                pid = int(pid_file.read_text())
                 break
-            time.sleep(0.05)
-        pid = int(pid_file.read_text())
+            except (OSError, ValueError):  # not written yet, or being replaced
+                time.sleep(0.05)
         for _ in range(50):
             if not alive(pid):
                 return True

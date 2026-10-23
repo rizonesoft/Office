@@ -208,27 +208,44 @@ class Host:
         def written(path):  # 100 ns intervals since 1601, in the system clock as it was at the write
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as k:
                 return winreg.QueryInfoKey(k)[2]
-        try:
-            changed = written(key)
-        except FileNotFoundError:
-            return False
+        # Deleting the key itself (not only its value) updates its parent's write time, so both are read.
+        parent = key.rsplit("\\", 1)[0]
+        times = []
+        for path in (key, parent):
+            try:
+                times.append(written(path))
+            except FileNotFoundError:
+                pass
+        if not times:
+            return False  # no policy key at all, now or (since the parent is gone too) at any point it could be read
         kernel32 = ctypes.WinDLL("kernel32")
         kernel32.GetTickCount64.restype = ctypes.c_ulonglong
         now = (int(time.time()) + 11644473600) * 10**7
         uptime = kernel32.GetTickCount64() * 10**4
-        return written_since_boot(changed, now, uptime, written(r"HARDWARE\DESCRIPTION"),
-                                  self.clock_moved_back(uptime // 10**4 + 86_400_000))
+        return written_since_boot(max(times), now, uptime, written(r"HARDWARE\DESCRIPTION"), self.clock_moved_back())
 
-    def clock_moved_back(self, window_ms):
-        """The total time, in 100 ns units, by which the system clock was set back in the last `window_ms`, from the
-        Kernel-General time change events (event 1, with OldTime and NewTime) in the System log."""
+    def clock_moved_back(self):
+        """The total time, in 100 ns units, by which the system clock was set back since Windows started: the
+        Kernel-General time change events (event 1, with OldTime and NewTime) after this boot's start event (event 12),
+        selected by record number, which no clock change moves. A log that no longer holds this boot's start event, or
+        more events than one query returns, cannot vouch for the history, so it is Unreadable."""
         wevtutil = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wevtutil.exe")
-        query = ("*[System[Provider[@Name='Microsoft-Windows-Kernel-General'] and (EventID=1) and "
-                 f"TimeCreated[timediff(@SystemTime) <= {int(window_ms)}]]]")
-        result = self.run([wevtutil, "qe", "System", f"/q:{query}", "/f:xml", "/c:5000"])
-        if result.returncode != 0:
-            raise Unreadable(f"wevtutil could not read the time change events (exit {result.returncode})")
-        return backward_shift(result.stdout)
+        kernel = "Provider[@Name='Microsoft-Windows-Kernel-General']"
+        started = self.run([wevtutil, "qe", "System", f"/q:*[System[{kernel} and (EventID=12)]]", "/rd:true",
+                            "/c:1", "/f:xml"])
+        if started.returncode != 0:
+            raise Unreadable(f"wevtutil could not read the System log (exit {started.returncode})")
+        record = re.search(r"<EventRecordID>(\d+)</EventRecordID>", started.stdout)
+        if not record:
+            raise Unreadable("the System log no longer holds this boot's start event, so clock changes are unknown")
+        changes = self.run([wevtutil, "qe", "System",
+                            f"/q:*[System[{kernel} and (EventID=1) and (EventRecordID > {record[1]})]]",
+                            "/f:xml", f"/c:{MAX_TIME_EVENTS}"])
+        if changes.returncode != 0:
+            raise Unreadable(f"wevtutil could not read the time change events (exit {changes.returncode})")
+        if changes.stdout.count("<Event ") + changes.stdout.count("<Event>") >= MAX_TIME_EVENTS:
+            raise Unreadable(f"more than {MAX_TIME_EVENTS} clock changes since boot")
+        return backward_shift(changes.stdout)
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -464,6 +481,7 @@ def written_since_boot(changed, now, uptime, hardware_written, moved_back=0):
     return changed > min(now - uptime, hardware_written) - moved_back
 
 
+MAX_TIME_EVENTS = 5000
 TIME_CHANGE = re.compile(r"<Data Name='NewTime'>([^<]+)</Data><Data Name='OldTime'>([^<]+)</Data>")
 
 
