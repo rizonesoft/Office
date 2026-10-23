@@ -340,7 +340,8 @@ class Repo:
         self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
         self.pages_read = []
         self.runs_read = []  # runs read one by one, by id
-        self.lost_runs = set()  # run ids the by-id endpoint no longer finds
+        self.positions_read = []  # single runs read at a position, to check a page boundary
+        self.lost_runs = set()  # run ids the by-id endpoint fails to read (a server error)
         self.wrong_ids = {}  # run id -> the id the by-id endpoint answers with instead
         self.older_runs = []  # raw API runs older than every main run (listed after them)
         self.after_page = {}  # page number -> a function run after that page is served (a run created mid-scan)
@@ -393,17 +394,26 @@ class Repo:
             out = "https://github.com/rizonesoft/Office.git\n"
         elif args[:2] == ["run", "list"] and "--commit" in args:
             head = args[args.index("--commit") + 1]
-            out = json.dumps([self.run_record(head)] if head in self.runs else [])
+            older = [run(headSha=head, databaseId=r["id"], status=r["status"], conclusion=r["conclusion"] or "",
+                         createdAt=r["created_at"], attempt=r.get("run_attempt", 1))
+                     for r in self.extra_runs + self.older_runs if r["head_sha"] == head and r["event"] == "push"
+                     and r["head_branch"] == "main"]
+            out = json.dumps(([self.run_record(head)] if head in self.runs else []) + older)
         elif args[0] == "api" and re.search(r"/actions/runs/\d+$", args[-1]):
             self.runs_read.append(args[-1])
             run_id = int(args[-1].rsplit("/", 1)[1])
-            found = [r for r in self.api_runs() if r["id"] == run_id and run_id not in self.lost_runs]
+            if run_id in self.lost_runs:
+                return subprocess.CompletedProcess(args, 1, "", "gh: Server Error (HTTP 502)")
+            found = [r for r in self.api_runs() if r["id"] == run_id]
             if not found:
-                return subprocess.CompletedProcess(args, 1, "", "HTTP 404: Not Found")
+                return subprocess.CompletedProcess(args, 1, "", "gh: Not Found (HTTP 404)")
             out = json.dumps(dict(found[0], id=self.wrong_ids.get(run_id, run_id)))
         elif args[0] == "api":
             url = args[-1]
-            self.pages_read.append(url)
+            if "per_page=1&" in url:
+                self.positions_read.append(url)
+            else:
+                self.pages_read.append(url)
             runs = self.api_runs()
             if "branch=" in url or "event=" in url:  # GitHub caps a filtered search at 1,000 results
                 runs = [r for r in runs if r["event"] == "push" and r["head_branch"] == "main"][:1000]
@@ -412,7 +422,8 @@ class Repo:
                 self.fail_pages.discard(page)
                 return subprocess.CompletedProcess(args, 1, "", "HTTP 502")
             total = len(runs) if self.total is None else self.total
-            out = json.dumps({"total_count": total, "workflow_runs": runs[(page - 1) * 100:page * 100]})
+            per = int(re.search(r"[?&]per_page=(\d+)", url)[1]) if "per_page=" in url else 30
+            out = json.dumps({"total_count": total, "workflow_runs": runs[(page - 1) * per:page * per]})
             self.after_page.pop(page, lambda: None)()
         elif args[:2] == ["run", "view"]:
             out = json.dumps({"jobs": []})
@@ -828,7 +839,7 @@ class Scale(Pending):
         repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
         with mock.patch.object(ci, "PENDING_SECONDS", 100):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
-        repo.lost_runs.add(int(a[:7], 16))  # A's run, settled in the first try, cannot be read again by its id
+        repo.lost_runs.add(int(a[:7], 16))  # A's run, settled in the first try, cannot be read again by its id now
         code, out = self.pending(repo)
         self.assertEqual(code, 2)
         self.assertIn(f"gh api run {int(a[:7], 16)} failed", out)
@@ -864,7 +875,9 @@ class Scale(Pending):
                        {"runs": {run_id: dict(good["runs"][run_id], attempt="1")}}, {"next_page": "2"},
                        {"total": -1}, {"progress": None}, {"results": {sha(2): {"code": 9, "lines": [], "run": None}}},
                        {"results": {sha(2): {"code": 0, "lines": [], "run": [1]}}}, {"pass": {"checked": None}},
-                       {"pass": []}, {"pass": {"checked": [sha(2)]}, "results": {}}):
+                       {"pass": []}, {"pass": {"checked": [sha(2)]}, "results": {}}, {"scan": None},
+                       {"scan": {"anchor": 1, "rewind": None, "next_anchor": None}},
+                       {"scan": {"anchor": None, "rewind": 0, "next_anchor": None}}):
             with self.subTest(damage=damage):
                 path.write_text(json.dumps(dict(good, **damage)), encoding="utf-8")
                 code, out = self.pending(repo)
@@ -1187,7 +1200,10 @@ class Scale(Pending):
         repo.older_runs = older
         self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=55))[0], ci.PROGRESSING)
         repo.runs[tip], repo.attempts[tip] = "failure", 2  # rerun after page 2 was read, and it fails
-        code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=55))
+        for _ in range(6):  # the scan goes on over further tries; the report must not rest on page 2's older read
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=55))
+            if code != ci.PROGRESSING:
+                break
         self.assertEqual((code, self.listed(out)), (1, [tip[:7]]))
 
     def test_a_try_without_progress_is_unknown(self):
@@ -1197,6 +1213,144 @@ class Scale(Pending):
         code, out = self.pending(repo, clock=clock)
         self.assertEqual(code, 2)
         self.assertIn("no progress", out)
+
+
+class Deleted(Pending):
+    """D00 T03 §23: workflow runs deleted during or between a reconciliation's tries."""
+
+    slow_clock_repo = Scale.slow_clock_repo
+
+    def checkpoint(self):
+        return json.loads((self.dir / "ci-reconcile.json").read_text(encoding="utf-8"))
+
+    def heads(self, count, unrecorded):
+        """`count` green main heads, newest first in the API (position p holds sha(count + 1 - p)), every one recorded
+        but `unrecorded`."""
+        heads = [sha(n) for n in range(1, count + 1)]
+        self.record(*(f"ci-green {h[:7]}" for h in heads if h not in unrecorded))
+        return heads, Repo(list(reversed(heads)), {h: "success" for h in heads})
+
+    def test_a_run_deleted_mid_scan_does_not_hide_the_run_after_it(self):
+        heads, repo = self.heads(300, {sha(200)})  # sha(200) is at position 101, the first run of page 2
+
+        def delete():  # a run on page 1, already read, is deleted before page 2 is read
+            del repo.runs[sha(299)]
+        repo.after_page[1] = delete
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
+
+    def test_a_run_deleted_between_tries_does_not_hide_the_run_after_it(self):
+        heads, repo = self.heads(300, {sha(200)})
+        with mock.patch.object(ci, "PENDING_SECONDS", 15):  # page 1, then out of time
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        del repo.runs[sha(299)]
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
+
+    def test_a_scan_without_deletions_reads_one_boundary_run_a_page_and_no_page_twice(self):
+        heads, repo = self.heads(300, set())
+        self.assertEqual(self.pending(repo)[0], 0)
+        self.assertEqual(len(repo.pages_read), len(set(repo.pages_read)))
+        self.assertEqual((len(repo.pages_read), len(repo.positions_read)), (4, 3))  # pages 1 to 4, boundaries 1 to 3
+
+    def test_a_run_created_mid_scan_needs_no_step_back(self):
+        heads, repo = self.heads(300, set())
+
+        def create():  # a new run of another branch pushes every run down one place
+            repo.extra_runs.append({"id": 99300, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(2100), "event": "pull_request",
+                                    "head_branch": "feature"})
+        repo.after_page[1] = create
+        self.assertEqual(self.pending(repo)[0], 0)
+        pages = [u.rsplit("=", 1)[1] for u in repo.pages_read]
+        self.assertEqual(pages, ["1", "2", "3", "4", "1", "2"])  # the scan, then the refresh that finds the new run
+
+    def test_more_than_a_page_of_deleted_runs_is_recovered(self):
+        heads, repo = self.heads(400, {sha(101)})  # sha(101) is at position 300, beyond the two pages read first
+
+        def delete():  # once page 2's boundary checks out, 150 runs already read are deleted: 150 unread runs move up
+            for n in range(251, 401):
+                del repo.runs[sha(n)]
+        repo.after_page[100] = delete  # the boundary check reads position 100 as page 100 of one run
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(101)[:7]]))
+
+    def test_a_recovery_cut_short_goes_on_in_the_next_try(self):
+        heads, repo = self.heads(400, {sha(101)})
+
+        def delete():
+            for n in range(251, 401):
+                del repo.runs[sha(n)]
+        repo.after_page[100] = delete
+        # Page 1, page 2 and its boundary, page 3 and its boundary (shifted), page 2 again: then out of time.
+        with mock.patch.object(ci, "PENDING_SECONDS", 65):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        self.assertEqual(self.checkpoint()["scan"]["rewind"], 1)  # the step back to page 1 is saved
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(101)[:7]]))
+        self.assertIsNone(self.checkpoint()["scan"]["rewind"])
+
+    def test_a_run_deleted_during_the_refresh_does_not_hide_a_new_head(self):
+        old = [sha(n) for n in range(1, 11)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)  # a completed reconciliation; its checkpoint is kept
+        n1, n2 = sha(11), sha(12)  # two new heads: N1 at position 101, N2 (origin/main) at 100
+        repo.history = [n2, n1, *repo.history]
+        repo.runs.update({n1: "failure", n2: "success"})
+        repo.extra_runs = [{"id": 98500 + n, "status": "completed", "conclusion": "success",
+                            "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(1600 + n), "event": "pull_request",
+                            "head_branch": "feature"} for n in range(99)]
+        repo.after_page[1] = lambda: repo.extra_runs.pop(5)  # a run on page 1, already read, is deleted
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
+
+    def test_a_deleted_run_a_result_rests_on_is_settled_again(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 98700 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1800 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        older = {"id": 5, "status": "completed", "conclusion": "failure", "created_at": "2026-10-23T09:00:00Z",
+                 "head_sha": a, "event": "push", "head_branch": "main"}  # an older push run of A
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        repo.older_runs = [older]
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        del repo.runs[a]  # A's newest run, which its green result rests on, is deleted
+        code, out = self.pending(repo)
+        self.assertEqual(code, 1)  # A is now decided by its older run, which failed
+        self.assertIn(f"red {a[:7]} run 5", out)
+        self.assertNotIn("gh api run", out)
+
+    def test_a_deleted_only_run_leaves_a_head_like_any_commit_without_a_run(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 98900 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1900 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        del repo.runs[a]  # A's only run is deleted: A is now covered by B, the push head after it
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
+        del repo.runs[b]  # origin/main's only run is deleted: it stays listed, as a commit without a run
+        code, out = self.pending(repo)
+        self.assertEqual(code, 2)
+        self.assertIn(f"unknown {b[:7]}: no ci.yml push run", out)
+        self.assertNotIn("gh api run", out)
+
+    def test_a_server_error_reading_a_run_is_still_unknown(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 99100 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(2000 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        repo.lost_runs.add(int(a[:7], 16))
+        code, out = self.pending(repo)
+        self.assertEqual(code, 2)
+        self.assertIn("HTTP 502", out)
 
 
 class Logs(Base):

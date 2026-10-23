@@ -262,7 +262,14 @@ def well_formed(data):
         return isinstance(r, dict) and set(r) == {"code", "lines", "run"} and r["code"] in (GREEN, RED, PENDING, UNKNOWN) \
             and isinstance(r["lines"], list) and all(isinstance(line, str) for line in r["lines"]) \
             and (r["run"] is None or (isinstance(r["run"], list) and len(r["run"]) == 2 and all(map(number, r["run"]))))
-    return isinstance(data, dict) and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass"} \
+    def text(value):
+        return value is None or isinstance(value, str)
+
+    scan = data.get("scan") if isinstance(data, dict) else None
+    return isinstance(data, dict) \
+        and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass", "scan"} \
+        and isinstance(scan, dict) and set(scan) == {"anchor", "rewind", "next_anchor"} and text(scan["anchor"]) \
+        and text(scan["next_anchor"]) and (scan["rewind"] is None or (type(scan["rewind"]) is int and scan["rewind"] > 0)) \
         and isinstance(data["inputs"], dict) and set(data["inputs"]) == {"repo", "head", "records"} \
         and all(isinstance(v, str) for v in data["inputs"].values()) \
         and isinstance(data["runs"], dict) and all(
@@ -288,10 +295,10 @@ def save_checkpoint(path, cp):
         raise Unknown(f"cannot save the checkpoint {path.name}: {exc.strerror or exc}") from None
 
 
-def read_page(tools, owner_name, page, seconds):
+def read_page(tools, owner_name, page, seconds, per_page=PER_PAGE):
     """(total_count, runs) of one page of the unfiltered workflow-runs endpoint, or Unknown."""
     result = tools.call("gh", ["api", "--hostname", github_origin.HOST,
-                               f"repos/{owner_name}/actions/workflows/{WORKFLOW}/runs?per_page={PER_PAGE}&page={page}"],
+                               f"repos/{owner_name}/actions/workflows/{WORKFLOW}/runs?per_page={per_page}&page={page}"],
                         seconds)
     if result.returncode != 0:
         raise Unknown(f"gh api page {page} failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
@@ -306,9 +313,12 @@ def read_page(tools, owner_name, page, seconds):
 
 
 def read_run(tools, owner_name, run_id, seconds):
-    """One workflow run, read by its id, or Unknown."""
+    """One workflow run, read by its id; None when GitHub answers that it no longer exists (HTTP 404, a deleted run);
+    Unknown on any other failure."""
     result = tools.call("gh", ["api", "--hostname", github_origin.HOST, f"repos/{owner_name}/actions/runs/{run_id}"],
                         seconds)
+    if result.returncode != 0 and "HTTP 404" in result.stderr:
+        return None
     if result.returncode != 0:
         raise Unknown(f"gh api run {run_id} failed: {(result.stderr.strip().splitlines() or ['no message'])[-1]}")
     try:
@@ -343,6 +353,30 @@ class Pages:
     def __init__(self, tools, repo, cp, left, save):
         self.tools, self.owner_name, self.cp, self.left, self.save = tools, repo.split("/", 1)[1], cp, left, save
         self.now, self.pages, self.last = set(), set(), None  # run ids and page numbers read in this try; last page
+        self.gone = set()  # held runs GitHub reported deleted in this try
+
+    def at(self, position):
+        """The id of the run at a 1-based position of the newest-first list, or None past its end."""
+        _, runs = read_page(self.tools, self.owner_name, position, self.left(), per_page=1)
+        return str(runs[0]["id"]) if runs else None
+
+    def continuous(self, page, runs, anchor):
+        """Whether `runs`, just read as `page`, follow on from `anchor`, the last run of the page before as it was
+        read (D00 T03 §23). They do when the page still holds the anchor (runs created since pushed it down, so
+        nothing was skipped), or when the anchor still sits at the last position of the page before. Otherwise runs
+        above the boundary were deleted, the list moved up, and the runs that crossed the boundary were never read."""
+        return anchor in {str(r["id"]) for r in runs} or self.at(PER_PAGE * (page - 1)) == anchor
+
+    def back_to(self, page, anchor):
+        """Read pages from `page` back toward the first until one holds `anchor` again: every run that moved up
+        across the boundary lies between them. Returns the last run of `page` as read now. Used within one try."""
+        first = None
+        for k in range(page, 0, -1):
+            runs, _ = self.read(k)
+            first = first if first is not None else (str(runs[-1]["id"]) if runs else None)
+            if anchor in {str(r["id"]) for r in runs}:
+                break
+        return first
 
     def read(self, page):
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
@@ -355,14 +389,21 @@ class Pages:
         return runs, changed
 
     def newest(self):
-        """Read from the first page until a page brings nothing new or changed, or the pages end. A page that changed
-        nothing is not progress."""
-        page = 0
+        """Read from the first page until a page brings nothing new or changed, or the pages end. Each page after the
+        first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
+        an unchanged page cannot end it over runs a deletion moved past. A page that changed nothing is not
+        progress."""
+        page, anchor = 0, None
         while True:
             page += 1
             runs, changed = self.read(page)
             self.cp["progress"] += 1 if changed else 0
             self.save(self.cp)
+            if page > 1 and not self.continuous(page, runs, anchor):
+                anchor = self.back_to(page - 1, anchor)
+                page -= 1  # read this page again after the pages before it
+                continue
+            anchor = str(runs[-1]["id"]) if runs else None
             if not changed or len(runs) < PER_PAGE:
                 return
 
@@ -378,7 +419,12 @@ class Pages:
             if len(missing) <= pages_total - page or (self.last is not None and page >= self.last) \
                     or page >= pages_total:
                 for run_id in sorted(missing, key=int):
-                    keep(self.cp, [read_run(self.tools, self.owner_name, run_id, self.left())])
+                    run = read_run(self.tools, self.owner_name, run_id, self.left())
+                    if run is None:  # deleted: the heads that rested on it are decided by what remains
+                        self.cp["runs"].pop(run_id, None)
+                        self.gone.add(run_id)
+                    else:
+                        keep(self.cp, [run])
                     self.now.add(run_id)
                     read = True
                 break
@@ -391,11 +437,29 @@ class Pages:
 
     def forward(self):
         """Continue the scan to the workflow's last page, saving every page as it is read. Runs created while the
-        pages were read push older runs down a page; reading the newest pages again then finds them."""
+        pages were read push older runs down a page; reading the newest pages again then finds them. Runs deleted
+        while the pages were read move older runs up: each page's boundary with the one before is checked, and a
+        shift is recovered by stepping back until the last run read before it is found again, with the rewind kept in
+        the checkpoint so a recovery cut short goes on in the next try (D00 T03 §23)."""
+        scan = self.cp["scan"]
         while self.cp["next_page"] is not None:
             page = self.cp["next_page"]
-            runs, _ = self.read(page)
-            self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
+            if scan["rewind"] is not None:  # recovering a shift: step back until the anchor is found again
+                k = scan["rewind"]
+                runs, _ = self.read(k)
+                if k == page - 1:  # the boundary is checked again from this page's last run, as read now
+                    scan["next_anchor"] = str(runs[-1]["id"]) if runs else None
+                if scan["anchor"] in {str(r["id"]) for r in runs} or k == 1:
+                    scan.update(anchor=scan["next_anchor"], rewind=None, next_anchor=None)
+                else:
+                    scan["rewind"] = k - 1
+            else:
+                runs, _ = self.read(page)
+                if page > 1 and scan["anchor"] is not None and not self.continuous(page, runs, scan["anchor"]):
+                    scan["rewind"] = page - 1  # this page is read again once the rewind ends
+                else:
+                    scan["anchor"] = str(runs[-1]["id"]) if runs else None
+                    self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
             self.cp["progress"] += 1
             self.save(self.cp)
         if len(self.cp["runs"]) < self.cp["total"]:
@@ -440,7 +504,7 @@ def unchecked_heads(tools, run_file, left, cp, save):
     if not cp or cp["inputs"].get("repo") != repo:  # another repository's runs are no use
         cp.clear()
         cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "total": None, "results": {}, "progress": 0,
-                   "pass": None})
+                   "pass": None, "scan": {"anchor": None, "rewind": None, "next_anchor": None}})
     cp["inputs"] = inputs
     if cp["pass"] is None:  # a new reconciliation: the heads it has settled, so a later try goes on past them
         cp["pass"] = {"checked": []}
@@ -587,8 +651,8 @@ def reconcile(args, tools, clock, now, checkpoint):
             pages.confirm(relied)
             confirming = False
             latest = listing()
-            stale = [s for s in latest[1] if s in checked and s in latest[2] and cp["results"][s]["code"] in (GREEN, RED)
-                     and not current(cp["results"][s], latest[2][s], cp["runs"])]
+            stale = [s for s in latest[1] if s in checked and cp["results"][s]["code"] in (GREEN, RED)
+                     and not current(cp["results"][s], latest[2].get(s), cp["runs"])]  # a deleted run's head too
             if latest[:2] == (baseline, heads) and not stale:
                 break
             baseline, heads, runs_of, base_run = latest
