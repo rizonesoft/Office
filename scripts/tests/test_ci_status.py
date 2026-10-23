@@ -864,7 +864,7 @@ class Scale(Pending):
                        {"runs": {run_id: dict(good["runs"][run_id], attempt="1")}}, {"next_page": "2"},
                        {"total": -1}, {"progress": None}, {"results": {sha(2): {"code": 9, "lines": [], "run": None}}},
                        {"results": {sha(2): {"code": 0, "lines": [], "run": [1]}}}, {"pass": {"checked": None}},
-                       {"pass": []}):
+                       {"pass": []}, {"pass": {"checked": [sha(2)]}, "results": {}}):
             with self.subTest(damage=damage):
                 path.write_text(json.dumps(dict(good, **damage)), encoding="utf-8")
                 code, out = self.pending(repo)

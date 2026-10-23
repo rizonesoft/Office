@@ -253,7 +253,8 @@ RUN_FIELDS = {"headSha": (str, type(None)), "event": (str, type(None)), "headBra
 
 
 def well_formed(data):
-    """Whether a loaded checkpoint has every field, of the type this code reads, so a damaged one is rebuilt."""
+    """Whether a loaded checkpoint has every field, of the type this code reads, and every head its pass has settled
+    has a stored result, so a damaged one is rebuilt."""
     def number(value, empty=False):
         return (type(value) is int and value >= 0) or (empty and value is None)
 
@@ -271,7 +272,8 @@ def well_formed(data):
         and isinstance(data["results"], dict) and all(result(r) for r in data["results"].values()) \
         and (data["pass"] is None or (isinstance(data["pass"], dict) and set(data["pass"]) == {"checked"}
                                       and isinstance(data["pass"]["checked"], list)
-                                      and all(isinstance(s, str) for s in data["pass"]["checked"])))
+                                      and all(isinstance(s, str) and s in data["results"]
+                                              for s in data["pass"]["checked"])))
 
 
 def save_checkpoint(path, cp):
