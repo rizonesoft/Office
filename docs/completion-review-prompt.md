@@ -39,7 +39,7 @@ Open the reply with these two lines, exactly:
 - `SECTION: <DNN TNN §N>` (the section named above);
 - `PURPOSE: completion`.
 
-Then list each gap as a numbered finding with the piece that is missing, why the feature is incomplete without it, and the remedy you recommend: `extend` (it belongs to this section's single responsibility) or `new section` (it is its own capability), tagged `P1` (the feature does not work without it), `P2` (a path or state is missing) or `P3` (polish or coverage). Then, on their own lines in this order:
+Then list each gap as a numbered finding, numbered once each from 1 with no nested numbered lists, with the piece that is missing, why the feature is incomplete without it, and the remedy you recommend: `extend` (it belongs to this section's single responsibility) or `new section` (it is its own capability), tagged `P1` (the feature does not work without it), `P2` (a path or state is missing) or `P3` (polish or coverage). Then, on their own lines in this order:
 
 - `COMPLETE: yes` when building the section as written gives a whole feature, otherwise `COMPLETE: no`;
 - `HIGHEST: P1`, `HIGHEST: P2`, `HIGHEST: P3` or `HIGHEST: none`;

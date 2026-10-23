@@ -510,6 +510,30 @@ class Stamp(Tree):
                 self.write_completion(review, outcome="## Outcome (round 1)\n\n1. filed -> D00 T01 §2\n")
                 self.refused(completion=self.completion, contains="gap 2 of round 1")
 
+    def test_a_gap_number_used_twice_is_refused(self):
+        # Review round 2 of D00 T03 §13, finding 1: two `1.` lines needed only one disposition.
+        self.tick_work()
+        for twice in (GAPS.replace("2. **[P2] new section", "1. **[P2] new section"),
+                      GAPS.replace("2. **[P2] new section: the export dialog.** Missing.",
+                                   "2. **[P2] new section: the export dialog.** Missing.\n  1) A nested step.")):
+            with self.subTest(twice=twice[-60:]):
+                self.write_completion(twice, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+                self.refused(completion=self.completion, contains="each gap needs its own number")
+
+    def test_completion_rounds_never_count_in_an_implementation_review_loop(self):
+        # Review round 2 of D00 T03 §13, finding 2: unclaimed completion approvals counted toward the cap and the
+        # severity cutoff of the implementation review.
+        self.tick_work()
+        completion_reply = envelope(1).replace("Review text.", "SECTION: D00 T01 §1\nPURPOSE: completion\n\n"
+                                               "COMPLETE: yes\nHIGHEST: none")
+        report = self.root / "docs/reviews/00-workspace/D00-T01-s1.md"
+        report.write_text("# Review findings\n\n" + completion_reply + envelope(2), encoding="utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            self.stamp(self.root, "D00 T01 §1", self.sha,
+                       [{"round": 2, "report": "docs/reviews/00-workspace/D00-T01-s1.md", "verdict": "clean"}],
+                       ["true -> ok"], "2026-10-13")
+        self.assertIn("holds completion review round(s) [1]", str(ctx.exception))
+
     def test_a_completion_record_is_never_the_implementation_review(self):
         # Review round 1 of D00 T03 §13, finding 3: an approving completion record stood in for the code review.
         self.tick_work()
@@ -523,7 +547,7 @@ class Stamp(Tree):
                           "PURPOSE: completion\n\nCOMPLETE: yes\nHIGHEST: none"), encoding="utf-8")
         with self.assertRaises(tg.Refused) as ctx:
             self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        self.assertIn("is a completion review, not a review of the implementation", str(ctx.exception))
+        self.assertIn("holds completion review round(s) [1]", str(ctx.exception))
 
     def test_a_stamped_completion_records_filed_sections_still_resolve(self):
         # Review round 1 of D00 T03 §13, finding 4: receipt validation skipped the filed-reference check.

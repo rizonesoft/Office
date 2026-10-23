@@ -310,6 +310,12 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                             and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
                             and ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1]
                             in ("OVERALL: approve", "OVERALL: needs-attention")}
+                # A findings file is one implementation review loop: a completion review (D00 T03 §13) recorded in it
+                # would count toward the cap and the severity cutoff without reviewing the implementation.
+                mixed = [e["number"] for e in recorded if "PURPOSE: completion"
+                         in [x.strip() for x in (e["review"] or "").splitlines() if x.strip()][:2]]
+                require(not mixed, f"{report} holds completion review round(s) {mixed}; completion reviews belong in "
+                                   f"the section's -completion.md record, not an implementation review loop: {ref}")
                 require(reviewed, f"{report} holds no returned review: {ref}")
                 # The cap bounds every loop, however it ends: a clean round after review 22 is past the cap.
                 require(len(reviewed) <= cap,
@@ -318,10 +324,6 @@ def receipt_data_ok(data, ref, stamp_sha, root=None, building=False):
                 for r in claimed:
                     e = reviewed.get(r["round"])
                     last = ([x.strip() for x in e["review"].splitlines() if x.strip()] or [""])[-1] if e else ""
-                    require(e is None or "PURPOSE: completion" not in
-                            [x.strip() for x in e["review"].splitlines() if x.strip()][:2],
-                            f"round {r['round']} of {report} is a completion review, not a review of the "
-                            f"implementation: {ref}")
                     require(e is not None and e["writer"] in dispatch.WRITER_FAMILY
                             and dispatch.FAMILY.get(e["cli"]) not in (None, dispatch.WRITER_FAMILY[e["writer"]])
                             and last == ("OVERALL: approve" if r["verdict"] == "clean" else "OVERALL: needs-attention"),
@@ -937,7 +939,13 @@ def completion_ok(root, ref, path, rows=None):
     if not complete:
         # Any numbered line counts, indented or not, `N.` or `N)`: a nested list asks for more dispositions, never
         # fewer, so no gap slips through on its formatting.
-        gaps = sorted({int(m.group(1)) for m in re.finditer(r"^\s*(\d+)[.)]\s", last["review"], re.M)})
+        numbers = [int(m.group(1)) for m in re.finditer(r"^\s*(\d+)[.)]\s", last["review"], re.M)]
+        # A number used twice (two findings both `1.`, or a nested list restarting at `1)`) would let one disposition
+        # answer two gaps, so the gaps must be numbered once each.
+        require(len(numbers) == len(set(numbers)),
+                f"round {n} of {path} numbers more than one line {sorted({x for x in numbers if numbers.count(x) > 1})}; "
+                f"each gap needs its own number: {ref}")
+        gaps = sorted(numbers)
         require(gaps, f"round {n} of {path} says COMPLETE: no but numbers no gap: {ref}")
         title = f"## Outcome (round {n})"
         require(title in [line.strip() for line in outside],
