@@ -2,6 +2,10 @@
 
 This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) Windows office suite in planning and design, whose six apps are to match their Microsoft counterparts feature by feature: Write (Word), Grid (Excel), Stage (PowerPoint), Flow (Visio), Plan (Project) and Mail (Outlook). The names and identifiers are recorded in `docs/brand/NAMES.md`; the plan is `todo/`; brand and icon sources are `scripts/lib/` and `design/`, with generated outputs in `assets/`. The verification commands are `python scripts/todo-graph.py validate`, `python scripts/build-icons.py --check` and `python -m unittest discover -s scripts/tests`, all run in CI (`.github/workflows/ci.yml`). Claude Code (Opus 5.5) is the only writer and GPT-6.1 Sol, through the Codex CLI, the only reviewer (owner decision 2026-10-23); the repository takes nothing from the Conclave SDK.
 
+## Product bar
+
+We are building a better product than Microsoft's, not a clone (owner, 2026-10-23). Parity is the floor; every feature is optimised and improved, beats Office's measured times on the same PC, and never takes a shortcut where the harder, better version is possible. The rules a plan, a build and a review check are in [docs/product-principles.md](./docs/product-principles.md).
+
 ## Working rules
 
 - Verify files, routes, schemas, tools, and commands before relying on them. A path someone mentions is a hypothesis until it is on disk.

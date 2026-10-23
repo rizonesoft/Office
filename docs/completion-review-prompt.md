@@ -28,6 +28,7 @@ A feature is complete when every way a user reaches it and every state it can be
 4. Persistence: what is saved, where, and how it is read back on the next start (settings, recent lists, document state).
 5. Reach: accessibility (UI Automation names and patterns, keyboard-only use, high contrast), localisation of every string, and each app that shares the feature.
 6. Proof: whether the section's checkpoint would fail if any of the above were missing.
+7. Better: against `docs/product-principles.md`, whether the section as written only copies the Microsoft counterpart where a measurably better result is in reach (fewer steps, smarter defaults, clearer feedback, more capability, higher fidelity, beating its performance budget), and whether it carries the budget test that proves it. Copying where better was in reach is a gap, with the improvement as its remedy.
 
 A piece owned by another named section is not a gap; say which section owns it. A piece no section owns is a gap.
 

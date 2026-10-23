@@ -22,6 +22,7 @@ Give a verdict per lens: `approve`, `needs-attention` (numbered findings, each w
 - `integration`: callers and consumers of what changed, contracts between components, anything that reads the changed data.
 - `source-defect`: whether the governing spec or upstream documentation is read accurately, with deviations named.
 - `design`: for user-facing surfaces, whether the rendered result matches the design source and every control works.
+- `excellence`: against `docs/product-principles.md`, whether the change merely copies the Microsoft counterpart where a measurably better result was in reach (fewer steps, clearer feedback, more capability, higher fidelity, more speed), misses its performance budget, or takes a shortcut where the harder, better version was the plan.
 - `record`: whether the claimed test output and evidence match what actually ran, and nothing is marked done that is not.
 
 ## Reply format

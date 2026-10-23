@@ -32,6 +32,7 @@ Each question was asked with a recommended option first. The options weighed:
 | Version scheme | One SemVer for the suite; calendar versions; per-app versions |
 | Release notes | From the stamped TODO sections; Conventional Commits |
 | Provenance | SBOM and build attestation; checksums only |
+| Product bar | Better than Office, measured (stated by the owner, not chosen from options) |
 
 ## Decision
 
@@ -57,6 +58,7 @@ Owner, 2026-10-23, in session (asked so the unattended run never stops on versio
 
 16. **Version scheme:** one Semantic Versioning 2.0 version for the whole suite, shared by all six apps: `0.x` for the per-app previews, `1.0.0` at the 1.0 gate, pre-release tags such as `1.2.0-preview.3`. Windows binaries carry four numbers, `MAJOR.MINOR.PATCH.BUILD`, with `BUILD` from CI; the update check compares SemVer precedence.
 17. **Release notes and bumps:** generated from the TODO sections stamped since the last release tag, grouped by app, with the bump proposed from them (a new feature minor, a fix patch, a breaking file-format or object-model change major). The commit style stays as it is.
+19. **Product bar:** we build a better product, not a clone (owner, 2026-10-23, in the owner's words in `docs/product-principles.md`). Parity is the floor; every app beats Office's own times on this PC for the D03 T01 §29 workloads and aims for half of them; every app domain plans signature improvements with tests that prove them; and both review prompts ask whether a section merely copies Office where better was in reach.
 18. **Provenance:** every draft release carries an SPDX software bill of materials built from the vcpkg dependencies, a GitHub build attestation of where and from which commit each artifact was built, and SHA-256 checksums. None of it needs a signing certificate.
 
 ## Consequences
