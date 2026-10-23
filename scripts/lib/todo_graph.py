@@ -897,6 +897,30 @@ def outside_rounds(text, dispatch):
     return out
 
 
+# D00 T03 §14: from this instant, when docs/completion-review-prompt.md first carried the `Contract:` line, a completion
+# round must echo the digest of the contract it was given; earlier rounds are judged by the D00 T03 §13 rules.
+CONTRACT_REQUIRED_FROM = "2026-10-23T09:40:00Z"
+CONTRACT_LINE = re.compile(r"CONTRACT: (sha256:[0-9a-f]{64})")
+INSTANT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+
+
+def contract_digest(row):
+    """`sha256:<hex>` of a section's contract: its heading and body with every checkbox unticked and the Verified,
+    Review and Started lines removed, so ticking and stamping leave it unchanged and editing any wording changes it."""
+    body = row.body.replace("\r\n", "\n")
+    body = re.sub(r"^- \[x\] ", "- [ ] ", body, flags=re.M)
+    body = re.sub(r"^> \*\*(?:Verified|Review|Started):\*\* .*(?:\n|$)", "", body, flags=re.M)
+    body = re.sub(r"\n{3,}", "\n\n", body).strip()
+    text = f"## {row.number}. {row.title}\n\n{body}\n"
+    return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _instant(text):
+    """An ISO 8601 UTC instant (`YYYY-MM-DDTHH:MM:SSZ`) as a comparable tuple, or None."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z", (text or "").strip())
+    return tuple(int(x) for x in m.groups()) if m else None
+
+
 def completion_ok(root, ref, path, rows=None):
     """The section's completion record (D00 T03 §13), or Refused. It is the dispatcher-written file named for the
     section, opening `# Completion review: <ref>`; its last returned round is a review by another model family that
@@ -978,6 +1002,7 @@ def completion_ok(root, ref, path, rows=None):
             for gap, target in sorted(dispositions.items()):
                 require(target is None or target in rows,
                         f"gap {gap} of round {n} in {path} is filed to {target}, which is no section: {ref}")
+        last["dispositions"] = dispositions  # gap -> filed section, or None for `extended`
     return last
 
 
@@ -1029,10 +1054,30 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
             and last["effort"] == pinned.get("effort"),
             f"the completion review in {completion} was run by {last['reviewer']} ({last['model']}, {last['effort']}), "
             f"not the reviewer the pin names for {last['writer']}: {ref}")
-    reopened = re.findall(r"^> \*\*Unstamped:\*\* (\d{4}-\d{2}-\d{2})", row.body, re.M)
-    require(not reopened or (run or "")[:10] >= max(reopened),
-            f"the completion review in {completion} ran {run}, before the section was reopened on {max(reopened)}; "
-            f"run a fresh one: {ref}" if reopened else "")
+    # D00 T03 §14: reopening is recorded to the second; a date-only note from before counts as the end of its day.
+    reopened = [(_instant(x) or _instant(f"{x[:10]}T23:59:59Z"), x) for x in
+                re.findall(r"^> \*\*Unstamped:\*\* (\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}Z)?)", row.body, re.M)]
+    if reopened:
+        latest = max(reopened)
+        require(_instant(run) is not None and _instant(run) > latest[0],
+                f"the completion review in {completion} ran {run}, not after the section was reopened at {latest[1]}; "
+                f"run a fresh one: {ref}")
+    # D00 T03 §14: a round from CONTRACT_REQUIRED_FROM on echoes the digest of the contract it was given, and that
+    # must still be this section's contract: an edit after dispatch, or an extension after approval, needs a new round.
+    if _instant(run) is not None and _instant(run) >= _instant(CONTRACT_REQUIRED_FROM):
+        lines = [x.strip() for x in last["review"].splitlines() if x.strip()]
+        echoed = CONTRACT_LINE.fullmatch(lines[2]) if len(lines) > 2 else None
+        require(echoed is not None,
+                f"round {last['number']} of {completion} must open with 'SECTION: {ref}', 'PURPOSE: completion' and "
+                f"'CONTRACT: sha256:<digest>' copied from its prompt: {ref}")
+        require(echoed[1] == contract_digest(row),
+                f"round {last['number']} of {completion} reviewed contract {echoed[1]}, but the section is now "
+                f"{contract_digest(row)}; it changed after its completion review, so run a fresh one: {ref}")
+    # D00 T03 §14: an `extended` gap in the last returned round's outcome means its re-check has not returned yet,
+    # whatever outage rounds came after it.
+    pending = sorted(g for g, target in (last.get("dispositions") or {}).items() if target is None)
+    require(not pending, f"round {last['number']} of {completion} extended gap {', '.join(map(str, pending))}, and its "
+                         f"re-check has not returned; run it before the stamp: {ref}")
     data["completion"] = completion
     if stopped:
         data["cap_outcome"] = cap_outcome.strip()
@@ -1078,7 +1123,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     return receipt
 
 
-def unstamp(root, ref, reason, date):
+def unstamp(root, ref, reason, when):
     """Flip a stamped section back to open when an audit finds it regressed: remove its Verified and Review lines,
     untick its Commit item and row, reopen its file, and keep the receipt as evidence under a revoked name, with a dated
     Unstamped note in the section saying why. Re-stamping later writes a fresh receipt."""
@@ -1088,7 +1133,8 @@ def unstamp(root, ref, reason, date):
     row = rows[ref]
     require(row.done, f"not stamped: {ref}")
     require(bool(reason.strip()) and "\n" not in reason, "--reason must be one line saying what regressed")
-    require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, f"invalid date: {date}")
+    require(_instant(when) is not None, f"invalid instant (YYYY-MM-DDTHH:MM:SSZ): {when}")
+    date = when[:10]
     stamp_lines = re.compile(r"\n\n> \*\*Verified:\*\* [^\n]*\n> \*\*Review:\*\* `[^`\n]*`")
     require(len(stamp_lines.findall(row.body)) == 1, f"stamp lines not found: {ref}")
     receipt_path = root / row.receipt
@@ -1100,7 +1146,7 @@ def unstamp(root, ref, reason, date):
     revoked = revoked_path.relative_to(root).as_posix()
     body = stamp_lines.sub("", row.body)
     body = re.sub(r"^- \[x\] (Commit:.+)$", r"- [ ] \1", body, flags=re.M)
-    body += f"\n\n> **Unstamped:** {date}: {reason.strip()} (revoked receipt `{revoked}`)"
+    body += f"\n\n> **Unstamped:** {when}: {reason.strip()} (revoked receipt `{revoked}`)"
     path = root / row.path
     original_bytes = path.read_bytes()
     text = read_text(path)

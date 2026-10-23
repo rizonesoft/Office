@@ -21,16 +21,16 @@
 Format and rules: todo/README.md. Stdlib only.
 """
 import argparse
-from datetime import date
+from datetime import date, datetime, timezone
 import json
 from pathlib import Path
 import re
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
-from todo_graph import (ROOT, Refused, adjacency_report, atomic, deferrals, disposition,  # noqa: E402
-                        extract_ref, graph, ordered, plan_config, projections, require, review_rounds, settled, stamp,
-                        suspects, unstamp)
+from todo_graph import (ROOT, Refused, adjacency_report, atomic, contract_digest, deferrals,  # noqa: E402
+                        disposition, extract_ref, graph, ordered, plan_config, projections, require, review_rounds,
+                        settled, stamp, suspects, unstamp)
 
 
 def review_round(value):
@@ -76,10 +76,13 @@ def main():
     u = sub.add_parser("unstamp", help="an audit found a stamped section regressed: reopen it, keeping the receipt")
     u.add_argument("ref")
     u.add_argument("--reason", required=True)
-    u.add_argument("--date", default=date.today().isoformat())
+    u.add_argument("--at", default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                   help="the UTC instant of the reopening (default now); a completion review must run after it")
+    d = sub.add_parser("contract-digest", help="print the digest of a section's contract (D00 T03 §14)")
+    d.add_argument("ref")
     args = p.parse_args()
     if args.command == "unstamp":
-        revoked = unstamp(ROOT, args.ref, args.reason, args.date)
+        revoked = unstamp(ROOT, args.ref, args.reason, args.at)
         print(f"unstamped {args.ref}; receipt kept as {revoked}; plan synchronized")
         for ref in suspects(ROOT, args.ref):
             print(f"suspect until {args.ref} re-stamps: {ref}")
@@ -90,6 +93,13 @@ def main():
         print(f"stamped {args.ref}; receipt {receipt}; plan synchronized")
         return 0
     rows = graph()
+    if args.command == "contract-digest":
+        ref, code = extract_ref(args.ref, rows)
+        if code:
+            print("TODO refused: no such section: " + args.ref, file=sys.stderr)
+            return 1
+        print(contract_digest(rows[ref]))
+        return 0
     if args.command == "plan":
         projections(sync=args.sync)
         print("plan synchronized" if args.sync else "plan current")

@@ -487,7 +487,7 @@ class Stamp(Tree):
         # An outcome written for another round does not answer this one.
         self.write_completion(GAPS, outcome="## Outcome (round 2)\n\n1. extended\n2. filed -> D00 T01 §2\n")
         self.refused(completion=self.completion, contains="has no '## Outcome (round 1)'")
-        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. filed -> D00 T01 §2\n2. filed -> D00 T01 §2\n")
         receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         self.assertEqual(json.loads((self.root / receipt).read_text(encoding="utf-8"))["completion"], self.completion)
         tg.graph(self.root)  # and the receipt validates
@@ -552,7 +552,7 @@ class Stamp(Tree):
     def test_a_stamped_completion_records_filed_sections_still_resolve(self):
         # Review round 1 of D00 T03 §13, finding 4: receipt validation skipped the filed-reference check.
         self.tick_work()
-        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n")
+        self.write_completion(GAPS, outcome="## Outcome (round 1)\n\n1. filed -> D00 T01 §2\n2. filed -> D00 T01 §2\n")
         self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
         tg.graph(self.root)
         record = self.root / self.completion
@@ -570,13 +570,108 @@ class Stamp(Tree):
         self.assertTrue((self.root / receipt).is_file())
 
     def test_a_reopened_section_needs_a_completion_review_run_since(self):
+        # D00 T03 §14: reopening is recorded to the second, so a review earlier the same day no longer counts.
         self.tick_work()
         self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails at abc1234; repair -> XREF: §2", "2026-10-22")
-        self.refused(completion=self.completion, contains="before the section was reopened on 2026-10-22")
-        self.write_completion(COMPLETE_YES, when="2026-10-22T09:00:00Z")
+        tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails at abc1234; repair -> XREF: §2", "2026-10-22T08:00:00Z")
+        self.refused(completion=self.completion, contains="not after the section was reopened at 2026-10-22T08:00:00Z")
+        self.write_completion(COMPLETE_YES, when="2026-10-22T07:59:59Z")  # the same day, before the reopening
+        self.refused(completion=self.completion, contains="not after the section was reopened")
+        self.write_completion(COMPLETE_YES, when="2026-10-22T08:00:00Z")  # the very second of the reopening
+        self.refused(completion=self.completion, contains="not after the section was reopened")
+        self.write_completion(COMPLETE_YES, when="2026-10-22T08:00:01Z")
         receipt = self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22")
         self.assertTrue((self.root / receipt).is_file())
+
+    def test_the_latest_of_two_reopenings_counts(self):
+        self.tick_work()
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        tg.unstamp(self.root, "D00 T01 §1", "first regression", "2026-10-20T08:00:00Z")
+        self.write_completion(COMPLETE_YES, when="2026-10-20T09:00:00Z")
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-20")
+        tg.unstamp(self.root, "D00 T01 §1", "second regression", "2026-10-21T08:00:00Z")
+        self.refused(completion=self.completion, contains="reopened at 2026-10-21T08:00:00Z")
+        self.write_completion(COMPLETE_YES, when="2026-10-21T08:30:00Z")
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-21")).is_file())
+
+    def test_a_legacy_date_only_reopening_counts_as_the_end_of_its_day(self):
+        self.tick_work()
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace("- [ ] Commit:", "> **Unstamped:** 2026-10-22: before D00 T03 §14\n\n- [ ] Commit:",
+                                     1), encoding="utf-8")
+        self.write_completion(COMPLETE_YES, when="2026-10-22T23:00:00Z")
+        self.refused(completion=self.completion, contains="reopened at 2026-10-22")
+        self.write_completion(COMPLETE_YES, when="2026-10-23T00:00:01Z")
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-23")).is_file())
+
+    def contract(self, ref="D00 T01 §1"):
+        return tg.contract_digest(tg.graph(self.root)[ref])
+
+    def reply(self, digest, verdict=COMPLETE_YES):
+        return verdict.replace("PURPOSE: completion\n", f"PURPOSE: completion\nCONTRACT: {digest}\n", 1)
+
+    def test_the_contract_digest_ignores_ticks_and_stamps_but_not_wording(self):
+        before = self.contract()
+        self.tick_work()
+        self.assertEqual(self.contract(), before)
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
+        self.assertEqual(self.contract(), before)  # the Verified and Review lines and the ticked Commit item
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("Work.", "Different work.", 1), encoding="utf-8")
+        self.assertNotEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), before)
+
+    def test_a_round_from_the_cutoff_must_echo_the_current_contract(self):
+        after = "2026-10-23T10:00:00Z"
+        self.tick_work()
+        self.write_completion(COMPLETE_YES, when=after)  # no CONTRACT line
+        self.refused(completion=self.completion, contains="'CONTRACT: sha256:<digest>' copied from its prompt")
+        self.write_completion(self.reply("sha256:" + "0" * 64), when=after)  # the section changed after dispatch
+        self.refused(completion=self.completion, contains="it changed after its completion review")
+        self.write_completion(self.reply(self.contract()), when=after)
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-23")).is_file())
+
+    def test_a_section_extended_after_its_approving_round_needs_a_new_one(self):
+        self.tick_work()
+        self.write_completion(self.reply(self.contract()), when="2026-10-23T10:00:00Z")
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("- [x] Work.", "- [x] Work.\n- [x] More work.", 1),
+                        encoding="utf-8")
+        self.refused(completion=self.completion, contains="it changed after its completion review")
+        self.write_completion(self.reply(self.contract()), when="2026-10-23T11:00:00Z")
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-23")).is_file())
+
+    def test_a_digest_free_round_before_the_cutoff_still_stamps(self):
+        self.tick_work()
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:39:59Z")
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-23")).is_file())
+
+    def test_an_extended_gap_waits_for_its_returned_re_check(self):
+        self.tick_work()
+        extended = "## Outcome (round 1)\n\n1. extended\n2. filed -> D00 T01 §2\n"
+        # The session died after recording `extended`.
+        self.write_completion(GAPS, outcome=extended)
+        self.refused(completion=self.completion, contains="its re-check has not returned")
+        # The re-check was an outage.
+        self.write_completion(GAPS, None, outcome=extended)
+        self.refused(completion=self.completion, contains="its re-check has not returned")
+        # Its one retry after the outage returned and approved.
+        self.write_completion(GAPS, None, COMPLETE_YES, outcome=extended)
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-13")).is_file())
+
+    def test_a_re_checks_own_gaps_are_filed(self):
+        self.tick_work()
+        outcomes = ("## Outcome (round 1)\n\n1. extended\n2. extended\n\n"
+                    "## Outcome (round 2)\n\n1. filed -> D00 T01 §2\n2. filed -> D00 T01 §2\n")
+        self.write_completion(GAPS, GAPS, outcome=outcomes)
+        self.assertTrue((self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"],
+                                                "2026-10-13")).is_file())
 
     def test_a_receipt_under_the_current_cap_must_name_its_completion_record(self):
         self.tick_work()
@@ -1082,16 +1177,17 @@ class Stamp(Tree):
         before = self.snapshot()
         for bad in (("D00 T01 §2", "x"), ("D00 T01 §1", ""), ("D00 T01 §1", "two\nlines")):
             with self.assertRaises(tg.Refused):
-                tg.unstamp(self.root, bad[0], bad[1], "2026-10-21")
+                tg.unstamp(self.root, bad[0], bad[1], "2026-10-20T12:00:00Z")
         self.assertEqual(self.snapshot(), before)
-        revoked = tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails at abc1234; repair -> XREF: §2", "2026-10-21")
+        revoked = tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails at abc1234; repair -> XREF: §2",
+                             "2026-10-20T12:00:00Z")
         rows = tg.graph(self.root)
         self.assertFalse(rows["D00 T01 §1"].done)
         self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows), 0)
         self.assertFalse((self.root / receipt).exists())
         self.assertEqual((self.root / revoked).read_bytes(), before[str(pathlib.Path(receipt))])
         text = (self.root / "todo/00-workspace/TODO-01-a.md").read_text(encoding="utf-8")
-        self.assertIn("> **Unstamped:** 2026-10-21: checkpoint fails", text)
+        self.assertIn("> **Unstamped:** 2026-10-20T12:00:00Z: checkpoint fails", text)
         self.assertIn("- [ ] Commit:", text)
         tg.projections(self.root)  # the plan was synced
         self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
@@ -1104,7 +1200,7 @@ class Stamp(Tree):
         self.index("TODO-02-b.md")
         for n in (1, 2, 3):
             self.stamp(self.root, f"D00 T02 §{n}", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        tg.unstamp(self.root, "D00 T02 §1", "checkpoint fails", "2026-10-21")
+        tg.unstamp(self.root, "D00 T02 §1", "checkpoint fails", "2026-10-21T00:00:00Z")
         rows = tg.graph(self.root)
         self.assertEqual([rows[f"D00 T02 §{n}"].done for n in (1, 2, 3)], [False, True, True])
         self.assertEqual(tg.suspects(self.root, "D00 T02 §1"), ["D00 T02 §2", "D00 T02 §3"])
@@ -1140,7 +1236,7 @@ class Stamp(Tree):
         tg.atomic = interrupt_on_second_write
         try:
             with self.assertRaises(KeyboardInterrupt):
-                tg.unstamp(self.root, "D00 T01 §1", "regressed", "2026-10-21")
+                tg.unstamp(self.root, "D00 T01 §1", "regressed", "2026-10-21T00:00:00Z")
         finally:
             tg.atomic = real_atomic
         self.assertEqual(self.snapshot(), before)

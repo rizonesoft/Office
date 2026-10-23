@@ -191,6 +191,16 @@ class Dispatch(unittest.TestCase):
         self.assertIsNone(summary["reviewer"])
         self.assertIn("not an approval", record.read_text())
 
+    def test_a_record_it_cannot_read_back_is_left_byte_for_byte(self):
+        # D00 T03 §14: exit 2 on --record leaves the record untouched, so a section parks with nothing to restore.
+        record = self.repo / "docs/reviews/round.md"
+        record.parent.mkdir(parents=True)
+        before = b"# Completion review: D00 T01 \xc2\xa71\r\n\r\n## Round 1: not the format --record writes\r\n"
+        record.write_bytes(before)
+        result, summary = self.dispatch("--writer", "claude", "--prompt", str(self.prompt), "--record", str(record))
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(record.read_bytes(), before)
+
     def test_rounds_are_numbered_and_appended(self):
         record = self.repo / "docs/reviews/round.md"
         record.parent.mkdir(parents=True)
