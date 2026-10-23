@@ -1,0 +1,122 @@
+{
+  "ref": "D00 T03 \u00a712",
+  "title": "Campaign Host Readiness Check",
+  "implementation_sha": "77c39bc9c4a1ef2a164f9e79fe5fa482e8a705ee",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 14,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 15,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 16,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 17,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 18,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 19,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 20,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 21,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 22,
+      "report": "docs/reviews/00-workspace/D00-T03-s12.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -> Ran 700 tests in 210.169s, OK (skipped=2)",
+    "python -m unittest discover -s scripts/tests -p \"test_check_campaign_host.py\" -> OK",
+    "python scripts/check-campaign-host.py -> 8 ok lines, \"ready: every check passed\", exit 0 (LLVM clang tools installed)",
+    "python scripts/todo-graph.py validate -> valid: 116 sections"
+  ],
+  "rounds_spent": 22,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s12-completion.md"
+}

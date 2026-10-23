@@ -51,3 +51,20 @@ No gaps remain. The revised section addresses all five round-one findings, inclu
 COMPLETE: yes
 HIGHEST: none
 OVERALL: approve
+
+## Round 3: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T09:27:30Z
+- Effort: medium
+- Lines: 8
+- Digest: 4eff9f662b357d0e
+
+SECTION: D00 T03 §12
+PURPOSE: completion
+
+No unowned completion gaps found. The section covers the required checks, failure and error states, notification failure, all campaign entry and resume paths, durable park records and campaign-wide stopping. D00 T03 §15 owns the additional CI access check and CI monitoring.
+
+COMPLETE: yes
+HIGHEST: none
+OVERALL: approve

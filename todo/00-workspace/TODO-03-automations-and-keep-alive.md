@@ -44,7 +44,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 9 | §9 | Dependency PR merges at boundaries | §1 | [x] |
 | 10 | §10 | Retire the .NET and WinUI 3 pins | §9 | [x] |
 | 11 | §11 | C++ toolchain pins | §10, D03 T01 §17 | [ ] |
-| 12 | §12 | Campaign host readiness check | §10 | [ ] |
+| 12 | §12 | Campaign host readiness check | §10 | [x] |
 | 13 | §13 | Single writer, cap 33, completion review | §10 | [x] |
 | 14 | §14 | Completion evidence hardening | §13 | [ ] |
 | 15 | §15 | CI watch and red-run repair | §13 | [ ] |
@@ -365,9 +365,12 @@ Owner decision 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, dec
 - [x] Write `scripts/tests/test_check_campaign_host.py` with fake readers for every check. Done when: the suite passes and fails when any one check is made to always pass. Cheaper substitute: running the script on this PC only.
 - [x] Run the check at campaign start and at every phase start in `process-plan` and `process-phase` (in `.claude/skills/`, the only copy since D00 T03 §13; **Corrected 2026-10-23:** named the `.agents/` and `.codex/` mirrors too); a failure records the fixes in the run file, emails them through `.conclave/automations/alert.py` (the script's `--notify` flag, through `scripts/lib/pin_proposal.py` `notify`, which sends with `alert.send`), and parks the campaign. Done when: both skills name the command and the park rule. Cheaper substitute: a check the owner must remember to run.
 - [x] Make a host failure stop the whole campaign, not one phase: in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`, exit 1 or 2 at campaign start, at a phase start reached by chaining, at a phase started on its own, and on a manual or heartbeat resume writes the column-0 `PARKED <UTC> run=<run id> host-not-ready: ...` line, runs `campaign_guard.py end --reason park`, deletes the heartbeat and confirms it with `CronList`, and claims no further row in any phase until a resumed run's check exits 0; `process-plan` never chains past a host-not-ready park. Done when: both skills name the four entry points, the guard end, the heartbeat cancellation and the no-chain rule. Cheaper substitute: a park that `process-plan` reads as one phase parking and chains past. **Groomed 2026-10-23:** completion finding 5.
-- [ ] Commit: `automations: add the campaign host readiness check`
+- [x] Commit: `automations: add the campaign host readiness check`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes and `python scripts/check-campaign-host.py` exits 0 on this PC once the LLVM clang tools are installed.
+
+> **Verified:** 2026-10-23 | §12 | 77c39bc9c4a1ef2a164f9e79fe5fa482e8a705ee
+> **Review:** `docs/reviews/d00-t03-s12.json`
 
 ## 13. Single Writer, Cap 33, Completion Review
 
