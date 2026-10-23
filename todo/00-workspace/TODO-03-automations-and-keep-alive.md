@@ -52,6 +52,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 17 | §17 | CI push reconciliation | §15 | [ ] |
 | 18 | §18 | CI recovery budget | §15 | [ ] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
+| 20 | §20 | CI reconciliation at scale | §17 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -563,6 +564,25 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 8): t
 - [ ] Commit: `automations: hold the campaign to its CI gate with guard and skill checks`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` pass.
+
+## 20. CI Reconciliation at Scale
+
+Filed 2026-10-23 from round 2 of D00 T03 §17's completion review (`docs/reviews/00-workspace/D00-T03-s17-completion.md`): §17 lists unchecked push heads oldest first and treats a full 500-run page as unknown. Two cases remain: an older red head followed by a later head that is pending, unknown or red (supersession needs a later green head, and repair covers only the newest red head), and a workflow history past 500 runs, where retrying the same capped query parks the campaign for good even when every recent push is green.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Settle the newest head first. Done when: earlier red heads are resolved only after it.
+2. Page the history down to a proven boundary. Done when: more than 500 runs reconcile.
+
+- [ ] Reconcile from the newest head back in `.claude/skills/process-plan/SKILL.md`: establish the newest listed head's outcome first (wait while pending, repair while red, park on unknown under §15's rules), and only once it is green record each earlier red head as `ci-superseded <sha> by <newest sha>`. Done when: the skill names the order, and fixtures in `scripts/tests/test_ci_status.py` for red A then pending B and red A then red B show `--pending` reporting both heads with their states so the order can be followed. Cheaper substitute: oldest-first processing that meets a red head with no rule.
+- [ ] Page `gh run list` in `scripts/ci-status.py --pending` until it reaches a run created before the baseline commit (the coverage boundary), using `--created` windows of the history, so the enumeration is complete however long the history is; exit 2 only when a page cannot be read or the boundary cannot be reached. Done when: a fixture with more than 500 runs finds every unchecked head, and one whose pages stop before the boundary exits 2. Cheaper substitute: one capped page that parks a long campaign for good.
+- [ ] Commit: `automations: reconcile CI from the newest head and across any history length`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
 
 ## Verification
 

@@ -32,3 +32,28 @@ OVERALL: needs-attention
 2. extended
 3. extended
 4. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T11:44:14Z
+- Effort: medium
+- Lines: 11
+- Digest: dcd96b01a205eb8c
+
+SECTION: D00 T03 §17
+PURPOSE: completion
+CONTRACT: sha256:0ba0eb05d0bb4ba6dc62bfc62370091edba34bed072853d975aa8547284eb4ec
+
+1. **P2, extend:** An older red head followed by a pending, unknown or red head has no defined action. Supersession requires a later green head, while repair explicitly covers only the newest red head. Processing oldest first therefore reaches a state neither rule handles. Define how reconciliation establishes the latest head’s outcome, repairs it if necessary, then records supersession for earlier red heads. Add fixtures for red A followed by pending B and red A followed by red B.
+
+2. **P2, extend:** Discovery permanently parks once the workflow history reaches 500 runs. Retrying the same capped query cannot restore complete enumeration, so normal campaign growth eventually disables reconciliation even when every recent push is green. Require pagination or a bounded history query with a proven coverage boundary, retaining exit 2 whenever completeness cannot be established. Add a fixture with more than 500 runs that successfully finds all unchecked heads.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §20
+2. filed -> D00 T03 §20
