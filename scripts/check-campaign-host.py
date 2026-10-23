@@ -61,6 +61,7 @@ MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 M
 POLL_SECONDS = 0.1
 KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
+SIGNED_OUT = 1  # `gh auth status` and `codex login status` exit 1 when signed out; any other failure is a crash
 WTS_ACTIVE = 0
 WTS_SESSIONSTATE_LOCK, WTS_SESSIONSTATE_UNLOCK = 0, 1
 NO_CONSOLE = 0xFFFFFFFF
@@ -465,13 +466,22 @@ def check_toolchain(host):
     return ok("toolchain", f"{name} has every C++ component the build needs")
 
 
+def exit_text(code):
+    """An exit code as a person reads it: a Windows NTSTATUS crash code in hex, a POSIX signal by number."""
+    if code < 0:
+        return f"killed by signal {-code}"
+    return f"exit {code:#010x}" if code >= 0xC0000000 else f"exit {code}"
+
+
 def check_gh(host):
     gh = host.find("gh")
     if not gh:
         return fail("gh", "gh is not on PATH", "install the GitHub CLI: winget install GitHub.cli")
     result = host.run([gh, "auth", "status"])
-    if result.returncode != 0:
+    if result.returncode == SIGNED_OUT:
         return fail("gh", "gh is not signed in", "gh auth login")
+    if result.returncode != 0:
+        raise Unreadable(f"gh auth status ended abnormally ({exit_text(result.returncode)})")
     return ok("gh", "gh is signed in")
 
 
@@ -489,8 +499,10 @@ def check_reviewer(host):
     except OSError as exc:
         return fail("reviewer", f"the pinned reviewer {reviewer}'s CLI {cli} cannot start ({exc.strerror or exc})",
                     "reinstall the Codex CLI: npm install -g @openai/codex")
-    if result.returncode != 0:
+    if result.returncode == SIGNED_OUT:
         return fail("reviewer", f"the pinned reviewer {reviewer}'s CLI {cli} is not signed in", f"{cli} login")
+    if result.returncode != 0:
+        raise Unreadable(f"{cli} login status ended abnormally ({exit_text(result.returncode)})")
     return ok("reviewer", f"the pinned reviewer {reviewer}'s CLI {cli} is on PATH and signed in")
 
 

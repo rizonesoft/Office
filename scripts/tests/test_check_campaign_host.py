@@ -377,6 +377,23 @@ class Services(Base):
         self.assertEqual((r["state"], r["fix"]), ("fail", "gh auth login"))
         self.assertIn([r"C:\gh\gh.exe", "auth", "status"], self.host.calls)
 
+    def test_a_crashed_gh_cannot_check(self):
+        self.host.gh_status = 0xC0000005  # access violation
+        r = self.result("gh")
+        self.assertEqual(r["state"], "error")
+        self.assertIn("0xc0000005", r["detail"])
+
+    def test_a_gh_killed_by_a_signal_cannot_check(self):
+        self.host.gh_status = -9
+        self.assertEqual(self.result("gh")["state"], "error")
+
+    def test_a_crashed_reviewer_cli_cannot_check(self):
+        self.host.reviewer_status = 0xC0000005
+        code, out = self.main()
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR reviewer", out)
+        self.assertNotIn("fix: codex login", out)
+
     def test_gh_missing_fails(self):
         del self.host.on_path["gh"]
         self.assertEqual(self.result("gh")["state"], "fail")
