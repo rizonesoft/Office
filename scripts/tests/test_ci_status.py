@@ -505,6 +505,24 @@ class Pending(unittest.TestCase):
                 self.assertIn(f"baseline {green[:7]}", out)
                 self.assertEqual(self.listed(out), [after[:7]])
 
+    def test_the_first_run_baseline_uses_each_heads_governing_run(self):
+        # Review round 3 of D00 T03 §17, finding 1: an older success under a newer failure is not green.
+        a = sha(1)
+        repo = Repo([a], {a: "failure"})
+        real = repo.call
+
+        def with_old_success(name, args, seconds):
+            result = real(name, args, seconds)
+            if args[:2] == ["run", "list"] and "--commit" not in args:
+                runs = json.loads(result.stdout)
+                runs.append(run(headSha=a, databaseId=1, conclusion="success", createdAt="2026-10-23T09:00:00Z"))
+                return subprocess.CompletedProcess(args, 0, json.dumps(runs), "")
+            return result
+        repo.call = with_old_success
+        code, out = self.pending(repo)
+        self.assertIn("no baseline", out)
+        self.assertEqual(self.listed(out), [a[:7]])
+
     def test_with_no_green_run_every_head_is_listed(self):
         a, b = sha(1), sha(2)
         code, out = self.pending(Repo([b, a], {a: "failure", b: "failure"}))

@@ -275,7 +275,11 @@ def unchecked_heads(tools, run_file, left):
             # an older recorded head lies beyond the read history, so heads between it and the baseline are unseen
             raise Unknown(f"recorded outcomes reach past the last {HISTORY_LIMIT} commits of origin/main")
     else:
-        green = {r["headSha"] for r in runs if r.get("status") == "completed" and r.get("conclusion") == "success"}
+        governing = {}  # each head's newest push run decides it, as for a single commit
+        for r in runs:
+            if r["headSha"] not in governing or str(r.get("createdAt", "")) > str(governing[r["headSha"]].get("createdAt", "")):
+                governing[r["headSha"]] = r
+        green = {h for h, r in governing.items() if r.get("status") == "completed" and r.get("conclusion") == "success"}
         baseline = next((c for c in heads if c in green), None)
         if baseline is None and cut_off:
             raise Unknown(f"no green push head within the last {HISTORY_LIMIT} commits of origin/main")
