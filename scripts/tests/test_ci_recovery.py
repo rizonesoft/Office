@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -91,11 +92,32 @@ class Recovery(Base):
         for _ in range(3):
             self.cli("reserve", "repair")
             self.cli("result", "red")
+        self.cli("attach", sha(4))
+        self.ancestors[sha(4)] = {sha(1)}
         self.cli("reserve", "repair")
-        code, out = self.cli("result", "green")
+        self.assertIn("close the recovery", self.cli("result", "green")[1])
+        code, out = self.cli("close", sha(4))
         self.assertEqual(code, 0)
         self.assertIn("closed", out)
         self.assertIn("no open recovery", self.cli("show")[1])
+
+    def test_a_green_result_alone_never_closes_or_resets(self):
+        # Review round 1 of D00 T03 §18, finding 1: a green result for an unrelated head must not reset the budget.
+        self.cli("open", sha(1))
+        self.cli("reserve", "wait", "--head", sha(9))
+        self.cli("result", "green")
+        self.assertIn("1 of 4 attempts spent", self.cli("show")[1])
+        self.assertEqual(self.cli("close", sha(9))[0], 1)  # it does not descend from the first head
+
+    def test_a_resumed_red_head_that_was_never_attached_joins_the_recovery(self):
+        # Review round 1 of D00 T03 §18, finding 2: repair B was pushed, then the session died before `attach B`.
+        a, b = sha(1), sha(2)
+        self.cli("open", a)
+        self.cli("reserve", "rerun")
+        self.cli("result", "red")
+        self.cli("reserve", "repair")  # B is pushed; the session dies here
+        self.assertIn(f"{b[:7]} is its newest head", self.cli("open", b)[1])
+        self.assertEqual(self.cli("reserve", "rerun")[1], f"attempt 3 of 4: rerun on {b[:7]}")
 
     def test_a_second_rerun_for_the_same_head_is_refused(self):
         self.cli("open", sha(1))
@@ -108,14 +130,18 @@ class Recovery(Base):
         self.assertEqual(self.cli("reserve", "rerun")[0], 0)  # a new head has its own one rerun
 
     def test_an_interrupted_reservation_is_spent_and_never_repeated_after_a_resume(self):
-        self.cli("open", sha(1))
-        self.cli("reserve", "rerun")  # the session dies here: no result was recorded
-        # A resume, in a new session with a new run file, reads the same state file.
-        _, shown = self.cli("show")
+        # Each step is its own process, as separate sessions are: the reserving process ends before any result, and
+        # the resumed one (with a new run file, which the state does not depend on) reads the same state file.
+        def process(*argv):
+            return subprocess.run([sys.executable, "-B", str(SCRIPTS / "ci-recovery.py"), "--state", str(self.state),
+                                   *argv], capture_output=True, text=True)
+        self.assertEqual(process("open", sha(1)).returncode, 0)
+        self.assertEqual(process("reserve", "rerun").returncode, 0)  # the session dies here: no result
+        shown = process("show").stdout
         self.assertIn("1 of 4 attempts spent", shown)
         self.assertIn("no result (spent)", shown)
-        self.assertEqual(self.cli("reserve", "rerun")[0], 1)  # the reserved rerun is not run again
-        self.assertEqual(self.cli("reserve", "repair")[1], "attempt 2 of 4: repair on 0000001")
+        self.assertEqual(process("reserve", "rerun").returncode, 1)  # the reserved rerun is not run again
+        self.assertEqual(process("reserve", "repair").stdout.strip(), "attempt 2 of 4: repair on 0000001")
 
     def test_the_state_is_written_atomically_and_never_reset_when_unreadable(self):
         self.cli("open", sha(1))

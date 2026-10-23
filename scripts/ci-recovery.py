@@ -3,7 +3,7 @@
 # Copyright 2026 Rizonesoft
 """One bounded recovery budget per red `main`, kept across sessions, resumes and run files (D00 T03 §18).
 
-    python scripts/ci-recovery.py open <sha>        # start the recovery for this first red head (or show the open one)
+    python scripts/ci-recovery.py open <sha>        # start the recovery for this red head, or attach it to the open one
     python scripts/ci-recovery.py attach <head>     # a repair head pushed during the recovery
     python scripts/ci-recovery.py reserve <kind>    # repair | rerun | wait | unreadable, before the action runs
     python scripts/ci-recovery.py result <outcome>  # green | red | pending | unreadable, for the last attempt
@@ -14,7 +14,8 @@ The state lives in build/ci-recovery.json (gitignored, written temp-then-replace
 a resume and a new run file without dirtying the tree. Every attempt is reserved before its action runs: a reserved
 attempt with no result after a resume counts as spent and is never repeated, and a reserved rerun is never run again.
 At most four attempts per recovery, any mix of kinds; a fifth is refused with `exhausted` (exit 1), and the campaign
-then files, emails and parks with `ci-red`. One flake rerun per head. A green result closes the recovery.
+then files, emails and parks with `ci-red`. One flake rerun per head. Only `close <green head>` ends a recovery, and
+only for a head that descends from its first head, so no green result for an unrelated head can reset the budget.
 
 Exit 0 done, 1 refused (exhausted, a second rerun, no open recovery, a head that does not descend), 2 unreadable state.
 """
@@ -93,7 +94,13 @@ def descends(first, head, run):
 
 def open_recovery(state, sha):
     if state["recovery"]:
-        return f"open: recovery {state['recovery']['first'][:7]} already open, {len(state['recovery']['attempts'])} of {BUDGET} attempts spent"
+        # On a resume the current red head may be a repair pushed just before the session died, never attached: it
+        # joins the open recovery as its newest head, so its own one rerun is still available.
+        recovery = state["recovery"]
+        if full_sha(sha) not in recovery["heads"]:
+            recovery["heads"].append(sha)
+        return (f"open: recovery {recovery['first'][:7]} already open, {sha[:7]} is its newest head, "
+                f"{len(recovery['attempts'])} of {BUDGET} attempts spent")
     state["recovery"] = {"first": full_sha(sha), "opened": now(), "heads": [sha], "attempts": [], "reruns": []}
     return f"open: recovery {sha[:7]} opened, 0 of {BUDGET} attempts spent"
 
@@ -136,8 +143,8 @@ def result(state, outcome):
     attempt = recovery["attempts"][-1]
     attempt["result"] = outcome
     if outcome == "green":
-        state["recovery"] = None
-        return f"result: attempt {attempt['n']} green; recovery {recovery['first'][:7]} closed"
+        return (f"result: attempt {attempt['n']} green; close the recovery with "
+                f"`ci-recovery.py close {attempt['head'][:7]}...` (the full SHA)")
     left = BUDGET - len(recovery["attempts"])
     return f"result: attempt {attempt['n']} {outcome}; {left} attempt(s) left" + ("" if left else ", exhausted")
 
@@ -163,8 +170,9 @@ def show(state):
     return "\n".join(lines)
 
 
-def main(argv=None, state_path=STATE, run=subprocess.run):
+def main(argv=None, state_path=None, run=subprocess.run):
     parser = argparse.ArgumentParser(description="One bounded CI recovery budget per red main.")
+    parser.add_argument("--state", help=f"the state file (default {STATE.relative_to(ROOT).as_posix()})")
     sub = parser.add_subparsers(dest="command", required=True)
     for name, arg in (("open", "sha"), ("attach", "head"), ("result", "outcome"), ("close", "head")):
         sub.add_parser(name).add_argument(arg)
@@ -173,7 +181,7 @@ def main(argv=None, state_path=STATE, run=subprocess.run):
     r.add_argument("--head", help="the head the attempt acts on (default: the newest attached head)")
     sub.add_parser("show")
     args = parser.parse_args(argv)
-    path = Path(state_path)
+    path = Path(state_path or args.state or STATE)
     try:
         state = load(path)
         if args.command == "open":
