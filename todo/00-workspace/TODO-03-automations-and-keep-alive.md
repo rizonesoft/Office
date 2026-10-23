@@ -611,6 +611,8 @@ Filed 2026-10-23 from round 2 of D00 T03 §17's completion review (`docs/reviews
 
 ## 21. CI Recovery Closed on Resume
 
+> **Started:** 2026-10-23T13:50:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §18's completion review (`docs/reviews/00-workspace/D00-T03-s18-completion.md`): a session can die after a repair or rerun turns `main` green but before `scripts/ci-recovery.py close` runs. On resume, §17's reconciliation establishes green and the campaign carries on, while the recovery stays open, so a later, unrelated red `main` would inherit its spent budget.
 
 **Phase:** 0
