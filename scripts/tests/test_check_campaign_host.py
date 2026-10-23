@@ -298,6 +298,24 @@ class ScreenLock(Base):
         # Written before this boot: not a pending change.
         self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
 
+    def test_a_deleted_key_or_ancestor_shows_in_the_nearest_surviving_one(self):
+        key = host_check.SYSTEM_POLICY
+        parent = key.rpartition("\\")[0]
+        grandparent = parent.rpartition("\\")[0]
+
+        def stamps(present):
+            def written(path):
+                if path not in present:
+                    raise FileNotFoundError(path)
+                return present[path]
+            return written
+        self.assertEqual(host_check.latest_write(key, stamps({key: 5, parent: 9})), 9)
+        self.assertEqual(host_check.latest_write(key, stamps({key: 9, parent: 5})), 9)
+        self.assertEqual(host_check.latest_write(key, stamps({parent: 7})), 7)  # the key was deleted
+        self.assertEqual(host_check.latest_write(key, stamps({grandparent: 8})), 8)  # its parent was deleted too
+        with self.assertRaises(host_check.Unreadable):
+            host_check.latest_write(key, stamps({}))
+
     def test_backward_steps_are_summed_from_the_time_change_events(self):
         def event(new, old):
             return f"<Event><EventData><Data Name='NewTime'>{new}</Data><Data Name='OldTime'>{old}</Data></EventData></Event>"
@@ -306,8 +324,15 @@ class ScreenLock(Base):
                + event("2026-10-23T09:00:00.0000000Z", "2026-10-23T09:00:00.2500000Z"))   # back 0.25 s
         self.assertEqual(host_check.backward_shift(xml), 120 * 10**7 + 2_500_000)
         self.assertEqual(host_check.backward_shift(""), 0)
-        with self.assertRaises(host_check.Unreadable):
-            host_check.backward_shift(event("yesterday", "2026-10-23T09:00:00Z"))
+        quoted = ('<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event"><EventData>'
+                  '<Data Name="NewTime">2026-10-23T08:00:00Z</Data><Data Name="OldTime">2026-10-23T08:00:10Z</Data>'
+                  '</EventData></Event>')
+        self.assertEqual(host_check.backward_shift(quoted), 10 * 10**7)
+        for bad in (event("yesterday", "2026-10-23T09:00:00Z"),
+                    "<Event><EventData><Data Name='NewTime'>2026-10-23T08:00:00Z</Data></EventData></Event>",
+                    event("2026-10-23T08:00:00Z", "2026-10-23T08:02:00Z")[:-20]):
+            with self.subTest(bad=bad[-40:]), self.assertRaises(host_check.Unreadable):
+                host_check.backward_shift(bad)
 
     def test_the_real_event_reader_runs(self):
         if host_check.os.name != "nt":
@@ -334,7 +359,8 @@ class ScreenLock(Base):
         self.assertIn("EventRecordID > 31239", calls[1][3])
 
     def test_a_full_page_of_changes_cannot_vouch(self):
-        page = "<Event>x</Event>" * host_check.MAX_TIME_EVENTS
+        page = ("<Event><EventData><Data Name='NewTime'>2026-10-23T08:00:00Z</Data>"
+                "<Data Name='OldTime'>2026-10-23T08:00:00Z</Data></EventData></Event>") * host_check.MAX_TIME_EVENTS
         with self.assertRaises(host_check.Unreadable):
             self.reader("<EventRecordID>7</EventRecordID>", page).clock_moved_back()
 

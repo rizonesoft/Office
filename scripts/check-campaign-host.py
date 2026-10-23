@@ -208,21 +208,12 @@ class Host:
         def written(path):  # 100 ns intervals since 1601, in the system clock as it was at the write
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as k:
                 return winreg.QueryInfoKey(k)[2]
-        # Deleting the key itself (not only its value) updates its parent's write time, so both are read.
-        parent = key.rsplit("\\", 1)[0]
-        times = []
-        for path in (key, parent):
-            try:
-                times.append(written(path))
-            except FileNotFoundError:
-                pass
-        if not times:
-            return False  # no policy key at all, now or (since the parent is gone too) at any point it could be read
+        changed = latest_write(key, written)
         kernel32 = ctypes.WinDLL("kernel32")
         kernel32.GetTickCount64.restype = ctypes.c_ulonglong
         now = (int(time.time()) + 11644473600) * 10**7
         uptime = kernel32.GetTickCount64() * 10**4
-        return written_since_boot(max(times), now, uptime, written(r"HARDWARE\DESCRIPTION"), self.clock_moved_back())
+        return written_since_boot(changed, now, uptime, written(r"HARDWARE\DESCRIPTION"), self.clock_moved_back())
 
     def clock_moved_back(self):
         """The total time, in 100 ns units, by which the system clock was set back since Windows started: the
@@ -243,9 +234,10 @@ class Host:
                             "/f:xml", f"/c:{MAX_TIME_EVENTS}"])
         if changes.returncode != 0:
             raise Unreadable(f"wevtutil could not read the time change events (exit {changes.returncode})")
-        if changes.stdout.count("<Event ") + changes.stdout.count("<Event>") >= MAX_TIME_EVENTS:
-            raise Unreadable(f"more than {MAX_TIME_EVENTS} clock changes since boot")
-        return backward_shift(changes.stdout)
+        moved_back, count = backward_shift(changes.stdout), changes.stdout.count("<Event")
+        if count >= MAX_TIME_EVENTS:
+            raise Unreadable(f"{MAX_TIME_EVENTS} or more clock changes since boot, more than one query returns")
+        return moved_back
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -473,6 +465,21 @@ class Containment:
         return False
 
 
+def latest_write(key, written):
+    """The latest write time of a key and of its nearest surviving ancestor: deleting a key updates its parent's write
+    time, so deleting the key, or any key above it, shows there. `written` raises FileNotFoundError for a missing key."""
+    times, path = [], key
+    while path:
+        try:
+            times.append(written(path))
+            if path != key:
+                return max(times)  # the nearest ancestor that still exists
+        except FileNotFoundError:
+            pass
+        path = path.rpartition("\\")[0]
+    raise Unreadable(f"neither HKLM\\{key} nor any key above it can be read")
+
+
 def written_since_boot(changed, now, uptime, hardware_written, moved_back=0):
     """Whether a key written at `changed` was written after Windows started (all in 100 ns units). Two boot times, and
     the earlier is used: now less the uptime moves with every clock correction made since, while the volatile
@@ -482,11 +489,25 @@ def written_since_boot(changed, now, uptime, hardware_written, moved_back=0):
 
 
 MAX_TIME_EVENTS = 5000
-TIME_CHANGE = re.compile(r"<Data Name='NewTime'>([^<]+)</Data><Data Name='OldTime'>([^<]+)</Data>")
 
 
 def backward_shift(events_xml):
-    """The sum of every backward clock step in Kernel-General time change events, in 100 ns units."""
+    """The sum of every backward clock step in Kernel-General time change events, in 100 ns units. The events are
+    parsed as XML, and every one must carry a readable NewTime and OldTime: one that does not is Unreadable, never a
+    step of zero."""
+    import xml.etree.ElementTree as ElementTree
+    try:
+        events = ElementTree.fromstring(f"<events>{events_xml}</events>")
+    except ElementTree.ParseError as exc:
+        raise Unreadable(f"the time change events are not readable XML: {exc}") from None
+    pairs = []
+    for event in events:
+        if event.tag.rpartition("}")[2] != "Event":
+            raise Unreadable(f"unexpected {event.tag} among the time change events")
+        data = {d.get("Name"): (d.text or "") for d in event.iter() if d.tag.rpartition("}")[2] == "Data"}
+        if not data.get("NewTime") or not data.get("OldTime"):
+            raise Unreadable("a time change event lacks its NewTime or OldTime")
+        pairs.append((data["NewTime"], data["OldTime"]))
     def ticks(text):
         m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z", text.strip())
         if not m:
@@ -494,7 +515,7 @@ def backward_shift(events_xml):
         whole = datetime(*map(int, m.groups()[:6]), tzinfo=timezone.utc)
         fraction = int(((m[7] or "") + "0000000")[:7])
         return (int(whole.timestamp()) + 11644473600) * 10**7 + fraction
-    return sum(max(0, ticks(old) - ticks(new)) for new, old in TIME_CHANGE.findall(events_xml))
+    return sum(max(0, ticks(old) - ticks(new)) for new, old in pairs)
 
 
 def ok(name, detail):
