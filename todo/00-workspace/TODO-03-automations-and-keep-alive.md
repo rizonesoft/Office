@@ -47,7 +47,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 12 | §12 | Campaign host readiness check | §10 | [x] |
 | 13 | §13 | Single writer, cap 33, completion review | §10 | [x] |
 | 14 | §14 | Completion evidence hardening | §13 | [x] |
-| 15 | §15 | CI watch and red-run repair | §13 | [ ] |
+| 15 | §15 | CI watch and red-run repair | §13 | [x] |
 | 16 | §16 | Completion evidence adoption boundary | §14 | [ ] |
 | 17 | §17 | CI push reconciliation | §15 | [ ] |
 | 18 | §18 | CI recovery budget | §15 | [ ] |
@@ -465,11 +465,14 @@ Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on 
 - [x] Make a `ci-red` or `ci-unknown` park end the whole campaign as a `host-not-ready` park does: in `.claude/skills/process-plan/SKILL.md` it writes the column-0 `PARKED <UTC> run=<run id> ci-red: <job>` (or `ci-unknown:`) line, ends the guard with `--reason park`, deletes and confirms the heartbeat, is never chained past, and the heartbeat prompt's step 5 treats it as terminal in either scope; an owner resume runs `python scripts/ci-status.py HEAD --wait --timeout 3600` before any row and parks again unless it exits 0; a failed email is recorded and never stops the park. Done when: the skill and its heartbeat prompt name both reasons, the no-chain rule and the resume check. Cheaper substitute: a park that the chaining or the heartbeat restarts on a red `main`. **Groomed 2026-10-23:** completion finding 5.
 - [x] Add a CI line to the readiness check (D00 T03 §12) wiring: `scripts/check-campaign-host.py` confirms `gh run list --workflow ci.yml --limit 1` can be read. Done when: the readiness item names it and a fixture without `gh` access fails. Cheaper substitute: discovering at the first boundary that CI cannot be read.
 - [x] Write `scripts/tests/test_ci_status.py` with a fake `gh` for every state, the wait, the timeout and the log bound. Done when: the suite passes and fails when any state's exit code is changed. Cheaper substitute: running the script against the live repository only.
-- [ ] Commit: `automations: watch CI at section boundaries and repair red runs`
+- [x] Commit: `automations: watch CI at section boundaries and repair red runs`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes, `python scripts/ci-status.py HEAD` prints the latest pushed commit's run state on this PC, and `python scripts/todo-graph.py validate` exits 0.
 
 -> XREF: §17 (pending pushes reconciled on start and resume), §18 (CI recovery budget), §19 (campaign CI gate integration checks)
+
+> **Verified:** 2026-10-23 | §15 | 70dbb6de58cb5a87656a921f3870e1a2a513a777
+> **Review:** `docs/reviews/d00-t03-s15.json`
 
 ## 16. Completion Evidence Adoption Boundary
 
