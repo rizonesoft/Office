@@ -53,6 +53,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 18 | §18 | CI recovery budget | §15 | [ ] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
 | 20 | §20 | CI reconciliation at scale | §17 | [ ] |
+| 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -590,6 +591,25 @@ Filed 2026-10-23 from round 2 of D00 T03 §17's completion review (`docs/reviews
 - [ ] Commit: `automations: reconcile CI from the newest head and across any history length`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
+
+## 21. CI Recovery Closed on Resume
+
+Filed 2026-10-23 from round 2 of D00 T03 §18's completion review (`docs/reviews/00-workspace/D00-T03-s18-completion.md`): a session can die after a repair or rerun turns `main` green but before `scripts/ci-recovery.py close` runs. On resume, §17's reconciliation establishes green and the campaign carries on, while the recovery stays open, so a later, unrelated red `main` would inherit its spent budget.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Teach the recovery tool to settle against reconciled history. Done when: an open recovery closes on a green descendant found at resume.
+2. Run it at every start and resume. Done when: both skills name it before any merge or row.
+
+- [ ] Add `settle <green head>` to `scripts/ci-recovery.py`: when a recovery is open and the given head is green and is its first head or descends from it, close it (resetting the budget), else leave it open and say why. Done when: tests cover an interrupted success (including success on attempt four), a resume that settles it, and a new red recovery afterwards starting with a fresh budget of four. Cheaper substitute: a recovery left open that charges the next, unrelated failure.
+- [ ] Run `python scripts/ci-recovery.py settle <origin/main sha>` after `ci-status.py --pending` reports green at campaign start, phase start and every resume, before the dependency merge or any row, in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`. Done when: both skills name the command and its place. Cheaper substitute: relying on `close` running in the same session as the green result.
+- [ ] Commit: `automations: settle an open CI recovery against green found at resume`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_recovery.py"` passes.
 
 ## Verification
 

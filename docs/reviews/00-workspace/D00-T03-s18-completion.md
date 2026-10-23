@@ -30,3 +30,25 @@ OVERALL: needs-attention
 2. extended
 3. extended
 4. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T12:30:15Z
+- Effort: medium
+- Lines: 9
+- Digest: 9b824df5ae729ee7
+
+SECTION: D00 T03 §18
+PURPOSE: completion
+CONTRACT: sha256:0703af846a63180f7298f0dd5cdea90eb4d4e1f1f6762b329478e92268e73d01
+
+1. **[P2] Resume does not explicitly reconcile an open recovery with an already-green head.** A session can die after a repair or rerun succeeds but before `close` runs. On resume, §17 can establish green and continue through the watch's green path, while §18 only requires wiring the red path and closing on an attempt's green result. The persisted recovery can therefore remain open, causing a later independent failure to inherit its spent budget. **Remedy: extend** the start/resume procedure to inspect the open recovery and close it when reconciliation establishes a governing green head equal to or descending from its first head, before dependency merging or further work. Test interrupted success, including success on attempt four, followed by resume and a new red recovery with a fresh budget. §17 owns push reconciliation and §19 owns general gate checks; neither explicitly owns this recovery-state reconciliation.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §21
