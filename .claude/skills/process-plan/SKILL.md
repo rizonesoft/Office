@@ -13,8 +13,8 @@ This skill does not ship a section and does not write a stamp. It audits, then c
 
 One continuous loop. You do not stop between sections or phases:
 
-1. Audit (below), start the run guard (below), then start `process-phase` on the first phase with a ready row, in this same turn.
-2. After that phase's closeout or park, re-run `python scripts/todo-graph.py query ready` and start the next phase with a ready row this session can run: `query ready` does not know which hosts are reachable, so a row whose Needs name an unreachable host (`arm64-host`, `display-session`, `office`, `attended`) is a leftover here even when listed. At each phase start, first retry once every row the run file records as `completion-parked` (its completion review returned no review, `process-todo-section` step 3a); a row that fails again is parked for the owner with its reason, and the plan moves on.
+1. Audit (below), start the run guard (below), run the host readiness check (below), then start `process-phase` on the first phase with a ready row, in this same turn.
+2. After that phase's closeout or park (a `host-not-ready` park excepted: it ends the run, see Host readiness), re-run `python scripts/todo-graph.py query ready` and start the next phase with a ready row this session can run: `query ready` does not know which hosts are reachable, so a row whose Needs name an unreachable host (`arm64-host`, `display-session`, `office`, `attended`) is a leftover here even when listed. At each phase start, first retry once every row the run file records as `completion-parked` (its completion review returned no review, `process-todo-section` step 3a); a row that fails again is parked for the owner with its reason, and the plan moves on.
 3. Stop only when no phase has a ready row: every remaining `[ ]` row is blocked or waiting in this context, or the plan is done. That, and an operator stop, are the only halts.
 
 A report to the operator is not a stop. An audit-only reply while a ready phase exists is a process defect: starting the phase is the next action, in the same turn. The self-correcting parts stay in the loop: drifted plan claims are corrected before building (inside `process-todo-section`), every gap and review leftover files through `add-todo`, and red gates are fixed, never bypassed (no `--no-verify`, no amend of a reviewed candidate, no force-push).
@@ -60,6 +60,16 @@ Ready means runnable now in this context: `query ready` already excludes rows wa
 
 If no phase has a ready row, report the leftovers with their blockers and stop. That is a genuine halt.
 
+### Host readiness
+
+An unattended campaign that meets a locked screen, a sleeping PC, a missing Office app or a missing compiler parks with the fixes recorded instead of failing mid-section (D00 T03 §12). Once the guard is up, and again at every phase start (`process-phase` Step 0), run:
+
+```powershell
+python scripts/check-campaign-host.py --notify
+```
+
+It runs at four entry points: campaign start, every phase start reached by chaining, a phase started on its own, and every resume (by hand or by the heartbeat), always before any row is claimed. Exit 0: carry on. Exit 1 (a check failed) or 2 (a check could not run): the script has printed one line per check with the fix for each failure and emailed them through `.conclave/automations/alert.py` (or printed `email not sent: <reason>`, which is recorded too). This park stops the whole campaign, not one phase: copy every non-`ok` line and its fix (and any `email not sent` line) into the run file's Critical events, write a column-0 `PARKED <UTC> run=<run id> host-not-ready: <failing checks>` line and the park record (the fixes), commit the run file, run `python scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason park`, `CronDelete` the heartbeat it names, confirm with `CronList`, and run `cancel-confirmed`. Never chain to another phase after a host-not-ready park, even one with ready rows: no row in any phase is claimed until a resumed run's check exits 0. The owner applies the fixes and resumes the campaign by hand.
+
 ### Run guard
 
 A run without a guard dies silently when the session stalls, so starting the first phase also starts the run guard, always. It has two parts, and they cover different failures. There is no keep-alive outside the session: nothing relaunches a session that died.
@@ -95,7 +105,7 @@ Claude run-guard heartbeat for Phase <N> (run file <run file>, generation <gener
 4. If step 1 printed NO GUARD, the run is over: run `<python> scripts/campaign_guard.py reset-state --expect-no-guard yes`, CronDelete this job, and reply RUN FINISHED.
 5. If <run file> has a "## Closeout run=<run id>" heading or a column-0 "PARKED" line carrying "run=<run id>" and step 1 printed scope=phase, the one phase asked for is over: run `<python> scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason closeout` (or `--reason park` for a PARKED line), CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN FINISHED. With scope=plan, if `<python> scripts/todo-graph.py query stats` shows every row verified, run `<python> scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason plan-done`, CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN FINISHED. If `query ready` lists nothing, or only rows whose Needs name a host this session cannot reach, while rows stay open, write a column-0 `PARKED <UTC> run=<run id> <reason>` line and park record in <run file>, commit, then end with `--reason park` the same way. If rows are still ready, the phase ended but the plan did not: resume under step 7.
 6. If build/claude-campaign-state.json has trips of 2 or more, the run stalled twice with no change: append a Critical events line naming what blocks it, run `<python> scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason stall`, CronDelete this job, confirm, run cancel-confirmed, and report the stall to the operator.
-7. Otherwise append `- bookkeeping: heartbeat resumed <UTC>` to the run file's Critical events and resume: under process-plan for scope=plan, or under process-phase for Phase <N> only for scope=phase. Re-run `<python> scripts/todo-graph.py query ready`, pick up the open section in the run file where it stopped, and keep shipping. Stop only at closeout, park, or an operator stop.
+7. Otherwise append `- bookkeeping: heartbeat resumed <UTC>` to the run file's Critical events and resume: under process-plan for scope=plan, or under process-phase for Phase <N> only for scope=phase. Run `<python> scripts/check-campaign-host.py --notify` first: a non-zero exit parks the campaign as the skill's Host readiness step says. Re-run `<python> scripts/todo-graph.py query ready`, pick up the open section in the run file where it stopped, and keep shipping. Stop only at closeout, park, or an operator stop.
 ```
 
 ## 2. After a phase closeout or park

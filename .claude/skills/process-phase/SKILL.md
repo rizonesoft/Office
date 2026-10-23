@@ -19,6 +19,8 @@ Completion never buys completion with a bypass: no `--no-verify`, no amend of a 
 
 Read `todo/README.md` (the format every TODO edit keeps) before the run's first write, then check that no other writer holds the tree (`git status`; ask about unfamiliar uncommitted work). Writes are serial: this run is the only writer. Open the run file `docs/phase-runs/<YYYY-MM-DD>-phase-<N>.md` (create `docs/phase-runs/` if absent) and append every finding the moment it is made: the file survives session death where chat scrollback does not. A phase started on its own (not from `process-plan`) starts the run guard first, as `process-plan` describes, with `--scope phase`, so its heartbeat resumes this phase and never the rest of the plan; one started from `process-plan` already has it.
 
+Then run the host readiness check, `python scripts/check-campaign-host.py --notify` (D00 T03 §12), at every phase start, chained or on its own. Exit 0 carries on. Exit 1 or 2 parks the whole campaign, not this phase: record each non-`ok` line and its fix in Critical events, write a column-0 `PARKED <UTC> run=<run id> host-not-ready: <failing checks>` line with the fixes as the park record, commit the run file, end the guard (`end --reason park`), delete and confirm the heartbeat as `process-plan`'s Host readiness step says, and do not return to `process-plan` to chain: a host-not-ready park ends the run. No row is claimed on a host that is not ready.
+
 ```markdown
 # Phase run: <heading>
 
