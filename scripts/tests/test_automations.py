@@ -252,10 +252,14 @@ class Alert(unittest.TestCase):
         alert.key(vault)
         self.assertTrue(os.path.isabs(calls[0][0]), calls[0][0])
         self.assertEqual(Path(calls[0][0]).parts[-2:], ("System32", "wsl.exe"))
-        linux = calls[0][-1]
-        self.assertIn(f"exec timeout --kill-after=5 {alert.LINUX_SECONDS} conclave-op read", linux)
-        self.assertIn(f"ulimit -v {alert.LINUX_MEMORY_KB};", linux)
-        self.assertLess(alert.LINUX_SECONDS + 5, 90)
+        argv = calls[0]
+        # wsl.exe starts systemd-run itself, so nothing (no profile) runs before the bounded unit exists.
+        self.assertEqual(argv[1:4], ["-e", "systemd-run", "--user"])
+        for flag in ("--pipe", "--wait", "--collect", f"RuntimeMaxSec={alert.LINUX_SECONDS}",
+                     f"MemoryMax={alert.LINUX_MEMORY}"):
+            self.assertIn(flag, argv)
+        self.assertEqual(argv[argv.index("--") + 1:argv.index("--") + 3], ["bash", "-lc"])
+        self.assertLess(alert.LINUX_SECONDS, 90)
 
     def test_a_dry_run_reads_no_key(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -41,6 +41,7 @@ class Fake:
         self.root = Path(root)
         self.session = (1, host_check.WTS_ACTIVE, host_check.WTS_SESSIONSTATE_UNLOCK)
         self.power = {host_check.STANDBYIDLE: 0, host_check.HIBERNATEIDLE: 0}
+        self.saver = {"active": True, "secure": False, "timeout": 3600}  # the live session's values
         self.values = {
             (host_check.HKCU, host_check.DESKTOP, "ScreenSaveActive"): "1",
             (host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure"): "0",
@@ -68,6 +69,11 @@ class Fake:
     def power_ac(self, subgroup, setting):
         assert subgroup == host_check.SUB_SLEEP
         return self.power[setting]
+
+    def screen_saver(self):
+        if isinstance(self.saver, Exception):
+            raise self.saver
+        return self.saver
 
     def registry(self, hive, key, name):
         return self.values.get((hive, key, name))
@@ -174,10 +180,19 @@ class Power(Base):
 
 class ScreenLock(Base):
     def test_secure_screen_saver_fails(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        self.host.saver["secure"] = True
         r = self.result("screen lock")
         self.assertEqual(r["state"], "fail")
-        self.assertIn("ScreenSaverIsSecure 0", r["fix"])
+        self.assertIn("On resume, display logon screen", r["fix"])
+
+    def test_a_live_setting_that_differs_from_the_stored_profile_wins(self):
+        # The stored profile says no lock; the live session (a temporary SystemParametersInfo setting) locks in 60 s.
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "0"
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")] = "0"
+        self.host.saver.update(secure=True, timeout=60)
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("after 60 seconds", r["detail"])
 
     def test_secure_screen_saver_by_policy_fails_naming_the_policy(self):
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaverIsSecure")] = "1"
@@ -186,27 +201,30 @@ class ScreenLock(Base):
         self.assertIn("policy", r["fix"])
 
     def test_policy_turning_the_saver_off_passes(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        self.host.saver["secure"] = True
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveActive")] = "0"
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
     def test_a_zero_timeout_never_starts_the_saver_so_it_passes(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")] = "0"
+        self.host.saver.update(secure=True, timeout=0)
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
     def test_a_zero_timeout_set_by_policy_wins_over_the_users(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        self.host.saver["secure"] = True
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "0"
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
-    def test_a_missing_timeout_never_starts_the_saver_so_it_passes(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
-        del self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")]
+    def test_no_saver_program_never_locks(self):
+        self.host.saver["secure"] = True
+        del self.host.values[(host_check.HKCU, host_check.DESKTOP, "SCRNSAVE.EXE")]
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
-    def test_an_unreadable_timeout_cannot_check(self):
-        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")] = "soon"
+    def test_an_unreadable_policy_timeout_cannot_check(self):
+        self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "soon"
+        self.assertEqual(self.result("screen lock")["state"], "error")
+
+    def test_a_failed_live_read_cannot_check(self):
+        self.host.saver = host_check.Unreadable("SystemParametersInfoW 0x0076 failed (error 5)")
         self.assertEqual(self.result("screen lock")["state"], "error")
 
     def test_inactivity_policy_fails(self):

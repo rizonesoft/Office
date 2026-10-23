@@ -174,6 +174,20 @@ class Host:
         except FileNotFoundError:
             return None
 
+    def screen_saver(self):
+        """The live session's screen saver: active, password on resume, and timeout in seconds (SystemParametersInfoW,
+        not the stored profile, which a temporary setting can differ from)."""
+        import ctypes
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        values = {}
+        for name, action, kind in (("active", 0x0010, ctypes.c_int), ("timeout", 0x000E, ctypes.c_int),
+                                   ("secure", 0x0076, ctypes.c_int)):  # SPI_GETSCREENSAVE{ACTIVE,TIMEOUT,SECURE}
+            value = kind()
+            if not user32.SystemParametersInfoW(action, 0, ctypes.byref(value), 0):
+                raise Unreadable(f"SystemParametersInfoW {action:#06x} failed (error {ctypes.get_last_error()})")
+            values[name] = value.value
+        return {"active": bool(values["active"]), "secure": bool(values["secure"]), "timeout": values["timeout"]}
+
     def is_file(self, path):
         return Path(path).is_file()
 
@@ -445,24 +459,28 @@ def check_power(host):
 
 
 def check_screen_lock(host):
-    def desktop(name):  # the screen saver policy, when set, overrides the user's own setting
+    """The screen saver as the live session runs it: SystemParametersInfo's values, which can differ from the stored
+    profile, each overridden by the screen saver policy where the policy sets it."""
+    live = host.screen_saver()
+
+    def effective(name, current):
         value = host.registry(HKCU, DESKTOP_POLICY, name)
-        return (value, True) if value is not None else (host.registry(HKCU, DESKTOP, name), False)
+        return (value, True) if value is not None else (current, False)
 
     fixes, found = [], []
-    (active, _), (secure, by_policy) = desktop("ScreenSaveActive"), desktop("ScreenSaverIsSecure")
-    saver, _ = desktop("SCRNSAVE.EXE")
-    timeout, _ = desktop("ScreenSaveTimeOut")
+    active, _ = effective("ScreenSaveActive", "1" if live["active"] else "0")
+    secure, by_policy = effective("ScreenSaverIsSecure", "1" if live["secure"] else "0")
+    timeout, _ = effective("ScreenSaveTimeOut", str(live["timeout"]))
+    saver = host.registry(HKCU, DESKTOP_POLICY, "SCRNSAVE.EXE") or host.registry(HKCU, DESKTOP, "SCRNSAVE.EXE")
     try:
-        seconds = int(str(timeout).strip()) if timeout is not None else 0
+        seconds = int(str(timeout).strip())
     except ValueError:
         raise Unreadable(f"ScreenSaveTimeOut is not a number of seconds: {timeout!r}") from None
-    # Without a timeout, or with 0, the screen saver never starts, so it never locks (Microsoft's ScreenSaveTimeOut
-    # policy, and "Group Policy screen saver setting does not work" for a timeout that is not configured).
-    if str(active) == "1" and str(secure) == "1" and saver and seconds > 0:
+    # A timeout of 0 never starts the screen saver, so it never locks (Microsoft's ScreenSaveTimeOut policy).
+    if str(active).strip() == "1" and str(secure).strip() == "1" and saver and seconds > 0:
         found.append(f"the screen saver locks the PC after {seconds} seconds")
         fixes.append("ask the administrator to remove the password-protected screen saver policy" if by_policy else
-                     "Set-ItemProperty 'HKCU:\\Control Panel\\Desktop' ScreenSaverIsSecure 0")
+                     "clear 'On resume, display logon screen' in Screen Saver Settings (control desk.cpl,,@screensaver)")
     inactivity = host.registry(HKLM, SYSTEM_POLICY, "InactivityTimeoutSecs")
     if inactivity:
         found.append(f"the machine inactivity limit locks the PC after {inactivity} seconds")

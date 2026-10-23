@@ -35,7 +35,7 @@ TO = "rizonetech@gmail.com"
 TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
 LINUX_SECONDS = 80  # under the 90 second Windows-side timeout
-LINUX_MEMORY_KB = 1024 * 1024
+LINUX_MEMORY = "1G"
 
 
 class Refused(Exception):
@@ -50,10 +50,13 @@ def wsl() -> str:
 
 def key(run=subprocess.run) -> str:
     """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed."""
-    # Bounded inside Linux too: ending wsl.exe on Windows does not end the Linux processes it started, so the read
-    # runs under `timeout` (which signals its whole process group) and a 1 GiB address-space limit.
-    linux = f'ulimit -v {LINUX_MEMORY_KB}; exec timeout --kill-after=5 {LINUX_SECONDS} conclave-op read "{ITEM}/credential"'
-    result = run([wsl(), "-e", "bash", "-lc", linux],
+    # Bounded inside Linux too: ending wsl.exe on Windows does not end the Linux processes it started. The read runs
+    # as a transient systemd user service, started by wsl.exe directly (no shell or profile before it): the login
+    # profile runs inside the unit, every process it starts is in the unit's cgroup and is killed when the read exits
+    # (a service's default KillMode), and RuntimeMaxSec and MemoryMax bound the whole unit.
+    result = run([wsl(), "-e", "systemd-run", "--user", "--pipe", "--wait", "--quiet", "--collect",
+                  "-p", f"RuntimeMaxSec={LINUX_SECONDS}", "-p", f"MemoryMax={LINUX_MEMORY}",
+                  "--", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
                  capture_output=True, text=True, timeout=90,
                  creationflags=0x08000000 if os.name == "nt" else 0)  # CREATE_NO_WINDOW: run.py has no console
     value = (result.stdout or "").strip()
