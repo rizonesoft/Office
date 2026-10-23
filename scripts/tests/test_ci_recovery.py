@@ -187,6 +187,34 @@ class Recovery(Base):
         self.assertTrue(rec.descends(parent, head, subprocess.run))
         self.assertFalse(rec.descends(head, parent, subprocess.run))
 
+    def test_a_green_found_at_resume_settles_an_interrupted_recovery(self):
+        # D00 T03 §21: attempt four turned green, then the session died before `close`.
+        red, repair = sha(1), sha(4)
+        self.ancestors[repair] = {red}
+        self.cli("open", red)
+        for _ in range(3):
+            self.cli("reserve", "repair")
+            self.cli("result", "red")
+        self.cli("reserve", "repair")
+        self.cli("attach", repair)
+        self.cli("result", "green")  # the session dies here
+        code, out = self.cli("settle", repair)  # the resume's reconciliation found origin/main green
+        self.assertEqual(code, 0)
+        self.assertIn("closed on green 0000004 after 4 of 4 attempts", out)
+        self.cli("open", sha(7))  # a later, unrelated failure
+        self.assertIn("0 of 4 attempts spent", self.cli("show")[1])
+
+    def test_settle_leaves_a_recovery_open_for_a_head_that_does_not_end_it(self):
+        self.cli("open", sha(1))
+        self.cli("reserve", "repair")
+        code, out = self.cli("settle", sha(9))
+        self.assertEqual(code, 0)
+        self.assertIn("stays open", out)
+        self.assertIn("1 of 4 attempts spent", self.cli("show")[1])
+
+    def test_settle_without_a_recovery_is_a_no_op(self):
+        self.assertEqual(self.cli("settle", sha(1)), (0, "settle: no open recovery"))
+
     def test_only_full_shas_are_accepted(self):
         self.assertEqual(self.cli("open", "abc1234")[0], 1)
 

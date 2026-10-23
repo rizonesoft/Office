@@ -58,6 +58,13 @@ OBLIGATIONS = [
     ("earlier red heads are superseded only once the newest is green", "plan", [
         "only once the newest head is green is each earlier red head recorded `ci-superseded <sha> by <newest sha>` and "
         "never repaired"]),
+    ("a green reconciliation settles the recovery before the merge or any row", "plan", [
+        "Whenever it establishes `origin/main`'s head as green (exit 0; exit 1 whose newest head is green and whose "
+        "earlier red heads are superseded; or a pending newest head that turns green after the wait), run "
+        "`python scripts/ci-recovery.py settle <origin/main sha>` next, before the dependency merge and before any row"]),
+    ("the phase settles the recovery before any row", "phase", [
+        "once it establishes `origin/main`'s head as green, run `python scripts/ci-recovery.py settle <origin/main sha>` "
+        "before any row, as `process-plan` says"]),
     ("heartbeat resume reconciles before any row", "plan", [
         "Then run `<python> scripts/ci-status.py --pending <run file>` (it checks `origin/main` and every unchecked push "
         "head before it) and act on it as the skill's CI watch step says before claiming any row."]),
@@ -100,6 +107,14 @@ WEAKENINGS = [
     ("exit 3 pending", "plan", "--wait --timeout 1800` and act on that result.", "--wait --timeout 1800` and claim the next row regardless of that result."),
     ("exit 2 unknown", "plan", "retry once after five minutes; still 2, ", ""),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
+    ("a green reconciliation settles the recovery before the merge or any row", "plan",
+     "`python scripts/ci-recovery.py settle <origin/main sha>` next, before the dependency merge and before any row",
+     "`python scripts/ci-recovery.py settle <origin/main sha>` after the dependency merge"),
+    ("a green reconciliation settles the recovery before the merge or any row", "plan",
+     "(exit 0; exit 1 whose newest head is green and whose earlier red heads are superseded; or a pending newest head "
+     "that turns green after the wait)", "(exit 0)"),
+    ("the phase settles the recovery before any row", "phase",
+     "run `python scripts/ci-recovery.py settle <origin/main sha>` before any row", "claim the next row"),
     ("reconciliation settles the newest head first", "plan", "settle the newest listed head first and the earlier ones "
      "only after it:", "settle the oldest listed head first:"),
     ("reconciliation settles the newest head first", "plan", "when `origin/main`'s head is already green (listed green, "
@@ -147,7 +162,7 @@ PINNED = [
     ('plan', 'Every campaign push gets a `ci-pending',
      '70ee904f5ec22338104e4707535a7be043000b7cd11acca69ac58c198ef6cdf6'),
     ('plan', 'Reconcile from the pushed history',
-     '53ac635cfa7d6acf54ff1bda6bf2db7006a7583280e4a0160eff4c19e62e963d'),
+     '5e0e6d6bb628159eda93d1ae3e21dc888fb4ec7aa31d4d97a3b9462e8a5cf189'),
     ('plan', 'Green is a hard gate in three places',
      '95411b47eb82906b2f147ddba0955e900e15464ca2efc3996793ed01866648e8'),
     ('plan', 'Nothing is written to the run file at a boundary',
@@ -163,7 +178,7 @@ PINNED = [
     ('phase', 'Then run the host readiness check',
      'd790d41adb7901713ca29916762cd12f4bfa1676c8eda5fd64b36f4ca1f5de42'),
     ('phase', "In the generated plan's table order, for each open row",
-     '34791bf68ed53aeb9a494443276fd41b890d7279337c5d323b5eaf349d19e893'),
+     'e2b5608da04b32463501fd08575ea92824697eddc2ac2bcd3e1e7a77d76082c4'),
     ('phase', 'When the phase table is all `[x]`',
      'ee4ddf73abbee2baf437dc1a02107c2963465fc845ebfe5db233ebaca378b959'),
 ]

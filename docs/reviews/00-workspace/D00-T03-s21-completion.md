@@ -24,3 +24,21 @@ OVERALL: needs-attention
 
 1. extended
 2. extended
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T13:45:02Z
+- Effort: medium
+- Lines: 9
+- Digest: e0b6505aa9e11e47
+
+SECTION: D00 T03 §21
+PURPOSE: completion
+CONTRACT: sha256:2c6e5a2517f5c942f2f05b0be993144d18fefbce34b91b32022a7ee126fa47c6
+
+No gaps found. The revised section covers all three green reconciliation paths before any merge or row, interrupted fourth-attempt success, a fresh recovery budget, and tests that reject weakened campaign wiring. Persistence and refusal behavior remain owned by §18; reconciliation and history limits by §17, §20 and §22.
+
+COMPLETE: yes
+HIGHEST: none
+OVERALL: approve

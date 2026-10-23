@@ -8,6 +8,7 @@
     python scripts/ci-recovery.py reserve <kind>    # repair | rerun | wait | unreadable, before the action runs
     python scripts/ci-recovery.py result <outcome>  # green | red | pending | unreadable, for the last attempt
     python scripts/ci-recovery.py close <head>      # a green head that descends from the first: the recovery ends
+    python scripts/ci-recovery.py settle <head>     # at a start or resume: close an open recovery this green head ends
     python scripts/ci-recovery.py show              # the open recovery and its attempts
 
 The state lives in build/ci-recovery.json (gitignored, written temp-then-replace), so it survives a session's death,
@@ -171,6 +172,20 @@ def close(state, head, run):
     return f"close: recovery {recovery['first'][:7]} closed on green {head[:7]}"
 
 
+def settle(state, head, run):
+    """At a campaign start, phase start or resume, after reconciliation found `head` (origin/main) green: close an open
+    recovery when the head is its first head or descends from it, else leave it open and say why (D00 T03 §21). A
+    session that died between a green result and `close` thus never charges the next, unrelated failure."""
+    recovery = state["recovery"]
+    if not recovery:
+        return "settle: no open recovery"
+    if not descends(recovery["first"], full_sha(head), run):
+        return (f"settle: recovery {recovery['first'][:7]} stays open: {head[:7]} does not descend from its first head")
+    state["recovery"] = None
+    return (f"settle: recovery {recovery['first'][:7]} closed on green {head[:7]} "
+            f"after {len(recovery['attempts'])} of {BUDGET} attempts")
+
+
 def show(state):
     recovery = state["recovery"]
     if not recovery:
@@ -188,7 +203,8 @@ def main(argv=None, state_path=None, run=subprocess.run):
     parser = argparse.ArgumentParser(description="One bounded CI recovery budget per red main.")
     parser.add_argument("--state", help=f"the state file (default {STATE.relative_to(ROOT).as_posix()})")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name, arg in (("open", "sha"), ("attach", "head"), ("result", "outcome"), ("close", "head")):
+    for name, arg in (("open", "sha"), ("attach", "head"), ("result", "outcome"), ("close", "head"),
+                      ("settle", "head")):
         sub.add_parser(name).add_argument(arg)
     r = sub.add_parser("reserve")
     r.add_argument("kind", choices=KINDS)
@@ -208,6 +224,8 @@ def main(argv=None, state_path=None, run=subprocess.run):
             message = result(state, args.outcome)
         elif args.command == "close":
             message = close(state, args.head, run)
+        elif args.command == "settle":
+            message = settle(state, args.head, run)
         else:
             print(show(state))
             return 0
