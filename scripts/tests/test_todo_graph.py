@@ -698,6 +698,44 @@ class Stamp(Tree):
                     with self.assertRaises(tg.Refused):
                         tg.graph(self.root)
 
+    def test_closing_a_deferral_keeps_a_stamped_contract(self):
+        # Review round 1 of D00 T03 §16: Deferred -> Resolved, as process-todo-section closes it, must not break the
+        # version 2 receipt of the section that deferred.
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace("## 1. A\n\n", "## 1. A\n\n> **Deferred:** the export -> XREF: §2\n\n", 1),
+                        encoding="utf-8")
+        self.tick_work()
+        self.write_completion(COMPLETE_YES)
+        self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-23")
+        stamped = path.read_text(encoding="utf-8")
+        path.write_text(stamped.replace("> **Deferred:** the export", "> **Resolved:** the export", 1), encoding="utf-8")
+        tg.graph(self.root)  # the receipt still validates
+        path.write_text(stamped.replace("> **Deferred:** the export", "> **Resolved:** a different export", 1),
+                        encoding="utf-8")
+        with self.assertRaises(tg.Refused):  # rewording it is a new contract
+            tg.graph(self.root)
+
+    def test_a_version_1_receipt_reopened_needs_version_2_evidence(self):
+        # Review round 1 of D00 T03 §16, finding 2: start from a genuine version 1 receipt, digest-free and pre-cutoff.
+        self.tick_work()
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:00:00Z")
+        receipt = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-23")
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        del data["completion_rules"]
+        receipt.write_text(json.dumps(data), encoding="utf-8")
+        self.write_completion(COMPLETE_YES, when="2026-10-23T09:00:00Z", contract=False)
+        last = tg.completion_ok(self.root, "D00 T01 §1", self.completion)
+        self.assertEqual(tg.completion_rules(data, last), 1)
+        tg.graph(self.root)  # a version 1 receipt validates without a digest
+        tg.unstamp(self.root, "D00 T01 §1", "checkpoint fails; repair -> XREF: §2", "2026-10-23T12:00:00Z")
+        self.refused(completion=self.completion, contains="reopened")  # the old, digest-free evidence
+        self.write_completion(COMPLETE_YES, when="2026-10-23T12:30:00Z", contract=False)
+        self.refused(completion=self.completion, contains="copied from its prompt")  # fresh, but without the echo
+        self.write_completion(COMPLETE_YES, when="2026-10-23T12:30:00Z")
+        restamped = self.root / self.stamp(self.root, "D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-23")
+        self.assertEqual(json.loads(restamped.read_text(encoding="utf-8"))["completion_rules"], 2)
+
     def test_a_receipt_claiming_rules_2_needs_the_contract_echo(self):
         self.tick_work()
         self.write_completion(COMPLETE_YES, when="2026-10-23T09:00:00Z")

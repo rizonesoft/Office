@@ -71,7 +71,7 @@ Seven questions, each answered against the repository and the governing document
 | Verifiability | Can the checkpoint run and fail on fixtures? | Unfalsifiable checkpoint passes |
 | Accuracy | Are paths, counts, refs, and deferrals true? | Authority citing moved facts |
 
-Ground each answer: `python scripts/todo-graph.py validate`, searches over `src/` and `tests/` for the named symbols, `git log --oneline -5 -- <touched paths>`. Check deferrals in both directions with `python scripts/todo-graph.py query deferred`: deferrals this section owns are part of its scope; deferrals this section wrote get re-read against today's tree (owner shipped means close it as `Resolved:`; description drifted means correct it; work quietly done elsewhere means verify it, close the deferral, and tick the owner's item).
+Ground each answer: `python scripts/todo-graph.py validate`, searches over `src/` and `tests/` for the named symbols, `git log --oneline -5 -- <touched paths>`. Check deferrals in both directions with `python scripts/todo-graph.py query deferred`: deferrals this section owns are part of its scope; deferrals this section wrote get re-read against today's tree (owner shipped means close it as `Resolved:`, changing only the marker so the deferring section's contract digest, and its receipt, still hold; description drifted means correct it; work quietly done elsewhere means verify it, close the deferral, and tick the owner's item).
 
 Anything unclear becomes a question answered from the source. Where the source is silent, take the industry-standard option, record that it is a default with the cost of changing it, and carry on.
 
