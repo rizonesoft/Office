@@ -479,16 +479,13 @@ class Probe(unittest.TestCase):
         self.assertIn("did not finish within 2 seconds", str(caught.exception))
         self.assertTrue(self.grandchild_gone(pid_file), "the probe's grandchild outlived the deadline")
 
-    def test_the_deadline_holds_when_the_tree_kill_does_nothing(self):
-        argv, pid_file = self.tree(60)
-        dispatch = host_check.todo_graph.review_dispatch()
-        started = time.monotonic()
-        with mock.patch.object(dispatch, "kill_tree", lambda process: None):
-            with self.assertRaises(host_check.Unreadable):
-                host_check.Host().run(argv, seconds=2)
-        self.assertLess(time.monotonic() - started, 20)
-        self.grandchild_gone(pid_file)  # reaped here: without the tree kill only the probe itself is ended
-
+    def test_a_flood_written_before_the_first_poll_is_still_refused(self):
+        burst = "import sys; sys.stdout.write('x' * 2_000_000)"
+        with mock.patch.object(host_check, "MAX_PROBE_BYTES", 1_000_000), \
+                mock.patch.object(host_check, "POLL_SECONDS", 5):
+            with self.assertRaises(host_check.Unreadable) as caught:
+                host_check.Host().run([sys.executable, "-c", burst], seconds=30)
+        self.assertIn("wrote more than 1000000 bytes", str(caught.exception))
     def test_a_flood_of_output_is_stopped_at_the_bound(self):
         flood = "import sys\nwhile True: sys.stdout.write('x' * 65536)"
         with mock.patch.object(host_check, "MAX_PROBE_BYTES", 1_000_000):
@@ -496,13 +493,13 @@ class Probe(unittest.TestCase):
                 host_check.Host().run([sys.executable, "-c", flood], seconds=30)
         self.assertIn("wrote more than 1000000 bytes", str(caught.exception))
 
-    def test_a_grandchild_left_behind_by_a_finished_probe_does_not_hold_it(self):
+    def test_a_grandchild_left_behind_by_a_finished_probe_is_ended_with_it(self):
         argv, pid_file = self.tree(0)
         started = time.monotonic()
         r = host_check.Host().run(argv, seconds=20)
         self.assertLess(time.monotonic() - started, 15)
         self.assertEqual(r.returncode, 0)
-        self.grandchild_gone(pid_file)  # reaped here: a finished probe's leftovers are not the check's to end
+        self.assertTrue(self.grandchild_gone(pid_file), "a descendant outlived the probe that started it")
 
 class Exit(Base):
     def test_a_failure_exits_one_listing_the_fix(self):

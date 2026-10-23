@@ -19,6 +19,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -179,42 +180,35 @@ class Host:
         return todo_graph.review_dispatch().find_cli(name)
 
     def run(self, argv, seconds=None):
-        """Run a probe with no input and a deadline, in its own process group, and end its whole tree if it overruns.
+        """Run a probe with no input and a deadline, contained with every process it starts, and end them all after.
 
-        Output goes to files, not pipes: a grandchild that inherits a pipe keeps it open after the probe is killed, and
-        reading that pipe would wait past any deadline. The files are watched while the probe runs, so neither a hang
-        nor a flood of output outlasts PROBE_SECONDS or MAX_PROBE_BYTES: an overrunning probe is ended with its tree
-        (review-dispatch's kill_tree, then its own handle) and reported as Unreadable. Its output is never printed (it
-        may name the signed-in account).
+        On Windows the probe starts suspended, joins a job object that kills every member when it is closed, and only
+        then runs, so a descendant can neither escape the job nor outlive the probe; on Linux and WSL it leads its own
+        session, whose process group is killed. Output goes to files, not pipes (a descendant holding a pipe would hold
+        the read past any deadline), watched while the probe runs and checked again once the tree is ended, so neither
+        a hang nor a flood of output gets past PROBE_SECONDS or MAX_PROBE_BYTES: either is reported as Unreadable. The
+        output is never printed (it may name the signed-in account).
         """
-        dispatch = todo_graph.review_dispatch()
         limit = PROBE_SECONDS if seconds is None else seconds
-        group = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | pin_proposal.NO_WINDOW} if os.name == "nt"
-                 else {"start_new_session": True})
-        # A grandchild that outlives the probe may still hold the output files, so a failed removal is ignored.
+        # A descendant ended a moment ago may still hold the output files, so a failed removal is ignored.
         with tempfile.TemporaryDirectory(prefix="campaign-host-", ignore_cleanup_errors=True) as scratch:
             paths = Path(scratch) / "out", Path(scratch) / "err"
-            with open(paths[0], "wb") as out, open(paths[1], "wb") as err:
-                process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, **group)
+            too_big = lambda: any(p.stat().st_size > MAX_PROBE_BYTES for p in paths)
+            with open(paths[0], "wb") as out, open(paths[1], "wb") as err, Containment() as box:
+                process = box.start(argv, out, err)
                 problem, deadline = None, time.monotonic() + limit
-                try:
-                    while process.poll() is None:
-                        if any(p.stat().st_size > MAX_PROBE_BYTES for p in paths):
-                            problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
-                            break
-                        if time.monotonic() > deadline:
-                            problem = f"did not finish within {limit} seconds"
-                            break
-                        time.sleep(POLL_SECONDS)
-                finally:
-                    # Only a live probe is killed: once it has exited its PID may already belong to another process.
-                    if process.poll() is None:
-                        dispatch.kill_tree(process)
-                        process.kill()  # through the handle, so this holds even when taskkill could not run
-                        try:
-                            process.wait(timeout=KILL_SECONDS)
-                        except subprocess.TimeoutExpired:
-                            problem = (problem or "overran") + ", and could not be ended"
+                while process.poll() is None:
+                    if too_big():
+                        problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
+                        break
+                    if time.monotonic() > deadline:
+                        problem = f"did not finish within {limit} seconds"
+                        break
+                    time.sleep(POLL_SECONDS)
+                if not box.end(process):
+                    problem = (problem or "left processes running") + ", and could not be ended"
+            if problem is None and too_big():
+                problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
             if problem:
                 raise Unreadable(f"{Path(argv[0]).name} {problem}")
 
@@ -231,6 +225,92 @@ class Host:
 
     def free_bytes(self):
         return shutil.disk_usage(self.root).free
+
+
+class Containment:
+    """A probe and everything it starts, ended together: a Windows job object, or a POSIX session's process group."""
+
+    def __enter__(self):
+        self.job = None
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+
+            class Basic(ctypes.Structure):  # JOBOBJECT_BASIC_LIMIT_INFORMATION
+                _fields_ = [("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
+                            ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER), ("LimitFlags", wintypes.DWORD),
+                            ("MinimumWorkingSetSize", ctypes.c_size_t), ("MaximumWorkingSetSize", ctypes.c_size_t),
+                            ("ActiveProcessLimit", wintypes.DWORD), ("Affinity", ctypes.c_size_t),
+                            ("PriorityClass", wintypes.DWORD), ("SchedulingClass", wintypes.DWORD)]
+
+            class Extended(ctypes.Structure):  # JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", ctypes.c_ulonglong * 6),
+                            ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                            ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+            self.ctypes = ctypes
+            self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            self.ntdll = ctypes.WinDLL("ntdll")
+            self.kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+            self.kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+            for name in ("SetInformationJobObject", "AssignProcessToJobObject", "TerminateJobObject", "CloseHandle"):
+                getattr(self.kernel32, name).restype = wintypes.BOOL
+            self.kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                                              wintypes.DWORD]
+            self.kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+            self.kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+            self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+            self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
+            self.job = self.kernel32.CreateJobObjectW(None, None)
+            if not self.job:
+                raise Unreadable(f"CreateJobObjectW failed (error {ctypes.get_last_error()})")
+            info = Extended()
+            info.BasicLimitInformation.LimitFlags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            if not self.kernel32.SetInformationJobObject(self.job, 9, ctypes.byref(info), ctypes.sizeof(info)):
+                self.kernel32.CloseHandle(self.job)  # 9 = JobObjectExtendedLimitInformation
+                raise Unreadable(f"SetInformationJobObject failed (error {ctypes.get_last_error()})")
+        return self
+
+    def start(self, argv, out, err):
+        if os.name != "nt":
+            return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True)
+        create_suspended = 0x00000004
+        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
+                                   creationflags=create_suspended | pin_proposal.NO_WINDOW)
+        handle = int(process._handle)
+        # Joined while suspended, so nothing it starts can be outside the job. NtResumeProcess resumes it: Popen keeps
+        # no handle to the primary thread that ResumeThread would need.
+        if not self.kernel32.AssignProcessToJobObject(self.job, handle):
+            process.kill()
+            raise Unreadable(f"AssignProcessToJobObject failed (error {self.ctypes.get_last_error()})")
+        status = self.ntdll.NtResumeProcess(handle)
+        if status:
+            process.kill()
+            raise Unreadable(f"NtResumeProcess failed (status {status & 0xFFFFFFFF:#x})")
+        return process
+
+    def end(self, process):
+        """End the probe and every descendant; True when the probe is gone within KILL_SECONDS."""
+        if os.name == "nt":
+            self.kernel32.TerminateJobObject(self.job, 1)
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass  # nothing in the group is left to kill
+        if process.poll() is None:
+            process.kill()  # through the handle
+        try:
+            process.wait(timeout=KILL_SECONDS)
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+
+    def __exit__(self, *exc):
+        if self.job:
+            self.kernel32.TerminateJobObject(self.job, 1)
+            self.kernel32.CloseHandle(self.job)  # KILL_ON_JOB_CLOSE ends anything that is somehow still in it
+        return False
 
 
 def ok(name, detail):

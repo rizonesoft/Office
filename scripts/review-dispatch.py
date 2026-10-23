@@ -241,7 +241,12 @@ def run(argv, stdin_text, timeout, watched):
                 time.sleep(POLL_SECONDS)
         finally:
             kill_tree(process)
-            process.wait()
+            if process.poll() is None:
+                process.kill()  # through the handle, so this holds even when taskkill could not run
+            try:
+                process.wait(timeout=KILL_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass  # only after a timeout or a flood, already the round's outcome: never wait on it unbounded
     if process.returncode != 0:
         return None, f"exited {process.returncode}"
     if any(path.is_file() and path.stat().st_size > MAX_OUTPUT_BYTES for path in watched):
