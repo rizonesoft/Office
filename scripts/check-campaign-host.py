@@ -203,16 +203,18 @@ class Host:
         inactivity limit is one) may not be the one in force."""
         import ctypes
         import winreg
+
+        def written(path):  # 100 ns intervals since 1601, in the system clock as it was at the write
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as k:
+                return winreg.QueryInfoKey(k)[2]
         try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key) as k:
-                written = winreg.QueryInfoKey(k)[2]  # 100 ns intervals since 1601
+            changed = written(key)
         except FileNotFoundError:
             return False
         kernel32 = ctypes.WinDLL("kernel32")
         kernel32.GetTickCount64.restype = ctypes.c_ulonglong
         now = (int(time.time()) + 11644473600) * 10**7
-        booted = now - kernel32.GetTickCount64() * 10**4
-        return written > booted
+        return written_since_boot(changed, now, kernel32.GetTickCount64() * 10**4, written(r"HARDWARE\DESCRIPTION"))
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -440,6 +442,13 @@ class Containment:
         return False
 
 
+def written_since_boot(changed, now, uptime, hardware_written):
+    """Whether a key written at `changed` was written after Windows started (all in 100 ns units). Two boot times, and
+    the earlier is used: now less the uptime moves with every clock correction made since, while the volatile
+    HARDWARE\\DESCRIPTION key is written as Windows starts, stamped by the clock as it was then."""
+    return changed > min(now - uptime, hardware_written)
+
+
 def ok(name, detail):
     return {"name": name, "state": "ok", "detail": detail, "fix": None}
 
@@ -505,7 +514,19 @@ def check_screen_lock(host):
     active, _ = effective("ScreenSaveActive", "1" if live["active"] else "0")
     secure, by_policy = effective("ScreenSaverIsSecure", "1" if live["secure"] else "0")
     timeout, _ = effective("ScreenSaveTimeOut", str(live["timeout"]), flag=False)
-    saver = host.registry(HKCU, DESKTOP_POLICY, "SCRNSAVE.EXE") or host.registry(HKCU, DESKTOP, "SCRNSAVE.EXE")
+
+    def program(value):  # the saver program a value names, when it exists; Windows starts no other
+        if not value:
+            return None
+        path = os.path.expandvars(str(value))
+        if not os.path.isabs(path):
+            path = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", path)
+        return path if host.is_file(path) else None
+
+    # A forced saver that does not exist is ignored (Microsoft's "Force specific screen saver" policy), so the user's
+    # own saver is then the one that runs.
+    saver = (program(host.registry(HKCU, DESKTOP_POLICY, "SCRNSAVE.EXE"))
+             or program(host.registry(HKCU, DESKTOP, "SCRNSAVE.EXE")))
     try:
         seconds = int(str(timeout).strip())
     except ValueError:
@@ -513,12 +534,7 @@ def check_screen_lock(host):
     if not 0 <= seconds <= 86400:  # 0 (off) or 1 to 86400 seconds, as Microsoft's ScreenSaveTimeOut policy allows
         raise Unreadable(f"ScreenSaveTimeOut is {seconds}, outside 0 to 86400 seconds")
     # A timeout of 0 never starts the screen saver, so it never locks (Microsoft's ScreenSaveTimeOut policy).
-    # Windows starts only a saver program that exists; a stale path never runs, so it never locks.
-    if saver:
-        saver = os.path.expandvars(str(saver))
-        if not os.path.isabs(saver):
-            saver = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", saver)
-    if str(active).strip() == "1" and str(secure).strip() == "1" and saver and host.is_file(saver) and seconds > 0:
+    if str(active).strip() == "1" and str(secure).strip() == "1" and saver and seconds > 0:
         found.append(f"the screen saver locks the PC after {seconds} seconds")
         fixes.append("ask the administrator to remove the password-protected screen saver policy" if by_policy else
                      "clear 'On resume, display logon screen' in Screen Saver Settings (control desk.cpl,,@screensaver)")

@@ -270,11 +270,30 @@ class ScreenLock(Base):
         self.host.values[(host_check.HKCU, host_check.DESKTOP, "SCRNSAVE.EXE")] = r"C:\missing.scr"
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
+    def test_a_missing_forced_saver_falls_back_to_the_users_own(self):
+        self.host.saver.update(secure=True, timeout=60)
+        self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "SCRNSAVE.EXE")] = r"C:\missing.scr"
+        self.assertEqual(self.result("screen lock")["state"], "fail")
+
+    def test_an_existing_forced_saver_is_the_one_that_runs(self):
+        self.host.saver.update(secure=True, timeout=60)
+        del self.host.values[(host_check.HKCU, host_check.DESKTOP, "SCRNSAVE.EXE")]
+        self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "SCRNSAVE.EXE")] = r"C:\WINDOWS\system32\Mystify.scr"
+        self.assertEqual(self.result("screen lock")["state"], "fail")
+
     def test_a_removed_inactivity_limit_needs_a_restart(self):
         self.host.policy_changed = True
         r = self.result("screen lock")
         self.assertEqual(r["state"], "fail")
         self.assertIn("restart Windows", r["fix"])
+
+    def test_a_clock_correction_after_the_change_does_not_hide_it(self):
+        s = 10**7
+        boot = 1000 * s
+        # Booted at B, policy removed at B+30, clock moved forward 120 s since: now reads B+720 after 600 s of uptime.
+        self.assertTrue(host_check.written_since_boot(boot + 30 * s, boot + 720 * s, 600 * s, boot + 1 * s))
+        # Written before this boot: not a pending change.
+        self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
 
     def test_the_real_reader_compares_with_boot_time(self):
         if host_check.os.name != "nt":
