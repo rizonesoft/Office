@@ -53,7 +53,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 18 | §18 | CI recovery budget | §15 | [x] |
 | 19 | §19 | CI gate checks | §15, §17, §18 | [x] |
 | 20 | §20 | CI reconciliation at scale | §17 | [x] |
-| 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
+| 21 | §21 | CI recovery closed on resume | §17, §18 | [x] |
 | 22 | §22 | CI reconciliation past limits | §20 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
@@ -627,9 +627,12 @@ Filed 2026-10-23 from round 2 of D00 T03 §18's completion review (`docs/reviews
 - [x] Add `settle <green head>` to `scripts/ci-recovery.py`: when a recovery is open and the given head is green and is its first head or descends from it, close it (resetting the budget), else leave it open and say why. Done when: tests cover an interrupted success (including success on attempt four), a resume that settles it, and a new red recovery afterwards starting with a fresh budget of four. Cheaper substitute: a recovery left open that charges the next, unrelated failure.
 - [x] Run `python scripts/ci-recovery.py settle <origin/main sha>` whenever reconciliation establishes the fetched newest head as green, at campaign start, phase start and every resume, before the dependency merge or any row, in `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md`: when `--pending` exits 0, when it exits 1 but the newest head is green and the earlier red heads are superseded, and when a pending newest head turns green after the wait. Done when: both skills name the command, the three paths and its place before the merge. Cheaper substitute: relying on `close` running in the same session as the green result, or settling only on an all-green exit. **Groomed 2026-10-23:** completion finding 1.
 - [x] Hold the settlement in `scripts/tests/test_skill_ci_gate.py`: obligations for `settle` on each of the three paths in `process-plan` and by reference in `process-phase`, placed before the dependency merge and before any row, each with a weakening fixture (settlement removed, or moved after the merge or the row) that fails, and the affected paragraph pins updated on purpose with every existing obligation kept. Done when: the suite passes and each weakened copy fails. Cheaper substitute: a recovery tool whose campaign wiring no test holds. **Groomed 2026-10-23:** completion finding 2.
-- [ ] Commit: `automations: settle an open CI recovery against green found at resume`
+- [x] Commit: `automations: settle an open CI recovery against green found at resume`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_recovery.py"` and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` pass.
+
+> **Verified:** 2026-10-23 | §21 | 1f31f669af94c23e7d3ad41fa432d6ca368a2d18
+> **Review:** `docs/reviews/d00-t03-s21.json`
 
 ## 22. CI Reconciliation Past Limits
 
