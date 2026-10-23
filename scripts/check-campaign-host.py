@@ -283,7 +283,7 @@ class Host:
         """A command's path from the absolute PATH entries only, never the working directory (review-dispatch's rule)."""
         return todo_graph.review_dispatch().find_cli(name)
 
-    def run(self, argv, seconds=None):
+    def run(self, argv, seconds=None, cwd=None):
         """Run a probe with no input and a deadline, contained with every process it starts, and end them all after.
 
         On Windows the probe starts suspended, joins a job object that kills every member when it is closed, and only
@@ -301,7 +301,7 @@ class Host:
             with open(paths[0], "wb") as out, open(paths[1], "wb") as err, Containment() as box:
                 work = Path(scratch) / "work"
                 work.mkdir()
-                process = box.start(argv, out, err, work)
+                process = box.start(argv, out, err, cwd or work)
                 problem, deadline = None, time.monotonic() + limit
                 while process.poll() is None:
                     if too_big():
@@ -752,9 +752,27 @@ def check_disk(host):
     return ok("disk", f"{gb:.0f} GB free on {drive}")
 
 
+def check_ci(host):
+    """The campaign checks CI at every section boundary (D00 T03 §15), so the CI runs must be readable now."""
+    gh = host.find("gh")
+    if not gh:
+        return fail("ci", "gh is not on PATH, so CI cannot be read", "install the GitHub CLI: winget install GitHub.cli")
+    result = host.run([gh, "run", "list", "--workflow", "ci.yml", "--limit", "1", "--json", "databaseId"],
+                      cwd=host.root)
+    if result.returncode != 0:
+        return fail("ci", "gh cannot read the ci.yml runs", "gh auth status, then gh run list --workflow ci.yml")
+    try:
+        runs = json.loads(result.stdout)
+    except ValueError:
+        raise Unreadable("gh run list did not print JSON") from None
+    if not isinstance(runs, list):
+        raise Unreadable("gh run list did not print a list")
+    return ok("ci", "the ci.yml runs can be read")
+
+
 CHECKS = (check_session, check_power, check_screen_lock, check_office, check_toolchain, check_gh, check_reviewer,
-          check_disk)
-NAMES = ("session", "power", "screen lock", "office", "toolchain", "gh", "reviewer", "disk")
+          check_ci, check_disk)
+NAMES = ("session", "power", "screen lock", "office", "toolchain", "gh", "reviewer", "ci", "disk")
 
 
 def run_checks(host):

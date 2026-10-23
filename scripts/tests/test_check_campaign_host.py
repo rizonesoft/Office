@@ -59,6 +59,7 @@ class Fake:
         self.on_path = {"gh": r"C:\gh\gh.exe", "codex": r"C:\npm\codex.cmd"}
         self.gh_status = 0
         self.reviewer_status = 0
+        self.ci_status, self.ci_output = 0, '[{"databaseId": 7}]'
         self.probe_error = {}  # program name -> the exception its probe raises
         self.pin = ("sol", "codex")
         self.free = 300 * 10**9
@@ -102,11 +103,13 @@ class Fake:
     def find(self, name):
         return self.on_path.get(name)
 
-    def run(self, argv):
+    def run(self, argv, cwd=None):
         self.calls.append(argv)
         program = Path(argv[0]).stem
         if program in self.probe_error:
             raise self.probe_error[program]
+        if argv[1:3] == ["run", "list"]:
+            return subprocess.CompletedProcess(argv, self.ci_status, self.ci_output, "")
         status = self.gh_status if program == "gh" else self.reviewer_status
         return subprocess.CompletedProcess(argv, status, "Logged in as someone@example.com", "")
 
@@ -142,7 +145,7 @@ class ReadyHost(Base):
     def test_every_check_passes_and_exits_zero(self):
         code, out = self.main()
         self.assertEqual(code, 0)
-        self.assertEqual([line.split()[0] for line in out.splitlines()[:8]], ["ok"] * 8)
+        self.assertEqual([line.split()[0] for line in out.splitlines()[:9]], ["ok"] * 9)
         for name in host_check.NAMES:
             self.assertIn(f" {name}: ", out)
         self.assertIn("ready: every check passed", out)
@@ -694,6 +697,20 @@ class Services(Base):
     def test_real_pin_names_the_codex_cli(self):
         self.assertEqual(host_check.Host().reviewer_cli()[1], "codex")
 
+    def test_unreadable_ci_runs_fail(self):
+        self.host.ci_status = 1
+        r = self.result("ci")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("gh run list --workflow ci.yml", r["fix"])
+
+    def test_ci_without_gh_fails(self):
+        del self.host.on_path["gh"]
+        self.assertEqual(self.result("ci")["state"], "fail")
+
+    def test_ci_output_that_is_not_a_list_cannot_check(self):
+        self.host.ci_output = "{}"
+        self.assertEqual(self.result("ci")["state"], "error")
+
     def test_low_disk_fails(self):
         self.host.free = 49 * 10**9
         r = self.result("disk")
@@ -865,7 +882,7 @@ class Exit(Base):
         self.assertEqual(code, 1)
         self.assertIn("FAIL  power", out)
         self.assertIn("fix: powercfg /change standby-timeout-ac 0", out)
-        self.assertEqual(sum(line.startswith("ok ") for line in out.splitlines()), 7)
+        self.assertEqual(sum(line.startswith("ok ") for line in out.splitlines()), 8)
 
     def test_cannot_check_outranks_a_failure(self):
         self.host.power[host_check.STANDBYIDLE] = 1800
@@ -885,6 +902,7 @@ class Exit(Base):
         code, out = self.main()
         self.assertEqual(code, 2)
         self.assertIn("ERROR gh: could not check", out)
+        self.assertIn("ERROR ci: could not check", out)  # the CI check runs gh too
         self.assertEqual(sum(line.startswith("ok ") for line in out.splitlines()), 7)
 
     def test_a_failure_beside_a_timeout_exits_two_and_lists_the_fix(self):
