@@ -531,6 +531,8 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (`docs/reviews
 
 ## 18. CI Recovery Budget
 
+> **Started:** 2026-10-23T12:28:00Z
+
 Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 6): §15 bounds the repair at three commits that leave the same job red, which misses an infrastructure outage, an unreadable log, a rerun that fails, and repairs that turn a different job red each time. This section gives the whole recovery one budget that survives a resume.
 
 **Phase:** 0
