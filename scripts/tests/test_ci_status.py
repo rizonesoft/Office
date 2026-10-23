@@ -1021,6 +1021,30 @@ class Scale(Pending):
         reported = set(re.findall(r"^green ([0-9a-f]{7})", out, re.M))
         self.assertEqual({r.split()[1] for r in records[1:]} | reported, {h[:7] for h in heads[1:]})  # none omitted
 
+    def test_a_large_red_backlog_reaches_the_report(self):
+        heads = [sha(n) for n in range(1, 2501)]
+        records = [f"ci-green {heads[0][:7]}"]
+        self.record(*records)
+        repo = Repo(list(reversed(heads)), {heads[0]: "success", **{h: "failure" for h in heads[1:]}})
+        codes, out = self.recording(repo, records, {"page_seconds": 30, "head_seconds": 1})
+        self.assertEqual(codes[-1], 1)
+        self.assertEqual(len(re.findall(r"^red ", out, re.M)), 2499)
+
+    def test_the_newest_head_settled_in_an_earlier_try_is_read_again(self):
+        base, a, b, c = sha(1), sha(2), sha(3), sha(4)
+        others = [{"id": 97500 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1300 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, b, a, base], {base: "success", a: "success", b: "success", c: "failure"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 120):
+            for _ in range(2):  # A settles; then B and C (red, the newest), cut short confirming A
+                self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10, head_seconds=55))[0],
+                                 ci.PROGRESSING)
+            repo.runs[c], repo.attempts[c] = "success", 2  # C is rerun green before the next try
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10, head_seconds=55))
+        self.assertEqual(code, 0)
+        self.assertIn(f"green {c[:7]} run {int(c[:7], 16)} attempt 2", out)
+
     def test_an_old_red_head_in_a_large_backlog_reaches_the_report(self):
         heads = [sha(n) for n in range(1, 2501)]
         records = [f"ci-green {heads[0][:7]}"]
@@ -1030,7 +1054,6 @@ class Scale(Pending):
         codes, out = self.recording(repo, records, {"page_seconds": 30, "head_seconds": 1})
         self.assertEqual(codes[-1], 1)
         self.assertIn(f"red {heads[1][:7]}", out)
-        self.assertTrue(repo.runs_read)  # read by its id, not by paging to it
         self.assertNotIn(f"ci-green {heads[1][:7]}", records)
 
     def test_a_red_head_is_never_confirmed_and_a_green_one_after_it_is(self):

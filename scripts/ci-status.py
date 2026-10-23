@@ -549,11 +549,14 @@ def reconcile(args, tools, clock, now, checkpoint):
                 if clock() - saved >= SAVE_SECONDS:  # the whole checkpoint is written, so not after every head
                     save(cp)
                     saved = clock()
-            # Everything the report rests on is read again in this try: each completed result's run (unless this try
-            # looked it up) and a first-run baseline's. A rerun since changes the result; a changed baseline changes
-            # the heads listed. Either is settled again before the report.
-            relied = {runs_of[s] for s in heads if s in runs_of and s not in looked
-                      and cp["results"][s]["code"] in (GREEN, RED)} | ({base_run} if base_run else set())
+            # What the report rests on is read again in this try, unless this try looked it up: every green result's
+            # run (a green is never reported on an older read), a first-run baseline's, and the newest head's, whose
+            # result decides what the campaign does. An earlier red may rest on an earlier try's read: reporting it
+            # red errs toward caution, and the campaign supersedes it once the newest head settles. A rerun since
+            # changes a result and a changed baseline changes the heads listed; either is settled again first.
+            relied = {runs_of[s] for s in heads if s in runs_of and s not in looked and (
+                cp["results"][s]["code"] == GREEN or (s == heads[-1] and cp["results"][s]["code"] == RED))} \
+                | ({base_run} if base_run else set())
             confirming = True
             pages.confirm(relied)
             confirming = False
