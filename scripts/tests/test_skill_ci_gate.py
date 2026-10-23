@@ -13,14 +13,21 @@ SKILLS = Path(__file__).resolve().parents[2] / ".claude" / "skills"
 PLAN = SKILLS / "process-plan" / "SKILL.md"
 PHASE = SKILLS / "process-phase" / "SKILL.md"
 
+EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any change to one is a deliberate test edit
+    'green': "- 0 (green): run the dependency merge below first, while the tree is still clean and `HEAD` pushed. If it merged anything, `main` has a new head on GitHub, which the local `HEAD` may not have (`merged-then-failed`: the pull after the merge failed): run `git fetch origin main` and `git pull --ff-only origin main` so the clone matches the merged head (if it still cannot, park with `ci-unknown: cannot align with origin/main`, since no repair can start from a stale checkout), then `python scripts/ci-status.py HEAD --wait --timeout 1800` and act on it by these same rules (repair, wait, retry or park), all before any row is claimed. Then append `ci-pending <sha> <UTC>` and `ci-green <sha>` for each push checked, and the merge's outcome, to the run file; they ride with the next section's commit, so no bookkeeping push exists to go unchecked.",
+    'red': '- 1 (red): repair it before the next row, as below.',
+    'pending': '- 3 (pending): run `python scripts/ci-status.py <sha> --wait --timeout 1800` and act on that result.',
+    'unknown': '- 2 (unknown: `gh` cannot be read, or no push run 10 minutes after the commit): retry once after five minutes; still 2, park the campaign with `ci-unknown` as the reason, since green cannot be established.',
+}
+
 # (obligation, skill, phrases that must all appear)
 OBLIGATIONS = [
     ("boundary check", "plan", ["At the next section boundary, before the next row is claimed, run "
                                 "`python scripts/ci-status.py <sha>`"]),
-    ("exit 0 green", "plan", ["- 0 (green):"]),
-    ("exit 1 red", "plan", ["- 1 (red): repair it before the next row"]),
-    ("exit 3 pending", "plan", ["- 3 (pending): run `python scripts/ci-status.py <sha> --wait --timeout 1800`"]),
-    ("exit 2 unknown", "plan", ["- 2 (unknown", "park the campaign with `ci-unknown`"]),
+    ('exit 0 green', "plan", [EXIT_BULLETS['green']]),
+    ('exit 1 red', "plan", [EXIT_BULLETS['red']]),
+    ('exit 3 pending', "plan", [EXIT_BULLETS['pending']]),
+    ('exit 2 unknown', "plan", [EXIT_BULLETS['unknown']]),
     ("three hard gates", "plan", ["Green is a hard gate in three places: a phase closeout (`process-phase` Step 4), a "
                                   "draft release, and the campaign's end (`plan-done`) each run "
                                   "`python scripts/ci-status.py HEAD --wait --timeout 3600`"]),
@@ -81,6 +88,8 @@ WEAKENINGS = [
      "$CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN "
      "FINISHED, even when rows are ready and the host check would now pass.", "resume under step 7."),
     ("hard gates proceed only on green", "plan", "and proceed only on exit 0.", "and proceed on any exit."),
+    ("exit 3 pending", "plan", "--wait --timeout 1800` and act on that result.", "--wait --timeout 1800` and claim the next row regardless of that result."),
+    ("exit 2 unknown", "plan", "retry once after five minutes; still 2, ", ""),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
     ("heartbeat closeout ends only on green", "plan", "and unless both exit 0 resume under step 7, whose CI watch "
      "repairs or parks, instead of ending:", "and regardless of either exit:"),
