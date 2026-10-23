@@ -1,0 +1,57 @@
+{
+  "ref": "D00 T03 \u00a719",
+  "title": "CI Gate Checks",
+  "implementation_sha": "315f3475c7f48857515ea106a6068010680dd511",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s19.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_skill_ci_gate.py\" -> Ran 5 tests, OK (21 paragraphs pinned; each changed or removed fails)",
+    "python -m unittest discover -s scripts/tests -p \"test_campaign_guard.py\" -> OK",
+    "python -m unittest discover -s scripts/tests -> OK (skipped=2)"
+  ],
+  "rounds_spent": 8,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s19-completion.md",
+  "completion_rules": 2
+}

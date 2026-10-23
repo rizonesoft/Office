@@ -51,7 +51,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 16 | §16 | Completion evidence adoption boundary | §14 | [x] |
 | 17 | §17 | CI push reconciliation | §15 | [x] |
 | 18 | §18 | CI recovery budget | §15 | [x] |
-| 19 | §19 | CI gate checks | §15, §17, §18 | [ ] |
+| 19 | §19 | CI gate checks | §15, §17, §18 | [x] |
 | 20 | §20 | CI reconciliation at scale | §17 | [ ] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [ ] |
 
@@ -575,9 +575,12 @@ Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (finding 8): t
 - [x] Make `scripts/campaign_guard.py` treat a column-0 `PARKED ... run=<run id> ci-red:`, `ci-unknown:` or `host-not-ready:` line as campaign-ending in either scope (the Stop hook lets the turn end, and a resumed run must start fresh), with tests in `scripts/tests/test_campaign_guard.py`. Done when: tests prove each reason ends the run and a phase park without one still chains. Cheaper substitute: relying on the heartbeat prompt's wording alone.
 - [x] Add `scripts/tests/test_skill_ci_gate.py`, which reads `.claude/skills/process-plan/SKILL.md` and `.claude/skills/process-phase/SKILL.md` and fails unless each names the boundary check, the four exit actions, the three hard gates, the resume check, the pending reconciliation and the recovery budget (`process-phase` by its explicit reference to `process-plan`'s one procedure, which the test also checks). Done when: the test passes, and removing any one of those lines from a copy makes it fail. Cheaper substitute: reading the skills by eye.
 - [x] Check the terminal-park procedure in the same test: the heartbeat prompt's step 5 ends the run for a `host-not-ready`, `ci-red` or `ci-unknown` park carrying the current run id in either scope, and `process-plan` names the no-chain rule, the guard's `end --reason park`, the heartbeat's deletion and confirmation, and a fresh-run resume. Done when: copies of the skill with each obligation removed or weakened (a reason dropped, the run-id match dropped, chaining allowed, the guard end or the heartbeat deletion removed, the fresh run replaced by a handover) each fail the test. Cheaper substitute: checking that the park reasons are named somewhere. **Groomed 2026-10-23:** completion finding 1.
-- [ ] Commit: `automations: hold the campaign to its CI gate with guard and skill checks`
+- [x] Commit: `automations: hold the campaign to its CI gate with guard and skill checks`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `python -m unittest discover -s scripts/tests -p "test_campaign_guard.py"` pass.
+
+> **Verified:** 2026-10-23 | §19 | 315f3475c7f48857515ea106a6068010680dd511
+> **Review:** `docs/reviews/d00-t03-s19.json`
 
 ## 20. CI Reconciliation at Scale
 
