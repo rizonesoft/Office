@@ -94,6 +94,16 @@ class Host:
 
     root = ROOT
 
+    def own_session(self):
+        """The session this campaign runs in (ProcessIdToSessionId of this process)."""
+        import ctypes
+        from ctypes import wintypes
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        session = wintypes.DWORD()
+        if not kernel32.ProcessIdToSessionId(kernel32.GetCurrentProcessId(), ctypes.byref(session)):
+            raise Unreadable(f"ProcessIdToSessionId failed (error {ctypes.get_last_error()})")
+        return session.value
+
     def console_session(self):
         """(session id, WTS_CONNECTSTATE_CLASS, session flags) of the physical console, or None when nobody is on it."""
         import ctypes
@@ -431,6 +441,10 @@ def check_session(host):
     if found is None:
         return fail("session", "no user is signed in at the console", "sign in at this PC's console and leave it unlocked")
     session, state, flags = found
+    own = host.own_session()
+    if own != session:  # Fast User Switching: another user's unlocked console is not this campaign's
+        return fail("session", f"the campaign runs in session {own}, but the console shows session {session}",
+                    "switch back to the campaign's user at this PC's console and leave it unlocked")
     if state != WTS_ACTIVE:
         return fail("session", f"console session {session} is not active (state {state})",
                     "sign in at this PC's console (not only over Remote Desktop) and leave it unlocked")
@@ -518,7 +532,9 @@ def check_office(host):
                     "install Microsoft 365 Apps with Visio and Project (Click-to-Run)")
     folder = Path(install) / "root" / "Office16"
     missing = [f"{app} ({exe})" for app, exe in OFFICE_APPS if not host.is_file(folder / exe)]
-    build = host.registry(HKLM, CLICK_TO_RUN + r"\Configuration", "VersionToReport") or "unknown"
+    build = host.registry(HKLM, CLICK_TO_RUN + r"\Configuration", "VersionToReport")
+    if not isinstance(build, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", build):
+        raise Unreadable(f"the Click-to-Run build (VersionToReport) is {build!r}, not a four-part version")
     if missing:
         return fail("office", f"missing from {folder}: {', '.join(missing)} (build {build}); {why}",
                     "add the missing apps to the Click-to-Run install")

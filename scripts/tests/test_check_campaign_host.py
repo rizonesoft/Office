@@ -40,6 +40,7 @@ class Fake:
     def __init__(self, root):
         self.root = Path(root)
         self.session = (1, host_check.WTS_ACTIVE, host_check.WTS_SESSIONSTATE_UNLOCK)
+        self.own = 1  # the campaign's own session
         self.power = {host_check.STANDBYIDLE: 0, host_check.HIBERNATEIDLE: 0}
         self.saver = {"active": True, "secure": False, "timeout": 3600}  # the live session's values
         self.values = {
@@ -60,6 +61,9 @@ class Fake:
         self.pin = ("sol", "codex")
         self.free = 300 * 10**9
         self.calls = []
+
+    def own_session(self):
+        return self.own
 
     def console_session(self):
         if isinstance(self.session, Exception):
@@ -144,6 +148,17 @@ class Session(Base):
         r = self.result("session")
         self.assertEqual(r["state"], "fail")
         self.assertIn("screen locked", r["detail"])
+
+    def test_another_users_unlocked_console_fails(self):
+        self.host.own = 2  # the campaign's user was switched away from; user B is at the console
+        r = self.result("session")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("runs in session 2", r["detail"])
+
+    def test_the_real_reader_knows_its_own_session(self):
+        if host_check.os.name != "nt":
+            self.skipTest("Windows sessions")
+        self.assertIsInstance(host_check.Host().own_session(), int)
 
     def test_no_console_user_fails(self):
         self.host.session = None
@@ -258,6 +273,13 @@ class Office(Base):
         self.assertEqual(r["state"], "fail")
         self.assertIn("VISIO.EXE", r["detail"])
         self.assertIn("16.0.20430.20182", r["detail"])
+
+    def test_an_unreadable_build_cannot_check(self):
+        key = (host_check.HKLM, host_check.CLICK_TO_RUN + r"\Configuration", "VersionToReport")
+        for value in (None, "not-a-build", "16.0"):
+            with self.subTest(value=value):
+                self.host.values[key] = value
+                self.assertEqual(self.result("office")["state"], "error")
 
     def test_no_click_to_run_fails(self):
         del self.host.values[(host_check.HKLM, host_check.CLICK_TO_RUN, "InstallPath")]
