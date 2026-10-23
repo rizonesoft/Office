@@ -47,6 +47,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 12 | §12 | Campaign host readiness check | §10 | [ ] |
 | 13 | §13 | Single writer, cap 33, completion review | §10 | [ ] |
 | 14 | §14 | Completion evidence hardening | §13 | [ ] |
+| 15 | §15 | CI watch and red-run repair | §13 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -418,6 +419,31 @@ Filed 2026-10-23 from round 2 of D00 T03 §13's completion review (`docs/reviews
 - [ ] Commit: `automations: bind completion evidence to the reviewed contract and its round`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` and `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` pass, and `python scripts/todo-graph.py validate` exits 0.
+
+## 15. CI Watch and Red-Run Repair
+
+Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on CI and fixes red runs. It does not: `process-plan` runs every gate locally and pushes after each stamp, but nothing reads the GitHub Actions result afterwards (the old guard's CI repair ledger was retired on 2026-10-21, and the Phase 2 run's CI repairs were found by hand). Once C++ lands, the Arm64 build and tests run only in CI, so a red run would go unseen. This section makes CI part of the loop: the previous push is checked at every section boundary, a red run is repaired before the next row is claimed, a phase closeout, a draft release and the end of the campaign wait for green, and a failure that will not yield parks the campaign, since a red `main` is shared infrastructure.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `scripts/ci-status.py` with its tests. Done when: each state has a fixture over a fake `gh`.
+2. Wire it into `process-plan` and `process-phase`. Done when: both skills name the boundary check, the hard gates, the repair rule and the bound.
+
+- [ ] Write `scripts/ci-status.py`, which finds the `ci.yml` run for a commit (`gh run list --workflow ci.yml --commit <sha> --json databaseId,status,conclusion,url`) and exits 0 when it succeeded, 1 when it failed (printing the failing jobs and steps from `gh run view <id> --json jobs`), 3 while it is queued or running, and 2 when there is no run yet past a grace period or `gh` cannot be read. Done when: fixtures for each state exit with their code. Cheaper substitute: reading the newest run on `main`, which may belong to another commit.
+- [ ] Add `--wait --timeout <seconds>` to `scripts/ci-status.py`, polling every 30 seconds until the run ends, and `--log <path>` writing `gh run view <id> --log-failed` to scratch, bounded to the last 400 lines. Done when: a fixture that turns green after two polls exits 0, one that never ends exits 3 at the timeout, and the log lands outside the repository. Cheaper substitute: an unbounded wait, or a full log pasted into the run file.
+- [ ] Record each push in the run file in `.claude/skills/process-plan/SKILL.md`: after a stamp push, append `ci-pending <sha> <UTC>`; at the next section boundary, before the next row is claimed, run `python scripts/ci-status.py <sha>`, and record `ci-green <sha>` or act on red. Done when: the skill names both records and the boundary check. Cheaper substitute: checking CI only at phase ends, when several red commits have stacked.
+- [ ] Repair a red run before the next row in `.claude/skills/process-plan/SKILL.md`: read the failing jobs and the log from `--log`, reproduce locally where the job can run here, fix at the owning layer in a `ci: <what was fixed> (repair for <sha>, run <id>)` commit, re-run the local gates, push, and `--wait` for green. A failure that passes on one `gh run rerun <id> --failed` is recorded as `ci-flaky <sha> <job>` and filed through `add-todo` as a flake to fix, never ignored. Done when: the skill names each step, the commit format and the flake rule. Cheaper substitute: re-running until green.
+- [ ] Bound the repair in `.claude/skills/process-plan/SKILL.md`: after three repair commits that leave the same job red, the campaign files the failure through `add-todo` (run link, job, step, what was tried), emails the owner through `.conclave/automations/alert.py`, and parks with `ci-red` as the reason. Done when: the skill names the bound, the filing, the email and the park. Cheaper substitute: an endless repair loop, or pushing more work onto a red `main`.
+- [ ] Make green a hard gate in `.claude/skills/process-phase/SKILL.md` and `.claude/skills/process-plan/SKILL.md`: a phase closeout, a draft release and the campaign's end each run `python scripts/ci-status.py HEAD --wait --timeout 3600` and proceed only on exit 0. Done when: both skills name the three gates. Cheaper substitute: closing a phase on local gates alone.
+- [ ] Add a CI line to the readiness check (D00 T03 §12) wiring: `scripts/check-campaign-host.py` confirms `gh run list --workflow ci.yml --limit 1` can be read. Done when: the readiness item names it and a fixture without `gh` access fails. Cheaper substitute: discovering at the first boundary that CI cannot be read.
+- [ ] Write `scripts/tests/test_ci_status.py` with a fake `gh` for every state, the wait, the timeout and the log bound. Done when: the suite passes and fails when any state's exit code is changed. Cheaper substitute: running the script against the live repository only.
+- [ ] Commit: `automations: watch CI at section boundaries and repair red runs`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes, `python scripts/ci-status.py HEAD` prints the latest pushed commit's run state on this PC, and `python scripts/todo-graph.py validate` exits 0.
 
 ## Verification
 
