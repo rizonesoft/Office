@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 27 | Checklist items: 177
+Sections: 27 | Checklist items: 178
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -37,7 +37,7 @@ Sections: 27 | Checklist items: 177
 | [x]    | D00 T03 §18 | CI Recovery Budget                       | none                   | 6     |
 | [x]    | D00 T03 §19 | CI Gate Checks                           | none                   | 4     |
 | [x]    | D00 T03 §20 | CI Reconciliation at Scale               | none                   | 5     |
-| [ ]    | D00 T03 §21 | CI Recovery Closed on Resume             | none                   | 3     |
+| [ ]    | D00 T03 §21 | CI Recovery Closed on Resume             | none                   | 4     |
 | [ ]    | D00 T03 §22 | CI Reconciliation Past Limits            | none                   | 3     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -180,4 +180,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 46/123 verified sections, 12 ready to run now.
 
-Checklist: 294/775 items completed (includes Commit items).
+Checklist: 294/776 items completed (includes Commit items).
