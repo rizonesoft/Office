@@ -244,7 +244,7 @@ def load_checkpoint(path):
         return None
     except (OSError, UnicodeDecodeError, ValueError):
         return None  # rebuilt from GitHub and git on this try
-    keys = {"inputs", "runs", "next_page", "refresh_page", "total", "results", "progress"}
+    keys = {"inputs", "runs", "next_page", "total", "results", "progress"}
     return data if isinstance(data, dict) and set(data) == keys and isinstance(data["runs"], dict) \
         and isinstance(data["results"], dict) else None
 
@@ -275,52 +275,73 @@ def read_page(tools, owner_name, page, seconds):
 
 
 def keep(cp, runs):
+    """Store runs as read, a fresher read replacing an older one (a rerun changes a run's attempt and conclusion).
+    Returns how many runs were new or changed."""
+    changed = 0
     for r in runs:
-        cp["runs"].setdefault(str(r["id"]), {"headSha": r.get("head_sha"), "event": r.get("event"),
-                                             "headBranch": r.get("head_branch"), "status": r.get("status"),
-                                             "conclusion": r.get("conclusion") or "",
-                                             "createdAt": r.get("created_at", "")})
+        entry = {"headSha": r.get("head_sha"), "event": r.get("event"), "headBranch": r.get("head_branch"),
+                 "status": r.get("status"), "conclusion": r.get("conclusion") or "",
+                 "createdAt": r.get("created_at", ""), "attempt": r.get("run_attempt", 1)}
+        if cp["runs"].get(str(r["id"])) != entry:
+            cp["runs"][str(r["id"])] = entry
+            changed += 1
+    return changed
 
 
-def enumerate_runs(tools, repo, cp, left, save):
-    """Read the workflow's runs into the checkpoint: forward to the last page, and, after the inputs changed or when
-    runs arrived meanwhile, from the first page until a run already held, so nothing is read twice on an unchanged
-    try and nothing new is missed. Every page is saved as it is read."""
-    owner_name = repo.split("/", 1)[1]  # github.com/<owner>/<name> -> <owner>/<name>
-    refreshed_at_end = False
-    while True:
-        if cp["refresh_page"] is not None:
-            page = cp["refresh_page"]
-            total, runs = read_page(tools, owner_name, page, left())
-            met = any(str(r["id"]) in cp["runs"] for r in runs)
-            keep(cp, runs)
-            cp["total"], cp["progress"] = total, cp["progress"] + 1
-            cp["refresh_page"] = None if met or len(runs) < PER_PAGE else page + 1
-        elif cp["next_page"] is not None:
-            page = cp["next_page"]
-            total, runs = read_page(tools, owner_name, page, left())
-            keep(cp, runs)
-            cp["total"], cp["progress"] = total, cp["progress"] + 1
-            cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
-        elif cp["total"] is not None and len(cp["runs"]) < cp["total"]:
-            if refreshed_at_end:
-                raise Unknown(f"gh api returned {len(cp['runs'])} of {cp['total']} runs, so the history may be cut off")
-            cp["refresh_page"], refreshed_at_end = 1, True  # runs were created while the pages were read
-            continue
-        else:
-            return
-        save(cp)
+class Pages:
+    """One try's reads of the workflow's runs. The forward scan reads each page once to the last page and continues
+    where an earlier try stopped; the refresh reads the newest pages again, each at most once a try, so runs created
+    since and reruns (a new attempt and conclusion on the same run id) are current before any result rests on them."""
+
+    def __init__(self, tools, repo, cp, left, save):
+        self.tools, self.owner_name, self.cp, self.left, self.save = tools, repo.split("/", 1)[1], cp, left, save
+        self.seen = set()  # run ids read this try, so current
+        self.top, self.stable, self.ended = 1, False, False
+
+    def read(self, page):
+        total, runs = read_page(self.tools, self.owner_name, page, self.left())
+        changed = keep(self.cp, runs)
+        self.seen |= {str(r["id"]) for r in runs}
+        self.cp["total"] = total
+        return runs, changed
+
+    def refresh(self, needed=frozenset()):
+        """Read from the newest page until a page brings nothing new and every run in `needed` was read this try, or
+        the pages end. A page that only confirms what is held is not progress."""
+        while not self.ended and not (self.stable and needed <= self.seen):
+            runs, changed = self.read(self.top)
+            self.top += 1
+            self.stable, self.ended = not changed, len(runs) < PER_PAGE
+            self.cp["progress"] += 1 if changed else 0
+            self.save(self.cp)
+
+    def forward(self):
+        """Continue the scan to the workflow's last page, saving every page as it is read. Runs created while the
+        pages were read push older runs down a page; one refresh from the top then finds them."""
+        while self.cp["next_page"] is not None:
+            page = self.cp["next_page"]
+            runs, _ = self.read(page)
+            self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
+            self.cp["progress"] += 1
+            self.save(self.cp)
+        if len(self.cp["runs"]) < self.cp["total"]:
+            self.top, self.stable, self.ended = 1, False, False
+            self.refresh()
+        if len(self.cp["runs"]) < self.cp["total"]:
+            raise Unknown(f"gh api returned {len(self.cp['runs'])} of {self.cp['total']} runs, so the history may be "
+                          f"cut off")
 
 
 def unchecked_heads(tools, run_file, left, cp, save):
-    """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first).
+    """(baseline, the push heads on the fetched origin/main with no recorded outcome after it, oldest first, and each
+    listed head's governing run when it was read this try).
 
     A push head is a commit with a ci-pending or outcome record, the head of a ci.yml push run on main, or origin/main
     itself; a commit that is not one is covered by the first push head after it. The baseline is the oldest head with
     a recorded outcome (history before the records began is covered), or, only when no run file holds any outcome, the
-    newest head whose push run is green. After it, a head is listed unless it has an outcome of its own: a later green
-    head never covers it. The whole first-parent history is read (D00 T03 §20), and the runs come from the checkpoint,
-    refreshed when the repository, the fetched head or the records changed since it was saved (D00 T03 §22)."""
+    newest head whose governing push run is green, judged on runs read this try. After it, a head is listed unless it
+    has an outcome of its own: a later green head never covers it. The whole first-parent history is read (D00 T03
+    §20); the runs come from the checkpoint, kept current by the refresh (D00 T03 §22)."""
     fetched = tools.call("git", ["fetch", "--quiet", "origin", BRANCH], left())
     if fetched.returncode != 0:
         raise Unknown("git fetch origin main failed")
@@ -342,57 +363,58 @@ def unchecked_heads(tools, run_file, left, cp, save):
     repo = origin(tools, left())
     outcomes, pendings = records(run_file)
     inputs = {"repo": repo, "head": history[0], "records": records_digest(outcomes, pendings)}
-    if not cp:
-        cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "refresh_page": None, "total": None, "results": {},
-                   "progress": 0})
-    elif cp["inputs"] != inputs:
-        if cp["inputs"].get("repo") != repo:  # another repository's runs are no use
-            cp.update({"runs": {}, "next_page": 1, "refresh_page": None, "total": None, "results": {}})
-        else:
-            cp["refresh_page"] = 1  # keep what was read; find what is new
-        cp["inputs"] = inputs
-        save(cp)
-    enumerate_runs(tools, repo, cp, left, save)
-    runs = [r for r in cp["runs"].values() if r["event"] == "push" and r["headBranch"] == BRANCH
-            and isinstance(r["headSha"], str)]
-    run_heads = {r["headSha"] for r in runs}
-    heads = [c for c in history if c in run_heads or recorded(pendings, c) or recorded(outcomes, c)
-             or c == history[0]]  # newest first
-    with_outcome = [c for c in heads if recorded(outcomes, c)]
-    if outcomes:
-        if not with_outcome:  # outcomes are recorded, but none is on the history of origin/main
-            raise Unknown("no recorded outcome is on origin/main's history")
-        baseline = with_outcome[-1]
-    else:
+    if not cp or cp["inputs"].get("repo") != repo:  # another repository's runs are no use
+        cp.clear()
+        cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "total": None, "results": {}, "progress": 0})
+    cp["inputs"] = inputs
+    pages = Pages(tools, repo, cp, left, save)
+    if cp["runs"]:  # runs held from an earlier try: find what is new or rerun before trusting them
+        pages.refresh({str(r["run"][0]) for r in cp["results"].values() if r.get("run")})
+    pages.forward()
+
+    def choose():
         governing = {}  # each head's newest push run decides it, as for a single commit
-        for r in runs:
-            if r["headSha"] not in governing or str(r["createdAt"]) > str(governing[r["headSha"]]["createdAt"]):
-                governing[r["headSha"]] = r
-        green = {h for h, r in governing.items() if r["status"] == "completed" and r["conclusion"] == "success"}
-        baseline = next((c for c in heads if c in green), None)
+        for i, r in cp["runs"].items():
+            if r["event"] == "push" and r["headBranch"] == BRANCH and isinstance(r["headSha"], str) and (
+                    r["headSha"] not in governing or str(r["createdAt"]) > str(governing[r["headSha"]][1]["createdAt"])):
+                governing[r["headSha"]] = (i, r)
+        heads = [c for c in history if c in governing or recorded(pendings, c) or recorded(outcomes, c)
+                 or c == history[0]]  # newest first
+        if outcomes:
+            with_outcome = [c for c in heads if recorded(outcomes, c)]
+            if not with_outcome:  # outcomes are recorded, but none is on the history of origin/main
+                raise Unknown("no recorded outcome is on origin/main's history")
+            baseline = with_outcome[-1]
+            rest = [c for c in heads[:heads.index(baseline)] if not recorded(outcomes, c)]  # the heads listed
+        else:
+            baseline = next((c for c in heads if c in governing and governing[c][1]["status"] == "completed"
+                             and governing[c][1]["conclusion"] == "success"), None)
+            rest = heads[:heads.index(baseline) + 1] if baseline else heads  # the baseline's own run decides too
+        return heads, baseline, governing, {governing[c][0] for c in rest if c in governing}
+    while True:  # the baseline and every listed head rest on their governing runs: read them this try
+        heads, baseline, governing, rests_on = choose()
+        if rests_on <= pages.seen or pages.ended:
+            break
+        pages.refresh(rests_on)
     newer = heads[:heads.index(baseline)] if baseline else heads
-    return baseline, [c for c in reversed(newer) if not recorded(outcomes, c)]
+    listed = [c for c in reversed(newer) if not recorded(outcomes, c)]
+    return baseline, listed, {c: governing[c] for c in listed if c in governing and governing[c][0] in pages.seen}
 
 
-def settle_head(tools, sha, stored, now, deadline, clock):
-    """(code, lines, run identity, newly settled) for one head. A stored completed result already confirmed in this
-    reconciliation is reused without a call; one not yet confirmed is reused after one look shows its governing run's id
-    and attempt unchanged (a rerun replaces it); a pending or unknown head, or one never settled, is checked again."""
-    if stored and stored["code"] in (GREEN, RED):
-        if stored.get("confirmed"):
+def settle_head(tools, sha, stored, fresh, now, deadline, clock):
+    """(code, lines, run identity, newly settled) for one head. A stored completed result is reused while the head's
+    governing run, read this try, is the same run on the same attempt (a rerun or a newer run replaces it); a pending or
+    unknown head, or one never settled, is checked again."""
+    if stored and stored["code"] in (GREEN, RED) and stored.get("run") and fresh:
+        run_id, run = fresh
+        if [int(run_id), run["attempt"]] == stored["run"] and run["status"] == "completed":
             return stored["code"], stored["lines"], stored["run"], False
-        remaining = deadline - clock()
-        if remaining <= 0:
-            raise DeadlinePassed("the deadline passed before the stored results could be confirmed")
-        run = governing_run(tools, sha, min(CALL_SECONDS, remaining), origin(tools, min(CALL_SECONDS, remaining)))
-        if run and run.get("status") == "completed" and [run.get("databaseId"), run.get("attempt", 1)] == stored["run"]:
-            return stored["code"], stored["lines"], stored["run"], True
     code, lines = status(tools, sha, now, deadline, None, clock)
     run = None
     if code in (GREEN, RED):
         found = re.search(r" run (\d+) attempt (\d+)", lines[0])
         run = [int(found[1]), int(found[2])] if found else None
-    return code, lines, run, code in (GREEN, RED)
+    return code, lines, run, code in (GREEN, RED) and stored != {"code": code, "lines": lines, "run": run}
 
 
 def pending_main(args, tools, clock, now, checkpoint):
@@ -405,7 +427,7 @@ def pending_main(args, tools, clock, now, checkpoint):
         print("acknowledged: the reconciliation's checkpoint is deleted")
         return GREEN
     cp = load_checkpoint(path) or {}
-    before = cp.get("progress", 0) if cp else 0
+    before = cp.get("progress", 0)
     deadline = clock() + PENDING_SECONDS
 
     def left():
@@ -425,7 +447,7 @@ def pending_main(args, tools, clock, now, checkpoint):
         print("unknown: this try made no progress before its deadline")
         return UNKNOWN
     try:
-        baseline, heads = unchecked_heads(tools, args.pending, left, cp, save)
+        baseline, heads, fresh = unchecked_heads(tools, args.pending, left, cp, save)
     except DeadlinePassed:
         return out_of_time()
     except Unknown as exc:
@@ -434,21 +456,18 @@ def pending_main(args, tools, clock, now, checkpoint):
     report, codes = [], []
     for sha in heads:
         moment = now() if now else datetime.now(timezone.utc)
-        stored = cp["results"].get(sha)
         try:
-            code, lines, run, settled = settle_head(tools, sha, stored, moment, deadline, clock)
+            code, lines, run, settled = settle_head(tools, sha, cp["results"].get(sha), fresh.get(sha), moment,
+                                                    deadline, clock)
         except DeadlinePassed:
             return out_of_time()
         cp["progress"] += settled
-        cp["results"][sha] = {"code": code, "lines": lines, "run": run, "confirmed": code in (GREEN, RED)}
+        cp["results"][sha] = {"code": code, "lines": lines, "run": run}
         save(cp)
         codes.append(code)
         report += lines
     print(f"{len(heads)} unchecked push head(s) after {'baseline ' + baseline[:7] if baseline else 'no baseline'}")
     print("\n".join(report))
-    for result in cp["results"].values():  # the report is complete: the next reconciliation confirms each again
-        result["confirmed"] = False
-    save(cp)
     for worst in (UNKNOWN, RED, PENDING):
         if worst in codes:
             return worst

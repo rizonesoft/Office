@@ -339,6 +339,7 @@ class Repo:
         self.total = total  # the API's total_count, when it should differ from the runs served
         self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
         self.pages_read = []
+        self.after_page = {}  # page number -> a function run after that page is served (a run created mid-scan)
         self.fail_pages = set()  # page numbers that fail once
         self.attempts = {}  # head -> attempt number, to model a rerun
         self.ahead = ahead  # local commits origin/main lacks
@@ -351,7 +352,8 @@ class Repo:
     def api_runs(self):
         """The workflow's runs as the API lists them, newest first."""
         runs = [{"id": int(h[:7], 16), "status": "completed" if c else "in_progress", "conclusion": c,
-                 "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main"}
+                 "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main",
+                 "run_attempt": self.attempts.get(h, 1)}
                 for h, c in self.runs.items()] + self.extra_runs
         return list(reversed(runs))
 
@@ -400,6 +402,7 @@ class Repo:
                 return subprocess.CompletedProcess(args, 1, "", "HTTP 502")
             total = len(runs) if self.total is None else self.total
             out = json.dumps({"total_count": total, "workflow_runs": runs[(page - 1) * 100:page * 100]})
+            self.after_page.pop(page, lambda: None)()
         elif args[:2] == ["run", "view"]:
             out = json.dumps({"jobs": []})
         if out is None:
@@ -647,14 +650,15 @@ class Scale(Pending):
         self.assertEqual(self.listed(out), [a[:7], b[:7]])
 
     def test_an_unchanged_try_reads_no_page_twice_and_a_push_is_found_on_the_next(self):
+        old = [sha(n) for n in range(10, 260)]  # three pages of older, recorded history
         base, a, new = sha(1), sha(2), sha(3)
-        self.record(f"ci-green {base[:7]}")
-        repo = Repo([a, base], {base: "success", a: "success"})
+        self.record(*(f"ci-green {h[:7]}" for h in old), f"ci-green {base[:7]}")
+        repo = Repo([a, base, *reversed(old)], {**{h: "success" for h in old}, base: "success", a: "success"})
         self.pending(repo)
         read = len(repo.pages_read)
-        self.pending(repo)  # same inputs: the checkpoint holds every page
-        self.assertEqual(len(repo.pages_read), read)
-        repo.history, repo.runs[new] = [new, a, base], "failure"  # a push and its run land between tries
+        self.pending(repo)  # same inputs: the scan is not repeated; only the newest page is read again for reruns
+        self.assertEqual(repo.pages_read[read:], [repo.pages_read[0]])
+        repo.history, repo.runs[new] = [new, a, base, *reversed(old)], "failure"  # a push and its run land between tries
         code, out = self.pending(repo)
         self.assertEqual(self.listed(out), [a[:7], new[:7]])
         self.assertEqual(code, 1)
@@ -673,7 +677,8 @@ class Scale(Pending):
         self.assertEqual(self.pending(repo)[0], 2)  # page 5 failed after pages 1 to 4 were read
         before = len(repo.pages_read)
         self.assertEqual(self.pending(repo)[0], 0)
-        self.assertEqual(len(repo.pages_read) - before, 4)  # pages 5 to 8 only
+        pages = [u.rsplit("=", 1)[1] for u in repo.pages_read[before:]]
+        self.assertEqual(pages, ["1", "5", "6", "7", "8"])  # the newest page again for new runs, then on from page 5
 
     def test_a_stored_red_result_is_reported_after_an_interruption(self):
         base, a, b = sha(1), sha(2), sha(3)
@@ -690,6 +695,69 @@ class Scale(Pending):
         self.assertEqual(code, 1)
         self.assertIn(f"red {a[:7]}", out)
         self.assertIn(f"green {b[:7]}", out)
+
+    def test_a_rerun_between_interrupted_tries_replaces_a_stored_result(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"})
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # A settled green, B cut short
+        repo.runs[a], repo.attempts[a] = "failure", 2  # A is rerun and fails
+        code, out = self.pending(repo)
+        self.assertEqual(code, 1)
+        self.assertIn(f"red {a[:7]} run {int(a[:7], 16)} attempt 2", out)
+
+    def test_a_delayed_run_is_found_without_a_change_of_head_or_records(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", b: "success"})  # A's push run has not started yet
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
+        repo.runs = {a: "failure", **repo.runs}  # A's run arrives; it is the newest run
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [a[:7], b[:7]]))
+
+    def test_a_rerun_on_the_same_conclusion_is_reported_on_its_new_attempt(self):
+        base, a = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([a, base], {base: "success", a: "failure"})
+        self.assertEqual(self.pending(repo)[0], 1)
+        repo.attempts[a] = 2  # rerun, and it failed again
+        code, out = self.pending(repo)
+        self.assertIn(f"red {a[:7]} run {int(a[:7], 16)} attempt 2", out)
+
+    def test_a_run_created_during_the_scan_is_found_in_the_same_try(self):
+        old = [sha(n) for n in range(10, 260)]
+        base, a = sha(1), sha(2)
+        self.record(*(f"ci-green {h[:7]}" for h in old), f"ci-green {base[:7]}")
+        repo = Repo([base, *reversed(old)], {**{h: "success" for h in old}, base: "success"})
+
+        def push():  # a run is created while page 2 is read, pushing every older run one place down
+            repo.runs[a] = "failure"
+        repo.after_page[2] = push
+        code, out = self.pending(repo)
+        self.assertEqual(code, 0)
+        self.assertNotIn("cut off", out)
+
+    def test_a_rerun_of_a_first_run_baseline_past_the_first_page_is_seen(self):
+        tip = sha(1)
+        others = [{"id": 70000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(500 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        repo = Repo([tip], {tip: "success"}, extra_runs=others)  # newer runs of other branches fill page 1
+        self.assertIn(f"baseline {tip[:7]}", self.pending(repo)[1])
+        repo.runs[tip], repo.attempts[tip] = "failure", 2
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [tip[:7]]))
+
+    def test_a_rerun_of_the_first_run_baseline_is_seen(self):
+        tip = sha(1)
+        repo = Repo([tip], {tip: "success"})  # no outcome recorded: the green tip is the first-run baseline
+        code, out = self.pending(repo)
+        self.assertIn(f"baseline {tip[:7]}", out)
+        repo.runs[tip], repo.attempts[tip] = "failure", 2
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [tip[:7]]))
 
     def test_a_pending_head_is_checked_again_and_a_rerun_replaces_a_stored_result(self):
         base, a = sha(1), sha(2)
@@ -712,7 +780,7 @@ class Scale(Pending):
         self.assertTrue(cp.exists())  # the records are not written yet: the work is kept
         read = len(repo.pages_read)
         self.assertEqual(self.pending(repo)[0], 0)
-        self.assertEqual(len(repo.pages_read), read)
+        self.assertEqual(len(repo.pages_read), read + 1)  # only the newest page again, for reruns
         self.assertEqual(self.pending(repo, "--ack")[0], 0)
         self.assertFalse(cp.exists())
 
