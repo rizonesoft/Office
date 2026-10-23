@@ -258,6 +258,12 @@ def unchecked_heads(tools, run_file, left):
     history = listed.stdout.split()
     if listed.returncode != 0 or not history or not all(len(c) == 40 for c in history):
         raise Unknown("cannot read the history of origin/main")
+    # A clone ahead of origin/main holds commits no CI run can cover yet: push them and reconcile again.
+    ahead = tools.call("git", ["rev-list", "--count", f"origin/{BRANCH}..HEAD"], left())
+    if ahead.returncode != 0 or not ahead.stdout.strip().isdigit():
+        raise Unknown("cannot compare HEAD with origin/main")
+    if int(ahead.stdout) > 0:
+        raise Unknown(f"HEAD has {int(ahead.stdout)} commit(s) origin/main lacks; push them, then reconcile again")
     repo = origin(tools, left())
     runs = push_runs(tools, repo, left())
     outcomes, pendings = records(run_file)

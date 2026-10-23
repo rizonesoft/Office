@@ -333,8 +333,9 @@ class Repo:
     """A scripted clone and GitHub for --pending: a first-parent history (newest first), push runs by head, and what
     `git fetch` brings in."""
 
-    def __init__(self, history, runs, fetched=None, fail=None):
+    def __init__(self, history, runs, fetched=None, fail=None, ahead=0):
         self.history = list(history)
+        self.ahead = ahead  # local commits origin/main lacks
         self.fetched = fetched
         self.runs = runs  # head -> conclusion ("success", "failure", or None while in progress)
         self.fail = fail or {}
@@ -355,6 +356,8 @@ class Repo:
             if self.fetched is not None:
                 self.history = self.fetched
             out = ""
+        elif name == "git" and args[:2] == ["rev-list", "--count"]:
+            out = f"{self.ahead}\n"
         elif name == "git" and args[0] == "rev-list":
             limit = next(int(a.split("=")[1]) for a in args if a.startswith("--max-count="))
             out = "\n".join(self.history[:limit]) + "\n"
@@ -483,6 +486,14 @@ class Pending(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(self.listed(out), [new[:7]])
         self.assertEqual(repo.calls[0][1][:1], ["fetch"])
+
+    def test_a_clone_ahead_of_origin_is_unknown_until_it_pushes(self):
+        # Review round 7 of D00 T03 §17: a stamp commit left unpushed must not pass as reconciled.
+        self.record(f"ci-green {sha(1)[:7]}")
+        code, out = self.pending(Repo([sha(1)], {sha(1): "success"}, ahead=1))
+        self.assertEqual(code, 2)
+        self.assertIn("HEAD has 1 commit(s) origin/main lacks", out)
+        self.assertEqual(self.pending(Repo([sha(1)], {sha(1): "success"}, ahead=0))[0], 0)
 
     def test_a_failed_fetch_is_unknown(self):
         self.record(f"ci-green {sha(1)[:7]}")
