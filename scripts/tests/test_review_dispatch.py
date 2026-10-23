@@ -681,6 +681,32 @@ class RepositoryPin(unittest.TestCase):
         self.assertEqual({k: pin["reviewers"][name][k] for k in ("cli", "model", "effort")},
                          {"cli": "codex", "model": "gpt-6.1-sol", "effort": "xhigh"})
 
+class KillTree(unittest.TestCase):
+    """kill_tree runs System32's taskkill by full path with a deadline (D00 T03 §12 review round 2)."""
+
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("dispatch_kill", SCRIPTS / "review-dispatch.py")
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+
+    @unittest.skipUnless(os.name == "nt", "taskkill is the Windows path")
+    def test_taskkill_is_run_by_full_path_with_a_deadline(self):
+        calls = []
+        with unittest.mock.patch.object(self.module.subprocess, "run",
+                                        side_effect=lambda argv, **kw: calls.append((argv, kw))):
+            self.module.kill_tree(unittest.mock.Mock(pid=4242))
+        argv, kw = calls[0]
+        self.assertTrue(os.path.isabs(argv[0]), argv[0])
+        self.assertEqual(Path(argv[0]).parts[-2:], ("System32", "taskkill.exe"))
+        self.assertEqual(argv[1:], ["/T", "/F", "/PID", "4242"])
+        self.assertEqual(kw["timeout"], self.module.KILL_SECONDS)
+
+    @unittest.skipUnless(os.name == "nt", "taskkill is the Windows path")
+    def test_a_hung_taskkill_is_abandoned(self):
+        def hang(argv, **kw):
+            raise subprocess.TimeoutExpired(argv, kw["timeout"])
+        with unittest.mock.patch.object(self.module.subprocess, "run", side_effect=hang):
+            self.module.kill_tree(unittest.mock.Mock(pid=4242))  # returns instead of raising or waiting
 
 if __name__ == "__main__":
     unittest.main()

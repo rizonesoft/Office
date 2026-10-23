@@ -161,13 +161,27 @@ def command(reviewer, executable, prompt, output_path):
             "--ephemeral", "--skip-git-repo-check", "-o", str(output_path), "-"], prompt
 
 
+KILL_SECONDS = 30
+
+
+def taskkill():
+    """taskkill.exe by its full System32 path: a bare name is searched for in the working directory first, where a
+    repository could hold its own taskkill.exe."""
+    return os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "taskkill.exe")
+
+
 def kill_tree(process):
-    """End a reviewer and everything it started, whether it is still running or has already exited."""
+    """End a reviewer and everything it started, whether it is still running or has already exited. Bounded: a
+    taskkill that hangs is abandoned after KILL_SECONDS, and the caller still ends the process through its handle."""
     if os.name == "nt":
         # WORKAROUND: Windows offers no process-group kill without job objects, so taskkill /T reaches the reviewer's
         # children only while the reviewer itself is alive. A child that outlives a reviewer which exited by itself
         # is not reached on Windows; on Linux and WSL the whole session is killed below.
-        subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+        try:
+            subprocess.run([taskkill(), "/T", "/F", "/PID", str(process.pid)], capture_output=True,
+                           stdin=subprocess.DEVNULL, timeout=KILL_SECONDS)
+        except (OSError, subprocess.TimeoutExpired):
+            pass  # the process handle is still killed by the caller; a lost descendant is the WORKAROUND above
     else:
         try:
             os.killpg(process.pid, signal.SIGKILL)

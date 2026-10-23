@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,6 +13,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("check_campaign_host", SCRIPTS / "check-campaign-host.py")
@@ -198,12 +200,14 @@ class ScreenLock(Base):
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "0"
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
-    def test_a_missing_timeout_on_a_secure_saver_still_fails(self):
+    def test_a_missing_timeout_never_starts_the_saver_so_it_passes(self):
         self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
         del self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")]
-        r = self.result("screen lock")
-        self.assertEqual(r["state"], "fail")
-        self.assertIn("default timeout", r["detail"])
+        self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_an_unreadable_timeout_cannot_check(self):
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")] = "soon"
+        self.assertEqual(self.result("screen lock")["state"], "error")
 
     def test_inactivity_policy_fails(self):
         self.host.values[(host_check.HKLM, host_check.SYSTEM_POLICY, "InactivityTimeoutSecs")] = 900
@@ -412,31 +416,93 @@ class Services(Base):
         self.assertIn("under 50 GB", r["detail"])
 
 
+def alive(pid):
+    """Whether a process is still running, without signalling it."""
+    if os.name == "nt":
+        import ctypes
+        kernel32 = ctypes.WinDLL("kernel32")
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
 class Probe(unittest.TestCase):
-    """The real Host.run: a deadline holds even when the probe leaves a grandchild holding its output open."""
+    """The real Host.run: a deadline and an output bound hold even when the probe leaves a grandchild behind."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+
+    def tree(self, sleep):
+        """A probe that starts a grandchild (which writes its PID) and then sleeps itself."""
+        pid_file = self.tmp / "grandchild.pid"
+        grandchild = f"import os, pathlib, time; pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); " \
+                     f"time.sleep(60)"
+        parent = (f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
+                  f"time.sleep({sleep})")
+        return [sys.executable, "-c", parent], pid_file
+
+    def grandchild_gone(self, pid_file):
+        for _ in range(100):
+            if pid_file.exists() and pid_file.read_text():
+                break
+            time.sleep(0.05)
+        pid = int(pid_file.read_text())
+        for _ in range(50):
+            if not alive(pid):
+                return True
+            time.sleep(0.1)
+        os.kill(pid, 9)
+        return False
 
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])
         self.assertEqual((r.returncode, r.stdout.strip()), (3, "hello"))
 
     def test_a_hung_probe_tree_is_ended_at_its_deadline(self):
-        grandchild = "import time; time.sleep(60)"
-        parent = (f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
-                  "time.sleep(60)")
+        argv, pid_file = self.tree(60)
         started = time.monotonic()
         with self.assertRaises(host_check.Unreadable) as caught:
-            host_check.Host().run([sys.executable, "-c", parent], seconds=2)
+            host_check.Host().run(argv, seconds=2)
         self.assertLess(time.monotonic() - started, 20)
         self.assertIn("did not finish within 2 seconds", str(caught.exception))
+        self.assertTrue(self.grandchild_gone(pid_file), "the probe's grandchild outlived the deadline")
+
+    def test_the_deadline_holds_when_the_tree_kill_does_nothing(self):
+        argv, pid_file = self.tree(60)
+        dispatch = host_check.todo_graph.review_dispatch()
+        started = time.monotonic()
+        with mock.patch.object(dispatch, "kill_tree", lambda process: None):
+            with self.assertRaises(host_check.Unreadable):
+                host_check.Host().run(argv, seconds=2)
+        self.assertLess(time.monotonic() - started, 20)
+        self.grandchild_gone(pid_file)  # reaped here: without the tree kill only the probe itself is ended
+
+    def test_a_flood_of_output_is_stopped_at_the_bound(self):
+        flood = "import sys\nwhile True: sys.stdout.write('x' * 65536)"
+        with mock.patch.object(host_check, "MAX_PROBE_BYTES", 1_000_000):
+            with self.assertRaises(host_check.Unreadable) as caught:
+                host_check.Host().run([sys.executable, "-c", flood], seconds=30)
+        self.assertIn("wrote more than 1000000 bytes", str(caught.exception))
 
     def test_a_grandchild_left_behind_by_a_finished_probe_does_not_hold_it(self):
-        grandchild = "import time; time.sleep(5)"
-        parent = f"import subprocess, sys; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); print('done')"
+        argv, pid_file = self.tree(0)
         started = time.monotonic()
-        r = host_check.Host().run([sys.executable, "-c", parent], seconds=20)
+        r = host_check.Host().run(argv, seconds=20)
         self.assertLess(time.monotonic() - started, 15)
-        self.assertEqual(r.stdout.strip(), "done")
-
+        self.assertEqual(r.returncode, 0)
+        self.grandchild_gone(pid_file)  # reaped here: a finished probe's leftovers are not the check's to end
 
 class Exit(Base):
     def test_a_failure_exits_one_listing_the_fix(self):

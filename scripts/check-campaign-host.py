@@ -23,6 +23,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +57,8 @@ SYSTEM_POLICY = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 MIN_FREE_BYTES = 50 * 10**9
 PROBE_SECONDS = 120  # every subprocess probe ends by then, so a hung tool cannot hold the campaign before its park
 MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 MB
+POLL_SECONDS = 0.1
+KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
 WTS_ACTIVE = 0
 WTS_SESSIONSTATE_LOCK, WTS_SESSIONSTATE_UNLOCK = 0, 1
@@ -176,36 +179,49 @@ class Host:
         return todo_graph.review_dispatch().find_cli(name)
 
     def run(self, argv, seconds=None):
-        """Run a probe with no input and a deadline, in its own process group, and end its whole tree afterwards.
+        """Run a probe with no input and a deadline, in its own process group, and end its whole tree if it overruns.
 
         Output goes to files, not pipes: a grandchild that inherits a pipe keeps it open after the probe is killed, and
-        reading that pipe would wait past any deadline. A probe still running at the deadline is ended with its tree
-        (review-dispatch's kill_tree) and reported as Unreadable. Its output is never printed (it may name the account).
+        reading that pipe would wait past any deadline. The files are watched while the probe runs, so neither a hang
+        nor a flood of output outlasts PROBE_SECONDS or MAX_PROBE_BYTES: an overrunning probe is ended with its tree
+        (review-dispatch's kill_tree, then its own handle) and reported as Unreadable. Its output is never printed (it
+        may name the signed-in account).
         """
         dispatch = todo_graph.review_dispatch()
+        limit = PROBE_SECONDS if seconds is None else seconds
         group = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | pin_proposal.NO_WINDOW} if os.name == "nt"
                  else {"start_new_session": True})
         # A grandchild that outlives the probe may still hold the output files, so a failed removal is ignored.
         with tempfile.TemporaryDirectory(prefix="campaign-host-", ignore_cleanup_errors=True) as scratch:
-            out_path, err_path = Path(scratch) / "out", Path(scratch) / "err"
-            with open(out_path, "wb") as out, open(err_path, "wb") as err:
+            paths = Path(scratch) / "out", Path(scratch) / "err"
+            with open(paths[0], "wb") as out, open(paths[1], "wb") as err:
                 process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, **group)
-                timed_out = False
+                problem, deadline = None, time.monotonic() + limit
                 try:
-                    process.wait(timeout=PROBE_SECONDS if seconds is None else seconds)
-                except subprocess.TimeoutExpired:
-                    timed_out = True
+                    while process.poll() is None:
+                        if any(p.stat().st_size > MAX_PROBE_BYTES for p in paths):
+                            problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
+                            break
+                        if time.monotonic() > deadline:
+                            problem = f"did not finish within {limit} seconds"
+                            break
+                        time.sleep(POLL_SECONDS)
                 finally:
                     # Only a live probe is killed: once it has exited its PID may already belong to another process.
                     if process.poll() is None:
                         dispatch.kill_tree(process)
-                        process.wait()
-            if timed_out:
-                raise Unreadable(f"{Path(argv[0]).name} did not finish within "
-                                 f"{PROBE_SECONDS if seconds is None else seconds} seconds")
-            read = lambda path: path.read_bytes()[:MAX_PROBE_BYTES].decode("utf-8", errors="replace")
-            return subprocess.CompletedProcess(argv, process.returncode, read(out_path), read(err_path))
+                        process.kill()  # through the handle, so this holds even when taskkill could not run
+                        try:
+                            process.wait(timeout=KILL_SECONDS)
+                        except subprocess.TimeoutExpired:
+                            problem = (problem or "overran") + ", and could not be ended"
+            if problem:
+                raise Unreadable(f"{Path(argv[0]).name} {problem}")
 
+            def read(path):
+                with open(path, "rb") as handle:
+                    return handle.read(MAX_PROBE_BYTES).decode("utf-8", errors="replace")
+            return subprocess.CompletedProcess(argv, process.returncode, read(paths[0]), read(paths[1]))
     def reviewer_cli(self):
         """(reviewer name, CLI name) the pin routes Claude's work to; review-dispatch's Refused when the pin is bad."""
         dispatch = todo_graph.review_dispatch()
@@ -271,13 +287,13 @@ def check_screen_lock(host):
     saver, _ = desktop("SCRNSAVE.EXE")
     timeout, _ = desktop("ScreenSaveTimeOut")
     try:
-        seconds = int(str(timeout).strip()) if timeout is not None else None
+        seconds = int(str(timeout).strip()) if timeout is not None else 0
     except ValueError:
-        seconds = None  # an unreadable timeout is treated as the default one: the saver still starts
-    # A timeout of 0 never starts the screen saver (Microsoft's ScreenSaveTimeOut policy), so it never locks.
-    if str(active) == "1" and str(secure) == "1" and saver and (seconds is None or seconds > 0):
-        found.append(f"the screen saver locks the PC after {seconds} seconds" if seconds else
-                     "the screen saver locks the PC after its default timeout")
+        raise Unreadable(f"ScreenSaveTimeOut is not a number of seconds: {timeout!r}") from None
+    # Without a timeout, or with 0, the screen saver never starts, so it never locks (Microsoft's ScreenSaveTimeOut
+    # policy, and "Group Policy screen saver setting does not work" for a timeout that is not configured).
+    if str(active) == "1" and str(secure) == "1" and saver and seconds > 0:
+        found.append(f"the screen saver locks the PC after {seconds} seconds")
         fixes.append("ask the administrator to remove the password-protected screen saver policy" if by_policy else
                      "Set-ItemProperty 'HKCU:\\Control Panel\\Desktop' ScreenSaverIsSecure 0")
     inactivity = host.registry(HKLM, SYSTEM_POLICY, "InactivityTimeoutSecs")
