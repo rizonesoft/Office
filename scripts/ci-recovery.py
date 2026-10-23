@@ -53,13 +53,27 @@ def load(path):
         state = json.loads(path.read_bytes().decode("utf-8"))
     except (OSError, UnicodeDecodeError, ValueError) as exc:
         raise Unreadable(f"{path} cannot be read ({exc}); fix or remove it by hand") from None
-    recovery = state.get("recovery") if isinstance(state, dict) else "invalid"
-    if recovery is not None and not (isinstance(recovery, dict) and isinstance(recovery.get("first"), str)
-                                     and isinstance(recovery.get("heads"), list)
-                                     and isinstance(recovery.get("attempts"), list)
-                                     and isinstance(recovery.get("reruns"), list)):
+    if not well_formed(state):
         raise Unreadable(f"{path} does not hold a recovery in the expected shape; fix or remove it by hand")
     return state
+
+
+def well_formed(state):
+    """The whole shape `save` writes, so no malformed field can crash a later command."""
+    if not isinstance(state, dict) or set(state) != {"recovery"}:
+        return False
+    recovery = state["recovery"]
+    if recovery is None:
+        return True
+    sha = lambda v: isinstance(v, str) and len(v) == SHA_LENGTH and all(c in "0123456789abcdef" for c in v)
+    return (isinstance(recovery, dict) and sha(recovery.get("first")) and isinstance(recovery.get("opened"), str)
+            and isinstance(recovery.get("heads"), list) and recovery["heads"] and all(sha(h) for h in recovery["heads"])
+            and recovery["heads"][0] == recovery["first"]
+            and isinstance(recovery.get("reruns"), list) and all(sha(h) for h in recovery["reruns"])
+            and isinstance(recovery.get("attempts"), list) and len(recovery["attempts"]) <= BUDGET
+            and all(isinstance(a, dict) and a.get("n") == i + 1 and a.get("kind") in KINDS and sha(a.get("head"))
+                    and isinstance(a.get("reserved"), str) and a.get("result") in (None, *OUTCOMES)
+                    for i, a in enumerate(recovery["attempts"])))
 
 
 def save(path, state):

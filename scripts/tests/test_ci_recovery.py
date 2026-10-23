@@ -152,6 +152,20 @@ class Recovery(Base):
         self.assertEqual(code, 2)
         self.assertEqual(self.state.read_text(encoding="utf-8"), "{ not json")
 
+    def test_every_malformed_state_is_unreadable_never_a_crash(self):
+        # Review round 2 of D00 T03 §18: shapes the writer never makes still exit 2.
+        self.cli("open", sha(1))
+        good = json.loads(self.state.read_text(encoding="utf-8"))
+        bad_shapes = [{}, {"recovery": None, "extra": 1}, [], {"recovery": {**good["recovery"], "heads": []}},
+                      {"recovery": {**good["recovery"], "first": "x"}},
+                      {"recovery": {**good["recovery"], "attempts": [{"n": 2, "kind": "repair"}]}},
+                      {"recovery": {**good["recovery"], "reruns": [1]}}]
+        for shape in bad_shapes:
+            with self.subTest(shape=str(shape)[:60]):
+                self.state.write_text(json.dumps(shape), encoding="utf-8")
+                for argv in (("show",), ("reserve", "repair"), ("open", sha(2))):
+                    self.assertEqual(self.cli(*argv)[0], 2, argv)
+
     def test_a_refused_request_changes_nothing(self):
         self.cli("open", sha(1))
         before = self.state.read_bytes()
