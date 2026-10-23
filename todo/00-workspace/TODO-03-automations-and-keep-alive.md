@@ -501,6 +501,8 @@ Filed 2026-10-23 from round 2 of D00 T03 §14's completion review (`docs/reviews
 
 ## 17. CI Push Reconciliation
 
+> **Started:** 2026-10-23T11:45:00Z
+
 Filed 2026-10-23 from round 1 of D00 T03 §15's completion review (`docs/reviews/00-workspace/D00-T03-s15-completion.md`, finding 3): §15 records `ci-pending` only after a stamp push, so a dependency merge, a closeout push, another campaign push, or a session that dies between a push and its record leaves a commit on `main` whose CI nobody checks. This section makes the pending set come from the pushed history, not from notes. **Groomed 2026-10-23:** finding 1 of round 2 of §15's completion review: GitHub runs a push workflow only for the push's tip, so the unit is the push head, not every commit; commits under a green head are covered by it.
 
 **Phase:** 0
