@@ -397,6 +397,21 @@ class Toolchain(Base):
                 self.assertRaises(host_check.Unreadable):
             host.vswhere()
 
+    def test_an_instance_with_a_malformed_version_cannot_check(self):
+        host = host_check.Host()
+        record = json.loads(json.dumps(FULL_VS))
+        record[0]["installationVersion"] = "not-a-version"
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, json.dumps(record), "")
+        with mock.patch.object(host_check, "VSWHERE", Path(sys.executable)), \
+                self.assertRaises(host_check.Unreadable):
+            host.vswhere()
+
+    def test_a_complete_record_is_accepted(self):
+        host = host_check.Host()
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, json.dumps(FULL_VS), "")
+        with mock.patch.object(host_check, "VSWHERE", Path(sys.executable)):
+            self.assertEqual(host.vswhere()[0]["installationVersion"], "18.11.12315.225")
+
     def test_prerelease_only_fails(self):
         self.host.instances[0]["isPrerelease"] = True
         self.assertEqual(self.result("toolchain")["state"], "fail")

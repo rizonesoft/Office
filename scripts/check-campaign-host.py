@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import socket
@@ -207,7 +208,8 @@ class Host:
             raise Unreadable("vswhere output is not a list of instances")
         for i in instances:
             if not (isinstance(i.get("installationPath"), str) and i["installationPath"]
-                    and isinstance(i.get("installationVersion"), str) and i["installationVersion"]
+                    and isinstance(i.get("installationVersion"), str)
+                    and re.fullmatch(r"[0-9]+(\.[0-9]+){1,3}", i["installationVersion"])
                     and isinstance(i.get("packages"), list)
                     and all(isinstance(p, dict) and isinstance(p.get("id"), str) for p in i["packages"])):
                 raise Unreadable("vswhere printed an instance without its path, version or packages")
@@ -505,8 +507,7 @@ def check_toolchain(host):
     if not stable:
         return fail("toolchain", f"no stable Visual Studio {VS_MAJOR} (2026) is installed",
                     "install Visual Studio 2026 with the desktop C++ workload")
-    newest = max(stable, key=lambda i: [int(p) for p in str(i.get("installationVersion", "0")).split(".")
-                                        if p.isdigit()])
+    newest = max(stable, key=lambda i: [int(p) for p in i["installationVersion"].split(".")])  # validated by vswhere()
     have = {p.get("id") for p in newest.get("packages") or [] if isinstance(p, dict)}
     missing = [i for i in TOOLCHAIN if i not in have]
     if not any(str(i).startswith(WINDOWS_SDK) for i in have):

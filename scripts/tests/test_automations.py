@@ -252,6 +252,10 @@ class Alert(unittest.TestCase):
         alert.key(vault)
         self.assertTrue(os.path.isabs(calls[0][0]), calls[0][0])
         self.assertEqual(Path(calls[0][0]).parts[-2:], ("System32", "wsl.exe"))
+        linux = calls[0][-1]
+        self.assertIn(f"exec timeout --kill-after=5 {alert.LINUX_SECONDS} conclave-op read", linux)
+        self.assertIn(f"ulimit -v {alert.LINUX_MEMORY_KB};", linux)
+        self.assertLess(alert.LINUX_SECONDS + 5, 90)
 
     def test_a_dry_run_reads_no_key(self):
         with tempfile.TemporaryDirectory() as tmp:

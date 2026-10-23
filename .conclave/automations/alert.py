@@ -34,6 +34,8 @@ SENDER = "Office automations <website@rizonetech.com>"
 TO = "rizonetech@gmail.com"
 TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
+LINUX_SECONDS = 80  # under the 90 second Windows-side timeout
+LINUX_MEMORY_KB = 1024 * 1024
 
 
 class Refused(Exception):
@@ -48,7 +50,10 @@ def wsl() -> str:
 
 def key(run=subprocess.run) -> str:
     """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed."""
-    result = run([wsl(), "-e", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
+    # Bounded inside Linux too: ending wsl.exe on Windows does not end the Linux processes it started, so the read
+    # runs under `timeout` (which signals its whole process group) and a 1 GiB address-space limit.
+    linux = f'ulimit -v {LINUX_MEMORY_KB}; exec timeout --kill-after=5 {LINUX_SECONDS} conclave-op read "{ITEM}/credential"'
+    result = run([wsl(), "-e", "bash", "-lc", linux],
                  capture_output=True, text=True, timeout=90,
                  creationflags=0x08000000 if os.name == "nt" else 0)  # CREATE_NO_WINDOW: run.py has no console
     value = (result.stdout or "").strip()
