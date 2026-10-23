@@ -439,6 +439,8 @@ Filed 2026-10-23 from round 2 of D00 T03 §13's completion review (`docs/reviews
 
 ## 15. CI Watch and Red-Run Repair
 
+> **Started:** 2026-10-23T10:12:00Z
+
 Filed 2026-10-23 from the owner's question whether the campaign keeps an eye on CI and fixes red runs. It does not: `process-plan` runs every gate locally and pushes after each stamp, but nothing reads the GitHub Actions result afterwards (the old guard's CI repair ledger was retired on 2026-10-21, and the Phase 2 run's CI repairs were found by hand). Once C++ lands, the Arm64 build and tests run only in CI, so a red run would go unseen. This section makes CI part of the loop: the previous push is checked at every section boundary, a red run is repaired before the next row is claimed, a phase closeout, a draft release and the end of the campaign wait for green, and a failure that will not yield parks the campaign, since a red `main` is shared infrastructure.
 
 **Phase:** 0
