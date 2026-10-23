@@ -287,16 +287,29 @@ class ScreenLock(Base):
         self.assertEqual(r["state"], "fail")
         self.assertIn("restart Windows", r["fix"])
 
-    def test_a_clock_correction_after_the_change_does_not_hide_it(self):
-        s = 10**7
-        boot = 1000 * s
-        # Booted at B, policy removed at B+30, clock moved forward 120 s since: now reads B+720 after 600 s of uptime.
-        self.assertTrue(host_check.written_since_boot(boot + 30 * s, boot + 720 * s, 600 * s, boot + 1 * s))
-        # Clock set back 120 s at uptime 60 s, policy removed at uptime 90 s (stamped B-30), clock restored since.
-        self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
-        self.assertTrue(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s, 120 * s))
-        # Written before this boot: not a pending change.
-        self.assertFalse(host_check.written_since_boot(boot - 30 * s, boot + 600 * s, 600 * s, boot + 1 * s))
+    S = 10**7
+
+    def test_a_write_after_boot_is_seen(self):
+        boot = 1000 * self.S
+        self.assertTrue(host_check.written_since_boot(boot + 30 * self.S, boot, [], boot + 600 * self.S))
+        self.assertFalse(host_check.written_since_boot(boot - 30 * self.S, boot, [], boot + 600 * self.S))
+
+    def test_a_forward_correction_after_the_change_does_not_hide_it(self):
+        # Round 16: booted at B, policy removed at B+30, the clock stepped forward 120 s at B+100.
+        boot, s = 1000 * self.S, self.S
+        steps = [(boot + 220 * s, boot + 100 * s)]
+        self.assertTrue(host_check.written_since_boot(boot + 30 * s, boot, steps, boot + 720 * s))
+
+    def test_a_write_stamped_while_the_clock_was_set_back_is_seen(self):
+        # Round 17: back 120 s at B+60, policy removed at uptime 90 (stamped B-30), the clock restored at B-10.
+        boot, s = 1000 * self.S, self.S
+        steps = [(boot - 60 * s, boot + 60 * s), (boot + 130 * s, boot - 10 * s)]
+        self.assertTrue(host_check.written_since_boot(boot - 30 * s, boot, steps, boot + 600 * s))
+
+    def test_a_write_before_a_reboot_with_the_clock_set_back_is_not_pending(self):
+        # Round 20: removed at 12:00, the clock set back, rebooted at 11:01: the restart applied the removal.
+        h, m = 3600 * self.S, 60 * self.S
+        self.assertFalse(host_check.written_since_boot(12 * h, 11 * h + 1 * m, [], 11 * h + 30 * m))
 
     def test_a_deleted_key_or_ancestor_shows_in_the_nearest_surviving_one(self):
         key = host_check.SYSTEM_POLICY
@@ -316,28 +329,46 @@ class ScreenLock(Base):
         with self.assertRaises(host_check.Unreadable):
             host_check.latest_write(key, stamps({}))
 
-    def test_backward_steps_are_summed_from_the_time_change_events(self):
+    def test_clock_steps_are_read_from_the_time_change_events(self):
         def event(new, old):
             return f"<Event><EventData><Data Name='NewTime'>{new}</Data><Data Name='OldTime'>{old}</Data></EventData></Event>"
-        xml = (event("2026-10-23T08:00:00.0000000Z", "2026-10-23T08:02:00.0000000Z")      # back 120 s
-               + event("2026-10-23T08:05:00.5000000Z", "2026-10-23T08:05:00.0000000Z")    # forward: ignored
-               + event("2026-10-23T09:00:00.0000000Z", "2026-10-23T09:00:00.2500000Z"))   # back 0.25 s
-        self.assertEqual(host_check.backward_shift(xml), 120 * 10**7 + 2_500_000)
-        self.assertEqual(host_check.backward_shift(""), 0)
+        xml = (event("2026-10-23T08:00:00.0000000Z", "2026-10-23T08:02:00.0000000Z")
+               + event("2026-10-23T09:00:00.25Z", "2026-10-23T09:00:00Z"))
+        steps = host_check.clock_steps(xml)
+        self.assertEqual(len(steps), 2)
+        self.assertEqual(steps[0][1] - steps[0][0], 120 * self.S)
+        self.assertEqual(steps[1][0] - steps[1][1], 2_500_000)
+        self.assertEqual(host_check.clock_steps(""), [])
         quoted = ('<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event"><EventData>'
                   '<Data Name="NewTime">2026-10-23T08:00:00Z</Data><Data Name="OldTime">2026-10-23T08:00:10Z</Data>'
                   '</EventData></Event>')
-        self.assertEqual(host_check.backward_shift(quoted), 10 * 10**7)
+        self.assertEqual(len(host_check.clock_steps(quoted)), 1)
         for bad in (event("yesterday", "2026-10-23T09:00:00Z"),
                     "<Event><EventData><Data Name='NewTime'>2026-10-23T08:00:00Z</Data></EventData></Event>",
                     event("2026-10-23T08:00:00Z", "2026-10-23T08:02:00Z")[:-20]):
             with self.subTest(bad=bad[-40:]), self.assertRaises(host_check.Unreadable):
-                host_check.backward_shift(bad)
+                host_check.clock_steps(bad)
+
+    def test_the_start_event_gives_its_record_and_time(self):
+        xml = ("<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System>"
+               "<TimeCreated SystemTime='2026-10-22T19:11:30.8640802Z'/><EventRecordID>31239</EventRecordID>"
+               "</System></Event>")
+        record, at = host_check.start_event(xml)
+        self.assertEqual(record, 31239)
+        self.assertEqual(at, host_check.ticks("2026-10-22T19:11:30.8640802Z"))
+        self.assertIsNone(host_check.start_event(""))
+        with self.assertRaises(host_check.Unreadable):
+            host_check.start_event("<Event><System><EventRecordID>x</EventRecordID></System></Event>")
 
     def test_the_real_event_reader_runs(self):
         if host_check.os.name != "nt":
             self.skipTest("Windows event log")
-        self.assertGreaterEqual(host_check.Host().clock_moved_back(), 0)
+        started, steps = host_check.Host().boot_clock()
+        self.assertIsInstance(steps, list)
+        self.assertGreater(started, 0)
+
+    START = ("<Event><System><TimeCreated SystemTime='2026-10-22T19:11:30Z'/><EventRecordID>31239</EventRecordID>"
+             "</System></Event>")
 
     def reader(self, started, changes):
         host = host_check.Host()
@@ -347,22 +378,24 @@ class ScreenLock(Base):
 
     def test_a_log_without_this_boots_start_event_cannot_vouch(self):
         with self.assertRaises(host_check.Unreadable) as caught:
-            self.reader("", "").clock_moved_back()
+            self.reader("", "").boot_clock()
         self.assertIn("start event", str(caught.exception))
 
-    def test_changes_are_read_after_the_boot_record(self):
+    def test_steps_are_read_after_the_boot_record(self):
         calls = []
-        host = self.reader("<Event><System><EventRecordID>31239</EventRecordID></System></Event>", "")
+        host = self.reader(self.START, "")
         run = host.run
         host.run = lambda argv, seconds=None: calls.append(argv) or run(argv, seconds)
-        self.assertEqual(host.clock_moved_back(), 0)
+        self.assertEqual(host.boot_clock()[1], [])
         self.assertIn("EventRecordID > 31239", calls[1][3])
 
-    def test_a_full_page_of_changes_cannot_vouch(self):
+    def test_a_full_page_of_steps_cannot_vouch(self):
         page = ("<Event><EventData><Data Name='NewTime'>2026-10-23T08:00:00Z</Data>"
-                "<Data Name='OldTime'>2026-10-23T08:00:00Z</Data></EventData></Event>") * host_check.MAX_TIME_EVENTS
-        with self.assertRaises(host_check.Unreadable):
-            self.reader("<EventRecordID>7</EventRecordID>", page).clock_moved_back()
+                "<Data Name='OldTime'>2026-10-23T08:00:00Z</Data></EventData></Event>")
+        with mock.patch.object(host_check, "MAX_TIME_EVENTS", 3):
+            self.assertEqual(len(self.reader(self.START, page * 2).boot_clock()[1]), 2)
+            with self.assertRaises(host_check.Unreadable):
+                self.reader(self.START, page * 3).boot_clock()
 
     def test_the_real_reader_compares_with_boot_time(self):
         if host_check.os.name != "nt":

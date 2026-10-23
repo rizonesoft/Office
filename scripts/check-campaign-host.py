@@ -200,44 +200,42 @@ class Host:
         return {"active": bool(values["active"]), "secure": bool(values["secure"]), "timeout": values["timeout"]}
 
     def changed_since_boot(self, key):
-        """True when an HKLM key was written after Windows last started, so a value read at sign-in (the machine
-        inactivity limit is one) may not be the one in force."""
-        import ctypes
+        """True when an HKLM key (or the nearest ancestor left after deleting it) may have been written since Windows
+        last started, so a value read at sign-in (the machine inactivity limit is one) may not be the one in force."""
         import winreg
 
         def written(path):  # 100 ns intervals since 1601, in the system clock as it was at the write
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as k:
                 return winreg.QueryInfoKey(k)[2]
         changed = latest_write(key, written)
-        kernel32 = ctypes.WinDLL("kernel32")
-        kernel32.GetTickCount64.restype = ctypes.c_ulonglong
-        now = (int(time.time()) + 11644473600) * 10**7
-        uptime = kernel32.GetTickCount64() * 10**4
-        return written_since_boot(changed, now, uptime, written(r"HARDWARE\DESCRIPTION"), self.clock_moved_back())
+        started, steps = self.boot_clock()
+        now = (time.time_ns() // 100) + 11644473600 * 10**7
+        return written_since_boot(changed, min(started, written(r"HARDWARE\DESCRIPTION")), steps, now)
 
-    def clock_moved_back(self):
-        """The total time, in 100 ns units, by which the system clock was set back since Windows started: the
-        Kernel-General time change events (event 1, with OldTime and NewTime) after this boot's start event (event 12),
-        selected by record number, which no clock change moves. A log that no longer holds this boot's start event, or
-        more events than one query returns, cannot vouch for the history, so it is Unreadable."""
+    def boot_clock(self):
+        """The clock as it ran since Windows started: the time this boot's start event (Kernel-General 12) was logged,
+        and every clock step since (Kernel-General 1, as (new, old) times in 100 ns units), selected by record number,
+        which no clock change moves. A log that no longer holds this boot's start event, or more steps than one query
+        returns, cannot vouch for the history, so it is Unreadable."""
         wevtutil = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wevtutil.exe")
         kernel = "Provider[@Name='Microsoft-Windows-Kernel-General']"
         started = self.run([wevtutil, "qe", "System", f"/q:*[System[{kernel} and (EventID=12)]]", "/rd:true",
                             "/c:1", "/f:xml"])
         if started.returncode != 0:
             raise Unreadable(f"wevtutil could not read the System log (exit {started.returncode})")
-        record = re.search(r"<EventRecordID>(\d+)</EventRecordID>", started.stdout)
-        if not record:
+        boot = start_event(started.stdout)
+        if boot is None:
             raise Unreadable("the System log no longer holds this boot's start event, so clock changes are unknown")
+        record, at = boot
         changes = self.run([wevtutil, "qe", "System",
-                            f"/q:*[System[{kernel} and (EventID=1) and (EventRecordID > {record[1]})]]",
+                            f"/q:*[System[{kernel} and (EventID=1) and (EventRecordID > {record})]]",
                             "/f:xml", f"/c:{MAX_TIME_EVENTS}"])
         if changes.returncode != 0:
             raise Unreadable(f"wevtutil could not read the time change events (exit {changes.returncode})")
-        moved_back, count = backward_shift(changes.stdout), changes.stdout.count("<Event")
-        if count >= MAX_TIME_EVENTS:
+        steps = clock_steps(changes.stdout)
+        if len(steps) >= MAX_TIME_EVENTS:
             raise Unreadable(f"{MAX_TIME_EVENTS} or more clock changes since boot, more than one query returns")
-        return moved_back
+        return at, steps
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -480,42 +478,70 @@ def latest_write(key, written):
     raise Unreadable(f"neither HKLM\\{key} nor any key above it can be read")
 
 
-def written_since_boot(changed, now, uptime, hardware_written, moved_back=0):
-    """Whether a key written at `changed` was written after Windows started (all in 100 ns units). Two boot times, and
-    the earlier is used: now less the uptime moves with every clock correction made since, while the volatile
-    HARDWARE\\DESCRIPTION key is written as Windows starts, stamped by the clock as it was then. A write stamped while
-    the clock was set back can sit before both, so the bound is widened by every backward correction since boot."""
-    return changed > min(now - uptime, hardware_written) - moved_back
+def written_since_boot(changed, started, steps, now):
+    """Whether a write stamped `changed` can have happened since Windows started (all in 100 ns units). Stamps are
+    clock readings, and the clock can be stepped either way, so a stamp is compared with the clock ranges the system
+    actually passed through since it started: from `started` to the first step's old time, from each step's new time
+    to the next one's old time, and from the last new time to `now`. A stamp inside any of them may be since boot; one
+    outside all of them was written before (a reading the clock never showed since)."""
+    ranges, current = [], started
+    for new, old in steps:
+        ranges.append((min(current, old), max(current, old)))
+        current = new
+    ranges.append((min(current, now), max(current, now)))
+    return any(lo <= changed <= hi for lo, hi in ranges)
 
 
 MAX_TIME_EVENTS = 5000
 
 
-def backward_shift(events_xml):
-    """The sum of every backward clock step in Kernel-General time change events, in 100 ns units. The events are
-    parsed as XML, and every one must carry a readable NewTime and OldTime: one that does not is Unreadable, never a
-    step of zero."""
+def _events(events_xml, what):
     import xml.etree.ElementTree as ElementTree
     try:
-        events = ElementTree.fromstring(f"<events>{events_xml}</events>")
+        events = list(ElementTree.fromstring(f"<events>{events_xml}</events>"))
     except ElementTree.ParseError as exc:
-        raise Unreadable(f"the time change events are not readable XML: {exc}") from None
-    pairs = []
+        raise Unreadable(f"the {what} are not readable XML: {exc}") from None
     for event in events:
         if event.tag.rpartition("}")[2] != "Event":
-            raise Unreadable(f"unexpected {event.tag} among the time change events")
-        data = {d.get("Name"): (d.text or "") for d in event.iter() if d.tag.rpartition("}")[2] == "Data"}
+            raise Unreadable(f"unexpected {event.tag} among the {what}")
+    return events
+
+
+def _name(element):
+    return element.tag.rpartition("}")[2]
+
+
+def ticks(text):
+    """An event time (ISO 8601 UTC, up to 9 fractional digits) in 100 ns units since 1601."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z", (text or "").strip())
+    if not m:
+        raise Unreadable(f"an event has an unreadable time {text!r}")
+    whole = datetime(*map(int, m.groups()[:6]), tzinfo=timezone.utc)
+    return (int(whole.timestamp()) + 11644473600) * 10**7 + int(((m[7] or "") + "0000000")[:7])
+
+
+def start_event(events_xml):
+    """(record number, logged time) of the one start event a query returned, or None when it returned none."""
+    events = _events(events_xml, "start events")
+    if not events:
+        return None
+    record = next((e.text for e in events[0].iter() if _name(e) == "EventRecordID"), None)
+    logged = next((e.get("SystemTime") for e in events[0].iter() if _name(e) == "TimeCreated"), None)
+    if not (record or "").strip().isdigit():
+        raise Unreadable("the start event has no record number")
+    return int(record), ticks(logged)
+
+
+def clock_steps(events_xml):
+    """Every clock step in Kernel-General time change events, in log order, as (new, old) in 100 ns units. Every event
+    must carry a readable NewTime and OldTime: one that does not is Unreadable, never left out."""
+    steps = []
+    for event in _events(events_xml, "time change events"):
+        data = {d.get("Name"): d.text for d in event.iter() if _name(d) == "Data"}
         if not data.get("NewTime") or not data.get("OldTime"):
             raise Unreadable("a time change event lacks its NewTime or OldTime")
-        pairs.append((data["NewTime"], data["OldTime"]))
-    def ticks(text):
-        m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z", text.strip())
-        if not m:
-            raise Unreadable(f"a time change event has an unreadable time {text!r}")
-        whole = datetime(*map(int, m.groups()[:6]), tzinfo=timezone.utc)
-        fraction = int(((m[7] or "") + "0000000")[:7])
-        return (int(whole.timestamp()) + 11644473600) * 10**7 + fraction
-    return sum(max(0, ticks(old) - ticks(new)) for new, old in pairs)
+        steps.append((ticks(data["NewTime"]), ticks(data["OldTime"])))
+    return steps
 
 
 def ok(name, detail):
