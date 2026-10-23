@@ -30,6 +30,7 @@ BRANCH = "main"
 GRACE_SECONDS = 600  # GitHub creates the push run within seconds; ten minutes without one is not a delay
 CALL_SECONDS = 60
 POLL_SECONDS = 30
+CHECK_RESERVE = 5  # the last look at a waited run happens at least this long before the deadline
 LOG_LINES = 400
 GREEN, RED, UNKNOWN, PENDING = 0, 1, 2, 3
 
@@ -58,13 +59,13 @@ class Tools:
         return result
 
 
-def resolve(tools, ref, seconds):
-    """The full SHA and the committer time (UTC) of a ref."""
-    result = tools.call("git", ["rev-parse", "--verify", f"{ref}^{{commit}}"], seconds)
+def resolve(tools, ref, left):
+    """The full SHA and the committer time (UTC) of a ref. `left()` is the time each call may take."""
+    result = tools.call("git", ["rev-parse", "--verify", f"{ref}^{{commit}}"], left())
     sha = result.stdout.strip()
     if result.returncode != 0 or len(sha) != 40:
         raise Unknown(f"{ref} is not a commit here")
-    shown = tools.call("git", ["show", "-s", "--format=%cI", sha], seconds)
+    shown = tools.call("git", ["show", "-s", "--format=%cI", sha], left())
     try:
         committed = datetime.fromisoformat(shown.stdout.strip()).astimezone(timezone.utc)
     except ValueError:
@@ -122,19 +123,30 @@ def write_log(tools, run_id, path, seconds):
     if result.returncode != 0:
         return "log not written: gh run view --log-failed failed"
     tail = "\n".join(result.stdout.splitlines()[-LOG_LINES:])
-    target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.with_name(target.name + ".tmp")
-    temp.write_text(tail + "\n", encoding="utf-8")
-    os.replace(temp, target)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temp.write_text(tail + "\n", encoding="utf-8")
+        os.replace(temp, target)
+    except OSError as exc:  # a full or locked scratch folder loses the log, never the CI result
+        try:
+            temp.unlink(missing_ok=True)
+        except OSError:
+            pass  # best-effort cleanup; the failure itself is the note returned below
+        return f"log not written: {exc.strerror or exc}: {target}"
     return f"log: {target} (last {LOG_LINES} lines)"
 
 
 def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
     """(exit code, lines) for one look at the commit's CI."""
     def left():
-        return max(1.0, min(CALL_SECONDS, deadline - clock()))
+        """The time the next call may take: 60 seconds or what is left, and none at all past the deadline."""
+        remaining = deadline - clock()
+        if remaining <= 0:
+            raise Unknown("the wait's deadline passed before CI could be read")
+        return min(CALL_SECONDS, remaining)
     try:
-        sha, committed = resolve(tools, ref, left())
+        sha, committed = resolve(tools, ref, left)
         run = governing_run(tools, sha, left())
     except Unknown as exc:
         return UNKNOWN, [f"unknown {ref}: {exc}"]
@@ -150,9 +162,12 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
     if run.get("conclusion") == "success":
         return GREEN, [f"green {head}"]
     lines = [f"red {head} ({run.get('conclusion') or 'no conclusion'})"]
-    lines += failing_steps(tools, run.get("databaseId"), left())
-    if log:
-        lines.append(write_log(tools, run.get("databaseId"), log, left()))
+    try:
+        lines += failing_steps(tools, run.get("databaseId"), left())
+        if log:
+            lines.append(write_log(tools, run.get("databaseId"), log, left()))
+    except Unknown as exc:  # the run is red either way; only its details ran out of time
+        lines.append(f"  ({exc})")
     return RED, lines
 
 
@@ -169,9 +184,11 @@ def main(argv=None, tools=None, clock=time.monotonic, sleep=time.sleep, now=None
     while True:
         moment = now() if now else datetime.now(timezone.utc)
         code, lines = status(tools, args.ref, moment, deadline, args.log, clock)
-        if code != PENDING or not args.wait or clock() + POLL_SECONDS > deadline:
+        remaining = deadline - clock()
+        if code != PENDING or not args.wait or remaining <= CHECK_RESERVE:
             break
-        sleep(POLL_SECONDS)
+        # Sleep to the next poll, or to just before the deadline, so the last look still falls inside it.
+        sleep(min(POLL_SECONDS, remaining - CHECK_RESERVE))
     if code == PENDING and args.wait:
         lines.append(f"still pending after {args.timeout} s")
     print("\n".join(lines))

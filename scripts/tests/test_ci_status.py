@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("ci_status", SCRIPTS / "ci-status.py")
@@ -185,6 +186,33 @@ class Waiting(Base):
         self.assertTrue(all(0 < seconds <= ci.CALL_SECONDS for _, _, seconds in fake.calls), fake.calls)
         self.assertTrue(any(seconds < ci.CALL_SECONDS for _, _, seconds in fake.calls), "never bounded by time left")
 
+    def test_a_run_turning_green_just_before_the_timeout_is_seen(self):
+        # Polls at 0, 30, 60 and 90 s, then one more at 95 s: a run that turns green at 95 s is green.
+        pending = [run(status="in_progress", conclusion="")]
+        code, _ = self.main(Fake(runs=[pending] * 4 + [[run()]]), "--wait", "--timeout", "100")
+        self.assertEqual(code, 0)
+
+    def test_no_call_is_made_after_the_deadline(self):
+        # Each git call takes 0.75 s against a 1 s wait: the gh call would start after the deadline.
+        clock = Clock()
+        fake = Fake()
+        real = fake.call
+
+        def slow(name, args, seconds):
+            self.assertGreater(seconds, 0)
+            result = real(name, args, seconds)
+            if name == "git":
+                clock.t += 0.75
+            return result
+        fake.call = slow
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = ci.main(["HEAD", "--wait", "--timeout", "1"], tools=fake, clock=clock, sleep=clock.sleep,
+                           now=lambda: COMMITTED + timedelta(minutes=5))
+        self.assertEqual(code, 2)
+        self.assertIn("deadline passed", out.getvalue())
+        self.assertFalse([c for c in fake.calls if c[0] == "gh"])
+
     def test_a_hung_gh_is_unknown_within_its_deadline(self):
         hung = ci.Unknown("gh run did not answer within 60 seconds")
         code, out = self.main(Fake(fail={"gh run list": hung}), "--wait", "--timeout", "600")
@@ -211,6 +239,15 @@ class Logs(Base):
         code, out = self.main(Fake(runs=[[run(conclusion="failure")]], log="x"), "--log", str(target))
         self.assertEqual(code, 1)
         self.assertIn("inside the repository", out)
+        self.assertFalse(target.exists())
+
+    def test_a_log_that_cannot_be_written_is_reported_and_the_status_stands(self):
+        target = self.tmp / "ci.log"
+        with mock.patch.object(Path, "mkdir", side_effect=PermissionError(13, "Access is denied")):
+            code, out = self.main(Fake(runs=[[run(conclusion="failure")]], log="x"), "--log", str(target))
+        self.assertEqual(code, 1)
+        self.assertIn("red aaaaaaa", out)
+        self.assertIn("log not written: Access is denied", out)
         self.assertFalse(target.exists())
 
     def test_a_log_that_cannot_be_read_is_reported_and_the_status_stands(self):

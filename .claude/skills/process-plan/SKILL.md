@@ -76,7 +76,7 @@ A resume after a host-not-ready park is a fresh run, never a continuation of the
 
 The campaign pushes to `main`, so it also reads what GitHub Actions made of each push and never builds on a red one (D00 T03 §15). After every stamp push, append `ci-pending <sha> <UTC>` to the run file's Critical events. At the next section boundary, before the next row is claimed, run `python scripts/ci-status.py <sha>` and act on its exit:
 
-- 0 (green): append `ci-green <sha>` and carry on.
+- 0 (green): append `ci-green <sha>`, commit the run file (`docs: phase run: ci-green <sha>`) and push it, so the tree is clean and `HEAD` pushed for the dependency merge below; that push is itself recorded `ci-pending` and checked at the next boundary.
 - 1 (red): repair it before the next row, as below.
 - 3 (pending): run `python scripts/ci-status.py <sha> --wait --timeout 1800` and act on that result.
 - 2 (unknown: `gh` cannot be read, or no push run 10 minutes after the commit): retry once after five minutes; still 2, park the campaign with `ci-unknown` as the reason, since green cannot be established.
