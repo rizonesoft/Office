@@ -258,12 +258,17 @@ def unchecked_heads(tools, run_file, left):
     history = listed.stdout.split()
     if listed.returncode != 0 or not history or not all(len(c) == 40 for c in history):
         raise Unknown("cannot read the history of origin/main")
-    # A clone ahead of origin/main holds commits no CI run can cover yet: push them and reconcile again.
-    ahead = tools.call("git", ["rev-list", "--count", f"origin/{BRANCH}..HEAD"], left())
-    if ahead.returncode != 0 or not ahead.stdout.strip().isdigit():
-        raise Unknown("cannot compare HEAD with origin/main")
-    if int(ahead.stdout) > 0:
-        raise Unknown(f"HEAD has {int(ahead.stdout)} commit(s) origin/main lacks; push them, then reconcile again")
+    # The clone must be exactly the fetched origin/main: its run files are then the records of the history checked,
+    # and the head checked is the one the next row builds on. Ahead: push first; behind: fast-forward first.
+    local = tools.call("git", ["rev-parse", "--verify", "HEAD^{commit}"], left())
+    if local.returncode != 0 or len(local.stdout.strip()) != 40:
+        raise Unknown("cannot read HEAD")
+    if local.stdout.strip() != history[0]:
+        ahead = tools.call("git", ["rev-list", "--count", f"origin/{BRANCH}..HEAD"], left())
+        count = int(ahead.stdout) if ahead.returncode == 0 and ahead.stdout.strip().isdigit() else 0
+        if count:
+            raise Unknown(f"HEAD has {count} commit(s) origin/main lacks; push them, then reconcile again")
+        raise Unknown("HEAD is not origin/main; fast-forward (git pull --ff-only origin main), then reconcile again")
     repo = origin(tools, left())
     runs = push_runs(tools, repo, left())
     outcomes, pendings = records(run_file)

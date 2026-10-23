@@ -333,9 +333,10 @@ class Repo:
     """A scripted clone and GitHub for --pending: a first-parent history (newest first), push runs by head, and what
     `git fetch` brings in."""
 
-    def __init__(self, history, runs, fetched=None, fail=None, ahead=0):
+    def __init__(self, history, runs, fetched=None, fail=None, ahead=0, local=None):
         self.history = list(history)
         self.ahead = ahead  # local commits origin/main lacks
+        self.local = local  # the clone's HEAD when it is not origin/main
         self.fetched = fetched
         self.runs = runs  # head -> conclusion ("success", "failure", or None while in progress)
         self.fail = fail or {}
@@ -363,7 +364,10 @@ class Repo:
             out = "\n".join(self.history[:limit]) + "\n"
         elif name == "git" and args[0] == "rev-parse":
             ref = args[2].split("^")[0]
-            out = (self.history[0] if ref in ("HEAD", "origin/main") else ref) + "\n"
+            if ref == "HEAD":
+                out = (self.local or (sha(999) if self.ahead else self.history[0])) + "\n"
+            else:
+                out = (self.history[0] if ref == "origin/main" else ref) + "\n"
         elif name == "git" and args[0] == "show":
             out = COMMITTED.isoformat() + "\n"
         elif name == "git" and args[0] == "remote":
@@ -478,10 +482,18 @@ class Pending(unittest.TestCase):
         self.assertEqual((code, self.listed(out)), (0, []))
         self.assertIn("0 unchecked push head(s)", out)
 
+    def test_a_clone_behind_the_fetched_head_is_unknown_until_it_fast_forwards(self):
+        # Review round 8 of D00 T03 §17: records from a stale checkout, or a head the pull then moves past, never pass.
+        base, new = sha(1), sha(2)
+        self.record(f"ci-green {base[:7]}")
+        code, out = self.pending(Repo([base], {base: "success", new: "success"}, fetched=[new, base], local=base))
+        self.assertEqual(code, 2)
+        self.assertIn("fast-forward", out)
+
     def test_the_remote_is_fetched_before_enumeration(self):
         base, new = sha(1), sha(2)
         self.record(f"ci-green {base[:7]}")
-        repo = Repo([base], {base: "success", new: "failure"}, fetched=[new, base])
+        repo = Repo([base], {base: "success", new: "failure"}, fetched=[new, base], local=new)
         code, out = self.pending(repo)
         self.assertEqual(code, 1)
         self.assertEqual(self.listed(out), [new[:7]])
