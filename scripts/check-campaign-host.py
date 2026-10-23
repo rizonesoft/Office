@@ -171,9 +171,12 @@ class Host:
         if result.returncode != 0:
             raise Unreadable(f"vswhere failed: {result.stderr.strip()}")
         try:
-            return json.loads(result.stdout or "[]")
+            instances = json.loads(result.stdout)  # vswhere prints [] when nothing matches, never nothing
         except ValueError as exc:
             raise Unreadable(f"vswhere output: {exc}") from None
+        if not isinstance(instances, list) or not all(isinstance(i, dict) for i in instances):
+            raise Unreadable("vswhere output is not a list of instances")
+        return instances
 
     def find(self, name):
         """A command's path from the absolute PATH entries only, never the working directory (review-dispatch's rule)."""
@@ -259,6 +262,9 @@ class Containment:
                                                               wintypes.DWORD]
             self.kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
             self.kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+            self.kernel32.QueryInformationJobObject.restype = wintypes.BOOL
+            self.kernel32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                                                wintypes.DWORD, ctypes.c_void_p]
             self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
             self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
             self.job = self.kernel32.CreateJobObjectW(None, None)
@@ -289,10 +295,32 @@ class Containment:
             raise Unreadable(f"NtResumeProcess failed (status {status & 0xFFFFFFFF:#x})")
         return process
 
+    def active(self):
+        """How many processes are still in the job (termination is asynchronous: TerminateJobObject only starts it)."""
+        ctypes = self.ctypes
+
+        class Accounting(ctypes.Structure):  # JOBOBJECT_BASIC_ACCOUNTING_INFORMATION
+            _fields_ = [("TotalUserTime", ctypes.c_longlong), ("TotalKernelTime", ctypes.c_longlong),
+                        ("ThisPeriodTotalUserTime", ctypes.c_longlong),
+                        ("ThisPeriodTotalKernelTime", ctypes.c_longlong), ("TotalPageFaultCount", ctypes.c_ulong),
+                        ("TotalProcesses", ctypes.c_ulong), ("ActiveProcesses", ctypes.c_ulong),
+                        ("TotalTerminatedProcesses", ctypes.c_ulong)]
+
+        info = Accounting()
+        if not self.kernel32.QueryInformationJobObject(self.job, 1, ctypes.byref(info), ctypes.sizeof(info), None):
+            return None  # 1 = JobObjectBasicAccountingInformation; unreadable counts as not yet empty
+        return info.ActiveProcesses
+
     def end(self, process):
-        """End the probe and every descendant; True when the probe is gone within KILL_SECONDS."""
+        """End the probe and every descendant; True when all of them are gone within KILL_SECONDS, so no output is
+        still pending when the caller measures it."""
+        deadline = time.monotonic() + KILL_SECONDS
         if os.name == "nt":
             self.kernel32.TerminateJobObject(self.job, 1)
+            while self.active() != 0:
+                if time.monotonic() > deadline:
+                    return False
+                time.sleep(POLL_SECONDS)
         else:
             try:
                 os.killpg(process.pid, signal.SIGKILL)
@@ -301,7 +329,7 @@ class Containment:
         if process.poll() is None:
             process.kill()  # through the handle
         try:
-            process.wait(timeout=KILL_SECONDS)
+            process.wait(timeout=max(0.0, deadline - time.monotonic()))
             return True
         except subprocess.TimeoutExpired:
             return False

@@ -447,9 +447,12 @@ class Probe(unittest.TestCase):
     def tree(self, sleep):
         """A probe that starts a grandchild (which writes its PID) and then sleeps itself."""
         pid_file = self.tmp / "grandchild.pid"
-        grandchild = f"import os, pathlib, time; pathlib.Path({str(pid_file)!r}).write_text(str(os.getpid())); " \
-                     f"time.sleep(60)"
-        parent = (f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
+        grandchild = f"import os, pathlib, time; pathlib.Path({str(pid_file)!r} + '.tmp').write_text(str(os.getpid())); " \
+                     f"os.replace({str(pid_file)!r} + '.tmp', {str(pid_file)!r}); time.sleep(60)"
+        # The parent waits for the PID file before it sleeps or exits, so the test measures cleanup, not scheduling.
+        parent = (f"import pathlib, subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
+                  f"p = pathlib.Path({str(pid_file)!r})\n"
+                  f"while not (p.exists() and p.read_text()): time.sleep(0.01)\n"
                   f"time.sleep({sleep})")
         return [sys.executable, "-c", parent], pid_file
 
@@ -465,6 +468,28 @@ class Probe(unittest.TestCase):
             time.sleep(0.1)
         os.kill(pid, 9)
         return False
+
+    def test_empty_vswhere_output_cannot_check(self):
+        host = host_check.Host()
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, "", "")
+        with mock.patch.object(host_check, "VSWHERE", Path(sys.executable)), \
+                self.assertRaises(host_check.Unreadable):
+            host.vswhere()
+
+    def test_vswhere_output_that_is_not_a_list_cannot_check(self):
+        host = host_check.Host()
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, "{}", "")
+        with mock.patch.object(host_check, "VSWHERE", Path(sys.executable)), \
+                self.assertRaises(host_check.Unreadable):
+            host.vswhere()
+
+    @unittest.skipUnless(os.name == "nt", "the job object is the Windows containment")
+    def test_a_job_that_never_empties_is_reported_not_trusted(self):
+        with mock.patch.object(host_check.Containment, "active", lambda self: 1), \
+                mock.patch.object(host_check, "KILL_SECONDS", 1):
+            with self.assertRaises(host_check.Unreadable) as caught:
+                host_check.Host().run([sys.executable, "-c", "print(1)"])
+        self.assertIn("could not be ended", str(caught.exception))
 
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])
