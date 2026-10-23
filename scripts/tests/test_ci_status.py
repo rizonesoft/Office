@@ -1038,6 +1038,32 @@ class Scale(Pending):
         reported = set(re.findall(r"^green ([0-9a-f]{7})", out, re.M))
         self.assertEqual({r.split()[1] for r in records[1:]} | reported, {h[:7] for h in heads[1:]})  # none omitted
 
+    def test_an_earlier_red_rerun_green_between_tries_is_reported_green(self):
+        base, b, c = sha(1), sha(2), sha(3)
+        others = [{"id": 97700 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1400 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, b, base], {base: "success", b: "failure", c: "success"}, extra_runs=others)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        repo.runs[b], repo.attempts[b] = "success", 2  # B, red when settled, is rerun green before the next try
+        code, out = self.pending(repo)
+        self.assertEqual(code, 0)
+        self.assertIn(f"green {b[:7]} run {int(b[:7], 16)} attempt 2", out)
+
+    def test_the_newest_head_is_read_again_even_when_the_earlier_reds_run_out_of_time(self):
+        base, r1, r2, c = sha(1), sha(2), sha(3), sha(4)
+        others = [{"id": 97900 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1500 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([c, r2, r1, base], {base: "success", r1: "failure", r2: "failure", c: "failure"}, extra_runs=others)
+        repo.older_runs = [dict(r, id=10 + n, head_sha=sha(1700 + n)) for n, r in enumerate(others * 7)]  # 12 pages
+        self.assertEqual(self.pending(repo)[0], 1)  # a full report; the checkpoint keeps every result
+        repo.runs[c], repo.attempts[c] = "success", 2  # the newest head is rerun green
+        with mock.patch.object(ci, "PENDING_SECONDS", 25):  # page 1, one run by id, then out of time
+            code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))
+        self.assertIn(f"green {c[:7]} run {int(c[:7], 16)} attempt 2", out)
+
     def test_a_large_red_backlog_reaches_the_report(self):
         heads = [sha(n) for n in range(1, 2501)]
         records = [f"ci-green {heads[0][:7]}"]

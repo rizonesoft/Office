@@ -607,13 +607,16 @@ def reconcile(args, tools, clock, now, checkpoint):
         else:
             print("unknown: this try made no progress before its deadline")
         return UNKNOWN
-    # Heads still pending or unknown are looked up again while the try has time; a deadline here reports them as they
-    # stand (a pending head is never reported green).
-    for sha in [s for s in heads if cp["results"][s]["code"] in (PENDING, UNKNOWN) and s not in looked]:
-        try:
+    # With the time left, earlier red results are read again (a rerun since is settled and reported) and heads still
+    # pending or unknown are looked up again. Neither can leave a green out of date, so a deadline here reports the
+    # rest as they stand: the report never waits on them.
+    try:
+        pages.confirm({runs_of[s] for s in heads if s in runs_of and s not in looked and cp["results"][s]["code"] == RED})
+        for sha in [s for s in heads if s not in looked and (cp["results"][s]["code"] in (PENDING, UNKNOWN) or (
+                cp["results"][s]["code"] == RED and not current(cp["results"][s], runs_of.get(s), cp["runs"])))]:
             settle(sha)
-        except DeadlinePassed:
-            break
+    except DeadlinePassed:
+        pass  # reported as they stand, as above
     codes = [cp["results"][s]["code"] for s in heads]
     cp["pass"] = None  # reported: the next reconciliation settles every head again
     save(cp)
