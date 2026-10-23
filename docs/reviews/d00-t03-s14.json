@@ -1,0 +1,27 @@
+{
+  "ref": "D00 T03 \u00a714",
+  "title": "Completion Evidence Hardening",
+  "implementation_sha": "aa432a1c4cb8f1fc304d0219774fa8ee2665e550",
+  "date": "2026-10-23",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s14.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s14.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_todo_graph.py\" -> OK",
+    "python -m unittest discover -s scripts/tests -p \"test_review_dispatch.py\" -> Ran 46 tests, OK (skipped=2)",
+    "python -m unittest discover -s scripts/tests -> Ran 709 tests, OK (skipped=2) at 3a15518",
+    "python scripts/todo-graph.py validate -> valid: 117 sections"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s14-completion.md"
+}

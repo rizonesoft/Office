@@ -46,7 +46,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 11 | §11 | C++ toolchain pins | §10, D03 T01 §17 | [ ] |
 | 12 | §12 | Campaign host readiness check | §10 | [x] |
 | 13 | §13 | Single writer, cap 33, completion review | §10 | [x] |
-| 14 | §14 | Completion evidence hardening | §13 | [ ] |
+| 14 | §14 | Completion evidence hardening | §13 | [x] |
 | 15 | §15 | CI watch and red-run repair | §13 | [ ] |
 | 16 | §16 | Completion evidence adoption boundary | §14 | [ ] |
 
@@ -430,9 +430,12 @@ Filed 2026-10-23 from round 2 of D00 T03 §13's completion review (`docs/reviews
 - [x] Refuse a pending re-check in `stamp`: when the `## Outcome (round N)` of the last returned completion round gives any gap `extended`, the re-check has not returned yet, whatever outage rounds were recorded after it, and the stamp is refused; a later returned round (the single re-check, or its one retry after an outage at the next phase start) satisfies it, with its own gaps `filed ->`. In `.claude/skills/process-todo-section/SKILL.md` the "never a third time" limit counts returned passes, not attempts, so a retry after an outage is allowed. Done when: tests refuse a session that died after recording `extended`, refuse one whose re-check returned an outage, pass one whose re-check returned after an outage round, and pass one whose re-check gaps were all filed; the skill states the counting rule. Cheaper substitute: one outcome block for the whole file, or counting outage attempts as passes. **Groomed 2026-10-23:** completion finding 2.
 - [x] Keep the completion record recoverable in `.claude/skills/process-todo-section/SKILL.md`: commit the record with its `# Completion review: <ref>` line before the first dispatch, and commit it again after every returned round and its outcome, before anything else is built; a dispatch that exits 2 leaves the record untouched (nothing to restore), and a record `read_rounds` cannot read is restored from its last commit, which then holds every returned round; either parks the section with the reason in the run file and retries once at the next phase start. Done when: the skill names both commits, exit 2, the read-back check, the restore and the single retry, and a test in `scripts/tests/test_review_dispatch.py` proves an exit 2 on `--record` leaves the record byte for byte unchanged. Cheaper substitute: building on a review that was never recorded, or restoring over uncommitted returned rounds. **Groomed 2026-10-23:** completion finding 3.
 - [x] Record reopening to the second: `python scripts/todo-graph.py unstamp` writes `> **Unstamped:** <UTC instant>: <reason>` (an ISO 8601 time ending in `Z`), and `stamp` refuses a completion round whose `Run:` time is not after the latest reopening; a date-only note from before this section counts as the end of its day. Done when: tests cover a review before and after a same-day reopen, two reopenings, and a legacy date-only note. Cheaper substitute: comparing dates.
-- [ ] Commit: `automations: bind completion evidence to the reviewed contract and its round`
+- [x] Commit: `automations: bind completion evidence to the reviewed contract and its round`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` and `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` pass, and `python scripts/todo-graph.py validate` exits 0.
+
+> **Verified:** 2026-10-23 | §14 | aa432a1c4cb8f1fc304d0219774fa8ee2665e550
+> **Review:** `docs/reviews/d00-t03-s14.json`
 
 ## 15. CI Watch and Red-Run Repair
 
