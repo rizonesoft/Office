@@ -339,6 +339,7 @@ class Repo:
         self.total = total  # the API's total_count, when it should differ from the runs served
         self.extra_runs = list(extra_runs)  # further raw API runs (an older attempt of a head, another branch)
         self.pages_read = []
+        self.older_runs = []  # raw API runs older than every main run (listed after them)
         self.after_page = {}  # page number -> a function run after that page is served (a run created mid-scan)
         self.fail_pages = set()  # page numbers that fail once
         self.attempts = {}  # head -> attempt number, to model a rerun
@@ -355,7 +356,7 @@ class Repo:
                  "created_at": "2026-10-23T10:00:05Z", "head_sha": h, "event": "push", "head_branch": "main",
                  "run_attempt": self.attempts.get(h, 1)}
                 for h, c in self.runs.items()] + self.extra_runs
-        return list(reversed(runs))
+        return list(reversed(self.older_runs + runs))
 
     def run_record(self, head):
         conclusion = self.runs[head]
@@ -758,6 +759,34 @@ class Scale(Pending):
         self.assertEqual(code, 1)
         self.assertIn(f"red {a[:7]} run {int(a[:7], 16)} attempt 2", out)
 
+    def test_a_head_pending_in_an_earlier_try_is_looked_up_again_before_the_report(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        repo = Repo([b, a, base], {base: "success", a: None, b: "success"})
+        clock = self.slow_clock_repo(repo, head_seconds=55)
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=clock)[0], ci.PROGRESSING)  # A pending, B cut short
+        repo.runs[a] = "success"
+        code, out = self.pending(repo)
+        self.assertEqual(code, 0)
+        self.assertIn(f"green {a[:7]}", out)
+
+    def test_pages_are_saved_as_read_even_if_the_try_dies(self):
+        heads = [sha(n) for n in range(1, 701)]
+        self.record(*(f"ci-green {h[:7]}" for h in heads))
+        repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
+        real = repo.call
+
+        def call(name, args, seconds):
+            if args[:1] == ["api"] and args[-1].endswith("page=5"):
+                raise KeyboardInterrupt  # the process is stopped mid-scan
+            return real(name, args, seconds)
+        repo.call = call
+        with self.assertRaises(KeyboardInterrupt):
+            self.pending(repo)
+        held = json.loads((self.dir / "ci-reconcile.json").read_text(encoding="utf-8"))
+        self.assertEqual((len(held["runs"]), held["next_page"]), (400, 5))
+
     def test_a_rerun_between_interrupted_tries_replaces_a_stored_result(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
@@ -840,6 +869,7 @@ class Scale(Pending):
         self.pending(repo)
         cp = self.dir / "ci-reconcile.json"
         self.assertTrue(cp.exists())  # the records are not written yet: the work is kept
+        self.assertIsNone(json.loads(cp.read_text(encoding="utf-8"))["pass"])  # the next reconciliation settles anew
         read = len(repo.pages_read)
         self.assertEqual(self.pending(repo)[0], 0)
         self.assertEqual(len(repo.pages_read), read + 1)  # only the newest page again, for reruns
@@ -882,22 +912,10 @@ class Scale(Pending):
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
         self.assertEqual(len(self.listed(out)), 2499)
 
-    def test_reading_a_new_pass_across_tries_is_progress(self):
-        # A finished reconciliation of 2,500 pending runs; the next one must read them all again in its own pass, which
-        # takes longer than one try: the pages its cursor reads are progress, though they change nothing.
-        heads = [sha(n) for n in range(1, 2501)]
-        self.record(f"ci-green {heads[0][:7]}")
-        repo = Repo(list(reversed(heads)), {heads[0]: "success", **{h: None for h in heads[1:]}})
-        for _ in range(8):
-            if self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))[0] != ci.PROGRESSING:
-                break
-        code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))
-        self.assertEqual(code, ci.PROGRESSING)
-        self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=30))[0], 3)
-
-    def test_confirming_a_large_backlog_across_tries_is_progress(self):
-        # 2,499 heads at 1 s a lookup settle over several tries; confirming the results of the earlier tries reads
-        # 25 pages at 30 s, longer than one try, so the confirmation's cursor carries over too.
+    def test_results_that_cannot_be_confirmed_in_one_try_are_never_reported(self):
+        # 2,499 heads at 1 s a lookup settle over several tries, each progressing; confirming the results of the
+        # earlier tries then needs 25 pages at 30 s, longer than one try. A report rests only on reads made in its own
+        # try, so this ends unknown, with the reason, rather than green on reads a rerun may have overtaken.
         heads = [sha(n) for n in range(1, 2501)]
         self.record(f"ci-green {heads[0][:7]}")
         repo = Repo(list(reversed(heads)), {h: "success" for h in heads})
@@ -907,8 +925,23 @@ class Scale(Pending):
             codes.append(code)
             if code != ci.PROGRESSING:
                 break
-        self.assertEqual(codes[-1], 0)
+        self.assertEqual(codes[-1], 2)
+        self.assertGreaterEqual(len(codes), 3)
         self.assertTrue(all(c == ci.PROGRESSING for c in codes[:-1]))
+        self.assertIn("cannot all be read again within one try", out)
+
+    def test_a_rerun_of_a_first_run_baseline_read_in_an_earlier_try_is_seen(self):
+        tip = sha(1)
+        newer = [{"id": 95000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                  "head_sha": sha(800 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        older = [{"id": 10 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-22T11:00:00Z",
+                  "head_sha": sha(3000 + n), "event": "pull_request", "head_branch": "feature"} for n in range(1000)]
+        repo = Repo([tip], {tip: "success"}, extra_runs=newer)  # no outcome recorded; the tip's run is on page 2
+        repo.older_runs = older
+        self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=55))[0], ci.PROGRESSING)
+        repo.runs[tip], repo.attempts[tip] = "failure", 2  # rerun after page 2 was read, and it fails
+        code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=55))
+        self.assertEqual((code, self.listed(out)), (1, [tip[:7]]))
 
     def test_a_try_without_progress_is_unknown(self):
         self.record(f"ci-green {sha(1)[:7]}")
