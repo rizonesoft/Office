@@ -397,7 +397,8 @@ class Stamp(Tree):
         self.write_completion(COMPLETE_YES)
         (self.root / ".conclave").mkdir(exist_ok=True)
         (self.root / ".conclave/reviewers.toml").write_text(
-            'schema_version = 1\n\n[reviewers.astra]\ncli = "codex"\nmodel = "m"\neffort = "medium"\n\n'
+            'schema_version = 1\n\n[reviewers.astra]\ncli = "codex"\nmodel = "m"\neffort = "medium"\n'
+            'type = "adversarial"\n\n'
             '[routes]\nclaude = ["astra"]\n', encoding="utf-8")
         for args in (["init", "-q"], ["config", "user.email", "t@example.com"],
                      ["config", "user.name", "T"], ["add", "-A"], ["commit", "-qm", "x"]):

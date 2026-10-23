@@ -1,6 +1,6 @@
 # Agent Skills and Rules Structure
 
-Claude Code (Opus 5.5) is this repository's only writer (owner decision 2026-10-23), so skills and agent rules live in one place, `.claude/`. GPT-6.1 Sol reviews through the Codex CLI (`scripts/review-dispatch.py`), reading the prompt it is given rather than any skill. The Antigravity and Codex skill mirrors, their rules and the `GEMINI.md` and `CODEX.md` entry files were removed that day; git history keeps them.
+Claude Code (Opus 5.5) is this repository's only writer (owner decision 2026-10-23), so skills and agent rules live in one place, `.claude/`. The reviewer `.conclave/reviewers.toml` routes to reviews through the Codex CLI (`scripts/review-dispatch.py`), reading the prompt it is given rather than any skill. The Antigravity and Codex skill mirrors, their rules and the `GEMINI.md` and `CODEX.md` entry files were removed that day; git history keeps them.
 
 ## Skill Location
 

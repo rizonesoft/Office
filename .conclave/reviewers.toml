@@ -8,18 +8,31 @@
 # an approval.
 #
 # Loaded strictly: an unknown key, a CLI other than codex, a malformed model, a
-# route for any writer but claude, a route of more than one reviewer, or one
-# naming an undefined reviewer refuses every dispatch.
+# review type docs/review-types.md does not define, a route for any writer but
+# claude, a route of more than one reviewer, or one naming an undefined reviewer
+# refuses every dispatch.
+#
+# Every reviewer the owner may choose is defined here; the route names the one in
+# use. Switch with `python scripts/review-dispatch.py --use <name>`, which checks
+# the result and replaces this file atomically; `--check-pin` shows the choice.
+# Nothing else in the repository names a reviewer (owner decision 2026-10-23).
 
 schema_version = 1
 
-# GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox (owner decision 2026-10-22 chose Sol,
-# replacing GPT-6 Astra at medium; owner decision 2026-10-23 moved its effort from xhigh to medium, with the
-# real-operation severity rule in docs/review-round-prompt.md, after a tooling section ran past 20 rounds).
+# GPT-6 Astra and GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox, adversarial reviews (owner
+# decisions 2026-10-23: medium effort with the real-operation severity rule in docs/review-round-prompt.md; both
+# reviewers kept, switchable; every review adversarial; Astra in use).
+[reviewers.astra]
+cli = "codex"
+model = "gpt-6-astra"
+effort = "medium"
+type = "adversarial"
+
 [reviewers.sol]
 cli = "codex"
 model = "gpt-6.1-sol"
 effort = "medium"
+type = "adversarial"
 
 [routes]
-claude = ["sol"]
+claude = ["astra"]

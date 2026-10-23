@@ -5,6 +5,7 @@
 
     python3 scripts/review-dispatch.py --writer claude --prompt review-prompt.md --record docs/reviews/x.md
     python3 scripts/review-dispatch.py --check-pin [--json] [--pin <path>]     the pin's verdict; runs no reviewer
+python3 scripts/review-dispatch.py --use <reviewer> [--pin <path>]         point the route at a defined reviewer
     python3 scripts/review-dispatch.py --list-rounds [--json] [--records <dir>]  recorded rounds; runs no reviewer
 
 `--writer` is the agent whose work is under review. Claude Code is the repository's only writer (owner decision
@@ -41,6 +42,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 PIN = ROOT / ".conclave" / "reviewers.toml"
+TYPES = ROOT / "docs" / "review-types.md"  # each `## <name>` section is a review type's stance
 # One writer and one reviewer CLI (owner decision 2026-10-23): Claude Code writes, a Codex model reviews.
 WRITERS = ("claude",)
 CLIS = ("codex",)
@@ -62,7 +64,22 @@ class Refused(Exception):
     """The pin or the arguments are wrong; nothing ran."""
 
 
-def load_pin(path=PIN):
+def review_types(path=TYPES):
+    """{type name: its stance text}, from the `## <name>` sections of docs/review-types.md, or Refused."""
+    try:
+        text = Path(path).read_bytes().decode("utf-8").replace("\r\n", "\n")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise Refused(f"unreadable review types {path}: {getattr(exc, 'strerror', None) or exc}") from None
+    types = {}
+    for block in re.split(r"(?m)^## ", text)[1:]:
+        name, _, body = block.partition("\n")
+        if not NAME.fullmatch(name.strip()) or not body.strip():
+            raise Refused(f"review type {name.strip()!r} in {Path(path).name} needs a lower-case name and a stance")
+        types[name.strip()] = body.strip()
+    return types
+
+
+def load_pin(path=PIN, types_path=TYPES):
     try:
         with open(path, "rb") as handle:
             pin = tomllib.load(handle)
@@ -88,11 +105,12 @@ def load_pin(path=PIN):
     reviewers = pin["reviewers"]
     if not isinstance(reviewers, dict) or not reviewers:
         raise Refused("the reviewer pin defines no reviewers")
+    types = review_types(types_path)
     for name, entry in reviewers.items():
         # fullmatch: `$` alone also matches before a trailing newline, which would then break the round heading.
         if not NAME.fullmatch(name) or not isinstance(entry, dict):
             raise Refused(f"invalid reviewer {name!r}")
-        unknown = set(entry) - {"cli", "model", "effort"}
+        unknown = set(entry) - {"cli", "model", "effort", "type"}
         if unknown:
             raise Refused(f"reviewer {name!r} has unknown keys: {', '.join(sorted(unknown))}")
         cli, model, effort = entry.get("cli"), entry.get("model"), entry.get("effort")
@@ -102,6 +120,9 @@ def load_pin(path=PIN):
             raise Refused(f"reviewer {name!r} has a malformed model")
         if effort not in EFFORTS[cli]:
             raise Refused(f"reviewer {name!r} needs effort = one of {', '.join(EFFORTS[cli])}")
+        if entry.get("type") not in types:
+            raise Refused(f"reviewer {name!r} needs type = one of {', '.join(sorted(types)) or 'none defined'} "
+                          f"(docs/review-types.md)")
     routes = pin["routes"]
     if not isinstance(routes, dict) or set(routes) - set(WRITERS):
         raise Refused(f"[routes] may only name the writers {', '.join(WRITERS)}")
@@ -261,6 +282,7 @@ def review(pin, writer, prompt_path, timeout):
     prompt = Path(prompt_path).read_text(encoding="utf-8")
     if not prompt.strip():
         raise Refused("the review prompt is empty")
+    types = review_types()
     if "\0" in prompt:
         raise Refused("the review prompt contains a NUL byte; no command line can carry it")
     failover = []
@@ -275,7 +297,9 @@ def review(pin, writer, prompt_path, timeout):
         tmp = Path(tempfile.mkdtemp())
         try:
             stdout_path, message_path = tmp / "stdout.txt", tmp / "last-message.md"
-            argv, stdin_text = command(reviewer, executable, prompt, message_path)
+            # The review type's stance comes first, then the task: every review this pin runs has that stance.
+            argv, stdin_text = command(reviewer, executable, types[reviewer["type"]] + "\n\n---\n\n" + prompt,
+                                       message_path)
             _, problem = run(argv, stdin_text, timeout, [stdout_path, message_path])
             if problem is None:
                 stdout = message_path.read_text(encoding="utf-8", errors="replace") if message_path.is_file() else ""
@@ -289,7 +313,8 @@ def review(pin, writer, prompt_path, timeout):
             failover.append({"reviewer": name, "reason": problem})
             continue
         return {"writer": writer, "reviewer": name, "cli": reviewer["cli"], "model": reviewer["model"],
-                "effort": reviewer.get("effort"), "failover": failover, "review": stdout.strip()}
+                "effort": reviewer.get("effort"), "type": reviewer["type"], "failover": failover,
+                "review": stdout.strip()}
     return {"writer": writer, "reviewer": None, "failover": failover, "review": None}
 
 
@@ -327,7 +352,7 @@ def atomic_write(path, text):
 # past Python's digit limit raises). A review is at most MAX_OUTPUT_BYTES, so it has at most MAX_OUTPUT_BYTES + 1 lines,
 # and the count's width follows from that: whatever `record` writes, the reader reads.
 ROUND_HEADING = re.compile(r"^## Round ([0-9]{1,6}): (none|([a-z0-9][a-z0-9-]*) \(`([^`]+)` via `([a-z]+)`\))$")
-ROUND_LINE = re.compile(r"^- (Writer|Run|Effort|Lines|Digest|Skipped): (\S.*)$")
+ROUND_LINE = re.compile(r"^- (Writer|Run|Effort|Type|Lines|Digest|Skipped): (\S.*)$")
 SKIPPED = re.compile(r"^([a-z0-9][a-z0-9-]*) \((.*)\)$")
 COUNT = re.compile(r"[0-9]{1,%d}" % len(str(MAX_OUTPUT_BYTES + 1)))
 DIGEST = re.compile(r"[0-9a-f]{16}")
@@ -369,7 +394,7 @@ def read_rounds(text):
         if not heading or i + 1 >= len(lines) or lines[i + 1] != "":
             return None
         entry = {"number": int(heading.group(1)), "reviewer": heading.group(3), "model": heading.group(4),
-                 "cli": heading.group(5), "writer": None, "run": None, "effort": None, "skipped": []}
+                 "cli": heading.group(5), "writer": None, "run": None, "effort": None, "type": None, "skipped": []}
         count = sealed = None
         i += 2
         while i < len(lines) and lines[i] != "":
@@ -439,6 +464,8 @@ def record(path, result, when):
     lines = [f"## Round {number}: {who}", "", f"- Writer: {result['writer']}", f"- Run: {when}"]
     if result.get("effort"):
         lines.append(f"- Effort: {result['effort']}")
+    if result.get("type"):
+        lines.append(f"- Type: {result['type']}")
     lines += [f"- Skipped: {f['reviewer']} ({f['reason']})" for f in result["failover"]]
     lines += [f"- Lines: {len(review)}", f"- Digest: {digest(review)}", "", *review, ""]
     # Always one blank line before the heading, even when the file already ends in one: a review whose last line is
@@ -478,6 +505,31 @@ def list_rounds(records_dir):
     return {"records": records, **({"unreadable": unreadable} if unreadable else {})}
 
 
+ROUTE = re.compile(r'(?m)^(claude[ \t]*=[ \t]*)\[[^\]\n]*\]')
+
+
+def use(path, name):
+    """Point the claude route at `name`, a reviewer the pin defines: the new pin must load under every rule before it
+    replaces the old one (temp file, then rename), so a refusal leaves the pin as it was. Returns the loaded pin."""
+    path = Path(path)
+    pin = load_pin(path)
+    if name not in pin["reviewers"]:
+        raise Refused(f"the pin defines no reviewer {name!r}; it defines {', '.join(sorted(pin['reviewers']))}")
+    text = path.read_bytes().decode("utf-8")
+    if len(ROUTE.findall(text)) != 1:
+        raise Refused("the pin's claude route is not one `claude = [...]` line; change it by hand")
+    fd, temporary = tempfile.mkstemp(dir=path.parent, suffix=".toml")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            handle.write(ROUTE.sub(lambda m: f'{m.group(1)}["{name}"]', text))
+        chosen = load_pin(temporary)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    return chosen
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--writer", choices=WRITERS, help="The agent whose work is under review")
@@ -485,6 +537,8 @@ def main(argv=None):
     parser.add_argument("--record", help="Findings file to append this round to")
     parser.add_argument("--timeout", type=int, default=1800, help="Seconds before the reviewer is stopped")
     parser.add_argument("--pin", default=str(PIN), help=argparse.SUPPRESS)
+    parser.add_argument("--use", metavar="REVIEWER",
+                        help="Point the claude route at a reviewer the pin defines, and run no review")
     parser.add_argument("--check-pin", action="store_true",
                         help="Report whether the pin loads, and each CLI's presence, instead of running a review; "
                              "no reviewer runs (exit 0 loads, 2 refused)")
@@ -494,6 +548,15 @@ def main(argv=None):
     parser.add_argument("--records", default=str(ROOT / "docs" / "reviews"),
                         help="With --list-rounds, the folder of findings files (default docs/reviews)")
     args = parser.parse_args(argv)
+    if args.use:
+        try:
+            pin = use(args.pin, args.use)
+        except (Refused, OSError) as exc:
+            print(f"refused: {exc}")
+            return 2
+        r = pin["reviewers"][args.use]
+        print(f"pinned {args.use}: {r['model']} via {r['cli']} at {r['effort']} effort, {r['type']} reviews")
+        return 0
     if args.check_pin:
         # load_pin stays the only place the rules live: this reports its verdict and runs nothing.
         try:

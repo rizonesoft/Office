@@ -28,10 +28,14 @@ FIXTURE_PIN = textwrap.dedent('''    schema_version = 1
     cli = "codex"
     model = "gpt-6-astra"
     effort = "medium"
+    type = "adversarial"
 
     [routes]
     claude = ["astra"]
 ''')
+# A second reviewer, so a switch has somewhere to go.
+SECOND = '\n[reviewers.sol]\ncli = "codex"\nmodel = "gpt-6.1-sol"\neffort = "medium"\ntype = "adversarial"\n'
+TYPES = SCRIPTS.parent / "docs" / "review-types.md"
 
 # One fake reviewer CLI; its launcher passes its name first. Launchers are a shell script on Linux and
 # a .cmd file on Windows, so the suite runs natively on both.
@@ -105,6 +109,8 @@ class Dispatch(unittest.TestCase):
         (self.repo / "scripts").mkdir(parents=True)
         (self.repo / ".conclave").mkdir()
         shutil.copy(SCRIPTS / "review-dispatch.py", self.repo / "scripts/review-dispatch.py")
+        (self.repo / "docs").mkdir()
+        shutil.copy(TYPES, self.repo / "docs/review-types.md")
         (self.repo / ".conclave/reviewers.toml").write_text(FIXTURE_PIN, encoding="utf-8")
         self.bin = Path(self._tmp.name) / "bin"
         self.bin.mkdir()
@@ -143,8 +149,68 @@ class Dispatch(unittest.TestCase):
         self.assertEqual(call["argv"][:3], ["exec", "-m", "gpt-6-astra"])
         for flag in ("--sandbox", "read-only", "--ephemeral", "model_reasoning_effort=medium"):
             self.assertIn(flag, call["argv"])
-        self.assertEqual(call["stdin"], self.prompt.read_text())
+        self.assertEqual(call["stdin"], self.stance() + "\n\n---\n\n" + self.prompt.read_text())
         self.assertEqual(Path(call["cwd"]).resolve(), self.repo.resolve())
+        self.assertEqual(summary["type"], "adversarial")
+
+    def stance(self):
+        spec = importlib.util.spec_from_file_location("dispatch_types", self.repo / "scripts/review-dispatch.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.review_types(self.repo / "docs/review-types.md")["adversarial"]
+
+    def test_every_review_carries_its_types_stance_and_records_it(self):
+        record = self.repo / "findings.md"
+        result, summary = self.dispatch("--writer", "claude", "--prompt", str(self.prompt), "--record", str(record))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.calls()[0]["stdin"].startswith("You are an adversarial reviewer."))
+        self.assertIn("- Type: adversarial\n", record.read_text(encoding="utf-8"))
+        result, _ = self.dispatch("--list-rounds", "--json", "--records", str(self.repo))
+        self.assertEqual(json.loads(result.stdout)["records"][0]["rounds"][0]["type"], "adversarial")
+
+    def test_use_switches_the_route_between_defined_reviewers(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        pin.write_text(FIXTURE_PIN + SECOND, encoding="utf-8")
+        result, _ = self.dispatch("--use", "sol")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("pinned sol: gpt-6.1-sol via codex at medium effort, adversarial reviews", result.stdout)
+        self.assertEqual(tomllib.loads(pin.read_text(encoding="utf-8"))["routes"], {"claude": ["sol"]})
+        result, summary = self.dispatch("--writer", "claude", "--prompt", str(self.prompt))
+        self.assertEqual((summary["reviewer"], summary["model"]), ("sol", "gpt-6.1-sol"))
+        self.assertEqual(self.dispatch("--use", "astra")[0].returncode, 0)
+        self.assertEqual(tomllib.loads(pin.read_text(encoding="utf-8"))["routes"], {"claude": ["astra"]})
+
+    def test_use_refuses_an_undefined_reviewer_and_leaves_the_pin_as_it_was(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        pin.write_text(FIXTURE_PIN + SECOND, encoding="utf-8")
+        before = pin.read_bytes()
+        result, _ = self.dispatch("--use", "nobody")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("defines no reviewer 'nobody'", result.stdout)
+        self.assertEqual(pin.read_bytes(), before)
+        self.assertEqual(sorted(p.name for p in pin.parent.iterdir()), ["reviewers.toml"])  # no temporary left
+
+    def test_use_refuses_a_switch_whose_result_would_not_load(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        pin.write_text(FIXTURE_PIN + SECOND, encoding="utf-8")
+        (self.repo / "docs/review-types.md").write_text("# Review Types\n\n## standard\n\nReview.\n", encoding="utf-8")
+        before = pin.read_bytes()
+        result, _ = self.dispatch("--use", "sol")
+        self.assertEqual(result.returncode, 2)  # the pin itself no longer loads: its type is not defined
+        self.assertIn("needs type = one of standard", result.stdout)
+        self.assertEqual(pin.read_bytes(), before)
+
+    def test_a_reviewer_needs_a_review_type_the_types_file_defines(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        for text in (FIXTURE_PIN.replace('type = "adversarial"\n', ""),
+                     FIXTURE_PIN.replace('type = "adversarial"', 'type = "gentle"')):
+            pin.write_text(text, encoding="utf-8")
+            result, _ = self.dispatch("--check-pin")
+            self.assertIn("needs type = one of adversarial", result.stdout)
+        (self.repo / "docs/review-types.md").unlink()
+        pin.write_text(FIXTURE_PIN, encoding="utf-8")
+        result, _ = self.dispatch("--check-pin")
+        self.assertIn("unreadable review types", result.stdout)
 
     def test_only_claude_code_is_a_writer(self):
         # Owner decision 2026-10-23: one writer. Any other is refused before a reviewer runs.
@@ -546,7 +612,7 @@ class Dispatch(unittest.TestCase):
         result, _ = self.dispatch("--writer", "claude", "--prompt", str(self.prompt))
         self.assertEqual(result.returncode, 0, result.stderr)
         call = self.calls()[0]
-        self.assertEqual(call["stdin"], "x" * 150_000)
+        self.assertEqual(call["stdin"], self.stance() + "\n\n---\n\n" + "x" * 150_000)
         self.assertFalse(any("x" * 100 in a for a in call["argv"]), "prompt text reached the arguments")
 
     def test_a_runaway_reviewer_is_stopped_while_it_runs(self):
@@ -674,22 +740,37 @@ class RepositoryPin(unittest.TestCase):
         pin = module.load_pin(REPO_PIN)
         self.assertTrue(pin["routes"], "the repository pin routes no writer")
 
-    def test_the_repository_pin_routes_only_claude_to_one_reviewer(self):
-        # Owner decision 2026-10-23: Claude Code is the only writer, with one reviewer and no fallback.
+    def test_the_repository_pin_routes_only_claude_to_one_defined_reviewer(self):
+        # Owner decision 2026-10-23: Claude Code is the only writer, with one reviewer in use and no fallback. Which
+        # reviewer is in use is the owner's switch (--use), so this names none of them.
         with open(REPO_PIN, "rb") as handle:
             pin = tomllib.load(handle)
-        self.assertEqual(pin["routes"], {"claude": ["sol"]})
-        self.assertEqual(set(pin["reviewers"]), {"sol"})
+        self.assertEqual(set(pin["routes"]), {"claude"})
+        (name,) = pin["routes"]["claude"]
+        self.assertIn(name, pin["reviewers"])
 
     def test_the_repository_pin_is_the_owners_choice(self):
-        # Owner decisions 2026-10-22 and 2026-10-23: GPT-6.1 Sol through the Codex CLI, at medium effort.
+        # Owner decisions 2026-10-23: every reviewer the pin defines runs through the Codex CLI at medium effort and
+        # gives adversarial reviews, whichever is in use.
         spec = importlib.util.spec_from_file_location("dispatch_pin_owner", SCRIPTS / "review-dispatch.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         pin = module.load_pin(REPO_PIN)
-        (name,) = pin["routes"]["claude"]
-        self.assertEqual({k: pin["reviewers"][name][k] for k in ("cli", "model", "effort")},
-                         {"cli": "codex", "model": "gpt-6.1-sol", "effort": "medium"})
+        for name, reviewer in pin["reviewers"].items():
+            self.assertEqual({k: reviewer[k] for k in ("cli", "effort", "type")},
+                             {"cli": "codex", "effort": "medium", "type": "adversarial"}, name)
+
+    def test_no_document_or_skill_names_the_reviewer_in_use(self):
+        # Owner decision 2026-10-23: switching reviewers changes the pin alone, so nothing else names a model.
+        with open(REPO_PIN, "rb") as handle:
+            models = {r["model"] for r in tomllib.load(handle)["reviewers"].values()}
+        root = SCRIPTS.parent
+        files = [root / "AGENTS.md", root / "CLAUDE.md", *root.glob(".claude/**/*.md"), *root.glob("docs/*.md"),
+                 *root.glob("scripts/*.py"), *root.glob(".conclave/*.py"), *root.glob(".conclave/**/*.py")]
+        for path in files:
+            text = path.read_text(encoding="utf-8").lower()
+            for model in models:
+                self.assertNotIn(model, text, f"{path.relative_to(root)} names {model}")
 
 class KillTree(unittest.TestCase):
     """kill_tree runs System32's taskkill by full path with a deadline (D00 T03 §12 review round 2)."""
