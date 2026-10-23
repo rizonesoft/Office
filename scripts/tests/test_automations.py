@@ -197,7 +197,7 @@ class Runner(unittest.TestCase):
         for path in (AUTO / "run.py", AUTO / "alert.py", scripts / "check-visual-studio.py",
                      scripts / "merge_prs.py", scripts / "lib" / "pin_proposal.py"):
             text = path.read_text(encoding="utf-8")
-            calls = text.count("subprocess.run(") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
+            calls = text.count("subprocess.run(") + text.count("subprocess.Popen(") + text.count("run([wsl()")
             flagged = text.count("creationflags=")
             with self.subTest(path=path.name):
                 self.assertGreaterEqual(flagged, calls - text.count('"git", "init"'), path.name)
@@ -241,6 +241,17 @@ class Alert(unittest.TestCase):
         for bad, code in (("", 0), ("api-short", 0), ("x" * 36, 0), ("api-" + "B" * 32, 1)):
             with self.subTest(bad=bad[:8], code=code), self.assertRaises(alert.Refused):
                 alert.key(vault(bad, code))
+
+    def test_the_key_is_read_through_wsl_by_its_system32_path(self):
+        calls = []
+
+        def vault(argv, **kw):
+            calls.append(argv)
+            return subprocess.CompletedProcess(argv, 0, stdout="api-" + "C" * 32, stderr="")
+
+        alert.key(vault)
+        self.assertTrue(os.path.isabs(calls[0][0]), calls[0][0])
+        self.assertEqual(Path(calls[0][0]).parts[-2:], ("System32", "wsl.exe"))
 
     def test_a_dry_run_reads_no_key(self):
         with tempfile.TemporaryDirectory() as tmp:

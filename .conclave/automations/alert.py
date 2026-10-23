@@ -40,9 +40,15 @@ class Refused(Exception):
     pass
 
 
+def wsl() -> str:
+    """wsl.exe by its full System32 path: a bare name is searched for in the working directory first, where a
+    repository could hold its own wsl.exe."""
+    return os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wsl.exe")
+
+
 def key(run=subprocess.run) -> str:
     """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed."""
-    result = run(["wsl.exe", "-e", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
+    result = run([wsl(), "-e", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
                  capture_output=True, text=True, timeout=90,
                  creationflags=0x08000000 if os.name == "nt" else 0)  # CREATE_NO_WINDOW: run.py has no console
     value = (result.stdout or "").strip()

@@ -247,6 +247,13 @@ class Office(Base):
         self.host.tree = {"D02 T01 §24": section("D02 T01 §24", needs=["office"], status="superseded")}
         self.assertEqual(self.result("office")["state"], "skip")
 
+    def test_a_git_timeout_reading_the_tree_still_checks_office(self):
+        self.host.tree = subprocess.TimeoutExpired(["git", "rev-list", "HEAD"], 30)
+        self.host.files.discard(str(Path(OFFICE) / "root" / "Office16" / "VISIO.EXE"))
+        r = self.result("office")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("VISIO.EXE", r["detail"])
+
     def test_unreadable_tree_still_checks_office(self):
         self.host.tree = todo_graph.Refused("canonical TODO tree is missing or empty")
         self.host.files.discard(str(Path(OFFICE) / "root" / "Office16" / "EXCEL.EXE"))
@@ -508,6 +515,30 @@ class Probe(unittest.TestCase):
                 host_check.Host().run([sys.executable, "-c", "print(1)"])
         self.assertIn("could not be ended", str(caught.exception))
 
+    def test_the_notice_reaches_the_sender_in_a_child(self):
+        seen = self.tmp / "seen.json"
+        code = ("import json, sys\nn = json.load(open(sys.argv[2], encoding='utf-8'))\n"
+                f"open({str(seen)!r}, 'w', encoding='utf-8').write(json.dumps(n))\n")
+        with mock.patch.object(host_check, "NOTICE_CODE", code):
+            host_check.Host().notify("subject", "body")
+        self.assertEqual(json.loads(seen.read_text(encoding="utf-8"))["subject"], "subject")
+
+    def test_a_sender_that_fails_is_reported(self):
+        with mock.patch.object(host_check, "NOTICE_CODE", "import sys; sys.exit('Refused: no vault key')"):
+            with self.assertRaises(host_check.Unreadable) as caught:
+                host_check.Host().notify("s", "b")
+        self.assertIn("Refused: no vault key", str(caught.exception))
+
+    def test_a_sender_that_hangs_is_ended_at_its_deadline(self):
+        argv, pid_file = self.tree(60)
+        code = argv[2]
+        started = time.monotonic()
+        with mock.patch.object(host_check, "NOTICE_CODE", code), mock.patch.object(host_check, "NOTIFY_SECONDS", 2):
+            with self.assertRaises(host_check.Unreadable):
+                host_check.Host().notify("s", "b")
+        self.assertLess(time.monotonic() - started, 20)
+        self.assertTrue(self.grandchild_gone(pid_file))
+
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])
         self.assertEqual((r.returncode, r.stdout.strip()), (3, "hello"))
@@ -582,7 +613,7 @@ class Exit(Base):
     def test_notify_emails_the_lines_on_failure(self):
         self.host.gh_status = 1
         sent = []
-        code, _ = self.main("--notify", mail=lambda root, subject, body: sent.append((subject, body)))
+        code, _ = self.main("--notify", mail=lambda subject, body: sent.append((subject, body)))
         self.assertEqual(code, 1)
         self.assertEqual(len(sent), 1)
         self.assertIn("campaign host not ready", sent[0][0])

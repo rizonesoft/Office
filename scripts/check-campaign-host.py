@@ -61,6 +61,16 @@ MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 M
 POLL_SECONDS = 0.1
 KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
+NOTIFY_SECONDS = 180  # the vault read (90 s at most) and the send (60 s at most), with room
+NOTICE_CODE = """import json, sys
+sys.path.insert(0, sys.argv[1])
+import pin_proposal
+notice = json.load(open(sys.argv[2], encoding="utf-8"))
+try:
+    pin_proposal.notify(notice["root"], notice["subject"], notice["body"])
+except Exception as exc:
+    sys.exit(f"{type(exc).__name__}: {exc}")
+"""
 SIGNED_OUT = 1  # `gh auth status` and `codex login status` exit 1 when signed out; any other failure is a crash
 WTS_ACTIVE = 0
 WTS_SESSIONSTATE_LOCK, WTS_SESSIONSTATE_UNLOCK = 0, 1
@@ -220,6 +230,17 @@ class Host:
                 with open(path, "rb") as handle:
                     return handle.read(MAX_PROBE_BYTES).decode("utf-8", errors="replace")
             return subprocess.CompletedProcess(argv, process.returncode, read(paths[0]), read(paths[1]))
+    def notify(self, subject, body):
+        """Email the operator through alert.py, in a contained child with a deadline: the sender reads its key through
+        WSL with pipes, and a descendant holding one must not keep the campaign from parking."""
+        with tempfile.TemporaryDirectory(prefix="campaign-notice-", ignore_cleanup_errors=True) as scratch:
+            notice = Path(scratch) / "notice.json"
+            notice.write_text(json.dumps({"root": str(self.root), "subject": subject, "body": body}), encoding="utf-8")
+            result = self.run([sys.executable, "-c", NOTICE_CODE, str(ROOT / "scripts" / "lib"), str(notice)],
+                              seconds=NOTIFY_SECONDS)
+        if result.returncode != 0:
+            raise Unreadable((result.stderr.strip().splitlines() or [f"exit {result.returncode}"])[-1])
+
     def reviewer_cli(self):
         """(reviewer name, CLI name) the pin routes Claude's work to; review-dispatch's Refused when the pin is bad."""
         dispatch = todo_graph.review_dispatch()
@@ -419,8 +440,8 @@ def office_needed(host):
     """The open sections that need live Office, read from the TODO files; when the tree cannot be read, assume some do."""
     try:
         sections = host.sections()
-    except (todo_graph.Refused, OSError, ValueError) as exc:
-        return None, f"the TODO tree cannot be read ({exc}), so Office is checked"
+    except Exception as exc:  # any failure to read the tree (a refusal, a git timeout, a bug) falls back to checking
+        return None, f"the TODO tree cannot be read ({type(exc).__name__}: {exc}), so Office is checked"
     refs = [s.ref for s in todo_graph.ordered(sections)
             if not s.done and s.status != "superseded" and "office" in s.needs]
     return refs, None
@@ -539,7 +560,7 @@ def report(results):
     return lines
 
 
-def main(argv=None, host=None, mail=pin_proposal.notify):
+def main(argv=None, host=None, mail=None):
     parser = argparse.ArgumentParser(description="Say whether this PC can run an unattended campaign.")
     parser.add_argument("--notify", action="store_true", help="email the operator when a check fails")
     args = parser.parse_args(argv)
@@ -552,8 +573,8 @@ def main(argv=None, host=None, mail=pin_proposal.notify):
            2: "unknown: a check could not run"}[code])
     if code and args.notify:
         try:
-            mail(host.root, f"Office: campaign host not ready on {socket.gethostname()}",
-                 "\n".join(lines + ["", "The campaign parks until these are fixed and it is resumed by hand."]))
+            body = "\n".join(lines + ["", "The campaign parks until these are fixed and it is resumed by hand."])
+            (mail or host.notify)(f"Office: campaign host not ready on {socket.gethostname()}", body)
         except Exception as exc:  # the park still happens: the line below lands in the run file with the fixes
             print(f"email not sent: {exc}")
     return code
