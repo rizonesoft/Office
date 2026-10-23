@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -186,6 +187,23 @@ class ScreenLock(Base):
         self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
         self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveActive")] = "0"
         self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_a_zero_timeout_never_starts_the_saver_so_it_passes(self):
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")] = "0"
+        self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_a_zero_timeout_set_by_policy_wins_over_the_users(self):
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        self.host.values[(host_check.HKCU, host_check.DESKTOP_POLICY, "ScreenSaveTimeOut")] = "0"
+        self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_a_missing_timeout_on_a_secure_saver_still_fails(self):
+        self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaverIsSecure")] = "1"
+        del self.host.values[(host_check.HKCU, host_check.DESKTOP, "ScreenSaveTimeOut")]
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("default timeout", r["detail"])
 
     def test_inactivity_policy_fails(self):
         self.host.values[(host_check.HKLM, host_check.SYSTEM_POLICY, "InactivityTimeoutSecs")] = 900
@@ -392,6 +410,32 @@ class Services(Base):
         r = self.result("disk")
         self.assertEqual(r["state"], "fail")
         self.assertIn("under 50 GB", r["detail"])
+
+
+class Probe(unittest.TestCase):
+    """The real Host.run: a deadline holds even when the probe leaves a grandchild holding its output open."""
+
+    def test_output_and_exit_code_are_returned(self):
+        r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])
+        self.assertEqual((r.returncode, r.stdout.strip()), (3, "hello"))
+
+    def test_a_hung_probe_tree_is_ended_at_its_deadline(self):
+        grandchild = "import time; time.sleep(60)"
+        parent = (f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
+                  "time.sleep(60)")
+        started = time.monotonic()
+        with self.assertRaises(host_check.Unreadable) as caught:
+            host_check.Host().run([sys.executable, "-c", parent], seconds=2)
+        self.assertLess(time.monotonic() - started, 20)
+        self.assertIn("did not finish within 2 seconds", str(caught.exception))
+
+    def test_a_grandchild_left_behind_by_a_finished_probe_does_not_hold_it(self):
+        grandchild = "import time; time.sleep(5)"
+        parent = f"import subprocess, sys; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); print('done')"
+        started = time.monotonic()
+        r = host_check.Host().run([sys.executable, "-c", parent], seconds=20)
+        self.assertLess(time.monotonic() - started, 15)
+        self.assertEqual(r.stdout.strip(), "done")
 
 
 class Exit(Base):
