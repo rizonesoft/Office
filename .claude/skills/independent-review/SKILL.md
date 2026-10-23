@@ -7,7 +7,7 @@ description: Get an independent review of your own work from the reviewer pinned
 
 Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names the reviewer, and `scripts/review-dispatch.py` runs the round. When that reviewer is unavailable there is no review this round: no other reviewer runs.
 
-Claude Code (Opus 5.5) is the only writer, and its work is reviewed by GPT-6.1 Sol through the Codex CLI at xhigh effort (owner decisions 2026-10-22 and 2026-10-23). The pin accepts only that one route, a reviewer of another model family with no fallback, and `scripts/tests/test_review_dispatch.py` holds it there.
+Claude Code (Opus 5.5) is the only writer, and its work is reviewed by GPT-6.1 Sol through the Codex CLI at medium effort (owner decisions 2026-10-22 and 2026-10-23; the effort moved from xhigh to medium on 2026-10-23, with the real-operation severity rule in `docs/review-round-prompt.md`). The pin accepts only that one route, a reviewer of another model family with no fallback, and `scripts/tests/test_review_dispatch.py` holds it there.
 
 ## Steps
 

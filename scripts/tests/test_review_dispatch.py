@@ -672,14 +672,14 @@ class RepositoryPin(unittest.TestCase):
         self.assertEqual(set(pin["reviewers"]), {"sol"})
 
     def test_the_repository_pin_is_the_owners_choice(self):
-        # Owner decision 2026-10-22: GPT-6.1 Sol at xhigh through the Codex CLI.
+        # Owner decisions 2026-10-22 and 2026-10-23: GPT-6.1 Sol through the Codex CLI, at medium effort.
         spec = importlib.util.spec_from_file_location("dispatch_pin_owner", SCRIPTS / "review-dispatch.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         pin = module.load_pin(REPO_PIN)
         (name,) = pin["routes"]["claude"]
         self.assertEqual({k: pin["reviewers"][name][k] for k in ("cli", "model", "effort")},
-                         {"cli": "codex", "model": "gpt-6.1-sol", "effort": "xhigh"})
+                         {"cli": "codex", "model": "gpt-6.1-sol", "effort": "medium"})
 
 class KillTree(unittest.TestCase):
     """kill_tree runs System32's taskkill by full path with a deadline (D00 T03 §12 review round 2)."""

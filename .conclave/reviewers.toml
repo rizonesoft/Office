@@ -13,12 +13,13 @@
 
 schema_version = 1
 
-# GPT-6.1 Sol through the Codex CLI at xhigh effort, read-only sandbox (owner decision 2026-10-22, replacing
-# GPT-6 Astra at medium).
+# GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox (owner decision 2026-10-22 chose Sol,
+# replacing GPT-6 Astra at medium; owner decision 2026-10-23 moved its effort from xhigh to medium, with the
+# real-operation severity rule in docs/review-round-prompt.md, after a tooling section ran past 20 rounds).
 [reviewers.sol]
 cli = "codex"
 model = "gpt-6.1-sol"
-effort = "xhigh"
+effort = "medium"
 
 [routes]
 claude = ["sol"]

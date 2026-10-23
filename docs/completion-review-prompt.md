@@ -32,6 +32,8 @@ A feature is complete when every way a user reaches it and every state it can be
 
 A piece owned by another named section is not a gap; say which section owns it. A piece no section owns is a gap.
 
+Judge gaps by real use (owner decision 2026-10-23): a piece the feature needs when it is used as intended is a gap at `P1` or `P2`; a piece needed only under a contrived precondition (an attacker who already controls the machine, a deliberately misset clock, a corrupted system API) is at most `P3`.
+
 ## Reply format
 
 Open the reply with these two lines, exactly:
