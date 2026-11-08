@@ -403,20 +403,18 @@ class Pages:
         self.cp["total"] = total
         return runs, changed
 
-    def newest(self):
-        """Read from the first page until a page brings nothing new or changed, or the pages end. Each page after the
-        first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
-        an unchanged page cannot end it over runs a deletion moved past. When a boundary recovery is interrupted by the
-        deadline, its rewind and continuation cursor (`refresh` in the checkpoint) are resumed in the next try before
-        the fresh prefix so an interrupted recovery advances instead of restarting from page 1. A page that changed
-        nothing is not progress unless a saved recovery is advancing."""
-        refresh = self.cp.get("refresh")
-        if refresh is not None:
-            target = refresh.get("target", refresh["page"])
-            any_changed = False
-            while refresh["rewind"] is not None:
+    def finish_refresh(self):
+        """Finish an active refresh in `self.cp["refresh"]` until a verified unchanged page at or past `target` (or a
+        short last page) is reached."""
+        refresh = self.cp["refresh"]
+        target = refresh.get("target", refresh["page"])
+        while self.cp.get("refresh") is not None:
+            if refresh["rewind"] is not None:
                 k = refresh["rewind"]
-                runs, _ = self.read(k)
+                runs, rchanged = self.read(k)
+                if rchanged and len(runs) == PER_PAGE:
+                    target = max(target, k + 1)
+                    refresh["target"] = target
                 read = [str(r["id"]) for r in runs]
                 if set(read) & set(refresh["ids"]) or k == 1:
                     refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None, next_ids=[])
@@ -424,80 +422,49 @@ class Pages:
                     refresh["rewind"] = k - 1
                 self.cp["progress"] += 1
                 self.save(self.cp)
-            while self.cp.get("refresh") is not None:
-                page, ids, anchor_total = refresh["page"], refresh["ids"], refresh.get("total")
-                runs, changed = self.read(page)
-                any_changed = any_changed or changed
-                if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
-                    target = max(target, page)
-                    refresh.update(page=page, target=target, ids=ids, total=anchor_total, rewind=page - 1, next_ids=[])
-                    self.cp["progress"] += 1
-                    self.save(self.cp)
-                    while refresh["rewind"] is not None:
-                        k = refresh["rewind"]
-                        rruns, rchanged = self.read(k)
-                        any_changed = any_changed or rchanged
-                        read = [str(r["id"]) for r in rruns]
-                        if set(read) & set(refresh["ids"]) or k == 1:
-                            refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None, next_ids=[])
-                        else:
-                            refresh["rewind"] = k - 1
-                        self.cp["progress"] += 1
-                        self.save(self.cp)
-                    continue
-                if page >= target and any_changed:
-                    target = page + 1
-                    refresh["target"] = target
-                if (not any_changed and page > target) or len(runs) < PER_PAGE:
-                    self.cp["refresh"] = None
-                    self.save(self.cp)
-                    break
-                refresh.update(page=page + 1, target=target, ids=[str(r["id"]) for r in runs], total=self.cp["total"])
-                self.cp["progress"] += 1
-                self.save(self.cp)
-                any_changed = False
-        page, ids, anchor_total, any_changed = 0, [], None, False
-        while True:
-            page += 1
-            runs, changed = self.read(page)
-            any_changed = any_changed or changed
-            self.cp["progress"] += 1 if changed else 0
-            self.save(self.cp)
-            if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
-                target = max(page, (self.cp.get("refresh") or {}).get("target", 0))
-                self.cp["refresh"] = {"page": page, "target": target, "ids": ids, "total": anchor_total,
-                                      "rewind": page - 1, "next_ids": []}
-                self.cp["progress"] += 1
-                self.save(self.cp)
-                k = page
-                while self.cp["refresh"]["rewind"] is not None:
-                    k = self.cp["refresh"]["rewind"]
-                    rruns, rchanged = self.read(k)
-                    any_changed = any_changed or rchanged
-                    read = [str(r["id"]) for r in rruns]
-                    if set(read) & set(self.cp["refresh"]["ids"]) or k == 1:
-                        self.cp["refresh"].update(page=k + 1, ids=read, total=self.cp["total"], rewind=None,
-                                                  next_ids=[])
-                    else:
-                        self.cp["refresh"]["rewind"] = k - 1
-                    self.cp["progress"] += 1
-                    self.save(self.cp)
-                ids, anchor_total = self.cp["refresh"]["ids"], self.cp["refresh"].get("total")
-                page = k  # resume forward from the page after k, checking every boundary on the way back up
                 continue
-            ids, anchor_total = [str(r["id"]) for r in runs], self.cp["total"]
-            if self.cp.get("refresh") is not None:
-                if page >= self.cp["refresh"]["target"] and any_changed:
-                    self.cp["refresh"]["target"] = page + 1
-                if (not any_changed and page > self.cp["refresh"]["target"]) or len(runs) < PER_PAGE:
-                    self.cp["refresh"] = None
-                    self.save(self.cp)
-                    return
-                self.cp["refresh"].update(page=page + 1, ids=ids, total=anchor_total)
+            page, ids, anchor_total = refresh["page"], refresh["ids"], refresh.get("total")
+            runs, changed = self.read(page)
+            read = [str(r["id"]) for r in runs]
+            pushed_copy = bool(ids and set(read) <= set(ids))
+            if (changed or pushed_copy) and len(runs) == PER_PAGE:
+                target = max(target, page + 1)
+                refresh["target"] = target
+            if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
+                target = max(target, page)
+                refresh.update(page=page, target=target, ids=ids, total=anchor_total, rewind=page - 1, next_ids=[])
+                self.cp["progress"] += 1
                 self.save(self.cp)
-            elif not any_changed or len(runs) < PER_PAGE:
+                continue
+            if (not changed and not pushed_copy and page >= target) or len(runs) < PER_PAGE:
+                self.cp["refresh"] = None
+                self.cp["progress"] += 1
+                self.save(self.cp)
                 return
-            any_changed = False
+            refresh.update(page=page + 1, target=target, ids=read, total=self.cp["total"])
+            self.cp["progress"] += 1
+            self.save(self.cp)
+
+    def newest(self):
+        """Read from the first page until a page brings nothing new or changed, or the pages end. Each page after the
+        first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
+        an unchanged page cannot end it over runs a deletion moved past. When a refresh or its boundary recovery is
+        interrupted by the deadline, its rewind and continuation cursor (`refresh` in the checkpoint) are resumed in the
+        next try before the fresh prefix so an interrupted refresh advances instead of restarting from page 1. A page
+        that changed nothing is not progress unless a saved refresh is advancing."""
+        if self.cp.get("refresh") is not None:
+            self.finish_refresh()
+        runs, changed = self.read(1)
+        if not changed or len(runs) < PER_PAGE:
+            if changed:
+                self.cp["progress"] += 1
+                self.save(self.cp)
+            return
+        self.cp["refresh"] = {"page": 2, "target": 2, "ids": [str(r["id"]) for r in runs], "total": self.cp["total"],
+                              "rewind": None, "next_ids": []}
+        self.cp["progress"] += 1
+        self.save(self.cp)
+        self.finish_refresh()
 
     def confirm(self, needed):
         """Read again in this try every run in `needed`: page by page from the newest while the runs still missing

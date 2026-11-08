@@ -1372,25 +1372,27 @@ class Deleted(Pending):
         self.record(*(f"ci-green {h[:7]}" for h in old))
         repo = Repo(list(reversed(old)), {h: "success" for h in old})
         self.assertEqual(self.pending(repo)[0], 0)  # completed checkpoint with 400 old runs
-        n1, n2 = sha(401), sha(402)  # N1 at position 500 (new run 500), N2 (origin/main) at position 499
+        n1, n2 = sha(401), sha(402)  # N1 at position 402 (page 5 after 150 deleted), N2 (origin/main) at position 401
         repo.history = [n2, n1, *repo.history]
         repo.runs.update({n1: "failure", n2: "success"})
         repo.extra_runs = [{"id": 95000 + n, "status": "completed", "conclusion": "success",
                             "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(3000 + n), "event": "pull_request",
-                            "head_branch": "feature"} for n in range(498)]
+                            "head_branch": "feature"} for n in range(550)]
 
         def delete_150():  # after page 2's boundary check, delete the newest 150 runs before page 3 is read
             del repo.extra_runs[-150:]
         repo.after_page[100] = delete_150
         # Read page 1, page 2, boundary 100 (deletes 150 runs), page 3, boundary 200 (shifted), rewind page 2,
-        # rewind page 1, then run out of time before re-reading page 2 (7 reads of 10s each in 75s).
+        # rewind page 1, then read page 2 and expire on boundary 100 (8 reads of 10s each in 75s).
         with mock.patch.object(ci, "PENDING_SECONDS", 75):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
         self.assertEqual(self.checkpoint().get("refresh", {}).get("page"), 2)
-        # Next try resumes at page 2 (boundary 100), then page 3 (boundary 200), then expires before page 4 (45s).
-        with mock.patch.object(ci, "PENDING_SECONDS", 45):
+        # Next try resumes at page 2 (boundary 100), then page 3 (boundary 200), then reads page 4 and expires on
+        # boundary 300 (5 reads in 55s); target must already be 5 so the third try continues past unchanged page 4.
+        with mock.patch.object(ci, "PENDING_SECONDS", 55):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
         self.assertEqual(self.checkpoint().get("refresh", {}).get("page"), 4)  # advanced to page 4, not restarted
+        self.assertEqual(self.checkpoint().get("refresh", {}).get("target"), 5)
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
         self.assertIsNone(self.checkpoint().get("refresh"))
