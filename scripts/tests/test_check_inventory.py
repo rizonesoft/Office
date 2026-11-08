@@ -356,11 +356,12 @@ class Inventory(unittest.TestCase):
     def test_any_host_name_or_address_in_text_is_refused_by_its_dots(self):
         # Audit round 7, findings 1 and 3: hosts in any plane and numeric addresses are refused, and padding with a
         # Unicode space after a sentence is not mistaken for a host.
-        for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now"):
+        for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now", "*.example.com", ".example.com"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
-        for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)"):
-            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
+        for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
+                     "Word Document (*.docx)", "Opens a .docx file.", ".docx", "Save as (.docx)"):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
 
     def test_unencodable_record_text_is_reported_not_a_crash(self):
@@ -511,7 +512,7 @@ class Inventory(unittest.TestCase):
             self.write("word/ribbon.json", [dict(TAB, label=chr(code) + "com")])
             self.assertTrue(any("host name or address" in p for p in self.problems()), hex(code))
         pattern = ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
-        missed = [hex(c) for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF
+        missed = [hex(c) for c in range(0x10000) if not 0xD800 <= c <= 0xDFFF and c != 0x2E
                   and "." in unicodedata.normalize("NFKC", chr(c)) and not pattern.search(chr(c) + "com")]
         self.assertEqual(missed, [])
 
