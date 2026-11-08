@@ -877,7 +877,12 @@ class Scale(Pending):
                        {"results": {sha(2): {"code": 0, "lines": [], "run": [1]}}}, {"pass": {"checked": None}},
                        {"pass": []}, {"pass": {"checked": [sha(2)]}, "results": {}}, {"scan": None},
                        {"scan": {"ids": [1], "rewind": None, "next_ids": []}},
-                       {"scan": {"ids": [], "rewind": 0, "next_ids": []}}):
+                       {"scan": {"ids": [], "rewind": 0, "next_ids": []}},
+                       {"refresh": {}},
+                       {"refresh": {"page": 1, "target": 2, "ids": [], "rewind": None, "next_ids": []}},
+                       {"refresh": {"page": 2, "target": 1, "ids": [], "rewind": None, "next_ids": []}},
+                       {"refresh": {"page": 2, "target": 2, "ids": [1], "rewind": None, "next_ids": []}},
+                       {"refresh": {"page": 2, "target": 2, "ids": [], "rewind": 0, "next_ids": []}}):
             with self.subTest(damage=damage):
                 path.write_text(json.dumps(dict(good, **damage)), encoding="utf-8")
                 code, out = self.pending(repo)
@@ -1616,6 +1621,83 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual(code, 2)
         self.assertIn("HTTP 502", out)
+
+    def test_an_unfinished_refresh_saves_page_three_and_page_twos_last_run_and_clears_when_done(self):
+        # D00 T03 §24 item 1: after a refresh cut short at page 3, the checkpoint names page 3 and page 2's last run,
+        # and after a finished refresh it names none.
+        old = [sha(n) for n in range(1, 101)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)
+        self.assertIsNone(self.checkpoint().get("refresh"))
+        added = [sha(n) for n in range(101, 401)]  # 300 new runs (pages 1..3), old runs pushed to page 4
+        self.record(*(f"ci-green {h[:7]}" for h in [*old, *added]))
+        repo.history = [*reversed(added), *repo.history]
+        repo.runs.update({h: "success" for h in added})
+        # Read refresh page 1, page 2, and boundary 100, then run out of time before page 3 (35s at 10s/call).
+        with mock.patch.object(ci, "PENDING_SECONDS", 35):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        refresh = self.checkpoint().get("refresh")
+        self.assertIsNotNone(refresh)
+        self.assertEqual(refresh["page"], 3)
+        self.assertEqual(refresh["ids"][-1], str(int(added[100][:7], 16)))  # page 2's last run (position 200)
+        self.assertEqual(self.pending(repo)[0], 0)
+        self.assertIsNone(self.checkpoint().get("refresh"))
+
+    def test_a_refresh_cut_short_before_page_three_with_first_hundred_deleted_finds_every_remaining_head(self):
+        # D00 T03 §24 item 2: a completed checkpoint gains 300 new runs, reads 200 of them, deletes the first 100 and
+        # runs out of time before page 3; over the following tries it finds every remaining head despite page 1 now
+        # holding only the already-held second 100 runs.
+        old = [sha(n) for n in range(1, 101)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)
+        added = [sha(n) for n in range(101, 401)]  # 300 new runs: added[0]..added[99] on page 3, [100]..[199] on page 2, [200]..[299] on page 1
+        unchecked_page3 = [added[0], added[50], added[99]]
+        self.record(*(f"ci-green {h[:7]}" for h in [*old, *(a for a in added if a not in unchecked_page3)]))
+        repo.history = [*reversed(added[:200]), *repo.history]  # the newest 100 deleted between tries are off main
+        repo.runs.update({added[0]: "failure", added[50]: "success", added[99]: "failure",
+                          **{h: "success" for h in added if h not in unchecked_page3}})
+        # First try reads page 1 (added[299..200]), page 2 (added[199..100]), boundary 100, then expires before page 3.
+        with mock.patch.object(ci, "PENDING_SECONDS", 35):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        self.assertEqual(self.checkpoint()["refresh"]["page"], 3)
+        for h in added[200:]:  # delete the first 100 (newest 100 runs) before the next try
+            del repo.runs[h]
+        # Next tries resume the saved refresh before page 1 can stop it, detect the boundary shift, step back, and find
+        # added[0..99] (now on page 2).
+        codes = []
+        for _ in range(5):
+            with mock.patch.object(ci, "PENDING_SECONDS", 45):
+                code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertIn(ci.PROGRESSING, codes)
+        self.assertEqual(codes[-1], 1)
+        self.assertEqual(self.listed(out), [h[:7] for h in unchecked_page3])
+        self.assertIsNone(self.checkpoint().get("refresh"))
+
+    def test_a_refresh_longer_than_one_try_returns_progressing_until_it_finishes(self):
+        # D00 T03 §24 item 3: each saved refresh page counts as progress so a multi-try refresh exits 4 until done.
+        old = [sha(n) for n in range(1, 101)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)
+        added = [sha(n) for n in range(101, 601)]  # 500 new runs (5 pages)
+        self.record(*(f"ci-green {h[:7]}" for h in [*old, *added[:-1]]))
+        repo.history = [*reversed(added), *repo.history]
+        repo.runs.update({**{h: "success" for h in added[:-1]}, added[-1]: "success"})
+        codes = []
+        for _ in range(6):
+            with mock.patch.object(ci, "PENDING_SECONDS", 35):  # at most 3 API calls per try
+                code, out = self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))
+            codes.append(code)
+            if code != ci.PROGRESSING:
+                break
+        self.assertGreaterEqual(codes.count(ci.PROGRESSING), 3)
+        self.assertEqual(codes[-1], 0)
+        self.assertEqual(self.listed(out), [added[-1][:7]])
 
 
 class Logs(Base):
