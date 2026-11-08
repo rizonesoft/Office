@@ -360,6 +360,7 @@ class Inventory(unittest.TestCase):
                      "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live",
                      "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM", "ATTACKER.ID", "SERVER.ID",
                      "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO-REGISTER.ID", "1-REGISTER.ID", "a-b.STDEV.S",
+                     "Visit FOO-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(1,2)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
                      "http:B2", "FTP:X", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
@@ -369,7 +370,8 @@ class Inventory(unittest.TestCase):
                      "Visio XML Drawing (*.vdx)", "Opens a .docx file.", ".docx", "Save as (.docx)",
                      "Loads Normal.dotm as the default template.", "Saves to Normal.dotm.",
                      "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)", "=1-STDEV.S(1,2)", "=-NORM.S.DIST(0,TRUE)",
-                     "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)"):
+                     "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
+                     "=SUM(FTP:FTP)", "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
         schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
