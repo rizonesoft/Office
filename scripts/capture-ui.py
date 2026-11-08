@@ -595,7 +595,7 @@ class Launched:
             self.started = (starter or start_process)(exe)
         self._apartment = _Apartment(
             daemon=True,
-            shutdown_timeout=min(1.5, max(0.5, init_timeout * 3.0)),
+            shutdown_timeout=min(2.0, max(1.5, init_timeout * 5.0)),
         )
         try:
             self._apartment.call(
@@ -605,7 +605,7 @@ class Launched:
         except TimeoutError:
             self._recover_hung_launch(
                 join_timeout=min(0.05, max(0.01, init_timeout * 0.1)),
-                shutdown_timeout=min(1.5, max(0.5, init_timeout * 3.0)),
+                shutdown_timeout=min(2.0, max(1.5, init_timeout * 5.0)),
             )
             raise Refused(f"{exe} did not finish starting within {init_timeout}s") from None
         except BaseException:
@@ -631,12 +631,62 @@ class Launched:
 
     def _abandon_hung_launch(self):
         self._post_close_if_owned()
+        if self.owned and self.app is not None:
+            import threading
+
+            def force_quit():
+                try:
+                    docs = list(self.created)
+                    if not docs:
+                        try:
+                            docs = list(self.documents())
+                        except Exception:
+                            docs = []
+                    for doc in docs:
+                        if getattr(doc, "closed", False):
+                            continue
+                        try:
+                            if self.key == "word":
+                                doc.Close(SaveChanges=0)
+                            elif self.key == "excel":
+                                doc.Close(SaveChanges=False)
+                            else:
+                                doc.Saved = True
+                                doc.Close()
+                        except Exception:
+                            pass
+                finally:
+                    try:
+                        if self.key == "word":
+                            self.app.Quit(SaveChanges=0)
+                        else:
+                            self.app.Quit()
+                    except Exception:
+                        pass
+
+            t = threading.Thread(target=force_quit, daemon=True)
+            t.start()
+            t.join(timeout=0.2)
         if self.proc is not None:
             try:
                 self.proc.close()
             except Exception:
                 pass
             self.proc = None
+
+    def _try_bind_window(self, owner):
+        if self.hwnd is None:
+            try:
+                wh = self.window_handle()
+                if wh is not None:
+                    self.hwnd = Win().top(wh)
+            except Exception:
+                pass
+        if self.proc is None and self.hwnd is not None:
+            try:
+                self.proc = (owner or OwnProcess)(self.hwnd, self.exe)
+            except Exception:
+                pass
 
     def _init_com(self, progid, separate, dispatch, owner):
         exe = self.exe
@@ -660,6 +710,7 @@ class Launched:
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
             self.app.Visible = True
+            self._try_bind_window(owner)
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
             doc = self.new_document()
@@ -668,7 +719,8 @@ class Launched:
             doc = None
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
-            self.hwnd = Win().top(self.window_handle())
+            if self.hwnd is None:
+                self.hwnd = Win().top(self.window_handle())
             if self.proc is None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
             if getattr(self, "_cancelled", False):

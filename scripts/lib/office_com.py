@@ -196,12 +196,17 @@ def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw3
         kernel32.CloseHandle(tx)
 
 
-def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
+def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None, fdopen=None,
+                      status_out=None):
     """Delete dst inside a Windows KTM kernel transaction only if dst still holds expected_bytes, so a concurrent
     save or edit to a newly created output is never deleted during rollback."""
+    import ctypes
+
     ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
     tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
     if tx == invalid or not tx:
+        if status_out is not None:
+            status_out.append("failed")
         return False
     committed = False
     try:
@@ -209,17 +214,30 @@ def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel
             str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None, tx, None, None
         )
         if h == invalid or not h:
+            err = ctypes.get_last_error()
+            if err in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+                if status_out is not None:
+                    status_out.append("absent")
+                return True
+            if status_out is not None:
+                status_out.append("failed")
             return False
         fd = open_osf(h, os.O_RDONLY)
         with fdopen(fd, "rb") as f:
             actual = f.read()
         if actual != expected_bytes:
+            if status_out is not None:
+                status_out.append("superseded")
             return False
         if on_enlisted is not None:
             on_enlisted(dst)
         if not kernel32.DeleteFileTransactedW(str(dst), tx):
+            if status_out is not None:
+                status_out.append("failed")
             return False
         if not ktmw32.CommitTransaction(tx):
+            if status_out is not None:
+                status_out.append("failed")
             return False
         committed = True
         return True
@@ -327,17 +345,26 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)
     except BaseException as exc:
+        unremoved = []
         for path in placed:
             if path not in aside:
-                transacted_unlink(path, files[path].encode("utf-8"))
+                status = []
+                if not transacted_unlink(path, files[path].encode("utf-8"), status_out=status):
+                    if "superseded" not in status:
+                        unremoved.append(path)
         unrestored = []
         for path, old in aside.items():
             if not transacted_restore(old, path, files[path].encode("utf-8"), placed_ok=(path in placed)):
-                if Path(old).exists():
+                bp = old if hasattr(old, "exists") else Path(old)
+                if bp.exists():
                     unrestored.append((path, old))
+        notes = []
+        if unremoved:
+            notes.append("rollback could not remove newly created " + ", ".join(str(p) for p in unremoved))
         if unrestored:
             kept = ", ".join(f"{p} (backup kept at {b})" for p, b in unrestored)
-            msg = f"rollback could not restore {kept}"
+            notes.append(f"rollback could not restore {kept}")
+        for msg in notes:
             print(f"publish: {msg}", file=sys.stderr)
             if hasattr(exc, "add_note"):
                 exc.add_note(msg)

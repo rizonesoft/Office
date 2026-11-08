@@ -621,6 +621,19 @@ class Writes(unittest.TestCase):
             open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"edited_after_place"),
         ))
         self.assertEqual(unlinked, ["out.old"])
+        unlink_status = []
+        self.assertFalse(cu.transacted_unlink(
+            Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=SharingViolationKernel(),
+            status_out=unlink_status,
+        ))
+        self.assertEqual(unlink_status, ["failed"])
+        unlink_status.clear()
+        self.assertFalse(cu.transacted_unlink(
+            Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"edited_after_place"),
+            status_out=unlink_status,
+        ))
+        self.assertEqual(unlink_status, ["superseded"])
 
 
 class Round3(unittest.TestCase):
@@ -849,9 +862,9 @@ class Round3(unittest.TestCase):
         finally:
             cu._Apartment.__init__ = orig_apt_init
         # Verify in a real child subprocess that exits immediately after cu.main() returns 2 on launch timeout:
-        # 1) When Documents.Add() outlasts both init_timeout and _recover_hung_launch's initial join (so doc_closed and
-        #    quit are still False when main() returns 2), _Apartment's bounded atexit hook waits for the delayed
-        #    Documents.Add() to finish and runs cleanup before interpreter exit.
+        # 1) When Documents.Add() outlasts both init_timeout and _recover_hung_launch's initial join (e.g. 0.9s delay
+        #    with init_timeout=0.05, so doc_closed and quit are still False when main() returns 2), _Apartment's
+        #    bounded atexit hook waits for the delayed Documents.Add() to finish and runs cleanup before exit.
         import subprocess
         import sys
         probe_delayed = (
@@ -864,7 +877,7 @@ class Round3(unittest.TestCase):
             "    def Close(self, SaveChanges=0): state['doc_closed'] = True; Docs.Count = 0\n"
             "class Docs:\n"
             "    Count = 0\n"
-            "    def Add(self): time.sleep(0.25); Docs.Count = 1; return Doc()\n"
+            "    def Add(self): time.sleep(0.9); Docs.Count = 1; return Doc()\n"
             "    def __iter__(self): return iter([])\n"
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
@@ -881,8 +894,59 @@ class Round3(unittest.TestCase):
         self.assertIn("MAIN_RC:2", proc.stdout)
         self.assertIn('AT_MAIN_RETURN:{"doc_closed": false, "quit": false}', proc.stdout)
         self.assertIn('ATEXIT:{"doc_closed": true, "quit": true}', proc.stdout)
-        # 2) When a COM call is permanently hung (waits on an unset Event forever), the daemon apartment thread and
-        #    bounded atexit join allow the CLI process to terminate promptly with code 2 rather than hanging forever.
+        # 2) When an owned instance's Documents.Add() blocks beyond the atexit shutdown budget (waits on an unset
+        #    Event forever), ownership (hwnd and proc) is bound before Documents.Add(), and _abandon_hung_launch
+        #    closes any open document, calls App.Quit(), and closes proc before the CLI process exits with code 2.
+        probe_hung_add = (
+            "import atexit, importlib.util, json, sys, threading\n"
+            f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
+            "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
+            "cu.Win = lambda: type('W', (), {'top': lambda self, h: h})()\n"
+            "never = threading.Event()\n"
+            "state = {'bound_before_add': False, 'doc_closed': False, 'quit': False, 'proc_closed': False}\n"
+            "class Proc:\n"
+            "    pid = 77\n"
+            "    def exited(self, s): return True\n"
+            "    def close(self): state['proc_closed'] = True\n"
+            "class Doc:\n"
+            "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
+            "    def Close(self, SaveChanges=0): self.closed = True; state['doc_closed'] = True; Docs.items.clear()\n"
+            "class Docs:\n"
+            "    items = []\n"
+            "    @property\n"
+            "    def Count(self): return len(self.items)\n"
+            "    def Add(self):\n"
+            "        self.items.append(Doc())\n"
+            "        never.wait()\n"
+            "        return self.items[-1]\n"
+            "    def __iter__(self): return iter(list(self.items))\n"
+            "class App:\n"
+            "    Visible = False; Documents = Docs()\n"
+            "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
+            "    def Quit(self, SaveChanges=0): state['quit'] = True\n"
+            "def make_owner(hwnd, exe):\n"
+            "    if not Docs.items:\n"
+            "        state['bound_before_add'] = True\n"
+            "    return Proc()\n"
+            "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
+            "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=make_owner, init_timeout=0.05))\n"
+            "print('AT_MAIN_RETURN:' + json.dumps(state), flush=True)\n"
+            "print('MAIN_RETURNED:' + str(rc), flush=True)\n"
+            "sys.exit(rc)\n"
+        )
+        proc_hung_add = subprocess.run([sys.executable, "-c", probe_hung_add], capture_output=True, text=True, timeout=3.5)
+        self.assertEqual(proc_hung_add.returncode, 2, proc_hung_add.stderr)
+        self.assertIn("MAIN_RETURNED:2", proc_hung_add.stdout)
+        self.assertIn(
+            'AT_MAIN_RETURN:{"bound_before_add": true, "doc_closed": false, "quit": false, "proc_closed": false}',
+            proc_hung_add.stdout,
+        )
+        self.assertIn(
+            'ATEXIT:{"bound_before_add": true, "doc_closed": true, "quit": true, "proc_closed": true}',
+            proc_hung_add.stdout,
+        )
+        # 3) When dispatch itself is permanently hung before ownership is established, the CLI exits promptly with code 2.
         probe_hung = (
             "import importlib.util, sys, threading\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
@@ -893,7 +957,7 @@ class Round3(unittest.TestCase):
             "print('MAIN_RETURNED:' + str(rc), flush=True)\n"
             "sys.exit(rc)\n"
         )
-        proc_hung = subprocess.run([sys.executable, "-c", probe_hung], capture_output=True, text=True, timeout=2.5)
+        proc_hung = subprocess.run([sys.executable, "-c", probe_hung], capture_output=True, text=True, timeout=3.5)
         self.assertEqual(proc_hung.returncode, 2, proc_hung.stderr)
         self.assertIn("MAIN_RETURNED:2", proc_hung.stdout)
 
@@ -1156,6 +1220,36 @@ class CaptureIntegration(unittest.TestCase):
                 self.assertEqual(len(backups), 1)
                 self.assertEqual(backups[0].read_text(encoding="utf-8"), '[{"id": "word.original_recovery"}]\n')
                 self.assertIn("backup kept at", err_buf.getvalue())
+
+                # 7. If rollback deletion of a newly created output fails due to a sharing violation, publish reports it.
+                first_new_locked = Path(tmp) / "first_new_locked.json"
+                second_new_locked = Path(tmp) / "second_new_locked.json"
+                new_lock_handles = []
+
+                def link_locks_first_then_fails_second(src, dst):
+                    if Path(dst) == first_new_locked:
+                        os.link(src, dst)
+                        h = ctypes.windll.kernel32.CreateFileW(
+                            str(first_new_locked), 0x80000000, 1, None, 3, 0, None
+                        )
+                        new_lock_handles.append(h)
+                        return
+                    raise OSError("simulated failure on second newly created output")
+
+                err_buf_new = io.StringIO()
+                try:
+                    with contextlib.redirect_stderr(err_buf_new), self.assertRaises(OSError) as cm_new:
+                        cu.publish({first_new_locked: '[{"id": "word.new_locked"}]\n',
+                                    second_new_locked: '[]\n'},
+                                   link=link_locks_first_then_fails_second,
+                                   create_only={first_new_locked, second_new_locked})
+                finally:
+                    for h in new_lock_handles:
+                        ctypes.windll.kernel32.CloseHandle(h)
+                self.assertIn("rollback could not remove newly created", err_buf_new.getvalue())
+                self.assertIn(str(first_new_locked), err_buf_new.getvalue())
+                if hasattr(cm_new.exception, "__notes__"):
+                    self.assertTrue(any("rollback could not remove newly created" in n for n in cm_new.exception.__notes__))
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

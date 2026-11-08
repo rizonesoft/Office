@@ -414,3 +414,49 @@ OVERALL: needs-attention
 2. **[P3] The new subprocess regression does not exercise cleanup after CLI exit**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by testing both a delayed `Documents.Add(0.25s)` with `init_timeout=0.05` (asserting `AT_MAIN_RETURN:{"doc_closed": false, "quit": false}` when `main()` returns 2 and `ATEXIT:{"doc_closed": true, "quit": true}` at interpreter shutdown) and a permanently hung `dispatch` waiting on an unset `threading.Event()` with `init_timeout=0.05` (asserting the child CLI process terminates with exit code 2 within 2.5s).
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 9: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T23:36:10Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 5c1b3cfea5c1e781
+
+## adversarial: needs-attention
+
+1. **[P2] Startup timeout still abandons a partially launched Office instance.** `scripts/capture-ui.py:565` stops waiting after the shutdown budget, while `:624` can request closure only when `self.hwnd` exists. That handle is assigned after `new_document()` returns at `:671`. If document creation remains blocked beyond both budgets, the daemon thread dies without closing the document or quitting Office. Reproduced by changing the existing subprocess probe’s delay from 0.25 to 0.9 seconds with `init_timeout=0.05`: it exited 2 with `ATEXIT:{"doc_closed": false, "quit": false}`. Precondition: slow Office document creation. Recovery needs ownership established before the blocking operation and a cleanup lifecycle that survives the caller’s exit.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. **[P2] Failed rollback of a newly created output is silently ignored.** `scripts/lib/office_com.py:332` discards the result of `transacted_unlink()`. If publication creates the first file, fails on the second, and a reader temporarily prevents deletion of the first, publication leaves partial output without reporting the failed recovery or its path. An in-memory probe reproduced a remaining `first.json` and an empty recovery diagnostic. Precondition: an ordinary file lock during rollback. Handle failed deletion explicitly, as the restoration path already does for existing files.
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Findings **1 and 2 [P2]** leave recovery incomplete without actionable diagnostics, contrary to the reliability and clear-feedback requirements in `docs/product-principles.md`.
+
+## record: needs-attention
+
+3. **[P3] The startup recovery test proves only completion within the extra grace period.** `scripts/tests/test_capture_ui.py:867` delays creation by 0.25 seconds, fitting inside the 0.5-second shutdown wait. The permanently hung probe at `:892` blocks dispatch before establishing ownership. Neither tests an owned instance whose document creation outlasts shutdown. Consequently, the recovery claim at `docs/reviews/02-interface/audit-d02-t01-s3.md:413` remains incomplete; finding 1 reproduces the missing case.
+
+Verification: 49 tests passed; three were blocked by filesystem restrictions and 13 were excluded because they require writes. The whole-inventory checker exited 0. No files changed; no live Office capture ran.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 9 disposition
+
+1. **[P2] Startup timeout still abandons a partially launched Office instance**: fixed in `scripts/capture-ui.py` (`Launched.__init__`, `Launched._init_com`, `Launched._try_bind_window`, and `Launched._abandon_hung_launch`) by raising the `atexit` shutdown grace budget floor to `1.5s` (`min(2.0, max(1.5, init_timeout * 5.0))`), binding `self.hwnd` and `self.proc` via `_try_bind_window` before calling `self.new_document()`, and running a bounded (`0.2s`) emergency cleanup in `_abandon_hung_launch` when `self._thread.is_alive()` remains `True` after `shutdown_timeout` (closing any open document in `self.created` or `self.documents()`, calling `self.app.Quit`, posting `WM_CLOSE` to `self.hwnd`, and closing `self.proc`); covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] Failed rollback of a newly created output is silently ignored**: fixed in `scripts/lib/office_com.py` (`transacted_unlink` and `publish`) by tracking `status_out` on `transacted_unlink` (`"superseded"` when `actual != expected_bytes`, `"absent"` when already missing, and `"failed"` when enlistment, deletion, or commit fails) and reporting any newly created outputs that failed rollback removal (`rollback could not remove newly created ...`) to `sys.stderr` and via `exc.add_note(...)`; covered by `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (in-memory) and `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` subtest 7 in `scripts/tests/test_capture_ui.py`.
+3. **[P3] The startup recovery test proves only completion within the extra grace period**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by raising `probe_delayed`'s `Documents.Add()` delay to `0.9s` (`init_timeout=0.05`) and adding `probe_hung_add`, which tests an owned instance whose `Documents.Add()` blocks indefinitely past `shutdown_timeout`, asserting `bound_before_add=True`, `doc_closed=True`, `quit=True`, and `proc_closed=True` at `atexit`.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
