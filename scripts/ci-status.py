@@ -343,15 +343,15 @@ def read_run(tools, owner_name, run_id, seconds):
 
 def keep(cp, runs):
     """Store runs as read, a fresher read replacing an older one (a rerun changes a run's attempt and conclusion).
-    Returns how many runs were new or changed."""
-    changed = 0
+    Returns the ids of the runs that were new or changed."""
+    changed = []
     for r in runs:
         entry = {"headSha": r.get("head_sha"), "event": r.get("event"), "headBranch": r.get("head_branch"),
                  "status": r.get("status"), "conclusion": r.get("conclusion") or "",
                  "createdAt": r.get("created_at", ""), "attempt": r.get("run_attempt", 1)}
         if cp["runs"].get(str(r["id"])) != entry:
             cp["runs"][str(r["id"])] = entry
-            changed += 1
+            changed.append(str(r["id"]))
     return changed
 
 
@@ -414,12 +414,13 @@ class Pages:
             if refresh["rewind"] is not None:
                 k = refresh["rewind"]
                 runs, rchanged = self.read(k)
-                if rchanged and len(runs) == PER_PAGE:
+                refresh["next_ids"] = list(dict.fromkeys(refresh["next_ids"] + rchanged))
+                read = [str(r["id"]) for r in runs]
+                if (rchanged or (set(read) & set(refresh["next_ids"]))) and len(runs) == PER_PAGE:
                     target = max(target, k + 1)
                     refresh["target"] = target
-                read = [str(r["id"]) for r in runs]
                 if set(read) & set(refresh["ids"]) or k == 1:
-                    refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None, next_ids=[])
+                    refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None)
                 else:
                     refresh["rewind"] = k - 1
                 self.cp["progress"] += 1
@@ -427,14 +428,15 @@ class Pages:
                 continue
             page, ids, anchor_total = refresh["page"], refresh["ids"], refresh.get("total")
             runs, changed = self.read(page)
+            refresh["next_ids"] = list(dict.fromkeys(refresh["next_ids"] + changed))
             read = [str(r["id"]) for r in runs]
-            pushed_copy = bool(ids and set(read) <= set(ids))
+            pushed_copy = bool((ids and set(read) <= set(ids)) or (set(read) & set(refresh["next_ids"])))
             if (changed or pushed_copy) and len(runs) == PER_PAGE:
                 target = max(target, page + 1)
                 refresh["target"] = target
             if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
                 target = max(target, page)
-                refresh.update(page=page, target=target, ids=ids, total=anchor_total, rewind=page - 1, next_ids=[])
+                refresh.update(page=page, target=target, ids=ids, total=anchor_total, rewind=page - 1)
                 self.cp["progress"] += 1
                 self.save(self.cp)
                 continue
@@ -463,7 +465,7 @@ class Pages:
                 self.save(self.cp)
             return
         self.cp["refresh"] = {"page": 2, "target": 2, "ids": [str(r["id"]) for r in runs], "total": self.cp["total"],
-                              "rewind": None, "next_ids": []}
+                              "rewind": None, "next_ids": changed}
         self.cp["progress"] += 1
         self.save(self.cp)
         self.finish_refresh()

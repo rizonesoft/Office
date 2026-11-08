@@ -1468,6 +1468,25 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [delayed[:7]]))
 
+    def test_an_insertion_during_refresh_recovery_does_not_stop_before_a_pushed_run(self):
+        old = [sha(n) for n in range(1, 101)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)
+        added = [sha(n) for n in range(101, 302)]  # 201 new push runs; 101 fails and 102..301 have recorded outcomes
+        self.record(*(f"ci-green {h[:7]}" for h in [*old, *added[1:]]))
+        repo.history = [*reversed(added), *repo.history]
+        repo.runs.update({added[0]: "failure", **{h: "success" for h in added[1:]}})
+
+        def insert_100_and_delete_one():  # after refresh page 2, push 301..102 to pages 2..3 and 101 to page 4
+            repo.extra_runs.extend({"id": 99500 + n, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(5000 + n),
+                                    "event": "pull_request", "head_branch": "feature"} for n in range(100))
+            del repo.runs[old[0]]
+        repo.after_page[2] = insert_100_and_delete_one
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [added[0][:7]]))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))
