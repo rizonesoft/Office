@@ -1298,6 +1298,45 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
 
+    def test_an_earlier_reds_deleted_newest_run_falls_back_to_its_older_run(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 99600 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(2300 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        older = {"id": 6, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
+                 "head_sha": a, "event": "push", "head_branch": "main"}  # an older green push run of A
+        repo = Repo([b, a, base], {base: "success", a: "failure", b: "success"}, extra_runs=others)
+        repo.older_runs = [older]
+        with mock.patch.object(ci, "PENDING_SECONDS", 100):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, head_seconds=55))[0], ci.PROGRESSING)
+        del repo.runs[a]  # the red A's newest run is deleted, leaving its older green run
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [a[:7], b[:7]]))
+        self.assertIn(f"green {a[:7]} run 6", out)
+
+    def test_a_deleted_boundary_run_during_the_refresh_costs_one_page_back(self):
+        old = [sha(n) for n in range(1, 11)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)
+        n1, n2 = sha(11), sha(12)  # N1 at position 201 (page 3), N2 at position 200 (last of page 2)
+        repo.history = [n2, n1, *repo.history]
+        repo.runs.update({n1: "failure", n2: "success"})
+        repo.extra_runs = [{"id": 98000 + n, "status": "completed", "conclusion": "success",
+                            "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(2400 + n), "event": "pull_request",
+                            "head_branch": "feature"} for n in range(199)]
+        repo.after_page[2] = lambda: repo.runs.pop(n2)  # page 2's boundary run is deleted before page 3 is read
+        repo.pages_read.clear()
+        code, out = self.pending(repo)
+        self.assertEqual(self.listed(out), [n1[:7], n2[:7]])
+        pages = [u.rsplit("=", 1)[1] for u in repo.pages_read]
+        self.assertEqual(pages, ["1", "2", "3", "2", "3"])  # step back stops at page 2, not page 1
+
+    def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
+        stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
+        self.assertFalse(ci.current(stored, "10", {}))
+        self.assertTrue(ci.current(stored, "10", {"10": {"attempt": 1}}))
+
     def test_a_recovery_cut_short_goes_on_in_the_next_try(self):
         heads, repo = self.heads(400, {sha(101)})
 
