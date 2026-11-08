@@ -327,7 +327,7 @@ class Checker(unittest.TestCase):
             self.assertIn(obligation, section)
         refresh = section[section.index("To refresh:"):]
         self.assertLess(refresh.index("baseline-sources.json"), refresh.index("scripts/import-office-ids.py"))
-        self.assertIn("git ls-tree", refresh)
+        self.assertIn('git ls-tree -r <full commit> -- "Microsoft 365/Current Channel"', refresh)
         self.assertIn("git hash-object", refresh)
 
     def test_baseline_rows_are_not_inventory_records(self):
