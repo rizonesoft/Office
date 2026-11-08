@@ -362,10 +362,10 @@ class Inventory(unittest.TestCase):
                      "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO-REGISTER.ID", "1-REGISTER.ID", "a-b.STDEV.S",
                      "Visit FOO-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(1,2)",
                      "Visit (1-REGISTER.ID(1,2))", "Visit  (1-REGISTER.ID(1,2))", "Visit [1-REGISTER.ID(1,2)]",
-                     "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
+                     "Visit \u201c(1-REGISTER.ID(1,2))\u201d", "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
-                     "http:B2", "FTP:X", "See (FTP:X)", "See [ (FTP:X)]", "See (FTP:FTP)", "See (A:A,FTP:FTP)",
-                     "s3:bucket"):
+                     "http:B2", "FTP:X", "See (FTP:X)", "See [ (FTP:X)]", "See \u201c(FTP:X)\u201d",
+                     "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
@@ -376,6 +376,7 @@ class Inventory(unittest.TestCase):
                      "=10-STDEV.S(1,2)", "=A10-STDEV.S(1,2)", "=A100000-STDEV.S(1,2)", "=XFD1048576-STDEV.S(1,2)",
                      "=1-STDEV.S(1, 2)", "=1-STDEV.S(SUM(A1:A2),2)", "=1-STDEV.S(SUM(SUM(A1:A2)),2)",
                      "=1-STDEV.S(SUM(SUM(SUM(SUM(A1:A2)))),2)", "=1-STDEV.S(Sheet1!A1:A2)", "=1-STDEV.S(A1:A2,3%)",
+                     "=1-STDEV.S('Sales Data'!A1:A2)", "=1-STDEV.S(Table1[Amount])", "=1-STDEV.S({1,2,3})",
                      "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
                      "=SUM(FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)", "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)",
                      "=SUM(SUM(FTP:FTP))", "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)"):
