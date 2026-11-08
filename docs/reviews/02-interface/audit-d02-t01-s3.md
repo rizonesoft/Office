@@ -323,3 +323,51 @@ OVERALL: needs-attention
 4. **[P3] The startup regression test does not establish cleanup**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by joining the apartment thread after releasing both a blocked `dispatch` and a blocked `Documents.Add()`, asserting `_thread.is_alive()` is `False`, no unclosed documents remain, and `quit` is `True`.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 7: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T23:03:45Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: 89520e52e4addc96
+
+## adversarial: needs-attention
+
+1. **[P1] Failed rollback deletes the original recovery copy.** `scripts/lib/office_com.py:271` deletes the backup whenever restoration did not commit, including sharing violations and failed moves or commits. Reproduce by publishing the first output, failing the second output, and holding the first output open without delete sharing during rollback. Restoration fails, but its backup is deleted; `publish()` also ignores the failure at line 327. An injected `ERROR_SHARING_VIOLATION` reproduced `restore=False` followed by backup deletion. Precondition: an ordinary file lock during publication recovery. Preserve failed-restoration backups and report their paths.
+
+2. **[P2] CLI exit terminates the startup cleanup before it runs.** `scripts/capture-ui.py:506` makes the COM apartment thread a daemon. After startup times out, recovery only queues shutdown; `main()` returns 2 at line 1221 and the interpreter exits. If `Documents.Add()` remains blocked, the cancellation checks and cleanup never execute. A subprocess probe with delayed `Add()` reproduced `MAIN_EXIT 2` and `quit=False` at interpreter exit. Precondition: slow or temporarily unresponsive Office startup. Cleanup must survive the CLI's timeout return.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P1]** also affects `scripts/word-commands.py:184`, which publishes commands and shortcuts through the shared helper. A second-file failure can leave mismatched outputs while destroying the original first-file backup.
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P1]** violates the recovery requirement in `docs/product-principles.md:15`: a recoverable publication failure can destroy the recovery data itself.
+
+## record: needs-attention
+
+3. **[P3] The startup regression supplies lifecycle management absent from production.** `scripts/tests/test_capture_ui.py:794` and line 808 explicitly join the apartment after releasing blocked initialization. Those joins allow cleanup to finish, whereas the CLI exits immediately. Consequently, the test passes despite finding 2, and the fixed disposition at `docs/reviews/02-interface/audit-d02-t01-s3.md:321` overstates recovery. Add a subprocess test that follows the actual CLI exit path.
+
+Verification: 49 selected tests passed; 16 tests requiring filesystem writes were excluded. The whole-inventory checker exited 0. Two additional probes reproduced the failures above. No files were modified; no live Office capture was run.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 7 disposition
+
+1. **[P1] Failed rollback deletes the original recovery copy**: fixed in `scripts/lib/office_com.py` (`transacted_restore` and `publish`) by tracking `superseded = True` only when `dst` was not placed (`not placed_ok`) or `actual != expected_bytes` (so `transacted_restore` unlinks `backup` only when `dst` was superseded by a concurrent save, preserving `backup` on transient failures such as sharing violations or failed moves/commits), and by collecting any unrestored backups in `publish` and reporting their preserved paths to `sys.stderr` and via `exc.add_note(...)`; covered by `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (in-memory) and `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` subtest 6 in `scripts/tests/test_capture_ui.py`.
+2. **[P2] CLI exit terminates the startup cleanup before it runs**: fixed in `scripts/capture-ui.py` (`_Apartment.__init__`, `_Apartment.close`, `Launched.__init__`, and `Launched._recover_hung_launch`) by making `Launched`'s COM apartment thread non-daemon (`daemon=False` by default) and bounding `_Apartment.close(join_timeout=...)` so interpreter shutdown after `main()` returns 2 waits for any delayed `Documents.Add()` or `dispatch` on the owning STA thread to reach the cancellation check and run `self.close()`; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+3. **[P3] The startup regression supplies lifecycle management absent from production**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by adding a child subprocess probe that invokes `cu.main(...)` with a delayed `Documents.Add()` exceeding `init_timeout`, calls `sys.exit(rc)` immediately without any manual thread join, and asserts via `atexit` that `rc == 2` and `{"doc_closed": true, "quit": true}`.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

@@ -496,14 +496,14 @@ class _Apartment:
     """A single-threaded COM apartment (STA) so every COM proxy is created, queried and closed on the same
     CoInitialize-d thread while allowing the caller to bound any call with a timeout."""
 
-    def __init__(self):
+    def __init__(self, daemon=False):
         import queue
         import threading
         self._q = queue.Queue()
         self._ready = queue.Queue()
         self.ident = None
         self._closed = False
-        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread = threading.Thread(target=self._loop, daemon=daemon)
         self._thread.start()
         self._ready.get()
 
@@ -542,10 +542,13 @@ class _Apartment:
             raise val
         return val
 
-    def close(self):
+    def close(self, join_timeout=5.0):
+        import threading
         if not self._closed:
             self._closed = True
             self._q.put(None)
+        if join_timeout and threading.get_ident() != self.ident and self._thread.is_alive():
+            self._thread.join(timeout=join_timeout)
 
 
 class Launched:
@@ -576,21 +579,21 @@ class Launched:
                 timeout=init_timeout,
             )
         except TimeoutError:
-            self._recover_hung_launch()
+            self._recover_hung_launch(join_timeout=max(0.5, min(5.0, init_timeout * 5.0)))
             raise Refused(f"{exe} did not finish starting within {init_timeout}s") from None
         except BaseException:
             self._apartment.close()
             raise
 
-    def _recover_hung_launch(self):
+    def _recover_hung_launch(self, join_timeout=5.0):
         self._cancelled = True
-        self._apartment.close()
         if self.owned and getattr(self, "hwnd", None):
             try:
                 import ctypes
                 ctypes.windll.user32.PostMessageW(self.hwnd, 0x0010, 0, 0)  # WM_CLOSE
             except Exception:
                 pass
+        self._apartment.close(join_timeout=join_timeout)
 
     def _init_com(self, progid, separate, dispatch, owner):
         import win32com.client
@@ -1079,7 +1082,7 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
     import types
     deadline = time.monotonic() + timeout
     own_apt = getattr(launched, "_apartment", None)
-    apt = own_apt or _Apartment()
+    apt = own_apt or _Apartment(daemon=True)
     try:
         try:
             build_str, lang_id = apt.call(
@@ -1159,7 +1162,7 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
                         pass
     finally:
         if own_apt is None:
-            apt.close()
+            apt.close(join_timeout=0)
     if "unsafe" in outcome:
         raise Unsafe(outcome["unsafe"])
     if "refused" in outcome:

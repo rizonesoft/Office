@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -231,7 +232,9 @@ def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel
 def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=None, ktmw32=None, kernel32=None,
                        open_osf=None, fdopen=None):
     """Restore backup to dst inside a Windows KTM kernel transaction only if dst is missing or still holds
-    expected_bytes (when placed_ok is True); otherwise leave the concurrent save at dst untouched and unlink backup."""
+    expected_bytes (when placed_ok is True); if dst was concurrently modified, leave dst untouched and unlink backup.
+    If restoration fails transiently (for example a sharing violation), keep backup on disk so recovery data is not
+    destroyed."""
     import ctypes
 
     ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
@@ -239,6 +242,7 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
     if tx == invalid or not tx:
         return False
     committed = False
+    superseded = False
     try:
         h = kernel32.CreateFileTransactedW(
             str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None, tx, None, None
@@ -255,6 +259,7 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
         with fdopen(fd, "rb") as f:
             actual = f.read()
         if not placed_ok or actual != expected_bytes:
+            superseded = True
             return False
         if on_enlisted is not None:
             on_enlisted(dst)
@@ -268,11 +273,13 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
         if not committed:
             ktmw32.RollbackTransaction(tx)
         kernel32.CloseHandle(tx)
-        if not committed and Path(backup).exists():
-            try:
-                Path(backup).unlink()
-            except OSError:
-                pass
+        if superseded:
+            bp = backup if hasattr(backup, "unlink") else Path(backup)
+            if bp.exists():
+                try:
+                    bp.unlink()
+                except OSError:
+                    pass
 
 
 def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), expected_bytes=None, on_enlisted=None):
@@ -319,12 +326,21 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
             rename(staged[path], path)
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)
-    except BaseException:
+    except BaseException as exc:
         for path in placed:
             if path not in aside:
                 transacted_unlink(path, files[path].encode("utf-8"))
+        unrestored = []
         for path, old in aside.items():
-            transacted_restore(old, path, files[path].encode("utf-8"), placed_ok=(path in placed))
+            if not transacted_restore(old, path, files[path].encode("utf-8"), placed_ok=(path in placed)):
+                if Path(old).exists():
+                    unrestored.append((path, old))
+        if unrestored:
+            kept = ", ".join(f"{p} (backup kept at {b})" for p, b in unrestored)
+            msg = f"rollback could not restore {kept}"
+            print(f"publish: {msg}", file=sys.stderr)
+            if hasattr(exc, "add_note"):
+                exc.add_note(msg)
         raise
     finally:
         for tmp in staged.values():

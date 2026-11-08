@@ -586,6 +586,42 @@ class Writes(unittest.TestCase):
             ("CloseHandle", 101),
         ])
 
+        # If restoration fails transiently (for example a sharing violation on CreateFileTransactedW),
+        # the backup is preserved rather than deleted, whereas if dst was superseded by a concurrent save,
+        # the backup is unlinked.
+        unlinked = []
+
+        class FakeBackupPath:
+            def __init__(self, name="out.old"):
+                self.name = name
+
+            def __str__(self):
+                return self.name
+
+            def exists(self):
+                return True
+
+            def unlink(self):
+                unlinked.append(self.name)
+
+        class SharingViolationKernel(FakeKernel):
+            def CreateFileTransactedW(self, dst, access, share, sec, disp, flags, tpl, tx, mv, ext):
+                import ctypes
+                ctypes.set_last_error(32)  # ERROR_SHARING_VIOLATION
+                events.append(("CreateFileTransactedW_locked", dst))
+                return 0
+
+        events.clear()
+        self.assertFalse(cu.transacted_restore(
+            FakeBackupPath(), Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=SharingViolationKernel(),
+        ))
+        self.assertEqual(unlinked, [])
+        self.assertFalse(cu.transacted_restore(
+            FakeBackupPath(), Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"edited_after_place"),
+        ))
+        self.assertEqual(unlinked, ["out.old"])
+
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):
@@ -812,6 +848,36 @@ class Round3(unittest.TestCase):
             self.assertTrue(late_doc_app.quit)
         finally:
             cu._Apartment.__init__ = orig_apt_init
+        # Also verify in a real child subprocess that exits immediately after cu.main() returns 2 on launch timeout:
+        # because the apartment thread is non-daemon, interpreter shutdown waits for delayed Documents.Add() to finish
+        # and runs cleanup (closing the late document and quitting the instance) without any caller join.
+        import subprocess
+        import sys
+        probe = (
+            "import atexit, importlib.util, json, sys, time\n"
+            f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
+            "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
+            "state = {'doc_closed': False, 'quit': False}\n"
+            "class Doc:\n"
+            "    Name = 'Doc1'; FullName = 'Doc1'\n"
+            "    def Close(self, SaveChanges=0): state['doc_closed'] = True; Docs.Count = 0\n"
+            "class Docs:\n"
+            "    Count = 0\n"
+            "    def Add(self): time.sleep(0.3); Docs.Count = 1; return Doc()\n"
+            "    def __iter__(self): return iter([])\n"
+            "class App:\n"
+            "    Visible = False; Documents = Docs()\n"
+            "    def Quit(self, SaveChanges=0): state['quit'] = True\n"
+            "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
+            "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), init_timeout=0.15))\n"
+            "print('MAIN_RC:' + str(rc), flush=True)\n"
+            "sys.exit(rc)\n"
+        )
+        proc = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, timeout=10)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("MAIN_RC:2", proc.stdout)
+        self.assertIn('ATEXIT:{"doc_closed": true, "quit": true}', proc.stdout)
 
 
 class Worker(unittest.TestCase):
@@ -1039,6 +1105,39 @@ class CaptureIntegration(unittest.TestCase):
                                link=link_edits_first_then_fails_second, create_only={new_out, second_out})
                 self.assertTrue(new_out.exists())
                 self.assertEqual(new_out.read_text(encoding="utf-8"), '[{"id": "word.annotated_by_operator"}]\n')
+
+                # 6. If rollback restoration fails due to a sharing violation, the backup copy is preserved and reported.
+                import ctypes
+                first_existing = Path(tmp) / "first_existing.json"
+                second_existing = Path(tmp) / "second_existing.json"
+                first_existing.write_text('[{"id": "word.original_recovery"}]\n', encoding="utf-8")
+                second_existing.write_text('[{"id": "word.second_orig"}]\n', encoding="utf-8")
+                lock_handles = []
+
+                def rename_locks_first_then_fails_second(src, dst):
+                    if Path(dst) == first_existing:
+                        os.replace(src, dst)
+                        # Open first_existing without FILE_SHARE_DELETE (share=1, FILE_SHARE_READ only) so rollback fails.
+                        h = ctypes.windll.kernel32.CreateFileW(
+                            str(first_existing), 0x80000000, 1, None, 3, 0, None
+                        )
+                        lock_handles.append(h)
+                        return
+                    raise OSError("simulated failure on second output")
+
+                err_buf = io.StringIO()
+                try:
+                    with contextlib.redirect_stderr(err_buf), self.assertRaises(OSError):
+                        cu.publish({first_existing: '[{"id": "word.new1"}]\n',
+                                    second_existing: '[{"id": "word.new2"}]\n'},
+                                   rename=rename_locks_first_then_fails_second)
+                finally:
+                    for h in lock_handles:
+                        ctypes.windll.kernel32.CloseHandle(h)
+                backups = list(Path(tmp).glob("first_existing.json.*.old"))
+                self.assertEqual(len(backups), 1)
+                self.assertEqual(backups[0].read_text(encoding="utf-8"), '[{"id": "word.original_recovery"}]\n')
+                self.assertIn("backup kept at", err_buf.getvalue())
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 
