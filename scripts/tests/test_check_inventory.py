@@ -357,14 +357,30 @@ class Inventory(unittest.TestCase):
         # Audit round 7, findings 1 and 3: hosts in any plane and numeric addresses are refused, and padding with a
         # Unicode space after a sentence is not mistaken for a host.
         for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now", "*.example.com", ".example.com",
-                     "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live"):
+                     "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live",
+                     "example.ht"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
-                     "Word Document (*.docx)", "Opens a .docx file.", ".docx", "Save as (.docx)",
+                     "Word Document (*.docx)", "Excel Add-In (*.xla)", "PowerPoint Add-In (*.ppa)",
+                     "Visio XML Drawing (*.vdx)", "Opens a .docx file.", ".docx", "Save as (.docx)",
                      "Loads Normal.dotm as the default template.", "Saves to Normal.dotm."):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+        exts = ("docx", "docm", "dotx", "dotm", "doc", "dot", "xlsx", "xlsm", "xltx", "xltm", "xlsb", "xls", "xlt",
+                "xlam", "xla", "pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppt", "pot", "pps", "ppam", "ppa",
+                "vsdx", "vsdm", "vstx", "vstm", "vssx", "vssm", "vsd", "vst", "vss", "vdx", "vsx", "vtx", "mpp",
+                "mpt", "mpx", "msg", "pst", "ost", "eml", "ics", "vcf", "oft", "pab", "oab", "odt", "ods", "odp",
+                "odg", "odf", "ott", "ots", "otp", "otg", "otf", "rtf", "txt", "csv", "tsv", "pdf", "xps", "oxps",
+                "xml", "json", "htm", "html", "mht", "mhtml", "svg", "png", "jpg", "jpeg", "gif", "bmp", "tif",
+                "tiff", "emf", "wmf", "ico", "thmx", "dic", "acl", "accda", "accdb", "accde", "accdr", "accdt",
+                "mdb", "ddb", "dif", "slk", "prn", "iqy", "dqy", "oqy", "rqy", "odc", "udl", "dsn", "cub", "exe",
+                "dll", "ini", "bas", "vbs", "bak", "tmp", "log", "bin", "dat")
+        for ext in exts:
+            for variant in (ext, ext.upper()):
+                rec = dict(BOLD, label=f"Format (*.{variant})", behaviour=f"Saves File.{variant} or .{variant}.")
+                self.assertEqual(ci.validate([rec], schema, schema), [], variant)
 
     def test_unencodable_record_text_is_reported_not_a_crash(self):
         # Audit round 7, finding 2: a lone surrogate in a record reaches the report; printing it must not raise.
