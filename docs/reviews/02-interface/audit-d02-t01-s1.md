@@ -962,3 +962,45 @@ python scripts/check-inventory.py                                          -> ex
 python scripts/todo-graph.py resolve "D02 T01 §1"                          -> exit 3 (done: true)
 ```
 
+
+## Round 24: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T12:16:04Z
+- Effort: medium
+- Type: adversarial
+- Lines: 32
+- Digest: 1c269479b841d149
+
+## adversarial: approve
+
+No substantiated finding after replaying the concurrent-read failure and independently checking 1,296 parent graphs.
+
+## consistency: approve
+
+No substantiated finding.
+
+## integration: approve
+
+No substantiated finding. The uppercase Outlook path passes the actual Windows CLI.
+
+## source-defect: approve
+
+No substantiated deviation from the governing requirements.
+
+## design: advisory
+
+Not applicable (`Surface: no`).
+
+## excellence: approve
+
+No additional substantiated finding.
+
+## record: advisory
+
+The committed inventory check passes, and §1 resolves as verified. Fifteen selected existing tests passed with filesystem-writing setup omitted. The concurrent-read reproduction now rejects both invalid versions and the switching scenario.
+
+The recorded full 117-test run, historical timings and cross-version results were not independently reproduced under the read-only restriction. Systematic mutation proof remains owned by §27.
+
+HIGHEST: none
+OVERALL: approve

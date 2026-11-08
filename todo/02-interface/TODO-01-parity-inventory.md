@@ -61,7 +61,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
 | 22 | §22 | Inventory ownership check | §18 | [ ] |
-| 23 | §23 | Audit schema checker | §1 | [ ] |
+| 23 | §23 | Audit schema checker | §1 | [x] |
 | 24 | §24 | Audit capture tool | §3 | [ ] |
 | 25 | §25 | Audit control ID baseline | §19 | [ ] |
 | 26 | §26 | Audit Microsoft-free rule | §21 | [ ] |
@@ -631,9 +631,12 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [x] Run audit rounds on `D02 T01 §1`'s stamped candidate and every later change to the files it owns, recording each with `--record docs/reviews/02-interface/audit-d02-t01-s1.md`, never in the section's own findings file. Done when: a round approves, or the severity cutoff or the 22-round cap stops the loop with its outcome recorded.
 - [x] Fix each finding at its owning layer in a new commit with a regression test, or file it through `add-todo` with an owner. Done when: no finding in `docs/reviews/02-interface/audit-d02-t01-s1.md` is open without a fix commit or a filed section.
 - [x] On a confirmed regression, file the repair through `add-todo`, then run `python scripts/todo-graph.py unstamp "D02 T01 §1" --reason "<what regressed, and the repair section>"` and list the suspect sections it prints in `docs/reviews/02-interface/audit-d02-t01-s1.md`. Done when: the repair section exists and `resolve "D02 T01 §1"` no longer exits 3, or the audit confirms the stamp.
-- [ ] Commit: `review: audit D02 T01 §1 under the current review process`
+- [x] Commit: `review: audit D02 T01 §1 under the current review process`
 
 **Test checkpoint:** `python scripts/todo-graph.py resolve "D02 T01 §1"` exits 3 (still verified) or shows the `Unstamped:` note with its repair, and `docs/reviews/02-interface/audit-d02-t01-s1.md` ends in an approving round or a recorded stop with every finding fixed or filed.
+
+> **Verified:** 2026-11-08 | §23 | 315ea601c2f1b5a5d6043dbcf8556ba1b428bb8a
+> **Review:** `docs/reviews/d02-t01-s23.json`
 
 ## 24. Audit Capture Tool
 

@@ -77,7 +77,7 @@ Sections: 42 | Checklist items: 269
 | [x]    | D02 T01 §3  | UIA Capture Tool          | office, windows-host, display-session | 12    |
 | [x]    | D02 T01 §19 | Control ID Baseline       | none                                  | 6     |
 | [x]    | D02 T01 §20 | Word Command Catalogue    | office, windows-host                  | 4     |
-| [ ]    | D02 T01 §23 | Audit Schema Checker      | none                                  | 5     |
+| [x]    | D02 T01 §23 | Audit Schema Checker      | none                                  | 5     |
 | [ ]    | D02 T01 §24 | Audit Capture Tool        | office, windows-host, display-session | 5     |
 | [ ]    | D02 T01 §25 | Audit Control ID Baseline | none                                  | 5     |
 | [ ]    | D02 T01 §26 | Audit Microsoft-Free Rule | none                                  | 5     |
@@ -180,6 +180,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 51/125 verified sections, 9 ready to run now.
+Progress: 52/125 verified sections, 9 ready to run now.
 
-Checklist: 318/788 items completed (includes Commit items).
+Checklist: 319/788 items completed (includes Commit items).
