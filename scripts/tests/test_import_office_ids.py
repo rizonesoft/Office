@@ -325,6 +325,10 @@ class Checker(unittest.TestCase):
         for obligation in ("baseline-sources.json", "`mailitem` (compose)", "null `idMso`", "`baselineMissing`",
                            "To refresh:", "--check"):
             self.assertIn(obligation, section)
+        refresh = section[section.index("To refresh:"):]
+        self.assertLess(refresh.index("baseline-sources.json"), refresh.index("scripts/import-office-ids.py"))
+        self.assertIn("git ls-tree", refresh)
+        self.assertIn("git hash-object", refresh)
 
     def test_baseline_rows_are_not_inventory_records(self):
         rec = {"id": "word.home", "app": "word", "kind": "tab", "label": "Home"}
