@@ -1,0 +1,20 @@
+{
+  "ref": "D00 T03 \u00a724",
+  "title": "Resumable Newest-Page Refresh",
+  "implementation_sha": "337058c6a8b385d1cc3927863d72e4028bcace22",
+  "date": "2026-11-08",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s24.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_ci_status.py\" -> Ran 170 tests in 31.399s OK"
+  ],
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s24-completion.md",
+  "completion_rules": 2
+}

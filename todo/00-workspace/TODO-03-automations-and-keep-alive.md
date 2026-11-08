@@ -56,7 +56,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [x] |
 | 22 | §22 | CI reconciliation past limits | §20 | [x] |
 | 23 | §23 | CI reconciliation after deleted runs | §22 | [x] |
-| 24 | §24 | Resumable newest-page refresh | §23 | [ ] |
+| 24 | §24 | Resumable newest-page refresh | §23 | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -706,9 +706,12 @@ Filed 2026-10-23 from round 2 of D00 T03 §23's completion review (`docs/reviews
 - [x] Save an unfinished refresh in `build/ci-reconcile.json` from `scripts/ci-status.py` `Pages.newest`: the next page to read and the id of the last run of the last page read (its boundary anchor), written as each page is read and cleared when the refresh ends, and checked by `well_formed`. Done when: after a refresh cut short at page 3, the checkpoint names page 3 and page 2's last run, and after a finished refresh it names none.
 - [x] Resume a saved refresh in `scripts/ci-status.py` `Pages.newest` before anything else in the next try: check the anchor's boundary as §23 does (recovering a shift by stepping back), then read on from the saved page; a first page with nothing new does not end the refresh while one is saved. Done when: a fixture with a completed checkpoint that gains 300 new runs, reads 200 of them, deletes the first 100 and runs out of time before page 3 finds every remaining head over the following tries. Cheaper substitute: restarting the refresh at page 1, whose unchanged first page ends it early.
 - [x] Count each saved refresh page as progress in `scripts/ci-status.py`, so a refresh longer than one try exits 4, not 2. Done when: a fixture whose refresh needs more than one try's reads returns 4 until it finishes.
-- [ ] Commit: `automations: resume an unfinished CI refresh`
+- [x] Commit: `automations: resume an unfinished CI refresh`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
+
+> **Verified:** 2026-11-08 | §24 | 337058c6a8b385d1cc3927863d72e4028bcace22
+> **Review:** `docs/reviews/d00-t03-s24.json`
 
 ## Verification
 
