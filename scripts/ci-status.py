@@ -266,10 +266,17 @@ def well_formed(data):
         return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
     scan = data.get("scan") if isinstance(data, dict) else None
+    refresh = data.get("refresh") if isinstance(data, dict) else None
     return isinstance(data, dict) \
         and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass", "scan"} \
+        | ({"refresh"} if "refresh" in data else set()) \
         and isinstance(scan, dict) and set(scan) == {"ids", "rewind", "next_ids"} and texts(scan["ids"]) \
         and texts(scan["next_ids"]) and (scan["rewind"] is None or (type(scan["rewind"]) is int and scan["rewind"] > 0)) \
+        and (refresh is None or (isinstance(refresh, dict) and set(refresh) == {"page", "ids", "rewind", "next_ids"}
+                                 and (type(refresh["page"]) is int and refresh["page"] > 1) and texts(refresh["ids"])
+                                 and texts(refresh["next_ids"])
+                                 and (refresh["rewind"] is None
+                                      or (type(refresh["rewind"]) is int and refresh["rewind"] > 0)))) \
         and isinstance(data["inputs"], dict) and set(data["inputs"]) == {"repo", "head", "records"} \
         and all(isinstance(v, str) for v in data["inputs"].values()) \
         and isinstance(data["runs"], dict) and all(
@@ -367,20 +374,6 @@ class Pages:
         above the boundary were deleted, the list moved up, and the runs that crossed the boundary were never read."""
         return anchor in {str(r["id"]) for r in runs} or self.at(PER_PAGE * (page - 1)) == anchor
 
-    def back_to(self, page, ids):
-        """Read pages from `page` back toward the first until one holds any run of `ids`, the runs `page` held when
-        it was read: the runs that moved up across the boundary lie after the last of them, so they are read once it
-        is found, however many were deleted (the boundary run itself among them). Returns `(page as read now, whether
-        any recovery page brought new or changed runs)`. Used within one try."""
-        first, any_changed = None, False
-        for k in range(page, 0, -1):
-            runs, changed = self.read(k)
-            any_changed = any_changed or changed
-            first = first if first is not None else [str(r["id"]) for r in runs]
-            if set(ids) & {str(r["id"]) for r in runs}:
-                break
-        return first, any_changed
-
     def read(self, page):
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
         changed = keep(self.cp, runs)
@@ -394,26 +387,62 @@ class Pages:
     def newest(self):
         """Read from the first page until a page brings nothing new or changed, or the pages end. Each page after the
         first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
-        an unchanged page cannot end it over runs a deletion moved past. Whether a page brought anything new or changed
-        is accumulated across any boundary recovery (`any_changed`), so re-reading a page after `back_to` repairs its
-        boundary does not stop the refresh when its first read had new runs. A page that changed nothing is not
-        progress."""
+        an unchanged page cannot end it over runs a deletion moved past. When a boundary recovery is interrupted by the
+        deadline, its rewind and target page (`refresh` in the checkpoint) are resumed after the fresh prefix in the
+        next try so an unchanged earlier page cannot end the refresh before the interrupted recovery and the pages
+        after it finish. A page that changed nothing is not progress unless a saved recovery is still open."""
+        refresh = self.cp.get("refresh") or {}
+        if refresh.get("rewind") is not None:
+            page = refresh["page"]
+            while refresh["rewind"] is not None:
+                k = refresh["rewind"]
+                runs, _ = self.read(k)
+                read = [str(r["id"]) for r in runs]
+                if k == page - 1:
+                    refresh["next_ids"] = read
+                if set(read) & set(refresh["ids"]) or k == 1:
+                    refresh.update(ids=refresh["next_ids"], rewind=None, next_ids=[])
+                else:
+                    refresh["rewind"] = k - 1
+                self.cp["progress"] += 1
+                self.save(self.cp)
         page, ids, any_changed = 0, [], False
         while True:
             page += 1
             runs, changed = self.read(page)
             any_changed = any_changed or changed
-            self.cp["progress"] += 1 if changed else 0
+            self.cp["progress"] += 1 if (changed or self.cp.get("refresh")) else 0
             self.save(self.cp)
             if page > 1 and ids and not self.continuous(page, runs, ids[-1]):
-                ids, rchanged = self.back_to(page - 1, ids)
-                any_changed = any_changed or rchanged
-                self.cp["progress"] += 1 if rchanged else 0
+                target = max(page, (self.cp.get("refresh") or {}).get("page", 0))
+                self.cp["refresh"] = {"page": target, "ids": ids, "rewind": page - 1, "next_ids": []}
+                self.cp["progress"] += 1
                 self.save(self.cp)
+                while self.cp["refresh"]["rewind"] is not None:
+                    k = self.cp["refresh"]["rewind"]
+                    rruns, rchanged = self.read(k)
+                    any_changed = any_changed or rchanged
+                    read = [str(r["id"]) for r in rruns]
+                    if k == page - 1:
+                        self.cp["refresh"]["next_ids"] = read
+                    if set(read) & set(self.cp["refresh"]["ids"]) or k == 1:
+                        self.cp["refresh"].update(ids=self.cp["refresh"]["next_ids"], rewind=None, next_ids=[])
+                    else:
+                        self.cp["refresh"]["rewind"] = k - 1
+                    self.cp["progress"] += 1
+                    self.save(self.cp)
+                ids = self.cp["refresh"]["ids"]
                 page -= 1  # read this page again after the pages before it
                 continue
             ids = [str(r["id"]) for r in runs]
-            if not any_changed or len(runs) < PER_PAGE:
+            if self.cp.get("refresh") is not None and page >= self.cp["refresh"]["page"]:
+                self.cp["refresh"] = None
+                any_changed = True  # the recovered page had new runs before its boundary shifted; check the next page
+                self.save(self.cp)
+            if (not any_changed and self.cp.get("refresh") is None) or len(runs) < PER_PAGE:
+                if self.cp.get("refresh") is not None:
+                    self.cp["refresh"] = None
+                    self.save(self.cp)
                 return
             any_changed = False
 

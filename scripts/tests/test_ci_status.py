@@ -1367,6 +1367,30 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
 
+    def test_an_interrupted_refresh_recovery_resumes_past_the_recovered_page(self):
+        old = [sha(n) for n in range(1, 401)]
+        self.record(*(f"ci-green {h[:7]}" for h in old))
+        repo = Repo(list(reversed(old)), {h: "success" for h in old})
+        self.assertEqual(self.pending(repo)[0], 0)  # completed checkpoint with 400 old runs
+        n1, n2 = sha(401), sha(402)  # N1 at position 500 (new run 500), N2 (origin/main) at position 499
+        repo.history = [n2, n1, *repo.history]
+        repo.runs.update({n1: "failure", n2: "success"})
+        repo.extra_runs = [{"id": 95000 + n, "status": "completed", "conclusion": "success",
+                            "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(3000 + n), "event": "pull_request",
+                            "head_branch": "feature"} for n in range(498)]
+
+        def delete_150():  # after page 2's boundary check, delete the newest 150 runs before page 3 is read
+            del repo.extra_runs[-150:]
+        repo.after_page[100] = delete_150
+        # Read page 1, page 2, boundary 100 (deletes 150 runs), page 3, boundary 200 (shifted), rewind page 2,
+        # rewind page 1, then run out of time before re-reading page 3 (7 reads of 10s each in 75s).
+        with mock.patch.object(ci, "PENDING_SECONDS", 75):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        self.assertIsNotNone(self.checkpoint().get("refresh"))
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
+        self.assertIsNone(self.checkpoint().get("refresh"))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))
