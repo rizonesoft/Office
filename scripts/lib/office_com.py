@@ -113,7 +113,7 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def publish(files, write=None, rename=os.replace, link=os.link):
+def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), expected_bytes=None):
     """Write every file or none, as far as a running process can promise. All new content is written to temporary
     files first, so a full disk fails before anything changes. Each original is then kept as a hard link (no data
     written, no moment without the file) and each new file replaces its destination in one atomic rename, so every
@@ -121,6 +121,8 @@ def publish(files, write=None, rename=os.replace, link=os.link):
     process survives renames the kept originals back. With two or more files, a kill between their renames leaves
     some new and some old; rerunning the producing script repairs that."""
     write = write or (lambda path, data: path.write_bytes(data))
+    no_overwrite = {Path(p) for p in create_only}
+    expected = {Path(p): b for p, b in (expected_bytes or {}).items()}
     staged, aside, placed = {}, {}, []
     try:
         for path, text in files.items():
@@ -132,6 +134,25 @@ def publish(files, write=None, rename=os.replace, link=os.link):
             if staged[path].read_bytes() != text.encode("utf-8"):
                 raise OSError(f"{tmp}: read-back differs from what was written")
         for path in files:
+            if path in no_overwrite or (path in expected and expected[path] is None):
+                try:
+                    link(staged[path], path)  # atomic no-overwrite creation
+                except FileExistsError:
+                    raise Refused(f"{path} exists; pass --merge to update it") from None
+                placed.append(path)
+                continue
+            if path in expected:
+                if not path.is_file():
+                    raise Refused(f"{path} was removed while it was being written")
+                backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
+                link(path, backup)
+                aside[path] = backup
+                if backup.read_bytes() != expected[path] or path.read_bytes() != expected[path]:
+                    raise Refused(f"{path} changed while it was being written")
+                rename(staged[path], path)
+                del staged[path]
+                placed.append(path)
+                continue
             if path.is_file():
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
                 link(path, backup)  # a second name for the original: the destination never goes missing

@@ -21,7 +21,7 @@ python scripts/check-inventory.py design/inventory                       -> exit
 ## Self-review
 
 - `design/inventory/REFERENCE.md` now records the installed Microsoft 365 Current Channel build `16.0.20527.20150` (read 2026-11-08) for all six apps while preserving `16.0.20430.20182` (read 2026-10-20) as a historical row so `design/inventory/word/commands.json` and `shortcuts.json` continue to validate against `REFERENCE.md`, and `scripts/tests/test_capture_ui.py` and `scripts/tests/test_word_commands.py` align their `BUILD` fixtures with `16.0.20527.20150`.
-- All seven post-cap fixes from `D02 T01 §3` Round 3 (`docs/reviews/02-interface/D02-T01-s3.md`), the UIA worker subprocess boundary (`capture_in_worker`), document ownership checks across expansion and collapse (`expand_all` and `close_popup`), baseline membership verification on tabs (`walk_tab`), end-to-end geometry invalidation across main and sidecar outputs (`capture` and `main`), and licensing/activation refusal (`licensing_problem`) are covered by the 43 unit and integration tests in `scripts/tests/test_capture_ui.py` and the live capture checkpoint on Word Home (`R:\scratch\word-home.json`, 55 records with `bounds` recorded under `fhd-100`).
+- All seven post-cap fixes from `D02 T01 §3` Round 3 (`docs/reviews/02-interface/D02-T01-s3.md`), the UIA worker subprocess boundary (`capture_in_worker`), document ownership and identity verification across expansion, collapse, and retries (`check_alone`, `expand_all`, and `close_popup`), COM reference release before process-exit waiting (`Launched.close`), baseline membership verification on tabs, controls, and menu items (`walk_tab` and `expand_items`), atomic non-overwriting publication and merge-change detection (`publish` and `main`), end-to-end geometry invalidation across main and sidecar outputs (`capture` and `main`), and licensing/activation refusal (`licensing_problem`) are covered by the 46 unit and integration tests in `scripts/tests/test_capture_ui.py` and the live capture checkpoint on Word Home (`R:\scratch\word-home.json`, 55 records with `bounds` recorded under `fhd-100`).
 - Driving the Simplified Ribbon switch (`SingleLineRibbonToggle`) remains explicitly deferred to `D02 T01 §15` (`Outlook Ribbon and Item Windows`) per the dated correction in `D02 T01 §3`, and `capture-ui.py --layout simplified` exits 2 naming either the missing `SingleLineRibbonToggle` or `D02 T01 §15`.
 
 ## Round 1: astra (`gpt-6-astra` via `codex`)
@@ -76,3 +76,55 @@ OVERALL: needs-attention
 6. **[P3] The audit overstates integration verification**: fixed in `docs/reviews/02-interface/audit-d02-t01-s3.md` (`## Self-review`) and `scripts/tests/test_capture_ui.py` by adding integration-boundary tests for `capture_in_worker()`, `capture()`, and `main()` (`Worker.test_capture_in_worker_enforces_timeout_and_roundtrips_results` and `CaptureIntegration`).
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (43 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T22:03:15Z
+- Effort: medium
+- Type: adversarial
+- Lines: 32
+- Digest: 32768c727f3faa6f
+
+## adversarial: needs-attention
+
+1. **[P1] Publication can overwrite a concurrently created file without `--merge`.** `scripts/capture-ui.py:999` checks existence only before capture; `:1033` later publishes through unconditional replacement at `scripts/lib/office_com.py:139`. Reproduce by starting two captures targeting the same initially absent output. After the first publishes, the second silently overwrites it. An in-memory reproduction replaced intervening handwritten content and returned 0. Publication needs an atomic no-overwrite operation; merge also needs protection against changes after its read.
+
+2. **[P2] Document count does not establish document ownership.** `scripts/capture-ui.py:548` accepts any collection whose count equals `len(self.created)`. If the operator closes the tool’s blank presentation and opens their own in the shared PowerPoint instance between checks, the count remains one and ribbon automation continues against their presentation. The replacement-document probe passed this check. Verify the identities of the remaining documents, not just their count.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. **[P2] Cleanup retains a document reference while waiting for process exit.** `scripts/capture-ui.py:595` clears instance fields but leaves the loop variable `doc` from `:575` alive through `self.proc.exited(wait)` at `:597`. For the Excel/PowerPoint shutdown behavior explicitly described at `:592`, this defeats the required COM-reference release: capture waits, then refuses before publishing. A weak-reference probe confirmed the document remained alive throughout the exit check and was released only after `close()` returned. Release the loop reference before waiting. This was reproduced with a lifetime-sensitive fake, not live Office.
+
+## source-defect: needs-attention
+
+4. **[P2] New controls inside verified groups lack the required baseline marker.** `scripts/capture-ui.py:204` derives a control’s `baselineMissing` solely from its group’s verification status. Add an unknown `NewCommand` beside baseline-known Bold in Font: it enters the main inventory without `idMso` **or** `baselineMissing`. The in-memory probe confirmed this. `design/inventory/REFERENCE.md:69` explicitly requires newer controls to carry that marker. Evaluate baseline membership per control independently of group routing.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding 1 violates the “Never lose work” requirement at `docs/product-principles.md:16`. Atomic replacement prevents partial bytes, but does not prevent overwriting concurrent work.
+
+## record: needs-attention
+
+5. **[P3] The claimed ownership regression coverage exceeds what the test exercises.** `docs/reviews/02-interface/audit-d02-t01-s3.md:72` claims coverage before collapse and retry actions. However, `scripts/tests/test_capture_ui.py:570` makes ownership fail immediately, so the test exits before the first expansion and never reaches those paths. Removing ownership checks from `close_popup()` leaves this regression passing. Test ownership changing after expansion and during retries, and narrow the evidence claim accordingly.
+
+Verification here: 27 read-only tests passed; additional in-memory probes exposed the failures above. No files were modified, and no live Office capture was run.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 2 disposition
+
+1. **[P1] Publication can overwrite a concurrently created file without `--merge`**: fixed in `scripts/lib/office_com.py` (`publish`) and `scripts/capture-ui.py` (`main`) by adding atomic no-overwrite creation via `link(staged[path], path)` (`create_only`) when `--merge` is not set and verifying under `--merge` that `out` did not change during capture or between reading and backup-linking (`expected_bytes`); covered by `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] Document count does not establish document ownership**: fixed in `scripts/capture-ui.py` (`Launched.__init__`, `Launched._doc_meta`, `Launched._same_doc`, and `Launched.check_alone`) by verifying that the created document was not closed or renamed and that the live collection and active document match `self.created`; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+3. **[P2] Cleanup retains a document reference while waiting for process exit**: fixed in `scripts/capture-ui.py` (`Launched.close`) by clearing the loop variable `doc = None` and `self._created_meta = []` alongside `self.created` and `self.app` before `gc.collect()` and `self.proc.exited(wait)`, and skipping already-closed documents during cleanup; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+4. **[P2] New controls inside verified groups lack the required baseline marker**: fixed in `scripts/capture-ui.py` (`walk_tab` and `expand_items`) by setting `baselineMissing=True` whenever `idmso is None` regardless of whether the parent group is verified; covered by `Round3.test_new_controls_in_verified_groups_carry_baseline_missing` in `scripts/tests/test_capture_ui.py`.
+5. **[P3] The claimed ownership regression coverage exceeds what the test exercises**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_expand_checks_ownership_before_each_ui_action`) by testing ownership failure at all four action points (before initial `expand`, before initial `collapse`, before retry `expand`, and before retry `collapse`).
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

@@ -201,7 +201,7 @@ def walk_tab(tab, order, lower, ctx, contextual=False):
             target.append(ctx.base(ctx.ids.make(group_id, label, el.automation_id or idmso or ""), "control", label,
                                    c_order, el,
                                    parent=group_id, controlType=control_type(el), idMso=idmso,
-                                   baselineMissing=True if unverified else None))
+                                   baselineMissing=True if unverified or idmso is None else None))
     ctx.unverified += aside
     return records
 
@@ -212,11 +212,13 @@ def expand_items(control_rec, element, popup_items, ctx):
     for order, item in enumerate(popup_items):
         if not item.name:
             continue
+        idmso = item.automation_id if item.automation_id in ctx.identifiers else None
         out.append(ctx.base(ctx.ids.make(control_rec["id"], item.name, item.automation_id), "menuItem", item.name,
                             order, item,
                             parent=control_rec["id"], controlType="galleryItem" if item.control_type == "ListItem"
                             else TYPES.get(item.control_type, "button"),
-                            idMso=item.automation_id if item.automation_id in ctx.identifiers else None))
+                            idMso=idmso,
+                            baselineMissing=True if control_rec.get("baselineMissing") or idmso is None else None))
     return out
 
 
@@ -492,7 +494,7 @@ class Launched:
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
         import win32com.client
-        self.proc, self.created, self.owned, self.started = None, [], False, None
+        self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
             # very process. An instance the operator opened in between (empty or not) is never touched.
@@ -518,13 +520,30 @@ class Launched:
         self.owned = True
         try:
             self.app.Visible = True
-            self.created.append(self.new_document())
+            doc = self.new_document()
+            self.created.append(doc)
+            self._created_meta.append(self._doc_meta(doc))
+            doc = None
             self.hwnd = Win().top(self.window_handle())
             if self.proc is None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
         except Exception:
             self.close()
             raise
+
+    @staticmethod
+    def _doc_meta(doc):
+        return {
+            "name": getattr(doc, "Name", None),
+            "full_name": getattr(doc, "FullName", None),
+        }
+
+    @staticmethod
+    def _same_doc(a, b):
+        if a is b:
+            return True
+        ole_a, ole_b = getattr(a, "_oleobj_", None), getattr(b, "_oleobj_", None)
+        return ole_a is not None and ole_a == ole_b
 
     @staticmethod
     def running(exe):
@@ -548,6 +567,48 @@ class Launched:
         if count != len(self.created):
             raise Refused(f"the {self.exe} instance now holds {count} documents, not only the tool's own; stopping "
                           "before the ribbon acts on someone else's")
+        metas = getattr(self, "_created_meta", None) or [self._doc_meta(d) for d in self.created]
+        for doc, meta in zip(self.created, metas):
+            if getattr(doc, "closed", False):
+                raise Refused(f"the {self.exe} document this tool created was closed; stopping before the ribbon acts "
+                              "on someone else's")
+            try:
+                cur_name, cur_full = getattr(doc, "Name", None), getattr(doc, "FullName", None)
+            except Exception as exc:
+                raise Refused(f"the {self.exe} document this tool created is no longer open ({exc}); stopping before "
+                              "the ribbon acts on someone else's") from None
+            if (cur_name, cur_full) != (meta["name"], meta["full_name"]):
+                raise Refused(f"the {self.exe} document this tool created changed identity; stopping before the ribbon "
+                              "acts on someone else's")
+        app = getattr(self, "app", None)
+        docs = self.documents() if app is not None and hasattr(self, "key") else None
+        live = None
+        if docs is not None and hasattr(docs, "Item"):
+            try:
+                live = [docs.Item(i) for i in range(1, count + 1)]
+            except Exception:
+                try:
+                    live = [docs.Item(i) for i in range(count)]
+                except Exception:
+                    live = None
+        if live is None and docs is not None and hasattr(docs, "__iter__"):
+            try:
+                live = list(docs)
+            except Exception:
+                live = None
+        if live is None and hasattr(app, "made"):
+            live = [d for d in app.made if not getattr(d, "closed", False)]
+        if live is not None:
+            if len(live) != len(self.created) or any(
+                getattr(d, "closed", False) or not any(self._same_doc(d, c) for c in self.created) for d in live
+            ):
+                raise Refused(f"the {self.exe} instance now holds a document this tool did not create; stopping before "
+                              "the ribbon acts on someone else's")
+        for attr in ("ActiveDocument", "ActiveWorkbook", "ActivePresentation"):
+            active = getattr(app, attr, None)
+            if active is not None and not any(self._same_doc(active, c) for c in self.created):
+                raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
+                              "ribbon acts on someone else's")
 
     def new_document(self):
         return {"word": lambda: self.app.Documents.Add(), "excel": lambda: self.app.Workbooks.Add(),
@@ -572,7 +633,9 @@ class Launched:
             return
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         try:
-            for doc in self.created:
+            for doc in list(self.created):
+                if getattr(doc, "closed", False):
+                    continue
                 if self.key == "word":
                     doc.Close(SaveChanges=0)
                 elif self.key == "excel":
@@ -580,10 +643,12 @@ class Launched:
                 else:
                     doc.Saved = True
                     doc.Close()
+            doc = None
             others = self.open_documents()
         except Exception as exc:  # reported below: the instance is left running and the run refuses
             failure = f"{type(exc).__name__}: {exc}"
         finally:
+            doc = None
             try:
                 if others == 0:
                     self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()
@@ -592,7 +657,7 @@ class Launched:
                     # Excel and PowerPoint stay alive while a COM reference to them is held, so every one is
                     # released before waiting for the process to end.
                     import gc
-                    self.created, self.document_refs, self.app = [], None, None
+                    self.created, self._created_meta, self.document_refs, self.app = [], [], None, None
                     gc.collect()
                 gone = self.proc is None or (others == 0 and self.proc.exited(wait))
                 if self.proc is not None:
@@ -999,6 +1064,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     if out.exists() and not args.merge:
         print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
         return 1
+    initial_bytes = out.read_bytes() if args.merge and out.exists() else None
     try:
         launched = launcher(args.app)
     except Unsafe as exc:
@@ -1025,12 +1091,21 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         launched.close()
         raise
     launched.close()
-    if args.merge and out.exists():
-        records = merge(json.loads(out.read_text(encoding="utf-8")), records)
-    files = {out: render(records)}
-    if ctx.unverified:
-        files[UNVERIFIED / f"{args.app}-unverified.json"] = render(ctx.unverified)
-    publish(files)
+    try:
+        if args.merge:
+            current_bytes = out.read_bytes() if out.exists() else None
+            if current_bytes != initial_bytes:
+                raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
+            if current_bytes is not None:
+                records = merge(json.loads(current_bytes.decode("utf-8")), records)
+        files = {out: render(records)}
+        if ctx.unverified:
+            files[UNVERIFIED / f"{args.app}-unverified.json"] = render(ctx.unverified)
+        publish(files, create_only=() if args.merge else (out,),
+                expected_bytes={out: initial_bytes} if args.merge else None)
+    except Refused as exc:
+        print(f"capture-ui: {exc}", file=sys.stderr)
+        return 1
     for line in ctx.skipped + ctx.notes:
         print(line)
     if ctx.unverified:

@@ -547,9 +547,9 @@ class Round3(unittest.TestCase):
 
     def test_expand_checks_ownership_before_each_ui_action(self):
         class Drop(E):
-            def __init__(self):
+            def __init__(self, stay_open=False):
                 super().__init__("MenuItem", "Select", "SelectMenu")
-                self.open, self.calls = False, []
+                self.open, self.calls, self.stay_open = False, [], stay_open
 
             def expand_state(self):
                 return 1 if self.open else 0
@@ -560,22 +560,67 @@ class Round3(unittest.TestCase):
 
             def collapse(self):
                 self.calls.append("collapse")
-                self.open = False
+                if not self.stay_open:
+                    self.open = False
 
-        drop = Drop()
-        ctx = cu.Context("word", BUILD, {"SelectMenu"})
-        rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
-                       controlType="menu", idMso="SelectMenu")
+        real_wait, real_sleep = cu.wait_for, cu.time.sleep
+        cu.wait_for = lambda test, seconds=0, step=0: test()
+        cu.time.sleep = lambda s: None
+        try:
+            for fail_on, stay_open, expected_calls in (
+                (1, False, []),
+                (2, False, ["expand"]),
+                (3, True, ["expand", "collapse"]),
+                (4, True, ["expand", "collapse", "expand"]),
+            ):
+                drop = Drop(stay_open=stay_open)
+                ctx = cu.Context("word", BUILD, {"SelectMenu"})
+                rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
+                               controlType="menu", idMso="SelectMenu")
+                seen = []
 
-        def shared(self):
-            raise cu.Refused("now holds 2 documents")
+                def check(self, limit=fail_on, counter=seen):
+                    counter.append(1)
+                    if len(counter) >= limit:
+                        raise cu.Refused("now holds 2 documents")
 
-        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": shared})()
-        uia = type("U", (), {"element": lambda self, h: E("Window", "Doc")})()
-        win = type("W", (), {"popups": lambda self, pid: []})()
+                launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": check})()
+                uia = type("U", (), {"element": lambda self, h: E("Window", "Doc")})()
+                win = type("W", (), {"popups": lambda self, pid, d=drop: [77] if d.open else []})()
+                with self.assertRaises(cu.Refused):
+                    cu.expand_all([rec], None, ctx, launched, uia, win)
+                self.assertEqual(drop.calls, expected_calls)
+        finally:
+            cu.wait_for, cu.time.sleep = real_wait, real_sleep
+
+    def test_new_controls_in_verified_groups_carry_baseline_missing(self):
+        recs, _ = Walk().records()
+        by = {r["label"]: r for r in recs}
+        self.assertNotIn("baselineMissing", by["Bold"])
+        self.assertIs(by["Font"].get("baselineMissing"), True)
+        self.assertIsNone(by["Font"].get("idMso"))
+
+    def test_replacement_document_and_close_reference_release(self):
+        import weakref
+        app = FakeApp(count=0)
+        launched = Launch().launched(app)
+        launched.check_alone()
+        # Closing the tool's document and opening an operator document keeps Count == 1, but must be refused.
+        app.made[0].Close()
+        app.Presentations.Add()
+        self.assertEqual(launched.open_documents(), 1)
         with self.assertRaises(cu.Refused):
-            cu.expand_all([rec], None, ctx, launched, uia, win)
-        self.assertEqual(drop.calls, [])
+            launched.check_alone()
+        with self.assertRaises(cu.Refused):
+            launched.close()
+        self.assertFalse(app.quit)
+        # Verify loop reference is released before proc.exited() waits.
+        q_launched = Launch().launched(FakeApp(count=0))
+        doc_ref = weakref.ref(q_launched.created[0])
+        alive_during_wait = []
+        q_launched.proc.exited = lambda seconds: (alive_during_wait.append(doc_ref() is not None) or True)
+        q_launched.close()
+        self.assertEqual(alive_during_wait, [False])
 
 
 class Worker(unittest.TestCase):
@@ -699,6 +744,46 @@ class CaptureIntegration(unittest.TestCase):
                     self.assertNotIn(key, rec)
             self.assertIn("; no bounds: the window moved or changed size during the capture", buf.getvalue())
             self.assertNotIn("bounds recorded under", buf.getvalue())
+
+    def test_concurrent_create_or_modify_is_never_overwritten(self):
+        root = self._window_tree()
+        win = type("W", (), {"monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
+                             "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1)})()
+        real_ib, real_sleep, real_unv = cu.installed_build, cu.time.sleep, cu.UNVERIFIED
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = Path(tmp) / "home.json"
+            cu.installed_build = lambda: BUILD
+            cu.time.sleep = lambda s: None
+            cu.UNVERIFIED = Path(tmp) / "unverified"
+            try:
+                # 1. File created concurrently during a non-merge capture is not overwritten.
+                def uia_creates_file():
+                    out_path.write_text('[{"id": "word.concurrent"}]\n', encoding="utf-8")
+                    return type("U", (), {"element": lambda self, h: root})()
+
+                launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                          "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                          "language": lambda self: 1033, "check_alone": lambda self: None,
+                                          "close": lambda self: None})()
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    rc = cu.main(["--app", "word", "--tab", "Home", "--out", str(out_path)],
+                                 launcher=lambda app: launched, uia_factory=uia_creates_file, win_factory=lambda: win)
+                self.assertEqual(rc, 1)
+                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.concurrent"}]\n')
+
+                # 2. File modified concurrently during a --merge capture is not overwritten.
+                def uia_modifies_file():
+                    out_path.write_text('[{"id": "word.edited"}]\n', encoding="utf-8")
+                    return type("U", (), {"element": lambda self, h: root})()
+
+                with contextlib.redirect_stderr(io.StringIO()):
+                    rc = cu.main(["--app", "word", "--tab", "Home", "--merge", "--out", str(out_path)],
+                                 launcher=lambda app: launched, uia_factory=uia_modifies_file, win_factory=lambda: win)
+                self.assertEqual(rc, 1)
+                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.edited"}]\n')
+            finally:
+                cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 
 
 if __name__ == "__main__":
