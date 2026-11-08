@@ -814,8 +814,20 @@ class DistinctnessReview(unittest.TestCase):
     REQUIRED_HEADINGS = ("Symbol contrast", "Distinctness rules", "Suite and app icons", "File-type icons", "Sign-off")
     GENERATORS = ("scripts/lib/icon_design.py", "scripts/lib/filetype_design.py", "scripts/lib/brand_design.py",
                   "scripts/build-icons.py")
+    RULE_PHRASES = {
+        "R1": "No single letter",
+        "R2": "No letter on a tile",
+        "R3": "No Microsoft app or file icon artwork",
+        "R4": "No app colour",
+        "R5": "object or diagram",
+        "R6": "shared glass construction",
+        "R7": "no text or letter",
+    }
+    MS_SOURCES = ("WINWORD.EXE", "EXCEL.EXE", "POWERPNT.EXE", "VISIO.EXE", "WINPROJ.EXE", "OUTLOOK.EXE",
+                  "FirstRunLogo.contrast-white_scale-100.png", "misc.exe", "wordicon.exe", "xlicons.exe",
+                  "pptico.exe", "visicon.exe", "pj11icon.exe", "outicon.exe")
 
-    def validate_distinctness_doc(self, text: str) -> list[str]:
+    def validate_distinctness_doc(self, text: str, review_text: str | None = None) -> list[str]:
         import hashlib
         problems = []
         if re.search(r"\|\s*fail\s*\|", text, flags=re.I):
@@ -835,9 +847,10 @@ class DistinctnessReview(unittest.TestCase):
             return problems
 
         rules_body = "\n".join(sections["Distinctness rules"])
-        for r_idx in range(1, 8):
-            if not re.search(rf"^\|\s*`R{r_idx}`\s*\|", rules_body, flags=re.M):
-                problems.append(f"missing rule definition R{r_idx}")
+        for r_key, phrase in self.RULE_PHRASES.items():
+            m = re.search(rf"^\|\s*`{r_key}`\s*\|\s*([^|]+)\|$", rules_body, flags=re.M)
+            if not m or phrase not in m.group(1):
+                problems.append(f"missing or incomplete rule definition {r_key}")
         for key, (_, _, (light, dark)) in d.APPS.items():
             accent = d.APP_COLOR[key]
             m = re.search(rf"^\|\s*`{key}`\s*\|\s*`{light}`/`{dark}`/`{accent}`\s*\|\s*`[^`]+`\s*\|\s*([^|]+)\|",
@@ -850,53 +863,64 @@ class DistinctnessReview(unittest.TestCase):
                     problems.append(f"palette overlap or incomplete MS hexes for {key}")
 
         app_body = "\n".join(sections["Suite and app icons"])
-        app_rows = dict(re.findall(
-            r"^\|\s*`([\w-]+)`\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|"
-            r"\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
-            name_and_cells := app_body, flags=re.M
-        ) if False else [
-            (m.group(1), m.groups()[1:])
+        app_rows = {
+            m.group(1): (m.group(2).strip(), m.groups()[2:])
             for m in re.finditer(
-                r"^\|\s*`([\w-]+)`\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*"
+                r"^\|\s*`([\w-]+)`\s*\|\s*([^|]+)\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*"
                 r"\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
                 app_body, flags=re.M
             )
-        ])
+        }
         want_suite = ("pass", "pass", "pass", "n/a", "n/a", "pass", "pass")
         want_app = ("pass", "pass", "pass", "pass", "pass", "pass", "n/a")
-        for mark in (d.SUITE, f"{d.SUITE}-mono"):
-            if app_rows.get(mark) != want_suite:
-                problems.append(f"suite mark row invalid for {mark}: {app_rows.get(mark)}")
+        if app_rows.get(d.SUITE) != ("`lg`, `md`, `sm`", want_suite):
+            problems.append(f"suite mark row invalid for {d.SUITE}: {app_rows.get(d.SUITE)}")
+        if app_rows.get(f"{d.SUITE}-mono") != ("`md` knockout", want_suite):
+            problems.append(f"suite mono row invalid: {app_rows.get(f'{d.SUITE}-mono')}")
         for key in d.APPS:
-            if app_rows.get(key) != want_app:
+            if app_rows.get(key) != ("`lg`, `md`, `sm`, `32`, `24`, `16`", want_app):
                 problems.append(f"app row invalid for {key}: {app_rows.get(key)}")
 
         file_body = "\n".join(sections["File-type icons"])
         file_rows = {
-            m.group(1): (m.group(2), m.group(3), m.groups()[3:])
+            m.group(1): (m.group(2), m.group(3), m.group(4).strip(), m.groups()[4:])
             for m in re.finditer(
-                r"^\|\s*`(\w+)`\s*\|\s*`(\w+)`\s*\|\s*(\w+)\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|"
+                r"^\|\s*`(\w+)`\s*\|\s*`(\w+)`\s*\|\s*(\w+)\s*\|\s*([^|]+)\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|"
                 r"\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
                 file_body, flags=re.M
             )
         }
         for ext, (app_key, kind, _) in ft.TYPES.items():
             expected_kind = kind or "normal"
-            if file_rows.get(ext) != (app_key, expected_kind, want_app):
+            if file_rows.get(ext) != (app_key, expected_kind, "5 (`lg`..`sm`)", want_app):
                 problems.append(f"file-type row invalid for {ext}: {file_rows.get(ext)}")
 
         signoff = "\n".join(sections["Sign-off"])
         for required_token in ("2026-11-08", "docs/specs/2026-10-23-campaign-scope-design.md", "`astra`",
-                               "docs/reviews/01-brand/D01-T02-s7.md", "16.0.20527.20150",
-                               "R:/scratch/icon-review/suite-and-apps-comparison.png",
-                               "R:/scratch/icon-review/file-types-comparison.png"):
+                               "docs/reviews/01-brand/D01-T02-s7-completion.md",
+                               "docs/reviews/01-brand/D01-T02-s7.md",
+                               "77828b64d456e3b8",
+                               "c68c65f8bff1a1d8a3bea86c2b652821cc191231",
+                               "16.0.20527.20150",
+                               "R:/scratch/icon-review/manifest.json",
+                               *self.MS_SOURCES):
             if required_token not in signoff:
                 problems.append(f"sign-off missing {required_token}")
+        for sheet_name in ("suite-and-apps-comparison.png", "file-types-comparison.png"):
+            pattern = (rf"`R:/scratch/icon-review/{re.escape(sheet_name)}`:\s*`\d+x\d+`\s*px,\s*`\d+`\s*bytes,\s*"
+                       r"`sha256:[0-9a-f]{64}`")
+            if not re.search(pattern, signoff):
+                problems.append(f"sign-off missing dimensions/bytes/sha256 for {sheet_name}")
         root = SCRIPTS.parent
         for rel in self.GENERATORS:
             digest = hashlib.sha256((root / rel).read_bytes()).hexdigest()
             if f"`{rel}`: `{digest}`" not in signoff:
                 problems.append(f"sign-off missing current digest for {rel}")
+        if review_text is None:
+            review_path = root / "docs/reviews/01-brand/D01-T02-s7.md"
+            review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
+        if "## Round 1:" not in review_text or "- Digest: 77828b64d456e3b8" not in review_text:
+            problems.append("review record missing Round 1 digest")
         return problems
 
     def test_distinctness_doc_is_complete_and_current(self):
@@ -916,6 +940,16 @@ class DistinctnessReview(unittest.TestCase):
         self.assertTrue(self.validate_distinctness_doc(text.replace("| `write` | `lg`", "| `missing` | `lg`", 1)))
         self.assertTrue(self.validate_distinctness_doc(text.replace("| `vcf` |", "| `zzz` |", 1)))
         self.assertTrue(self.validate_distinctness_doc(text.replace("6094e3b0", "00000000", 1)))
+        self.assertTrue(self.validate_distinctness_doc(
+            text.replace("c68c65f8bff1a1d8a3bea86c2b652821cc191231", "missing-rev", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("wordicon.exe", "missing.exe")))
+        self.assertTrue(self.validate_distinctness_doc(
+            text.replace("sha256:f8c168c821b99078cb4212b8a9cf28994dede9ce7156d95f890c5f56ca6e26e8", "sha256:bad")))
+        self.assertTrue(self.validate_distinctness_doc(
+            text.replace("`lg`, `md`, `sm`, `32`, `24`, `16`", "`lg`", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("5 (`lg`..`sm`)", "`lg`", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("No single letter", "Empty rule", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text, review_text="# Header only\n"))
 
 
 if __name__ == "__main__":
