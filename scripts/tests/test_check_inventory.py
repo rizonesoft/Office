@@ -366,13 +366,14 @@ class Inventory(unittest.TestCase):
                      '=SUM(1) Visit "(1-REGISTER.ID(1,2))"', '=1-STDEV.S(1,2) Visit "(1-REGISTER.ID(1,2))"',
                      '=1-STDEV.S(1,2) Visit "(1  -  REGISTER.ID(1,2))"',
                      "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
+                     "=1-REGISTER.ID(SUM(1) help desk)",
                      "=1-STDEV.S(1,2) and =1-REGISTER.ID(help desk)", "=(1-REGISTER.ID())",
                      "=SUM(Table1[" + "a" * 30 + ") (FTP:X)", "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
-                     "http:B2", "FTP:X", "See (FTP:X)", "See [ (FTP:X)]", "See \u201c(FTP:X)\u201d",
+                     "http:B2", "FTP:X", "See (FTP:X)", "See (  FTP:X)", "See [ (FTP:X)]", "See \u201c(FTP:X)\u201d",
                      'See "mode=fast,(FTP:X)"', '=SUM(1) See "(FTP:X)"', '=SUM(FTP:FTP) See "(FTP:X)"',
-                     '=SUM(  FTP:FTP) See "(  FTP:X)"', '=SUM(FTP:FTP) See "(FTP:FTP)"',
-                     "=(  FTP:X)", "=   (  FTP:X)", "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
+                     '=SUM(  FTP:FTP) See "(  FTP:X)"', '=SUM(2*FTP:FTP) See "(2*FTP:X)"',
+                     '=SUM(FTP:FTP) See "(FTP:FTP)"', "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
@@ -393,6 +394,8 @@ class Inventory(unittest.TestCase):
                      "=1-STDEV.S(Table1[Amount])", "=1-STDEV.S(Table1[[#Data],[Amount]])", "=1-STDEV.S({1,2,3})",
                      "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
                      "=SUM(FTP:FTP)", "=SUM( FTP:FTP)", "=SUM(  FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)",
+                     "=SUM(FTP:FTP*2)", "=SUM(2*FTP:FTP)", "=SUM(2 * FTP:FTP)", "=SUM(A1+FTP:FTP)",
+                     "=SUM(FTP:FTP/2)", "=SUM(2/FTP:FTP)", "=SUM((FTP:FTP)*2)", "=SUM(2*(FTP:FTP))",
                      "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)", "=SUM(A:A,  FTP:FTP)",
                      "=SUM(1) and =SUM(FTP:FTP)", "=SUM(A1 + B1,FTP:FTP)", "=SUM('Sales Data'!A1,FTP:FTP)",
                      "=SUM('Sales Data'!  FTP:FTP)", "=SUM('John''s Data'!A1,FTP:FTP)",
@@ -467,8 +470,11 @@ class Inventory(unittest.TestCase):
         self.assertIn("REFERENCE.md: cannot read", str(raised.exception))
 
     def test_long_strings_cost_bounded_time(self):
-        # Audit round 11, finding 3 and round 15, finding 2: the link and address patterns never search past a field's
-        # maxLength, and repeated formula-span tokens below maxLength run in bounded time without backtracking.
+        # Audit round 11, finding 3, round 15, finding 2, round 16, finding 1, and round 17, finding 1: the link and
+        # address patterns never search past a field's maxLength, repeated formula-span tokens below maxLength run in
+        # bounded time without backtracking, and a subprocess timeout guards against any future catastrophic regex hang.
+        import subprocess
+        import sys
         import time
         for field in ("label", "behaviour", "uiaId"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "a" * 40000})])
@@ -476,21 +482,44 @@ class Inventory(unittest.TestCase):
             problems = self.problems()
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
-        for text in ("=1" + (" + " * 30) + "2",
-                     "=SUM(Table1[" + "a" * 30 + "])",
-                     "=SUM(Table1[QuarterlyRevenueForecastAmount])",
-                     "=SUM(" + ("'John''s Data'!A1," * 15) + "FTP:FTP)",
-                     "=SUM(" + ("Table1[[#Data],[Amount]]," * 15) + "FTP:FTP)"):
+        accepted = (
+            "=1" + (" + " * 30) + "2",
+            "=SUM(Table1[" + "a" * 30 + "])",
+            "=SUM(Table1[QuarterlyRevenueForecastAmount])",
+            "=SUM(" + ("'John''s Data'!A1," * 15) + "FTP:FTP)",
+            "=SUM(" + ("Table1[[#Data],[Amount]]," * 15) + "FTP:FTP)",
+            "=" + "SUM(" * 20 + "1" + ")" * 20,
+            "=" + "+".join(f"SUM(A{i})" for i in range(1, 21)),
+            "=1-STDEV.S(" + "SUM(" * 20 + "1" + ")" * 21,
+        )
+        refused = (
+            "=SUM(Table1[" + "a" * 30 + ") (FTP:X)",
+            "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)",
+            "=" + "SUM(" * 20 + "1" + ")" * 20 + ' See "(FTP:X)"',
+        )
+        for text in accepted:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             start = time.perf_counter()
             self.assertEqual(self.problems(), [], text)
             self.assertLess(time.perf_counter() - start, 1.0, text)
-        for text in ("=SUM(Table1[" + "a" * 30 + ") (FTP:X)",
-                     "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)"):
+        for text in refused:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             start = time.perf_counter()
             self.assertTrue(any("host name or address" in p for p in self.problems()), text)
             self.assertLess(time.perf_counter() - start, 1.0, text)
+        probe = (
+            "import importlib.util, json, pathlib; "
+            "spec = importlib.util.spec_from_file_location('ci', 'scripts/check-inventory.py'); "
+            "ci = importlib.util.module_from_spec(spec); spec.loader.exec_module(ci); "
+            "schema = json.loads(pathlib.Path('design/inventory/schema.json').read_text(encoding='utf-8')); "
+            f"accepted = {accepted!r}; refused = {refused!r}; base = {BOLD!r}; "
+            "assert all(ci.validate([dict(base, label='Word Document (*.docx)', behaviour=t)], schema, schema, 't') == [] "
+            "for t in accepted); "
+            "assert all(any('host name or address' in p "
+            "for p in ci.validate([dict(base, label='Word Document (*.docx)', behaviour=t)], schema, schema, 't')) "
+            "for t in refused)"
+        )
+        subprocess.run([sys.executable, "-c", probe], cwd=str(SCRIPTS.parent), timeout=5.0, check=True)
 
     def test_each_file_is_loaded_once_per_check(self):
         # Audit round 23, finding 1: schema and relationship checks must inspect the same loaded content, so a file
