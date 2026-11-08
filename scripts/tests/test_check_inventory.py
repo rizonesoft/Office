@@ -364,12 +364,15 @@ class Inventory(unittest.TestCase):
                      "Visit (1-REGISTER.ID(1,2))", "Visit  (1-REGISTER.ID(1,2))", "Visit [1-REGISTER.ID(1,2)]",
                      "Visit \u201c(1-REGISTER.ID(1,2))\u201d", 'Visit "label=(1-REGISTER.ID(1,2))"',
                      '=SUM(1) Visit "(1-REGISTER.ID(1,2))"', '=1-STDEV.S(1,2) Visit "(1-REGISTER.ID(1,2))"',
+                     '=1-STDEV.S(1,2) Visit "(1  -  REGISTER.ID(1,2))"',
                      "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
                      "=1-STDEV.S(1,2) and =1-REGISTER.ID(help desk)", "=(1-REGISTER.ID())",
+                     "=SUM(Table1[" + "a" * 30 + ") (FTP:X)", "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
                      "http:B2", "FTP:X", "See (FTP:X)", "See [ (FTP:X)]", "See \u201c(FTP:X)\u201d",
                      'See "mode=fast,(FTP:X)"', '=SUM(1) See "(FTP:X)"', '=SUM(FTP:FTP) See "(FTP:X)"',
-                     '=SUM(FTP:FTP) See "(FTP:FTP)"', "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
+                     '=SUM(  FTP:FTP) See "(  FTP:X)"', '=SUM(FTP:FTP) See "(FTP:FTP)"',
+                     "=(  FTP:X)", "=   (  FTP:X)", "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
@@ -378,19 +381,23 @@ class Inventory(unittest.TestCase):
                      "Loads Normal.dotm as the default template.", "Saves to Normal.dotm.",
                      "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)", "=1-STDEV.S(1,2)", "=-NORM.S.DIST(0,TRUE)",
                      "Calculates =1-STDEV.S(1,2) in each row.", "=SUM(1) and =1-STDEV.S(1,2)",
+                     "=1 - STDEV.S(1,2)", "=1  -  STDEV.S(1,2)",
                      "=10-STDEV.S(1,2)", "=A10-STDEV.S(1,2)", "=A100000-STDEV.S(1,2)", "=XFD1048576-STDEV.S(1,2)",
                      "=Total-STDEV.S(A1:A2)", "=Table1[Amount]-STDEV.S(A1:A2)", "=SUM('Sales Data'!A1)-STDEV.S(A1:A2)",
                      "=SUM('John''s Data'!A1)-STDEV.S(A1:A2)", "=SUM(Table1[[#Data],[Amount]])-STDEV.S(A1:A2)",
+                     "=SUM(Table1[QuarterlyRevenueForecastAmount])-STDEV.S(A1:A2)",
                      "=SUM(A1 + B1)-STDEV.S(A1:A2)",
                      "=1-STDEV.S(1, 2)", "=1-STDEV.S(SUM(A1:A2),2)", "=1-STDEV.S(SUM(SUM(A1:A2)),2)",
                      "=1-STDEV.S(SUM(SUM(SUM(SUM(A1:A2)))),2)", "=1-STDEV.S(Sheet1!A1:A2)", "=1-STDEV.S(A1:A2,3%)",
                      "=1-STDEV.S('Sales Data'!A1:A2)", "=1-STDEV.S('John''s Data'!A1:A2)",
                      "=1-STDEV.S(Table1[Amount])", "=1-STDEV.S(Table1[[#Data],[Amount]])", "=1-STDEV.S({1,2,3})",
                      "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
-                     "=SUM(FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)", "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)",
+                     "=SUM(FTP:FTP)", "=SUM( FTP:FTP)", "=SUM(  FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)",
+                     "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)", "=SUM(A:A,  FTP:FTP)",
                      "=SUM(1) and =SUM(FTP:FTP)", "=SUM(A1 + B1,FTP:FTP)", "=SUM('Sales Data'!A1,FTP:FTP)",
-                     "=SUM('John''s Data'!A1,FTP:FTP)", "=SUM(Table1[[#Data],[Amount]],FTP:FTP)",
-                     "=SUM(SUM(FTP:FTP))", "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)"):
+                     "=SUM('Sales Data'!  FTP:FTP)", "=SUM('John''s Data'!A1,FTP:FTP)",
+                     "=SUM(Table1[[#Data],[Amount]],FTP:FTP)", "=SUM(Table1[QuarterlyRevenueForecastAmount],FTP:FTP)",
+                     "=SUM(SUM(FTP:FTP))", "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)", "=SUM(Sheet1!  FTP:FTP)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
         schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
@@ -470,11 +477,19 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
         for text in ("=1" + (" + " * 30) + "2",
+                     "=SUM(Table1[" + "a" * 30 + "])",
+                     "=SUM(Table1[QuarterlyRevenueForecastAmount])",
                      "=SUM(" + ("'John''s Data'!A1," * 15) + "FTP:FTP)",
                      "=SUM(" + ("Table1[[#Data],[Amount]]," * 15) + "FTP:FTP)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             start = time.perf_counter()
             self.assertEqual(self.problems(), [], text)
+            self.assertLess(time.perf_counter() - start, 1.0, text)
+        for text in ("=SUM(Table1[" + "a" * 30 + ") (FTP:X)",
+                     "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)"):
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
+            start = time.perf_counter()
+            self.assertTrue(any("host name or address" in p for p in self.problems()), text)
             self.assertLess(time.perf_counter() - start, 1.0, text)
 
     def test_each_file_is_loaded_once_per_check(self):
