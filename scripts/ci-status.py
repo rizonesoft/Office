@@ -728,11 +728,23 @@ def reconcile(args, tools, clock, now, checkpoint):
             # result decides what the campaign does. An earlier red may rest on an earlier try's read: reporting it
             # red errs toward caution, and the campaign supersedes it once the newest head settles. A rerun since
             # changes a result and a changed baseline changes the heads listed; either is settled again first.
+            def confirm_all(initial):
+                pages.confirm(initial)
+                while True:
+                    _, _, latest_runs, latest_base = listing()
+                    unconfirmed = {r for s, r in latest_runs.items() if r not in pages.now
+                                   and (r != runs_of.get(s) or cp["results"].get(s, {}).get("code") == UNKNOWN
+                                        or (s in looked and not current(cp["results"].get(s), r, cp["runs"])))} \
+                        | ({latest_base} if latest_base and latest_base not in pages.now else set())
+                    if not unconfirmed:
+                        return
+                    pages.confirm(unconfirmed)
+
             relied = {runs_of[s] for s in heads if s in runs_of and s not in looked and (
                 cp["results"][s]["code"] == GREEN or (s == heads[-1] and cp["results"][s]["code"] == RED))} \
                 | ({base_run} if base_run else set())
             confirming = True
-            pages.confirm(relied)
+            confirm_all(relied)
             confirming = False
             latest, must = listing(), owed()
             if latest[:2] == (baseline, heads) and not must and not reds_read:
@@ -740,8 +752,8 @@ def reconcile(args, tools, clock, now, checkpoint):
                 # becomes a false green, so a deadline here is not fatal, but a run found deleted changes the listing.
                 reds_read = True
                 try:
-                    pages.confirm({runs_of[s] for s in heads if s in runs_of and s not in looked
-                                   and cp["results"][s]["code"] == RED})
+                    confirm_all({runs_of[s] for s in heads if s in runs_of and s not in looked
+                                 and cp["results"][s]["code"] == RED})
                 except DeadlinePassed:
                     pass  # the reds not read again are reported as they stand
                 latest, must = listing(), owed()

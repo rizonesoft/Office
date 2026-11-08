@@ -1577,6 +1577,21 @@ class Deleted(Pending):
         self.assertIn(f"unknown {b[:7]}: no ci.yml push run", out)
         self.assertNotIn("gh api run", out)
 
+    def test_deleting_both_governing_and_fallback_runs_leaves_a_head_covered_by_a_later_head(self):
+        base, a, b = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        others = [{"id": 99000 + n, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T11:00:00Z",
+                   "head_sha": sha(1950 + n), "event": "pull_request", "head_branch": "feature"} for n in range(150)]
+        older = {"id": 7, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
+                 "head_sha": a, "event": "push", "head_branch": "main"}
+        repo = Repo([b, a, base], {base: "success", a: "success", b: "success"}, extra_runs=others)
+        repo.older_runs = [older]
+        self.assertEqual(self.pending(repo)[0], 0)
+        del repo.runs[a]
+        repo.older_runs.clear()  # both A's newest run and its older fallback run are deleted between tries
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
+
     def test_a_server_error_reading_a_run_is_still_unknown(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
