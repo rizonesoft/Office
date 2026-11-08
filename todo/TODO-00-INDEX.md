@@ -6,7 +6,6 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 
 | TODO | Scope |
 | ---- | ----- |
-| `00-workspace/TODO-01-design-doc-tooling.md` | Checkers and CI |
 | `00-workspace/TODO-02-licensing-and-contributions.md` | Licensing and contributions |
 | `00-workspace/TODO-03-automations-and-keep-alive.md` | Automations and keep-alive |
 | `01-brand/TODO-01-suite-naming.md` | Suite and app names |
@@ -17,3 +16,7 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 | `03-architecture/TODO-01-tech-stack.md` | Tech stack |
 
 ## Completed TODOs
+
+| TODO | Scope | Completed |
+| ---- | ----- | --------- |
+| `00-workspace/TODO-01-design-doc-tooling.md` | Checkers and CI | 2026-10-21 |
