@@ -188,7 +188,7 @@ def walk_tab(tab, order, lower, ctx, contextual=False):
     for g_order, group in enumerate(groups):
         members = [(el, frame) for el, frame in controls_of(group) if control_type(el)]
         ids = [identifier(el, ctx.identifiers) for el, _ in members]
-        unverified = tab_unverified or (members and not any(ids))
+        unverified = tab_unverified or (not any(ids) and (not group.automation_id or group.automation_id not in ctx.identifiers))
         if unverified and not tab_unverified:
             ctx.skipped.append(f"group {group.name!r} on {tab.name!r}: no control the baseline knows, so its "
                                "provenance is unverified")
@@ -225,7 +225,7 @@ def expand_items(control_rec, element, popup_items, ctx):
 def merge(existing, captured):
     """Captured records refresh `bounds`, `order` and the profile they were taken under; every other field of an
     existing record (behaviour, source and anything written by hand) is kept, and records not captured stay."""
-    refreshed = ("bounds", "order", "captureProfile", "size")
+    refreshed = ("bounds", "order", "captureProfile", "size", "capturedFrom")
     keep = {r.get("id"): r for r in existing}
     mapping, matched, out_by_id = {}, set(), {}
     for new in captured:  # parents come before their children, so a parent's mapping is known first
@@ -246,6 +246,9 @@ def merge(existing, captured):
             mapping[new["id"]] = old["id"]
             kept = {k: v for k, v in old.items() if k not in refreshed}
             kept.update({k: new[k] for k in refreshed if k in new})
+            if "capturedFrom" in new and old.get("capturedFrom") and old.get("source") == f"uia:{old['capturedFrom']}" \
+                    and "source" in new:
+                kept["source"] = new["source"]
             out_by_id[old["id"]] = kept
             continue
         rid, n = new["id"], 1
@@ -996,7 +999,32 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
             child.stdin.write(json.dumps({"answer": text}) + "\n")
             child.stdin.flush()
 
-        outcome = converse(timed_lines(), reply, launched)
+        def timed_check_alone( _self=None):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise Refused(f"the capture worker timed out after {timeout}s")
+            box = queue.Queue()
+
+            def run_check():
+                try:
+                    launched.check_alone()
+                    box.put(("ok", None))
+                except BaseException as exc:
+                    box.put(("err", exc))
+
+            threading.Thread(target=run_check, daemon=True).start()
+            try:
+                kind, val = box.get(timeout=remaining)
+            except queue.Empty:
+                raise TimeoutError(f"the capture worker timed out after {timeout}s") from None
+            if kind == "err":
+                raise val
+
+        timed_launched = types.SimpleNamespace(check_alone=timed_check_alone)
+        try:
+            outcome = converse(timed_lines(), reply, timed_launched)
+        except TimeoutError as exc:
+            raise Refused(str(exc)) from None
         remaining = max(0.0, deadline - time.monotonic())
         try:
             child.wait(timeout=min(60.0, remaining))

@@ -146,9 +146,10 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                     raise Refused(f"{path} was removed while it was being written")
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
                 link(path, backup)
-                aside[path] = backup
                 if backup.read_bytes() != expected[path] or path.read_bytes() != expected[path]:
+                    backup.unlink()
                     raise Refused(f"{path} changed while it was being written")
+                aside[path] = backup
                 rename(staged[path], path)
                 del staged[path]
                 placed.append(path)
@@ -165,7 +166,12 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
             if path not in aside:
                 path.unlink()
         for path, old in aside.items():
-            rename(old, path)
+            if path in placed and (not path.exists() or path.read_bytes() == files[path].encode("utf-8")):
+                rename(old, path)
+            elif not path.exists():
+                rename(old, path)
+            else:
+                old.unlink()
         raise
     finally:
         for tmp in staged.values():

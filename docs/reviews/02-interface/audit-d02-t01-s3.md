@@ -128,3 +128,54 @@ OVERALL: needs-attention
 5. **[P3] The claimed ownership regression coverage exceeds what the test exercises**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_expand_checks_ownership_before_each_ui_action`) by testing ownership failure at all four action points (before initial `expand`, before initial `collapse`, before retry `expand`, and before retry `collapse`).
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T22:16:55Z
+- Effort: medium
+- Type: adversarial
+- Lines: 32
+- Digest: ce486574cca50396
+
+## adversarial: needs-attention
+
+1. **[P1] Conflict detection can itself discard a concurrent edit.** `scripts/lib/office_com.py:167-168` restores every backup, including destinations it never replaced. Reproduce during `--merge`: create the backup link at line 148, then let an editor atomically save the destination before line 150 checks it. The check detects the change and raises, but rollback replaces the editor’s file with the old backup. An in-memory filesystem probe reproduced the refusal followed by restoration of the original bytes. This requires an ordinary concurrent save. Roll back only changes this invocation actually published, with protection against subsequent edits.
+
+2. **[P2] A blocked ownership check bypasses the worker deadline.** `scripts/capture-ui.py:945` calls `launched.check_alone()` synchronously in the supervising process. Its Office COM calls can block while Office is unresponsive; meanwhile, nothing checks the deadline or terminates the worker. A probe with `timeout=0.2` and a 0.8-second ownership check returned after 0.972 seconds. An indefinitely blocked check never reaches cleanup. The timeout must also cover parent-side COM requests.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. **[P2] Merge attributes refreshed measurements to the previous Office build.** `scripts/capture-ui.py:228` refreshes geometry and order, while lines 247-248 retain the old `capturedFrom`. Reproduce by merging a capture from `16.0.20527.20150` into records captured from `16.0.20430.20182`: the result contains the new bounds but still declares the historical build. The in-memory probe confirmed this. This is the normal reference-update workflow introduced by this candidate, and contradicts `design/inventory/REFERENCE.md:19`. Preserve annotations while explicitly representing the provenance of refreshed measurements.
+
+## source-defect: needs-attention
+
+4. **[P3] An empty unverified group is admitted to the main inventory.** `scripts/capture-ui.py:191` uses `members and not any(ids)`, which is false when no supported controls were found. Reproduce with a baseline-known Home tab containing an add-in group with no children, or only unsupported child types. `walk_tab()` emits the group into the main records without `baselineMissing` or a warning. The probe confirmed this. This needs an empty or incompletely exposed group, but violates the stated rule at lines 174-176 that groups without a known control go to the sidecar.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding 1 violates the “Never lose work” requirement in `docs/product-principles.md:16`. Finding 2 leaves the intended bounded failure recovery incomplete.
+
+## record: needs-attention
+
+Finding 1 contradicts the concurrency-fix claim in `docs/reviews/02-interface/audit-d02-t01-s3.md:124`. The cited test at `scripts/tests/test_capture_ui.py:748` changes the destination during capture, before publication; it never exercises a concurrent save after backup-link creation.
+
+Verification here: 48 tests that require no file writes passed. Additional in-memory probes reproduced the findings. No files were modified and no live Office capture was run.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 3 disposition
+
+1. **[P1] Conflict detection can itself discard a concurrent edit**: fixed in `scripts/lib/office_com.py` (`publish`) by verifying `backup.read_bytes() == expected[path]` and `path.read_bytes() == expected[path]` before registering `aside[path] = backup` (unlinking `backup` immediately if `path` changed before replacement) and during rollback restoring `old` only when `path in placed` and `path` still holds the bytes placed by this invocation (or when `path` is absent); covered by `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] A blocked ownership check bypasses the worker deadline**: fixed in `scripts/capture-ui.py` (`capture_in_worker`) by running `launched.check_alone()` on a daemon thread bounded by `remaining = deadline - time.monotonic()` (`timed_check_alone`) so a blocked parent-side COM check raises `Refused` at the worker deadline and terminates the worker; covered by `Worker.test_capture_in_worker_enforces_timeout_and_roundtrips_results` in `scripts/tests/test_capture_ui.py`.
+3. **[P2] Merge attributes refreshed measurements to the previous Office build**: fixed in `scripts/capture-ui.py` (`merge`) by including `capturedFrom` in `refreshed` and updating `source` to `new["source"]` when `old`'s `source` was `uia:<old_capturedFrom>`, preserving hand-written fields while recording the refreshed build provenance; covered by `Merge.test_hand_written_fields_survive_and_positions_refresh` in `scripts/tests/test_capture_ui.py`.
+4. **[P3] An empty unverified group is admitted to the main inventory**: fixed in `scripts/capture-ui.py` (`walk_tab`) by treating any group with `not any(ids)` (whose own `automation_id` is not in `ctx.identifiers`) as `unverified` even when `members` is empty; covered by `Round3.test_new_controls_in_verified_groups_carry_baseline_missing` in `scripts/tests/test_capture_ui.py`.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK) and `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK).

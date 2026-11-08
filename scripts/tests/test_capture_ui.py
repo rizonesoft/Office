@@ -149,13 +149,19 @@ class Merge(unittest.TestCase):
     def test_hand_written_fields_survive_and_positions_refresh(self):
         old = [{"id": "word.home.font.bold", "label": "Bold", "order": 3, "behaviour": "Ours.", "source": "uia:1.2.3.4",
                 "bounds": {"x": 1, "y": 1, "width": 1, "height": 1}},
+               {"id": "word.home.font.cut", "label": "Cut", "order": 4, "behaviour": "Cuts.",
+                "source": "uia:16.0.20430.20182", "capturedFrom": "16.0.20430.20182"},
                {"id": "word.home.gone", "label": "Gone", "behaviour": "Kept."}]
         new = [{"id": "word.home.font.bold", "label": "Bold", "order": 5, "source": f"uia:{BUILD}",
                 "bounds": {"x": 9, "y": 9, "width": 9, "height": 9}, "captureProfile": "fhd-100"},
-               {"id": "word.home.font.italic", "label": "Italic", "order": 6}]
+               {"id": "word.home.font.cut", "label": "Cut", "order": 6, "source": f"uia:{BUILD}",
+                "capturedFrom": BUILD},
+               {"id": "word.home.font.italic", "label": "Italic", "order": 7}]
         out = {r["id"]: r for r in cu.merge(old, new)}
-        bold = out["word.home.font.bold"]
+        bold, cut = out["word.home.font.bold"], out["word.home.font.cut"]
         self.assertEqual((bold["behaviour"], bold["source"], bold["order"], bold["bounds"]["x"]), ("Ours.", "uia:1.2.3.4", 5, 9))
+        self.assertEqual((cut["behaviour"], cut["source"], cut["capturedFrom"], cut["order"]),
+                         ("Cuts.", f"uia:{BUILD}", BUILD, 6))
         self.assertIn("word.home.gone", out)
         self.assertIn("word.home.font.italic", out)
 
@@ -599,6 +605,15 @@ class Round3(unittest.TestCase):
         self.assertNotIn("baselineMissing", by["Bold"])
         self.assertIs(by["Font"].get("baselineMissing"), True)
         self.assertIsNone(by["Font"].get("idMso"))
+        # An empty unverified group on a verified tab is routed to ctx.unverified, not the main inventory.
+        ctx = cu.Context("word", BUILD, IDS)
+        lower = E("Pane", "Lower Ribbon", kids=[E("Group", "Home", kids=[E("Group", "EmptyAddin")])])
+        tab = E("TabItem", "Home", "TabHome")
+        main_recs = cu.walk_tab(tab, 0, lower, ctx)
+        self.assertEqual([r["kind"] for r in main_recs], ["tab"])
+        self.assertEqual([(r["label"], r["kind"], r["baselineMissing"]) for r in ctx.unverified],
+                         [("EmptyAddin", "group", True)])
+        self.assertIn("EmptyAddin", ctx.skipped[0])
 
     def test_replacement_document_and_close_reference_release(self):
         import weakref
@@ -677,6 +692,17 @@ class Worker(unittest.TestCase):
                                                    worker_cmd=[sys.executable, "-c", script])
         self.assertEqual((recs, problems, ctx.skipped, ctx.notes, ctx.unverified, len(checks)),
                          ([{"id": "word.home"}], [], ["s"], ["n"], [{"id": "word.u"}], 1))
+        # A parent-side ownership check that hangs is also bounded by the worker deadline.
+        slow_launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                       "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                       "language": lambda self: 1033,
+                                       "check_alone": lambda self: time.sleep(1.5)})()
+        t1 = time.monotonic()
+        with self.assertRaises(cu.Refused) as slow_err:
+            cu.capture_in_worker(args, slow_launched, timeout=0.2,
+                                 worker_cmd=[sys.executable, "-c", script])
+        self.assertLess(time.monotonic() - t1, 1.0)
+        self.assertIn("timed out", str(slow_err.exception))
 
 
 class CaptureIntegration(unittest.TestCase):
@@ -782,6 +808,21 @@ class CaptureIntegration(unittest.TestCase):
                                  launcher=lambda app: launched, uia_factory=uia_modifies_file, win_factory=lambda: win)
                 self.assertEqual(rc, 1)
                 self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.edited"}]\n')
+
+                # 3. A concurrent save after backup-link creation during publish is neither overwritten nor rolled back.
+                import os
+                orig_bytes = out_path.read_bytes()
+
+                def link_then_editor_saves(src, dst):
+                    os.link(src, dst)
+                    editor_tmp = out_path.with_name("editor.tmp")
+                    editor_tmp.write_text('[{"id": "word.saved_after_link"}]\n', encoding="utf-8")
+                    os.replace(editor_tmp, out_path)
+
+                with self.assertRaises(cu.Refused):
+                    cu.publish({out_path: '[{"id": "word.ours"}]\n'}, link=link_then_editor_saves,
+                               expected_bytes={out_path: orig_bytes})
+                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.saved_after_link"}]\n')
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 
