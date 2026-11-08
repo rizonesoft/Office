@@ -667,6 +667,7 @@ def reconcile(args, tools, clock, now, checkpoint):
         return now() if now else datetime.now(timezone.utc)
 
     looked = set()  # heads looked up in this try: their results are as current as a read in this try
+    rechecked = set()  # cached runs re-read by id after a lookup in this try disagreed with them
     confirming, listing, pages = False, None, None
 
     def settle(sha):
@@ -732,9 +733,13 @@ def reconcile(args, tools, clock, now, checkpoint):
                 pages.confirm(initial)
                 while True:
                     _, _, latest_runs, latest_base = listing()
-                    unconfirmed = {r for s, r in latest_runs.items() if r not in pages.now
-                                   and (r != runs_of.get(s) or cp["results"].get(s, {}).get("code") == UNKNOWN
-                                        or (s in looked and not current(cp["results"].get(s), r, cp["runs"])))} \
+                    contradicted = {r for s, r in latest_runs.items() if s in looked and r not in rechecked
+                                    and f" run {r} " not in (cp["results"].get(s, {}).get("lines") or [""])[0]}
+                    rechecked.update(contradicted)
+                    pages.now -= contradicted
+                    unconfirmed = contradicted | {r for s, r in latest_runs.items() if r not in pages.now
+                                                  and (r != runs_of.get(s)
+                                                       or cp["results"].get(s, {}).get("code") == UNKNOWN)} \
                         | ({latest_base} if latest_base and latest_base not in pages.now else set())
                     if not unconfirmed:
                         return
@@ -747,21 +752,24 @@ def reconcile(args, tools, clock, now, checkpoint):
             confirm_all(relied)
             confirming = False
             latest, must = listing(), owed()
+            runs_of, base_run = latest[2], latest[3]
             if latest[:2] == (baseline, heads) and not must and not reds_read:
                 # Only once nothing owed is left: earlier reds are read again with the time left. A stale red never
                 # becomes a false green, so a deadline here is not fatal, but a run found deleted changes the listing.
                 reds_read = True
                 try:
                     confirm_all({runs_of[s] for s in heads if s in runs_of and s not in looked
-                                 and cp["results"][s]["code"] == RED})
+                                 and cp["results"][s]["code"] in (RED, PENDING, UNKNOWN)})
                 except DeadlinePassed:
                     pass  # the reds not read again are reported as they stand
                 latest, must = listing(), owed()
+                runs_of, base_run = latest[2], latest[3]
             if latest[:2] == (baseline, heads) and not must:
                 break
             baseline, heads, runs_of, base_run = latest
             for s in must:
                 checked.remove(s)
+                looked.discard(s)
     except DeadlinePassed:
         ready = confirmed()
         if cp and (cp["progress"] > before or ready):

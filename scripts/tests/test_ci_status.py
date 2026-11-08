@@ -1592,6 +1592,18 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (0, [b[:7]]))
 
+    def test_a_run_deleted_after_its_page_is_read_in_the_same_try_falls_back_to_its_older_run(self):
+        base, a, c = sha(1), sha(2), sha(3)
+        self.record(f"ci-green {base[:7]}")
+        older = {"id": 8, "status": "completed", "conclusion": "success", "created_at": "2026-10-23T09:00:00Z",
+                 "head_sha": a, "event": "push", "head_branch": "main"}
+        repo = Repo([c, a, base], {base: "success", a: "failure", c: "success"})
+        repo.older_runs = [older]
+        repo.after_page[1] = lambda: repo.runs.pop(a, None)  # A's newer failed run is deleted right after page 1
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [a[:7], c[:7]]))
+        self.assertIn(f"green {a[:7]} run 8", out)
+
     def test_a_server_error_reading_a_run_is_still_unknown(self):
         base, a, b = sha(1), sha(2), sha(3)
         self.record(f"ci-green {base[:7]}")
