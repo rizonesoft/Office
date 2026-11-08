@@ -358,7 +358,7 @@ class Inventory(unittest.TestCase):
         # Unicode space after a sentence is not mistaken for a host.
         for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now", "*.example.com", ".example.com",
                      "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live",
-                     "example.ht"):
+                     "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
@@ -377,10 +377,27 @@ class Inventory(unittest.TestCase):
                 "tiff", "emf", "wmf", "ico", "thmx", "dic", "acl", "accda", "accdb", "accde", "accdr", "accdt",
                 "mdb", "ddb", "dif", "slk", "prn", "iqy", "dqy", "oqy", "rqy", "odc", "udl", "dsn", "cub", "exe",
                 "dll", "ini", "bas", "vbs", "bak", "tmp", "log", "bin", "dat")
+        self.assertEqual(len(exts), 115)
         for ext in exts:
             for variant in (ext, ext.upper()):
                 rec = dict(BOLD, label=f"Format (*.{variant})", behaviour=f"Saves File.{variant} or .{variant}.")
                 self.assertEqual(ci.validate([rec], schema, schema), [], variant)
+        funcs = ("BETA.DIST", "BETA.INV", "BINOM.DIST", "BINOM.DIST.RANGE", "BINOM.INV", "CEILING.MATH",
+                 "CEILING.PRECISE", "CHISQ.DIST", "CHISQ.DIST.RT", "CHISQ.INV", "CHISQ.INV.RT", "CHISQ.TEST",
+                 "CONFIDENCE.NORM", "CONFIDENCE.T", "COVARIANCE.P", "COVARIANCE.S", "ECMA.CEILING", "ERF.PRECISE",
+                 "ERFC.PRECISE", "ERROR.TYPE", "EXPON.DIST", "F.DIST", "F.DIST.RT", "F.INV", "F.INV.RT", "F.TEST",
+                 "FLOOR.MATH", "FLOOR.PRECISE", "FORECAST.ETS", "FORECAST.ETS.CONFINT", "FORECAST.ETS.SEASONALITY",
+                 "FORECAST.ETS.STAT", "FORECAST.LINEAR", "GAMMA.DIST", "GAMMA.INV", "GAMMALN.PRECISE", "HYPGEOM.DIST",
+                 "ISO.CEILING", "LOGNORM.DIST", "LOGNORM.INV", "MODE.MULT", "MODE.SNGL", "NEGBINOM.DIST",
+                 "NETWORKDAYS.INTL", "NORM.DIST", "NORM.INV", "NORM.S.DIST", "NORM.S.INV", "PERCENTILE.EXC",
+                 "PERCENTILE.INC", "PERCENTRANK.EXC", "PERCENTRANK.INC", "POISSON.DIST", "QUARTILE.EXC",
+                 "QUARTILE.INC", "RANK.AVG", "RANK.EQ", "REGISTER.ID", "SKEW.P", "SQL.REQUEST", "STDEV.P", "STDEV.S",
+                 "T.DIST", "T.DIST.2T", "T.DIST.RT", "T.INV", "T.INV.2T", "T.TEST", "VAR.P", "VAR.S", "WEIBULL.DIST",
+                 "WORKDAY.INTL", "Z.TEST")
+        self.assertEqual(len(funcs), 73)
+        for fn in funcs:
+            rec = dict(BOLD, label=fn, behaviour=f"Inserts the {fn} function ({fn}).")
+            self.assertEqual(ci.validate([rec], schema, schema), [], fn)
 
     def test_unencodable_record_text_is_reported_not_a_crash(self):
         # Audit round 7, finding 2: a lone surrogate in a record reaches the report; printing it must not raise.
