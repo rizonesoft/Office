@@ -64,7 +64,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 23 | §23 | Audit schema checker | §1 | [x] |
 | 24 | §24 | Audit capture tool | §3 | [ ] |
 | 25 | §25 | Audit control ID baseline | §19 | [x] |
-| 26 | §26 | Audit Microsoft-free rule | §21 | [ ] |
+| 26 | §26 | Audit Microsoft-free rule | §21 | [x] |
 | 27 | §27 | Checker mutation sweep | §23 | [ ] |
 | 28 | §28 | Record dispositions | §18, §22, §23 | [ ] |
 
@@ -704,9 +704,12 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [x] Run audit rounds on `D02 T01 §21`'s stamped candidate and every later change to the files it owns, recording each with `--record docs/reviews/02-interface/audit-d02-t01-s21.md`, never in the section's own findings file. Done when: a round approves (`clean`), or the severity cutoff (`stopped-low-severity`, after round 8 when all findings are `P3` or advisory) or the 33-round cap (`stopped-at-33`) stops the loop with its outcome recorded and matching the receipt's verdict and `--cap-outcome`.
 - [x] Fix each finding at its owning layer in a new commit with a regression test, or file it through `add-todo` with an owner. Done when: no finding in `docs/reviews/02-interface/audit-d02-t01-s21.md` is open without a fix commit or a filed section.
 - [x] On a confirmed regression, file the repair through `add-todo`, then run `python scripts/todo-graph.py unstamp "D02 T01 §21" --reason "<what regressed, and the repair section>"` and list the suspect sections it prints in `docs/reviews/02-interface/audit-d02-t01-s21.md`. Done when: the repair section exists and `resolve "D02 T01 §21"` no longer exits 3, or the audit confirms the stamp.
-- [ ] Commit: `review: audit D02 T01 §21 under the current review process`
+- [x] Commit: `review: audit D02 T01 §21 under the current review process`
 
 **Test checkpoint:** `python scripts/todo-graph.py resolve "D02 T01 §21"` exits 3 (still verified) or shows the `Unstamped:` note with its repair, `python scripts/check-inventory.py design/inventory` exits 0 (when the stamp is confirmed), and `docs/reviews/02-interface/audit-d02-t01-s21.md` ends in an approving round or a recorded stop under the 33-round cap with every finding fixed or filed.
+
+> **Verified:** 2026-11-08 | §26 | a4ba192190baec153945bb7d0cabcea04250e63d
+> **Review:** `docs/reviews/d02-t01-s26.json`
 
 ## 27. Checker Mutation Sweep
 

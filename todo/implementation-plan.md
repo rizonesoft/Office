@@ -80,7 +80,7 @@ Sections: 42 | Checklist items: 270
 | [x]    | D02 T01 §23 | Audit Schema Checker      | none                                  | 5     |
 | [ ]    | D02 T01 §24 | Audit Capture Tool        | office, windows-host, display-session | 5     |
 | [x]    | D02 T01 §25 | Audit Control ID Baseline | none                                  | 5     |
-| [ ]    | D02 T01 §26 | Audit Microsoft-Free Rule | none                                  | 5     |
+| [x]    | D02 T01 §26 | Audit Microsoft-Free Rule | none                                  | 5     |
 | [ ]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §5  | Word Ribbon               | office, windows-host, display-session | 10    |
 | [ ]    | D02 T01 §6  | Word Panes, Dialogs       | office, windows-host, display-session | 7     |
@@ -180,6 +180,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 53/125 verified sections, 8 ready to run now.
+Progress: 54/125 verified sections, 8 ready to run now.
 
-Checklist: 328/789 items completed (includes Commit items).
+Checklist: 329/789 items completed (includes Commit items).

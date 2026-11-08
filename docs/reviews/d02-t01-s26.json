@@ -1,0 +1,184 @@
+{
+  "ref": "D02 T01 \u00a726",
+  "title": "Audit Microsoft-Free Rule",
+  "implementation_sha": "a4ba192190baec153945bb7d0cabcea04250e63d",
+  "date": "2026-11-08",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 14,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 15,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 16,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 17,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 18,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 19,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 20,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 21,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 22,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 23,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 24,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 25,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 26,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 27,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 28,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 29,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 30,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 31,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 32,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 33,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s21.md",
+      "verdict": "stopped-at-33"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py resolve \"D02 T01 \u00a721\" -> exit 3 (still verified)",
+    "python -m unittest discover -s scripts/tests -p test_check_inventory.py -> Ran 117 tests in 14.385s OK",
+    "python scripts/check-inventory.py design/inventory -> exit 0",
+    "rg -n -i \"https?://|microsoft\\.com|screentip\" design/inventory scripts/check-inventory.py scripts/tests/test_check_inventory.py -> matches only refusal fixtures, $schema dialect lines, and Visio idMso control identifier tokens"
+  ],
+  "rounds_spent": 33,
+  "round_cap": 33,
+  "completion": "docs/reviews/02-interface/D02-T01-s26-completion.md",
+  "completion_rules": 2,
+  "cap_outcome": "All findings from Rounds 1 through 32 were fixed and verified; Round 33 P2 finding fixed in commit 015ff91, and arbitrary-depth parenthesis balance and completed-call boundary enforcement for hyphenated dotted-function calls in scripts/check-inventory.py plus independent review of 015ff91 filed in D02 T01 \u00a727"
+}
