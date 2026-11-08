@@ -809,5 +809,114 @@ class MonoMark(unittest.TestCase):
         for xy in ((px + pw // 2, py + ph - 4), (cx, cy - r + 6)):  # the pane, then the orb
             self.assertEqual(img.getpixel(xy), (255, 0, 0, 255), xy)
 
+
+class DistinctnessReview(unittest.TestCase):
+    REQUIRED_HEADINGS = ("Symbol contrast", "Distinctness rules", "Suite and app icons", "File-type icons", "Sign-off")
+    GENERATORS = ("scripts/lib/icon_design.py", "scripts/lib/filetype_design.py", "scripts/lib/brand_design.py",
+                  "scripts/build-icons.py")
+
+    def validate_distinctness_doc(self, text: str) -> list[str]:
+        import hashlib
+        problems = []
+        if re.search(r"\|\s*fail\s*\|", text, flags=re.I):
+            problems.append("distinctness table contains a fail cell")
+        sections = {}
+        current = None
+        for line in text.splitlines():
+            if line.startswith("## "):
+                current = line[3:].strip()
+                sections[current] = []
+            elif current is not None:
+                sections[current].append(line)
+        for heading in self.REQUIRED_HEADINGS:
+            if heading not in sections:
+                problems.append(f"missing heading: {heading}")
+        if problems:
+            return problems
+
+        rules_body = "\n".join(sections["Distinctness rules"])
+        for r_idx in range(1, 8):
+            if not re.search(rf"^\|\s*`R{r_idx}`\s*\|", rules_body, flags=re.M):
+                problems.append(f"missing rule definition R{r_idx}")
+        for key, (_, _, (light, dark)) in d.APPS.items():
+            accent = d.APP_COLOR[key]
+            m = re.search(rf"^\|\s*`{key}`\s*\|\s*`{light}`/`{dark}`/`{accent}`\s*\|\s*`[^`]+`\s*\|\s*([^|]+)\|",
+                          rules_body, flags=re.M)
+            if not m:
+                problems.append(f"missing palette comparison row for {key}")
+            else:
+                ms_hexes = set(re.findall(r"#[0-9a-f]{6}", m.group(1)))
+                if len(ms_hexes) < 3 or ({light, dark, accent} & ms_hexes):
+                    problems.append(f"palette overlap or incomplete MS hexes for {key}")
+
+        app_body = "\n".join(sections["Suite and app icons"])
+        app_rows = dict(re.findall(
+            r"^\|\s*`([\w-]+)`\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|"
+            r"\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
+            name_and_cells := app_body, flags=re.M
+        ) if False else [
+            (m.group(1), m.groups()[1:])
+            for m in re.finditer(
+                r"^\|\s*`([\w-]+)`\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*"
+                r"\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
+                app_body, flags=re.M
+            )
+        ])
+        want_suite = ("pass", "pass", "pass", "n/a", "n/a", "pass", "pass")
+        want_app = ("pass", "pass", "pass", "pass", "pass", "pass", "n/a")
+        for mark in (d.SUITE, f"{d.SUITE}-mono"):
+            if app_rows.get(mark) != want_suite:
+                problems.append(f"suite mark row invalid for {mark}: {app_rows.get(mark)}")
+        for key in d.APPS:
+            if app_rows.get(key) != want_app:
+                problems.append(f"app row invalid for {key}: {app_rows.get(key)}")
+
+        file_body = "\n".join(sections["File-type icons"])
+        file_rows = {
+            m.group(1): (m.group(2), m.group(3), m.groups()[3:])
+            for m in re.finditer(
+                r"^\|\s*`(\w+)`\s*\|\s*`(\w+)`\s*\|\s*(\w+)\s*\|\s*[^|]+\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|"
+                r"\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|\s*(pass|n/a)\s*\|$",
+                file_body, flags=re.M
+            )
+        }
+        for ext, (app_key, kind, _) in ft.TYPES.items():
+            expected_kind = kind or "normal"
+            if file_rows.get(ext) != (app_key, expected_kind, want_app):
+                problems.append(f"file-type row invalid for {ext}: {file_rows.get(ext)}")
+
+        signoff = "\n".join(sections["Sign-off"])
+        for required_token in ("2026-11-08", "docs/specs/2026-10-23-campaign-scope-design.md", "`astra`",
+                               "docs/reviews/01-brand/D01-T02-s7.md", "16.0.20527.20150",
+                               "R:/scratch/icon-review/suite-and-apps-comparison.png",
+                               "R:/scratch/icon-review/file-types-comparison.png"):
+            if required_token not in signoff:
+                problems.append(f"sign-off missing {required_token}")
+        root = SCRIPTS.parent
+        for rel in self.GENERATORS:
+            digest = hashlib.sha256((root / rel).read_bytes()).hexdigest()
+            if f"`{rel}`: `{digest}`" not in signoff:
+                problems.append(f"sign-off missing current digest for {rel}")
+        return problems
+
+    def test_distinctness_doc_is_complete_and_current(self):
+        import subprocess
+        doc_path = SCRIPTS.parent / "docs/brand/icon-distinctness.md"
+        cmd = [sys.executable, str(SCRIPTS / "check-design-doc.py"), str(doc_path)]
+        for h in self.REQUIRED_HEADINGS:
+            cmd.extend(["--require", h])
+        proc = subprocess.run(cmd, cwd=SCRIPTS.parent, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        text = doc_path.read_text(encoding="utf-8")
+        self.assertEqual(self.validate_distinctness_doc(text), [])
+
+    def test_validator_rejects_failed_cell_missing_row_or_stale_digest(self):
+        text = (SCRIPTS.parent / "docs/brand/icon-distinctness.md").read_text(encoding="utf-8")
+        self.assertTrue(self.validate_distinctness_doc(text.replace("| pass |", "| fail |", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("| `write` | `lg`", "| `missing` | `lg`", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("| `vcf` |", "| `zzz` |", 1)))
+        self.assertTrue(self.validate_distinctness_doc(text.replace("6094e3b0", "00000000", 1)))
+
+
 if __name__ == "__main__":
     unittest.main()
