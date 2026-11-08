@@ -523,10 +523,14 @@ class Pages:
                     self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
             self.cp["progress"] += 1
             self.save(self.cp)
-        if len(self.cp["runs"]) < self.cp["total"] or (
+        while len(self.cp["runs"]) < self.cp["total"] or (
                 self.cp["total"] and any(p > 1 for p in self.pages)
                 and ((top := self.at(1)) not in self.cp["runs"] or len(self.cp["runs"]) < (self.probe_total or 0))):
+            before = self.cp["progress"]
+            self.pages = set()
             self.newest()
+            if self.cp["progress"] == before:
+                break
         if len(self.cp["runs"]) < self.cp["total"]:
             raise Unknown(f"gh api returned {len(self.cp['runs'])} of {self.cp['total']} runs, so the history may be "
                           f"cut off")

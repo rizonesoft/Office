@@ -1449,15 +1449,22 @@ class Deleted(Pending):
 
     def test_a_deletion_on_page_one_and_a_new_push_run_at_the_front_still_refreshes_the_prefix(self):
         heads, repo = self.heads(300, set())
-        delayed = sha(301)  # an unrecorded commit already on main whose push run appears after page 1 is read
+        delayed = sha(301)  # an unrecorded commit already on main whose push run appears during the refresh
         repo.history = [heads[-1], delayed, *repo.history[1:]]
 
-        def delete_and_create():  # delete one run on page 1 and create the delayed commit's failed run at the front
-            del repo.runs[sha(250)]
+        def after_refresh_page_one():  # after refresh page 1 is read: delete another page-1 run and add delayed's run
+            del repo.runs[sha(249)]
             repo.extra_runs.append({"id": int(delayed[:7], 16), "status": "completed", "conclusion": "failure",
-                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": delayed, "event": "push",
+                                    "created_at": "2026-10-23T11:01:00Z", "head_sha": delayed, "event": "push",
                                     "head_branch": "main"})
-        repo.after_page[1] = delete_and_create
+
+        def after_initial_page_one():  # after scan page 1 is read: delete 1 run, add PR run, and arm refresh page 1
+            del repo.runs[sha(250)]
+            repo.extra_runs.append({"id": 99996, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4003),
+                                    "event": "pull_request", "head_branch": "feature"})
+            repo.after_page[1] = lambda: repo.after_page.__setitem__(1, after_refresh_page_one)
+        repo.after_page[1] = after_initial_page_one
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [delayed[:7]]))
 
