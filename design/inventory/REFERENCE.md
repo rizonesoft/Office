@@ -4,16 +4,17 @@ What the parity inventory is measured against: one fixed build, one capture prof
 
 ## Builds
 
-Read 2026-10-20 on the operator's host (Windows 11 Pro, Venom-PC) from the Click-to-Run configuration and each program's file version, the values the Account page reports.
+Read 2026-10-20 (`16.0.20430.20182`) and 2026-11-08 (`16.0.20527.20150`) on the operator's host (Windows 11 Pro, Venom-PC) from the Click-to-Run configuration and each program's file version, the values the Account page reports.
 
 | App | Version | Build | Channel | Platform |
 | --- | ------- | ----- | ------- | -------- |
-| Word | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
-| Excel | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
-| PowerPoint | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
-| Visio | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
-| Project | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
-| Outlook (classic) | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
+| Word | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| Excel | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| PowerPoint | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| Visio | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| Project | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| Outlook (classic) | 16.0 | 16.0.20527.20150 | Current Channel | x64 |
+| Word, Excel, PowerPoint, Visio, Project, Outlook (2026-10-20) | 16.0 | 16.0.20430.20182 | Current Channel | x64 |
 
 The channel is the update channel id `492350f6-3a01-4f97-b9c0-c7c6ddf67d60`, which is Current Channel. Every record captured live carries this build in `capturedFrom`, and a capture from any other build is a new reference, recorded here first.
 

@@ -18,7 +18,7 @@ spec = importlib.util.spec_from_file_location("check_inventory", SCRIPTS / "chec
 ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ci)
 
-BUILD = "16.0.20430.20182"
+BUILD = "16.0.20527.20150"
 TABLE = [["Command Name", "Modifiers", "Key"], ["About", "", ""], ["Align Left", "", ""], ["Align Left", "", ""],
          ["Bold", "Ctrl+", "B"], ["Bold", "Ctrl+Shift+", "B"], ["Help", "", "F1"], ["Zoom200", "", ""]]
 
@@ -30,7 +30,7 @@ def table_text(rows):
 class Fake:
     """A Word.Application stand-in that records what the script did to it."""
 
-    def __init__(self, rows=TABLE, bindings=0, addins=0, build="16.0.20430"):
+    def __init__(self, rows=TABLE, bindings=0, addins=0, build="16.0.20527"):
         self.rows, self.quit, self.closed, self.Build = rows, False, 0, build
         self.KeyBindings = type("K", (), {"Count": bindings})()
         self.AddIns = type("A", (), {"Count": addins})()
@@ -120,9 +120,9 @@ class Records(unittest.TestCase):
         self.assertFalse(wc.office_com.is_executable(office + "EXCEL.EXE", "WINWORD.EXE"))
 
     def test_build_components_must_match(self):
-        self.assertTrue(wc.same_build("16.0.20430", BUILD))
+        self.assertTrue(wc.same_build("16.0.20527", BUILD))
         self.assertTrue(wc.same_build(BUILD, BUILD))
-        for bad in ("16.0.2043", "16.0.20431", "16", "16.0.20430.20182.1"):
+        for bad in ("16.0.2052", "16.0.20528", "16", "16.0.20527.20150.1"):
             self.assertFalse(wc.same_build(bad, BUILD), bad)
 
     def test_the_reference_build_is_read_from_the_reference(self):
@@ -168,7 +168,7 @@ class Instance(unittest.TestCase):
         self.assertEqual(seen, [fake])  # the process comes from the dispatched instance, not a process list
         self.assertEqual(len(table), len(TABLE) - 1)
         self.assertTrue(fake.quit and proc.closed)
-        self.assertEqual((fake.closed, proc.waited, build), (2, 5, "16.0.20430"))
+        self.assertEqual((fake.closed, proc.waited, build), (2, 5, "16.0.20527"))
 
     def test_a_customised_instance_is_refused_and_still_quit(self):
         for fake in (Fake(bindings=3), Fake(addins=1)):
@@ -221,7 +221,7 @@ class Main(unittest.TestCase):
 
     def test_writes_both_files_with_counts(self):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
-        code, out, files = self.run_main(lambda: (table, "16.0.20430"))
+        code, out, files = self.run_main(lambda: (table, "16.0.20527"))
         self.assertEqual(code, 0, out)
         self.assertEqual(len(json.loads(files["commands.json"])), 7)
         self.assertEqual(len(json.loads(files["shortcuts.json"])), 3)
@@ -300,7 +300,7 @@ class Main(unittest.TestCase):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
         odd = [["Odd", "Ctrl", "B"]]
         for lister, build, want in ((refused, BUILD, 1), (broken, BUILD, 2),
-                                    (lambda: (table, "16.0.19000"), BUILD, 1), (lambda: (odd, "16.0.20430"), BUILD, 1)):
+                                    (lambda: (table, "16.0.19000"), BUILD, 1), (lambda: (odd, "16.0.20527"), BUILD, 1)):
             code, out, files = self.run_main(lister, build)
             self.assertEqual(code, want, out)
             self.assertEqual(sorted(files), ["baseline.json"])

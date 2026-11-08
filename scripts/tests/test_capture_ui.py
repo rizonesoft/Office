@@ -24,7 +24,7 @@ spec = importlib.util.spec_from_file_location("check_inventory", SCRIPTS / "chec
 ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ci)
 
-BUILD = "16.0.20430.20182"
+BUILD = "16.0.20527.20150"
 IDS = {"TabHome", "PasteMenu", "Paste", "Cut", "Bold", "FontDialog", "QuickStylesGallery", "ChangeCaseGallery"}
 
 
@@ -462,11 +462,11 @@ class Writes(unittest.TestCase):
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):
-        word = type("W", (), {"Build": "16.0.20430", "Version": "16.0"})()
-        excel = type("X", (), {"Build": 20430, "Version": "16.0"})()
-        self.assertEqual((cu.reported_build(word), cu.reported_build(excel)), ("16.0.20430", "16.0.20430"))
-        excel_com = type("X", (), {"Build": 20430.0, "Version": "16.0"})()  # what Excel really returns through COM
-        self.assertEqual(cu.reported_build(excel_com), "16.0.20430")
+        word = type("W", (), {"Build": "16.0.20527", "Version": "16.0"})()
+        excel = type("X", (), {"Build": 20527, "Version": "16.0"})()
+        self.assertEqual((cu.reported_build(word), cu.reported_build(excel)), ("16.0.20527", "16.0.20527"))
+        excel_com = type("X", (), {"Build": 20527.0, "Version": "16.0"})()  # what Excel really returns through COM
+        self.assertEqual(cu.reported_build(excel_com), "16.0.20527")
         self.assertTrue(cu.same_build(cu.reported_build(excel), BUILD))
 
     def test_a_classic_capture_needs_the_simplified_layout_off(self):
