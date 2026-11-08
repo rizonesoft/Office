@@ -616,19 +616,37 @@ class Round3(unittest.TestCase):
         self.assertIn("EmptyAddin", ctx.skipped[0])
 
     def test_replacement_document_and_close_reference_release(self):
+        import ctypes
+        import threading
         import weakref
+        caller_tid = threading.get_ident()
+        tids, hresults = [], []
+
+        def record_com():
+            tids.append(threading.get_ident())
+            apt_type = ctypes.c_int(-1)
+            apt_qual = ctypes.c_int(-1)
+            hresults.append(ctypes.windll.ole32.CoGetApartmentType(ctypes.byref(apt_type), ctypes.byref(apt_qual)))
+
         app = FakeApp(count=0)
+        real_add = app.Presentations.Add
+        app.Presentations.Add = lambda: (record_com(), real_add())[1]
         launched = Launch().launched(app)
         launched.check_alone()
+        launched._apartment.call(record_com)
+        self.assertEqual(hresults, [0, 0])
+        self.assertEqual(len(set(tids)), 1)
+        self.assertNotEqual(tids[0], caller_tid)
         # Closing the tool's document and opening an operator document keeps Count == 1, but must be refused.
         app.made[0].Close()
-        app.Presentations.Add()
+        real_add()
         self.assertEqual(launched.open_documents(), 1)
         with self.assertRaises(cu.Refused):
             launched.check_alone()
         with self.assertRaises(cu.Refused):
             launched.close()
         self.assertFalse(app.quit)
+        launched._apartment.close()
         # Verify loop reference is released before proc.exited() waits.
         q_launched = Launch().launched(FakeApp(count=0))
         doc_ref = weakref.ref(q_launched.created[0])
@@ -665,14 +683,22 @@ class Worker(unittest.TestCase):
 
     def test_capture_in_worker_enforces_timeout_and_roundtrips_results(self):
         import argparse
+        import ctypes
         import sys
         import time
         args = argparse.Namespace(app="word", tab="Home", all_tabs=False, expand=False, layout="classic",
                                   merge=False, out=None)
         checks = []
+
+        def check_with_com(self):
+            apt_type = ctypes.c_int(-1)
+            apt_qual = ctypes.c_int(-1)
+            hr = ctypes.windll.ole32.CoGetApartmentType(ctypes.byref(apt_type), ctypes.byref(apt_qual))
+            checks.append(hr)
+
         launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
                                   "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
-                                  "language": lambda self: 1033, "check_alone": lambda self: checks.append(1)})()
+                                  "language": lambda self: 1033, "check_alone": check_with_com})()
         t0 = time.monotonic()
         with self.assertRaises(cu.Refused) as ctx_err:
             cu.capture_in_worker(args, launched, timeout=0.15,
@@ -690,8 +716,8 @@ class Worker(unittest.TestCase):
         )
         recs, problems, ctx = cu.capture_in_worker(args, launched, timeout=5.0,
                                                    worker_cmd=[sys.executable, "-c", script])
-        self.assertEqual((recs, problems, ctx.skipped, ctx.notes, ctx.unverified, len(checks)),
-                         ([{"id": "word.home"}], [], ["s"], ["n"], [{"id": "word.u"}], 1))
+        self.assertEqual((recs, problems, ctx.skipped, ctx.notes, ctx.unverified, checks),
+                         ([{"id": "word.home"}], [], ["s"], ["n"], [{"id": "word.u"}], [0]))
         # A parent-side ownership check that hangs is also bounded by the worker deadline.
         slow_launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
                                        "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
@@ -823,6 +849,36 @@ class CaptureIntegration(unittest.TestCase):
                     cu.publish({out_path: '[{"id": "word.ours"}]\n'}, link=link_then_editor_saves,
                                expected_bytes={out_path: orig_bytes})
                 self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.saved_after_link"}]\n')
+
+                # 4. A concurrent save arriving inside rename right before os.replace is refused without data loss.
+                orig_bytes2 = out_path.read_bytes()
+
+                def editor_saves_before_replace(src, dst):
+                    if Path(dst) == out_path:
+                        out_path.write_text('[{"id": "word.saved_in_rename_window"}]\n', encoding="utf-8")
+                    os.replace(src, dst)
+
+                with self.assertRaises(cu.Refused):
+                    cu.publish({out_path: '[{"id": "word.ours2"}]\n'}, rename=editor_saves_before_replace,
+                               expected_bytes={out_path: orig_bytes2})
+                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.saved_in_rename_window"}]\n')
+
+                # 5. Rollback of a newly created output does not delete concurrent edits made before a second file fails.
+                new_out = Path(tmp) / "fresh.json"
+                second_out = Path(tmp) / "sidecar.json"
+
+                def link_edits_first_then_fails_second(src, dst):
+                    if Path(dst) == new_out:
+                        os.link(src, dst)
+                        return
+                    new_out.write_text('[{"id": "word.annotated_by_operator"}]\n', encoding="utf-8")
+                    raise OSError("simulated failure on second output")
+
+                with self.assertRaises(OSError):
+                    cu.publish({new_out: '[{"id": "word.initial"}]\n', second_out: '[]\n'},
+                               link=link_edits_first_then_fails_second, create_only={new_out, second_out})
+                self.assertTrue(new_out.exists())
+                self.assertEqual(new_out.read_text(encoding="utf-8"), '[{"id": "word.annotated_by_operator"}]\n')
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

@@ -179,3 +179,52 @@ OVERALL: needs-attention
 4. **[P3] An empty unverified group is admitted to the main inventory**: fixed in `scripts/capture-ui.py` (`walk_tab`) by treating any group with `not any(ids)` (whose own `automation_id` is not in `ctx.identifiers`) as `unverified` even when `members` is empty; covered by `Round3.test_new_controls_in_verified_groups_carry_baseline_missing` in `scripts/tests/test_capture_ui.py`.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK) and `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK).
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T22:23:36Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: 1ec1976927a09c2f
+
+## adversarial: needs-attention
+
+1. **[P1] Merge can still overwrite a concurrent save.** `scripts/lib/office_com.py:149` checks destination bytes, then line 153 replaces the destination unconditionally. An editor saving between those operations loses its changes, and publication reports success. An in-memory probe injected that save immediately before replacement and confirmed the editor’s bytes were overwritten. Precondition: an ordinary concurrent save during `--merge`. Comparison and replacement need protection covering both operations.
+
+2. **[P1] Rollback deletes concurrent edits to newly created output.** `scripts/lib/office_com.py:165-167` unconditionally unlinks published paths without backups. Reproduce by publishing a previously absent inventory, saving an annotation into it, then failing publication of the unverified sidecar. Rollback deletes the annotated inventory. The in-memory probe confirmed the destination disappeared. Precondition: concurrent editing plus a second-file publication failure. Rollback must establish ownership of the current destination before deleting it.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. **[P2] Ownership checks use Office COM objects from an uninitialized thread.** `scripts/capture-ui.py:1010-1015` passes `launched.check_alone()` to a fresh Python thread, although its application and document proxies were created on the launching thread. There is neither COM initialization nor interface marshaling. Normal worker capture reaches this path before selecting a tab and can fail instead of capturing. A native `CoGetApartmentType` probe inside this exact callback returned `-2147221008`, “CoInitialize has not been called.” Keep COM operations in a correctly initialized owning apartment with a bounded process-level recovery mechanism.
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Findings **1 and 2 [P1]** violate the “Never lose work” requirement in `docs/product-principles.md:16`. Atomic replacement alone does not preserve concurrent work.
+
+## record: needs-attention
+
+4. **[P3] The ownership-check fix lacks evidence for its actual COM execution path.** `docs/reviews/02-interface/audit-d02-t01-s3.md:177` declares the threaded fix covered, but `scripts/tests/test_capture_ui.py:673-675` substitutes a Python callback, and lines 696-699 substitute `sleep`. Both pass despite finding 3. The latest disposition at line 181 supplies unit-suite results without a post-change live checkpoint. Add coverage exercising the COM apartment boundary and record the current candidate’s live result.
+
+Verification: 48 selected tests passed; three additional tests were blocked by the read-only environment’s temporary-directory restriction. In-memory publication probes reproduced findings 1 and 2. No files were modified; no live Office capture was run.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 4 disposition
+
+1. **[P1] Merge can still overwrite a concurrent save**: fixed in `scripts/lib/office_com.py` (`publish`) by wrapping `rename(staged[path], path)` for expected-bytes destinations in `guarded_replace`, which checks destination bytes immediately before replacement and, if a save occurred after backup creation, verifies the backup content or restores the saved bytes if `backup` and `path` shared the same link, raising `Refused` without overwriting the editor's save; covered by `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` (subtest 4) in `scripts/tests/test_capture_ui.py`.
+2. **[P1] Rollback deletes concurrent edits to newly created output**: fixed in `scripts/lib/office_com.py` (`publish`) by recording `placed_ino[path]` and checking during rollback of newly created files (`path not in aside`) that `os.stat(path).st_ino == placed_ino.get(path)` and `path.read_bytes() == files[path].encode("utf-8")` before unlinking, so concurrent edits to a newly created output survive a later failure; covered by `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` (subtest 5) in `scripts/tests/test_capture_ui.py`.
+3. **[P2] Ownership checks use Office COM objects from an uninitialized thread**: fixed in `scripts/capture-ui.py` (`_Apartment`, `Launched`, and `capture_in_worker`) by running a persistent single-threaded COM apartment thread (`ole32.CoInitialize(None)`) per `Launched` session so document creation, `open_documents`, `check_alone`, `language`, and `close` all execute inside the owning STA while `capture_in_worker` passes `timeout=remaining` to bound parent-side COM checks; covered by `Round3.test_replacement_document_and_close_reference_release` and `Worker.test_capture_in_worker_enforces_timeout_and_roundtrips_results` in `scripts/tests/test_capture_ui.py`.
+4. **[P3] The ownership-check fix lacks evidence for its actual COM execution path**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release` and `Worker.test_capture_in_worker_enforces_timeout_and_roundtrips_results`) by asserting `ole32.CoGetApartmentType` returns `0` (`S_OK`) and all COM callbacks execute on the same initialized STA thread, and by recording the post-change live Word Home capture checkpoint below.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

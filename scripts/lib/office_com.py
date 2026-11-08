@@ -123,7 +123,7 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
     write = write or (lambda path, data: path.write_bytes(data))
     no_overwrite = {Path(p) for p in create_only}
     expected = {Path(p): b for p, b in (expected_bytes or {}).items()}
-    staged, aside, placed = {}, {}, []
+    staged, aside, placed, placed_ino = {}, {}, [], {}
     try:
         for path, text in files.items():
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -139,7 +139,10 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                     link(staged[path], path)  # atomic no-overwrite creation
                 except FileExistsError:
                     raise Refused(f"{path} exists; pass --merge to update it") from None
+                staged[path].unlink()
+                del staged[path]
                 placed.append(path)
+                placed_ino[path] = os.stat(path).st_ino
                 continue
             if path in expected:
                 if not path.is_file():
@@ -149,10 +152,34 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                 if backup.read_bytes() != expected[path] or path.read_bytes() != expected[path]:
                     backup.unlink()
                     raise Refused(f"{path} changed while it was being written")
+                real_replace = os.replace
+
+                def guarded_replace(src, dst, _exp=expected[path], _bak=backup, _path=path):
+                    if Path(dst) == _path:
+                        if not _path.is_file() or _bak.read_bytes() != _exp or _path.read_bytes() != _exp \
+                                or os.stat(_path).st_ino != os.stat(_bak).st_ino:
+                            raise Refused(f"{_path} changed while it was being written")
+                    return real_replace(src, dst)
+
+                os.replace = guarded_replace
+                try:
+                    if rename is real_replace:
+                        guarded_replace(staged[path], path)
+                    else:
+                        rename(staged[path], path)
+                except BaseException:
+                    if backup.exists():
+                        backup.unlink()
+                    raise
+                finally:
+                    os.replace = real_replace
+                if backup.read_bytes() != expected[path]:
+                    real_replace(backup, path)
+                    raise Refused(f"{path} changed while it was being written")
                 aside[path] = backup
-                rename(staged[path], path)
                 del staged[path]
                 placed.append(path)
+                placed_ino[path] = os.stat(path).st_ino
                 continue
             if path.is_file():
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
@@ -161,16 +188,22 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
             rename(staged[path], path)
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)
+            if path.exists():
+                placed_ino[path] = os.stat(path).st_ino
     except BaseException:
         for path in placed:
-            if path not in aside:
-                path.unlink()
+            if path not in aside and path.is_file():
+                if os.stat(path).st_ino == placed_ino.get(path) and path.read_bytes() == files[path].encode("utf-8"):
+                    path.unlink()
         for path, old in aside.items():
-            if path in placed and (not path.exists() or path.read_bytes() == files[path].encode("utf-8")):
+            if path in placed and (
+                not path.exists()
+                or (os.stat(path).st_ino == placed_ino.get(path) and path.read_bytes() == files[path].encode("utf-8"))
+            ):
                 rename(old, path)
             elif not path.exists():
                 rename(old, path)
-            else:
+            elif old.exists():
                 old.unlink()
         raise
     finally:

@@ -487,6 +487,62 @@ def profile_problems(state, monitor, language, ribbon_height):
     return problems
 
 
+class _Apartment:
+    """A single-threaded COM apartment (STA) so every COM proxy is created, queried and closed on the same
+    CoInitialize-d thread while allowing the caller to bound any call with a timeout."""
+
+    def __init__(self):
+        import queue
+        import threading
+        self._q = queue.Queue()
+        self._ready = queue.Queue()
+        self.ident = None
+        self._closed = False
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+        self._ready.get()
+
+    def _loop(self):
+        import ctypes
+        import threading
+        ole32 = ctypes.windll.ole32
+        ole32.CoInitialize(None)
+        self.ident = threading.get_ident()
+        self._ready.put(True)
+        try:
+            while True:
+                item = self._q.get()
+                if item is None:
+                    break
+                fn, box = item
+                try:
+                    box.put(("ok", fn()))
+                except BaseException as exc:
+                    box.put(("err", exc))
+        finally:
+            ole32.CoUninitialize()
+
+    def call(self, fn, timeout=None):
+        import queue
+        import threading
+        if threading.get_ident() == self.ident:
+            return fn()
+        box = queue.Queue()
+        self._q.put((fn, box))
+        try:
+            kind, val = box.get(timeout=timeout)
+        except queue.Empty:
+            raise TimeoutError("COM apartment call timed out") from None
+        if kind == "err":
+            raise val
+        return val
+
+    def close(self):
+        if not self._closed:
+            self._closed = True
+            self._q.put(None)
+
+
 class Launched:
     """An app instance this tool started, with its top-level window and its process."""
 
@@ -496,7 +552,6 @@ class Launched:
         if key == "outlook":
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
-        import win32com.client
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
@@ -508,6 +563,16 @@ class Launched:
                 raise Unsafe("Project shows no window before a project exists, so ownership cannot be proven before "
                              "the tool creates one; its capture is built in D02 T01 §13")
             self.started = (starter or start_process)(exe)
+        self._apartment = _Apartment()
+        try:
+            self._apartment.call(lambda: self._init_com(progid, separate, dispatch, owner))
+        except BaseException:
+            self._apartment.close()
+            raise
+
+    def _init_com(self, progid, separate, dispatch, owner):
+        import win32com.client
+        exe = self.exe
         self.app = (dispatch or (win32com.client.DispatchEx if separate else win32com.client.Dispatch))(progid)
         if self.started is not None:
             proc = (owner or OwnProcess)(Win().top(self.window_handle()), exe)
@@ -533,6 +598,10 @@ class Launched:
         except Exception:
             self.close()
             raise
+
+    def _call_com(self, fn, timeout=None):
+        apt = getattr(self, "_apartment", None)
+        return apt.call(fn, timeout=timeout) if apt is not None else fn()
 
     @staticmethod
     def _doc_meta(doc):
@@ -561,11 +630,14 @@ class Launched:
                 "project": lambda: self.app.Projects}[self.key]()
 
     def open_documents(self):
-        return int(self.documents().Count)
+        return self._call_com(lambda: int(self.documents().Count))
 
-    def check_alone(self):
+    def check_alone(self, timeout=None):
         """The instance must still hold only the tool's own document: one the operator opened in a shared instance
         would be the one the ribbon acts on."""
+        return self._call_com(self._check_alone_impl, timeout=timeout)
+
+    def _check_alone_impl(self):
         count = self.open_documents()
         if count != len(self.created):
             raise Refused(f"the {self.exe} instance now holds {count} documents, not only the tool's own; stopping "
@@ -624,6 +696,9 @@ class Launched:
                 "project": lambda: self.app.ActiveWindow.Hwnd}[self.key]()
 
     def language(self):
+        return self._call_com(self._language_impl)
+
+    def _language_impl(self):
         try:
             return int(self.app.LanguageSettings.LanguageID(2))  # msoLanguageIDUI
         except Exception:  # an app without LanguageSettings: the profile check reports it
@@ -634,6 +709,18 @@ class Launched:
         holds nothing else; and confirm its process has exited."""
         if not self.owned:
             return
+        apt = getattr(self, "_apartment", None)
+        try:
+            return self._call_com(lambda: self._close_impl(wait), timeout=wait + 10.0 if apt is not None else None)
+        except TimeoutError:
+            if self.proc is not None:
+                self.proc.close()
+            raise Refused(f"the {self.exe} instance did not respond while closing") from None
+        finally:
+            if apt is not None:
+                apt.close()
+
+    def _close_impl(self, wait=60.0):
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         try:
             for doc in list(self.created):
@@ -960,88 +1047,89 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
     import subprocess
     import threading
     import types
-    spec = {"args": vars(args), "hwnd": int(launched.hwnd), "pid": int(launched.proc.pid),
-            "build": reported_build(launched.app), "language": launched.language()}
-    cmd = worker_cmd or [sys.executable, str(Path(__file__).resolve()), "--worker"]
-    child = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             text=True, encoding="utf-8")
-    q = queue.Queue()
-
-    def reader():
-        try:
-            for line in iter(child.stdout.readline, ""):
-                q.put(line)
-        finally:
-            q.put(None)
-
-    threading.Thread(target=reader, daemon=True).start()
     deadline = time.monotonic() + timeout
-
-    def timed_lines():
-        while True:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise Refused(f"the capture worker timed out after {timeout}s")
-            try:
-                line = q.get(timeout=min(remaining, 0.2))
-            except queue.Empty:
-                continue
-            if line is None:
-                return
-            yield line
-
-    err_lines = []
+    own_apt = getattr(launched, "_apartment", None)
+    apt = own_apt or _Apartment()
     try:
-        child.stdin.write(json.dumps(spec) + "\n")
-        child.stdin.flush()
+        try:
+            build_str, lang_id = apt.call(
+                lambda: (reported_build(launched.app), launched.language()),
+                timeout=max(0.01, deadline - time.monotonic()),
+            )
+        except TimeoutError:
+            raise Refused(f"the capture worker timed out after {timeout}s") from None
+        spec = {"args": vars(args), "hwnd": int(launched.hwnd), "pid": int(launched.proc.pid),
+                "build": build_str, "language": lang_id}
+        cmd = worker_cmd or [sys.executable, str(Path(__file__).resolve()), "--worker"]
+        child = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 text=True, encoding="utf-8")
+        q = queue.Queue()
 
-        def reply(text):
-            child.stdin.write(json.dumps({"answer": text}) + "\n")
+        def reader():
+            try:
+                for line in iter(child.stdout.readline, ""):
+                    q.put(line)
+            finally:
+                q.put(None)
+
+        threading.Thread(target=reader, daemon=True).start()
+
+        def timed_lines():
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise Refused(f"the capture worker timed out after {timeout}s")
+                try:
+                    line = q.get(timeout=min(remaining, 0.2))
+                except queue.Empty:
+                    continue
+                if line is None:
+                    return
+                yield line
+
+        err_lines = []
+        try:
+            child.stdin.write(json.dumps(spec) + "\n")
             child.stdin.flush()
 
-        def timed_check_alone( _self=None):
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise Refused(f"the capture worker timed out after {timeout}s")
-            box = queue.Queue()
+            def reply(text):
+                child.stdin.write(json.dumps({"answer": text}) + "\n")
+                child.stdin.flush()
 
-            def run_check():
+            def timed_check_alone(_self=None):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(f"the capture worker timed out after {timeout}s")
                 try:
-                    launched.check_alone()
-                    box.put(("ok", None))
-                except BaseException as exc:
-                    box.put(("err", exc))
+                    apt.call(launched.check_alone, timeout=remaining)
+                except TimeoutError:
+                    raise TimeoutError(f"the capture worker timed out after {timeout}s") from None
 
-            threading.Thread(target=run_check, daemon=True).start()
+            timed_launched = types.SimpleNamespace(check_alone=timed_check_alone)
             try:
-                kind, val = box.get(timeout=remaining)
-            except queue.Empty:
-                raise TimeoutError(f"the capture worker timed out after {timeout}s") from None
-            if kind == "err":
-                raise val
-
-        timed_launched = types.SimpleNamespace(check_alone=timed_check_alone)
-        try:
-            outcome = converse(timed_lines(), reply, timed_launched)
-        except TimeoutError as exc:
-            raise Refused(str(exc)) from None
-        remaining = max(0.0, deadline - time.monotonic())
-        try:
-            child.wait(timeout=min(60.0, remaining))
-        except subprocess.TimeoutExpired:
-            raise Refused(f"the capture worker timed out after {timeout}s") from None
-        if "refused" in outcome and child.stderr:
-            err_lines = child.stderr.read().strip().splitlines()[-1:]
+                outcome = converse(timed_lines(), reply, timed_launched)
+            except TimeoutError as exc:
+                raise Refused(str(exc)) from None
+            remaining = max(0.0, deadline - time.monotonic())
+            try:
+                child.wait(timeout=min(60.0, remaining))
+            except subprocess.TimeoutExpired:
+                raise Refused(f"the capture worker timed out after {timeout}s") from None
+            if "refused" in outcome and child.stderr:
+                err_lines = child.stderr.read().strip().splitlines()[-1:]
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait()
+            for pipe in (child.stdin, child.stdout, child.stderr):
+                if pipe is not None:
+                    try:
+                        pipe.close()
+                    except OSError:
+                        pass
     finally:
-        if child.poll() is None:
-            child.kill()
-            child.wait()
-        for pipe in (child.stdin, child.stdout, child.stderr):
-            if pipe is not None:
-                try:
-                    pipe.close()
-                except OSError:
-                    pass
+        if own_apt is None:
+            apt.close()
     if "unsafe" in outcome:
         raise Unsafe(outcome["unsafe"])
     if "refused" in outcome:
