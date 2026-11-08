@@ -393,15 +393,12 @@ class Pages:
         after it finish. A page that changed nothing is not progress unless a saved recovery is still open."""
         refresh = self.cp.get("refresh") or {}
         if refresh.get("rewind") is not None:
-            page = refresh["page"]
             while refresh["rewind"] is not None:
                 k = refresh["rewind"]
                 runs, _ = self.read(k)
                 read = [str(r["id"]) for r in runs]
-                if k == page - 1:
-                    refresh["next_ids"] = read
                 if set(read) & set(refresh["ids"]) or k == 1:
-                    refresh.update(ids=refresh["next_ids"], rewind=None, next_ids=[])
+                    refresh.update(ids=read, rewind=None, next_ids=[])
                 else:
                     refresh["rewind"] = k - 1
                 self.cp["progress"] += 1
@@ -418,21 +415,20 @@ class Pages:
                 self.cp["refresh"] = {"page": target, "ids": ids, "rewind": page - 1, "next_ids": []}
                 self.cp["progress"] += 1
                 self.save(self.cp)
+                k = page
                 while self.cp["refresh"]["rewind"] is not None:
                     k = self.cp["refresh"]["rewind"]
                     rruns, rchanged = self.read(k)
                     any_changed = any_changed or rchanged
                     read = [str(r["id"]) for r in rruns]
-                    if k == page - 1:
-                        self.cp["refresh"]["next_ids"] = read
                     if set(read) & set(self.cp["refresh"]["ids"]) or k == 1:
-                        self.cp["refresh"].update(ids=self.cp["refresh"]["next_ids"], rewind=None, next_ids=[])
+                        self.cp["refresh"].update(ids=read, rewind=None, next_ids=[])
                     else:
                         self.cp["refresh"]["rewind"] = k - 1
                     self.cp["progress"] += 1
                     self.save(self.cp)
                 ids = self.cp["refresh"]["ids"]
-                page -= 1  # read this page again after the pages before it
+                page = k  # resume forward from the page after k, checking every boundary on the way back up
                 continue
             ids = [str(r["id"]) for r in runs]
             if self.cp.get("refresh") is not None and page >= self.cp["refresh"]["page"] and any_changed:
@@ -487,10 +483,9 @@ class Pages:
                 k = scan["rewind"]
                 runs, _ = self.read(k)
                 read = [str(r["id"]) for r in runs]
-                if k == page - 1:  # the boundary is checked again against this page, as read now
-                    scan["next_ids"] = read
                 if set(read) & set(scan["ids"]) or k == 1:
-                    scan.update(ids=scan["next_ids"], rewind=None, next_ids=[])
+                    scan.update(ids=read, rewind=None, next_ids=[])
+                    self.cp["next_page"] = k + 1  # walk forward from k + 1, checking each boundary on the way back up
                 else:
                     scan["rewind"] = k - 1
             else:

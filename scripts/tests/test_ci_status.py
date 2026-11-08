@@ -1395,6 +1395,23 @@ class Deleted(Pending):
         self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
         self.assertIsNone(self.checkpoint().get("refresh"))
 
+    def test_a_run_created_during_backward_recovery_does_not_skip_a_surviving_run(self):
+        heads, repo = self.heads(500, {sha(251)})  # sha(251) is at initial position 250
+
+        def delete_150():  # after page 2's boundary check, delete runs 500..351 (positions 1..150)
+            for n in range(351, 501):
+                del repo.runs[sha(n)]
+
+        def create_during_rewind():  # after rewind reads page 2, create one new run before rewind reads page 1
+            if repo.pages_read.count("repos/o/r/actions/workflows/ci.yml/runs?per_page=100&page=2") == 2:
+                repo.extra_runs.append({"id": 99999, "status": "completed", "conclusion": "success",
+                                        "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4000),
+                                        "event": "pull_request", "head_branch": "feature"})
+        repo.after_page[100] = delete_150
+        repo.after_page[2] = create_during_rewind
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(251)[:7]]))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))
