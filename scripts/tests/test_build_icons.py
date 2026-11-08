@@ -913,7 +913,7 @@ class DistinctnessReview(unittest.TestCase):
                 problems.append(f"sign-off missing dimensions/bytes/sha256 for {sheet_name}")
         root = SCRIPTS.parent
         for rel in self.GENERATORS:
-            digest = hashlib.sha256((root / rel).read_bytes()).hexdigest()
+            digest = hashlib.sha256((root / rel).read_text(encoding="utf-8").encode("utf-8")).hexdigest()
             if f"`{rel}`: `{digest}`" not in signoff:
                 problems.append(f"sign-off missing current digest for {rel}")
         if review_text is None:
