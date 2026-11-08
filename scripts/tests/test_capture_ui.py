@@ -182,9 +182,12 @@ class Merge(unittest.TestCase):
         new = [{"id": "word.v.g.x", "parent": "word.v.g", "uiaId": "Second", "label": "X"},
                {"id": "word.v.g.x.item", "parent": "word.v.g.x", "label": "Item"},
                {"id": "word.v.g.x-2", "parent": "word.v.g", "uiaId": "First", "label": "X"}]
-        out = {r["id"]: r for r in cu.merge(old, new)}
+        unverified = [{"id": "word.v.g.addin", "parent": "word.v.g.x", "label": "Addin", "baselineMissing": True},
+                      {"id": "word.v.g.addin.btn", "parent": "word.v.g.addin", "label": "Btn", "baselineMissing": True}]
+        out = {r["id"]: r for r in cu.merge(old, new, unverified)}
         item = next(r for r in out.values() if r["label"] == "Item")
         self.assertEqual(item["parent"], "word.v.g.x-2")  # Second keeps its own id, and its new item hangs under it
+        self.assertEqual(unverified[0]["parent"], "word.v.g.x-2")  # Sidecar parent is remapped to the retained ID
         self.assertEqual(out["word.v.g.x"]["behaviour"], "About First.")
 
     def test_a_new_control_on_a_taken_id_is_kept_under_its_own(self):
@@ -496,6 +499,10 @@ class Writes(unittest.TestCase):
                 events.append(("MoveFileTransactedW", src, dst, flags, tx))
                 return 1
 
+            def DeleteFileTransactedW(self, dst, tx):
+                events.append(("DeleteFileTransactedW", dst, tx))
+                return 1
+
             def CloseHandle(self, h):
                 events.append(("CloseHandle", h))
                 return 1
@@ -525,6 +532,53 @@ class Writes(unittest.TestCase):
                 open_osf=lambda h, mode: 303,
                 fdopen=lambda fd, mode: io.BytesIO(b"modified_by_editor"),
             )
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("RollbackTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+        # Transacted rollback unlink and restore also enlist in KTM before comparing and roll back on mismatch.
+        events.clear()
+        self.assertTrue(cu.transacted_unlink(
+            Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"expected"),
+        ))
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("DeleteFileTransactedW", "out.json", 101),
+            ("CommitTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+        events.clear()
+        self.assertFalse(cu.transacted_unlink(
+            Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"edited_after_place"),
+        ))
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("RollbackTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+        events.clear()
+        self.assertTrue(cu.transacted_restore(
+            Path("out.old"), Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"expected"),
+        ))
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("MoveFileTransactedW", "out.old", "out.json", 1, 101),
+            ("CommitTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+        events.clear()
+        self.assertFalse(cu.transacted_restore(
+            Path("out.old"), Path("out.json"), b"expected", ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"edited_after_place"),
+        ))
         self.assertEqual(events, [
             "CreateTransaction",
             ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
@@ -719,15 +773,45 @@ class Round3(unittest.TestCase):
         q_launched.proc.exited = lambda seconds: (alive_during_wait.append(doc_ref() is not None) or True)
         q_launched.close()
         self.assertEqual(alive_during_wait, [False])
-        # Verify blocked COM initialization is bounded by init_timeout and cleans up the apartment.
+        # Verify blocked COM initialization is bounded by init_timeout and cleans up the apartment and instance.
         import time
         unblock = threading.Event()
-        t0 = time.monotonic()
-        with self.assertRaises(cu.Refused) as err:
-            cu.Launched("word", dispatch=lambda p: (unblock.wait(2.0), FakeApp(0))[1], init_timeout=0.05)
-        unblock.set()
-        self.assertLess(time.monotonic() - t0, 1.0)
-        self.assertIn("did not finish starting", str(err.exception))
+        late_app = FakeApp(0)
+        created_apt = []
+        orig_apt_init = cu._Apartment.__init__
+
+        def track_apt(apt_self):
+            orig_apt_init(apt_self)
+            created_apt.append(apt_self)
+
+        cu._Apartment.__init__ = track_apt
+        try:
+            t0 = time.monotonic()
+            with self.assertRaises(cu.Refused) as err:
+                cu.Launched("word", dispatch=lambda p: (unblock.wait(2.0), late_app)[1], init_timeout=0.05)
+            elapsed = time.monotonic() - t0
+            unblock.set()
+            created_apt[-1]._thread.join(timeout=1.0)
+            self.assertFalse(created_apt[-1]._thread.is_alive())
+            self.assertLess(elapsed, 1.0)
+            self.assertIn("did not finish starting", str(err.exception))
+            self.assertEqual(len(late_app.made), 0)
+            self.assertTrue(late_app.quit)
+            # Also verify if Documents.Add() blocks past init_timeout, the late document is closed and app quits.
+            unblock_add = threading.Event()
+            late_doc_app = FakeApp(0)
+            orig_doc_add = late_doc_app.Documents.Add
+            late_doc_app.Documents.Add = lambda: (unblock_add.wait(2.0), orig_doc_add())[1]
+            with self.assertRaises(cu.Refused):
+                cu.Launched("word", dispatch=lambda p: late_doc_app, init_timeout=0.05)
+            unblock_add.set()
+            created_apt[-1]._thread.join(timeout=1.0)
+            self.assertFalse(created_apt[-1]._thread.is_alive())
+            self.assertEqual(len(late_doc_app.made), 1)
+            self.assertTrue(late_doc_app.made[0].closed)
+            self.assertTrue(late_doc_app.quit)
+        finally:
+            cu._Apartment.__init__ = orig_apt_init
 
 
 class Worker(unittest.TestCase):

@@ -113,10 +113,7 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None,
-                       fdopen=None):
-    """Verify dst still holds expected_bytes, hard-link dst to backup, and replace dst with src inside a single
-    Windows KTM kernel transaction so no concurrent atomic save or write can interleave between check and replace."""
+def _ktm_apis(ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
     import ctypes
     from ctypes import wintypes
     import msvcrt
@@ -149,12 +146,20 @@ def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw3
             wintypes.DWORD, wintypes.HANDLE,
         ]
         kernel32.MoveFileTransactedW.restype = wintypes.BOOL
+        kernel32.DeleteFileTransactedW.argtypes = [wintypes.LPCWSTR, wintypes.HANDLE]
+        kernel32.DeleteFileTransactedW.restype = wintypes.BOOL
         kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
         kernel32.CloseHandle.restype = wintypes.BOOL
-    open_osf = open_osf or msvcrt.open_osfhandle
-    fdopen = fdopen or os.fdopen
+    return ktmw32, kernel32, open_osf or msvcrt.open_osfhandle, fdopen or os.fdopen, wintypes.HANDLE(-1).value
 
-    invalid = wintypes.HANDLE(-1).value
+
+def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None,
+                       fdopen=None):
+    """Verify dst still holds expected_bytes, hard-link dst to backup, and replace dst with src inside a single
+    Windows KTM kernel transaction so no concurrent atomic save or write can interleave between check and replace."""
+    import ctypes
+
+    ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
     tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
     if tx == invalid or not tx:
         raise OSError(ctypes.get_last_error(), "CreateTransaction failed")
@@ -190,6 +195,86 @@ def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw3
         kernel32.CloseHandle(tx)
 
 
+def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
+    """Delete dst inside a Windows KTM kernel transaction only if dst still holds expected_bytes, so a concurrent
+    save or edit to a newly created output is never deleted during rollback."""
+    ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
+    tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
+    if tx == invalid or not tx:
+        return False
+    committed = False
+    try:
+        h = kernel32.CreateFileTransactedW(
+            str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None, tx, None, None
+        )
+        if h == invalid or not h:
+            return False
+        fd = open_osf(h, os.O_RDONLY)
+        with fdopen(fd, "rb") as f:
+            actual = f.read()
+        if actual != expected_bytes:
+            return False
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        if not kernel32.DeleteFileTransactedW(str(dst), tx):
+            return False
+        if not ktmw32.CommitTransaction(tx):
+            return False
+        committed = True
+        return True
+    finally:
+        if not committed:
+            ktmw32.RollbackTransaction(tx)
+        kernel32.CloseHandle(tx)
+
+
+def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=None, ktmw32=None, kernel32=None,
+                       open_osf=None, fdopen=None):
+    """Restore backup to dst inside a Windows KTM kernel transaction only if dst is missing or still holds
+    expected_bytes (when placed_ok is True); otherwise leave the concurrent save at dst untouched and unlink backup."""
+    import ctypes
+
+    ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
+    tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
+    if tx == invalid or not tx:
+        return False
+    committed = False
+    try:
+        h = kernel32.CreateFileTransactedW(
+            str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None, tx, None, None
+        )
+        if h == invalid or not h:
+            err = ctypes.get_last_error()
+            if err in (2, 3):  # dst is missing; restore backup without overwrite flag (0)
+                if kernel32.MoveFileTransactedW(str(backup), str(dst), None, None, 0, tx):
+                    if ktmw32.CommitTransaction(tx):
+                        committed = True
+                        return True
+            return False
+        fd = open_osf(h, os.O_RDONLY)
+        with fdopen(fd, "rb") as f:
+            actual = f.read()
+        if not placed_ok or actual != expected_bytes:
+            return False
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        if not kernel32.MoveFileTransactedW(str(backup), str(dst), None, None, 1, tx):
+            return False
+        if not ktmw32.CommitTransaction(tx):
+            return False
+        committed = True
+        return True
+    finally:
+        if not committed:
+            ktmw32.RollbackTransaction(tx)
+        kernel32.CloseHandle(tx)
+        if not committed and Path(backup).exists():
+            try:
+                Path(backup).unlink()
+            except OSError:
+                pass
+
+
 def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), expected_bytes=None, on_enlisted=None):
     """Write every file or none, as far as a running process can promise. All new content is written to temporary
     files first, so a full disk fails before anything changes. Each original is then kept as a hard link (no data
@@ -200,7 +285,7 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
     write = write or (lambda path, data: path.write_bytes(data))
     no_overwrite = {Path(p) for p in create_only}
     expected = {Path(p): b for p, b in (expected_bytes or {}).items()}
-    staged, aside, placed, placed_ino = {}, {}, [], {}
+    staged, aside, placed = {}, {}, []
     try:
         for path, text in files.items():
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -219,7 +304,6 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                 staged[path].unlink()
                 del staged[path]
                 placed.append(path)
-                placed_ino[path] = os.stat(path).st_ino
                 continue
             if path in expected:
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
@@ -227,7 +311,6 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                 aside[path] = backup
                 del staged[path]
                 placed.append(path)
-                placed_ino[path] = os.stat(path).st_ino
                 continue
             if path.is_file():
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
@@ -236,23 +319,12 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
             rename(staged[path], path)
             del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)
-            if path.exists():
-                placed_ino[path] = os.stat(path).st_ino
     except BaseException:
         for path in placed:
-            if path not in aside and path.is_file():
-                if os.stat(path).st_ino == placed_ino.get(path) and path.read_bytes() == files[path].encode("utf-8"):
-                    path.unlink()
+            if path not in aside:
+                transacted_unlink(path, files[path].encode("utf-8"))
         for path, old in aside.items():
-            if path in placed and (
-                not path.exists()
-                or (os.stat(path).st_ino == placed_ino.get(path) and path.read_bytes() == files[path].encode("utf-8"))
-            ):
-                rename(old, path)
-            elif not path.exists():
-                rename(old, path)
-            elif old.exists():
-                old.unlink()
+            transacted_restore(old, path, files[path].encode("utf-8"), placed_ok=(path in placed))
         raise
     finally:
         for tmp in staged.values():

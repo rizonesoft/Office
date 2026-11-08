@@ -274,3 +274,52 @@ OVERALL: needs-attention
 3. **[P3] The concurrency regression test does not establish the claimed fix**: fixed in `scripts/tests/test_capture_ui.py` (`CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` subtests 3 and 4 and `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch`) by attempting an atomic `os.replace(editor_tmp, enlisted_dst)` and an in-place write inside `on_enlisted` (after `transacted_replace` has read and verified the destination bytes and before `MoveFileTransactedW`), confirming the kernel blocks the concurrent atomic save with `WinError 6800` and preserves `editor_tmp`.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 6: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T22:52:24Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: f2e445812a1a018a
+
+## adversarial: needs-attention
+
+1. **[P1] Rollback can still destroy a concurrent save.** `scripts/lib/office_com.py:249-251` compares the destination’s inode and bytes, then restores the backup using an unprotected rename. Reproduce by publishing the inventory, failing publication of its sidecar, and atomically saving an annotation after rollback’s comparison but before its rename. Recovery overwrites the annotation with the original inventory. An in-memory filesystem probe reproduced this loss. The new transaction protects forward replacement, but ends before rollback. The deletion at lines 244-245 has the equivalent race. Precondition: an ordinary concurrent save during recovery from a publication failure.
+
+2. **[P2] Launch timeout does not cancel initialization or recover a partially launched instance.** `scripts/capture-ui.py:580-593` queues apartment shutdown and clears references, but the running `_init_com` call continues. If activation or `Documents.Add()` stalls before line 617 assigns `hwnd`, recovery cannot even post its close message. Releasing a blocked dispatch after the timeout reproduced creation of a document after refusal, followed by apartment exit with `quit=False`. Precondition: slow or temporarily unresponsive Office startup. Initialization needs cancellation-aware cleanup on its owning apartment, including recovery when no window handle has yet been recorded.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. **[P2] Merge leaves sidecar records pointing to discarded parent IDs.** `scripts/capture-ui.py:1238-1241` remaps identities only in the main records, then publishes `ctx.unverified` unchanged. Reproduce with an existing Home tab whose retained ID is `word.home-reviewed` and whose `uiaId` is `TabHome`, then capture Home with an unverified add-in group. Merge retains `word.home-reviewed`, but the sidecar group still references `word.home`, which exists in neither output. An in-memory `main()` probe returned success with this dangling reference. Precondition: an existing tab ID differs from the fresh capture’s generated ID. Apply the same identity mapping to both outputs.
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P1]** violates the “Never lose work” requirement at `docs/product-principles.md:15`: recovery itself can discard annotations.
+
+## record: needs-attention
+
+4. **[P3] The startup regression test does not establish cleanup.** `scripts/tests/test_capture_ui.py:722-730` claims to verify apartment cleanup, but asserts only elapsed time and refusal text. It releases the blocked dispatch without joining the apartment or checking whether initialization subsequently creates documents or quits Office. It passes despite finding 2, so the recovery coverage cited at `docs/reviews/02-interface/audit-d02-t01-s3.md:273` is incomplete.
+
+Verification: 49 selected tests passed. Sixteen tests requiring filesystem writes were excluded under the read-only restriction. Three additional in-memory probes reproduced the findings above. No files were modified; no live Office capture was run.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 6 disposition
+
+1. **[P1] Rollback can still destroy a concurrent save**: fixed in `scripts/lib/office_com.py` (`transacted_unlink`, `transacted_restore`, and `publish`) by executing rollback deletion of newly created outputs and rollback restoration of replaced outputs inside Windows KTM kernel transactions (`CreateTransaction`, `CreateFileTransactedW` with `GENERIC_READ | DELETE` and `FILE_SHARE_READ`, `DeleteFileTransactedW` / `MoveFileTransactedW`, and `CommitTransaction` / `RollbackTransaction`), so the destination is kernel-locked before its bytes are verified and rolled back only if its bytes still match what `publish` wrote; covered by `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` and `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] Launch timeout does not cancel initialization or recover a partially launched instance**: fixed in `scripts/capture-ui.py` (`Launched.__init__`, `Launched._recover_hung_launch`, and `Launched._init_com`) by setting `self._cancelled = True` on launch timeout while keeping apartment state intact until the apartment thread finishes, checking `self._cancelled` at each step after `self.owned = True` inside `_init_com`, and running `self.close()` in `except BaseException:` on the owning apartment thread so a delayed dispatch or `Documents.Add()` closes any created document, quits an owned empty instance, and exits the apartment cleanly; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+3. **[P2] Merge leaves sidecar records pointing to discarded parent IDs**: fixed in `scripts/capture-ui.py` (`merge` and `main`) by passing `ctx.unverified` into `merge` and remapping each sidecar record's `parent` through `mapping` so unverified groups and controls follow retained parent tab IDs; covered by `Merge.test_children_follow_their_parent_through_a_remapped_id` in `scripts/tests/test_capture_ui.py`.
+4. **[P3] The startup regression test does not establish cleanup**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by joining the apartment thread after releasing both a blocked `dispatch` and a blocked `Documents.Add()`, asserting `_thread.is_alive()` is `False`, no unclosed documents remain, and `quit` is `True`.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

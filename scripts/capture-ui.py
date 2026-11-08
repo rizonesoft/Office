@@ -38,7 +38,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
-                        same_build, transacted_replace)
+                        same_build, transacted_replace, transacted_restore, transacted_unlink)
 
 PROFILE = "fhd-100"
 PROFILE_SIZE, PROFILE_DPI, UI_LANGUAGE = (1920, 1080), 96, 1033  # en-US
@@ -222,7 +222,7 @@ def expand_items(control_rec, element, popup_items, ctx):
     return out
 
 
-def merge(existing, captured):
+def merge(existing, captured, unverified=None):
     """Captured records refresh `bounds`, `order` and the profile they were taken under; every other field of an
     existing record (behaviour, source and anything written by hand) is kept, and records not captured stay."""
     refreshed = ("bounds", "order", "captureProfile", "size", "capturedFrom")
@@ -257,6 +257,11 @@ def merge(existing, captured):
             rid = f"{new['id']}-{n}"
         mapping[new["id"]] = rid
         out_by_id[rid] = dict(new, id=rid, **({"parent": parent} if parent else {}))
+    if unverified:
+        for u in unverified:
+            if u.get("parent") in mapping:
+                u["parent"] = mapping[u["parent"]]
+                mapping[u["id"]] = u["id"]
     out = [out_by_id.get(r["id"], r) for r in existing]
     out += [r for rid, r in out_by_id.items() if rid not in keep]
     return out
@@ -553,7 +558,7 @@ class Launched:
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
-        self.app, self.hwnd = None, None
+        self.app, self.hwnd, self._cancelled = None, None, False
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
             # very process. An instance the operator opened in between (empty or not) is never touched.
@@ -578,6 +583,7 @@ class Launched:
             raise
 
     def _recover_hung_launch(self):
+        self._cancelled = True
         self._apartment.close()
         if self.owned and getattr(self, "hwnd", None):
             try:
@@ -585,12 +591,6 @@ class Launched:
                 ctypes.windll.user32.PostMessageW(self.hwnd, 0x0010, 0, 0)  # WM_CLOSE
             except Exception:
                 pass
-        if self.proc is not None:
-            try:
-                self.proc.close()
-            except Exception:
-                pass
-        self.created, self._created_meta, self.app = [], [], None
 
     def _init_com(self, progid, separate, dispatch, owner):
         import win32com.client
@@ -609,15 +609,23 @@ class Launched:
             raise Unsafe(f"{exe} already holds documents, so it is not an instance this tool started")
         self.owned = True
         try:
+            if getattr(self, "_cancelled", False):
+                raise Refused(f"{exe} startup was cancelled after timeout")
             self.app.Visible = True
+            if getattr(self, "_cancelled", False):
+                raise Refused(f"{exe} startup was cancelled after timeout")
             doc = self.new_document()
             self.created.append(doc)
             self._created_meta.append(self._doc_meta(doc))
             doc = None
+            if getattr(self, "_cancelled", False):
+                raise Refused(f"{exe} startup was cancelled after timeout")
             self.hwnd = Win().top(self.window_handle())
             if self.proc is None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
-        except Exception:
+            if getattr(self, "_cancelled", False):
+                raise Refused(f"{exe} startup was cancelled after timeout")
+        except BaseException:
             self.close()
             raise
 
@@ -1235,7 +1243,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             if current_bytes != initial_bytes:
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
-                records = merge(json.loads(current_bytes.decode("utf-8")), records)
+                records = merge(json.loads(current_bytes.decode("utf-8")), records, ctx.unverified)
         files = {out: render(records)}
         if ctx.unverified:
             files[UNVERIFIED / f"{args.app}-unverified.json"] = render(ctx.unverified)
