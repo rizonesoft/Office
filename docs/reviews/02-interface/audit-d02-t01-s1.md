@@ -1,6 +1,6 @@
 # Audit findings: D02 T01 §1 Inventory Schema and Checker
 
-Audit stance under the current review process (D02 T01 §23). Candidate: the stamped implementation `602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c` and every later change to the files it owns, up to `b481dd446f9ffb9c67006ece19b25503e191ea73`: `scripts/check-inventory.py`, `scripts/tests/test_check_inventory.py`, `design/inventory/schema.json`.
+Audit stance under the current review process (D02 T01 §23). Candidate: the stamped implementation `602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c` and every later change to the files it owns, up to `315ea601c2f1b5a5d6043dbcf8556ba1b428bb8a`: `scripts/check-inventory.py`, `scripts/tests/test_check_inventory.py`, `design/inventory/schema.json`.
 
 ## Checkpoint at the audit's start
 
