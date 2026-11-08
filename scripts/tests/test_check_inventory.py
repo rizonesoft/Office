@@ -361,9 +361,11 @@ class Inventory(unittest.TestCase):
                      "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM", "ATTACKER.ID", "SERVER.ID",
                      "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO-REGISTER.ID", "1-REGISTER.ID", "a-b.STDEV.S",
                      "Visit FOO-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(help desk)", "Visit 1-REGISTER.ID(1,2)",
-                     "Visit (1-REGISTER.ID(1,2))", "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
+                     "Visit (1-REGISTER.ID(1,2))", "Visit  (1-REGISTER.ID(1,2))", "Visit [1-REGISTER.ID(1,2)]",
+                     "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
-                     "http:B2", "FTP:X", "See (FTP:X)", "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
+                     "http:B2", "FTP:X", "See (FTP:X)", "See [ (FTP:X)]", "See (FTP:FTP)", "See (A:A,FTP:FTP)",
+                     "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
@@ -373,9 +375,10 @@ class Inventory(unittest.TestCase):
                      "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)", "=1-STDEV.S(1,2)", "=-NORM.S.DIST(0,TRUE)",
                      "=10-STDEV.S(1,2)", "=A10-STDEV.S(1,2)", "=A100000-STDEV.S(1,2)", "=XFD1048576-STDEV.S(1,2)",
                      "=1-STDEV.S(1, 2)", "=1-STDEV.S(SUM(A1:A2),2)", "=1-STDEV.S(SUM(SUM(A1:A2)),2)",
+                     "=1-STDEV.S(SUM(SUM(SUM(SUM(A1:A2)))),2)", "=1-STDEV.S(Sheet1!A1:A2)", "=1-STDEV.S(A1:A2,3%)",
                      "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
-                     "=SUM(FTP:FTP)", "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)", "=SUM(SUM(FTP:FTP))",
-                     "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)"):
+                     "=SUM(FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)", "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)",
+                     "=SUM(SUM(FTP:FTP))", "=SUM(SMB:SMB)", "=SUM(Sheet1!FTP:FTP)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
         schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
