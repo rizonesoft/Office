@@ -385,6 +385,8 @@ class Pages:
         if anchor in {str(r["id"]) for r in runs}:
             return True
         page_total = self.cp["total"]
+        if not runs and anchor_total == PER_PAGE * (page - 1) and page_total == anchor_total:
+            return True
         if self.at(PER_PAGE * (page - 1)) != anchor:
             return False
         if (self.probe_total is not None and page_total is not None and self.probe_total > page_total) \
@@ -521,7 +523,9 @@ class Pages:
                     self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
             self.cp["progress"] += 1
             self.save(self.cp)
-        if len(self.cp["runs"]) < self.cp["total"]:
+        if len(self.cp["runs"]) < self.cp["total"] or (
+                self.cp["total"] and any(p > 1 for p in self.pages)
+                and ((top := self.at(1)) not in self.cp["runs"] or len(self.cp["runs"]) < (self.probe_total or 0))):
             self.newest()
         if len(self.cp["runs"]) < self.cp["total"]:
             raise Unknown(f"gh api returned {len(self.cp['runs'])} of {self.cp['total']} runs, so the history may be "

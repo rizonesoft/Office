@@ -1447,6 +1447,20 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
 
+    def test_a_deletion_on_page_one_and_a_new_push_run_at_the_front_still_refreshes_the_prefix(self):
+        heads, repo = self.heads(300, set())
+        delayed = sha(301)  # an unrecorded commit already on main whose push run appears after page 1 is read
+        repo.history = [heads[-1], delayed, *repo.history[1:]]
+
+        def delete_and_create():  # delete one run on page 1 and create the delayed commit's failed run at the front
+            del repo.runs[sha(250)]
+            repo.extra_runs.append({"id": int(delayed[:7], 16), "status": "completed", "conclusion": "failure",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": delayed, "event": "push",
+                                    "head_branch": "main"})
+        repo.after_page[1] = delete_and_create
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [delayed[:7]]))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))
