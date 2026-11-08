@@ -221,6 +221,8 @@ One command turns the SVG masters into every platform format, so icons are never
 
 ## 7. Distinctness Review and Owner Sign-Off
 
+> **Started:** 2026-11-08T10:54:00Z
+
 The family is compared side by side with Microsoft's current app and file icons so the owner can confirm nothing could be mistaken for Microsoft's. **Groomed 2026-10-23:** the owner delegated the sign-off to the pinned independent reviewer, recorded with its evidence for the owner to audit later (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 3); the `owner-decision` Need is removed. The comparison sheet is built in `R:\scratch` and never committed, because it contains Microsoft artwork.
 
 **Phase:** 1
