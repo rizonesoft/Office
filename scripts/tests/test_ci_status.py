@@ -1418,11 +1418,11 @@ class Deleted(Pending):
         def delete_first():  # after page 1, delete run 300 so run 200 moves to position 100
             del repo.runs[sha(300)]
 
-        def create_before_probe():  # after page 2 (which skipped run 200), create a new run so 201 returns to pos 100
+        def create_before_probe():  # after page 2 (which skipped run 200), create a new run and delete run 150
             repo.extra_runs.append({"id": 99998, "status": "completed", "conclusion": "success",
                                     "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4001),
                                     "event": "pull_request", "head_branch": "feature"})
-            repo.after_page[100] = lambda: repo.runs.pop(sha(299))  # delete another read run after the probe
+            del repo.runs[sha(150)]  # offsetting deletion below the boundary before the probe
         repo.after_page[1] = delete_first
         repo.after_page[2] = create_before_probe
         code, out = self.pending(repo)

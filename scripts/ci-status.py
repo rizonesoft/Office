@@ -364,6 +364,7 @@ class Pages:
         self.now, self.pages, self.last = set(), set(), None  # run ids and page numbers read in this try; last page
         self.gone = set()  # held runs GitHub reported deleted in this try
         self.probe_total = None  # total_count from the last boundary probe
+        self.prev_total = cp.get("total")  # total_count before the most recent page read
 
     def at(self, position):
         """The id of the run at a 1-based position of the newest-first list, or None past its end."""
@@ -374,21 +375,24 @@ class Pages:
     def continuous(self, page, runs, anchor):
         """Whether `runs`, just read as `page`, follow on from `anchor`, the last run of the page before as it was
         read (D00 T03 §23). They do when the page still holds the anchor (runs created since pushed it down, so
-        nothing was skipped), or when the anchor still sits at the last position of the page before and the workflow's
-        `total_count` did not grow between reading `page` and reading that boundary position (a creation after a
-        deletion that pushed the anchor back into place increases `total_count` between the two reads). Otherwise runs
+        nothing was skipped), or when the anchor still sits at the last position of the page before and `total_count`
+        neither dropped before reading `page` nor grew between reading `page` and reading that boundary position (a
+        deletion above the boundary followed by a creation before the probe drops `total_count` on `page`'s read even
+        if a second deletion below the boundary cancels the creation's count increase on the probe). Otherwise runs
         above the boundary were deleted, the list moved up, and the runs that crossed the boundary were never read."""
         if anchor in {str(r["id"]) for r in runs}:
             return True
         page_total = self.cp["total"]
         if self.at(PER_PAGE * (page - 1)) != anchor:
             return False
-        if self.probe_total is not None and page_total is not None and self.probe_total > page_total:
+        if (self.probe_total is not None and page_total is not None and self.probe_total > page_total) \
+                or (self.prev_total is not None and page_total is not None and page_total < self.prev_total):
             self.cp["total"] = self.probe_total
             return False
         return True
 
     def read(self, page):
+        self.prev_total = self.cp["total"]
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
         changed = keep(self.cp, runs)
         self.now |= {str(r["id"]) for r in runs}
