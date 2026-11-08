@@ -113,7 +113,84 @@ def write_atomic(path, text):
         raise OSError(f"{path}: read-back differs from what was written")
 
 
-def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), expected_bytes=None):
+def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None,
+                       fdopen=None):
+    """Verify dst still holds expected_bytes, hard-link dst to backup, and replace dst with src inside a single
+    Windows KTM kernel transaction so no concurrent atomic save or write can interleave between check and replace."""
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+
+    if ktmw32 is None:
+        ktmw32 = ctypes.WinDLL("ktmw32", use_last_error=True)
+        ktmw32.CreateTransaction.argtypes = [
+            wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD,
+            wintypes.DWORD, wintypes.DWORD, wintypes.LPCWSTR,
+        ]
+        ktmw32.CreateTransaction.restype = wintypes.HANDLE
+        ktmw32.CommitTransaction.argtypes = [wintypes.HANDLE]
+        ktmw32.CommitTransaction.restype = wintypes.BOOL
+        ktmw32.RollbackTransaction.argtypes = [wintypes.HANDLE]
+        ktmw32.RollbackTransaction.restype = wintypes.BOOL
+    if kernel32 is None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateFileTransactedW.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE, wintypes.HANDLE,
+            wintypes.PUSHORT, wintypes.LPVOID,
+        ]
+        kernel32.CreateFileTransactedW.restype = wintypes.HANDLE
+        kernel32.CreateHardLinkTransactedW.argtypes = [
+            wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.LPVOID, wintypes.HANDLE,
+        ]
+        kernel32.CreateHardLinkTransactedW.restype = wintypes.BOOL
+        kernel32.MoveFileTransactedW.argtypes = [
+            wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.LPVOID, wintypes.LPVOID,
+            wintypes.DWORD, wintypes.HANDLE,
+        ]
+        kernel32.MoveFileTransactedW.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+    open_osf = open_osf or msvcrt.open_osfhandle
+    fdopen = fdopen or os.fdopen
+
+    invalid = wintypes.HANDLE(-1).value
+    tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
+    if tx == invalid or not tx:
+        raise OSError(ctypes.get_last_error(), "CreateTransaction failed")
+    committed = False
+    try:
+        # Enlist dst in the transaction with GENERIC_READ | DELETE and FILE_SHARE_READ only, blocking any
+        # concurrent non-transacted write or atomic replace (WinError 6800 ERROR_TRANSACTIONAL_CONFLICT).
+        h = kernel32.CreateFileTransactedW(
+            str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None, tx, None, None
+        )
+        if h == invalid or not h:
+            err = ctypes.get_last_error()
+            if err in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+                raise Refused(f"{dst} was removed while it was being written")
+            raise Refused(f"{dst} changed while it was being written (WinError {err})")
+        fd = open_osf(h, os.O_RDONLY)
+        with fdopen(fd, "rb") as f:
+            actual = f.read()
+        if actual != expected_bytes:
+            raise Refused(f"{dst} changed while it was being written")
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        if not kernel32.CreateHardLinkTransactedW(str(backup), str(dst), None, tx):
+            raise OSError(ctypes.get_last_error(), f"CreateHardLinkTransactedW failed for {backup}")
+        if not kernel32.MoveFileTransactedW(str(src), str(dst), None, None, 1, tx):
+            raise OSError(ctypes.get_last_error(), f"MoveFileTransactedW failed for {dst}")
+        if not ktmw32.CommitTransaction(tx):
+            raise OSError(ctypes.get_last_error(), f"CommitTransaction failed for {dst}")
+        committed = True
+    finally:
+        if not committed:
+            ktmw32.RollbackTransaction(tx)
+        kernel32.CloseHandle(tx)
+
+
+def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), expected_bytes=None, on_enlisted=None):
     """Write every file or none, as far as a running process can promise. All new content is written to temporary
     files first, so a full disk fails before anything changes. Each original is then kept as a hard link (no data
     written, no moment without the file) and each new file replaces its destination in one atomic rename, so every
@@ -145,37 +222,8 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                 placed_ino[path] = os.stat(path).st_ino
                 continue
             if path in expected:
-                if not path.is_file():
-                    raise Refused(f"{path} was removed while it was being written")
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
-                link(path, backup)
-                if backup.read_bytes() != expected[path] or path.read_bytes() != expected[path]:
-                    backup.unlink()
-                    raise Refused(f"{path} changed while it was being written")
-                real_replace = os.replace
-
-                def guarded_replace(src, dst, _exp=expected[path], _bak=backup, _path=path):
-                    if Path(dst) == _path:
-                        if not _path.is_file() or _bak.read_bytes() != _exp or _path.read_bytes() != _exp \
-                                or os.stat(_path).st_ino != os.stat(_bak).st_ino:
-                            raise Refused(f"{_path} changed while it was being written")
-                    return real_replace(src, dst)
-
-                os.replace = guarded_replace
-                try:
-                    if rename is real_replace:
-                        guarded_replace(staged[path], path)
-                    else:
-                        rename(staged[path], path)
-                except BaseException:
-                    if backup.exists():
-                        backup.unlink()
-                    raise
-                finally:
-                    os.replace = real_replace
-                if backup.read_bytes() != expected[path]:
-                    real_replace(backup, path)
-                    raise Refused(f"{path} changed while it was being written")
+                transacted_replace(staged[path], path, backup, expected[path], on_enlisted=on_enlisted)
                 aside[path] = backup
                 del staged[path]
                 placed.append(path)

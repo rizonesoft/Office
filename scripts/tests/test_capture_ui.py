@@ -467,6 +467,71 @@ class Writes(unittest.TestCase):
             self.assertEqual(path.read_text(encoding="utf-8"), "[]\n")
             self.assertEqual([p.name for p in Path(tmp).iterdir()], ["ribbon.json"])
 
+    def test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch(self):
+        events = []
+
+        class FakeKtm:
+            def CreateTransaction(self, *args):
+                events.append("CreateTransaction")
+                return 101
+
+            def CommitTransaction(self, tx):
+                events.append(("CommitTransaction", tx))
+                return 1
+
+            def RollbackTransaction(self, tx):
+                events.append(("RollbackTransaction", tx))
+                return 1
+
+        class FakeKernel:
+            def CreateFileTransactedW(self, dst, access, share, sec, disp, flags, tpl, tx, mv, ext):
+                events.append(("CreateFileTransactedW", dst, access, share, tx))
+                return 202
+
+            def CreateHardLinkTransactedW(self, backup, dst, sec, tx):
+                events.append(("CreateHardLinkTransactedW", backup, dst, tx))
+                return 1
+
+            def MoveFileTransactedW(self, src, dst, prog, data, flags, tx):
+                events.append(("MoveFileTransactedW", src, dst, flags, tx))
+                return 1
+
+            def CloseHandle(self, h):
+                events.append(("CloseHandle", h))
+                return 1
+
+        cu.transacted_replace(
+            Path("staged.new"), Path("out.json"), Path("out.old"), b"expected",
+            on_enlisted=lambda d: events.append(("on_enlisted", str(d))),
+            ktmw32=FakeKtm(), kernel32=FakeKernel(),
+            open_osf=lambda h, mode: (events.append(("open_osf", h)) or 303),
+            fdopen=lambda fd, mode: io.BytesIO(b"expected"),
+        )
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("open_osf", 202),
+            ("on_enlisted", "out.json"),
+            ("CreateHardLinkTransactedW", "out.old", "out.json", 101),
+            ("MoveFileTransactedW", "staged.new", "out.json", 1, 101),
+            ("CommitTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+        events.clear()
+        with self.assertRaises(cu.Refused):
+            cu.transacted_replace(
+                Path("staged.new"), Path("out.json"), Path("out.old"), b"expected",
+                ktmw32=FakeKtm(), kernel32=FakeKernel(),
+                open_osf=lambda h, mode: 303,
+                fdopen=lambda fd, mode: io.BytesIO(b"modified_by_editor"),
+            )
+        self.assertEqual(events, [
+            "CreateTransaction",
+            ("CreateFileTransactedW", "out.json", 0x80000000 | 0x00010000, 1, 101),
+            ("RollbackTransaction", 101),
+            ("CloseHandle", 101),
+        ])
+
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):
@@ -654,6 +719,15 @@ class Round3(unittest.TestCase):
         q_launched.proc.exited = lambda seconds: (alive_during_wait.append(doc_ref() is not None) or True)
         q_launched.close()
         self.assertEqual(alive_during_wait, [False])
+        # Verify blocked COM initialization is bounded by init_timeout and cleans up the apartment.
+        import time
+        unblock = threading.Event()
+        t0 = time.monotonic()
+        with self.assertRaises(cu.Refused) as err:
+            cu.Launched("word", dispatch=lambda p: (unblock.wait(2.0), FakeApp(0))[1], init_timeout=0.05)
+        unblock.set()
+        self.assertLess(time.monotonic() - t0, 1.0)
+        self.assertIn("did not finish starting", str(err.exception))
 
 
 class Worker(unittest.TestCase):
@@ -835,33 +909,35 @@ class CaptureIntegration(unittest.TestCase):
                 self.assertEqual(rc, 1)
                 self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.edited"}]\n')
 
-                # 3. A concurrent save after backup-link creation during publish is neither overwritten nor rolled back.
+                # 3. During transactional publish, a concurrent atomic save or write after byte comparison and before
+                # MoveFileTransactedW is kernel-blocked (ERROR_TRANSACTIONAL_CONFLICT) so editor work is never lost.
                 import os
                 orig_bytes = out_path.read_bytes()
+                editor_tmp = out_path.with_name("editor.tmp")
+                editor_tmp.write_text('[{"id": "word.saved_during_tx"}]\n', encoding="utf-8")
+                conflict_errors = []
 
-                def link_then_editor_saves(src, dst):
-                    os.link(src, dst)
-                    editor_tmp = out_path.with_name("editor.tmp")
-                    editor_tmp.write_text('[{"id": "word.saved_after_link"}]\n', encoding="utf-8")
-                    os.replace(editor_tmp, out_path)
+                def attempt_concurrent_atomic_save_after_check(enlisted_dst):
+                    with self.assertRaises(OSError) as ctx_os:
+                        os.replace(editor_tmp, enlisted_dst)
+                    conflict_errors.append(ctx_os.exception.winerror)
+                    with self.assertRaises(OSError) as ctx_write:
+                        Path(enlisted_dst).write_text('[{"id": "word.in_place"}]\n', encoding="utf-8")
+                    conflict_errors.append(ctx_write.exception.winerror)
 
-                with self.assertRaises(cu.Refused):
-                    cu.publish({out_path: '[{"id": "word.ours"}]\n'}, link=link_then_editor_saves,
-                               expected_bytes={out_path: orig_bytes})
-                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.saved_after_link"}]\n')
+                cu.publish({out_path: '[{"id": "word.ours"}]\n'}, expected_bytes={out_path: orig_bytes},
+                           on_enlisted=attempt_concurrent_atomic_save_after_check)
+                self.assertEqual(conflict_errors[0], 6800)
+                self.assertEqual(len(conflict_errors), 2)
+                self.assertEqual(editor_tmp.read_text(encoding="utf-8"), '[{"id": "word.saved_during_tx"}]\n')
+                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.ours"}]\n')
 
-                # 4. A concurrent save arriving inside rename right before os.replace is refused without data loss.
+                # 4. If a failure occurs while enlisted before commit, KTM rolls back leaving destination untouched.
                 orig_bytes2 = out_path.read_bytes()
-
-                def editor_saves_before_replace(src, dst):
-                    if Path(dst) == out_path:
-                        out_path.write_text('[{"id": "word.saved_in_rename_window"}]\n', encoding="utf-8")
-                    os.replace(src, dst)
-
                 with self.assertRaises(cu.Refused):
-                    cu.publish({out_path: '[{"id": "word.ours2"}]\n'}, rename=editor_saves_before_replace,
-                               expected_bytes={out_path: orig_bytes2})
-                self.assertEqual(out_path.read_text(encoding="utf-8"), '[{"id": "word.saved_in_rename_window"}]\n')
+                    cu.publish({out_path: '[{"id": "word.ours2"}]\n'}, expected_bytes={out_path: orig_bytes2},
+                               on_enlisted=lambda d: (_ for _ in ()).throw(cu.Refused("aborted in tx")))
+                self.assertEqual(out_path.read_bytes(), orig_bytes2)
 
                 # 5. Rollback of a newly created output does not delete concurrent edits made before a second file fails.
                 new_out = Path(tmp) / "fresh.json"

@@ -38,7 +38,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
-                        same_build)
+                        same_build, transacted_replace)
 
 PROFILE = "fhd-100"
 PROFILE_SIZE, PROFILE_DPI, UI_LANGUAGE = (1920, 1080), 96, 1033  # en-US
@@ -546,13 +546,14 @@ class _Apartment:
 class Launched:
     """An app instance this tool started, with its top-level window and its process."""
 
-    def __init__(self, key, dispatch=None, starter=None, owner=None):
+    def __init__(self, key, dispatch=None, starter=None, owner=None, init_timeout=60.0):
         row, exe, progid, separate = APPS[key]
         self.key, self.row, self.exe = key, row, exe
         if key == "outlook":
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
+        self.app, self.hwnd = None, None
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
             # very process. An instance the operator opened in between (empty or not) is never touched.
@@ -565,10 +566,31 @@ class Launched:
             self.started = (starter or start_process)(exe)
         self._apartment = _Apartment()
         try:
-            self._apartment.call(lambda: self._init_com(progid, separate, dispatch, owner))
+            self._apartment.call(
+                lambda: self._init_com(progid, separate, dispatch, owner),
+                timeout=init_timeout,
+            )
+        except TimeoutError:
+            self._recover_hung_launch()
+            raise Refused(f"{exe} did not finish starting within {init_timeout}s") from None
         except BaseException:
             self._apartment.close()
             raise
+
+    def _recover_hung_launch(self):
+        self._apartment.close()
+        if self.owned and getattr(self, "hwnd", None):
+            try:
+                import ctypes
+                ctypes.windll.user32.PostMessageW(self.hwnd, 0x0010, 0, 0)  # WM_CLOSE
+            except Exception:
+                pass
+        if self.proc is not None:
+            try:
+                self.proc.close()
+            except Exception:
+                pass
+        self.created, self._created_meta, self.app = [], [], None
 
     def _init_com(self, progid, separate, dispatch, owner):
         import win32com.client

@@ -21,7 +21,7 @@ python scripts/check-inventory.py design/inventory                       -> exit
 ## Self-review
 
 - `design/inventory/REFERENCE.md` now records the installed Microsoft 365 Current Channel build `16.0.20527.20150` (read 2026-11-08) for all six apps while preserving `16.0.20430.20182` (read 2026-10-20) as a historical row so `design/inventory/word/commands.json` and `shortcuts.json` continue to validate against `REFERENCE.md`, and `scripts/tests/test_capture_ui.py` and `scripts/tests/test_word_commands.py` align their `BUILD` fixtures with `16.0.20527.20150`.
-- All seven post-cap fixes from `D02 T01 §3` Round 3 (`docs/reviews/02-interface/D02-T01-s3.md`), the UIA worker subprocess boundary (`capture_in_worker`), document ownership and identity verification across expansion, collapse, and retries (`check_alone`, `expand_all`, and `close_popup`), COM reference release before process-exit waiting (`Launched.close`), baseline membership verification on tabs, controls, and menu items (`walk_tab` and `expand_items`), atomic non-overwriting publication and merge-change detection (`publish` and `main`), end-to-end geometry invalidation across main and sidecar outputs (`capture` and `main`), and licensing/activation refusal (`licensing_problem`) are covered by the 46 unit and integration tests in `scripts/tests/test_capture_ui.py` and the live capture checkpoint on Word Home (`R:\scratch\word-home.json`, 55 records with `bounds` recorded under `fhd-100`).
+- All seven post-cap fixes from `D02 T01 §3` Round 3 (`docs/reviews/02-interface/D02-T01-s3.md`), the UIA worker subprocess boundary (`capture_in_worker`), bounded COM initialization and persistent STA apartment execution (`_Apartment`, `Launched`), document ownership and identity verification across expansion, collapse, and retries (`check_alone`, `expand_all`, and `close_popup`), COM reference release before process-exit waiting (`Launched.close`), baseline membership verification on tabs, controls, and menu items (`walk_tab` and `expand_items`), atomic non-overwriting publication and KTM kernel-transacted merge replacement (`publish` and `transacted_replace`), end-to-end geometry invalidation across main and sidecar outputs (`capture` and `main`), and licensing/activation refusal (`licensing_problem`) are covered by the 47 unit and integration tests in `scripts/tests/test_capture_ui.py` and the live capture checkpoint on Word Home (`R:\scratch\word-home.json`, 55 records with `bounds` recorded under `fhd-100`).
 - Driving the Simplified Ribbon switch (`SingleLineRibbonToggle`) remains explicitly deferred to `D02 T01 §15` (`Outlook Ribbon and Item Windows`) per the dated correction in `D02 T01 §3`, and `capture-ui.py --layout simplified` exits 2 naming either the missing `SingleLineRibbonToggle` or `D02 T01 §15`.
 
 ## Round 1: astra (`gpt-6-astra` via `codex`)
@@ -228,3 +228,49 @@ OVERALL: needs-attention
 4. **[P3] The ownership-check fix lacks evidence for its actual COM execution path**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release` and `Worker.test_capture_in_worker_enforces_timeout_and_roundtrips_results`) by asserting `ole32.CoGetApartmentType` returns `0` (`S_OK`) and all COM callbacks execute on the same initialized STA thread, and by recording the post-change live Word Home capture checkpoint below.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (46 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T22:36:01Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 7f911cd18b67f93d
+
+## adversarial: needs-attention
+
+1. **[P1] Merge still loses concurrent atomic saves.** `scripts/lib/office_com.py:159-162` checks the destination, then replaces it without protection spanning both operations. An editor can atomically save between those steps. The backup still contains the original bytes, so the subsequent check at line 176 passes and publication reports success. An in-memory filesystem probe reproduced success with the editor’s bytes lost. Precondition: an ordinary concurrent save during `--merge`. Moving the check closer to replacement does not eliminate this race.
+
+2. **[P2] Office initialization can hang indefinitely before the worker deadline starts.** `scripts/capture-ui.py:568` calls `_init_com` without a timeout; `_Apartment.call` consequently waits indefinitely at line 533. If COM activation or `Documents.Add()` blocks, execution never reaches `capture_in_worker` or its deadline. A controlled blocked-dispatch probe confirmed that launch remained blocked until explicitly released. Precondition: Office becomes unresponsive during startup or document creation. Bound initialization and provide recovery for partially launched instances.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P1]** violates the “Never lose work” requirement in `docs/product-principles.md:16`. Atomic replacement does not make the preceding comparison atomic.
+
+## record: needs-attention
+
+3. **[P3] The concurrency regression test does not establish the claimed fix.** `scripts/tests/test_capture_ui.py:856-859` inserts its edit before calling the temporarily patched `os.replace`, so the new guard sees that edit. It never exercises an atomic save after the guard and before the underlying replacement, which reproduces finding 1. Consequently, `docs/reviews/02-interface/audit-d02-t01-s3.md:225` incorrectly declares that race fixed.
+
+Verification: 48 selected tests passed. In-memory probes exercised publication and blocked initialization. No files were modified; no live Office capture was run. Tests requiring temporary-file writes were excluded.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 5 disposition
+
+1. **[P1] Merge still loses concurrent atomic saves**: fixed in `scripts/lib/office_com.py` (`transacted_replace` and `publish`) by executing expected-bytes verification, backup hard-link creation, and destination replacement inside a single Windows KTM kernel transaction (`CreateTransaction`, `CreateFileTransactedW` with `GENERIC_READ | DELETE` and `FILE_SHARE_READ`, `CreateHardLinkTransactedW`, `MoveFileTransactedW`, and `CommitTransaction` / `RollbackTransaction`), so the destination is kernel-locked against concurrent writes and atomic `os.replace` (`WinError 6800: ERROR_TRANSACTIONAL_CONFLICT`) before its bytes are read and remains locked until the replacement commits; covered by `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` and `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] Office initialization can hang indefinitely before the worker deadline starts**: fixed in `scripts/capture-ui.py` (`Launched.__init__` and `Launched._recover_hung_launch`) by bounding `_init_com` with `init_timeout=60.0` on `self._apartment.call(...)` and, on `TimeoutError`, closing the apartment, posting `WM_CLOSE` if an owned window handle was created, closing any `self.proc`, and raising `Refused`; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+3. **[P3] The concurrency regression test does not establish the claimed fix**: fixed in `scripts/tests/test_capture_ui.py` (`CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` subtests 3 and 4 and `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch`) by attempting an atomic `os.replace(editor_tmp, enlisted_dst)` and an in-place write inside `on_enlisted` (after `transacted_replace` has read and verified the destination bytes and before `MoveFileTransactedW`), confirming the kernel blocks the concurrent atomic save with `WinError 6800` and preserves `editor_tmp`.
+- Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
