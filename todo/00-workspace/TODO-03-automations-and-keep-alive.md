@@ -691,6 +691,8 @@ Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-worksp
 
 ## 24. Resumable Newest-Page Refresh
 
+> **Started:** 2026-11-08T10:25:00Z
+
 Filed 2026-10-23 from round 2 of D00 T03 §23's completion review (`docs/reviews/00-workspace/D00-T03-s23-completion.md`): `scripts/ci-status.py` `Pages.newest`, the refresh every resumed try runs, keeps no state between tries. When a refresh that has read some pages of new runs is cut short by the deadline, and runs already read are deleted before the next try, that try's first page can hold only runs already held and stop the refresh as unchanged, while the deleted runs still held make the count match `total_count`; the new runs on the unread pages are never found. §23's boundary checks and rewind do not cover it, because no boundary was ever checked.
 
 **Phase:** 0
