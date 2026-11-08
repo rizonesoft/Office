@@ -359,15 +359,17 @@ class Inventory(unittest.TestCase):
         for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now", "*.example.com", ".example.com",
                      "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live",
                      "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM", "ATTACKER.ID", "SERVER.ID",
-                     "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO-REGISTER.ID", "FOO.DIST", "BAR.S", "BAZ.TEST",
-                     "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T"):
+                     "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO-REGISTER.ID", "1-REGISTER.ID", "a-b.STDEV.S",
+                     "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
+                     "http:B2", "FTP:X", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
                      "Word Document (*.docx)", "Excel Add-In (*.xla)", "PowerPoint Add-In (*.ppa)",
                      "Visio XML Drawing (*.vdx)", "Opens a .docx file.", ".docx", "Save as (.docx)",
                      "Loads Normal.dotm as the default template.", "Saves to Normal.dotm.",
-                     "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)"):
+                     "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)", "=1-STDEV.S(1,2)", "=-NORM.S.DIST(0,TRUE)",
+                     "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)"):
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
             self.assertEqual(self.problems(), [], ascii(text))
         schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
@@ -399,7 +401,7 @@ class Inventory(unittest.TestCase):
                  "WORKDAY.INTL", "Z.TEST")
         self.assertEqual(len(funcs), 73)
         for fn in funcs:
-            rec = dict(BOLD, label=fn, behaviour=f"Inserts {fn} or ={fn}(1,2) + {fn}.")
+            rec = dict(BOLD, label=fn, behaviour=f"Inserts {fn}, =1-{fn}(A1:B2) or =-{fn}(1,2).")
             self.assertEqual(ci.validate([rec], schema, schema), [], fn)
 
     def test_unencodable_record_text_is_reported_not_a_crash(self):
