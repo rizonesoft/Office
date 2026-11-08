@@ -1428,6 +1428,23 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
 
+    def test_a_deletion_between_tries_followed_by_a_creation_before_the_probe_is_recovered(self):
+        heads, repo = self.heads(400, {sha(200)})  # sha(200) is at initial position 201 (first run of page 3)
+        # First try reads page 1, page 2, and boundary 100, then runs out of time before page 3 (35s at 10s/call).
+        with mock.patch.object(ci, "PENDING_SECONDS", 35):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        self.assertEqual(self.checkpoint()["next_page"], 3)
+        del repo.runs[sha(250)]  # deleted on page 2 between tries: sha(200) moves to position 200
+
+        def create_before_probe():  # after forward page 3 (which skipped sha(200)), create 1 and delete 1 below 200
+            repo.extra_runs.append({"id": 99997, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4002),
+                                    "event": "pull_request", "head_branch": "feature"})
+            del repo.runs[sha(150)]
+        repo.after_page[3] = create_before_probe
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))

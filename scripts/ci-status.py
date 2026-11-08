@@ -270,10 +270,12 @@ def well_formed(data):
     return isinstance(data, dict) \
         and set(data) == {"inputs", "runs", "next_page", "total", "results", "progress", "pass", "scan"} \
         | ({"refresh"} if "refresh" in data else set()) \
-        and isinstance(scan, dict) and set(scan) == {"ids", "rewind", "next_ids"} and texts(scan["ids"]) \
+        and isinstance(scan, dict) and set(scan) - {"total"} == {"ids", "rewind", "next_ids"} \
+        and ("total" not in scan or number(scan["total"], empty=True)) and texts(scan["ids"]) \
         and texts(scan["next_ids"]) and (scan["rewind"] is None or (type(scan["rewind"]) is int and scan["rewind"] > 0)) \
         and (refresh is None or (isinstance(refresh, dict)
-                                 and set(refresh) == {"page", "target", "ids", "rewind", "next_ids"}
+                                 and set(refresh) - {"total"} == {"page", "target", "ids", "rewind", "next_ids"}
+                                 and ("total" not in refresh or number(refresh["total"], empty=True))
                                  and (type(refresh["page"]) is int and refresh["page"] > 1)
                                  and (type(refresh["target"]) is int and refresh["target"] > 1)
                                  and texts(refresh["ids"]) and texts(refresh["next_ids"])
@@ -364,7 +366,6 @@ class Pages:
         self.now, self.pages, self.last = set(), set(), None  # run ids and page numbers read in this try; last page
         self.gone = set()  # held runs GitHub reported deleted in this try
         self.probe_total = None  # total_count from the last boundary probe
-        self.prev_total = cp.get("total")  # total_count before the most recent page read
 
     def at(self, position):
         """The id of the run at a 1-based position of the newest-first list, or None past its end."""
@@ -372,27 +373,27 @@ class Pages:
         self.probe_total = total
         return str(runs[0]["id"]) if runs else None
 
-    def continuous(self, page, runs, anchor):
+    def continuous(self, page, runs, anchor, anchor_total=None):
         """Whether `runs`, just read as `page`, follow on from `anchor`, the last run of the page before as it was
         read (D00 T03 §23). They do when the page still holds the anchor (runs created since pushed it down, so
         nothing was skipped), or when the anchor still sits at the last position of the page before and `total_count`
-        neither dropped before reading `page` nor grew between reading `page` and reading that boundary position (a
-        deletion above the boundary followed by a creation before the probe drops `total_count` on `page`'s read even
-        if a second deletion below the boundary cancels the creation's count increase on the probe). Otherwise runs
-        above the boundary were deleted, the list moved up, and the runs that crossed the boundary were never read."""
+        neither dropped between reading the anchor's page (`anchor_total`) and reading `page` nor grew between reading
+        `page` and reading that boundary position (a deletion above the boundary followed by a creation before the
+        probe drops `total_count` relative to `anchor_total` even if a second deletion below the boundary cancels the
+        creation's count increase on the probe). Otherwise runs above the boundary were deleted, the list moved up, and
+        the runs that crossed the boundary were never read."""
         if anchor in {str(r["id"]) for r in runs}:
             return True
         page_total = self.cp["total"]
         if self.at(PER_PAGE * (page - 1)) != anchor:
             return False
         if (self.probe_total is not None and page_total is not None and self.probe_total > page_total) \
-                or (self.prev_total is not None and page_total is not None and page_total < self.prev_total):
+                or (anchor_total is not None and page_total is not None and page_total < anchor_total):
             self.cp["total"] = self.probe_total
             return False
         return True
 
     def read(self, page):
-        self.prev_total = self.cp["total"]
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
         changed = keep(self.cp, runs)
         self.now |= {str(r["id"]) for r in runs}
@@ -418,18 +419,18 @@ class Pages:
                 runs, _ = self.read(k)
                 read = [str(r["id"]) for r in runs]
                 if set(read) & set(refresh["ids"]) or k == 1:
-                    refresh.update(page=k + 1, ids=read, rewind=None, next_ids=[])
+                    refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None, next_ids=[])
                 else:
                     refresh["rewind"] = k - 1
                 self.cp["progress"] += 1
                 self.save(self.cp)
             while self.cp.get("refresh") is not None:
-                page, ids = refresh["page"], refresh["ids"]
+                page, ids, anchor_total = refresh["page"], refresh["ids"], refresh.get("total")
                 runs, changed = self.read(page)
                 any_changed = any_changed or changed
-                if page > 1 and ids and not self.continuous(page, runs, ids[-1]):
+                if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
                     target = max(target, page)
-                    refresh.update(page=page, target=target, ids=ids, rewind=page - 1, next_ids=[])
+                    refresh.update(page=page, target=target, ids=ids, total=anchor_total, rewind=page - 1, next_ids=[])
                     self.cp["progress"] += 1
                     self.save(self.cp)
                     while refresh["rewind"] is not None:
@@ -438,7 +439,7 @@ class Pages:
                         any_changed = any_changed or rchanged
                         read = [str(r["id"]) for r in rruns]
                         if set(read) & set(refresh["ids"]) or k == 1:
-                            refresh.update(page=k + 1, ids=read, rewind=None, next_ids=[])
+                            refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None, next_ids=[])
                         else:
                             refresh["rewind"] = k - 1
                         self.cp["progress"] += 1
@@ -451,20 +452,21 @@ class Pages:
                     self.cp["refresh"] = None
                     self.save(self.cp)
                     break
-                refresh.update(page=page + 1, target=target, ids=[str(r["id"]) for r in runs])
+                refresh.update(page=page + 1, target=target, ids=[str(r["id"]) for r in runs], total=self.cp["total"])
                 self.cp["progress"] += 1
                 self.save(self.cp)
                 any_changed = False
-        page, ids, any_changed = 0, [], False
+        page, ids, anchor_total, any_changed = 0, [], None, False
         while True:
             page += 1
             runs, changed = self.read(page)
             any_changed = any_changed or changed
             self.cp["progress"] += 1 if changed else 0
             self.save(self.cp)
-            if page > 1 and ids and not self.continuous(page, runs, ids[-1]):
+            if page > 1 and ids and not self.continuous(page, runs, ids[-1], anchor_total):
                 target = max(page, (self.cp.get("refresh") or {}).get("target", 0))
-                self.cp["refresh"] = {"page": page, "target": target, "ids": ids, "rewind": page - 1, "next_ids": []}
+                self.cp["refresh"] = {"page": page, "target": target, "ids": ids, "total": anchor_total,
+                                      "rewind": page - 1, "next_ids": []}
                 self.cp["progress"] += 1
                 self.save(self.cp)
                 k = page
@@ -474,15 +476,16 @@ class Pages:
                     any_changed = any_changed or rchanged
                     read = [str(r["id"]) for r in rruns]
                     if set(read) & set(self.cp["refresh"]["ids"]) or k == 1:
-                        self.cp["refresh"].update(page=k + 1, ids=read, rewind=None, next_ids=[])
+                        self.cp["refresh"].update(page=k + 1, ids=read, total=self.cp["total"], rewind=None,
+                                                  next_ids=[])
                     else:
                         self.cp["refresh"]["rewind"] = k - 1
                     self.cp["progress"] += 1
                     self.save(self.cp)
-                ids = self.cp["refresh"]["ids"]
+                ids, anchor_total = self.cp["refresh"]["ids"], self.cp["refresh"].get("total")
                 page = k  # resume forward from the page after k, checking every boundary on the way back up
                 continue
-            ids = [str(r["id"]) for r in runs]
+            ids, anchor_total = [str(r["id"]) for r in runs], self.cp["total"]
             if self.cp.get("refresh") is not None:
                 if page >= self.cp["refresh"]["target"] and any_changed:
                     self.cp["refresh"]["target"] = page + 1
@@ -490,7 +493,7 @@ class Pages:
                     self.cp["refresh"] = None
                     self.save(self.cp)
                     return
-                self.cp["refresh"].update(page=page + 1, ids=ids)
+                self.cp["refresh"].update(page=page + 1, ids=ids, total=anchor_total)
                 self.save(self.cp)
             elif not any_changed or len(runs) < PER_PAGE:
                 return
@@ -538,16 +541,16 @@ class Pages:
                 runs, _ = self.read(k)
                 read = [str(r["id"]) for r in runs]
                 if set(read) & set(scan["ids"]) or k == 1:
-                    scan.update(ids=read, rewind=None, next_ids=[])
+                    scan.update(ids=read, total=self.cp["total"], rewind=None, next_ids=[])
                     self.cp["next_page"] = k + 1  # walk forward from k + 1, checking each boundary on the way back up
                 else:
                     scan["rewind"] = k - 1
             else:
                 runs, _ = self.read(page)
-                if page > 1 and scan["ids"] and not self.continuous(page, runs, scan["ids"][-1]):
+                if page > 1 and scan["ids"] and not self.continuous(page, runs, scan["ids"][-1], scan.get("total")):
                     scan["rewind"] = page - 1  # this page is read again once the rewind ends
                 else:
-                    scan["ids"] = [str(r["id"]) for r in runs]
+                    scan.update(ids=[str(r["id"]) for r in runs], total=self.cp["total"])
                     self.cp["next_page"] = None if len(runs) < PER_PAGE else page + 1
             self.cp["progress"] += 1
             self.save(self.cp)
@@ -593,7 +596,7 @@ def unchecked_heads(tools, run_file, left, cp, save):
     if not cp or cp["inputs"].get("repo") != repo:  # another repository's runs are no use
         cp.clear()
         cp.update({"inputs": inputs, "runs": {}, "next_page": 1, "total": None, "results": {}, "progress": 0,
-                   "pass": None, "scan": {"ids": [], "rewind": None, "next_ids": []}})
+                   "pass": None, "scan": {"ids": [], "total": None, "rewind": None, "next_ids": []}})
     cp["inputs"] = inputs
     if cp["pass"] is None:  # a new reconciliation: the heads it has settled, so a later try goes on past them
         cp["pass"] = {"checked": []}
