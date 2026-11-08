@@ -337,7 +337,7 @@ OVERALL: needs-attention
 
 1. **[P1] Failed rollback deletes the original recovery copy.** `scripts/lib/office_com.py:271` deletes the backup whenever restoration did not commit, including sharing violations and failed moves or commits. Reproduce by publishing the first output, failing the second output, and holding the first output open without delete sharing during rollback. Restoration fails, but its backup is deleted; `publish()` also ignores the failure at line 327. An injected `ERROR_SHARING_VIOLATION` reproduced `restore=False` followed by backup deletion. Precondition: an ordinary file lock during publication recovery. Preserve failed-restoration backups and report their paths.
 
-2. **[P2] CLI exit terminates the startup cleanup before it runs.** `scripts/capture-ui.py:506` makes the COM apartment thread a daemon. After startup times out, recovery only queues shutdown; `main()` returns 2 at line 1221 and the interpreter exits. If `Documents.Add()` remains blocked, the cancellation checks and cleanup never execute. A subprocess probe with delayed `Add()` reproduced `MAIN_EXIT 2` and `quit=False` at interpreter exit. Precondition: slow or temporarily unresponsive Office startup. Cleanup must survive the CLI's timeout return.
+2. **[P2] CLI exit terminates the startup cleanup before it runs.** `scripts/capture-ui.py:506` makes the COM apartment thread a daemon. After startup times out, recovery only queues shutdown; `main()` returns 2 at line 1221 and the interpreter exits. If `Documents.Add()` remains blocked, the cancellation checks and cleanup never execute. A subprocess probe with delayed `Add()` reproduced `MAIN_EXIT 2` and `quit=False` at interpreter exit. Precondition: slow or temporarily unresponsive Office startup. Cleanup must survive the CLI’s timeout return.
 
 ## consistency: approve
 
@@ -370,4 +370,47 @@ OVERALL: needs-attention
 2. **[P2] CLI exit terminates the startup cleanup before it runs**: fixed in `scripts/capture-ui.py` (`_Apartment.__init__`, `_Apartment.close`, `Launched.__init__`, and `Launched._recover_hung_launch`) by making `Launched`'s COM apartment thread non-daemon (`daemon=False` by default) and bounding `_Apartment.close(join_timeout=...)` so interpreter shutdown after `main()` returns 2 waits for any delayed `Documents.Add()` or `dispatch` on the owning STA thread to reach the cancellation check and run `self.close()`; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
 3. **[P3] The startup regression supplies lifecycle management absent from production**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by adding a child subprocess probe that invokes `cu.main(...)` with a delayed `Documents.Add()` exceeding `init_timeout`, calls `sys.exit(rc)` immediately without any manual thread join, and asserts via `atexit` that `rc == 2` and `{"doc_closed": true, "quit": true}`.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 8: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T23:20:16Z
+- Effort: medium
+- Type: adversarial
+- Lines: 26
+- Digest: 89d5507288ce5cd8
+
+## adversarial: needs-attention
+
+1. **[P2] A hung COM call still prevents CLI termination after timeout.** `scripts/capture-ui.py:506` creates a non-daemon apartment thread; `:575` uses that default. Recovery at `:596` only bounds the join, leaving Python shutdown waiting indefinitely for the blocked thread. Reproduce with an injected dispatch that waits on an unset event and `init_timeout=0.05`: the probe printed the timeout refusal and `MAIN_RETURNED`, but remained alive after three seconds and required termination. Precondition: an Office COM call that remains unresponsive. Cleanup needs a lifecycle that preserves recovery without indefinitely blocking the caller’s exit.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** conflicts with the reliability and clear-feedback requirements in `docs/product-principles.md:22`: reporting a startup timeout does not release the invoking process.
+
+## record: needs-attention
+
+2. **[P3] The new subprocess regression does not exercise cleanup after CLI exit.** `scripts/tests/test_capture_ui.py:866` delays `Documents.Add()` by 0.3 seconds, while `:873` sets `init_timeout=0.15`. Recovery at `scripts/capture-ui.py:582` then joins for another 0.75 seconds, allowing cleanup to finish before `main()` returns. Consequently, the test does not establish the interpreter-shutdown behavior claimed in the Round 7 disposition. An in-memory mutation restoring daemon threads still produced `doc_closed=True`, `quit=True`, and exit 0 with those timings. Make the delayed operation outlast the recovery join, and separately verify genuinely blocked calls cannot hold the CLI indefinitely.
+
+Verification: 49 selected tests passed; one additional test was blocked by the read-only filesystem when creating a temporary directory. The whole-inventory checker exited 0. No files were modified; no live Office capture was run.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 8 disposition
+
+1. **[P2] A hung COM call still prevents CLI termination after timeout**: fixed in `scripts/capture-ui.py` (`_Apartment.__init__`, `_Apartment.close`, `_Apartment._join_at_exit`, `Launched.__init__`, `Launched._recover_hung_launch`, and `Launched._abandon_hung_launch`) by keeping the COM apartment thread a daemon (`daemon=True`) while registering a bounded `atexit` cleanup waiter (`_join_at_exit`, bounded by `shutdown_timeout`) when `_thread.is_alive()` remains `True` after `_recover_hung_launch`'s brief join, so a delayed-but-completing COM call finishes cleanup during interpreter shutdown while a permanently unresponsive COM call is abandoned after `shutdown_timeout` and never blocks CLI exit; covered by `Round3.test_replacement_document_and_close_reference_release` in `scripts/tests/test_capture_ui.py`.
+2. **[P3] The new subprocess regression does not exercise cleanup after CLI exit**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by testing both a delayed `Documents.Add(0.25s)` with `init_timeout=0.05` (asserting `AT_MAIN_RETURN:{"doc_closed": false, "quit": false}` when `main()` returns 2 and `ATEXIT:{"doc_closed": true, "quit": true}` at interpreter shutdown) and a permanently hung `dispatch` waiting on an unset `threading.Event()` with `init_timeout=0.05` (asserting the child CLI process terminates with exit code 2 within 2.5s).
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

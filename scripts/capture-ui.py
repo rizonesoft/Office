@@ -496,13 +496,16 @@ class _Apartment:
     """A single-threaded COM apartment (STA) so every COM proxy is created, queried and closed on the same
     CoInitialize-d thread while allowing the caller to bound any call with a timeout."""
 
-    def __init__(self, daemon=False):
+    def __init__(self, daemon=True, shutdown_timeout=1.5):
         import queue
         import threading
         self._q = queue.Queue()
         self._ready = queue.Queue()
         self.ident = None
         self._closed = False
+        self._atexit_registered = False
+        self._shutdown_timeout = shutdown_timeout
+        self._on_abandoned = None
         self._thread = threading.Thread(target=self._loop, daemon=daemon)
         self._thread.start()
         self._ready.get()
@@ -542,13 +545,31 @@ class _Apartment:
             raise val
         return val
 
-    def close(self, join_timeout=5.0):
+    def close(self, join_timeout=5.0, shutdown_timeout=None, on_abandoned=None):
+        import atexit
         import threading
+        if shutdown_timeout is not None:
+            self._shutdown_timeout = shutdown_timeout
+        if on_abandoned is not None:
+            self._on_abandoned = on_abandoned
         if not self._closed:
             self._closed = True
             self._q.put(None)
-        if join_timeout and threading.get_ident() != self.ident and self._thread.is_alive():
-            self._thread.join(timeout=join_timeout)
+        if threading.get_ident() != self.ident and self._thread.is_alive():
+            if join_timeout:
+                self._thread.join(timeout=join_timeout)
+            if self._thread.is_alive() and not self._atexit_registered:
+                self._atexit_registered = True
+                atexit.register(self._join_at_exit)
+
+    def _join_at_exit(self):
+        if self._thread.is_alive() and self._shutdown_timeout:
+            self._thread.join(timeout=self._shutdown_timeout)
+        if self._thread.is_alive() and self._on_abandoned is not None:
+            try:
+                self._on_abandoned()
+            except Exception:
+                pass
 
 
 class Launched:
@@ -572,33 +593,57 @@ class Launched:
                 raise Unsafe("Project shows no window before a project exists, so ownership cannot be proven before "
                              "the tool creates one; its capture is built in D02 T01 §13")
             self.started = (starter or start_process)(exe)
-        self._apartment = _Apartment()
+        self._apartment = _Apartment(
+            daemon=True,
+            shutdown_timeout=min(1.5, max(0.5, init_timeout * 3.0)),
+        )
         try:
             self._apartment.call(
                 lambda: self._init_com(progid, separate, dispatch, owner),
                 timeout=init_timeout,
             )
         except TimeoutError:
-            self._recover_hung_launch(join_timeout=max(0.5, min(5.0, init_timeout * 5.0)))
+            self._recover_hung_launch(
+                join_timeout=min(0.05, max(0.01, init_timeout * 0.1)),
+                shutdown_timeout=min(1.5, max(0.5, init_timeout * 3.0)),
+            )
             raise Refused(f"{exe} did not finish starting within {init_timeout}s") from None
         except BaseException:
             self._apartment.close()
             raise
 
-    def _recover_hung_launch(self, join_timeout=5.0):
+    def _recover_hung_launch(self, join_timeout=0.05, shutdown_timeout=1.5):
         self._cancelled = True
+        self._post_close_if_owned()
+        self._apartment.close(
+            join_timeout=join_timeout,
+            shutdown_timeout=shutdown_timeout,
+            on_abandoned=self._abandon_hung_launch,
+        )
+
+    def _post_close_if_owned(self):
         if self.owned and getattr(self, "hwnd", None):
             try:
                 import ctypes
                 ctypes.windll.user32.PostMessageW(self.hwnd, 0x0010, 0, 0)  # WM_CLOSE
             except Exception:
                 pass
-        self._apartment.close(join_timeout=join_timeout)
+
+    def _abandon_hung_launch(self):
+        self._post_close_if_owned()
+        if self.proc is not None:
+            try:
+                self.proc.close()
+            except Exception:
+                pass
+            self.proc = None
 
     def _init_com(self, progid, separate, dispatch, owner):
-        import win32com.client
         exe = self.exe
-        self.app = (dispatch or (win32com.client.DispatchEx if separate else win32com.client.Dispatch))(progid)
+        if dispatch is None:
+            import win32com.client
+            dispatch = win32com.client.DispatchEx if separate else win32com.client.Dispatch
+        self.app = dispatch(progid)
         if self.started is not None:
             proc = (owner or OwnProcess)(Win().top(self.window_handle()), exe)
             if proc.pid != self.started:

@@ -816,8 +816,8 @@ class Round3(unittest.TestCase):
         created_apt = []
         orig_apt_init = cu._Apartment.__init__
 
-        def track_apt(apt_self):
-            orig_apt_init(apt_self)
+        def track_apt(apt_self, *args, **kwargs):
+            orig_apt_init(apt_self, *args, **kwargs)
             created_apt.append(apt_self)
 
         cu._Apartment.__init__ = track_apt
@@ -848,12 +848,13 @@ class Round3(unittest.TestCase):
             self.assertTrue(late_doc_app.quit)
         finally:
             cu._Apartment.__init__ = orig_apt_init
-        # Also verify in a real child subprocess that exits immediately after cu.main() returns 2 on launch timeout:
-        # because the apartment thread is non-daemon, interpreter shutdown waits for delayed Documents.Add() to finish
-        # and runs cleanup (closing the late document and quitting the instance) without any caller join.
+        # Verify in a real child subprocess that exits immediately after cu.main() returns 2 on launch timeout:
+        # 1) When Documents.Add() outlasts both init_timeout and _recover_hung_launch's initial join (so doc_closed and
+        #    quit are still False when main() returns 2), _Apartment's bounded atexit hook waits for the delayed
+        #    Documents.Add() to finish and runs cleanup before interpreter exit.
         import subprocess
         import sys
-        probe = (
+        probe_delayed = (
             "import atexit, importlib.util, json, sys, time\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
             "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
@@ -863,21 +864,38 @@ class Round3(unittest.TestCase):
             "    def Close(self, SaveChanges=0): state['doc_closed'] = True; Docs.Count = 0\n"
             "class Docs:\n"
             "    Count = 0\n"
-            "    def Add(self): time.sleep(0.3); Docs.Count = 1; return Doc()\n"
+            "    def Add(self): time.sleep(0.25); Docs.Count = 1; return Doc()\n"
             "    def __iter__(self): return iter([])\n"
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
             "    def Quit(self, SaveChanges=0): state['quit'] = True\n"
             "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
-            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), init_timeout=0.15))\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), init_timeout=0.05))\n"
+            "print('AT_MAIN_RETURN:' + json.dumps(state), flush=True)\n"
             "print('MAIN_RC:' + str(rc), flush=True)\n"
             "sys.exit(rc)\n"
         )
-        proc = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, timeout=10)
+        proc = subprocess.run([sys.executable, "-c", probe_delayed], capture_output=True, text=True, timeout=10)
         self.assertEqual(proc.returncode, 2, proc.stderr)
         self.assertIn("MAIN_RC:2", proc.stdout)
+        self.assertIn('AT_MAIN_RETURN:{"doc_closed": false, "quit": false}', proc.stdout)
         self.assertIn('ATEXIT:{"doc_closed": true, "quit": true}', proc.stdout)
+        # 2) When a COM call is permanently hung (waits on an unset Event forever), the daemon apartment thread and
+        #    bounded atexit join allow the CLI process to terminate promptly with code 2 rather than hanging forever.
+        probe_hung = (
+            "import importlib.util, sys, threading\n"
+            f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
+            "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
+            "never = threading.Event()\n"
+            "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: never.wait(), init_timeout=0.05))\n"
+            "print('MAIN_RETURNED:' + str(rc), flush=True)\n"
+            "sys.exit(rc)\n"
+        )
+        proc_hung = subprocess.run([sys.executable, "-c", probe_hung], capture_output=True, text=True, timeout=2.5)
+        self.assertEqual(proc_hung.returncode, 2, proc_hung.stderr)
+        self.assertIn("MAIN_RETURNED:2", proc_hung.stdout)
 
 
 class Worker(unittest.TestCase):
