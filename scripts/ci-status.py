@@ -435,11 +435,11 @@ class Pages:
                 page -= 1  # read this page again after the pages before it
                 continue
             ids = [str(r["id"]) for r in runs]
-            if self.cp.get("refresh") is not None and page >= self.cp["refresh"]["page"]:
-                self.cp["refresh"] = None
-                any_changed = True  # the recovered page had new runs before its boundary shifted; check the next page
+            if self.cp.get("refresh") is not None and page >= self.cp["refresh"]["page"] and any_changed:
+                self.cp["refresh"]["page"] = page + 1
                 self.save(self.cp)
-            if (not any_changed and self.cp.get("refresh") is None) or len(runs) < PER_PAGE:
+            if (not any_changed and (self.cp.get("refresh") is None or page > self.cp["refresh"]["page"])) \
+                    or len(runs) < PER_PAGE:
                 if self.cp.get("refresh") is not None:
                     self.cp["refresh"] = None
                     self.save(self.cp)

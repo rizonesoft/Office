@@ -1387,6 +1387,10 @@ class Deleted(Pending):
         with mock.patch.object(ci, "PENDING_SECONDS", 75):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
         self.assertIsNotNone(self.checkpoint().get("refresh"))
+        # Next try reads page 1, page 2, boundary 100, page 3, boundary 200, then expires before page 4 (55s).
+        with mock.patch.object(ci, "PENDING_SECONDS", 55):
+            self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
+        self.assertIsNotNone(self.checkpoint().get("refresh"))  # still kept until page 4 proves unchanged or <100
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
         self.assertIsNone(self.checkpoint().get("refresh"))
