@@ -1383,14 +1383,14 @@ class Deleted(Pending):
             del repo.extra_runs[-150:]
         repo.after_page[100] = delete_150
         # Read page 1, page 2, boundary 100 (deletes 150 runs), page 3, boundary 200 (shifted), rewind page 2,
-        # rewind page 1, then run out of time before re-reading page 3 (7 reads of 10s each in 75s).
+        # rewind page 1, then run out of time before re-reading page 2 (7 reads of 10s each in 75s).
         with mock.patch.object(ci, "PENDING_SECONDS", 75):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
-        self.assertIsNotNone(self.checkpoint().get("refresh"))
-        # Next try reads page 1, page 2, boundary 100, page 3, boundary 200, then expires before page 4 (55s).
-        with mock.patch.object(ci, "PENDING_SECONDS", 55):
+        self.assertEqual(self.checkpoint().get("refresh", {}).get("page"), 2)
+        # Next try resumes at page 2 (boundary 100), then page 3 (boundary 200), then expires before page 4 (45s).
+        with mock.patch.object(ci, "PENDING_SECONDS", 45):
             self.assertEqual(self.pending(repo, clock=self.slow_clock_repo(repo, page_seconds=10))[0], ci.PROGRESSING)
-        self.assertIsNotNone(self.checkpoint().get("refresh"))  # still kept until page 4 proves unchanged or <100
+        self.assertEqual(self.checkpoint().get("refresh", {}).get("page"), 4)  # advanced to page 4, not restarted
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [n1[:7], n2[:7]]))
         self.assertIsNone(self.checkpoint().get("refresh"))
@@ -1398,19 +1398,35 @@ class Deleted(Pending):
     def test_a_run_created_during_backward_recovery_does_not_skip_a_surviving_run(self):
         heads, repo = self.heads(500, {sha(251)})  # sha(251) is at initial position 250
 
-        def delete_150():  # after page 2's boundary check, delete runs 500..351 (positions 1..150)
+        def create_during_rewind():  # after rewind reads page 2, create one new run before rewind reads page 1
+            repo.extra_runs.append({"id": 99999, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4000),
+                                    "event": "pull_request", "head_branch": "feature"})
+
+        def delete_150():  # after page 2's boundary check, delete runs 500..351 and arm creation on rewind page 2
             for n in range(351, 501):
                 del repo.runs[sha(n)]
-
-        def create_during_rewind():  # after rewind reads page 2, create one new run before rewind reads page 1
-            if repo.pages_read.count("repos/o/r/actions/workflows/ci.yml/runs?per_page=100&page=2") == 2:
-                repo.extra_runs.append({"id": 99999, "status": "completed", "conclusion": "success",
-                                        "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4000),
-                                        "event": "pull_request", "head_branch": "feature"})
+            repo.after_page[2] = create_during_rewind
         repo.after_page[100] = delete_150
-        repo.after_page[2] = create_during_rewind
         code, out = self.pending(repo)
+        self.assertEqual(len(repo.extra_runs), 1)  # the creation during rewind actually ran
         self.assertEqual((code, self.listed(out)), (0, [sha(251)[:7]]))
+
+    def test_a_concurrent_creation_after_a_deletion_cannot_hide_a_skipped_run(self):
+        heads, repo = self.heads(300, {sha(200)})  # sha(200) is at initial position 101
+
+        def delete_first():  # after page 1, delete run 300 so run 200 moves to position 100
+            del repo.runs[sha(300)]
+
+        def create_before_probe():  # after page 2 (which skipped run 200), create a new run so 201 returns to pos 100
+            repo.extra_runs.append({"id": 99998, "status": "completed", "conclusion": "success",
+                                    "created_at": "2026-10-23T11:00:00Z", "head_sha": sha(4001),
+                                    "event": "pull_request", "head_branch": "feature"})
+            repo.after_page[100] = lambda: repo.runs.pop(sha(299))  # delete another read run after the probe
+        repo.after_page[1] = delete_first
+        repo.after_page[2] = create_before_probe
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(200)[:7]]))
 
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
