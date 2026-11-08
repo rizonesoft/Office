@@ -420,6 +420,11 @@ class Pages:
                     target = max(target, k + 1)
                     refresh["target"] = target
                 if set(read) & set(refresh["ids"]) or k == 1:
+                    if len(runs) < PER_PAGE:
+                        self.cp["refresh"] = None
+                        self.cp["progress"] += 1
+                        self.save(self.cp)
+                        return
                     refresh.update(page=k + 1, ids=read, total=self.cp["total"], rewind=None)
                 else:
                     refresh["rewind"] = k - 1
@@ -513,7 +518,7 @@ class Pages:
                 read = [str(r["id"]) for r in runs]
                 if set(read) & set(scan["ids"]) or k == 1:
                     scan.update(ids=read, total=self.cp["total"], rewind=None, next_ids=[])
-                    self.cp["next_page"] = k + 1  # walk forward from k + 1, checking each boundary on the way back up
+                    self.cp["next_page"] = None if len(runs) < PER_PAGE else k + 1  # walk forward from k + 1 if full
                 else:
                     scan["rewind"] = k - 1
             else:

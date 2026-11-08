@@ -1487,6 +1487,27 @@ class Deleted(Pending):
         code, out = self.pending(repo)
         self.assertEqual((code, self.listed(out)), (1, [added[0][:7]]))
 
+    def test_a_recovered_partial_page_ends_the_scan_and_the_refresh(self):
+        heads, repo = self.heads(300, {sha(151)})
+
+        def delete_bottom_150():  # after page 2's boundary check, delete runs 150..1 so page 2 has 50 runs left
+            for n in range(1, 151):
+                del repo.runs[sha(n)]
+        repo.after_page[100] = delete_bottom_150
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (0, [sha(151)[:7]]))
+        added = [sha(n) for n in range(301, 451)]  # 150 new push runs on top of the 150 remaining runs (300 total)
+        self.record(*(f"ci-green {h[:7]}" for h in [*heads[150:], *added[:-1]]))
+        repo.history = [*reversed(added), *repo.history[:150]]
+        repo.runs.update({**{h: "success" for h in added[:-1]}, added[-1]: "failure"})
+
+        def delete_older_150():  # after refresh page 2's boundary check, delete the older 150 runs so page 2 has 50
+            for n in range(151, 301):
+                del repo.runs[sha(n)]
+        repo.after_page[100] = delete_older_150
+        code, out = self.pending(repo)
+        self.assertEqual((code, self.listed(out)), (1, [added[-1][:7]]))
+
     def test_current_is_false_when_the_stored_run_is_not_in_runs(self):
         stored = {"code": ci.GREEN, "lines": ["green aaaaaaa run 10 attempt 1"], "run": [10, 1]}
         self.assertFalse(ci.current(stored, "10", {}))
