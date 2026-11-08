@@ -370,15 +370,16 @@ class Pages:
     def back_to(self, page, ids):
         """Read pages from `page` back toward the first until one holds any run of `ids`, the runs `page` held when
         it was read: the runs that moved up across the boundary lie after the last of them, so they are read once it
-        is found, however many were deleted (the boundary run itself among them). Returns `page` as read now. Used
-        within one try."""
-        first = None
+        is found, however many were deleted (the boundary run itself among them). Returns `(page as read now, whether
+        any recovery page brought new or changed runs)`. Used within one try."""
+        first, any_changed = None, False
         for k in range(page, 0, -1):
-            runs, _ = self.read(k)
+            runs, changed = self.read(k)
+            any_changed = any_changed or changed
             first = first if first is not None else [str(r["id"]) for r in runs]
             if set(ids) & {str(r["id"]) for r in runs}:
                 break
-        return first
+        return first, any_changed
 
     def read(self, page):
         total, runs = read_page(self.tools, self.owner_name, page, self.left())
@@ -393,21 +394,28 @@ class Pages:
     def newest(self):
         """Read from the first page until a page brings nothing new or changed, or the pages end. Each page after the
         first is checked against the one before it, and a shifted boundary is recovered before the refresh goes on, so
-        an unchanged page cannot end it over runs a deletion moved past. A page that changed nothing is not
+        an unchanged page cannot end it over runs a deletion moved past. Whether a page brought anything new or changed
+        is accumulated across any boundary recovery (`any_changed`), so re-reading a page after `back_to` repairs its
+        boundary does not stop the refresh when its first read had new runs. A page that changed nothing is not
         progress."""
-        page, ids = 0, []
+        page, ids, any_changed = 0, [], False
         while True:
             page += 1
             runs, changed = self.read(page)
+            any_changed = any_changed or changed
             self.cp["progress"] += 1 if changed else 0
             self.save(self.cp)
             if page > 1 and ids and not self.continuous(page, runs, ids[-1]):
-                ids = self.back_to(page - 1, ids)
+                ids, rchanged = self.back_to(page - 1, ids)
+                any_changed = any_changed or rchanged
+                self.cp["progress"] += 1 if rchanged else 0
+                self.save(self.cp)
                 page -= 1  # read this page again after the pages before it
                 continue
             ids = [str(r["id"]) for r in runs]
-            if not changed or len(runs) < PER_PAGE:
+            if not any_changed or len(runs) < PER_PAGE:
                 return
+            any_changed = False
 
     def confirm(self, needed):
         """Read again in this try every run in `needed`: page by page from the newest while the runs still missing
