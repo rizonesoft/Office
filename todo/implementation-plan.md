@@ -67,7 +67,7 @@ Sections: 16 | Checklist items: 82
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 42 | Checklist items: 269
+Sections: 42 | Checklist items: 270
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -97,7 +97,7 @@ Sections: 42 | Checklist items: 269
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
 | [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
-| [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 5     |
+| [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 6     |
 | [ ]    | D02 T01 §28 | Record Dispositions       | none                                  | 6     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
@@ -182,4 +182,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 53/125 verified sections, 8 ready to run now.
 
-Checklist: 324/788 items completed (includes Commit items).
+Checklist: 328/789 items completed (includes Commit items).
