@@ -407,6 +407,39 @@ class Inventory(unittest.TestCase):
             self.assertLess(time.perf_counter() - start, 3.0, field)
             self.assertTrue(any(f".{field}: longer than" in p for p in problems), field)
 
+    def test_each_file_is_loaded_once_per_check(self):
+        # Audit round 23, finding 1: schema and relationship checks must inspect the same loaded content, so a file
+        # that changes between two reads cannot pass by combining two invalid versions.
+        named = self.write("word/ribbon.json", [TAB])
+        versions = [
+            [{"id": "word.home", "app": "word", "kind": "tab"}],
+            [{"id": "word.home", "app": "word", "kind": "tab", "label": "Home", "parent": "word.home"}],
+        ]
+        real_load = ci.load
+        calls = []
+
+        def changing_load(path):
+            if Path(path).resolve() == named.resolve():
+                calls.append(path)
+                return versions[min(len(calls) - 1, len(versions) - 1)]
+            return real_load(path)
+
+        ci.load = changing_load
+        try:
+            problems = ci.check([str(named)], inventory=self.inv)
+        finally:
+            ci.load = real_load
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(any("missing label" in p for p in problems), problems)
+
+    def test_outlook_baseline_columns_take_any_folder_case(self):
+        # Audit round 23, finding 2: OUTLOOK/baseline.json on a case-insensitive file system still uses Outlook's
+        # column layout.
+        data = json.loads((ci.INVENTORY / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        problems = ci.check_baseline(Path("OUTLOOK/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA),
+                                     ci.load(ci.INVENTORY / ci.SOURCES))
+        self.assertEqual(problems, [])
+
     def test_compatibility_characters_with_an_ascii_form_are_refused_in_text(self):
         # Audit round 22, re-think of the text rule: fullwidth digits spell 127.0.0.1 to IDNA, so every compatibility
         # character whose normalised form holds a visible ASCII character is refused, not one family per round. The

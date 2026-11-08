@@ -370,7 +370,7 @@ def check_baseline(f, data, schema, sources=None):
     if sources and data["source"] != f"baseline:{sources.get('commit')}":
         problems.append(f"{f}: source {data['source']} is not the manifest commit {sources.get('commit')}")
     defs = schema["$defs"]
-    expected = defs["outlookColumns"]["const"] if f.parent.name == "outlook" else defs["columns"]["const"]
+    expected = defs["outlookColumns"]["const"] if f.parent.name.casefold() == "outlook" else defs["columns"]["const"]
     if data["columns"] != expected:
         return [f"{f}: columns {data['columns']} are not {expected}"]
     kinds = {"placement": defs["placement"], "policyId": defs["policyId"]}
@@ -401,10 +401,14 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
     named = [Path(f) for f in inventory_files(paths, manifest)]
     universe = {f.resolve(): f for f in inventory_files([inventory], manifest)} if Path(inventory).is_dir() else {}
     universe.update({f.resolve(): f for f in named})
-    records = {}
+    named_resolved = [f.resolve() for f in named]
+    named_set = set(named_resolved)
+    loaded, records = {}, {}
     for resolved, f in universe.items():
-        data = None if is_baseline(f) else load(f)  # a baseline holds no records
-        records[resolved] = data if isinstance(data, list) else []
+        if not is_baseline(f) or resolved in named_set:
+            loaded[resolved] = load(f)  # each file is loaded once, so schema and relationship checks see the same data
+        data = loaded.get(resolved)
+        records[resolved] = data if not is_baseline(f) and isinstance(data, list) else []
     problems = []
     seen, kinds = {}, {}
     for resolved, f in universe.items():
@@ -412,7 +416,6 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if isinstance(rec, dict) and isinstance(rec.get("id"), str):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
                 kinds[rec["id"]] = rec.get("kind")
-    named_resolved = [f.resolve() for f in named]
     # A parent chain is followed only through ids defined once; an ambiguous parent is reported on its own.
     parents = {}
     for resolved, f in universe.items():
@@ -468,7 +471,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if not path.is_file():
                 problems.append(f"{path}: missing baseline")
             elif app == "outlook" and sources:
-                data = load(path)
+                resolved = path.resolve()
+                if resolved not in loaded:
+                    loaded[resolved] = load(path)
+                data = loaded[resolved]
                 rows = data.get("rows") if isinstance(data, dict) else None
                 rows = rows if isinstance(rows, list) else []  # a malformed envelope is reported by check_baseline
                 windows_seen = {r[0] for r in rows if isinstance(r, list) and r and isinstance(r[0], str)}
@@ -477,7 +483,7 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                     problems.append(f"{path}: no rows for the windows {absent}")
     for resolved in named_resolved:
         f = universe[resolved]
-        data = load(f)
+        data = loaded[resolved]
         if is_baseline(f):
             baseline_schema = baseline_schema or load(BASELINE_SCHEMA)
             problems += check_baseline(f, data, baseline_schema, sources)

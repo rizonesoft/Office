@@ -1,6 +1,6 @@
 # Audit findings: D02 T01 §1 Inventory Schema and Checker
 
-Audit stance under the current review process (D02 T01 §23). Candidate: the stamped implementation `602f9dd` and every later change to the files it owns, up to `179ec01`: `scripts/check-inventory.py`, `scripts/tests/test_check_inventory.py`, `design/inventory/schema.json`.
+Audit stance under the current review process (D02 T01 §23). Candidate: the stamped implementation `602f9dd43adfd329c5b03acf2eeb8e0528a0ec6c` and every later change to the files it owns, up to `b481dd446f9ffb9c67006ece19b25503e191ea73`: `scripts/check-inventory.py`, `scripts/tests/test_check_inventory.py`, `design/inventory/schema.json`.
 
 ## Checkpoint at the audit's start
 
@@ -890,27 +890,75 @@ OVERALL: needs-attention
 
 ## Dispositions after audit round 22
 
-Round 22 is the last the 22-round cap allows. All three findings were verified and fixed in the next commit, with regression tests: three fail against the round 21 checker (fixes stashed), and the fourth fails when the row-length guard is removed. No independent round reviews these fixes under this audit's cap; that review is owned by `D02 T01 §27` (below).
+All three findings were verified and fixed in commits `6e0db0f` and `b481dd4`, with regression tests: three fail against the round 21 checker (fixes stashed), and the fourth fails when the row-length guard is removed. When Round 22 ran on 2026-10-22 the review-round cap was 22 (`D02 T01 §27` was filed to own systematic mutation testing of every rule in `scripts/check-inventory.py` and every pattern alternative in `design/inventory/schema.json`). On 2026-10-23 the review-round cap was raised to 33 (`D00 T03 §13`, `docs/phase-runs/2026-10-22-phase-2.md`), so this audit continues with Round 23 under the 33-round cap while `D02 T01 §27` continues to own systematic rule-by-rule mutation proof.
 
-1. P1 a hexadecimal IPv4 component (`127.0x0.1`, `0x7f.1`) passed. A hexadecimal number beside a full stop is now refused (`test_a_hexadecimal_number_beside_a_full_stop_is_an_address`). The text rule had been patched in rounds 18 to 21 one look-alike family at a time, so it was re-thought rather than patched again: readable text now refuses every compatibility character whose normalised form holds a visible ASCII character (778 BMP characters, generated from Unicode's data: fullwidth letters and digits, circled and superscript numbers, ligatures, the round 20 and 21 characters among them). Only the ellipsis U+2026 stays, under the full stop rules. Characters with no compatibility form (accented letters, dashes) and those whose form is only a space (no-break space) are untouched. No committed inventory text holds any non-ASCII character, and a test checks the class against this Python's Unicode data (`test_compatibility_characters_with_an_ascii_form_are_refused_in_text`). Trade-off: a future label that needs a character such as the trade mark sign U+2122 (normalised TM) is refused and needs a deliberate exception.
+1. P1 a hexadecimal IPv4 component (`127.0x0.1`, `0x7f.1`) passed. A hexadecimal number beside a full stop is now refused (`test_a_hexadecimal_number_beside_a_full_stop_is_an_address`). The text rule had been patched in rounds 18 to 21 one look-alike family at a time, so it was re-thought rather than patched again: readable text now refuses every compatibility character whose normalised form holds a visible ASCII character (778 BMP characters under Unicode 16.0 / 779 under Unicode 17.0, generated from Unicode's data: fullwidth letters and digits, circled and superscript numbers, ligatures, the round 20 and 21 characters among them). Only the ellipsis U+2026 stays, under the full stop rules. Characters with no compatibility form (accented letters, dashes) and those whose form is only a space (no-break space) are untouched. No committed inventory text holds any non-ASCII character, and a test checks the class against this Python's Unicode data (`test_compatibility_characters_with_an_ascii_form_are_refused_in_text`). Trade-off: a future label that needs a character such as the trade mark sign U+2122 (normalised TM) is refused and needs a deliberate exception.
 2. P1 a baseline spelled `BASELINE.JSON` skipped the baseline checks on a case-insensitive file system: `is_baseline()` compares the case-folded name, used by both discovery and validation (`test_a_baseline_in_any_case_takes_the_baseline_checks`).
-3. P3 the row-length guard was untested on its own: `test_a_baseline_row_of_the_wrong_length_is_refused`.
-
-## Cap reached
-
-Rounds spent: 22 (Astra 6 medium rounds 1 to 3, GPT-6.1 Sol xhigh rounds 4 to 22; no outage rounds). Every round found real defects, all fixed in their own commits with regression tests proven against the code before the fix. Leftovers:
-
-- The round 22 fixes have no independent review round: owned by `D02 T01 §27`.
-- The record lens found an untested guard in each of rounds 18 to 22, so the ticked claim that every rule's removal fails a test (`D02 T01 §1`) is proven rule by rule rather than systematically: `D02 T01 §27` runs a mutation sweep over every rule in `scripts/check-inventory.py` and every pattern in `design/inventory/schema.json`.
-
-No leftover is a safety, data-integrity or stamp-invalidating defect: the checker refuses more than before at every round, the committed inventory passes it unchanged, and no finding was a regression of `D02 T01 §1`'s stamped behaviour, so the audit confirms its stamp.
+3. P3 the row-length guard was untested on its own: `test_a_baseline_row_of_the_wrong_length_is_refused` (systematic mutation testing across all guards and pattern alternatives is owned by `D02 T01 §27`).
 
 ## Checkpoint after round 22
 
 ```text
-python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 115 tests in 8.186s OK
+python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 115 tests in 7.600s OK
 python scripts/check-inventory.py                                          -> exit 0
-python -m unittest discover -s scripts/tests                               -> Ran 622 tests, OK (skipped=2)
+python scripts/todo-graph.py resolve "D02 T01 §1"                          -> exit 3 (done: true)
 ```
 
-CI on the round 22 fix commit failed: CI pins Python 3.15 (Unicode 17.0), whose data adds U+A7F1, a compatibility character with an ASCII form that the class generated under the local Python 3.14 (Unicode 16.0) lacked. The class is now generated from the CI pin's Unicode 17.0 data (779 characters), its description names the version, and the checker tests pass under both 3.14 and 3.15. The full suite now runs under the CI pin before every push.
+CI on the round 22 fix commit failed: CI pins Python 3.15 (Unicode 17.0), whose data adds U+A7F1, a compatibility character with an ASCII form that the class generated under the local Python 3.14 (Unicode 16.0) lacked. The class is now generated from the CI pin's Unicode 17.0 data (779 characters) in commit `b481dd4`, its description names the version, and the checker tests pass under both 3.14 and 3.15.
+
+
+## Round 23: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T12:09:51Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: bc35717a1f1028a4
+
+## adversarial: needs-attention
+
+1. **[P1] Concurrent edits can produce success although neither file version is valid.** `scripts/check-inventory.py:480` reloads records after building the ID and parent indexes at lines 406 to 424. Reproduced with in-memory overrides for `word/commands.json`: the first read lacks the first record’s `label`; the second restores that label but sets its `parent` to its own ID. Each version checked independently fails. Switching versions between reads returns `[]`. Preconditions: an author or script saves during validation. Validate schema and relationships against the same loaded data.
+
+## consistency: needs-attention
+
+2. **[P2] Outlook validation still depends on directory casing.** `scripts/check-inventory.py:373` compares `f.parent.name == "outlook"` case-sensitively. On this Windows workspace, checking `design/inventory/outlook/baseline.json` succeeds, while checking `design/inventory/OUTLOOK/baseline.json` rejects its columns. `Path.samefile()` confirms these name the same file. Preconditions: an ordinary alternate casing in the supplied path. Apply consistent case handling to app-directory classification as well as baseline filenames.
+
+## integration: needs-attention
+
+Finding 2 breaks equivalent Windows paths accepted by the CLI.
+
+## source-defect: approve
+
+No additional independently substantiated finding.
+
+## design: advisory
+
+Not applicable (`Surface: no`).
+
+## excellence: needs-attention
+
+Finding 1 violates reliable validation: the checker combines two versions and approves a result neither version earns.
+
+## record: advisory
+
+The full 115-test checkpoint was not reproduced under the no-write restriction. Fourteen selected existing tests passed with filesystem-writing setup omitted where unnecessary; the committed inventory check also passed. Historical timings and cross-version results remain unverified. Systematic mutation proof remains assigned to §27.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Dispositions after audit round 23
+
+Both findings verified and fixed in the next commit, with regression tests:
+
+1. P1 `check()` loaded each named file twice (once when building `records` and `parents`, and again when validating the file's schema and relationships), so a concurrent edit between the two reads could combine two invalid versions. `check()` now caches each loaded file in `loaded[resolved]` and reuses that single parsed payload for index construction, whole-inventory Outlook baseline checks, and per-file schema and relationship validation (`test_each_file_is_loaded_once_per_check`).
+2. P2 `check_baseline()` compared `f.parent.name == "outlook"` case-sensitively. It now compares `f.parent.name.casefold() == "outlook"` so `OUTLOOK/baseline.json` on a case-insensitive file system uses Outlook's column layout (`test_outlook_baseline_columns_take_any_folder_case`).
+
+## Checkpoint after round 23
+
+```text
+python -m unittest discover -s scripts/tests -p "test_check_inventory.py"   -> Ran 117 tests in 8.881s OK
+python scripts/check-inventory.py                                          -> exit 0
+python scripts/todo-graph.py resolve "D02 T01 §1"                          -> exit 3 (done: true)
+```
+
