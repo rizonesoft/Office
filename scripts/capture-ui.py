@@ -16,11 +16,12 @@ every profile value is checked, and `bounds` and `size` are recorded only when a
 
 Records carry facts only: a control's name (its label, without control characters), control type, UI Automation id (as `idMso` when the app's
 baseline lists it, and always as `uiaId`), KeyTip, order and, under the profile, bounds relative to the client
-area. ScreenTip text (the UI Automation help text and full description) is never read. A tab without an identifier,
-or a group with no control the baseline knows, may be an add-in or may be new in this build: it is not written to
-the inventory but to build/capture-ui/<app>-unverified.json, marked `baselineMissing`, and listed for review. The run
-reports which of the baseline's core tabs the window did not show, and that File (Backstage) is not a ribbon tab.
-Combo box lists (fonts, sizes) are system and document data, so they are not expanded; the run counts them.
+area. ScreenTip text (the UI Automation help text and full description) is never read. A tab whose identifier is not
+in the app's baseline, or a group with no control the baseline knows, may be an add-in or may be new in this build:
+it is not written to the inventory but to build/capture-ui/<app>-unverified.json, marked `baselineMissing`, and
+listed for review. The run reports which of the baseline's core tabs the window did not show, and that File
+(Backstage) is not a ribbon tab. Combo box lists (fonts, sizes) are system and document data, so they are not
+expanded; the run counts them.
 All UI Automation reading runs in a child process of this script, which exits before the app is quit: Excel keeps
 running after Quit for as long as the process that read its window through UI Automation is alive. The child asks
 this process for every check that needs the app's object model (whether the instance still holds only the tool's
@@ -106,11 +107,13 @@ class Context:
         self.app, self.build, self.identifiers = app, build, identifiers
         self.origin = origin  # client-area origin on screen, only when the capture profile holds
         self.ids, self.skipped, self.unverified, self.notes = Ids(), [], [], []
+        self.dropped_reasons = []
         self.elements = {}  # record id -> the element it was read from, for expansion
 
     def drop_geometry(self, why):
         """Geometry from a window that moved is no longer under the profile: none is kept for this capture."""
         self.origin = None
+        self.dropped_reasons.append(why)
         self.notes.append(f"no bounds: {why}")
 
     def base(self, rid, kind, label, order, element, parent=None, **extra):
@@ -169,15 +172,17 @@ def controls_of(group):
 
 def walk_tab(tab, order, lower, ctx, contextual=False):
     """Records for one selected tab: the tab, its groups and their controls. Content the baseline cannot vouch for
-    (a tab without an identifier, a group with no known control) goes to ctx.unverified, marked baselineMissing."""
-    tab_unverified = not tab.automation_id
+    (a tab whose identifier is not in the baseline, a group with no known control) goes to ctx.unverified, marked
+    baselineMissing."""
+    tab_unverified = not tab.automation_id or tab.automation_id not in ctx.identifiers
     tab_id = ctx.ids.make(ctx.app, tab.name, tab.automation_id)
     tab_rec = ctx.base(tab_id, "contextualTab" if contextual else "tab", tab.name, order, tab,
                        idMso=tab.automation_id if tab.automation_id in ctx.identifiers else None,
                        baselineMissing=True if tab_unverified else None)
     records, aside = ([], [tab_rec]) if tab_unverified else ([tab_rec], [])
     if tab_unverified:
-        ctx.skipped.append(f"tab {tab.name!r}: no identifier, so its provenance is unverified")
+        why = "no identifier" if not tab.automation_id else f"identifier {tab.automation_id!r} is not in the baseline"
+        ctx.skipped.append(f"tab {tab.name!r}: {why}, so its provenance is unverified")
     containers = [c for c in lower.children() if c.control_type == "Group"]
     groups = [g for c in containers for g in c.children() if g.control_type == "Group"]
     for g_order, group in enumerate(groups):
@@ -670,6 +675,9 @@ def capture(args, launched, uia, win):
         win.place(launched.hwnd, monitor)
         time.sleep(2)
     root = uia.element(launched.hwnd)
+    notice = licensing_problem(root)
+    if notice:
+        raise Refused(notice)
     tabs_bar = wait_for(lambda: find(root, lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs"))
     lower = wait_for(lambda: find(root, lambda e: e.name == "Lower Ribbon"))
     if not tabs_bar or not lower:
@@ -702,6 +710,7 @@ def capture(args, launched, uia, win):
         tab.select()
         if not wait_for(lambda: first_group_name(uia.element(launched.hwnd)) == tab.name):
             raise Refused(f"tab {tab.name!r} did not open")
+        launched.check_alone()
         lower = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
         tab_records = walk_tab(tab, order, lower, ctx)
         if args.expand:
@@ -710,14 +719,39 @@ def capture(args, launched, uia, win):
     if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
         ctx.drop_geometry("the window moved or changed size during the capture")
     if ctx.origin is None:
-        for rec in records:
+        for rec in records + ctx.unverified:
             for key in ("bounds", "captureProfile", "size"):
                 rec.pop(key, None)
+        for why in ctx.dropped_reasons:
+            if why not in problems:
+                problems.append(why)
     return records, problems, ctx
 
 
 def same_geometry(before, after):
     return all(before[k] == after[k] for k in ("window", "origin", "dpi", "zoomed"))
+
+
+LICENSING_PHRASES = (
+    "unlicensed product",
+    "product activation failed",
+    "activation required",
+    "activate office",
+    "reduced functionality",
+    "subscription expired",
+    "sign in to set up office",
+    "most features are disabled",
+)
+
+
+def licensing_problem(root):
+    """Why the window shows a licence, activation or reduced-functionality notice, or None."""
+    for el in [root] + list(descendants(root)):
+        text = (el.name or "").strip()
+        lower = text.casefold()
+        if any(phrase in lower for phrase in LICENSING_PHRASES):
+            return f"the window shows a licence or activation notice ({text!r})"
+    return None
 
 
 def reported_build(app):
@@ -766,6 +800,7 @@ def expand_all(records, lower, ctx, launched, uia, win):
         if rec.get("controlType") == "comboBox":
             combos += 1  # fonts, sizes: the machine's and the document's data, not the app's interface
             continue
+        launched.check_alone()
         before = win.popups(launched.proc.pid)
         target.expand()
         try:
@@ -777,24 +812,30 @@ def expand_all(records, lower, ctx, launched, uia, win):
         finally:
             close_popup(target, lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
                         or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,
-                        rec["label"])
+                        rec["label"], check_alone=launched.check_alone)
         out += expand_items(rec, target, items, ctx)
     if combos:
         ctx.notes.append(f"{combos} combo box list(s) on this tab not expanded (system or document data)")
     return out
 
 
-def close_popup(target, still_open, label, attempts=3):
+def close_popup(target, still_open, label, attempts=3, check_alone=None):
     """Collapse a menu and confirm its popup is gone. The control's own expand state is not trusted: Word reports
     some drop-downs collapsed while open and others expanded while closed, so "gone" means no popup window and no
     open menu remain. A drop-down that ignores Collapse closes when opened and collapsed again; one that stays open
     stops the capture rather than leaving it behind."""
+    if check_alone is not None:
+        check_alone()
     target.collapse()
     for _ in range(attempts):
         if wait_for(lambda: not still_open(), 1.5):
             return
+        if check_alone is not None:
+            check_alone()
         target.expand()
         time.sleep(0.4)
+        if check_alone is not None:
+            check_alone()
         target.collapse()
     raise Refused(f"{label!r} did not close after being opened")
 
@@ -845,14 +886,43 @@ def converse(lines, reply, launched):
     return {"refused": "the capture worker ended without reporting an outcome"}
 
 
-def capture_in_worker(args, launched, timeout=3600):
+def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
     """Run capture() in a child process and return its records, profile problems and notes."""
+    import queue
     import subprocess
+    import threading
     import types
     spec = {"args": vars(args), "hwnd": int(launched.hwnd), "pid": int(launched.proc.pid),
             "build": reported_build(launched.app), "language": launched.language()}
-    child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--worker"], stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+    cmd = worker_cmd or [sys.executable, str(Path(__file__).resolve()), "--worker"]
+    child = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             text=True, encoding="utf-8")
+    q = queue.Queue()
+
+    def reader():
+        try:
+            for line in iter(child.stdout.readline, ""):
+                q.put(line)
+        finally:
+            q.put(None)
+
+    threading.Thread(target=reader, daemon=True).start()
+    deadline = time.monotonic() + timeout
+
+    def timed_lines():
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise Refused(f"the capture worker timed out after {timeout}s")
+            try:
+                line = q.get(timeout=min(remaining, 0.2))
+            except queue.Empty:
+                continue
+            if line is None:
+                return
+            yield line
+
+    err_lines = []
     try:
         child.stdin.write(json.dumps(spec) + "\n")
         child.stdin.flush()
@@ -861,17 +931,28 @@ def capture_in_worker(args, launched, timeout=3600):
             child.stdin.write(json.dumps({"answer": text}) + "\n")
             child.stdin.flush()
 
-        outcome = converse(iter(child.stdout.readline, ""), reply, launched)
-        child.wait(timeout=60)
+        outcome = converse(timed_lines(), reply, launched)
+        remaining = max(0.0, deadline - time.monotonic())
+        try:
+            child.wait(timeout=min(60.0, remaining))
+        except subprocess.TimeoutExpired:
+            raise Refused(f"the capture worker timed out after {timeout}s") from None
+        if "refused" in outcome and child.stderr:
+            err_lines = child.stderr.read().strip().splitlines()[-1:]
     finally:
         if child.poll() is None:
             child.kill()
             child.wait()
+        for pipe in (child.stdin, child.stdout, child.stderr):
+            if pipe is not None:
+                try:
+                    pipe.close()
+                except OSError:
+                    pass
     if "unsafe" in outcome:
         raise Unsafe(outcome["unsafe"])
     if "refused" in outcome:
-        detail = child.stderr.read().strip().splitlines()[-1:] if child.stderr else []
-        raise Refused(outcome["refused"] + (f" ({detail[0]})" if detail else ""))
+        raise Refused(outcome["refused"] + (f" ({err_lines[0]})" if err_lines else ""))
     result = outcome["result"]
     ctx = types.SimpleNamespace(skipped=result["skipped"], notes=result["notes"], unverified=result["unverified"])
     return result["records"], result["problems"], ctx

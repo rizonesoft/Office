@@ -101,12 +101,14 @@ class Walk(unittest.TestCase):
         self.assertTrue(all(r.get("captureProfile") == "fhd-100" for r in recs if "bounds" in r))
 
     def test_a_tab_without_an_identifier_is_set_aside_with_its_groups(self):
-        ctx = cu.Context("word", BUILD, IDS)
-        lower = E("Pane", kids=[E("Group", "Acrobat", kids=[E("Group", "Create", kids=[E("Button", "Bold", "Bold")])])])
-        self.assertEqual(cu.walk_tab(E("TabItem", "Acrobat"), 9, lower, ctx), [])
-        self.assertIn("no identifier", ctx.skipped[0])
-        self.assertEqual([(r["kind"], r["baselineMissing"]) for r in ctx.unverified],
-                         [("tab", True), ("group", True), ("control", True)])
+        for tab, expected_why in ((E("TabItem", "Acrobat"), "no identifier"),
+                                  (E("TabItem", "Acrobat", "ThirdPartyTab"), "identifier 'ThirdPartyTab' is not in the baseline")):
+            ctx = cu.Context("word", BUILD, IDS)
+            lower = E("Pane", kids=[E("Group", "Acrobat", kids=[E("Group", "Create", kids=[E("Button", "Bold", "Bold")])])])
+            self.assertEqual(cu.walk_tab(tab, 9, lower, ctx), [])
+            self.assertIn(expected_why, ctx.skipped[0])
+            self.assertEqual([(r["kind"], r["baselineMissing"], r.get("idMso")) for r in ctx.unverified],
+                             [("tab", True, None), ("group", True, None), ("control", True, "Bold")])
 
     def test_unverified_records_pass_the_checker(self):
         recs, ctx = self.records()
@@ -530,7 +532,7 @@ class Round3(unittest.TestCase):
         ctx = cu.Context("word", BUILD, {"SelectMenu", "SelectAll"})
         rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
                        controlType="menu", idMso="SelectMenu")
-        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5})()
+        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": lambda self: None})()
         uia = type("U", (), {"element": lambda self, h: popup if h == 77 else E("Window", "Doc")})()
         win = type("W", (), {"popups": lambda self, pid: [77] if drop.open else []})()
         real = cu.wait_for
@@ -542,6 +544,38 @@ class Round3(unittest.TestCase):
         self.assertEqual([r["label"] for r in out[1:]], ["Select All", "Selection Pane"])
         self.assertEqual(out[1]["idMso"], "SelectAll")
         self.assertFalse(drop.open)
+
+    def test_expand_checks_ownership_before_each_ui_action(self):
+        class Drop(E):
+            def __init__(self):
+                super().__init__("MenuItem", "Select", "SelectMenu")
+                self.open, self.calls = False, []
+
+            def expand_state(self):
+                return 1 if self.open else 0
+
+            def expand(self):
+                self.calls.append("expand")
+                self.open = True
+
+            def collapse(self):
+                self.calls.append("collapse")
+                self.open = False
+
+        drop = Drop()
+        ctx = cu.Context("word", BUILD, {"SelectMenu"})
+        rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
+                       controlType="menu", idMso="SelectMenu")
+
+        def shared(self):
+            raise cu.Refused("now holds 2 documents")
+
+        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": shared})()
+        uia = type("U", (), {"element": lambda self, h: E("Window", "Doc")})()
+        win = type("W", (), {"popups": lambda self, pid: []})()
+        with self.assertRaises(cu.Refused):
+            cu.expand_all([rec], None, ctx, launched, uia, win)
+        self.assertEqual(drop.calls, [])
 
 
 class Worker(unittest.TestCase):
@@ -561,13 +595,111 @@ class Worker(unittest.TestCase):
         cu.converse(iter([json.dumps({"ask": "check_alone"}), json.dumps({"refused": "x"})]), replies.append,
                     type("L", (), {"check_alone": refuse})())
         self.assertEqual(replies, ["now holds 2 documents"])
-        proxy = cu.Proxy({"hwnd": 1, "pid": 2, "build": "16.0.20430", "language": 1033}, lambda q: "now holds 2")
+        proxy = cu.Proxy({"hwnd": 1, "pid": 2, "build": "16.0.20527", "language": 1033}, lambda q: "now holds 2")
         with self.assertRaises(cu.Refused):
             proxy.check_alone()
-        self.assertEqual((proxy.language(), cu.reported_build(proxy.app)), (1033, "16.0.20430"))
+        self.assertEqual((proxy.language(), cu.reported_build(proxy.app)), (1033, "16.0.20527"))
 
     def test_a_worker_that_ends_silently_is_a_refusal(self):
         self.assertIn("refused", cu.converse(iter([]), lambda r: None, None))
+
+    def test_capture_in_worker_enforces_timeout_and_roundtrips_results(self):
+        import argparse
+        import sys
+        import time
+        args = argparse.Namespace(app="word", tab="Home", all_tabs=False, expand=False, layout="classic",
+                                  merge=False, out=None)
+        checks = []
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                  "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                  "language": lambda self: 1033, "check_alone": lambda self: checks.append(1)})()
+        t0 = time.monotonic()
+        with self.assertRaises(cu.Refused) as ctx_err:
+            cu.capture_in_worker(args, launched, timeout=0.15,
+                                 worker_cmd=[sys.executable, "-c", "import time; time.sleep(5)"])
+        self.assertLess(time.monotonic() - t0, 2.0)
+        self.assertIn("timed out", str(ctx_err.exception))
+        script = (
+            "import json, sys\n"
+            "spec = json.loads(sys.stdin.readline())\n"
+            "print(json.dumps({'ask': 'check_alone'}), flush=True)\n"
+            "ans = json.loads(sys.stdin.readline())['answer']\n"
+            "assert ans == 'ok'\n"
+            "print(json.dumps({'result': {'records': [{'id': 'word.home'}], 'problems': [], "
+            "'skipped': ['s'], 'notes': ['n'], 'unverified': [{'id': 'word.u'}]}}), flush=True)\n"
+        )
+        recs, problems, ctx = cu.capture_in_worker(args, launched, timeout=5.0,
+                                                   worker_cmd=[sys.executable, "-c", script])
+        self.assertEqual((recs, problems, ctx.skipped, ctx.notes, ctx.unverified, len(checks)),
+                         ([{"id": "word.home"}], [], ["s"], ["n"], [{"id": "word.u"}], 1))
+
+
+class CaptureIntegration(unittest.TestCase):
+    def _window_tree(self, extra_kids=()):
+        tab, lower = home()
+        tab.select = lambda: None
+        lower.rect = (0, 80, 1920, 200)
+        tabs_bar = E("Tab", "Ribbon Tabs", kids=[tab])
+        return E("Window", "Document1 - Word", kids=[tabs_bar, lower, *extra_kids])
+
+    def test_capture_refuses_licensing_or_activation_notice(self):
+        import argparse
+        args = argparse.Namespace(app="word", tab="Home", all_tabs=False, expand=False, layout="classic",
+                                  merge=False, out=None)
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                  "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                  "language": lambda self: 1033, "check_alone": lambda self: None})()
+        win = type("W", (), {"monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
+                             "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1)})()
+        root = self._window_tree(extra_kids=[E("Pane", "Unlicensed Product - Most features are disabled")])
+        uia = type("U", (), {"element": lambda self, h: root})()
+        real_ib, real_sleep = cu.installed_build, cu.time.sleep
+        cu.installed_build = lambda: BUILD
+        cu.time.sleep = lambda s: None
+        try:
+            with self.assertRaises(cu.Refused) as err:
+                cu.capture(args, launched, uia, win)
+            self.assertIn("licence or activation notice", str(err.exception))
+        finally:
+            cu.installed_build, cu.time.sleep = real_ib, real_sleep
+
+    def test_geometry_invalidation_strips_sidecar_bounds_and_reports_no_bounds(self):
+        root = self._window_tree()
+        states = [
+            dict(Profile.GOOD, origin=(0, 0), monitor=1),
+            dict(Profile.GOOD, origin=(0, 0), monitor=1),
+            dict(Profile.GOOD, window=(10, 10, 1930, 1090), origin=(10, 10), monitor=1),
+        ]
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                  "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                  "language": lambda self: 1033, "check_alone": lambda self: None,
+                                  "close": lambda self: None})()
+        win = type("W", (), {"monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
+                             "state": lambda self, h: states.pop(0) if len(states) > 1 else states[0]})()
+        uia = type("U", (), {"element": lambda self, h: root})()
+        real_ib, real_sleep, real_unv = cu.installed_build, cu.time.sleep, cu.UNVERIFIED
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = Path(tmp) / "home.json"
+            cu.installed_build = lambda: BUILD
+            cu.time.sleep = lambda s: None
+            cu.UNVERIFIED = Path(tmp) / "unverified"
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    rc = cu.main(["--app", "word", "--tab", "Home", "--out", str(out_path)],
+                                 launcher=lambda app: launched, uia_factory=lambda: uia, win_factory=lambda: win)
+            finally:
+                cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
+            self.assertEqual(rc, 0)
+            written = json.loads(out_path.read_text(encoding="utf-8"))
+            sidecar = json.loads((Path(tmp) / "unverified" / "word-unverified.json").read_text(encoding="utf-8"))
+            self.assertTrue(written and sidecar)
+            for rec in written + sidecar:
+                for key in ("bounds", "captureProfile", "size"):
+                    self.assertNotIn(key, rec)
+            self.assertIn("; no bounds: the window moved or changed size during the capture", buf.getvalue())
+            self.assertNotIn("bounds recorded under", buf.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
