@@ -2,7 +2,7 @@
 schema_version: 1
 id: icon-system
 domain: 01-brand
-status: active
+status: done
 title: "TODO-02 -- Suite and App Icon System"
 ---
 
@@ -43,7 +43,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | 4 | §4 | Small-size app icon variants | §3 | [x] |
 | 5 | §5 | Document file-type icons | §3 | [x] |
 | 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [x] |
-| 7 | §7 | Distinctness review and owner sign-off | §6 | [ ] |
+| 7 | §7 | Distinctness review and owner sign-off | §6 | [x] |
 
 ## 1. Icon Design Language Brief
 
@@ -242,6 +242,9 @@ The family is compared side by side with Microsoft's current app and file icons 
 - [x] Commit: `brand: record icon distinctness review`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/brand/icon-distinctness.md --require "Symbol contrast" --require "Distinctness rules" --require "Suite and app icons" --require "File-type icons" --require "Sign-off"` exits 0, `Select-String -Path docs/brand/icon-distinctness.md -Pattern "\| fail \|"` finds nothing, and `python -m unittest discover -s scripts/tests -p "test_build_icons.py"` exits 0 (including the `icon-distinctness.md` completeness test). **Corrected 2026-11-08:** required all five section headings and the `test_build_icons.py` completeness check so an empty `## Sign-off` cannot pass.
+
+> **Verified:** 2026-11-08 | §7 | 8f6a24444eb18fa91c192927c4897ab7bd36a489
+> **Review:** `docs/reviews/d01-t02-s7.json`
 
 ## Verification
 
