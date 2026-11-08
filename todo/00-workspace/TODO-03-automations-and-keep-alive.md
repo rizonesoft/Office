@@ -55,7 +55,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 20 | §20 | CI reconciliation at scale | §17 | [x] |
 | 21 | §21 | CI recovery closed on resume | §17, §18 | [x] |
 | 22 | §22 | CI reconciliation past limits | §20 | [x] |
-| 23 | §23 | CI reconciliation after deleted runs | §22 | [ ] |
+| 23 | §23 | CI reconciliation after deleted runs | §22 | [x] |
 | 24 | §24 | Resumable newest-page refresh | §23 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
@@ -682,9 +682,12 @@ Filed 2026-10-23 from round 13 of D00 T03 §22's review (`docs/reviews/00-worksp
 - [x] Apply the same boundary check and recovery to `scripts/ci-status.py` `Pages.newest`, the refresh every resumed try runs: each page after the first is checked against the one before it, and its stop condition (a page with nothing new or changed) counts only once that page's boundary checks out. Done when: a fixture with a completed checkpoint, more than one page of new runs and a deletion of an already-read run during the refresh finds every remaining head. Cheaper substitute: a refresh whose unchanged page hides a skipped new run. **Groomed 2026-10-23:** completion finding 1.
 - [x] Remove a held run from the checkpoint in `scripts/ci-status.py` when `read_run` gets HTTP 404 for it, and settle again every listed head whose stored result rested on it (`look_up`, which reads the head's governing run as it is now); any other failure stays unknown. Done when: a fixture deleting a settled head's only run between tries reports that head as GitHub now does (pending or unknown with no run, or its older run's result) instead of exiting 2 on every try, and a fixture with a 502 still exits 2. Cheaper substitute: exiting 2 forever on a run that no longer exists.
 - [x] Keep the listing right without the removed run in `scripts/ci-status.py` `unchecked_heads`: a head whose only run was removed is listed only through its records or as `origin/main`, as for any commit without a run, and a head with an older run is decided by that run. Done when: fixtures for both cases list the head as described.
-- [ ] Commit: `automations: reconcile CI through deleted runs`
+- [x] Commit: `automations: reconcile CI through deleted runs`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ci_status.py"` passes.
+
+> **Verified:** 2026-11-08 | §23 | ae496065b9af82d2167fa80b76815cf274116c42
+> **Review:** `docs/reviews/d00-t03-s23.json`
 
 ## 24. Resumable Newest-Page Refresh
 
