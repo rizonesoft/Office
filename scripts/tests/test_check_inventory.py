@@ -358,7 +358,9 @@ class Inventory(unittest.TestCase):
         # Unicode space after a sentence is not mistaken for a host.
         for text in ("\U00010428.com", "8.8.8.8", "Visit 10.0.0.1 now", "*.example.com", ".example.com",
                      "*.example.dotm", "doc.docx.dotm", "1.25.dotm", "Normal..dotm", "contoso.xyz", "office.live",
-                     "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM"):
+                     "example.ht", "EXAMPLE.TEST", "MICROSOFT.ID", "WWW.MICROSOFT.COM", "ATTACKER.ID", "SERVER.ID",
+                     "Visit ATTACKER.ID now", "XREGISTER.ID", "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL",
+                     "XT.DIST.2T", "X.T.DIST.2T"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
             self.assertTrue(any("host name or address" in p for p in self.problems()), ascii(text))
         for text in ("Opens the dialog.\u2002", "Sets 1.5 line spacing.", "Ctrl+Shift+.", "Save As...", "(see Help.)",
