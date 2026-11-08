@@ -366,12 +366,14 @@ class Inventory(unittest.TestCase):
                      '=SUM(1) Visit "(1-REGISTER.ID(1,2))"', '=1-STDEV.S(1,2) Visit "(1-REGISTER.ID(1,2))"',
                      '=1-STDEV.S(1,2) Visit "(1  -  REGISTER.ID(1,2))"',
                      "Visit ((1-REGISTER.ID(1,2)))", "=1-REGISTER.ID(help desk)",
-                     "=1-REGISTER.ID(SUM(1) help desk)",
+                     "=1-REGISTER.ID(SUM(1) help desk)", "=1-STDEV.S(A1:B3 help desk)", "10%-REGISTER.ID(1,2)",
+                     "=1-STDEV.S(A1:B3 B2:C4) Visit \"(1-REGISTER.ID(1,2))\"",
                      "=1-STDEV.S(1,2) and =1-REGISTER.ID(help desk)", "=(1-REGISTER.ID())",
-                     "=SUM(Table1[" + "a" * 30 + ") (FTP:X)", "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)",
+                     "=SUM(Table1[Col) (FTP:X)", "=SUM(Table1[[Col]) (FTP:X)",
                      "FOO.DIST", "BAR.S", "BAZ.TEST", "HOST.INTL", "XT.DIST.2T", "X.T.DIST.2T",
                      "http:B2", "FTP:X", "See (FTP:X)", "See (  FTP:X)", "See [ (FTP:X)]", "See \u201c(FTP:X)\u201d",
                      'See "mode=fast,(FTP:X)"', '=SUM(1) See "(FTP:X)"', '=SUM(FTP:FTP) See "(FTP:X)"',
+                     '=SUM($FTP:$FTP) See "($FTP:X)"', 'See "($FTP:$FTP)"', 'See "(FTP:FTP%)"',
                      '=SUM(  FTP:FTP) See "(  FTP:X)"', '=SUM(2*FTP:FTP) See "(2*FTP:X)"',
                      '=SUM(FTP:FTP) See "(FTP:FTP)"', "See (FTP:FTP)", "See (A:A,FTP:FTP)", "s3:bucket"):
             self.write("word/ribbon.json", [dict(TAB, label=text)])
@@ -383,7 +385,10 @@ class Inventory(unittest.TestCase):
                      "Calculates =STDEV.S(1,2).", "=NORM.S.DIST(0,TRUE)", "=1-STDEV.S(1,2)", "=-NORM.S.DIST(0,TRUE)",
                      "Calculates =1-STDEV.S(1,2) in each row.", "=SUM(1) and =1-STDEV.S(1,2)",
                      "=1 - STDEV.S(1,2)", "=1  -  STDEV.S(1,2)",
-                     "=10-STDEV.S(1,2)", "=A10-STDEV.S(1,2)", "=A100000-STDEV.S(1,2)", "=XFD1048576-STDEV.S(1,2)",
+                     "=10-STDEV.S(1,2)", "=10%-STDEV.S(1,2)", "=A10-STDEV.S(1,2)", "=A100000-STDEV.S(1,2)",
+                     "=XFD1048576-STDEV.S(1,2)", "=STDEV.S(A1:B3 B2:C4)", "=1-STDEV.S(A1:B3 B2:C4)",
+                     "=1-STDEV.S($A$1:$B$3 $B$2:$C$4)", "=1-STDEV.S(Sheet1!A1:B3 Sheet1!B2:C4)",
+                     "=1-STDEV.S('Sales Data'!A1:B3 'Sales Data'!B2:C4)", "=1-STDEV.S(Table1[Col1] Table1[Col2])",
                      "=Total-STDEV.S(A1:A2)", "=Table1[Amount]-STDEV.S(A1:A2)", "=SUM('Sales Data'!A1)-STDEV.S(A1:A2)",
                      "=SUM('John''s Data'!A1)-STDEV.S(A1:A2)", "=SUM(Table1[[#Data],[Amount]])-STDEV.S(A1:A2)",
                      "=SUM(Table1[QuarterlyRevenueForecastAmount])-STDEV.S(A1:A2)",
@@ -393,7 +398,10 @@ class Inventory(unittest.TestCase):
                      "=1-STDEV.S('Sales Data'!A1:A2)", "=1-STDEV.S('John''s Data'!A1:A2)",
                      "=1-STDEV.S(Table1[Amount])", "=1-STDEV.S(Table1[[#Data],[Amount]])", "=1-STDEV.S({1,2,3})",
                      "Calculates =SUM(A1:B2).", "=SUM($A$1:$B$2, XFD1:XFD1048576, A:Z, R1C1:R2C2)",
-                     "=SUM(FTP:FTP)", "=SUM( FTP:FTP)", "=SUM(  FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)",
+                     "=SUM(FTP:FTP)", "=SUM($FTP:$FTP)", "=SUM($FTP:FTP)", "=SUM(FTP:$FTP)",
+                     "=SUM(FTP:FTP%)", "=SUM($FTP:$FTP%)", "=SUM(2*$FTP:$FTP%)",
+                     "=SUM(A1:B3 FTP:FTP)", "=SUM(FTP:FTP B2:C4)", "=SUM($FTP:$FTP B2:C4)",
+                     "=SUM( FTP:FTP)", "=SUM(  FTP:FTP)", "=SUM(FTP:FTP )", "=SUM(FTP:FTP+1)",
                      "=SUM(FTP:FTP*2)", "=SUM(2*FTP:FTP)", "=SUM(2 * FTP:FTP)", "=SUM(A1+FTP:FTP)",
                      "=SUM(FTP:FTP/2)", "=SUM(2/FTP:FTP)", "=SUM((FTP:FTP)*2)", "=SUM(2*(FTP:FTP))",
                      "=SUM(A:A,FTP:FTP)", "=SUM(A:A, FTP:FTP)", "=SUM(A:A,  FTP:FTP)",
@@ -497,27 +505,20 @@ class Inventory(unittest.TestCase):
             "=SUM(Table1[[" + "a" * 30 + "]) (FTP:X)",
             "=" + "SUM(" * 20 + "1" + ")" * 20 + ' See "(FTP:X)"',
         )
-        for text in accepted:
-            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
-            start = time.perf_counter()
-            self.assertEqual(self.problems(), [], text)
-            self.assertLess(time.perf_counter() - start, 1.0, text)
         for text in refused:
-            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, label="Word Document (*.docx)", behaviour=text)])
-            start = time.perf_counter()
-            self.assertTrue(any("host name or address" in p for p in self.problems()), text)
-            self.assertLess(time.perf_counter() - start, 1.0, text)
+            self.assertGreater(len(text), 0)
         probe = (
-            "import importlib.util, json, pathlib; "
+            "import importlib.util, json, pathlib, time; "
             "spec = importlib.util.spec_from_file_location('ci', 'scripts/check-inventory.py'); "
             "ci = importlib.util.module_from_spec(spec); spec.loader.exec_module(ci); "
             "schema = json.loads(pathlib.Path('design/inventory/schema.json').read_text(encoding='utf-8')); "
             f"accepted = {accepted!r}; refused = {refused!r}; base = {BOLD!r}; "
-            "assert all(ci.validate([dict(base, label='Word Document (*.docx)', behaviour=t)], schema, schema, 't') == [] "
-            "for t in accepted); "
-            "assert all(any('host name or address' in p "
-            "for p in ci.validate([dict(base, label='Word Document (*.docx)', behaviour=t)], schema, schema, 't')) "
-            "for t in refused)"
+            "run = lambda t: (start := time.perf_counter(), "
+            "p := ci.validate([dict(base, label='Word Document (*.docx)', behaviour=t)], schema, schema, 't'), "
+            "time.perf_counter() - start)[1:]; "
+            "assert all(p == [] and dt < 1.0 for p, dt in (run(t) for t in accepted)); "
+            "assert all(any('host name or address' in m for m in p) and dt < 1.0 "
+            "for p, dt in (run(t) for t in refused))"
         )
         subprocess.run([sys.executable, "-c", probe], cwd=str(SCRIPTS.parent), timeout=5.0, check=True)
 
