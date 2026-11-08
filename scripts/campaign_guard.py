@@ -857,19 +857,42 @@ def _record_hook_error(root: str, guard: dict | None, reason: str) -> None:
     os.replace(name + ".tmp", name)
 
 
+def _event_root(event: dict, project_dir: str | None) -> str:
+    if project_dir:
+        return project_dir
+    cwd = event.get("cwd")
+    if isinstance(cwd, str) and cwd:
+        return cwd
+    paths = event.get("workspacePaths")
+    if isinstance(paths, list):
+        for item in paths:
+            if isinstance(item, str) and item:
+                return item
+    return ""
+
+
 def stop_hook(stdin: str, project_dir: str | None) -> tuple[int, str]:
     """Run the hook on one Stop payload; returns (exit, stdout). Always exits 0: a failure allows the stop."""
-    root, guard = None, None
+    root, guard, agy = None, None, False
     try:
         if not stdin.strip():
             return 0, ""
         event = json.loads(stdin)
-        root = project_dir or str(event.get("cwd") or "")
+        agy = isinstance(event, dict) and "conversationId" in event and "session_id" not in event
+        empty = "{}" if agy else ""
+        if not isinstance(event, dict):
+            return 0, empty
+        if agy and event.get("terminationReason") in ("USER_CANCELED", "ERROR", "MAX_TOKEN_BUDGET_EXCEEDED"):
+            return 0, empty
+        root = _event_root(event, project_dir)
         if not root:
-            return 0, ""
+            return 0, empty
         guard = read_guard(root)
-        decision = stop_decision(root, str(event.get("session_id") or ""))
-        return 0, json.dumps(decision) if decision else ""
+        session = str(event.get("session_id") or event.get("conversationId") or "")
+        decision = stop_decision(root, session)
+        if decision and agy:
+            decision = {**decision, "decision": "continue"}
+        return 0, json.dumps(decision) if decision else empty
     except Exception as error:  # fail open, but never silently: the heartbeat reports what is recorded here
         reason = f"{type(error).__name__}: {error}"
         print(f"campaign-stop: {reason}", file=sys.stderr)
@@ -878,7 +901,7 @@ def stop_hook(stdin: str, project_dir: str | None) -> tuple[int, str]:
                 _record_hook_error(root, guard, reason)
             except OSError:
                 pass
-        return 0, ""
+        return 0, "{}" if agy else ""
 
 
 def _opts(argv: list[str]) -> dict:

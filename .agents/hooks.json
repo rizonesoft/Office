@@ -1,0 +1,11 @@
+{
+  "campaign-guard": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 ../scripts/campaign_guard.py stop-hook",
+        "timeout": 60
+      }
+    ]
+  }
+}

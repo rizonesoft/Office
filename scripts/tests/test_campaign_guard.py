@@ -322,6 +322,33 @@ class StopHook(Workspace):
                 ran += 1
         self.assertGreater(ran, 0, "no shell could run the configured hook")
 
+    def test_antigravity_stop_payload_and_hooks_json_work_from_agents_dir(self):
+        hooks_doc = json.loads((REPO / ".agents" / "hooks.json").read_text(encoding="utf-8"))
+        command = hooks_doc["campaign-guard"]["Stop"][0]["command"]
+        agents_dir = os.path.join(self.root, ".agents")
+        os.makedirs(agents_dir, exist_ok=True)
+        self.acquire()
+        canceled = json.dumps({"conversationId": SESSION, "workspacePaths": [self.root],
+                               "hookEventName": "Stop", "terminationReason": "USER_CANCELED"})
+        self.assertEqual(guard.stop_hook(canceled, None), (0, "{}"))
+        self.assertEqual(self.state(), {})
+        shells = ([["cmd.exe", "/c"], ["powershell.exe", "-NoProfile", "-Command"]] if os.name == "nt"
+                  else [["sh", "-c"]])
+        ran = 0
+        for shell in shells:
+            if not shutil.which(shell[0]):
+                continue
+            with self.subTest(shell=shell[0]):
+                env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+                payload = json.dumps({"conversationId": SESSION, "workspacePaths": [self.root],
+                                      "hookEventName": "Stop", "terminationReason": "NO_TOOL_CALL"})
+                proc = subprocess.run([*shell, command], input=payload, capture_output=True, text=True,
+                                      encoding="utf-8", env=env, cwd=agents_dir, timeout=120)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertEqual(json.loads(proc.stdout)["decision"], "continue", proc.stderr)
+                ran += 1
+        self.assertGreater(ran, 0, "no shell could run the configured Antigravity hook")
+
 
 class Lifecycle(Workspace):
     def test_acquire_is_exclusive_and_a_handover_is_recorded(self):

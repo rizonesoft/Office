@@ -765,8 +765,9 @@ class RepositoryPin(unittest.TestCase):
         with open(REPO_PIN, "rb") as handle:
             models = {r["model"] for r in tomllib.load(handle)["reviewers"].values()}
         root = SCRIPTS.parent
-        files = [root / "AGENTS.md", root / "CLAUDE.md", *root.glob(".claude/**/*.md"), *root.glob("docs/*.md"),
-                 *root.glob("scripts/*.py"), *root.glob(".conclave/*.py"), *root.glob(".conclave/**/*.py")]
+        files = [root / "AGENTS.md", root / "CLAUDE.md", root / "GEMINI.md", *root.glob(".claude/**/*.md"),
+                 *root.glob(".agents/**/*.md"), *root.glob("docs/*.md"), *root.glob("scripts/*.py"),
+                 *root.glob(".conclave/*.py"), *root.glob(".conclave/**/*.py")]
         for path in files:
             text = path.read_text(encoding="utf-8").lower()
             for model in models:
