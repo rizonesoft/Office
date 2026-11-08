@@ -1,0 +1,33 @@
+{
+  "ref": "D02 T01 \u00a725",
+  "title": "Audit Control ID Baseline",
+  "implementation_sha": "5af840f2faf3011ad71073823067c90173ea4d21",
+  "date": "2026-11-08",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s19.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s19.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py resolve 'D02 T01 \u00a719' -> exit 3 (still verified)",
+    "python -m unittest discover -s scripts/tests -p test_import_office_ids.py -> Ran 27 tests OK",
+    "python scripts/check-inventory.py design/inventory -> exit 0",
+    "python scripts/import-office-ids.py R:/scratch/office-ui-ids/b230a0df45036b2d5e8b49ebf368b3f90ada8d63 --check -> exit 0"
+  ],
+  "rounds_spent": 3,
+  "round_cap": 33,
+  "completion": "docs/reviews/02-interface/D02-T01-s25-completion.md",
+  "completion_rules": 2
+}
