@@ -22,3 +22,24 @@ CONTRACT: sha256:f5f47ef934d64ae437f9db513711c284324020f4a3656ac875927eb96de033a
 COMPLETE: no
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T03:37:08Z
+- Effort: medium
+- Type: adversarial
+- Lines: 11
+- Digest: dfd45d3a0a594fe1
+
+SECTION: D02 T01 §4
+PURPOSE: completion
+CONTRACT: sha256:252266d7f9f263d948f275b90411a7a68807560b6e5cd3d0e4dd7697cc9412d8
+
+1. **P2: Container replacement does not define descendant removal.** [TODO-01-parity-inventory.md:180](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:180) specifies replacing a container’s direct children. However, line 176 requires children beneath `shell.tabrow.editingMode`. Replacing the tab row for Excel removes `editingMode` without specifying what happens to its Editing, Reviewing and Viewing descendants. A literal implementation leaves orphaned records or exposes modes Excel should exclude. The source-file orphan check cannot catch this because the shared parent still exists in the source inventory. **Remedy: extend** the resolver contract to remove excluded subtrees, define parent remapping for retained descendants, and validate the resolved graph. Require a nested Excel fixture that proves all three mode items disappear while Word retains them.
+
+2. **P2: Outlook’s distinct shells cannot be selected through the specified resolver.** [TODO-01-parity-inventory.md:180](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:180) requires different explorer and item-window QAT records but defines only `effective_shell(records, app)` and overrides corresponding to shared `shell.<path>`. Both contexts therefore resolve with the same `app="outlook"` input. The contract does not define how a consumer obtains explorer commands such as `SendReceiveAll` separately from item-window commands such as `FileSave`, rather than a union or one context overwriting another. §15 owns live window-type measurements at [line 442](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:442), but does not supply the missing selection semantics. **Remedy: extend** §4 with explicit window-context identifiers and context-aware resolution, retaining §15 as the measurement owner. Require fixtures proving explorer and compose shells resolve independently and exclude each other’s context-only commands.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
