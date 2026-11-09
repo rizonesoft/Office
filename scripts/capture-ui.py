@@ -583,6 +583,7 @@ class Launched:
                          "attended (D02 T01 §15)")
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
         self.app, self.hwnd, self._cancelled = None, None, False
+        self._marshaled_app, self.cleanup_errors = None, []
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
             # very process. An instance the operator opened in between (empty or not) is never touched.
@@ -629,50 +630,156 @@ class Launched:
             except Exception:
                 pass
 
-    def _abandon_hung_launch(self):
-        self._post_close_if_owned()
-        if self.owned and self.app is not None:
-            import threading
-
-            def force_quit():
-                try:
-                    docs = list(self.created)
-                    if not docs:
-                        try:
-                            docs = list(self.documents())
-                        except Exception:
-                            docs = []
-                    for doc in docs:
-                        if getattr(doc, "closed", False):
-                            continue
-                        try:
-                            if self.key == "word":
-                                doc.Close(SaveChanges=0)
-                            elif self.key == "excel":
-                                doc.Close(SaveChanges=False)
-                            else:
-                                doc.Saved = True
-                                doc.Close()
-                        except Exception:
-                            pass
-                finally:
-                    try:
-                        if self.key == "word":
-                            self.app.Quit(SaveChanges=0)
-                        else:
-                            self.app.Quit()
-                    except Exception:
-                        pass
-
-            t = threading.Thread(target=force_quit, daemon=True)
-            t.start()
-            t.join(timeout=0.2)
-        if self.proc is not None:
+    def _marshal_app(self, app):
+        self._marshaled_app = None
+        ole = getattr(app, "_oleobj_", None)
+        if ole is not None:
             try:
-                self.proc.close()
+                import pythoncom
+                stream = pythoncom.CoMarshalInterThreadInterfaceInStream(pythoncom.IID_IDispatch, ole)
+                self._marshaled_app = ("stream", stream)
+                return
             except Exception:
                 pass
-            self.proc = None
+        marshal_fn = getattr(app, "__com_marshal__", None)
+        if callable(marshal_fn):
+            self._marshaled_app = ("custom", marshal_fn())
+            return
+        self._marshaled_app = ("direct", app, getattr(self._apartment, "ident", None))
+
+    def _release_marshaled_app(self):
+        token = getattr(self, "_marshaled_app", None)
+        self._marshaled_app = None
+        if token and token[0] == "stream":
+            try:
+                import pythoncom
+                token[1].Seek(0, 0)
+                pythoncom.CoReleaseMarshalData(token[1])
+            except Exception:
+                pass
+
+    def _unmarshal_app(self, target_tid=None):
+        token = getattr(self, "_marshaled_app", None)
+        self._marshaled_app = None
+        if not token:
+            return None, None
+        kind = token[0]
+        if kind == "stream":
+            import pythoncom
+            import win32com.client
+            disp = pythoncom.CoGetInterfaceAndReleaseStream(token[1], pythoncom.IID_IDispatch)
+            return win32com.client.Dispatch(disp), None
+        if kind == "custom":
+            return token[1](), None
+        if kind == "direct":
+            app, prev_tid = token[1], token[2]
+            if target_tid is not None and prev_tid is not None and getattr(app, "_owner_tid", None) == prev_tid:
+                app._owner_tid = target_tid
+            return app, prev_tid
+        return None, None
+
+    def _emergency_close_com(self, target_tid):
+        import gc
+        failures = []
+        app, prev_tid = self._unmarshal_app(target_tid=target_tid)
+        if app is None:
+            failures.append(f"could not unmarshal {self.exe} application proxy for emergency cleanup")
+            return failures
+        docs, docs_col = None, None
+        try:
+            try:
+                docs_col = self._documents_of(app)
+                count = int(docs_col.Count)
+                if hasattr(docs_col, "Item"):
+                    try:
+                        docs = [docs_col.Item(i) for i in range(1, count + 1)]
+                    except Exception:
+                        try:
+                            docs = [docs_col.Item(i) for i in range(count)]
+                        except Exception:
+                            docs = None
+                if docs is None and hasattr(docs_col, "__iter__"):
+                    docs = list(docs_col)
+                if docs is None and hasattr(app, "made"):
+                    docs = [d for d in app.made if not getattr(d, "closed", False)]
+            except Exception as exc:
+                failures.append(f"enumerate documents failed ({type(exc).__name__}: {exc})")
+                docs = []
+            for doc in docs or []:
+                if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
+                    doc._owner_tid = target_tid
+                if getattr(doc, "closed", False):
+                    continue
+                try:
+                    if self.key == "word":
+                        doc.Close(SaveChanges=0)
+                    elif self.key == "excel":
+                        doc.Close(SaveChanges=False)
+                    else:
+                        doc.Saved = True
+                        doc.Close()
+                except Exception as exc:
+                    failures.append(f"close document failed ({type(exc).__name__}: {exc})")
+            try:
+                remaining = int(self._documents_of(app).Count)
+                if remaining:
+                    failures.append(f"{remaining} document(s) remained open")
+            except Exception as exc:
+                failures.append(f"count open documents failed ({type(exc).__name__}: {exc})")
+        finally:
+            doc = None
+            docs = None
+            docs_col = None
+            try:
+                if self.key == "word":
+                    app.Quit(SaveChanges=0)
+                else:
+                    app.Quit()
+            except Exception as exc:
+                failures.append(f"quit failed ({type(exc).__name__}: {exc})")
+            finally:
+                app = None
+                self.created, self._created_meta, self.app = [], [], None
+                gc.collect()
+        return failures
+
+    def _abandon_hung_launch(self):
+        failures = []
+        self._post_close_if_owned()
+        if self.owned and (getattr(self, "_marshaled_app", None) is not None or self.app is not None):
+            cleanup_apt = _Apartment(daemon=True, shutdown_timeout=0)
+            try:
+                failures.extend(
+                    cleanup_apt.call(
+                        lambda: self._emergency_close_com(cleanup_apt.ident),
+                        timeout=0.5,
+                    )
+                )
+            except TimeoutError:
+                failures.append(f"{self.exe} emergency COM cleanup timed out")
+            except Exception as exc:
+                failures.append(f"emergency COM cleanup failed ({type(exc).__name__}: {exc})")
+            finally:
+                cleanup_apt.close(join_timeout=0.05, shutdown_timeout=0)
+        if self.proc is not None:
+            try:
+                if not self.proc.exited(0.5):
+                    failures.append(f"the {self.exe} instance this tool started did not exit")
+            except Exception as exc:
+                failures.append(f"waiting for {self.exe} process exit failed ({type(exc).__name__}: {exc})")
+            finally:
+                try:
+                    self.proc.close()
+                except Exception as exc:
+                    failures.append(f"closing {self.exe} process handle failed ({type(exc).__name__}: {exc})")
+                self.proc = None
+        if failures:
+            self.cleanup_errors.extend(failures)
+            print(
+                f"capture-ui: {self.exe} emergency shutdown incomplete: {'; '.join(failures)}",
+                file=sys.stderr,
+                flush=True,
+            )
 
     def _try_bind_window(self, owner):
         if self.hwnd is None:
@@ -709,6 +816,7 @@ class Launched:
         try:
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
+            self._marshal_app(self.app)
             self.app.Visible = True
             self._try_bind_window(owner)
             if getattr(self, "_cancelled", False):
@@ -725,6 +833,7 @@ class Launched:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
+            self._release_marshaled_app()
         except BaseException:
             self.close()
             raise
@@ -754,10 +863,13 @@ class Launched:
                              text=True, check=True).stdout
         return any(line.upper().startswith(f'"{exe.upper()}"') for line in out.splitlines())
 
+    def _documents_of(self, app):
+        return {"word": lambda: app.Documents, "excel": lambda: app.Workbooks,
+                "powerpoint": lambda: app.Presentations, "visio": lambda: app.Documents,
+                "project": lambda: app.Projects}[self.key]()
+
     def documents(self):
-        return {"word": lambda: self.app.Documents, "excel": lambda: self.app.Workbooks,
-                "powerpoint": lambda: self.app.Presentations, "visio": lambda: self.app.Documents,
-                "project": lambda: self.app.Projects}[self.key]()
+        return self._documents_of(self.app)
 
     def open_documents(self):
         return self._call_com(lambda: int(self.documents().Count))
@@ -869,6 +981,7 @@ class Launched:
             failure = f"{type(exc).__name__}: {exc}"
         finally:
             doc = None
+            self._release_marshaled_app()
             try:
                 if others == 0:
                     self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()

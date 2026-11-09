@@ -460,3 +460,48 @@ OVERALL: needs-attention
 3. **[P3] The startup recovery test proves only completion within the extra grace period**: fixed in `scripts/tests/test_capture_ui.py` (`Round3.test_replacement_document_and_close_reference_release`) by raising `probe_delayed`'s `Documents.Add()` delay to `0.9s` (`init_timeout=0.05`) and adding `probe_hung_add`, which tests an owned instance whose `Documents.Add()` blocks indefinitely past `shutdown_timeout`, asserting `bound_before_add=True`, `doc_closed=True`, `quit=True`, and `proc_closed=True` at `atexit`.
 - Layer: `scripts/lib/office_com.py`, `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 10: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-08T23:48:16Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 35dfac28df311af1
+
+## adversarial: needs-attention
+
+1. **[P2] Emergency startup cleanup runs without COM initialization.** `scripts/capture-ui.py:667` starts a new thread that calls the owning STA’s document and application proxies without initializing COM or marshaling them. Exceptions from `Close` and `Quit` are swallowed at lines 656 and 664. **Precondition:** document creation outlasts the startup and shutdown budgets, and the posted `WM_CLOSE` cannot complete. Cleanup then abandons the instance without verifying termination. Reproduced by adding `CoGetApartmentType` checks to the existing hung-add subprocess fixture: both calls returned `0x800401F0`, and shutdown reported `doc_closed=false`, `quit=false`, `proc_closed=true`. Closing the process handle does not close Office.
+
+## consistency: needs-attention
+
+Finding **1 [P2]** bypasses the same-apartment COM lifecycle explicitly established by `_Apartment` at `scripts/capture-ui.py:495`. Emergency cleanup needs a valid COM ownership and execution path too.
+
+## integration: approve
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** leaves recovery incomplete and silently suppresses its failures, contrary to the reliability and actionable-feedback requirements in `docs/product-principles.md:22`.
+
+## record: needs-attention
+
+2. **[P3] The hung-startup regression cannot detect invalid COM cleanup.** `scripts/tests/test_capture_ui.py:913` and `:926` implement `Close` and `Quit` as unconditional Python flag assignments. Consequently, the test passes despite finding 1. **Reproduce:** require a successful `CoGetApartmentType` result before either assignment; the existing subprocess exits with both cleanup flags false. The assertion at `:946` therefore does not establish the Office cleanup claimed by the Round 9 disposition. Exercise apartment validity and proxy ownership in this failure path.
+
+Verification: 49 tests passed; 16 filesystem-writing tests were excluded from this read-only review. The whole-inventory checker exited 0. Additional probes ran entirely in memory. No live Office capture ran; no repository files changed.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 10 disposition
+
+1. **[P2] Emergency startup cleanup runs without COM initialization:** Fixed in `Launched._marshal_app`, `Launched._release_marshaled_app`, `Launched._unmarshal_app`, `Launched._emergency_close_com`, `Launched._abandon_hung_launch`, `Launched._init_com`, and `Launched._close_impl` (`scripts/capture-ui.py`). `_init_com` marshals the owning STA's application proxy (`CoMarshalInterThreadInterfaceInStream` for real COM `PyIDispatch` proxies, `__com_marshal__` for apartment-bound test doubles, or owner-thread handoff) before calling `new_document()`, and releases the marshaled stream once `_init_com` or `_close_impl` completes on the owning STA. When `_thread.is_alive()` remains `True` past `shutdown_timeout`, `_abandon_hung_launch` runs `_emergency_close_com` inside a dedicated COM-initialized `_Apartment(daemon=True)` (`cleanup_apt`), unmarshals the application proxy onto `cleanup_apt`'s STA thread, enumerates open documents from `self._documents_of(app)` on that STA thread, closes them, verifies `int(self._documents_of(app).Count) == 0`, calls `app.Quit`, releases COM references and runs `gc.collect()`, verifies process exit via `self.proc.exited(0.5)` before `self.proc.close()`, and records and reports any cleanup or exit failures to `self.cleanup_errors` and `sys.stderr`.
+2. **[P3] The hung-startup regression cannot detect invalid COM cleanup:** Fixed in `Round3.test_replacement_document_and_close_reference_release` (`scripts/tests/test_capture_ui.py`), which now enforces `CoGetApartmentType == 0` and per-thread apartment proxy ownership (`threading.get_ident() == self._owner_tid`) across both `probe_delayed` and `probe_hung_add` (via `__com_marshal__` cross-apartment unmarshaling onto `cleanup_apt`'s STA thread and `proc.exited` verification before `proc.close`), plus a `probe_hung_fail` subprocess test verifying that `Close`, `Quit`, and `proc.exited` failures are reported to `sys.stderr`.
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).

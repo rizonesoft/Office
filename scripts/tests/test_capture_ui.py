@@ -868,20 +868,38 @@ class Round3(unittest.TestCase):
         import subprocess
         import sys
         probe_delayed = (
-            "import atexit, importlib.util, json, sys, time\n"
+            "import atexit, ctypes, importlib.util, json, sys, threading, time\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
             "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
             "state = {'doc_closed': False, 'quit': False}\n"
+            "def require_com(owner_tid):\n"
+            "    at, aq = ctypes.c_int(-1), ctypes.c_int(-1)\n"
+            "    if ctypes.windll.ole32.CoGetApartmentType(ctypes.byref(at), ctypes.byref(aq)) != 0:\n"
+            "        raise RuntimeError('COM not initialized on thread')\n"
+            "    if threading.get_ident() != owner_tid:\n"
+            "        raise RuntimeError('proxy called on wrong apartment thread')\n"
             "class Doc:\n"
             "    Name = 'Doc1'; FullName = 'Doc1'\n"
-            "    def Close(self, SaveChanges=0): state['doc_closed'] = True; Docs.Count = 0\n"
+            "    def __init__(self, tid): self._owner_tid = tid\n"
+            "    def Close(self, SaveChanges=0):\n"
+            "        require_com(self._owner_tid)\n"
+            "        state['doc_closed'] = True; Docs.Count = 0\n"
             "class Docs:\n"
             "    Count = 0\n"
-            "    def Add(self): time.sleep(0.9); Docs.Count = 1; return Doc()\n"
+            "    def __init__(self, tid): self._owner_tid = tid\n"
+            "    def Add(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        time.sleep(0.9); Docs.Count = 1; return Doc(self._owner_tid)\n"
             "    def __iter__(self): return iter([])\n"
             "class App:\n"
-            "    Visible = False; Documents = Docs()\n"
-            "    def Quit(self, SaveChanges=0): state['quit'] = True\n"
+            "    Visible = False\n"
+            "    def __init__(self):\n"
+            "        self._owner_tid = threading.get_ident()\n"
+            "        require_com(self._owner_tid)\n"
+            "        self.Documents = Docs(self._owner_tid)\n"
+            "    def Quit(self, SaveChanges=0):\n"
+            "        require_com(self._owner_tid)\n"
+            "        state['quit'] = True\n"
             "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
             "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), init_timeout=0.05))\n"
@@ -896,21 +914,115 @@ class Round3(unittest.TestCase):
         self.assertIn('ATEXIT:{"doc_closed": true, "quit": true}', proc.stdout)
         # 2) When an owned instance's Documents.Add() blocks beyond the atexit shutdown budget (waits on an unset
         #    Event forever), ownership (hwnd and proc) is bound before Documents.Add(), and _abandon_hung_launch
-        #    closes any open document, calls App.Quit(), and closes proc before the CLI process exits with code 2.
+        #    marshals the COM proxy onto a COM-initialized emergency apartment, closes open documents, calls App.Quit(),
+        #    verifies proc.exited(), and closes proc before the CLI process exits with code 2.
         probe_hung_add = (
-            "import atexit, importlib.util, json, sys, threading\n"
+            "import atexit, ctypes, importlib.util, json, sys, threading\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
             "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
             "cu.Win = lambda: type('W', (), {'top': lambda self, h: h})()\n"
             "never = threading.Event()\n"
-            "state = {'bound_before_add': False, 'doc_closed': False, 'quit': False, 'proc_closed': False}\n"
+            "state = {\n"
+            "    'bound_before_add': False, 'marshaled_on_sta': False, 'unmarshaled_on_new_sta': False,\n"
+            "    'doc_closed': False, 'quit': False, 'exited_checked': False, 'proc_closed': False,\n"
+            "}\n"
+            "def require_com(owner_tid):\n"
+            "    at, aq = ctypes.c_int(-1), ctypes.c_int(-1)\n"
+            "    if ctypes.windll.ole32.CoGetApartmentType(ctypes.byref(at), ctypes.byref(aq)) != 0:\n"
+            "        raise RuntimeError('COM not initialized on thread')\n"
+            "    if threading.get_ident() != owner_tid:\n"
+            "        raise RuntimeError('proxy called on wrong apartment thread')\n"
             "class Proc:\n"
             "    pid = 77\n"
-            "    def exited(self, s): return True\n"
-            "    def close(self): state['proc_closed'] = True\n"
+            "    def exited(self, s):\n"
+            "        state['exited_checked'] = bool(state['doc_closed'] and state['quit'])\n"
+            "        return state['exited_checked']\n"
+            "    def close(self): state['proc_closed'] = bool(state['exited_checked'])\n"
+            "shared_docs = []\n"
             "class Doc:\n"
             "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
-            "    def Close(self, SaveChanges=0): self.closed = True; state['doc_closed'] = True; Docs.items.clear()\n"
+            "    def __init__(self, tid): self._owner_tid = tid\n"
+            "    def Close(self, SaveChanges=0):\n"
+            "        require_com(self._owner_tid)\n"
+            "        self.closed = True; state['doc_closed'] = True; shared_docs.clear()\n"
+            "class Docs:\n"
+            "    def __init__(self, tid): self._owner_tid = tid\n"
+            "    @property\n"
+            "    def Count(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        return len(shared_docs)\n"
+            "    def Add(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        shared_docs.append(Doc(self._owner_tid))\n"
+            "        never.wait()\n"
+            "        return shared_docs[-1]\n"
+            "    def Item(self, i):\n"
+            "        require_com(self._owner_tid)\n"
+            "        return Doc(self._owner_tid)\n"
+            "    def __iter__(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        return iter([Doc(self._owner_tid) for _ in list(shared_docs)])\n"
+            "class App:\n"
+            "    Visible = False\n"
+            "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
+            "    def __init__(self, tid=None):\n"
+            "        self._owner_tid = tid or threading.get_ident()\n"
+            "        require_com(self._owner_tid)\n"
+            "        self.Documents = Docs(self._owner_tid)\n"
+            "    def __com_marshal__(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        origin_tid = self._owner_tid\n"
+            "        state['marshaled_on_sta'] = True\n"
+            "        def unmarshal():\n"
+            "            new_tid = threading.get_ident()\n"
+            "            require_com(new_tid)\n"
+            "            if new_tid == origin_tid:\n"
+            "                raise RuntimeError('unmarshaled on blocked origin STA')\n"
+            "            state['unmarshaled_on_new_sta'] = True\n"
+            "            return App(tid=new_tid)\n"
+            "        return unmarshal\n"
+            "    def Quit(self, SaveChanges=0):\n"
+            "        require_com(self._owner_tid)\n"
+            "        state['quit'] = True\n"
+            "def make_owner(hwnd, exe):\n"
+            "    if not shared_docs:\n"
+            "        state['bound_before_add'] = True\n"
+            "    return Proc()\n"
+            "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
+            "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=make_owner, init_timeout=0.05))\n"
+            "print('AT_MAIN_RETURN:' + json.dumps(state), flush=True)\n"
+            "print('MAIN_RETURNED:' + str(rc), flush=True)\n"
+            "sys.exit(rc)\n"
+        )
+        proc_hung_add = subprocess.run([sys.executable, "-c", probe_hung_add], capture_output=True, text=True, timeout=4.5)
+        self.assertEqual(proc_hung_add.returncode, 2, proc_hung_add.stderr)
+        self.assertIn("MAIN_RETURNED:2", proc_hung_add.stdout)
+        self.assertIn(
+            'AT_MAIN_RETURN:{"bound_before_add": true, "marshaled_on_sta": true, "unmarshaled_on_new_sta": false, '
+            '"doc_closed": false, "quit": false, "exited_checked": false, "proc_closed": false}',
+            proc_hung_add.stdout,
+        )
+        self.assertIn(
+            'ATEXIT:{"bound_before_add": true, "marshaled_on_sta": true, "unmarshaled_on_new_sta": true, '
+            '"doc_closed": true, "quit": true, "exited_checked": true, "proc_closed": true}',
+            proc_hung_add.stdout,
+        )
+        # 2b) When emergency cleanup encounters a COM error and the process does not exit, _abandon_hung_launch
+        #     records and reports both failures to stderr instead of swallowing them silently.
+        probe_hung_fail = (
+            "import ctypes, importlib.util, sys, threading\n"
+            f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
+            "cu = importlib.util.module_from_spec(spec); spec.loader.exec_module(cu)\n"
+            "cu.Win = lambda: type('W', (), {'top': lambda self, h: h})()\n"
+            "never = threading.Event()\n"
+            "class Proc:\n"
+            "    pid = 88\n"
+            "    def exited(self, s): return False\n"
+            "    def close(self): pass\n"
+            "class Doc:\n"
+            "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
+            "    def Close(self, SaveChanges=0): raise RuntimeError('close refused')\n"
             "class Docs:\n"
             "    items = []\n"
             "    @property\n"
@@ -923,29 +1035,17 @@ class Round3(unittest.TestCase):
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
             "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
-            "    def Quit(self, SaveChanges=0): state['quit'] = True\n"
-            "def make_owner(hwnd, exe):\n"
-            "    if not Docs.items:\n"
-            "        state['bound_before_add'] = True\n"
-            "    return Proc()\n"
-            "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
+            "    def Quit(self, SaveChanges=0): raise RuntimeError('quit refused')\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
-            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=make_owner, init_timeout=0.05))\n"
-            "print('AT_MAIN_RETURN:' + json.dumps(state), flush=True)\n"
-            "print('MAIN_RETURNED:' + str(rc), flush=True)\n"
+            "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=lambda h, e: Proc(), init_timeout=0.05))\n"
             "sys.exit(rc)\n"
         )
-        proc_hung_add = subprocess.run([sys.executable, "-c", probe_hung_add], capture_output=True, text=True, timeout=3.5)
-        self.assertEqual(proc_hung_add.returncode, 2, proc_hung_add.stderr)
-        self.assertIn("MAIN_RETURNED:2", proc_hung_add.stdout)
-        self.assertIn(
-            'AT_MAIN_RETURN:{"bound_before_add": true, "doc_closed": false, "quit": false, "proc_closed": false}',
-            proc_hung_add.stdout,
-        )
-        self.assertIn(
-            'ATEXIT:{"bound_before_add": true, "doc_closed": true, "quit": true, "proc_closed": true}',
-            proc_hung_add.stdout,
-        )
+        proc_hung_fail = subprocess.run([sys.executable, "-c", probe_hung_fail], capture_output=True, text=True, timeout=4.5)
+        self.assertEqual(proc_hung_fail.returncode, 2, proc_hung_fail.stderr)
+        self.assertIn("emergency shutdown incomplete", proc_hung_fail.stderr)
+        self.assertIn("close document failed (RuntimeError: close refused)", proc_hung_fail.stderr)
+        self.assertIn("quit failed (RuntimeError: quit refused)", proc_hung_fail.stderr)
+        self.assertIn("the WINWORD.EXE instance this tool started did not exit", proc_hung_fail.stderr)
         # 3) When dispatch itself is permanently hung before ownership is established, the CLI exits promptly with code 2.
         probe_hung = (
             "import importlib.util, sys, threading\n"
