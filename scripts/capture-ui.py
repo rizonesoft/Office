@@ -2167,15 +2167,17 @@ def validate_shell_chrome(records):
         if _EMAIL_RE.search(str(rec.get("label", ""))) or _EMAIL_RE.search(str(rec.get("behaviour", ""))):
             raise Refused(f"shell record {rid!r} contains an unsanitised email address")
 
-    missing = [rid for rid in REQUIRED_SHELL_IDS if rid not in by_id]
+    spec_by_id = {item["id"]: item for item in _SHELL_SPEC}
+    missing = [rid for rid in REQUIRED_SHELL_IDS if rid not in by_id] + [
+        rid for rid in spec_by_id if rid not in by_id and rid not in REQUIRED_SHELL_IDS
+    ]
     if missing:
         raise Refused(f"shell chrome inventory is missing required records: {missing}")
 
-    spec_by_id = {item["id"]: item for item in _SHELL_SPEC}
     for rid, rec in by_id.items():
         spec = spec_by_id.get(rid)
         if spec is not None:
-            for field in ("kind", "controlType", "app", "window", "parent", "keytip"):
+            for field in ("kind", "controlType", "app", "window", "parent", "keytip", "idMso", "uiaId"):
                 if rec.get(field) != spec.get(field):
                     raise Refused(
                         f"shell record {rid!r} has {field}={rec.get(field)!r}, expected {spec.get(field)!r}"
@@ -2744,9 +2746,16 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     pid = getattr(getattr(launched, "proc", None), "pid", None)
     has_popups = win is not None and hasattr(win, "popups") and pid is not None
     before_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
+    before_nodes = [before_root] + list(descendants(before_root, 25))
     before_state = {
         _element_identity(el): _visible_rect_tuple(el)
-        for el in [before_root] + list(descendants(before_root, 25))
+        for el in before_nodes
+    }
+    before_visible_sigs = {
+        (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+        for el in before_nodes
+        for vrect in (_visible_rect_tuple(el),)
+        if vrect is not None
     }
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
@@ -2785,6 +2794,7 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             target.select()
     surface_collected = []
     opened_state = {}
+    opened_only_sigs = set()
     cleanup_err = None
     try:
         time.sleep(0.1)
@@ -2796,6 +2806,9 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             if vrect is not None and (prev_vrect is _ABSENT or vrect != prev_vrect):
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
+                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                if sig not in before_visible_sigs:
+                    opened_only_sigs.add(sig)
         if has_popups and uia is not None:
             for h in win.popups(pid):
                 if h not in before_popups:
@@ -2806,6 +2819,14 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                         if vrect is not None:
                             surface_collected.append(el)
                             opened_state[eid] = (_ABSENT, vrect)
+                            sig = (
+                                getattr(el, "control_type", ""),
+                                getattr(el, "automation_id", ""),
+                                getattr(el, "name", ""),
+                                vrect,
+                            )
+                            if sig not in before_visible_sigs:
+                                opened_only_sigs.add(sig)
     finally:
         try:
             if surface_key == "keytips":
@@ -2835,17 +2856,26 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         still_open = False
         for el in [after_root] + list(descendants(after_root, 25)):
             eid = _element_identity(el)
-            if eid not in opened_state:
-                continue
-            prev_vrect, _open_vrect = opened_state[eid]
             cur_vrect = _visible_rect_tuple(el)
-            if prev_vrect is _ABSENT or prev_vrect is None:
-                if cur_vrect is not None:
+            if eid in opened_state:
+                prev_vrect, _open_vrect = opened_state[eid]
+                if prev_vrect is _ABSENT or prev_vrect is None:
+                    if cur_vrect is not None:
+                        still_open = True
+                        break
+                elif cur_vrect != prev_vrect:
                     still_open = True
                     break
-            elif cur_vrect != prev_vrect:
-                still_open = True
-                break
+            elif cur_vrect is not None:
+                sig = (
+                    getattr(el, "control_type", ""),
+                    getattr(el, "automation_id", ""),
+                    getattr(el, "name", ""),
+                    cur_vrect,
+                )
+                if eid not in before_state or sig in opened_only_sigs:
+                    still_open = True
+                    break
         tree_closed = not still_open
         popups_closed = not has_popups or not [h for h in win.popups(pid) if h not in before_popups]
         if expand_closed and tree_closed and popups_closed:

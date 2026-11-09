@@ -2013,6 +2013,24 @@ class ShellChrome(unittest.TestCase):
         with self.assertRaises(cu.Refused):
             cu.validate_shell_chrome(wrong_ctype)
 
+        # Deleting required per-app override records is refused.
+        for per_app_id in (
+            "powerpoint.shell.qat.save",
+            "excel.shell.tabrow.comments",
+            "visio.shell.qat.redo",
+        ):
+            missing_per_app = [r for r in base if r["id"] != per_app_id and r.get("parent") != per_app_id]
+            with self.assertRaises(cu.Refused):
+                cu.validate_shell_chrome(missing_per_app)
+
+        # Mutating canonical idMso / uiaId on any canonical record (e.g. shell.qat.customize.save) is refused.
+        wrong_ident = [dict(r) for r in base]
+        target_id = next(r for r in wrong_ident if r["id"] == "shell.qat.customize.save")
+        target_id["idMso"] = "FileOpenUsingBackstage"
+        target_id["uiaId"] = "FileOpenUsingBackstage"
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(wrong_ident)
+
     def test_main_shell_writes_and_merges_valid_inventory(self):
         real_ib, real_rb, real_sleep = cu.installed_build, cu.reference_build, cu.time.sleep
         cu.installed_build = lambda: BUILD
@@ -2478,6 +2496,25 @@ class ShellChrome(unittest.TestCase):
                     cu._open_and_collect_shell_surface(
                         "qat.customize", qat_inplace_trig, inplace_root,
                         type("U", (), {"element": lambda self, h: get_inplace_root()})(),
+                        good_win, launched,
+                    )
+                # If a provider replaces a visible KeyTip badge with a newly allocated visible element (new runtime_id)
+                # at the same bounds during deactivate_keytips, cleanup verification refuses it.
+                rebuilt_kt_root = make_shell_root(app_name="word")
+                orig_rebuilt_kt = rebuilt_kt_root.on_keytips
+
+                def _rebuilt_keytips(active):
+                    if active:
+                        orig_rebuilt_kt(True)
+                    else:
+                        orig_rebuilt_kt(False)
+                        rebuilt_kt_root.kids.append(E("Pane", "F", "", rect=(22, 71, 37, 88)))
+
+                rebuilt_kt_root.on_keytips = _rebuilt_keytips
+                with self.assertRaises(cu.Refused):
+                    cu._open_and_collect_shell_surface(
+                        "keytips", None, rebuilt_kt_root,
+                        type("U", (), {"element": lambda self, h: E._wrap(rebuilt_kt_root)})(),
                         good_win, launched,
                     )
 
