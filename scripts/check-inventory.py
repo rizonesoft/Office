@@ -38,6 +38,42 @@ def is_baseline(path):
     """Whether a file is an app's baseline. Windows and macOS file systems ignore case, so BASELINE.JSON is the same
     file and must take the same checks."""
     return Path(path).name.casefold() == BASELINE
+
+
+_SHELL_VALIDATOR = None
+
+
+def is_shell_chrome(path, data):
+    """Whether a file is the shared shell chrome inventory, either by path (shell/chrome.json) or because its records
+    define shared shell.* or per-app <app>.shell.* chrome records."""
+    p = Path(path)
+    if p.name.casefold() == "chrome.json" and p.parent.name.casefold() == "shell":
+        return True
+    return isinstance(data, list) and any(
+        isinstance(r, dict)
+        and (
+            r.get("app") == "shell"
+            or (isinstance(r.get("id"), str) and (r["id"].startswith("shell.") or ".shell." in r["id"]))
+        )
+        for r in data
+    )
+
+
+def check_shell_chrome(f, data):
+    """Problems in shell/chrome.json beyond the record schema: required shared and per-app records, bounds and
+    effective_shell resolution across all six apps and Outlook window contexts."""
+    global _SHELL_VALIDATOR
+    if _SHELL_VALIDATOR is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("capture_ui", ROOT / "scripts" / "capture-ui.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _SHELL_VALIDATOR = mod.validate_shell_chrome
+    try:
+        _SHELL_VALIDATOR(data)
+    except Exception as exc:
+        return [f"{f}: {exc}"]
+    return []
 SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
 APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
 REFERENCE = "REFERENCE.md"  # the builds and capture profiles records are measured against
@@ -492,6 +528,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
         problems += [f"{f}: {p}" for p in schema_problems]
         if not isinstance(data, list):
             continue
+        if is_shell_chrome(f, data):
+            problems += check_shell_chrome(f, data)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The
         # locations the schema already reported are gathered once per file, not once per record.
         reported = {p.split(": ", 1)[0] for p in schema_problems}

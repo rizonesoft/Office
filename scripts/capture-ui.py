@@ -917,34 +917,10 @@ class Launched:
                     if getattr(doc, "closed", False):
                         continue
                     try:
-                        if self.key == "word":
-                            doc.Close(SaveChanges=0)
-                        elif self.key == "excel":
-                            doc.Close(SaveChanges=False)
-                        elif self.key == "project" and not hasattr(doc, "Close"):
-                            active_proj = getattr(app, "ActiveProject", None)
-                            if (
-                                unowned_count > 0
-                                or count != 1
-                                or active_proj is None
-                                or not self._same_doc(active_proj, doc)
-                                or not self._is_unmodified_blank_doc(active_proj)
-                            ):
-                                failures.append(
-                                    f"the active {self.exe} project is not the single unmodified blank project this tool created, "
-                                    "so FileCloseEx was not called"
-                                )
-                                unowned_count += 1
-                                continue
-                            if hasattr(app, "FileCloseEx"):
-                                app.FileCloseEx(0)
-                            else:
-                                app.FileClose(0)
-                        else:
-                            doc.Saved = True
-                            doc.Close()
+                        self._close_owned_doc(doc, app=app)
                     except Exception as exc:
                         failures.append(f"close document failed ({type(exc).__name__}: {exc})")
+                        unowned_count += 1
                 try:
                     remaining = int(self._documents_of(app).Count)
                 except Exception as exc:
@@ -1181,6 +1157,11 @@ class Launched:
                               "ribbon acts on someone else's")
 
     def _new_project(self):
+        projs = getattr(self.app, "Projects", None)
+        if projs is not None and hasattr(projs, "Add"):
+            proj = projs.Add()
+            if proj is not None and not isinstance(proj, bool):
+                return proj
         res = self.app.FileNew()
         if res is None or isinstance(res, bool):
             try:
@@ -1196,6 +1177,37 @@ class Launched:
             except Exception:
                 pass
         return res
+
+    def _close_owned_doc(self, doc, app=None):
+        if self.key == "word":
+            doc.Close(SaveChanges=0)
+            return
+        if self.key == "excel":
+            doc.Close(SaveChanges=False)
+            return
+        if hasattr(doc, "Close"):
+            doc.Saved = True
+            doc.Close()
+            return
+        if self.key == "project":
+            wins = getattr(doc, "Windows2", None) or getattr(doc, "Windows", None)
+            if wins is not None:
+                w_count = int(wins.Count)
+                if w_count > 0:
+                    closed_any = False
+                    for i in range(w_count, 0, -1):
+                        w = wins.Item(i) if hasattr(wins, "Item") else wins(i)
+                        if hasattr(w, "Close"):
+                            if not self._is_unmodified_blank_doc(doc):
+                                raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+                            w.Close()
+                            closed_any = True
+                    if closed_any:
+                        return
+        raise Refused(
+            f"the {self.exe} document exposes no target-bound Close method, "
+            "so application-level active-target close was refused"
+        )
 
     def new_document(self):
         return {"word": lambda: self.app.Documents.Add(), "excel": lambda: self.app.Workbooks.Add(),
@@ -1264,30 +1276,7 @@ class Launched:
                         raise Refused(f"the {self.exe} document this tool created changed identity")
                 if not self._is_unmodified_blank_doc(doc):
                     raise Refused(f"the {self.exe} document has unsaved changes or a file path")
-                if self.key == "word":
-                    doc.Close(SaveChanges=0)
-                elif self.key == "excel":
-                    doc.Close(SaveChanges=False)
-                elif self.key == "project" and not hasattr(doc, "Close"):
-                    cur_count = self.open_documents()
-                    active_proj = getattr(self.app, "ActiveProject", None)
-                    if cur_count != 1 or active_proj is None or not self._same_doc(active_proj, doc):
-                        raise Refused(
-                            f"the active {self.exe} project is not the single blank project this tool created, "
-                            "so FileCloseEx was not called"
-                        )
-                    if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
-                        if self._doc_meta(active_proj) != meta:
-                            raise Refused(f"the active {self.exe} project changed identity")
-                    if not self._is_unmodified_blank_doc(active_proj):
-                        raise Refused(f"the active {self.exe} project has unsaved changes or a file path")
-                    if hasattr(self.app, "FileCloseEx"):
-                        self.app.FileCloseEx(0)
-                    else:
-                        self.app.FileClose(0)
-                else:
-                    doc.Saved = True
-                    doc.Close()
+                self._close_owned_doc(doc, app=self.app)
             doc = None
             others = self.open_documents()
         except Exception as exc:  # reported below: the instance is left running and the run refuses
@@ -2809,6 +2798,55 @@ def _visible_rect_tuple(el):
 _ABSENT = object()
 
 
+def _walk_with_ancestors(element, depth=25, ancestors=()):
+    yield element, ancestors
+    if depth <= 0:
+        return
+    next_anc = ancestors + (element,)
+    for child in element.children():
+        yield from _walk_with_ancestors(child, depth - 1, next_anc)
+
+
+def _is_surface_candidate(surface_key, el, ancestors=()):
+    ctype = getattr(el, "control_type", "")
+    aid = getattr(el, "automation_id", "") or ""
+    name = (getattr(el, "name", "") or "").strip()
+    if surface_key != "statusbar.customizeMenu":
+        if ctype == "StatusBar" or aid.startswith("StatusBar"):
+            return False
+        if any(
+            getattr(a, "control_type", "") == "StatusBar"
+            or (getattr(a, "automation_id", "") or "").startswith("StatusBar")
+            for a in ancestors
+        ):
+            return False
+        if re.match(r"^(Page \d+ of \d+|\d+ of \d+|Words:?\s*\d+|Character.*|\d+\s*%)$", name, re.I):
+            return False
+    if surface_key == "keytips":
+        if ctype not in ("Pane", "Text", "ToolTip", "Custom"):
+            return False
+        if not name:
+            return ctype in ("Pane", "ToolTip", "Custom")
+        if "keytip" in name.casefold():
+            return True
+        if re.fullmatch(r"[A-Z0-9]{1,4}", name):
+            return True
+        if keytip(getattr(el, "access_key", "")):
+            return True
+        return False
+    if surface_key == "statusbar.customizeMenu":
+        if ctype in ("Menu", "MenuItem", "ListItem", "CheckBox", "RadioButton"):
+            return True
+        return any(getattr(a, "control_type", "") == "Menu" for a in ancestors)
+    if surface_key in ("qat.customize", "tabrow.editingMode", "tabrow.share", "ribbonDisplay"):
+        if ctype in ("Menu", "MenuItem", "ListItem", "CheckBox", "RadioButton", "Pane", "Group", "List"):
+            return True
+        if any(getattr(a, "control_type", "") == "Menu" for a in ancestors):
+            return True
+        return ctype in ITEM_TYPES
+    return True
+
+
 def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launched):
     if launched is not None and hasattr(launched, "check_alone"):
         launched.check_alone()
@@ -2816,7 +2854,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     pid = getattr(getattr(launched, "proc", None), "pid", None)
     has_popups = win is not None and hasattr(win, "popups") and pid is not None
     before_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-    before_nodes = [before_root] + list(descendants(before_root, 25))
+    before_pairs = list(_walk_with_ancestors(before_root, 25))
+    before_nodes = [el for el, _anc in before_pairs]
     before_state = {
         _element_identity(el): _visible_rect_tuple(el)
         for el in before_nodes
@@ -2824,16 +2863,24 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     before_sig_counts = {}
     before_key_counts = {}
     before_rect_counts = {}
+    before_aid_counts = {}
+    before_anchor_by_eid = {}
     for el in before_nodes:
+        eid = _element_identity(el)
         vrect = _visible_rect_tuple(el)
         if vrect is not None:
             ctype = getattr(el, "control_type", "")
-            sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
-            key = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""))
+            aid = getattr(el, "automation_id", "") or ""
+            sig = (ctype, aid, getattr(el, "name", ""), vrect)
+            key = (ctype, aid, getattr(el, "name", ""))
             rkey = (ctype, vrect)
+            anchor = (ctype, vrect[0], vrect[1], vrect[3])
             before_sig_counts[sig] = before_sig_counts.get(sig, 0) + 1
             before_key_counts[key] = before_key_counts.get(key, 0) + 1
             before_rect_counts[rkey] = before_rect_counts.get(rkey, 0) + 1
+            if aid:
+                before_aid_counts[(ctype, aid)] = before_aid_counts.get((ctype, aid), 0) + 1
+            before_anchor_by_eid[eid] = anchor
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2877,38 +2924,65 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     try:
         time.sleep(0.1)
         live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-        live_nodes = [live_root] + list(descendants(live_root, 25))
+        live_pairs = list(_walk_with_ancestors(live_root, 25))
+        live_nodes = [el for el, _anc in live_pairs]
+        live_eids = {_element_identity(el) for el in live_nodes if _visible_rect_tuple(el) is not None}
+        disappeared_anchors = {}
+        for eid, anchor in before_anchor_by_eid.items():
+            if eid not in live_eids:
+                disappeared_anchors[anchor] = disappeared_anchors.get(anchor, 0) + 1
         kept_sig_counts = {}
         kept_rect_counts = {}
+        kept_aid_counts = {}
+        used_disappeared_anchors = {}
         for el in live_nodes:
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
+            if vrect is not None and eid in before_state and before_state[eid] is not None:
+                ctype = getattr(el, "control_type", "")
+                aid = getattr(el, "automation_id", "") or ""
+                if aid:
+                    kept_aid_counts[(ctype, aid)] = kept_aid_counts.get((ctype, aid), 0) + 1
             if vrect is not None and before_state.get(eid, _ABSENT) == vrect:
                 ctype = getattr(el, "control_type", "")
                 sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
                 rkey = (ctype, vrect)
                 kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
                 kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
-        for el in live_nodes:
+        for el, ancestors in live_pairs:
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
             prev_vrect = before_state.get(eid, _ABSENT)
             if vrect is not None and (prev_vrect is _ABSENT or vrect != prev_vrect):
+                if not _is_surface_candidate(surface_key, el, ancestors):
+                    continue
                 ctype = getattr(el, "control_type", "")
-                sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                aid = getattr(el, "automation_id", "") or ""
+                name = getattr(el, "name", "") or ""
+                sig = (ctype, aid, name, vrect)
                 rkey = (ctype, vrect)
+                anchor = (ctype, vrect[0], vrect[1], vrect[3])
                 if prev_vrect is _ABSENT and (
                     kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0)
                     or kept_rect_counts.get(rkey, 0) < before_rect_counts.get(rkey, 0)
+                    or (aid and kept_aid_counts.get((ctype, aid), 0) < before_aid_counts.get((ctype, aid), 0))
+                    or (
+                        not name
+                        and used_disappeared_anchors.get(anchor, 0) < disappeared_anchors.get(anchor, 0)
+                    )
                 ):
                     if kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0):
                         kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
                     if kept_rect_counts.get(rkey, 0) < before_rect_counts.get(rkey, 0):
                         kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
+                    if aid and kept_aid_counts.get((ctype, aid), 0) < before_aid_counts.get((ctype, aid), 0):
+                        kept_aid_counts[(ctype, aid)] = kept_aid_counts.get((ctype, aid), 0) + 1
+                    if not name and used_disappeared_anchors.get(anchor, 0) < disappeared_anchors.get(anchor, 0):
+                        used_disappeared_anchors[anchor] = used_disappeared_anchors.get(anchor, 0) + 1
                     continue
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
-                key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
+                key = (ctype, aid, getattr(el, "name", ""))
                 opened_sigs.add(sig)
                 opened_keys.add(key)
         if has_popups and uia is not None:
@@ -2960,7 +3034,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     for attempt in range(10):
         expand_closed = not can_expand or getattr(target, "expand_state", lambda: 0)() in (0, None)
         after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-        after_nodes = [after_root] + list(descendants(after_root, 25))
+        after_pairs = list(_walk_with_ancestors(after_root, 25))
+        after_nodes = [el for el, _anc in after_pairs]
         after_sig_counts = {}
         after_key_counts = {}
         for el in after_nodes:
@@ -2971,10 +3046,12 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 after_sig_counts[sig] = after_sig_counts.get(sig, 0) + 1
                 after_key_counts[key] = after_key_counts.get(key, 0) + 1
         still_open = False
-        for el in after_nodes:
+        for el, ancestors in after_pairs:
             eid = _element_identity(el)
             cur_vrect = _visible_rect_tuple(el)
             if cur_vrect is None:
+                continue
+            if not _is_surface_candidate(surface_key, el, ancestors):
                 continue
             sig = (
                 getattr(el, "control_type", ""),

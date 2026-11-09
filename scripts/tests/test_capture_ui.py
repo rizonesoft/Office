@@ -389,9 +389,9 @@ class Launch(unittest.TestCase):
 
     def test_project_is_refused_until_ownership_can_be_proven(self):
         class ProjectOnlyApp:
-            """A Project COM stand-in whose Project items have no .Close() method and close through FileCloseEx."""
+            """A Project COM stand-in whose Project items have no .Close() method, exposing per-project .Windows."""
 
-            def __init__(self):
+            def __init__(self, with_windows=True):
                 self.quit = False
                 self.Visible = False
                 self.made = []
@@ -406,6 +406,24 @@ class Launch(unittest.TestCase):
                         self.Path = path
                         self.Saved = saved
                         self.closed = False
+                        proj = self
+
+                        class ProjWin:
+                            def Close(self):
+                                proj.closed = True
+
+                        class ProjWins:
+                            @property
+                            def Count(self):
+                                return 0 if proj.closed else 1
+
+                            def Item(self, idx):
+                                if idx != 1 or proj.closed:
+                                    raise IndexError(idx)
+                                return ProjWin()
+
+                        if with_windows:
+                            self.Windows = ProjWins()
 
                 self._proj_cls = ProjItem
 
@@ -450,17 +468,17 @@ class Launch(unittest.TestCase):
                     owner=lambda hwnd, exe: Proc(7),
                 )
             self.assertEqual((windowless_proj.Projects.Count, windowless_proj.quit, windowless_proj.made), (0, False, []))
-            # Owned blank project closes cleanly via FileCloseEx(0).
+            # Owned blank project closes cleanly through its own target-bound Windows collection without calling FileCloseEx.
             owned_proj = ProjectOnlyApp()
             launched_proj = self.launched(owned_proj, key="project", started=7, window_pid=7)
             self.assertEqual(len(owned_proj.made), 1)
             launched_proj.close()
             self.assertEqual(
-                (owned_proj.made[0].closed, owned_proj.quit, owned_proj.Projects.Count, len(owned_proj.file_close_calls)),
-                (True, True, 0, 1),
+                (owned_proj.made[0].closed, owned_proj.quit, owned_proj.Projects.Count, owned_proj.file_close_calls),
+                (True, True, 0, []),
             )
-            # If the operator opens/activates a foreign unsaved project during capture, close() refuses without
-            # calling FileCloseEx(0) and leaves the foreign project untouched.
+            # If the operator opens/activates a foreign unsaved project during capture, target-bound window close never
+            # touches the foreign project or calls FileCloseEx, and close() refuses to quit the shared instance.
             shared_proj = ProjectOnlyApp()
             launched_shared = self.launched(shared_proj, key="project", started=7, window_pid=7)
             foreign = shared_proj._proj_cls("OperatorSchedule.mpp", saved=False, path="C:\\Work")
@@ -471,6 +489,14 @@ class Launch(unittest.TestCase):
             self.assertFalse(foreign.closed)
             self.assertEqual(shared_proj.file_close_calls, [])
             self.assertFalse(shared_proj.quit)
+            # A project item with neither .Close() nor .Windows is refused without falling back to FileCloseEx(0).
+            no_target_proj = ProjectOnlyApp(with_windows=False)
+            launched_no_target = self.launched(no_target_proj, key="project", started=7, window_pid=7)
+            with self.assertRaises(cu.Refused):
+                launched_no_target.close()
+            self.assertFalse(no_target_proj.made[0].closed)
+            self.assertEqual(no_target_proj.file_close_calls, [])
+            self.assertFalse(no_target_proj.quit)
         finally:
             cu.Launched.running, cu.Win, cu.wait_for = real
 
@@ -2503,6 +2529,20 @@ class ShellChrome(unittest.TestCase):
                 with self.assertRaises(cu.Refused):
                     cu.validate_shell_chrome(bad_ribbon_display)
                 self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
+                with tempfile.TemporaryDirectory() as stripped_tmp:
+                    stripped_bounds_path = Path(stripped_tmp) / "shell" / "chrome.json"
+                    stripped_bounds_path.parent.mkdir(parents=True, exist_ok=True)
+                    stripped_records = [
+                        {k: v for k, v in r.items() if k != "bounds"}
+                        for r in data
+                    ]
+                    stripped_bounds_path.write_text(cu.render(stripped_records), encoding="utf-8")
+                    self.assertTrue(
+                        any(
+                            "missing positive bounds" in p
+                            for p in ci.check([str(stripped_bounds_path)], require_behaviour=True, inventory=Path(stripped_tmp))
+                        )
+                    )
 
                 # 3b. Delayed asynchronous surface dismissal (closing on the 2nd UIA poll after PostMessageW Escape)
                 #     succeeds via bounded polling; pre-existing hidden UIA nodes (both rect=None and is_offscreen=True
@@ -2631,10 +2671,10 @@ class ShellChrome(unittest.TestCase):
                         good_win, launched,
                     )
                 # Conversely, if an unrelated baseline element (such as a status bar indicator) is recreated with a
-                # new runtime_id at identical bounds during KeyTip activation or dismissal while all KeyTip badges
+                # new runtime_id and widened bounds during KeyTip activation or dismissal while all KeyTip badges
                 # close, cleanup succeeds and the reconstructed baseline element is not mistaken for a surface control.
                 rebuilt_base_root = make_shell_root(app_name="word")
-                status_lbl = [E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))]
+                status_lbl = [E("Button", "Page 1 of 9", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))]
                 rebuilt_base_root.kids.append(status_lbl[0])
                 orig_base_kt = rebuilt_base_root.on_keytips
 
@@ -2645,8 +2685,9 @@ class ShellChrome(unittest.TestCase):
                         orig_base_kt(False)
                     if status_lbl[0] in rebuilt_base_root.kids:
                         rebuilt_base_root.kids.remove(status_lbl[0])
-                    new_text = "Page 1 of 2" if active else "Page 1 of 3"
-                    status_lbl[0] = E("Button", new_text, "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
+                    new_text = "Page 1 of 10" if active else "Page 1 of 11"
+                    new_rect = (8, 1054, 96, 1076) if active else (8, 1054, 104, 1076)
+                    status_lbl[0] = E("Button", new_text, "StatusBarPageNumber", rect=new_rect)
                     rebuilt_base_root.kids.append(status_lbl[0])
 
                 rebuilt_base_root.on_keytips = _rebuilt_baseline_on_open_and_dismiss
