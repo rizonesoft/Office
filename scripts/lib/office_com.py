@@ -154,6 +154,9 @@ def _ktm_apis(ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
     return ktmw32, kernel32, open_osf or msvcrt.open_osfhandle, fdopen or os.fdopen, wintypes.HANDLE(-1).value
 
 
+_NO_TXF_ERRORS = (1, 50, 6801, 6805, 6832)
+
+
 def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None,
                        fdopen=None):
     """Verify dst still holds expected_bytes, hard-link dst to backup, and replace dst with src inside a single
@@ -175,6 +178,21 @@ def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw3
             err = ctypes.get_last_error()
             if err in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
                 raise Refused(f"{dst} was removed while it was being written")
+            if err in _NO_TXF_ERRORS:  # Non-TxF volume (e.g. ReFS Dev Drive): verify via hardlinked backup
+                try:
+                    actual = Path(dst).read_bytes()
+                except FileNotFoundError:
+                    raise Refused(f"{dst} was removed while it was being written") from None
+                if actual != expected_bytes:
+                    raise Refused(f"{dst} changed while it was being written")
+                if on_enlisted is not None:
+                    on_enlisted(dst)
+                os.link(dst, backup)
+                if Path(backup).read_bytes() != expected_bytes:
+                    Path(backup).unlink(missing_ok=True)
+                    raise Refused(f"{dst} changed while it was being written")
+                os.replace(src, dst)
+                return
             raise Refused(f"{dst} changed while it was being written (WinError {err})")
         fd = open_osf(h, os.O_RDONLY)
         with fdopen(fd, "rb") as f:
@@ -219,6 +237,30 @@ def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel
                 if status_out is not None:
                     status_out.append("absent")
                 return True
+            if err in _NO_TXF_ERRORS:
+                try:
+                    actual = Path(dst).read_bytes()
+                except FileNotFoundError:
+                    if status_out is not None:
+                        status_out.append("absent")
+                    return True
+                except OSError:
+                    if status_out is not None:
+                        status_out.append("failed")
+                    return False
+                if actual != expected_bytes:
+                    if status_out is not None:
+                        status_out.append("superseded")
+                    return False
+                if on_enlisted is not None:
+                    on_enlisted(dst)
+                try:
+                    Path(dst).unlink()
+                    return True
+                except OSError:
+                    if status_out is not None:
+                        status_out.append("failed")
+                    return False
             if status_out is not None:
                 status_out.append("failed")
             return False
@@ -272,6 +314,28 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
                     if ktmw32.CommitTransaction(tx):
                         committed = True
                         return True
+            if err in _NO_TXF_ERRORS:
+                dst_path = Path(dst)
+                if not dst_path.exists():
+                    try:
+                        os.replace(backup, dst)
+                        return True
+                    except OSError:
+                        return False
+                try:
+                    actual = dst_path.read_bytes()
+                except OSError:
+                    return False
+                if not placed_ok or actual != expected_bytes:
+                    superseded = True
+                    return False
+                if on_enlisted is not None:
+                    on_enlisted(dst)
+                try:
+                    os.replace(backup, dst)
+                    return True
+                except OSError:
+                    return False
             return False
         fd = open_osf(h, os.O_RDONLY)
         with fdopen(fd, "rb") as f:

@@ -1245,11 +1245,18 @@ def capture(args, launched, uia, win):
         win.place(launched.hwnd, monitor)
         time.sleep(2)
     root = uia.element(launched.hwnd)
-    notice = licensing_problem(root)
-    if notice:
-        raise Refused(notice)
+
+    def check_licensing():
+        current = uia.element(launched.hwnd)
+        for candidate in (current,) if current is root else (current, root):
+            notice = licensing_problem(candidate)
+            if notice:
+                raise Refused(notice)
+
+    check_licensing()
     tabs_bar = wait_for(lambda: find(root, lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs"))
     lower = wait_for(lambda: find(root, lambda e: e.name == "Lower Ribbon"))
+    check_licensing()
     if not tabs_bar or not lower:
         raise Refused("the ribbon was not found in the app's window")
     problem = layout_problem(root, args.layout)
@@ -1280,13 +1287,16 @@ def capture(args, launched, uia, win):
         tab.select()
         lower = lower_for_tab(uia, launched.hwnd, tab.name)
         launched.check_alone()
+        check_licensing()
         before_unverified = len(ctx.unverified)
         tab_records = walk_tab(tab, order, lower, ctx)
         if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
             raise Refused(f"tab {tab.name!r} produced no control records")
         if args.expand:
             tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
+            check_licensing()
         records += tab_records
+    check_licensing()
     if not any(r.get("kind") == "control" for r in records + ctx.unverified):
         raise Refused("no ribbon controls were captured")
     if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
@@ -1450,6 +1460,12 @@ def lower_for_tab(uia, hwnd, tab_name):
         last_lower, last_sig = lower, sig
         time.sleep(0.2)
     if last_lower is None or stable < 2:
+        try:
+            notice = licensing_problem(uia.element(hwnd))
+        except Gone:
+            notice = None
+        if notice:
+            raise Refused(notice)
         raise Refused(f"tab {tab_name!r} did not open or its controls did not stabilise")
     return last_lower
 
@@ -1678,6 +1694,16 @@ def worker():
     return 0
 
 
+def _load_existing_records(path, raw):
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise Refused(f"{path} is not valid UTF-8 JSON ({exc})") from None
+    if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):
+        raise Refused(f"{path} does not hold a JSON list of record objects")
+    return data
+
+
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser = argparse.ArgumentParser(description="Capture an Office app's ribbon through UI Automation.")
     parser.add_argument("--app", required=True, choices=sorted(APPS))
@@ -1696,7 +1722,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         return 1
     unverified_path = UNVERIFIED / f"{args.app}-unverified.json"
     initial_bytes = out.read_bytes() if args.merge and out.exists() else None
-    initial_unverified = unverified_path.read_bytes() if args.merge and unverified_path.exists() else None
+    initial_unverified = unverified_path.read_bytes() if unverified_path.exists() else None
     try:
         launched = launcher(args.app)
     except Unsafe as exc:
@@ -1729,20 +1755,27 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
+            if current_bytes is not None:
+                records = merge(_load_existing_records(out, current_bytes), records, unverified_records)
+        if args.merge or unverified_records:
             current_unverified = unverified_path.read_bytes() if unverified_path.exists() else None
             if current_unverified != initial_unverified:
                 raise Refused(f"{unverified_path} changed during the capture; re-run to merge cleanly")
-            if current_bytes is not None:
-                records = merge(json.loads(current_bytes.decode("utf-8")), records, unverified_records)
-            if current_unverified is not None:
-                unverified_records = merge(json.loads(current_unverified.decode("utf-8")), unverified_records)
+            if unverified_records and current_unverified is not None:
+                unverified_records = merge(
+                    _load_existing_records(unverified_path, current_unverified),
+                    unverified_records,
+                )
         files = {out: render(records)}
-        expected = {out: initial_bytes} if args.merge else None
+        expected = {out: initial_bytes} if args.merge else {}
+        create_only = [] if args.merge else [out]
         if unverified_records:
             files[unverified_path] = render(unverified_records)
-            if args.merge:
+            if initial_unverified is not None:
                 expected[unverified_path] = initial_unverified
-        publish(files, create_only=() if args.merge else (out,), expected_bytes=expected)
+            else:
+                create_only.append(unverified_path)
+        publish(files, create_only=tuple(create_only), expected_bytes=expected or None)
     except Refused as exc:
         print(f"capture-ui: {exc}", file=sys.stderr)
         return 1

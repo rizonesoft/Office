@@ -1312,6 +1312,17 @@ class CaptureIntegration(unittest.TestCase):
             with self.assertRaises(cu.Refused) as err:
                 cu.capture(args, launched, uia, win)
             self.assertIn("licence or activation notice", str(err.exception))
+            # A licence notice that appears only after the initial scan (e.g. during tab selection) is also refused.
+            delayed_root = self._window_tree()
+            tabs_bar = next(c for c in delayed_root.kids if c.name == "Ribbon Tabs")
+            home_tab = tabs_bar.kids[0]
+            home_tab.select = lambda: delayed_root.kids.append(
+                E("Pane", "Product Activation Failed - Reduced functionality")
+            )
+            delayed_uia = type("U", (), {"element": lambda self, h: delayed_root})()
+            with self.assertRaises(cu.Refused) as err_delayed:
+                cu.capture(args, launched, delayed_uia, win)
+            self.assertIn("licence or activation notice", str(err_delayed.exception))
         finally:
             cu.installed_build, cu.time.sleep = real_ib, real_sleep
 
@@ -1630,6 +1641,24 @@ class CaptureIntegration(unittest.TestCase):
                 self.assertEqual(json.loads(unv_only_out.read_text(encoding="utf-8")), [])
                 sidecar_recs = json.loads((unv_sidecar_dir / "word-unverified.json").read_text(encoding="utf-8"))
                 self.assertEqual([r["kind"] for r in sidecar_recs], ["tab", "group", "control"])
+
+                # 12. Separate fresh --out captures without --merge preserve earlier unverified records in the shared
+                # sidecar and refuse concurrent modification of the sidecar.
+                sep_sidecar_dir = Path(tmp) / "unverified_sep"
+                cu.UNVERIFIED = sep_sidecar_dir
+                sep_home_out = Path(tmp) / "sep_home.json"
+                sep_ins_out = Path(tmp) / "sep_insert.json"
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc_sh = cu.main(["--app", "word", "--tab", "Home", "--out", str(sep_home_out)],
+                                    launcher=lambda app: launched, uia_factory=lambda: seq_uia, win_factory=lambda: win)
+                    rc_si = cu.main(["--app", "word", "--tab", "Insert", "--out", str(sep_ins_out)],
+                                    launcher=lambda app: launched, uia_factory=lambda: seq_uia, win_factory=lambda: win)
+                self.assertEqual((rc_sh, rc_si), (0, 0))
+                sep_sidecar_ids = {
+                    r["id"] for r in json.loads((sep_sidecar_dir / "word-unverified.json").read_text(encoding="utf-8"))
+                }
+                self.assertIn("word.home.adobe-acrobat", sep_sidecar_ids)
+                self.assertIn("word.insert.new", sep_sidecar_ids)
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

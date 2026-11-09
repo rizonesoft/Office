@@ -741,3 +741,46 @@ OVERALL: needs-attention
 - **Layer:** `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`
 
 
+
+## Round 16: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T01:16:23Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 4b39687eb4843ad7
+
+## adversarial: needs-attention
+
+1. **[P2] A licence notice appearing during capture bypasses refusal.** `scripts/capture-ui.py:1248` scans for licensing problems only before waiting for and selecting tabs. **Precondition:** an activation or reduced-functionality notice appears after that initial scan. Reproduced by adding the notice during tab selection in the existing window fixture: `main()` returned `0` and published 11 records while `licensing_problem()` confirmed the notice remained visible. Recheck the current window before accepting the capture.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. **[P2] Separate output captures silently overwrite each other’s unverified records.** `scripts/capture-ui.py:1697` assigns every capture of an app the same sidecar, but `:1737` preserves existing sidecar records only with `--merge`, and `:1745` protects only the main output against replacement. **Precondition:** capture Home and Insert into different fresh `--out` files without `--merge`. Reproduced through `main()` with in-memory storage: both calls returned `0`, both main files survived, but the sidecar retained only Insert’s records. Home’s unresolved records disappeared. Scope sidecars to their output or preserve and protect the shared sidecar independently of the main file’s merge mode.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** violates `design/inventory/REFERENCE.md:51`, which requires refusing an app showing a licence, activation or reduced-functionality notice.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **2 [P2]** loses capture evidence during supported use, contrary to the reliability requirement at `docs/product-principles.md:15`.
+
+## record: advisory
+
+50 selected tests passed; 16 filesystem-writing tests were excluded under the read-only constraint. The whole-inventory checker exited `0`. Both reproductions used in-memory doubles and a mocked publisher. No live Office capture ran; no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 16 disposition
+
+- **Finding 1 (P2, licence notice appearing during capture bypasses refusal):** Fixed at the owning layer (`scripts/capture-ui.py`: `capture` and `lower_for_tab`). `capture` now re-runs `check_licensing()` after the ribbon elements appear, after each tab's `lower_for_tab` and ownership check, after `expand_all`, and right before returning the captured records, and `lower_for_tab` checks `licensing_problem(uia.element(hwnd))` if a tab fails to stabilise so a delayed activation or reduced-functionality notice is caught and reported as a refusal. Added regression coverage in `CaptureIntegration.test_capture_refuses_licensing_or_activation_notice` (`scripts/tests/test_capture_ui.py`).
+- **Finding 2 (P2, separate output captures silently overwrite each other's unverified records):** Fixed at the owning layer (`scripts/capture-ui.py`: `_load_existing_records` and `main`; `scripts/lib/office_com.py`: `transacted_replace`, `transacted_unlink`, and `transacted_restore`). `main` now snapshots `initial_unverified` whenever `unverified_path` exists regardless of `--merge`, verifies `current_unverified == initial_unverified` before publishing, merges existing sidecar records with new `unverified_records` even when `--merge` is not passed on a fresh `--out` file, and passes `expected[unverified_path] = initial_unverified` (or adds `unverified_path` to `create_only` when creating it fresh) to `publish`, with non-TxF volume support (`_NO_TXF_ERRORS`, including `WinError 6832` on ReFS Dev Drives) in `office_com.py`. Added regression test 12 in `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` (`scripts/tests/test_capture_ui.py`).
