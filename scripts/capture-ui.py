@@ -939,10 +939,7 @@ class Launched:
             can_quit = (not enum_failed) and (not failures) and (remaining == 0) and (unowned_count == 0)
             try:
                 if can_quit:
-                    if self.key == "word":
-                        app.Quit(SaveChanges=0)
-                    else:
-                        app.Quit()
+                    app.Quit()
                     quitted = True
             except Exception as exc:
                 failures.append(f"quit failed ({type(exc).__name__}: {exc})")
@@ -1286,7 +1283,7 @@ class Launched:
             self._release_marshaled_app()
             try:
                 if others == 0:
-                    self.app.Quit(SaveChanges=0) if self.key == "word" else self.app.Quit()
+                    self.app.Quit()
             finally:
                 if others == 0:
                     # Excel and PowerPoint stay alive while a COM reference to them is held, so every one is
@@ -2826,7 +2823,7 @@ def _is_surface_candidate(surface_key, el, ancestors=()):
         if ctype not in ("Pane", "Text", "ToolTip", "Custom"):
             return False
         if not name:
-            return ctype in ("Pane", "ToolTip", "Custom")
+            return False
         if "keytip" in name.casefold():
             return True
         if re.fullmatch(r"[A-Z0-9]{1,4}", name):

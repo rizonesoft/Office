@@ -315,7 +315,7 @@ class Popups(unittest.TestCase):
 
 class FakeApp:
     def __init__(self, count):
-        self.count, self.quit, self.made = count, False, []
+        self.count, self.quit, self.quit_args, self.made = count, False, [], []
         app = self
 
         class Docs:
@@ -342,8 +342,9 @@ class FakeApp:
     def FileNew(self):
         return self.Projects.Add()
 
-    def Quit(self, SaveChanges=None):
+    def Quit(self, *args, **kwargs):
         self.quit = True
+        self.quit_args.append((args, kwargs))
 
 
 class Proc:
@@ -520,8 +521,9 @@ class Launch(unittest.TestCase):
             launched.close()
         self.assertEqual((app.made[0].closed, app.quit, app.count), (True, False, 1))
         quiet = FakeApp(count=0)
-        self.launched(quiet).close()
+        self.launched(quiet, key="word").close()
         self.assertTrue(quiet.quit)
+        self.assertEqual(quiet.quit_args, [((), {})])
 
     def test_core_tabs_come_from_the_baseline(self):
         self.assertIn("TabHome", cu.baseline_core_tabs("word"))
@@ -2645,23 +2647,23 @@ class ShellChrome(unittest.TestCase):
                         type("U", (), {"element": lambda self, h: E._wrap(rebuilt_kt_root)})(),
                         good_win, launched,
                     )
-                # If a surface pane shares (control_type, automation_id, name) with an existing baseline pane and is
+                # If a KeyTip badge pane shares (control_type, automation_id, name) with an existing baseline pane and is
                 # replaced during dismissal with a new runtime_id and shifted bounds, cleanup verification refuses it.
                 rebuilt_pane_root = make_shell_root(app_name="word")
-                rebuilt_pane_root.kids.append(E("Pane", "", "", rect=(0, 0, 100, 100)))
-                opened_unnamed_pane = [None]
+                rebuilt_pane_root.kids.append(E("Pane", "F", "", rect=(0, 0, 15, 17)))
+                opened_dup_badge = [None]
                 orig_pane_kt = rebuilt_pane_root.on_keytips
 
                 def _rebuilt_shifted_pane_keytips(active):
                     if active:
                         orig_pane_kt(True)
-                        opened_unnamed_pane[0] = E("Pane", "", "", rect=(200, 200, 400, 400))
-                        rebuilt_pane_root.kids.append(opened_unnamed_pane[0])
+                        opened_dup_badge[0] = E("Pane", "F", "", rect=(22, 71, 37, 88))
+                        rebuilt_pane_root.kids.append(opened_dup_badge[0])
                     else:
                         orig_pane_kt(False)
-                        if opened_unnamed_pane[0] in rebuilt_pane_root.kids:
-                            rebuilt_pane_root.kids.remove(opened_unnamed_pane[0])
-                        rebuilt_pane_root.kids.append(E("Pane", "", "", rect=(201, 200, 401, 400)))
+                        if opened_dup_badge[0] in rebuilt_pane_root.kids:
+                            rebuilt_pane_root.kids.remove(opened_dup_badge[0])
+                        rebuilt_pane_root.kids.append(E("Pane", "F", "", rect=(23, 71, 38, 88)))
 
                 rebuilt_pane_root.on_keytips = _rebuilt_shifted_pane_keytips
                 with self.assertRaises(cu.Refused):
@@ -2670,17 +2672,19 @@ class ShellChrome(unittest.TestCase):
                         type("U", (), {"element": lambda self, h: E._wrap(rebuilt_pane_root)})(),
                         good_win, launched,
                     )
-                # Conversely, if an unrelated baseline element (such as a status bar indicator) is recreated with a
-                # new runtime_id and widened bounds during KeyTip activation or dismissal while all KeyTip badges
-                # close, cleanup succeeds and the reconstructed baseline element is not mistaken for a surface control.
+                # Conversely, if an unrelated baseline element (such as a status bar indicator or a persistent unnamed
+                # layout Pane) is recreated or resized during KeyTip activation or dismissal while all KeyTip badges
+                # close, cleanup succeeds and the baseline elements are not mistaken for surface controls.
                 rebuilt_base_root = make_shell_root(app_name="word")
                 status_lbl = [E("Button", "Page 1 of 9", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))]
-                rebuilt_base_root.kids.append(status_lbl[0])
+                persistent_pane = E("Pane", "", "", rect=(0, 200, 1900, 1000))
+                rebuilt_base_root.kids.extend([status_lbl[0], persistent_pane])
                 orig_base_kt = rebuilt_base_root.on_keytips
 
                 def _rebuilt_baseline_on_open_and_dismiss(active):
                     if active:
                         orig_base_kt(True)
+                        persistent_pane.rect = (0, 200, 1880, 1000)
                     else:
                         orig_base_kt(False)
                     if status_lbl[0] in rebuilt_base_root.kids:
