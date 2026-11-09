@@ -249,6 +249,32 @@ class Popups(unittest.TestCase):
         finally:
             cu.time.sleep = real
 
+    def test_a_popup_that_never_stabilises_is_refused(self):
+        step = [0]
+
+        class GrowingMenu(E):
+            def children(self):
+                step[0] += 1
+                return iter([E("MenuItem", f"Item {i}") for i in range(1, min(step[0], 4) + 1)])
+
+        root = E("Window", "Doc", kids=[GrowingMenu("Menu", "Styles")])
+        clock = [0.0]
+
+        def fake_monotonic():
+            val = clock[0]
+            clock[0] += 1.0  # 4 readings before 4.0s deadline expires, each with 1, 2, 3, 4 items
+            return val
+
+        real_sleep, real_mono = cu.time.sleep, cu.time.monotonic
+        cu.time.sleep = lambda s: None
+        cu.time.monotonic = fake_monotonic
+        try:
+            with self.assertRaises(cu.Refused) as err:
+                cu.popup_items(root, label="Styles")
+            self.assertIn("did not stabilise", str(err.exception))
+        finally:
+            cu.time.sleep, cu.time.monotonic = real_sleep, real_mono
+
     def test_a_popup_that_reports_collapsed_while_open_is_closed_again(self):
         class Drop:
             def __init__(self, stubborn):
@@ -1473,6 +1499,58 @@ class CaptureIntegration(unittest.TestCase):
                 self.assertIn(str(first_new_locked), err_buf_new.getvalue())
                 if hasattr(cm_new.exception, "__notes__"):
                     self.assertTrue(any("rollback could not remove newly created" in n for n in cm_new.exception.__notes__))
+
+                # 8. Sequential --tab captures with --merge preserve unverified records from earlier tabs in the sidecar.
+                seq_out = Path(tmp) / "seq_ribbon.json"
+                home_tab, home_lower = home()
+                home_tab.select = lambda: None
+                home_lower.rect = (0, 80, 1920, 200)
+                insert_tab = E("TabItem", "Insert", "TabInsert", key="Alt, N", rect=(80, 40, 140, 70))
+                insert_tab.select = lambda: None
+                insert_lower = E("Pane", "Lower Ribbon", rect=(0, 80, 1920, 200), kids=[
+                    E("Group", "Insert", kids=[
+                        E("Group", "Pages", kids=[
+                            E("Button", "Blank Page", "BlankPageInsert", rect=(10, 90, 60, 156)),
+                        ]),
+                        E("Group", "New", kids=[
+                            E("Button", "Addin Insert", "UnknownInsertBtn", rect=(70, 90, 120, 156)),
+                        ]),
+                    ]),
+                ])
+                active_tab = ["Home"]
+
+                def select_home():
+                    active_tab[0] = "Home"
+
+                def select_insert():
+                    active_tab[0] = "Insert"
+
+                home_tab.select = select_home
+                insert_tab.select = select_insert
+
+                def multi_tab_root():
+                    lower_el = home_lower if active_tab[0] == "Home" else insert_lower
+                    return E("Window", "Document1 - Word", kids=[
+                        E("Tab", "Ribbon Tabs", kids=[home_tab, insert_tab]),
+                        lower_el,
+                    ])
+
+                seq_uia = type("U", (), {"element": lambda self, h: multi_tab_root()})()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc_home = cu.main(["--app", "word", "--tab", "Home", "--out", str(seq_out)],
+                                      launcher=lambda app: launched, uia_factory=lambda: seq_uia, win_factory=lambda: win)
+                    rc_ins = cu.main(["--app", "word", "--tab", "Insert", "--merge", "--out", str(seq_out)],
+                                     launcher=lambda app: launched, uia_factory=lambda: seq_uia, win_factory=lambda: win)
+                self.assertEqual((rc_home, rc_ins), (0, 0))
+                merged_main = {r["id"] for r in json.loads(seq_out.read_text(encoding="utf-8"))}
+                merged_sidecar = {r["id"] for r in json.loads(
+                    (Path(tmp) / "unverified" / "word-unverified.json").read_text(encoding="utf-8")
+                )}
+                self.assertIn("word.home", merged_main)
+                self.assertIn("word.insert", merged_main)
+                self.assertIn("word.insert.pages", merged_main)
+                self.assertIn("word.home.adobe-acrobat", merged_sidecar)
+                self.assertIn("word.insert.new", merged_sidecar)
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

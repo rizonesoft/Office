@@ -605,3 +605,49 @@ OVERALL: needs-attention
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
 
+
+## Round 13: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T00:37:06Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 987866c2ed2115f3
+
+## adversarial: needs-attention
+
+1. **[P2] Popup timeout silently accepts an incomplete reading.** `scripts/capture-ui.py:1204` returns the last item list even when the stability condition never succeeded. **Precondition:** a gallery continues populating during the four-second reading budget. Reproduce with successive readings containing one, two, three and four items, then expire the deadline. The in-memory probe returned four items without refusing; `expand_all()` treats that nonempty result as successful. Require stability before accepting the result, or explicitly report incomplete capture.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. **[P2] Sequential tab merges erase previously captured unverified records.** `scripts/capture-ui.py:1607` replaces the app-wide sidecar with only the current capture’s unverified records, although the main inventory preserves previously captured tabs. **Precondition:** capture tabs individually using the supported `--tab` and `--merge` options. Reproduced through `main()` with in-memory storage: capture Home, then Insert, each containing an unverified group. Both calls returned `0`; the main output retained both tabs, but the sidecar retained only `word.insert.new`. Home’s unresolved inventory disappeared. Merge the sidecar consistently with the main inventory, preserving records outside the current capture.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** undermines the item-capture requirement at `todo/02-interface/TODO-01-parity-inventory.md:147`: an unfinished gallery reading can be published without identifying omitted items.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Findings **1 and 2 [P2]** leave incomplete inventory or discard unresolved capture evidence during supported workflows, contrary to the reliability requirement in `docs/product-principles.md`.
+
+## record: advisory
+
+49 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited `0`. Both reproductions used in-memory doubles. No live Office capture ran, and no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 13 disposition
+
+1. **[P2] Popup timeout silently accepts an incomplete reading:** Fixed in `popup_items` and `expand_all` (`scripts/capture-ui.py`). `popup_items` now compares the full item signature (`(runtime_id(), control_type, name, automation_id)` across all items, not merely `len(items)`) and raises `Refused(f"{label!r} items did not stabilise before timeout")` whenever the four-second deadline expires with `stable < 2` and any items or rebuilding (`Gone`) or changing readings were observed. Added regression test `Popups.test_a_popup_that_never_stabilises_is_refused` in `scripts/tests/test_capture_ui.py`.
+2. **[P2] Sequential tab merges erase previously captured unverified records:** Fixed in `main` (`scripts/capture-ui.py`). When `--merge` is passed, `main` reads the existing sidecar `build/capture-ui/<app>-unverified.json`, verifies it was not modified concurrently during the capture, merges `ctx.unverified` into the existing sidecar records via `merge()`, and publishes the merged sidecar under KTM transaction protection (`expected_bytes[unverified_path] = initial_unverified`). Added a sequential `--tab Home` then `--tab Insert --merge` regression test in `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` (`scripts/tests/test_capture_ui.py`) confirming both `word.home.adobe-acrobat` and `word.insert.new` are retained in `word-unverified.json`.
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (48 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+

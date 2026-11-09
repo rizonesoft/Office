@@ -1171,8 +1171,8 @@ def wait_for(test, seconds=5.0, step=0.2):
     return test()
 
 
-def popup_items(root, popup_roots=()):
-    """The items of the menu or gallery that just opened, once their count is stable. Office exposes an open menu as
+def popup_items(root, popup_roots=(), label="popup"):
+    """The items of the menu or gallery that just opened, once their reading is stable. Office exposes an open menu as
     a Menu element in the app window's own tree (menus nest, so items are taken once each by runtime id)."""
     def read():
         # Word nests an empty Menu shell around the menus that hold the items, so every open Menu is read.
@@ -1190,17 +1190,29 @@ def popup_items(root, popup_roots=()):
         except Gone:
             return None  # the menu is still rebuilding: not a reading yet
 
-    last, stable = None, 0
+    def signature(items):
+        return tuple((e.runtime_id(), e.control_type, e.name, getattr(e, "automation_id", "")) for e in items)
+
+    last, last_sig, stable, saw_unstable = None, None, 0, False
     deadline = time.monotonic() + 4.0
     while time.monotonic() < deadline and stable < 2:
         items = attempt()
         if items is None:
-            stable, last = 0, None
+            saw_unstable = True
+            stable, last, last_sig = 0, None, None
             time.sleep(0.4)
             continue
-        stable = stable + 1 if last is not None and len(items) == len(last) and items else 0
-        last = items
+        sig = signature(items)
+        if last_sig is not None and sig == last_sig and items:
+            stable += 1
+        else:
+            if last_sig is not None and sig != last_sig:
+                saw_unstable = True
+            stable = 0
+        last, last_sig = items, sig
         time.sleep(0.4)
+    if stable < 2 and (last or saw_unstable):
+        raise Refused(f"{label!r} items did not stabilise before timeout")
     return last or []
 
 
@@ -1349,7 +1361,7 @@ def expand_all(records, lower, ctx, launched, uia, win):
         try:
             time.sleep(0.3)
             opened = [h for h in win.popups(launched.proc.pid) if h not in before]
-            items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened])
+            items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened], label=rec["label"])
             if not items:
                 ctx.notes.append(f"{rec['label']!r} opened but no item was read from it")
         finally:
@@ -1568,7 +1580,9 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     if out.exists() and not args.merge:
         print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
         return 1
+    unverified_path = UNVERIFIED / f"{args.app}-unverified.json"
     initial_bytes = out.read_bytes() if args.merge and out.exists() else None
+    initial_unverified = unverified_path.read_bytes() if args.merge and unverified_path.exists() else None
     try:
         launched = launcher(args.app)
     except Unsafe as exc:
@@ -1596,24 +1610,32 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         raise
     launched.close()
     try:
+        unverified_records = list(ctx.unverified)
         if args.merge:
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
+            current_unverified = unverified_path.read_bytes() if unverified_path.exists() else None
+            if current_unverified != initial_unverified:
+                raise Refused(f"{unverified_path} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
-                records = merge(json.loads(current_bytes.decode("utf-8")), records, ctx.unverified)
+                records = merge(json.loads(current_bytes.decode("utf-8")), records, unverified_records)
+            if current_unverified is not None:
+                unverified_records = merge(json.loads(current_unverified.decode("utf-8")), unverified_records)
         files = {out: render(records)}
-        if ctx.unverified:
-            files[UNVERIFIED / f"{args.app}-unverified.json"] = render(ctx.unverified)
-        publish(files, create_only=() if args.merge else (out,),
-                expected_bytes={out: initial_bytes} if args.merge else None)
+        expected = {out: initial_bytes} if args.merge else None
+        if unverified_records:
+            files[unverified_path] = render(unverified_records)
+            if args.merge:
+                expected[unverified_path] = initial_unverified
+        publish(files, create_only=() if args.merge else (out,), expected_bytes=expected)
     except Refused as exc:
         print(f"capture-ui: {exc}", file=sys.stderr)
         return 1
     for line in ctx.skipped + ctx.notes:
         print(line)
-    if ctx.unverified:
-        print(f"{len(ctx.unverified)} unverified records in {UNVERIFIED / (args.app + '-unverified.json')}")
+    if unverified_records:
+        print(f"{len(unverified_records)} unverified records in {unverified_path}")
     print(f"{out}: {len(records)} records" + ("; bounds recorded under " + PROFILE if not problems else
                                                "; no bounds: " + "; ".join(problems)))
     return 0
