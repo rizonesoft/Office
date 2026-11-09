@@ -358,26 +358,77 @@ class FakeApp:
 
 
 class Proc:
-    def __init__(self, pid):
+    def __init__(self, pid, require_window_close=False):
         self.pid, self.closed = pid, False
+        self.require_window_close = require_window_close
+        self.window_closed = False
 
     def exited(self, seconds):
-        return True
+        return self.window_closed if self.require_window_close else True
 
     def close(self):
         self.closed = True
 
 
 class Launch(unittest.TestCase):
+    REAL_WIN = cu.Win
+
+    def make_win(self, pid=7, hwnd=5, class_name="PPTFrameClass", proc=None):
+        import ctypes
+        import ctypes.wintypes
+        win = self.REAL_WIN.__new__(self.REAL_WIN)
+        win.ct, win.wt = ctypes, ctypes.wintypes
+        win.posted = []
+        win.windows = {hwnd: {"pid": pid, "class": class_name, "visible": True, "valid": True}}
+
+        class FakeUser32:
+            def GetAncestor(_self, h, _flags):
+                return h
+
+            def IsWindow(_self, h):
+                return bool(win.windows.get(int(h), {}).get("valid", False))
+
+            def IsWindowVisible(_self, h):
+                return bool(win.windows.get(int(h), {}).get("visible", False))
+
+            def GetWindowThreadProcessId(_self, h, ptr):
+                owner_pid = int(win.windows.get(int(h), {}).get("pid", 0))
+                ctypes.cast(ptr, ctypes.POINTER(ctypes.wintypes.DWORD)).contents.value = owner_pid
+                return 1
+
+            def GetClassNameW(_self, h, buf, _max_count):
+                cls_val = str(win.windows.get(int(h), {}).get("class", ""))
+                buf.value = cls_val
+                return len(cls_val)
+
+            def EnumWindows(_self, cb, lparam):
+                for h in list(win.windows):
+                    if not cb(h, lparam):
+                        break
+                return 1
+
+            def PostMessageW(_self, h, msg, wparam, lparam):
+                rec = (int(h), int(msg), int(wparam), int(lparam))
+                win.posted.append(rec)
+                if proc is not None and rec == (hwnd, 0x0010, 0, 0):
+                    proc.window_closed = True
+                return 1
+
+        win.user32 = FakeUser32()
+        return win
+
     def launched(self, app, key="powerpoint", started=7, window_pid=7):
         real = cu.Launched.running, cu.Win
         cu.Launched.running = staticmethod(lambda exe: False)
-        cu.Win = lambda: type("W", (), {"top": lambda self, h: h})()
+        cls_name = "PPTFrameClass" if key == "powerpoint" else "JWinproj-WhimperMainClass" if key == "project" else "OpusApp"
+        proc = Proc(window_pid, require_window_close=(key == "powerpoint"))
+        win = self.make_win(pid=window_pid, hwnd=5, class_name=cls_name, proc=proc)
+        cu.Win = lambda: win
         app.HWND = 5
         app.ActiveWindow = type("AW", (), {"Hwnd": 5})()
         try:
             return cu.Launched(key, dispatch=lambda progid: app, starter=lambda exe: started,
-                               owner=lambda hwnd, exe: Proc(window_pid))
+                               owner=lambda hwnd, exe: proc, win=win)
         finally:
             cu.Launched.running, cu.Win = real
 
@@ -559,7 +610,78 @@ class Launch(unittest.TestCase):
         self.assertEqual(quiet_ppt.made[0].close_args, [])
         self.assertFalse(quiet_ppt.made[0].closed)
         self.assertEqual(launched_quiet_ppt.closed_window_hwnds, [5])
+        self.assertEqual(launched_quiet_ppt._win.posted, [(5, 0x0010, 0, 0)])
+        self.assertTrue(launched_quiet_ppt.proc.window_closed)
         self.assertNotIn("Saved", quiet_ppt.made[0].__dict__)
+
+        emerg_ppt = FakeApp(count=0)
+        launched_emerg_ppt = self.launched(emerg_ppt, key="powerpoint")
+        launched_emerg_ppt._marshal_app(emerg_ppt)
+        launched_emerg_ppt._marshaled_docs = [("direct", emerg_ppt.made[0], None)]
+        emerg_errs = launched_emerg_ppt._emergency_close_com()
+        self.assertEqual(emerg_errs, [])
+        self.assertTrue(launched_emerg_ppt._emergency_quitted)
+        self.assertEqual(launched_emerg_ppt.closed_window_hwnds, [5])
+        self.assertEqual(launched_emerg_ppt._win.posted, [(5, 0x0010, 0, 0)])
+        self.assertFalse(emerg_ppt.quit)
+
+        # Missing, replaced, mismatched, or recycled PowerPoint window handles refuse both _emergency_close_com() and
+        # close() without posting WM_CLOSE or calling Quit().
+        def mutate_missing_com_handles(l_inst, a_inst):
+            a_inst.ActiveWindow = None
+            a_inst.HWND = None
+
+        def mutate_zero_active_hwnd(l_inst, a_inst):
+            a_inst.ActiveWindow.Hwnd = 0
+
+        def mutate_replaced_active_hwnd(l_inst, a_inst):
+            a_inst.ActiveWindow.Hwnd = 9
+
+        def mutate_replaced_app_hwnd(l_inst, a_inst):
+            a_inst.HWND = 9
+
+        def mutate_replaced_process_windows(l_inst, a_inst):
+            l_inst._win.windows = {9: {"pid": 7, "class": "PPTFrameClass", "visible": True, "valid": True}}
+
+        def mutate_extra_process_window(l_inst, a_inst):
+            l_inst._win.windows[9] = {"pid": 7, "class": "PPTFrameClass", "visible": True, "valid": True}
+
+        def mutate_destroyed_window(l_inst, a_inst):
+            l_inst._win.windows[5]["valid"] = False
+
+        def mutate_recycled_pid(l_inst, a_inst):
+            l_inst._win.windows[5]["pid"] = 99
+
+        def mutate_recycled_class(l_inst, a_inst):
+            l_inst._win.windows[5]["class"] = "Notepad"
+
+        for mutator in (
+            mutate_missing_com_handles,
+            mutate_zero_active_hwnd,
+            mutate_replaced_active_hwnd,
+            mutate_replaced_app_hwnd,
+            mutate_replaced_process_windows,
+            mutate_extra_process_window,
+            mutate_destroyed_window,
+            mutate_recycled_pid,
+            mutate_recycled_class,
+        ):
+            for mode in ("emergency", "close"):
+                bad_win_app = FakeApp(count=0)
+                bad_win_launched = self.launched(bad_win_app, key="powerpoint")
+                mutator(bad_win_launched, bad_win_app)
+                if mode == "emergency":
+                    bad_win_launched._marshal_app(bad_win_app)
+                    bad_win_launched._marshaled_docs = [("direct", bad_win_app.made[0], None)]
+                    bad_errs = bad_win_launched._emergency_close_com()
+                    self.assertTrue(bad_errs, f"expected errors for {mutator.__name__} in {mode}")
+                    self.assertFalse(bad_win_launched._emergency_quitted)
+                else:
+                    with self.assertRaises(cu.Refused, msg=f"expected Refused for {mutator.__name__} in {mode}"):
+                        bad_win_launched.close()
+                self.assertEqual(bad_win_launched._win.posted, [])
+                self.assertEqual(bad_win_launched.closed_window_hwnds, [])
+                self.assertFalse(bad_win_app.quit)
         # If an intervening edit flips Saved=False AFTER the initial Saved inspection succeeds (on the Name read at the
         # end of _is_unmodified_blank_doc, after Saved was already read as True), or during _release_marshaled_app,
         # neither doc.Close() nor app.Quit() nor WM_CLOSE discards work on either normal or emergency cleanup.

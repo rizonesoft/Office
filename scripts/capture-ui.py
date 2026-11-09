@@ -483,8 +483,8 @@ class Win:
                 "window": (rect.left, rect.top, rect.right, rect.bottom), "origin": (origin.x, origin.y),
                 "monitor": monitor}
 
-    def main_window(self, pid, class_name=None):
-        """Visible top-level window of one process, matching class_name when given."""
+    def windows_of(self, pid, class_name=None):
+        """All visible top-level windows of one process, matching class_name when given."""
         ct, wt, found = self.ct, self.wt, []
         proc = ct.WINFUNCTYPE(ct.c_bool, wt.HWND, wt.LPARAM)
 
@@ -499,6 +499,11 @@ class Win:
             return True
 
         self.user32.EnumWindows(proc(each), 0)
+        return found
+
+    def main_window(self, pid, class_name=None):
+        """Visible top-level window of one process, matching class_name when given."""
+        found = self.windows_of(pid, class_name)
         return found[0] if found else None
 
     def popups(self, pid):
@@ -554,12 +559,25 @@ class Win:
         if callable(hook):
             hook()
 
-    def close_window(self, hwnd):
+    def close_window(self, hwnd, expected_pid=None, expected_class=None):
         """Post WM_CLOSE (0x0010) to a specific top-level window handle so only that window closes (prompting if dirty)."""
         if not isinstance(hwnd, int) or isinstance(hwnd, bool) or hwnd == 0:
             raise Refused("cannot close window without a bound top-level window handle")
-        if self.user32.IsWindow(hwnd) and not self.user32.PostMessageW(hwnd, 0x0010, 0, 0):
+        if not self.user32.IsWindow(hwnd):
+            raise Refused(f"window handle {hwnd} is no longer a valid window")
+        if expected_pid is not None:
+            owner = self.wt.DWORD()
+            self.user32.GetWindowThreadProcessId(hwnd, self.ct.byref(owner))
+            if owner.value != expected_pid:
+                raise Refused(f"window handle {hwnd} belongs to process {owner.value}, not {expected_pid}")
+        if expected_class is not None:
+            buf = self.ct.create_unicode_buffer(256)
+            self.user32.GetClassNameW(hwnd, buf, 256)
+            if buf.value != expected_class:
+                raise Refused(f"window handle {hwnd} has class {buf.value!r}, not {expected_class!r}")
+        if not self.user32.PostMessageW(hwnd, 0x0010, 0, 0):
             raise OSError(f"PostMessageW(WM_CLOSE) failed for hwnd {hwnd}")
+        return True
 
 
 def profile_monitor(monitors):
@@ -674,7 +692,7 @@ class _Apartment:
 class Launched:
     """An app instance this tool started, with its top-level window and its process."""
 
-    def __init__(self, key, dispatch=None, starter=None, owner=None, init_timeout=60.0):
+    def __init__(self, key, dispatch=None, starter=None, owner=None, init_timeout=60.0, win=None):
         row, exe, progid, separate = APPS[key]
         self.key, self.row, self.exe = key, row, exe
         if key == "outlook":
@@ -682,6 +700,7 @@ class Launched:
                          "attended (D02 T01 §15)")
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
         self.app, self.hwnd, self._owned_window_hwnd, self._cancelled = None, None, None, False
+        self._win = win
         self.closed_window_hwnds = []
         self._marshaled_app, self.cleanup_errors = None, []
         if not separate:
@@ -867,19 +886,116 @@ class Launched:
             raise RuntimeError(f"collection of {count} document(s) is not enumerable")
         return live
 
+    def _get_win(self):
+        w = getattr(self, "_win", None)
+        return w if w is not None else Win()
+
+    def _verify_powerpoint_window_ownership(self, app, docs=()):
+        owned_hwnd = getattr(self, "_owned_window_hwnd", None)
+        if not isinstance(owned_hwnd, int) or isinstance(owned_hwnd, bool) or owned_hwnd == 0:
+            raise Refused(f"the {self.exe} owned window handle is not bound, so window-bound close was refused")
+        win = self._get_win()
+        top_fn = getattr(win, "top", lambda h: h)
+        cur_self_hwnd = getattr(self, "hwnd", None)
+        if cur_self_hwnd is not None:
+            if (
+                not isinstance(cur_self_hwnd, int)
+                or isinstance(cur_self_hwnd, bool)
+                or cur_self_hwnd == 0
+                or top_fn(cur_self_hwnd) != owned_hwnd
+            ):
+                raise Refused(
+                    f"the {self.exe} current window handle {cur_self_hwnd!r} no longer matches bound window {owned_hwnd}"
+                )
+        for d in docs:
+            wins = getattr(d, "Windows", None)
+            if wins is not None:
+                try:
+                    w_cnt = int(wins.Count)
+                except Exception as exc:
+                    raise Refused(f"the {self.exe} presentation window count could not be read ({exc})") from None
+                if w_cnt != 1:
+                    raise Refused(f"the {self.exe} presentation has {w_cnt} windows, not 1")
+                if hasattr(wins, "Item"):
+                    try:
+                        w_item = wins.Item(1)
+                        w_hwnd = getattr(w_item, "Hwnd", None)
+                        if w_hwnd is None:
+                            w_hwnd = getattr(w_item, "HWND", None)
+                    except Exception as exc:
+                        raise Refused(f"the {self.exe} presentation window handle could not be read ({exc})") from None
+                    if isinstance(w_hwnd, int) and not isinstance(w_hwnd, bool):
+                        if w_hwnd == 0 or top_fn(w_hwnd) != owned_hwnd:
+                            raise Refused(
+                                f"the {self.exe} presentation window handle {w_hwnd} does not match bound window {owned_hwnd}"
+                            )
+        aw_hwnd = None
+        try:
+            aw = getattr(app, "ActiveWindow", None)
+        except Exception as exc:
+            raise Refused(f"the {self.exe} ActiveWindow could not be read ({exc})") from None
+        if hasattr(app, "ActiveWindow") and aw is None:
+            raise Refused(f"the {self.exe} ActiveWindow is no longer available")
+        if aw is not None:
+            try:
+                cand_h = getattr(aw, "Hwnd", None)
+                if cand_h is None:
+                    cand_h = getattr(aw, "HWND", None)
+            except Exception as exc:
+                raise Refused(f"the {self.exe} ActiveWindow handle could not be read ({exc})") from None
+            if (hasattr(aw, "Hwnd") or hasattr(aw, "HWND")) and cand_h is None:
+                raise Refused(f"the {self.exe} ActiveWindow handle is None")
+            if isinstance(cand_h, int) and not isinstance(cand_h, bool):
+                if cand_h == 0 or top_fn(cand_h) != owned_hwnd:
+                    raise Refused(
+                        f"the {self.exe} ActiveWindow handle {cand_h} does not match bound window {owned_hwnd}"
+                    )
+                aw_hwnd = cand_h
+        app_hwnd = None
+        try:
+            raw_h = getattr(app, "HWND", None)
+            if raw_h is None:
+                raw_h = getattr(app, "Hwnd", None)
+        except Exception as exc:
+            raise Refused(f"the {self.exe} application HWND could not be read ({exc})") from None
+        if (hasattr(app, "HWND") or hasattr(app, "Hwnd")) and raw_h is None and aw_hwnd is None:
+            raise Refused(f"the {self.exe} application HWND is None")
+        if isinstance(raw_h, int) and not isinstance(raw_h, bool):
+            if raw_h == 0 or top_fn(raw_h) != owned_hwnd:
+                raise Refused(
+                    f"the {self.exe} application HWND {raw_h} does not match bound window {owned_hwnd}"
+                )
+            app_hwnd = raw_h
+        expected_pid = getattr(self, "started", None) or getattr(getattr(self, "proc", None), "pid", None)
+        proc_wins = None
+        if expected_pid is not None and hasattr(win, "windows_of"):
+            proc_wins = [top_fn(h) for h in win.windows_of(expected_pid, "PPTFrameClass")]
+            if proc_wins != [owned_hwnd]:
+                raise Refused(
+                    f"the {self.exe} process windows {proc_wins} do not match sole bound window [{owned_hwnd}]"
+                )
+        cur_wh = aw_hwnd or app_hwnd or (proc_wins[0] if proc_wins == [owned_hwnd] else None)
+        if not isinstance(cur_wh, int) or isinstance(cur_wh, bool) or cur_wh == 0 or top_fn(cur_wh) != owned_hwnd:
+            raise Refused(
+                f"the {self.exe} current window handle {cur_wh!r} could not be verified against bound window {owned_hwnd}"
+            )
+        return owned_hwnd
+
     def _post_close_owned_window(self):
-        hwnd = getattr(self, "_owned_window_hwnd", None) or getattr(self, "hwnd", None)
+        hwnd = getattr(self, "_owned_window_hwnd", None)
         if not isinstance(hwnd, int) or isinstance(hwnd, bool) or hwnd == 0:
             raise Refused(f"the {self.exe} window handle is not bound, so target-bound window close was refused")
-        win = Win()
+        cur_hwnd = getattr(self, "hwnd", None)
+        if cur_hwnd is not None and cur_hwnd != hwnd:
+            raise Refused(f"the {self.exe} current window handle {cur_hwnd!r} does not match bound window {hwnd}")
+        expected_pid = getattr(self, "started", None) or getattr(getattr(self, "proc", None), "pid", None)
+        expected_cls = "PPTFrameClass" if self.key == "powerpoint" else None
+        win = self._get_win()
         close_fn = getattr(win, "close_window", None)
-        if callable(close_fn):
-            close_fn(hwnd)
-        elif hasattr(win, "user32"):
-            if win.user32.IsWindow(hwnd) and not win.user32.PostMessageW(hwnd, 0x0010, 0, 0):
-                raise OSError(f"PostMessageW(WM_CLOSE) failed for hwnd {hwnd}")
-        else:
+        if not callable(close_fn):
             raise Refused(f"Win() exposes no close_window method for {self.exe} hwnd {hwnd}")
+        if not close_fn(hwnd, expected_pid=expected_pid, expected_class=expected_cls):
+            raise Refused(f"close_window did not post WM_CLOSE for {self.exe} hwnd {hwnd}")
         if not hasattr(self, "closed_window_hwnds") or self.closed_window_hwnds is None:
             self.closed_window_hwnds = []
         self.closed_window_hwnds.append(hwnd)
@@ -988,6 +1104,11 @@ class Launched:
                                     else:
                                         post_matched.add(id(m_doc))
                     if all_clean and not enum_failed and unowned_count == 0 and not failures:
+                        try:
+                            self._verify_powerpoint_window_ownership(app, post_docs)
+                        except Exception as exc:
+                            failures.append(f"verify window ownership failed ({type(exc).__name__}: {exc})")
+                    if all_clean and not enum_failed and unowned_count == 0 and not failures:
                         remaining = 0
                     else:
                         remaining = max(count or 0, post_count or 0, len(to_close) + unowned_count, 1)
@@ -1085,7 +1206,7 @@ class Launched:
             try:
                 wh = self.window_handle()
                 if wh is not None:
-                    self.hwnd = Win().top(wh)
+                    self.hwnd = self._get_win().top(wh)
                     if self._owned_window_hwnd is None:
                         self._owned_window_hwnd = self.hwnd
             except Exception:
@@ -1107,7 +1228,7 @@ class Launched:
             if not isinstance(wh, int) or isinstance(wh, bool) or wh == 0:
                 self.app = None
                 raise Unsafe(f"{exe} shows no window for process {self.started}, so ownership cannot be proven")
-            proc = (owner or OwnProcess)(Win().top(wh), exe)
+            proc = (owner or OwnProcess)(self._get_win().top(wh), exe)
             if proc.pid != self.started:
                 proc.close()
                 self.app = None
@@ -1138,7 +1259,7 @@ class Launched:
                 raise Refused(f"{exe} startup was cancelled after timeout")
             wh = self.window_handle()
             if wh is not None:
-                self.hwnd = Win().top(wh)
+                self.hwnd = self._get_win().top(wh)
                 self._owned_window_hwnd = self.hwnd
             if self.proc is None and self.hwnd is not None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
@@ -1328,7 +1449,7 @@ class Launched:
             if isinstance(raw, int) and not isinstance(raw, bool) and raw != 0:
                 return raw
             if self.started is not None:
-                found = wait_for(lambda: Win().main_window(self.started, win_cls), seconds=10.0)
+                found = wait_for(lambda: self._get_win().main_window(self.started, win_cls), seconds=10.0)
                 if found is not None:
                     return found
             return aw_hwnd if aw_hwnd is not None else raw
@@ -1421,15 +1542,7 @@ class Launched:
                 if m_doc is None:
                     return 1
                 post_matched.add(id(m_doc))
-            owned_hwnd = getattr(self, "_owned_window_hwnd", None) or getattr(self, "hwnd", None)
-            if isinstance(owned_hwnd, int) and not isinstance(owned_hwnd, bool) and owned_hwnd != 0:
-                try:
-                    cur_wh = self.window_handle()
-                except Exception:
-                    cur_wh = None
-                if isinstance(cur_wh, int) and not isinstance(cur_wh, bool) and cur_wh != 0:
-                    if Win().top(cur_wh) != owned_hwnd:
-                        return 1
+            self._verify_powerpoint_window_ownership(self.app, post_live)
             return 0
         finally:
             d = None
