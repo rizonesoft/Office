@@ -4590,26 +4590,815 @@ WORD_INSERTION_GALLERY_IDS = frozenset({
     "word.graphics-format.arrange.rotate",
 })
 
-WORD_SINGLE_TARGET_GALLERY_IDS = frozenset({
+WORD_DOCUMENT_GALLERY_IDS = frozenset({
     "word.design.document-formatting.themes",
     "word.design.document-formatting.style-set",
     "word.design.document-formatting.colors",
     "word.design.document-formatting.fonts",
+    "word.design.document-formatting.paragraph-spacing",
     "word.design.document-formatting.effects",
     "word.design.page-background.watermark",
+    "word.design.page-background.page-color",
+    "word.draw.edit.format-background",
+    "word.immersive-reader.immersive-reader.page-color",
+    "word.references.citations-bibliography.change-provider",
+})
+
+WORD_SINGLE_CONTAINER_GALLERY_IDS = frozenset({
+    "word.insert.text.drop-cap",
+    "word.table-design.table-styles.table-styles",
+    "word.picture-format.adjust.corrections",
+    "word.picture-format.adjust.color",
+    "word.picture-format.adjust.artistic-effects",
+    "word.picture-format.adjust.transparency",
+    "word.picture-format.picture-styles.picture-layout",
+    "word.picture-format.size.crop",
+    "word.shape-format.text.text-direction",
+    "word.shape-format.text.align-text",
+    "word.chart-design.chart-layouts.add-chart-element",
+    "word.chart-design.chart-layouts.quick-layout",
+    "word.chart-design.chart-styles.change-colors",
+    "word.chart-design.chart-styles.quick-styles",
+    "word.smartart-design.layouts.change-layout",
+    "word.smartart-design.smartart-styles.change-colors",
+    "word.smartart-design.smartart-styles.quick-styles",
+    "word.graphics-format.size.crop",
+    "word.3d-model.3d-model-views.views",
+    "word.layout.arrange.position",
+    "word.layout.arrange.wrap-text",
+    "word.picture-format.arrange.position",
+    "word.picture-format.arrange.wrap-text",
+    "word.shape-format.arrange.position",
+    "word.shape-format.arrange.wrap-text",
+    "word.format.arrange.position",
+    "word.format.arrange.wrap-text",
+    "word.format-tabsmartarttoolsformat.arrange.position",
+    "word.format-tabsmartarttoolsformat.arrange.wrap-text",
+    "word.graphics-format.arrange.position",
+    "word.graphics-format.arrange.wrap-text",
+    "word.3d-model.arrange.position",
+    "word.3d-model.arrange.wrap-text",
+})
+
+WORD_SECTION_GALLERY_IDS = frozenset({
     "word.layout.page-setup.margins",
     "word.layout.page-setup.orientation",
     "word.layout.page-setup.size",
     "word.layout.page-setup.columns",
-    "word.references.citations-bibliography.change-provider",
-    "word.chart-design.chart-layouts.quick-layout",
-    "word.chart-design.chart-styles.change-colors",
-    "word.smartart-design.layouts.change-layout",
-    "word.smartart-design.smartart-styles.change-colors",
     "word.print-preview.page-setup.margins",
     "word.print-preview.page-setup.orientation",
     "word.print-preview.page-setup.size",
 })
+
+WORD_NO_MIXED_GALLERY_IDS = (
+    WORD_INSERTION_GALLERY_IDS
+    | WORD_DOCUMENT_GALLERY_IDS
+    | WORD_SINGLE_CONTAINER_GALLERY_IDS
+    | frozenset({
+        "word.draw.drawing-tools.drawing-tools",
+        "word.insert.header-footer.page-number",
+        "word.header-footer.header-footer.page-number",
+        "word.insert.symbols.equation",
+        "word.developer.controls.legacy-tools",
+    })
+)
+
+WORD_NO_MIXED_GALLERY_PREFIXES = tuple(f"{g}." for g in WORD_NO_MIXED_GALLERY_IDS)
+
+WORD_NO_MIXED_SPINNER_IDS = frozenset({
+    "word.header-footer.position.header-position-from-top",
+    "word.header-footer.position.footer-position-from-bottom",
+})
+
+WORD_REQUIRED_GROUP_IDS = (
+    "word.home.clipboard",
+    "word.home.font",
+    "word.home.paragraph",
+    "word.home.styles",
+    "word.home.editing",
+    "word.home.voice",
+    "word.home.sensitivity",
+    "word.home.editor",
+    "word.home.add-ins",
+    "word.insert.pages",
+    "word.insert.tables",
+    "word.insert.illustrations",
+    "word.insert.media",
+    "word.insert.links",
+    "word.insert.comments",
+    "word.insert.header-footer",
+    "word.insert.text",
+    "word.insert.symbols",
+    "word.insert.esignature",
+    "word.draw.drawing-tools",
+    "word.draw.undo",
+    "word.draw.stencils",
+    "word.draw.edit",
+    "word.draw.convert",
+    "word.draw.insert",
+    "word.draw.replay",
+    "word.draw.help",
+    "word.design.document-formatting",
+    "word.design.page-background",
+    "word.layout.page-setup",
+    "word.layout.paragraph",
+    "word.layout.arrange",
+    "word.references.table-of-contents",
+    "word.references.footnotes",
+    "word.references.citations-bibliography",
+    "word.references.captions",
+    "word.references.index",
+    "word.references.table-of-authorities",
+    "word.mailings.create",
+    "word.mailings.start-mail-merge",
+    "word.mailings.write-insert-fields",
+    "word.mailings.preview-results",
+    "word.mailings.finish",
+    "word.review.proofing",
+    "word.review.speech",
+    "word.review.accessibility",
+    "word.review.language",
+    "word.review.comments",
+    "word.review.markup",
+    "word.review.tracking",
+    "word.review.compare",
+    "word.review.protect",
+    "word.review.ink",
+    "word.review.onenote",
+    "word.view.views",
+    "word.view.immersive",
+    "word.view.page-movement",
+    "word.view.show",
+    "word.view.zoom",
+    "word.view.window",
+    "word.view.macros",
+    "word.view.sharepoint",
+    "word.developer.code",
+    "word.developer.add-ins",
+    "word.developer.controls",
+    "word.developer.mapping",
+    "word.developer.protect",
+    "word.developer.templates",
+    "word.help.help",
+    "word.table-design.table-style-options",
+    "word.table-design.table-styles",
+    "word.table-design.borders",
+    "word.table-layout.table",
+    "word.table-layout.draw",
+    "word.table-layout.rows-columns",
+    "word.table-layout.merge",
+    "word.table-layout.cell-size",
+    "word.table-layout.alignment",
+    "word.table-layout.data",
+    "word.picture-format.adjust",
+    "word.picture-format.picture-styles",
+    "word.picture-format.accessibility",
+    "word.picture-format.arrange",
+    "word.picture-format.size",
+    "word.shape-format.insert-shapes",
+    "word.shape-format.shape-styles",
+    "word.shape-format.wordart-styles",
+    "word.shape-format.text",
+    "word.shape-format.accessibility",
+    "word.shape-format.arrange",
+    "word.shape-format.size",
+    "word.header-footer.header-footer",
+    "word.header-footer.insert",
+    "word.header-footer.navigation",
+    "word.header-footer.options",
+    "word.header-footer.position",
+    "word.header-footer.close",
+    "word.equation.tools",
+    "word.equation.conversions",
+    "word.equation.symbols",
+    "word.equation.structures",
+    "word.chart-design.chart-layouts",
+    "word.chart-design.chart-styles",
+    "word.chart-design.data",
+    "word.chart-design.type",
+    "word.format.current-selection",
+    "word.format.insert-shapes",
+    "word.format.shape-styles",
+    "word.format.wordart-styles",
+    "word.format.accessibility",
+    "word.format.arrange",
+    "word.format.size",
+    "word.smartart-design.create-graphic",
+    "word.smartart-design.layouts",
+    "word.smartart-design.smartart-styles",
+    "word.smartart-design.reset",
+    "word.format-tabsmartarttoolsformat.shapes",
+    "word.format-tabsmartarttoolsformat.shape-styles",
+    "word.format-tabsmartarttoolsformat.wordart-styles",
+    "word.format-tabsmartarttoolsformat.accessibility",
+    "word.format-tabsmartarttoolsformat.arrange",
+    "word.format-tabsmartarttoolsformat.size",
+    "word.graphics-format.change",
+    "word.graphics-format.graphics-styles",
+    "word.graphics-format.accessibility",
+    "word.graphics-format.arrange",
+    "word.graphics-format.size",
+    "word.3d-model.adjust",
+    "word.3d-model.3d-model-views",
+    "word.3d-model.accessibility",
+    "word.3d-model.arrange",
+    "word.3d-model.size",
+    "word.outlining.outline-tools",
+    "word.outlining.master-document",
+    "word.outlining.close",
+    "word.print-preview.print",
+    "word.print-preview.page-setup",
+    "word.print-preview.zoom",
+    "word.print-preview.preview",
+    "word.background-removal.refine",
+    "word.background-removal.close",
+    "word.immersive-reader.immersive-reader",
+    "word.immersive-reader.close",
+)
+
+WORD_REQUIRED_CONTROL_IDS = (
+    "word.home.clipboard.paste",
+    "word.home.clipboard.cut",
+    "word.home.clipboard.copy",
+    "word.home.clipboard.format-painter",
+    "word.home.clipboard.office-clipboard",
+    "word.home.font.font",
+    "word.home.font.font-size",
+    "word.home.font.grow-font",
+    "word.home.font.shrink-font",
+    "word.home.font.change-case",
+    "word.home.font.clear-formatting",
+    "word.home.font.bold",
+    "word.home.font.italic",
+    "word.home.font.underline",
+    "word.home.font.strikethrough",
+    "word.home.font.subscript",
+    "word.home.font.superscript",
+    "word.home.font.text-effects-and-typography",
+    "word.home.font.text-highlight-color",
+    "word.home.font.font-color",
+    "word.home.font.font-fontdialog",
+    "word.home.paragraph.bullets",
+    "word.home.paragraph.numbering",
+    "word.home.paragraph.multilevel-list",
+    "word.home.paragraph.decrease-indent",
+    "word.home.paragraph.increase-indent",
+    "word.home.paragraph.sort",
+    "word.home.paragraph.show-all",
+    "word.home.paragraph.align-left",
+    "word.home.paragraph.center",
+    "word.home.paragraph.align-right",
+    "word.home.paragraph.justify",
+    "word.home.paragraph.line-and-paragraph-spacing",
+    "word.home.paragraph.shading",
+    "word.home.paragraph.borders",
+    "word.home.paragraph.paragraph",
+    "word.home.styles.styles",
+    "word.home.styles.styles-stylespane",
+    "word.home.editing.find",
+    "word.home.editing.replace",
+    "word.home.editing.select",
+    "word.home.voice.dictate",
+    "word.home.sensitivity.sensitivity",
+    "word.home.editor.editor",
+    "word.home.add-ins.add-ins",
+    "word.insert.pages.cover-page",
+    "word.insert.pages.blank-page",
+    "word.insert.pages.page-break",
+    "word.insert.tables.table",
+    "word.insert.illustrations.pictures",
+    "word.insert.illustrations.shapes",
+    "word.insert.illustrations.icons",
+    "word.insert.illustrations.3d-models",
+    "word.insert.illustrations.smartart",
+    "word.insert.illustrations.chart",
+    "word.insert.illustrations.screenshot",
+    "word.insert.media.online-videos",
+    "word.insert.links.link",
+    "word.insert.links.bookmark",
+    "word.insert.links.cross-reference",
+    "word.insert.comments.comment",
+    "word.insert.header-footer.header",
+    "word.insert.header-footer.footer",
+    "word.insert.header-footer.page-number",
+    "word.insert.text.text-box",
+    "word.insert.text.quick-parts",
+    "word.insert.text.wordart",
+    "word.insert.text.drop-cap",
+    "word.insert.text.signature-line",
+    "word.insert.text.date-time",
+    "word.insert.text.object",
+    "word.insert.symbols.equation",
+    "word.insert.symbols.symbol",
+    "word.insert.esignature.esignature-fields",
+    "word.draw.drawing-tools.drawing-tools",
+    "word.draw.drawing-tools.add",
+    "word.draw.undo.can-t-undo",
+    "word.draw.undo.can-t-repeat",
+    "word.draw.stencils.ruler",
+    "word.draw.edit.format-background",
+    "word.draw.convert.ink-to-shape",
+    "word.draw.convert.ink-to-math",
+    "word.draw.insert.drawing-canvas",
+    "word.draw.replay.ink-replay",
+    "word.draw.help.ink-help",
+    "word.design.document-formatting.themes",
+    "word.design.document-formatting.style-set",
+    "word.design.document-formatting.colors",
+    "word.design.document-formatting.fonts",
+    "word.design.document-formatting.paragraph-spacing",
+    "word.design.document-formatting.effects",
+    "word.design.document-formatting.set-as-default",
+    "word.design.page-background.watermark",
+    "word.design.page-background.page-color",
+    "word.design.page-background.page-borders",
+    "word.layout.page-setup.margins",
+    "word.layout.page-setup.orientation",
+    "word.layout.page-setup.size",
+    "word.layout.page-setup.columns",
+    "word.layout.page-setup.breaks",
+    "word.layout.page-setup.line-numbers",
+    "word.layout.page-setup.hyphenation",
+    "word.layout.page-setup.page-setup",
+    "word.layout.paragraph.indent-left",
+    "word.layout.paragraph.more",
+    "word.layout.paragraph.less",
+    "word.layout.paragraph.indent-right",
+    "word.layout.paragraph.more-2",
+    "word.layout.paragraph.less-2",
+    "word.layout.paragraph.spacing-before",
+    "word.layout.paragraph.more-3",
+    "word.layout.paragraph.less-3",
+    "word.layout.paragraph.spacing-after",
+    "word.layout.paragraph.more-4",
+    "word.layout.paragraph.less-4",
+    "word.layout.paragraph.paragraph",
+    "word.layout.arrange.position",
+    "word.layout.arrange.wrap-text",
+    "word.layout.arrange.bring-forward",
+    "word.layout.arrange.send-backward",
+    "word.layout.arrange.selection-pane",
+    "word.layout.arrange.align",
+    "word.layout.arrange.group",
+    "word.layout.arrange.rotate",
+    "word.references.table-of-contents.table-of-contents",
+    "word.references.table-of-contents.add-text",
+    "word.references.table-of-contents.update-table",
+    "word.references.footnotes.insert-footnote",
+    "word.references.footnotes.insert-endnote",
+    "word.references.footnotes.next-footnote",
+    "word.references.footnotes.show-notes",
+    "word.references.footnotes.footnote-and-endnote-dialog",
+    "word.references.citations-bibliography.insert-citation",
+    "word.references.citations-bibliography.manage-sources",
+    "word.references.citations-bibliography.style",
+    "word.references.citations-bibliography.bibliography",
+    "word.references.citations-bibliography.change-provider",
+    "word.references.captions.insert-caption",
+    "word.references.captions.insert-table-of-figures",
+    "word.references.captions.update-table",
+    "word.references.captions.cross-reference",
+    "word.references.index.mark-entry",
+    "word.references.index.insert-index",
+    "word.references.index.update-index",
+    "word.references.table-of-authorities.mark-citation",
+    "word.references.table-of-authorities.insert-table-of-authorities",
+    "word.references.table-of-authorities.update-table",
+    "word.mailings.create.envelopes",
+    "word.mailings.create.labels",
+    "word.mailings.start-mail-merge.start-mail-merge",
+    "word.mailings.start-mail-merge.select-recipients",
+    "word.mailings.start-mail-merge.edit-recipient-list",
+    "word.mailings.write-insert-fields.highlight-merge-fields",
+    "word.mailings.write-insert-fields.address-block",
+    "word.mailings.write-insert-fields.greeting-line",
+    "word.mailings.write-insert-fields.insert-merge-field",
+    "word.mailings.write-insert-fields.rules",
+    "word.mailings.write-insert-fields.match-fields",
+    "word.mailings.write-insert-fields.update-labels",
+    "word.mailings.preview-results.preview-results",
+    "word.mailings.preview-results.first",
+    "word.mailings.preview-results.previous",
+    "word.mailings.preview-results.record",
+    "word.mailings.preview-results.next",
+    "word.mailings.preview-results.last",
+    "word.mailings.preview-results.find-recipient",
+    "word.mailings.preview-results.check-for-errors",
+    "word.mailings.finish.finish-merge",
+    "word.review.proofing.editor",
+    "word.review.proofing.spelling-and-grammar",
+    "word.review.proofing.thesaurus",
+    "word.review.proofing.word-count",
+    "word.review.speech.read-aloud",
+    "word.review.accessibility.check-accessibility",
+    "word.review.language.translate",
+    "word.review.language.language",
+    "word.review.comments.new-comment",
+    "word.review.comments.delete",
+    "word.review.comments.previous",
+    "word.review.comments.next",
+    "word.review.comments.show-comments",
+    "word.review.markup.filter-all-markup",
+    "word.review.markup.display-for-review",
+    "word.review.markup.show-markup",
+    "word.review.markup.reviewing-pane",
+    "word.review.markup.change-tracking-options",
+    "word.review.tracking.track-changes",
+    "word.review.tracking.accept",
+    "word.review.tracking.reject",
+    "word.review.tracking.previous",
+    "word.review.tracking.next",
+    "word.review.compare.compare",
+    "word.review.protect.block-authors",
+    "word.review.protect.restrict-editing",
+    "word.review.ink.hide-ink",
+    "word.review.onenote.linked-notes",
+    "word.view.views.read-mode",
+    "word.view.views.print-layout",
+    "word.view.views.web-layout",
+    "word.view.views.outline",
+    "word.view.views.draft",
+    "word.view.immersive.focus",
+    "word.view.immersive.immersive-reader",
+    "word.view.page-movement.vertical",
+    "word.view.page-movement.side-to-side",
+    "word.view.show.ruler",
+    "word.view.show.gridlines",
+    "word.view.show.navigation-pane",
+    "word.view.zoom.zoom",
+    "word.view.zoom.100",
+    "word.view.zoom.one-page",
+    "word.view.zoom.multiple-pages",
+    "word.view.zoom.page-width",
+    "word.view.window.new-window",
+    "word.view.window.arrange-all",
+    "word.view.window.split",
+    "word.view.window.view-side-by-side",
+    "word.view.window.synchronous-scrolling",
+    "word.view.window.reset-window-position",
+    "word.view.window.switch-windows",
+    "word.view.macros.macros",
+    "word.view.sharepoint.properties",
+    "word.developer.code.visual-basic",
+    "word.developer.code.macros",
+    "word.developer.code.record-macro",
+    "word.developer.code.pause-recording",
+    "word.developer.code.macro-security",
+    "word.developer.add-ins.add-ins",
+    "word.developer.add-ins.word-add-ins",
+    "word.developer.add-ins.com-add-ins",
+    "word.developer.controls.rich-text-content-control",
+    "word.developer.controls.plain-text-content-control",
+    "word.developer.controls.picture-content-control",
+    "word.developer.controls.building-block-gallery-content-control",
+    "word.developer.controls.check-box-content-control",
+    "word.developer.controls.combo-box-content-control",
+    "word.developer.controls.drop-down-list-content-control",
+    "word.developer.controls.date-picker-content-control",
+    "word.developer.controls.repeating-section-content-control",
+    "word.developer.controls.legacy-tools",
+    "word.developer.controls.design-mode",
+    "word.developer.controls.properties",
+    "word.developer.controls.group",
+    "word.developer.mapping.xml-mapping-pane",
+    "word.developer.protect.block-authors",
+    "word.developer.protect.restrict-editing",
+    "word.developer.templates.document-template",
+    "word.help.help.help",
+    "word.help.help.contact-support",
+    "word.help.help.feedback",
+    "word.help.help.show-training",
+    "word.help.help.what-s-new",
+    "word.table-design.table-style-options.header-row",
+    "word.table-design.table-style-options.total-row",
+    "word.table-design.table-style-options.banded-rows",
+    "word.table-design.table-style-options.first-column",
+    "word.table-design.table-style-options.last-column",
+    "word.table-design.table-style-options.banded-columns",
+    "word.table-design.table-styles.table-styles",
+    "word.table-design.table-styles.shading",
+    "word.table-design.borders.border-styles",
+    "word.table-design.borders.pen-style",
+    "word.table-design.borders.pen-weight",
+    "word.table-design.borders.pen-color",
+    "word.table-design.borders.borders",
+    "word.table-design.borders.border-painter",
+    "word.table-design.borders.borders-and-shading",
+    "word.table-layout.table.select",
+    "word.table-layout.table.view-gridlines",
+    "word.table-layout.table.properties",
+    "word.table-layout.draw.draw-table",
+    "word.table-layout.draw.eraser",
+    "word.table-layout.rows-columns.delete",
+    "word.table-layout.rows-columns.insert-row-above",
+    "word.table-layout.rows-columns.insert-row-below",
+    "word.table-layout.rows-columns.insert-column-left",
+    "word.table-layout.rows-columns.insert-column-right",
+    "word.table-layout.rows-columns.insert-cells",
+    "word.table-layout.merge.merge-cells",
+    "word.table-layout.merge.split-cells",
+    "word.table-layout.merge.split-table",
+    "word.table-layout.cell-size.autofit",
+    "word.table-layout.cell-size.table-row-height",
+    "word.table-layout.cell-size.more",
+    "word.table-layout.cell-size.less",
+    "word.table-layout.cell-size.table-column-width",
+    "word.table-layout.cell-size.more-2",
+    "word.table-layout.cell-size.less-2",
+    "word.table-layout.cell-size.distribute-rows",
+    "word.table-layout.cell-size.distribute-columns",
+    "word.table-layout.cell-size.properties",
+    "word.table-layout.alignment.align-top-left",
+    "word.table-layout.alignment.align-top-center",
+    "word.table-layout.alignment.align-top-right",
+    "word.table-layout.alignment.align-center-left",
+    "word.table-layout.alignment.align-center",
+    "word.table-layout.alignment.align-center-right",
+    "word.table-layout.alignment.align-bottom-left",
+    "word.table-layout.alignment.align-bottom-center",
+    "word.table-layout.alignment.align-bottom-right",
+    "word.table-layout.alignment.text-direction",
+    "word.table-layout.alignment.cell-margins",
+    "word.table-layout.data.sort",
+    "word.table-layout.data.repeat-header-rows",
+    "word.table-layout.data.convert-to-text",
+    "word.table-layout.data.formula",
+    "word.picture-format.adjust.remove-background",
+    "word.picture-format.adjust.corrections",
+    "word.picture-format.adjust.color",
+    "word.picture-format.adjust.artistic-effects",
+    "word.picture-format.adjust.transparency",
+    "word.picture-format.adjust.compress-pictures",
+    "word.picture-format.adjust.change-picture",
+    "word.picture-format.adjust.reset-picture",
+    "word.picture-format.picture-styles.quick-styles",
+    "word.picture-format.picture-styles.picture-border",
+    "word.picture-format.picture-styles.picture-effects",
+    "word.picture-format.picture-styles.picture-layout",
+    "word.picture-format.picture-styles.picture",
+    "word.picture-format.accessibility.alt-text",
+    "word.picture-format.arrange.position",
+    "word.picture-format.arrange.wrap-text",
+    "word.picture-format.arrange.bring-forward",
+    "word.picture-format.arrange.send-backward",
+    "word.picture-format.arrange.selection-pane",
+    "word.picture-format.arrange.align",
+    "word.picture-format.arrange.group",
+    "word.picture-format.arrange.rotate",
+    "word.picture-format.size.crop",
+    "word.picture-format.size.shape-height",
+    "word.picture-format.size.more",
+    "word.picture-format.size.less",
+    "word.picture-format.size.shape-width",
+    "word.picture-format.size.more-2",
+    "word.picture-format.size.less-2",
+    "word.picture-format.size.size-and-position",
+    "word.shape-format.insert-shapes.shapes",
+    "word.shape-format.insert-shapes.edit-shape",
+    "word.shape-format.insert-shapes.draw-text-box",
+    "word.shape-format.shape-styles.quick-styles",
+    "word.shape-format.shape-styles.shape-fill",
+    "word.shape-format.shape-styles.shape-outline",
+    "word.shape-format.shape-styles.shape-effects",
+    "word.shape-format.shape-styles.format-object",
+    "word.shape-format.wordart-styles.quick-styles",
+    "word.shape-format.wordart-styles.text-fill",
+    "word.shape-format.wordart-styles.text-outline",
+    "word.shape-format.wordart-styles.text-effects",
+    "word.shape-format.wordart-styles.format-text-effects",
+    "word.shape-format.text.text-direction",
+    "word.shape-format.text.align-text",
+    "word.shape-format.text.create-link",
+    "word.shape-format.accessibility.alt-text",
+    "word.shape-format.arrange.position",
+    "word.shape-format.arrange.wrap-text",
+    "word.shape-format.arrange.bring-forward",
+    "word.shape-format.arrange.send-backward",
+    "word.shape-format.arrange.selection-pane",
+    "word.shape-format.arrange.align",
+    "word.shape-format.arrange.group",
+    "word.shape-format.arrange.rotate",
+    "word.shape-format.size.shape-height",
+    "word.shape-format.size.more",
+    "word.shape-format.size.less",
+    "word.shape-format.size.shape-width",
+    "word.shape-format.size.more-2",
+    "word.shape-format.size.less-2",
+    "word.shape-format.size.size-and-position",
+    "word.header-footer.header-footer.header",
+    "word.header-footer.header-footer.footer",
+    "word.header-footer.header-footer.page-number",
+    "word.header-footer.insert.date-time",
+    "word.header-footer.insert.document-info",
+    "word.header-footer.insert.quick-parts",
+    "word.header-footer.insert.pictures",
+    "word.header-footer.insert.online-pictures",
+    "word.header-footer.navigation.go-to-header",
+    "word.header-footer.navigation.go-to-footer",
+    "word.header-footer.navigation.previous",
+    "word.header-footer.navigation.next",
+    "word.header-footer.navigation.link-to-previous",
+    "word.header-footer.options.different-first-page",
+    "word.header-footer.options.different-odd-even-pages",
+    "word.header-footer.options.show-document-text",
+    "word.header-footer.position.header-position-from-top",
+    "word.header-footer.position.more",
+    "word.header-footer.position.less",
+    "word.header-footer.position.footer-position-from-bottom",
+    "word.header-footer.position.more-2",
+    "word.header-footer.position.less-2",
+    "word.header-footer.position.insert-alignment-tab",
+    "word.header-footer.close.close-header-and-footer",
+    "word.equation.tools.equation",
+    "word.equation.tools.ink-equation",
+    "word.equation.conversions.unicode",
+    "word.equation.conversions.latex",
+    "word.equation.conversions.text",
+    "word.equation.conversions.convert",
+    "word.equation.conversions.equation-options",
+    "word.equation.symbols.equation-symbols",
+    "word.equation.structures.fraction",
+    "word.equation.structures.script",
+    "word.equation.structures.radical",
+    "word.equation.structures.integral",
+    "word.equation.structures.large-operator",
+    "word.equation.structures.bracket",
+    "word.equation.structures.function",
+    "word.equation.structures.accent",
+    "word.equation.structures.limit-and-log",
+    "word.equation.structures.operator",
+    "word.equation.structures.matrix",
+    "word.chart-design.chart-layouts.add-chart-element",
+    "word.chart-design.chart-layouts.quick-layout",
+    "word.chart-design.chart-styles.change-colors",
+    "word.chart-design.chart-styles.quick-styles",
+    "word.chart-design.data.switch-row-column",
+    "word.chart-design.data.select-data",
+    "word.chart-design.data.edit-data",
+    "word.chart-design.data.refresh-data",
+    "word.chart-design.type.change-chart-type",
+    "word.format.current-selection.chart-elements",
+    "word.format.current-selection.format-selection",
+    "word.format.current-selection.reset-to-match-style",
+    "word.format.insert-shapes.shapes",
+    "word.format.insert-shapes.change-shape",
+    "word.format.shape-styles.quick-styles",
+    "word.format.shape-styles.shape-fill",
+    "word.format.shape-styles.shape-outline",
+    "word.format.shape-styles.shape-effects",
+    "word.format.shape-styles.format-object",
+    "word.format.wordart-styles.quick-styles",
+    "word.format.wordart-styles.text-fill",
+    "word.format.wordart-styles.text-outline",
+    "word.format.wordart-styles.text-effects",
+    "word.format.wordart-styles.format-text-effects",
+    "word.format.accessibility.alt-text",
+    "word.format.arrange.position",
+    "word.format.arrange.wrap-text",
+    "word.format.arrange.bring-forward",
+    "word.format.arrange.send-backward",
+    "word.format.arrange.selection-pane",
+    "word.format.arrange.align",
+    "word.format.arrange.group",
+    "word.format.arrange.rotate",
+    "word.format.size.shape-height",
+    "word.format.size.more",
+    "word.format.size.less",
+    "word.format.size.shape-width",
+    "word.format.size.more-2",
+    "word.format.size.less-2",
+    "word.format.size.size-and-position",
+    "word.smartart-design.create-graphic.add-shape",
+    "word.smartart-design.create-graphic.add-bullet",
+    "word.smartart-design.create-graphic.text-pane",
+    "word.smartart-design.create-graphic.promote",
+    "word.smartart-design.create-graphic.demote",
+    "word.smartart-design.create-graphic.right-to-left",
+    "word.smartart-design.create-graphic.move-before",
+    "word.smartart-design.create-graphic.move-after",
+    "word.smartart-design.create-graphic.layout",
+    "word.smartart-design.layouts.change-layout",
+    "word.smartart-design.smartart-styles.change-colors",
+    "word.smartart-design.smartart-styles.quick-styles",
+    "word.smartart-design.reset.reset-graphic",
+    "word.format-tabsmartarttoolsformat.shapes.edit-in-2-d",
+    "word.format-tabsmartarttoolsformat.shapes.change-shape",
+    "word.format-tabsmartarttoolsformat.shapes.larger",
+    "word.format-tabsmartarttoolsformat.shapes.smaller",
+    "word.format-tabsmartarttoolsformat.shape-styles.quick-styles",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-fill",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-outline",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects",
+    "word.format-tabsmartarttoolsformat.shape-styles.format-object",
+    "word.format-tabsmartarttoolsformat.wordart-styles.quick-styles",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-fill",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-outline",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects",
+    "word.format-tabsmartarttoolsformat.wordart-styles.format-text-effects",
+    "word.format-tabsmartarttoolsformat.accessibility.alt-text",
+    "word.format-tabsmartarttoolsformat.arrange.position",
+    "word.format-tabsmartarttoolsformat.arrange.wrap-text",
+    "word.format-tabsmartarttoolsformat.arrange.bring-forward",
+    "word.format-tabsmartarttoolsformat.arrange.send-backward",
+    "word.format-tabsmartarttoolsformat.arrange.selection-pane",
+    "word.format-tabsmartarttoolsformat.arrange.align",
+    "word.format-tabsmartarttoolsformat.arrange.group",
+    "word.format-tabsmartarttoolsformat.arrange.rotate",
+    "word.format-tabsmartarttoolsformat.size.shape-height",
+    "word.format-tabsmartarttoolsformat.size.more",
+    "word.format-tabsmartarttoolsformat.size.less",
+    "word.format-tabsmartarttoolsformat.size.shape-width",
+    "word.format-tabsmartarttoolsformat.size.more-2",
+    "word.format-tabsmartarttoolsformat.size.less-2",
+    "word.format-tabsmartarttoolsformat.size.size-and-position",
+    "word.graphics-format.change.change-graphic",
+    "word.graphics-format.change.convert-to-shape",
+    "word.graphics-format.graphics-styles.graphics-styles",
+    "word.graphics-format.graphics-styles.graphics-fill",
+    "word.graphics-format.graphics-styles.graphics-outline",
+    "word.graphics-format.graphics-styles.graphics-effects",
+    "word.graphics-format.graphics-styles.format-graphic",
+    "word.graphics-format.accessibility.alt-text",
+    "word.graphics-format.arrange.position",
+    "word.graphics-format.arrange.wrap-text",
+    "word.graphics-format.arrange.bring-forward",
+    "word.graphics-format.arrange.send-backward",
+    "word.graphics-format.arrange.selection-pane",
+    "word.graphics-format.arrange.align",
+    "word.graphics-format.arrange.group",
+    "word.graphics-format.arrange.rotate",
+    "word.graphics-format.size.crop",
+    "word.graphics-format.size.shape-height",
+    "word.graphics-format.size.more",
+    "word.graphics-format.size.less",
+    "word.graphics-format.size.shape-width",
+    "word.graphics-format.size.more-2",
+    "word.graphics-format.size.less-2",
+    "word.graphics-format.size.size-and-position",
+    "word.3d-model.adjust.3d-models",
+    "word.3d-model.adjust.reset-3d-model",
+    "word.3d-model.3d-model-views.views",
+    "word.3d-model.3d-model-views.format-3d-model",
+    "word.3d-model.accessibility.alt-text",
+    "word.3d-model.arrange.position",
+    "word.3d-model.arrange.wrap-text",
+    "word.3d-model.arrange.bring-forward",
+    "word.3d-model.arrange.send-backward",
+    "word.3d-model.arrange.selection-pane",
+    "word.3d-model.arrange.align",
+    "word.3d-model.arrange.group",
+    "word.3d-model.size.pan-zoom",
+    "word.3d-model.size.shape-height",
+    "word.3d-model.size.more",
+    "word.3d-model.size.less",
+    "word.3d-model.size.shape-width",
+    "word.3d-model.size.more-2",
+    "word.3d-model.size.less-2",
+    "word.3d-model.size.size-and-position",
+    "word.outlining.outline-tools.promote-to-heading-1",
+    "word.outlining.outline-tools.promote",
+    "word.outlining.outline-tools.outline-level",
+    "word.outlining.outline-tools.demote",
+    "word.outlining.outline-tools.demote-to-body-text",
+    "word.outlining.outline-tools.move-up",
+    "word.outlining.outline-tools.move-down",
+    "word.outlining.outline-tools.expand",
+    "word.outlining.outline-tools.collapse",
+    "word.outlining.outline-tools.show-level",
+    "word.outlining.outline-tools.show-text-formatting",
+    "word.outlining.outline-tools.show-first-line-only",
+    "word.outlining.master-document.show-document",
+    "word.outlining.master-document.collapse-subdocuments",
+    "word.outlining.close.close-outline-view",
+    "word.print-preview.print.print-preview-and-print",
+    "word.print-preview.print.options",
+    "word.print-preview.page-setup.margins",
+    "word.print-preview.page-setup.orientation",
+    "word.print-preview.page-setup.size",
+    "word.print-preview.page-setup.page-setup",
+    "word.print-preview.zoom.zoom",
+    "word.print-preview.zoom.100",
+    "word.print-preview.zoom.one-page",
+    "word.print-preview.zoom.multiple-pages",
+    "word.print-preview.zoom.page-width",
+    "word.print-preview.preview.show-ruler",
+    "word.print-preview.preview.magnifier",
+    "word.print-preview.preview.shrink-one-page",
+    "word.print-preview.preview.next-page",
+    "word.print-preview.preview.previous-page",
+    "word.print-preview.preview.close-print-preview",
+    "word.background-removal.refine.mark-areas-to-keep",
+    "word.background-removal.refine.mark-areas-to-remove",
+    "word.background-removal.close.discard-all-changes",
+    "word.background-removal.close.keep-changes",
+    "word.immersive-reader.immersive-reader.column-width",
+    "word.immersive-reader.immersive-reader.page-color",
+    "word.immersive-reader.immersive-reader.line-focus",
+    "word.immersive-reader.immersive-reader.text-spacing",
+    "word.immersive-reader.immersive-reader.syllables",
+    "word.immersive-reader.immersive-reader.read-aloud",
+    "word.immersive-reader.close.close-immersive-reader",
+)
 
 WORD_SELECTION_COMBOBOX_IDS = frozenset({
     "word.home.font.font",
@@ -5195,324 +5984,7 @@ def reconcile_word_unverified(records, unverified):
     return records, remaining_unverified
 
 
-def synthesize_word_behaviour(records):
-    by_id = {r["id"]: r for r in records if isinstance(r, dict) and "id" in r}
-    children_of = {}
-    for r in records:
-        if not isinstance(r, dict):
-            continue
-        p = r.get("parent")
-        if p:
-            children_of.setdefault(p, []).append(r)
-
-    def root_tab_of(rec):
-        cur = rec
-        seen = set()
-        while cur and cur.get("id") not in seen:
-            seen.add(cur.get("id"))
-            if cur.get("kind") in ("tab", "contextualTab"):
-                return cur
-            cur = by_id.get(cur.get("parent"))
-        return None
-
-    def group_of(rec):
-        cur = rec
-        seen = set()
-        while cur and cur.get("id") not in seen:
-            seen.add(cur.get("id"))
-            if cur.get("kind") == "group":
-                return cur
-            cur = by_id.get(cur.get("parent"))
-        return None
-
-    for rec in records:
-        if not isinstance(rec, dict) or rec.get("behaviour"):
-            continue
-        kind = rec.get("kind")
-        if kind == "contextualTab":
-            idmso = rec.get("idMso", "")
-            rec["behaviour"] = CONTEXTUAL_TAB_BEHAVIOURS.get(
-                idmso,
-                f"Appears as a contextual ribbon tab ({rec.get('label', '')}) when its target object or mode is active in the document window.",
-            )
-            continue
-        if kind not in ("control", "menuItem"):
-            continue
-
-        rid = rec["id"]
-        label = rec.get("label", "").rstrip(".…").strip() or rec.get("label", "")
-        ctype = rec.get("controlType", "button")
-        idmso = rec.get("idMso") or rec.get("uiaId") or ""
-        tab_rec = root_tab_of(rec)
-        grp_rec = group_of(rec)
-        parent_rec = by_id.get(rec.get("parent"))
-        tab_label = (tab_rec["label"].rstrip(".…").strip() if tab_rec else "Word") or "Word"
-        grp_label = (grp_rec["label"].rstrip(".…").strip() if grp_rec else "Ribbon") or "Ribbon"
-        parent_label = (parent_rec["label"].rstrip(".…").strip() if parent_rec else grp_label) or grp_label
-        has_kids = bool(children_of.get(rid))
-
-        if rid == "word.home.sensitivity.sensitivity" or idmso == "ClassifyLabelProtect":
-            precond = "Enabled only when the signed-in Microsoft 365 tenant publishes Azure Information Protection / Purview sensitivity label policies; disabled in unlabelled or local sessions without tenant sensitivity policy."
-        elif idmso == "BlockAuthorsMenu":
-            precond = "Enabled only when editing a shared document hosted on SharePoint or OneDrive with active co-authoring; disabled on local documents."
-        elif idmso == "SmartArtOrganizationChartMenu":
-            precond = "Enabled when an organization-chart or hierarchy node is selected inside a SmartArt diagram; disabled on non-hierarchy SmartArt layouts."
-        elif idmso in ("ObjectBringForwardMenu", "ObjectSendBackwardMenu") and not has_kids:
-            precond = f"Enabled when the selected object on {tab_label} uses floating text wrapping (such as Square, Tight, Behind Text or In Front of Text) so z-order layering applies; disabled while the object is In Line with Text."
-        elif idmso == "ObjectsGroupMenu" and not has_kids:
-            precond = f"Enabled when two or more floating objects are multi-selected or when an existing grouped object is selected on {tab_label}; disabled when a single ungrouped object is selected."
-        elif idmso in ("ShapeChangeShapeGallery", "ObjectRotateGallery") and not has_kids:
-            precond = f"Enabled when an inner chart drawing shape or rotatable plot element is selected on {tab_label}; disabled when the outer chart container frame is selected."
-        elif tab_rec and tab_rec.get("kind") == "contextualTab":
-            precond = f"Enabled when {tab_label} is active for the selected object or mode in an editable document region."
-        elif tab_label == "Mailings":
-            if any(k in rid for k in ("insert-merge-field", "rules", "finish-merge", "preview-results", "match-fields", "update-labels", "greeting-line", "address-block", "highlight-merge-fields")):
-                precond = "Enabled when a mail-merge main document has an attached recipient data source (such as a CSV or address list)."
-            else:
-                precond = "Enabled in an editable document when configuring or running a mail merge on the Mailings tab."
-        elif tab_label == "Review" and grp_label == "Comments":
-            precond = "Enabled in an editable document when comments are permitted (with Delete and navigation actions active once at least one comment exists in the document)."
-        else:
-            precond = f"Enabled in an editable document when the current selection or view on {tab_label} ({grp_label}) supports the command."
-
-        if kind == "control":
-            if ctype == "gallery":
-                if rid == "word.draw.drawing-tools.drawing-tools":
-                    action = (
-                        "Displays the in-ribbon Drawing Tools pen, pencil and highlighter slot list on Draw; additional pens are added and configured via the adjacent Add dropdown button (Add Pen)."
-                    )
-                    state_rule = (
-                        "State rule: highlights the active drawing tool (Select, Lasso, Eraser, or Pen/Highlighter) as selected (on), shows inactive tools unselected (off), and mixed state is not used (strictly one active drawing tool at a time)."
-                    )
-                else:
-                    action = (
-                        f"Displays the {label} gallery in the {grp_label} group on {tab_label} with live preview tiles and opens its full dropdown popup via the gallery's More / dropdown expand button ({idmso or 'More'}) to list preset items, category filters and bottom commands."
-                    )
-                    if rid in WORD_INSERTION_GALLERY_IDS:
-                        state_rule = (
-                            "State rule: opens its preset catalog when expanded (on) and closes when collapsed (off); tiles act as one-shot insertion or transformation commands and mixed state is not used."
-                        )
-                    elif rid in WORD_SINGLE_TARGET_GALLERY_IDS:
-                        state_rule = (
-                            "State rule: highlights the tile matching the active document, section, or object preset as selected (on), shows no tile selected (off) when custom settings outside the presets are in effect, and clears tile selection (mixed) when a multi-section or multi-object selection spans differing presets."
-                        )
-                    else:
-                        state_rule = (
-                            "State rule: highlights the gallery tile matching the active selection's uniform formatting or style as selected (on), shows no tile selected (off) when the selection uses custom formatting outside the gallery presets, and clears tile selection (mixed) when the selection spans multiple conflicting styles."
-                        )
-            elif ctype == "splitButton":
-                action = (
-                    f"Executes the default {label} command in the {grp_label} group on {tab_label} when the primary button face is clicked, and opens the {label} dropdown menu via its split dropdown arrow to choose specific options."
-                )
-                if rid in WORD_SELECTION_FORMAT_SPLIT_BUTTON_IDS:
-                    state_rule = (
-                        "State rule: the primary button reflects the active formatting state on the selection (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
-                    )
-                elif rid in WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS:
-                    state_rule = (
-                        f"State rule: the primary button reflects the active {label} mode or pane state (checked/on when {label} is active in the document or window, unchecked/off when inactive, and mixed state is not used because {label} is strictly binary on/off)."
-                    )
-                else:
-                    state_rule = ""
-            elif ctype == "menu":
-                action = (
-                    f"Opens the {label} dropdown menu in the {grp_label} group on {tab_label} to present its child commands and submenus."
-                )
-                state_rule = ""
-            elif ctype in ("toggleButton", "checkBox", "radioButton"):
-                action = (
-                    f"Toggles the {label} state or formatting attribute in the {grp_label} group on {tab_label}."
-                )
-                if rid in WORD_SELECTION_FORMAT_TOGGLE_IDS:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) when {label} is uniformly applied across the current selection, unchecked (off) when absent on the selection, and indeterminate/mixed (or unpressed) when the selection spans both {label} and non-{label} content."
-                    )
-                elif rid in WORD_VIEW_MODE_TOGGLE_IDS:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) when the active document window is in {label} view or display mode, unchecked (off) when another view or display mode is active, and mixed state is not used (strictly binary on/off across the active window, independent of text selection)."
-                    )
-                elif rid in WORD_PANE_TOGGLE_IDS:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) while the {label} task pane or flyout is open in the document window, unchecked (off) when the pane or flyout is closed, and mixed state is not used (strictly binary on/off)."
-                    )
-                elif rid in WORD_VISIBILITY_TOGGLE_IDS:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) when {label} display is shown in the active window, unchecked (off) when hidden, and mixed state is not used (strictly binary on/off)."
-                    )
-                elif rid in WORD_TOOL_MODE_TOGGLE_IDS:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) while the {label} interactive tool or editing mode is active, unchecked (off) when inactive, and mixed state is not used (strictly binary on/off)."
-                    )
-                else:
-                    state_rule = (
-                        f"State rule: reports checked/pressed (on) when the {label} option is enabled on the active document, section, table, or diagram, unchecked (off) when disabled, and mixed state is not used (strictly binary on/off, independent of character formatting)."
-                    )
-            elif ctype == "comboBox":
-                action = (
-                    f"Displays and edits the active {label} value in the {grp_label} group on {tab_label}, accepting direct text entry or selection from its dropdown list."
-                )
-                if rid in WORD_SELECTION_COMBOBOX_IDS:
-                    state_rule = (
-                        f"State rule: shows the matching {label} value as selected (on) when uniform across the selection, unselected (off) for other list entries, and a blank edit field (mixed) when the selection spans multiple {label} values."
-                    )
-                else:
-                    state_rule = (
-                        f"State rule: shows the active {label} setting as selected (on), unselected (off) for inactive list entries, and mixed state is not used (always displays the single active setting)."
-                    )
-            elif ctype == "spinner":
-                action = (
-                    f"Displays and adjusts the numeric {label} measurement in the {grp_label} group on {tab_label} via direct entry or its paired More/Less increment buttons."
-                )
-                state_rule = (
-                    f"State rule: shows the active {label} measurement (on) when uniform across the selection, default zero/auto state (off) when unset, and a blank field (mixed) when the selection spans differing measurements."
-                )
-            elif ctype == "editBox":
-                action = (
-                    f"Accepts text or numeric input for {label} in the {grp_label} group on {tab_label} and applies the entered value on Enter or focus commit."
-                )
-                state_rule = ""
-            elif ctype == "dialogLauncher":
-                action = (
-                    f"Opens the modal dialog or task pane associated with the {grp_label} group on {tab_label} ({label})."
-                )
-                state_rule = ""
-            else:
-                if label == "More" and not idmso:
-                    action = (
-                        f"Increments ({label}) the adjacent numeric spinner measurement in the {grp_label} group on {tab_label} by one step."
-                    )
-                elif label == "Less" and not idmso:
-                    action = (
-                        f"Decrements ({label}) the adjacent numeric spinner measurement in the {grp_label} group on {tab_label} by one step."
-                    )
-                else:
-                    action = (
-                        f"Invokes the {label} command in the {grp_label} group on {tab_label} to apply its action to the current selection or document."
-                    )
-                state_rule = ""
-        else:
-            parent_id = rec.get("parent") or ""
-            if ctype == "galleryItem":
-                if parent_id in WORD_INSERTION_GALLERY_IDS or parent_id.startswith(tuple(f"{g}." for g in WORD_INSERTION_GALLERY_IDS)):
-                    action = (
-                        f"Inserts or applies the {label} item from {parent_label} ({grp_label} group on {tab_label}) at the active insertion point or selection."
-                    )
-                    state_rule = (
-                        "State rule: acts as a one-shot insertion or transformation tile (unselected/off at rest, highlighted/on only while focused or hovered in the open gallery, and mixed state is not used)."
-                    )
-                else:
-                    action = (
-                        f"Applies the {label} gallery preset from {parent_label} ({grp_label} group on {tab_label}) to the active selection or target object, with live preview on hover."
-                    )
-                    state_rule = (
-                        f"State rule: appears selected (on) in the {parent_label} gallery when the current selection uniformly matches {label}, unselected (off) when another preset or custom formatting applies, and unselected (mixed) when the selection spans multiple presets."
-                    )
-            elif has_kids or rid in WORD_REQUIRED_SUBMENU_PARENTS:
-                action = (
-                    f"Selects or expands the {label} submenu under {parent_label} ({grp_label} group on {tab_label})."
-                )
-                state_rule = (
-                    "State rule: expands its cascade popup (on) while hovered or keyboard-selected, collapses (off) when focus moves to another item or the menu closes, and mixed state is not used (container submenu item)."
-                )
-            elif label == "Gallery Filter":
-                action = (
-                    f"Selects the active category filter inside the {parent_label} gallery popup on {tab_label} to scope which gallery items are shown."
-                )
-                state_rule = (
-                    "State rule: shows the active filter category (on) for the currently selected gallery scope, unselected (off) for inactive filter entries, and mixed state is not used."
-                )
-            elif label == "No Online Content Available":
-                action = (
-                    f"Placeholder item shown inside {parent_label} on {tab_label} when online template content is unavailable or not yet fetched."
-                )
-                state_rule = (
-                    "State rule: remains disabled and unselected (off) at all times; checked (on) and mixed states are not used."
-                )
-            elif any(
-                seg in rid
-                for seg in (
-                    ".line-numbers.none",
-                    ".line-numbers.continuous",
-                    ".line-numbers.restart-each-page",
-                    ".line-numbers.restart-each-section",
-                    ".line-numbers.suppress-for-current-paragraph",
-                    ".hyphenation.none",
-                    ".hyphenation.automatic",
-                    ".wrap-text.move-with-text",
-                    ".wrap-text.fix-position-on-page",
-                    ".smartart-design.create-graphic.layout.",
-                    ".equation.conversions.convert.current-",
-                    ".crop.aspect-ratio.",
-                )
-            ):
-                action = (
-                    f"Applies or toggles the {label} option from the {parent_label} menu ({grp_label} group on {tab_label}) on the active selection, section, or object."
-                )
-                state_rule = (
-                    f"State rule: shows checked/highlighted (on) when {label} is uniformly applied across the selected paragraphs, sections, or objects, unchecked (off) when absent, and unchecked (mixed) when the selection spans differing settings."
-                )
-            elif any(
-                seg in rid
-                for seg in (
-                    ".high-contrast-only",
-                    ".view-gridlines",
-                    ".use-alignment-guides",
-                    ".align-to-page",
-                    ".align-to-margin",
-                    ".align-selected-objects",
-                    ".start-mail-merge.letters",
-                    ".start-mail-merge.e-mail-messages",
-                    ".start-mail-merge.envelopes",
-                    ".start-mail-merge.labels",
-                    ".start-mail-merge.directory",
-                    ".start-mail-merge.normal-word-document",
-                    ".filter-all-markup.mentions-me",
-                    ".filter-all-markup.active-only",
-                    ".filter-all-markup.resolved-only",
-                    ".show-markup.insertions-and-deletions",
-                    ".show-markup.formatting",
-                    ".show-markup.highlight-updates",
-                    ".show-markup.other-authors",
-                    ".show-markup.balloons.",
-                    ".show-markup.specific-people.all-reviewers",
-                    ".reviewing-pane.reviewing-pane-vertical",
-                    ".reviewing-pane.reviewing-pane-horizontal",
-                    ".track-changes.for-everyone",
-                    ".track-changes.just-mine",
-                    ".track-changes.lock-tracking",
-                    ".hide-ink.hide-ink",
-                    ".switch-windows.1-document1",
-                    ".border-styles.border-sampler",
-                    ".size.crop.crop",
-                    ".edit-shape.edit-points",
-                    ".edit-shape.reroute-connectors",
-                    ".immersive-reader.column-width.",
-                    ".immersive-reader.line-focus.",
-                )
-            ):
-                action = (
-                    f"Toggles or selects the {label} mode from the {parent_label} menu ({grp_label} group on {tab_label})."
-                )
-                state_rule = (
-                    f"State rule: shows a check mark or radio indicator (on) when {label} is the active document, view, or object setting, unchecked (off) when inactive, and mixed state is not used (strictly binary on/off)."
-                )
-            else:
-                action = (
-                    f"Executes the {label} command from the {parent_label} menu ({grp_label} group on {tab_label}) on the active selection or document."
-                )
-                state_rule = (
-                    "State rule: acts as a one-shot command item (unselected/off at rest, highlighted/on only while focused in the open menu, and mixed state is not used)."
-                )
-
-        parts = [action, precond]
-        if state_rule:
-            parts.append(state_rule)
-        rec["behaviour"] = strip_control_chars(" ".join(parts))
-
-    return records
-
-
-def validate_word_ribbon(records):
+def validate_word_ribbon(records, *, require_behaviour=True):
     """Validate `design/inventory/word/ribbon.json` against D02 T01 §5 completeness, KeyTip, expansion and behaviour invariants."""
     if not isinstance(records, list) or not records:
         raise Refused("Word ribbon inventory is empty or not a list")
@@ -5578,6 +6050,16 @@ def validate_word_ribbon(records):
         if not any(c.get("kind") == "control" for c in children_of.get(promoted_grp, ())):
             raise Refused(f"promoted built-in group {promoted_grp!r} has no child control records")
 
+    for req_grp in WORD_REQUIRED_GROUP_IDS:
+        g_rec = by_id.get(req_grp)
+        if g_rec is None or g_rec.get("kind") != "group":
+            raise Refused(f"missing required Word group {req_grp!r}")
+
+    for req_ctrl in WORD_REQUIRED_CONTROL_IDS:
+        c_rec = by_id.get(req_ctrl)
+        if c_rec is None or c_rec.get("kind") != "control":
+            raise Refused(f"missing required Word control {req_ctrl!r}")
+
     keytip_re = re.compile(r"^[A-Z0-9:]+$")
     for rec in records:
         rid = rec["id"]
@@ -5610,7 +6092,7 @@ def validate_word_ribbon(records):
             grps = [c for c in children_of.get(rid, ()) if c.get("kind") == "group"]
             if not grps:
                 raise Refused(f"{rid}: tab has no child group records")
-            if kind == "contextualTab":
+            if kind == "contextualTab" and require_behaviour:
                 beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
                 if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold() or "Appears" not in beh:
                     raise Refused(f"{rid}: contextualTab is missing trigger behaviour")
@@ -5637,34 +6119,56 @@ def validate_word_ribbon(records):
                 is_spinner_btn = rec.get("label") in ("More", "Less") and not uia_id
                 if uia_id not in WORD_RECONCILED_UNKEYED_CONTROL_UIA_IDS and not is_spinner_btn:
                     raise Refused(f"{rid}: control is missing keytip and is not in reconciled unkeyed controls")
-            beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
-            if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
-                raise Refused(f"{rid}: control is missing distinct behaviour sentence")
-            if "Enabled" not in beh:
-                raise Refused(f"{rid}: control behaviour is missing enablement precondition")
-            if rec.get("label") == "Less" and not (rec.get("uiaId") or rec.get("idMso")) and "Decrements (Less)" not in beh:
-                raise Refused(f"{rid}: Less spinner button must describe decrementing, got {beh!r}")
-            if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "comboBox", "spinner") or (
-                ctype == "splitButton" and rid in WORD_TOGGLE_SPLIT_BUTTON_IDS
-            ):
-                if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
-                    raise Refused(f"{rid}: stateful {ctype} behaviour is missing on/off/mixed state rule")
-                if ctype in ("toggleButton", "checkBox", "radioButton"):
-                    if rid in WORD_SELECTION_FORMAT_TOGGLE_IDS:
-                        if "mixed state is not used" in beh:
-                            raise Refused(f"{rid}: selection-formatting toggle must describe its mixed state")
-                    else:
-                        if "mixed state is not used" not in beh or "spans both formatted and unformatted content" in beh or "spans mixed formatting" in beh:
-                            raise Refused(f"{rid}: binary {ctype} must state that mixed state is not used and must not claim mixed formatting state")
-                elif ctype == "splitButton":
-                    if rid in WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS:
-                        if "mixed state is not used" not in beh or "spans mixed formatting" in beh:
-                            raise Refused(f"{rid}: binary toggle splitButton must state that mixed state is not used")
-            elif ctype == "splitButton" and "State rule:" in beh:
-                raise Refused(f"{rid}: non-toggle splitButton must not fabricate a checked/mixed state rule")
-            if ctype == "gallery":
-                if "expand" not in beh and "dropdown" not in beh and "More" not in beh:
-                    raise Refused(f"{rid}: gallery behaviour is missing expand control description")
+            if require_behaviour:
+                beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
+                if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
+                    raise Refused(f"{rid}: control is missing distinct behaviour sentence")
+                if "Enabled" not in beh:
+                    raise Refused(f"{rid}: control behaviour is missing enablement precondition")
+                if rec.get("label") == "Less" and not (rec.get("uiaId") or rec.get("idMso")) and "Decrements (Less)" not in beh:
+                    raise Refused(f"{rid}: Less spinner button must describe decrementing, got {beh!r}")
+                if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "comboBox", "spinner") or (
+                    ctype == "splitButton" and rid in WORD_TOGGLE_SPLIT_BUTTON_IDS
+                ):
+                    if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
+                        raise Refused(f"{rid}: stateful {ctype} behaviour is missing on/off/mixed state rule")
+                    if ctype in ("toggleButton", "checkBox", "radioButton"):
+                        if rid in WORD_SELECTION_FORMAT_TOGGLE_IDS:
+                            if "mixed state is not used" in beh:
+                                raise Refused(f"{rid}: selection-formatting toggle must describe its mixed state")
+                        else:
+                            if "mixed state is not used" not in beh or "spans both formatted and unformatted content" in beh or "spans mixed formatting" in beh:
+                                raise Refused(f"{rid}: binary {ctype} must state that mixed state is not used and must not claim mixed formatting state")
+                    elif ctype == "splitButton":
+                        if rid in WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS:
+                            if "mixed state is not used" not in beh or "spans mixed formatting" in beh:
+                                raise Refused(f"{rid}: binary toggle splitButton must state that mixed state is not used")
+                    elif ctype == "gallery":
+                        if rid in WORD_NO_MIXED_GALLERY_IDS:
+                            if (
+                                "mixed state is not used" not in beh
+                                or "multi-section or multi-object selection" in beh
+                                or "spans multiple conflicting styles" in beh
+                                or "spans multiple presets" in beh
+                            ):
+                                raise Refused(f"{rid}: single-scope or document-scope gallery must state that mixed state is not used")
+                        else:
+                            if "mixed state is not used" in beh:
+                                raise Refused(f"{rid}: multi-target gallery must describe its mixed state")
+                            if rid in WORD_SECTION_GALLERY_IDS and "multi-object" in beh:
+                                raise Refused(f"{rid}: section-scoped gallery must not claim multi-object mixed state")
+                    elif ctype == "spinner":
+                        if rid in WORD_NO_MIXED_SPINNER_IDS:
+                            if "mixed state is not used" not in beh:
+                                raise Refused(f"{rid}: single-section spinner must state that mixed state is not used")
+                        else:
+                            if "mixed state is not used" in beh:
+                                raise Refused(f"{rid}: multi-target spinner must describe its mixed state")
+                elif ctype == "splitButton" and "State rule:" in beh:
+                    raise Refused(f"{rid}: non-toggle splitButton must not fabricate a checked/mixed state rule")
+                if ctype == "gallery":
+                    if "expand" not in beh and "dropdown" not in beh and "More" not in beh:
+                        raise Refused(f"{rid}: gallery behaviour is missing expand control description")
             if ctype in ("menu", "splitButton", "gallery") and rid not in WORD_RECONCILED_UNEXPANDED_CONTROLS:
                 items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
                 if not items:
@@ -5680,12 +6184,21 @@ def validate_word_ribbon(records):
                 if rec.get("label") not in WORD_RECONCILED_UNKEYED_MENU_LABELS:
                     raise Refused(f"{rid}: menuItem {rec.get('label')!r} is missing keytip and is not reconciled")
             beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
-            if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
-                raise Refused(f"{rid}: menuItem is missing distinct behaviour sentence")
-            if "Enabled" not in beh:
-                raise Refused(f"{rid}: menuItem behaviour is missing enablement precondition")
-            if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
-                raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
+            if require_behaviour:
+                if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
+                    raise Refused(f"{rid}: menuItem is missing distinct behaviour sentence")
+                if "Enabled" not in beh:
+                    raise Refused(f"{rid}: menuItem behaviour is missing enablement precondition")
+                if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
+                    raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
+                if ctype == "galleryItem":
+                    parent_id = rec.get("parent") or ""
+                    if parent_id in WORD_NO_MIXED_GALLERY_IDS or parent_id.startswith(WORD_NO_MIXED_GALLERY_PREFIXES):
+                        if "mixed state is not used" not in beh or "spans multiple presets" in beh:
+                            raise Refused(f"{rid}: galleryItem under single-scope/document-scope gallery must state that mixed state is not used")
+                    else:
+                        if "mixed state is not used" in beh:
+                            raise Refused(f"{rid}: galleryItem under multi-target gallery must describe its mixed state")
             if "Selects or expands" in beh or rid in WORD_REQUIRED_SUBMENU_PARENTS:
                 sub_items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
                 if not sub_items:
@@ -5711,13 +6224,21 @@ def validate_word_ribbon(records):
 
 def merge_word_ribbon(existing, fresh, unverified=(), *, full_capture=True):
     """Merge fresh Word ribbon records into existing records, validating full-capture completeness on `fresh` before
-    merging so old records in `existing` cannot conceal missing tabs, contextual tabs, controls, or submenus."""
+    merging so old records in `existing` cannot conceal missing tabs, contextual tabs, groups, controls, or submenus."""
     if full_capture:
-        validate_word_ribbon(synthesize_word_behaviour([dict(r) for r in fresh]))
+        validate_word_ribbon(fresh, require_behaviour=False)
+        fresh_ids = {r.get("id") for r in fresh if isinstance(r, dict) and r.get("id")}
+        missing_existing = [
+            r["id"] for r in existing if isinstance(r, dict) and r.get("id") and r["id"] not in fresh_ids
+        ]
+        if missing_existing:
+            raise Refused(
+                f"fresh full Word ribbon capture is missing {len(missing_existing)} existing record(s), "
+                f"including {missing_existing[0]!r}"
+            )
     merged = merge(existing, fresh, unverified)
-    merged = synthesize_word_behaviour(merged)
     if full_capture:
-        validate_word_ribbon(merged)
+        validate_word_ribbon(merged, require_behaviour=True)
     return merged
 
 
@@ -5845,7 +6366,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             except OSError:
                 is_canonical_word_ribbon = False
             if is_canonical_word_ribbon and args.all_tabs:
-                validate_word_ribbon(synthesize_word_behaviour([dict(r) for r in records]))
+                validate_word_ribbon(records, require_behaviour=False)
         if args.merge:
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
@@ -5867,11 +6388,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                     _load_existing_records(unverified_path, current_unverified),
                     unverified_records,
                 )
-        if args.app == "word":
-            records = synthesize_word_behaviour(records)
-            unverified_records = synthesize_word_behaviour(unverified_records)
-            if is_canonical_word_ribbon:
-                validate_word_ribbon(records)
+        if args.app == "word" and is_canonical_word_ribbon:
+            validate_word_ribbon(records, require_behaviour=True)
         files = {out: render(records)}
         expected = {out: initial_bytes} if args.merge else {}
         create_only = [] if args.merge else [out]
