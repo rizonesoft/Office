@@ -388,12 +388,60 @@ class Launch(unittest.TestCase):
         self.assertEqual((app.count, app.quit, app.made), (0, False, []))
 
     def test_project_is_refused_until_ownership_can_be_proven(self):
+        class ProjectOnlyApp:
+            """A Project COM stand-in whose Project items have no .Close() method and close through FileCloseEx."""
+
+            def __init__(self):
+                self.quit = False
+                self.Visible = False
+                self.made = []
+                self.ActiveProject = None
+                self.file_close_calls = []
+                app = self
+
+                class ProjItem:
+                    def __init__(self, name="Project1", saved=True, path=""):
+                        self.Name = name
+                        self.FullName = f"{path}\\{name}" if path else name
+                        self.Path = path
+                        self.Saved = saved
+                        self.closed = False
+
+                self._proj_cls = ProjItem
+
+                class Projs:
+                    @property
+                    def Count(self):
+                        return sum(1 for p in app.made if not p.closed)
+
+                    def Item(self, idx):
+                        open_projs = [p for p in app.made if not p.closed]
+                        return open_projs[idx - 1]
+
+                self.Projects = Projs()
+
+            def FileNew(self):
+                p = self._proj_cls(f"Project{len(self.made) + 1}", saved=True, path="")
+                self.made.append(p)
+                self.ActiveProject = p
+                return True
+
+            def FileCloseEx(self, save_type=0):
+                self.file_close_calls.append((save_type, self.ActiveProject))
+                if self.ActiveProject is not None:
+                    self.ActiveProject.closed = True
+                    open_projs = [p for p in self.made if not p.closed]
+                    self.ActiveProject = open_projs[-1] if open_projs else None
+
+            def Quit(self, SaveChanges=None):
+                self.quit = True
+
         real = cu.Launched.running, cu.Win, cu.wait_for
         cu.Launched.running = staticmethod(lambda exe: False)
         cu.Win = lambda: type("W", (), {"top": lambda self, h: h, "main_window": lambda self, pid, cls=None: None})()
         cu.wait_for = lambda fn, seconds=0, step=0: fn()
         try:
-            windowless_proj = FakeApp(count=0)
+            windowless_proj = ProjectOnlyApp()
             with self.assertRaises(cu.Unsafe):
                 cu.Launched(
                     "project",
@@ -401,12 +449,28 @@ class Launch(unittest.TestCase):
                     starter=lambda exe: 7,
                     owner=lambda hwnd, exe: Proc(7),
                 )
-            self.assertEqual((windowless_proj.count, windowless_proj.quit, windowless_proj.made), (0, False, []))
-            owned_proj = FakeApp(count=0)
+            self.assertEqual((windowless_proj.Projects.Count, windowless_proj.quit, windowless_proj.made), (0, False, []))
+            # Owned blank project closes cleanly via FileCloseEx(0).
+            owned_proj = ProjectOnlyApp()
             launched_proj = self.launched(owned_proj, key="project", started=7, window_pid=7)
             self.assertEqual(len(owned_proj.made), 1)
             launched_proj.close()
-            self.assertEqual((owned_proj.made[0].closed, owned_proj.quit, owned_proj.count), (True, True, 0))
+            self.assertEqual(
+                (owned_proj.made[0].closed, owned_proj.quit, owned_proj.Projects.Count, len(owned_proj.file_close_calls)),
+                (True, True, 0, 1),
+            )
+            # If the operator opens/activates a foreign unsaved project during capture, close() refuses without
+            # calling FileCloseEx(0) and leaves the foreign project untouched.
+            shared_proj = ProjectOnlyApp()
+            launched_shared = self.launched(shared_proj, key="project", started=7, window_pid=7)
+            foreign = shared_proj._proj_cls("OperatorSchedule.mpp", saved=False, path="C:\\Work")
+            shared_proj.made.append(foreign)
+            shared_proj.ActiveProject = foreign
+            with self.assertRaises(cu.Refused):
+                launched_shared.close()
+            self.assertFalse(foreign.closed)
+            self.assertEqual(shared_proj.file_close_calls, [])
+            self.assertFalse(shared_proj.quit)
         finally:
             cu.Launched.running, cu.Win, cu.wait_for = real
 
@@ -2581,7 +2645,7 @@ class ShellChrome(unittest.TestCase):
                         orig_base_kt(False)
                     if status_lbl[0] in rebuilt_base_root.kids:
                         rebuilt_base_root.kids.remove(status_lbl[0])
-                    new_text = "Page 1 of 1" if active else "Page 1 of 2"
+                    new_text = "Page 1 of 2" if active else "Page 1 of 3"
                     status_lbl[0] = E("Button", new_text, "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
                     rebuilt_base_root.kids.append(status_lbl[0])
 
@@ -2592,7 +2656,7 @@ class ShellChrome(unittest.TestCase):
                     good_win, launched,
                 )
                 self.assertGreaterEqual(len(collected_rebuilt_base), 5)
-                self.assertFalse(any(e.name == "Page 1 of 1" for e in collected_rebuilt_base))
+                self.assertFalse(any(e.name.startswith("Page 1 of") for e in collected_rebuilt_base))
 
                 # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
                 #    and on a complete Word window refreshes Word bounds while preserving Excel bounds and custom behaviour.

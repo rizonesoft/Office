@@ -922,6 +922,20 @@ class Launched:
                         elif self.key == "excel":
                             doc.Close(SaveChanges=False)
                         elif self.key == "project" and not hasattr(doc, "Close"):
+                            active_proj = getattr(app, "ActiveProject", None)
+                            if (
+                                unowned_count > 0
+                                or count != 1
+                                or active_proj is None
+                                or not self._same_doc(active_proj, doc)
+                                or not self._is_unmodified_blank_doc(active_proj)
+                            ):
+                                failures.append(
+                                    f"the active {self.exe} project is not the single unmodified blank project this tool created, "
+                                    "so FileCloseEx was not called"
+                                )
+                                unowned_count += 1
+                                continue
                             if hasattr(app, "FileCloseEx"):
                                 app.FileCloseEx(0)
                             else:
@@ -1160,7 +1174,7 @@ class Launched:
             ):
                 raise Refused(f"the {self.exe} instance now holds a document this tool did not create; stopping before "
                               "the ribbon acts on someone else's")
-        for attr in ("ActiveDocument", "ActiveWorkbook", "ActivePresentation"):
+        for attr in ("ActiveDocument", "ActiveWorkbook", "ActivePresentation", "ActiveProject"):
             active = getattr(app, attr, None)
             if active is not None and not any(self._same_doc(active, c) for c in self.created):
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
@@ -1255,6 +1269,18 @@ class Launched:
                 elif self.key == "excel":
                     doc.Close(SaveChanges=False)
                 elif self.key == "project" and not hasattr(doc, "Close"):
+                    cur_count = self.open_documents()
+                    active_proj = getattr(self.app, "ActiveProject", None)
+                    if cur_count != 1 or active_proj is None or not self._same_doc(active_proj, doc):
+                        raise Refused(
+                            f"the active {self.exe} project is not the single blank project this tool created, "
+                            "so FileCloseEx was not called"
+                        )
+                    if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                        if self._doc_meta(active_proj) != meta:
+                            raise Refused(f"the active {self.exe} project changed identity")
+                    if not self._is_unmodified_blank_doc(active_proj):
+                        raise Refused(f"the active {self.exe} project has unsaved changes or a file path")
                     if hasattr(self.app, "FileCloseEx"):
                         self.app.FileCloseEx(0)
                     else:
@@ -2797,13 +2823,17 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     }
     before_sig_counts = {}
     before_key_counts = {}
+    before_rect_counts = {}
     for el in before_nodes:
         vrect = _visible_rect_tuple(el)
         if vrect is not None:
-            sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
-            key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
+            ctype = getattr(el, "control_type", "")
+            sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+            key = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""))
+            rkey = (ctype, vrect)
             before_sig_counts[sig] = before_sig_counts.get(sig, 0) + 1
             before_key_counts[key] = before_key_counts.get(key, 0) + 1
+            before_rect_counts[rkey] = before_rect_counts.get(rkey, 0) + 1
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2849,20 +2879,32 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
         live_nodes = [live_root] + list(descendants(live_root, 25))
         kept_sig_counts = {}
+        kept_rect_counts = {}
         for el in live_nodes:
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
             if vrect is not None and before_state.get(eid, _ABSENT) == vrect:
-                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                ctype = getattr(el, "control_type", "")
+                sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                rkey = (ctype, vrect)
                 kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
+                kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
         for el in live_nodes:
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
             prev_vrect = before_state.get(eid, _ABSENT)
             if vrect is not None and (prev_vrect is _ABSENT or vrect != prev_vrect):
-                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
-                if prev_vrect is _ABSENT and kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0):
-                    kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
+                ctype = getattr(el, "control_type", "")
+                sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                rkey = (ctype, vrect)
+                if prev_vrect is _ABSENT and (
+                    kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0)
+                    or kept_rect_counts.get(rkey, 0) < before_rect_counts.get(rkey, 0)
+                ):
+                    if kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0):
+                        kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
+                    if kept_rect_counts.get(rkey, 0) < before_rect_counts.get(rkey, 0):
+                        kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
                     continue
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
