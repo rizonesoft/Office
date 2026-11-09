@@ -852,6 +852,8 @@ class Launched:
                 if count == 0:
                     docs = []
                 else:
+                    docs = None
+                    last_exc = None
                     if hasattr(docs_col, "Item"):
                         try:
                             docs = [docs_col.Item(i) for i in range(1, count + 1)]
@@ -859,12 +861,17 @@ class Launched:
                             try:
                                 docs = [docs_col.Item(i) for i in range(count)]
                             except Exception:
-                                raise exc1 from None
-                    elif hasattr(docs_col, "__iter__"):
-                        docs = list(docs_col)
-                    elif hasattr(app, "made"):
+                                last_exc = exc1
+                    if docs is None and hasattr(docs_col, "__iter__"):
+                        try:
+                            docs = list(docs_col)
+                        except Exception as exc2:
+                            last_exc = last_exc or exc2
+                    if docs is None and last_exc is None and hasattr(app, "made"):
                         docs = [d for d in app.made if not getattr(d, "closed", False)]
-                    else:
+                    if docs is None:
+                        if last_exc is not None:
+                            raise last_exc
                         raise RuntimeError(f"collection of {count} document(s) is not enumerable")
             except Exception as exc:
                 enum_failed = True
@@ -1275,53 +1282,83 @@ class Launched:
             if apt is not None:
                 apt.close()
 
+    def _check_powerpoint_only_owned_blank(self, metas):
+        for idx, doc in enumerate(list(self.created)):
+            if getattr(doc, "closed", False):
+                continue
+            meta = metas[idx] if idx < len(metas) else None
+            if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                if self._doc_meta(doc) != meta:
+                    raise Refused(f"the {self.exe} document this tool created changed identity")
+            if not self._is_unmodified_blank_doc(doc):
+                raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+        doc = None
+        total = self.open_documents()
+        open_created = [d for d in self.created if not getattr(d, "closed", False)]
+        if total != len(open_created):
+            return max(1, total - len(open_created))
+        if total == 0:
+            return 0
+        docs_col = self.documents()
+        live = None
+        last_exc = None
+        if hasattr(docs_col, "Item"):
+            try:
+                live = [docs_col.Item(i) for i in range(1, total + 1)]
+            except Exception as exc1:
+                try:
+                    live = [docs_col.Item(i) for i in range(total)]
+                except Exception:
+                    last_exc = exc1
+        if live is None and hasattr(docs_col, "__iter__"):
+            try:
+                live = list(docs_col)
+            except Exception as exc2:
+                last_exc = last_exc or exc2
+        if live is None and last_exc is None and hasattr(self.app, "made"):
+            live = [d for d in self.app.made if not getattr(d, "closed", False)]
+        if live is None:
+            if last_exc is not None:
+                raise last_exc
+            raise RuntimeError(f"collection of {total} document(s) is not enumerable")
+        try:
+            if len(live) != len(open_created):
+                return max(1, abs(len(live) - len(open_created)))
+            matched_ids = set()
+            for idx, created_doc in enumerate(self.created):
+                if getattr(created_doc, "closed", False):
+                    continue
+                meta = metas[idx] if idx < len(metas) else None
+                match = None
+                for d in live:
+                    if id(d) in matched_ids:
+                        continue
+                    if self._same_doc(d, created_doc):
+                        match = d
+                        break
+                if match is None:
+                    return 1
+                matched_ids.add(id(match))
+                if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                    if self._doc_meta(match) != meta:
+                        raise Refused(f"the {self.exe} document this tool created changed identity")
+                if not self._is_unmodified_blank_doc(match):
+                    raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+            return 0
+        finally:
+            d = None
+            match = None
+            created_doc = None
+            live = None
+            docs_col = None
+            open_created = None
+
     def _close_impl(self, wait=60.0):
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
+        metas = list(getattr(self, "_created_meta", ()))
         try:
-            metas = list(getattr(self, "_created_meta", ()))
             if self.key == "powerpoint":
-                for idx, doc in enumerate(list(self.created)):
-                    if getattr(doc, "closed", False):
-                        continue
-                    meta = metas[idx] if idx < len(metas) else None
-                    if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
-                        if self._doc_meta(doc) != meta:
-                            raise Refused(f"the {self.exe} document this tool created changed identity")
-                    if not self._is_unmodified_blank_doc(doc):
-                        raise Refused(f"the {self.exe} document has unsaved changes or a file path")
-                doc = None
-                total = self.open_documents()
-                open_created = [d for d in self.created if not getattr(d, "closed", False)]
-                if total != len(open_created):
-                    others = max(1, total - len(open_created))
-                else:
-                    docs_col = self.documents()
-                    live = None
-                    if hasattr(docs_col, "Item"):
-                        try:
-                            live = [docs_col.Item(i) for i in range(1, total + 1)]
-                        except Exception:
-                            try:
-                                live = [docs_col.Item(i) for i in range(total)]
-                            except Exception:
-                                live = None
-                    if live is None and hasattr(docs_col, "__iter__"):
-                        try:
-                            live = list(docs_col)
-                        except Exception:
-                            live = None
-                    if live is None and hasattr(self.app, "made"):
-                        live = [d for d in self.app.made if not getattr(d, "closed", False)]
-                    if live is not None and (
-                        len(live) != len(open_created)
-                        or any(not any(self._same_doc(d, c) for c in open_created) for d in live)
-                    ):
-                        others = max(1, len(live))
-                    else:
-                        others = 0
-                    live = None
-                    docs_col = None
-                open_created = None
+                others = self._check_powerpoint_only_owned_blank(metas)
             else:
                 for idx, doc in enumerate(list(self.created)):
                     if getattr(doc, "closed", False):
@@ -1340,22 +1377,15 @@ class Launched:
         finally:
             doc = None
             self._release_marshaled_app()
-            if others == 0 and self.key == "powerpoint":
+            if others == 0:
                 try:
-                    for idx, d in enumerate(list(self.created)):
-                        if getattr(d, "closed", False):
-                            continue
-                        meta = metas[idx] if idx < len(metas) else None
-                        if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
-                            if self._doc_meta(d) != meta:
-                                raise Refused(f"the {self.exe} document this tool created changed identity")
-                        if not self._is_unmodified_blank_doc(d):
-                            raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+                    if self.key == "powerpoint":
+                        others = self._check_powerpoint_only_owned_blank(metas)
+                    else:
+                        others = self.open_documents()
                 except Exception as exc:
                     others = None
                     failure = f"{type(exc).__name__}: {exc}"
-                finally:
-                    d = None
             try:
                 if others == 0:
                     self.app.Quit()

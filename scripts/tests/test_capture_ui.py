@@ -558,8 +558,9 @@ class Launch(unittest.TestCase):
         self.assertEqual(quiet_ppt.made[0].close_args, [])
         self.assertFalse(quiet_ppt.made[0].closed)
         self.assertNotIn("Saved", quiet_ppt.made[0].__dict__)
-        # If an intervening edit flips Saved=False after the initial inspection (for example during Name lookup at the
-        # end of _is_unmodified_blank_doc or during _release_marshaled_app), neither doc.Close() nor app.Quit() discards work.
+        # If an intervening edit flips Saved=False AFTER the initial Saved inspection succeeds (on the Name read at the
+        # end of _is_unmodified_blank_doc, after Saved was already read as True), or during _release_marshaled_app,
+        # neither doc.Close() nor app.Quit() discards work on either normal or emergency cleanup.
         for key in ("word", "excel", "powerpoint", "visio"):
             interleaved = FakeApp(count=0)
             interleaved.Hwnd = 5
@@ -567,34 +568,109 @@ class Launch(unittest.TestCase):
             launched_interleaved = self.launched(interleaved, key=key)
             doc = interleaved.made[0]
 
-            class DirtyAfterCheckDoc:
+            class DirtyAfterSavedInspectDoc:
                 def __init__(self, inner):
                     self._inner = inner
-                    self.Saved = True
+                    self._saved = True
                     self.Path = ""
                     self.FullName = "Doc1"
                     self.closed = False
                     self.close_args = inner.close_args
-                    self._checks = 0
+                    self.saved_reads = 0
+                    self.name_reads = 0
+                    self.inspected_clean = False
+
+                @property
+                def Saved(self):
+                    self.saved_reads += 1
+                    return self._saved
+
+                @Saved.setter
+                def Saved(self, val):
+                    self._saved = val
+                    self._inner.Saved = val
 
                 @property
                 def Name(self):
-                    self._checks += 1
-                    if self._checks >= 1:
-                        self.Saved = False
+                    self.name_reads += 1
+                    if self.saved_reads >= 1:
+                        self.inspected_clean = True
+                        self._saved = False
                         self._inner.Saved = False
                     return "Doc1"
 
                 def Close(self, *args, **kwargs):
                     return self._inner.Close(*args, **kwargs)
 
-            wrapped = DirtyAfterCheckDoc(doc)
+            wrapped = DirtyAfterSavedInspectDoc(doc)
+            interleaved.made = [wrapped]
             launched_interleaved.created = [wrapped]
             launched_interleaved._created_meta = [{"name": "Doc1", "full_name": "Doc1"}]
-            with self.assertRaises(cu.Refused):
-                launched_interleaved.close()
+            launched_interleaved._marshal_app(interleaved)
+            launched_interleaved._marshaled_docs = [("direct", wrapped, None)]
+            errs = launched_interleaved._emergency_close_com()
+            self.assertTrue(wrapped.inspected_clean)
+            self.assertTrue(errs)
             self.assertFalse(doc.closed)
             self.assertFalse(interleaved.quit)
+
+            wrapped._saved = True
+            doc.Saved = True
+            wrapped.saved_reads = 0
+            wrapped.name_reads = 0
+            wrapped.inspected_clean = False
+            with self.assertRaises(cu.Refused):
+                launched_interleaved.close()
+            self.assertTrue(wrapped.inspected_clean)
+            self.assertFalse(doc.closed)
+            self.assertFalse(interleaved.quit)
+
+        # If a foreign presentation is opened or the owned presentation becomes dirty in PowerPoint during
+        # _release_marshaled_app, or if PowerPoint's Presentations collection cannot be enumerated, cleanup refuses
+        # and never calls Quit().
+        ppt_late_dirty = FakeApp(count=0)
+        launched_late_dirty = self.launched(ppt_late_dirty, key="powerpoint")
+        orig_dirty_release = launched_late_dirty._release_marshaled_app
+
+        def _dirty_on_release():
+            orig_dirty_release()
+            ppt_late_dirty.made[0].Saved = False
+
+        launched_late_dirty._release_marshaled_app = _dirty_on_release
+        with self.assertRaises(cu.Refused):
+            launched_late_dirty.close()
+        self.assertFalse(ppt_late_dirty.made[0].closed)
+        self.assertFalse(ppt_late_dirty.quit)
+
+        ppt_late_foreign = FakeApp(count=0)
+        launched_late_foreign = self.launched(ppt_late_foreign, key="powerpoint")
+        orig_release = launched_late_foreign._release_marshaled_app
+
+        def _open_foreign_on_release():
+            orig_release()
+            ppt_late_foreign.Presentations.Add()
+
+        launched_late_foreign._release_marshaled_app = _open_foreign_on_release
+        with self.assertRaises(cu.Refused):
+            launched_late_foreign.close()
+        self.assertFalse(ppt_late_foreign.quit)
+
+        ppt_unenumerable = FakeApp(count=0)
+        launched_unenumerable = self.launched(ppt_unenumerable, key="powerpoint")
+
+        class UnenumerablePresCol:
+            Count = 1
+
+            def Item(self, _i):
+                raise OSError("RPC enumeration failed")
+
+            def __iter__(self):
+                raise OSError("RPC iteration failed")
+
+        ppt_unenumerable.Presentations = UnenumerablePresCol()
+        with self.assertRaises(cu.Refused):
+            launched_unenumerable.close()
+        self.assertFalse(ppt_unenumerable.quit)
 
     def test_core_tabs_come_from_the_baseline(self):
         self.assertIn("TabHome", cu.baseline_core_tabs("word"))
