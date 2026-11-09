@@ -911,20 +911,29 @@ class Launched:
                             unowned_count += 1
                 else:
                     unowned_count += sum(1 for d in docs if not getattr(d, "closed", False))
-                for doc in to_close:
-                    if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
-                        doc._owner_tid = target_tid
-                    if getattr(doc, "closed", False):
-                        continue
+                if self.key == "powerpoint":
+                    # PowerPoint's Presentation.Close() and DocumentWindow.Close() discard unsaved changes without
+                    # prompting, whereas Application.Quit() prompts when a presentation is dirty and exits cleanly
+                    # when only our unmodified blank presentation is open and all COM references are released.
+                    if unowned_count == 0 and not failures and all(self._is_unmodified_blank_doc(d) for d in to_close):
+                        remaining = 0
+                    else:
+                        remaining = max(count or 0, len(to_close) + unowned_count, 1)
+                else:
+                    for doc in to_close:
+                        if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
+                            doc._owner_tid = target_tid
+                        if getattr(doc, "closed", False):
+                            continue
+                        try:
+                            self._close_owned_doc(doc, app=app)
+                        except Exception as exc:
+                            failures.append(f"close document failed ({type(exc).__name__}: {exc})")
+                            unowned_count += 1
                     try:
-                        self._close_owned_doc(doc, app=app)
+                        remaining = int(self._documents_of(app).Count)
                     except Exception as exc:
-                        failures.append(f"close document failed ({type(exc).__name__}: {exc})")
-                        unowned_count += 1
-                try:
-                    remaining = int(self._documents_of(app).Count)
-                except Exception as exc:
-                    failures.append(f"count open documents failed ({type(exc).__name__}: {exc})")
+                        failures.append(f"count open documents failed ({type(exc).__name__}: {exc})")
                 still_open = max(remaining or 0, unowned_count)
                 if still_open and not any("left running" in f or "left open" in f for f in failures):
                     failures.append(
@@ -1178,10 +1187,14 @@ class Launched:
     def _close_owned_doc(self, doc, app=None):
         if not self._is_unmodified_blank_doc(doc):
             raise Refused(f"the {self.exe} document has unsaved changes or a file path")
-        if hasattr(doc, "Close"):
-            doc.Close()
-            return
+        if self.key == "powerpoint":
+            raise Refused(
+                "PowerPoint Presentation.Close and DocumentWindow.Close discard unsaved changes without prompting, "
+                "so per-presentation close was refused"
+            )
         if self.key == "project":
+            # Project items expose no target-bound Close(): close via the project's own window collection,
+            # which targets that project's window without silently discarding post-check edits.
             wins = getattr(doc, "Windows2", None) or getattr(doc, "Windows", None)
             if wins is not None:
                 w_count = int(wins.Count)
@@ -1196,6 +1209,13 @@ class Launched:
                             closed_any = True
                     if closed_any:
                         return
+            raise Refused(
+                f"the {self.exe} document exposes no target-bound window Close method, "
+                "so active-target close was refused"
+            )
+        if hasattr(doc, "Close"):
+            doc.Close()
+            return
         raise Refused(
             f"the {self.exe} document exposes no target-bound Close method, "
             "so application-level active-target close was refused"
@@ -1259,23 +1279,83 @@ class Launched:
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         try:
             metas = list(getattr(self, "_created_meta", ()))
-            for idx, doc in enumerate(list(self.created)):
-                if getattr(doc, "closed", False):
-                    continue
-                meta = metas[idx] if idx < len(metas) else None
-                if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
-                    if self._doc_meta(doc) != meta:
-                        raise Refused(f"the {self.exe} document this tool created changed identity")
-                if not self._is_unmodified_blank_doc(doc):
-                    raise Refused(f"the {self.exe} document has unsaved changes or a file path")
-                self._close_owned_doc(doc, app=self.app)
-            doc = None
-            others = self.open_documents()
+            if self.key == "powerpoint":
+                for idx, doc in enumerate(list(self.created)):
+                    if getattr(doc, "closed", False):
+                        continue
+                    meta = metas[idx] if idx < len(metas) else None
+                    if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                        if self._doc_meta(doc) != meta:
+                            raise Refused(f"the {self.exe} document this tool created changed identity")
+                    if not self._is_unmodified_blank_doc(doc):
+                        raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+                doc = None
+                total = self.open_documents()
+                open_created = [d for d in self.created if not getattr(d, "closed", False)]
+                if total != len(open_created):
+                    others = max(1, total - len(open_created))
+                else:
+                    docs_col = self.documents()
+                    live = None
+                    if hasattr(docs_col, "Item"):
+                        try:
+                            live = [docs_col.Item(i) for i in range(1, total + 1)]
+                        except Exception:
+                            try:
+                                live = [docs_col.Item(i) for i in range(total)]
+                            except Exception:
+                                live = None
+                    if live is None and hasattr(docs_col, "__iter__"):
+                        try:
+                            live = list(docs_col)
+                        except Exception:
+                            live = None
+                    if live is None and hasattr(self.app, "made"):
+                        live = [d for d in self.app.made if not getattr(d, "closed", False)]
+                    if live is not None and (
+                        len(live) != len(open_created)
+                        or any(not any(self._same_doc(d, c) for c in open_created) for d in live)
+                    ):
+                        others = max(1, len(live))
+                    else:
+                        others = 0
+                    live = None
+                    docs_col = None
+                open_created = None
+            else:
+                for idx, doc in enumerate(list(self.created)):
+                    if getattr(doc, "closed", False):
+                        continue
+                    meta = metas[idx] if idx < len(metas) else None
+                    if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                        if self._doc_meta(doc) != meta:
+                            raise Refused(f"the {self.exe} document this tool created changed identity")
+                    if not self._is_unmodified_blank_doc(doc):
+                        raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+                    self._close_owned_doc(doc, app=self.app)
+                doc = None
+                others = self.open_documents()
         except Exception as exc:  # reported below: the instance is left running and the run refuses
             failure = f"{type(exc).__name__}: {exc}"
         finally:
             doc = None
             self._release_marshaled_app()
+            if others == 0 and self.key == "powerpoint":
+                try:
+                    for idx, d in enumerate(list(self.created)):
+                        if getattr(d, "closed", False):
+                            continue
+                        meta = metas[idx] if idx < len(metas) else None
+                        if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                            if self._doc_meta(d) != meta:
+                                raise Refused(f"the {self.exe} document this tool created changed identity")
+                        if not self._is_unmodified_blank_doc(d):
+                            raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+                except Exception as exc:
+                    others = None
+                    failure = f"{type(exc).__name__}: {exc}"
+                finally:
+                    d = None
             try:
                 if others == 0:
                     self.app.Quit()

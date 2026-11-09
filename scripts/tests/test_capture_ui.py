@@ -336,8 +336,10 @@ class FakeApp:
                 self.close_args = []
 
             def Close(self, *args, **kwargs):
-                self.closed = True
                 self.close_args.append((args, kwargs))
+                if not args and not kwargs and not bool(getattr(self, "Saved", True)):
+                    raise RuntimeError("prompt to save unsaved changes")
+                self.closed = True
                 app.count -= 1
 
         self.Workbooks = self.Projects = self.Presentations = self.Documents = Docs()
@@ -347,8 +349,12 @@ class FakeApp:
         return self.Projects.Add()
 
     def Quit(self, *args, **kwargs):
-        self.quit = True
         self.quit_args.append((args, kwargs))
+        if not args and not kwargs and any(
+            not getattr(d, "closed", False) and not bool(getattr(d, "Saved", True)) for d in self.made
+        ):
+            raise RuntimeError("prompt to save unsaved changes")
+        self.quit = True
 
 
 class Proc:
@@ -519,12 +525,24 @@ class Launch(unittest.TestCase):
 
     def test_only_the_tools_own_document_is_closed_and_a_shared_instance_is_left_running(self):
         app = FakeApp(count=0)
-        launched = self.launched(app)
-        app.count += 1  # the operator opens a presentation in the instance while the capture runs
+        launched = self.launched(app, key="word")
+        app.count += 1  # the operator opens a document in the instance while the capture runs
         with self.assertRaises(cu.Refused):
             launched.close()
         self.assertEqual((app.made[0].closed, app.made[0].close_args, app.quit, app.count), (True, [((), {})], False, 1))
-        for key in ("word", "excel", "powerpoint", "visio"):
+        # In PowerPoint, Presentation.Close() discards unsaved edits without prompting, so per-presentation close is
+        # never called: when a second presentation is open, both presentations and PowerPoint are left open; when only
+        # the tool's unmodified blank presentation is open, Application.Quit() closes it without calling doc.Close().
+        ppt_shared = FakeApp(count=0)
+        launched_ppt_shared = self.launched(ppt_shared, key="powerpoint")
+        ppt_shared.count += 1
+        with self.assertRaises(cu.Refused):
+            launched_ppt_shared.close()
+        self.assertEqual(
+            (ppt_shared.made[0].closed, ppt_shared.made[0].close_args, ppt_shared.quit, ppt_shared.count),
+            (False, [], False, 2),
+        )
+        for key in ("word", "excel", "visio"):
             quiet = FakeApp(count=0)
             quiet.Hwnd = 5
             quiet.WindowHandle32 = 5
@@ -533,12 +551,50 @@ class Launch(unittest.TestCase):
             self.assertEqual(quiet.quit_args, [((), {})])
             self.assertEqual(quiet.made[0].close_args, [((), {})])
             self.assertNotIn("Saved", quiet.made[0].__dict__)
-        dirty = FakeApp(count=0)
-        launched_dirty = self.launched(dirty, key="word")
-        dirty.made[0].Saved = False
-        with self.assertRaises(cu.Refused):
-            launched_dirty._close_owned_doc(dirty.made[0], app=dirty)
-        self.assertEqual(dirty.made[0].close_args, [])
+        quiet_ppt = FakeApp(count=0)
+        self.launched(quiet_ppt, key="powerpoint").close()
+        self.assertTrue(quiet_ppt.quit)
+        self.assertEqual(quiet_ppt.quit_args, [((), {})])
+        self.assertEqual(quiet_ppt.made[0].close_args, [])
+        self.assertFalse(quiet_ppt.made[0].closed)
+        self.assertNotIn("Saved", quiet_ppt.made[0].__dict__)
+        # If an intervening edit flips Saved=False after the initial inspection (for example during Name lookup at the
+        # end of _is_unmodified_blank_doc or during _release_marshaled_app), neither doc.Close() nor app.Quit() discards work.
+        for key in ("word", "excel", "powerpoint", "visio"):
+            interleaved = FakeApp(count=0)
+            interleaved.Hwnd = 5
+            interleaved.WindowHandle32 = 5
+            launched_interleaved = self.launched(interleaved, key=key)
+            doc = interleaved.made[0]
+
+            class DirtyAfterCheckDoc:
+                def __init__(self, inner):
+                    self._inner = inner
+                    self.Saved = True
+                    self.Path = ""
+                    self.FullName = "Doc1"
+                    self.closed = False
+                    self.close_args = inner.close_args
+                    self._checks = 0
+
+                @property
+                def Name(self):
+                    self._checks += 1
+                    if self._checks >= 1:
+                        self.Saved = False
+                        self._inner.Saved = False
+                    return "Doc1"
+
+                def Close(self, *args, **kwargs):
+                    return self._inner.Close(*args, **kwargs)
+
+            wrapped = DirtyAfterCheckDoc(doc)
+            launched_interleaved.created = [wrapped]
+            launched_interleaved._created_meta = [{"name": "Doc1", "full_name": "Doc1"}]
+            with self.assertRaises(cu.Refused):
+                launched_interleaved.close()
+            self.assertFalse(doc.closed)
+            self.assertFalse(interleaved.quit)
 
     def test_core_tabs_come_from_the_baseline(self):
         self.assertIn("TabHome", cu.baseline_core_tabs("word"))
@@ -1378,7 +1434,7 @@ class Round3(unittest.TestCase):
         ppt_launched.cleanup_errors = []
         ppt_launched._marshal_app(ppt_app)
         errs = ppt_launched._emergency_close_com()
-        self.assertTrue(own_pres.closed)
+        self.assertFalse(own_pres.closed)
         self.assertFalse(foreign_pres.closed)
         self.assertEqual(foreign_pres.Saved, 0)
         self.assertFalse(ppt_app.quit)
