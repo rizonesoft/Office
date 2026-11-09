@@ -1473,14 +1473,17 @@ class Launched:
     def _is_valid_seeded_sig(self, sig, seq_advanced=False):
         if not isinstance(sig, tuple) or len(sig) != 2:
             return False
-        fmts, text_payload = sig
-        if not fmts:
+        fmts, text_items = sig
+        if not fmts or not isinstance(text_items, tuple) or not text_items:
             return False
         if not seq_advanced:
             saved_handles = getattr(self, "_saved_clipboard_handles", ())
             if saved_handles and fmts == saved_handles:
                 return False
-        return text_payload in ("Sample", "Sample\r", "Sample\r\n")
+        for _fmt, txt in text_items:
+            if txt not in ("Sample", "Sample\r", "Sample\r\n"):
+                return False
+        return True
 
     @staticmethod
     def _matches_expected_clipboard_sig(cur_sig, expected_sig, allow_synthesized=False):
@@ -1495,10 +1498,14 @@ class Launched:
             and len(expected_sig) == 2
         ):
             return False
-        cur_fmts, cur_text = cur_sig
-        exp_fmts, exp_text = expected_sig
-        if cur_text != exp_text:
+        cur_fmts, cur_text_items = cur_sig
+        exp_fmts, exp_text_items = expected_sig
+        if not (isinstance(cur_text_items, tuple) and isinstance(exp_text_items, tuple)):
             return False
+        cur_texts = dict(cur_text_items)
+        for fmt, txt in exp_text_items:
+            if cur_texts.get(fmt) != txt:
+                return False
         exp_set = set(exp_fmts)
         cur_set = set(cur_fmts)
         if not exp_set.issubset(cur_set):
@@ -1538,15 +1545,7 @@ class Launched:
                         decoded = self._decode_clipboard_text(fmt, raw)
                 texts[fmt] = decoded
             fmt = int(u32.EnumClipboardFormats(fmt) or 0)
-        if 13 in texts and 1 in texts:
-            text_payload = texts[13] if texts[13] == texts[1] else None
-        elif 13 in texts:
-            text_payload = texts[13]
-        elif 1 in texts:
-            text_payload = texts[1]
-        else:
-            text_payload = None
-        return (tuple(fmts), text_payload)
+        return (tuple(fmts), tuple(sorted(texts.items())))
 
     def _record_seeded_clipboard_state(self):
         if callable(getattr(self, "_clipboard_saver", None)) or callable(getattr(self, "_clipboard_restorer", None)):
@@ -1760,9 +1759,10 @@ class Launched:
         u32.OpenClipboard.restype = ctypes.c_int
         u32.OpenClipboard.argtypes = [ctypes.c_void_p]
         owner_hwnd = int(getattr(self, "_clipboard_owner_hwnd", 0) or 0)
-        temp_owner_hwnd = int(getattr(self, "_partial_restore_owner_hwnd", 0) or 0)
-        if owner_hwnd <= 0 and temp_owner_hwnd > 0:
-            owner_hwnd = temp_owner_hwnd
+        retained_owner_hwnd = int(getattr(self, "_partial_restore_owner_hwnd", 0) or 0)
+        created_temp_hwnd = 0
+        if owner_hwnd <= 0 and retained_owner_hwnd > 0:
+            owner_hwnd = retained_owner_hwnd
         if owner_hwnd <= 0 and hasattr(u32, "CreateWindowExW"):
             u32.CreateWindowExW.restype = ctypes.c_void_p
             u32.CreateWindowExW.argtypes = [
@@ -1779,7 +1779,7 @@ class Launched:
                 ctypes.c_void_p,
                 ctypes.c_void_p,
             ]
-            temp_owner_hwnd = int(
+            created_temp_hwnd = int(
                 u32.CreateWindowExW(
                     0,
                     "STATIC",
@@ -1796,15 +1796,17 @@ class Launched:
                 )
                 or 0
             )
-            self._partial_restore_owner_hwnd = temp_owner_hwnd
-            owner_hwnd = temp_owner_hwnd
+            owner_hwnd = created_temp_hwnd
         if owner_hwnd <= 0:
             owner_hwnd = int(getattr(self, "hwnd", 0) or 0)
         if owner_hwnd <= 0:
             raise Refused("could not obtain a valid window handle to take clipboard ownership for restoration")
         opened = False
         partial_restore_failed = False
+        validated_partial_retry = False
+        restore_resolved = False
         pre_close_sig = None
+        cur_sig = None
         try:
             for _ in range(25):
                 if u32.OpenClipboard(owner_hwnd):
@@ -1848,10 +1850,17 @@ class Launched:
                     self._seeded_clipboard_sig = None
                     self._clipboard_externally_modified = False
                     self._partial_restore_in_progress = False
+                    restore_resolved = True
                     return False
+                if partial_retry:
+                    validated_partial_retry = True
                 if not u32.EmptyClipboard():
                     raise Refused("could not empty the system clipboard to restore operator clipboard state")
                 emptied_by_us = True
+                if created_temp_hwnd > 0:
+                    self._partial_restore_owner_hwnd = created_temp_hwnd
+                    retained_owner_hwnd = created_temp_hwnd
+                    created_temp_hwnd = 0
                 for fmt, kind, payload in snapshot or ():
                     if kind == "hglobal":
                         if not isinstance(payload, (bytes, bytearray)):
@@ -1937,6 +1946,7 @@ class Launched:
                 self._seeded_clipboard_sig = None
                 self._clipboard_externally_modified = False
                 self._partial_restore_in_progress = False
+                restore_resolved = True
                 return True
             except BaseException:
                 if emptied_by_us:
@@ -1949,11 +1959,18 @@ class Launched:
                     self._seeded_clipboard_sig = pre_close_sig
                     self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
                     self._partial_restore_in_progress = True
+                elif validated_partial_retry and not restore_resolved and cur_sig is not None:
+                    self._seeded_clipboard_sig = cur_sig
+                    self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
         finally:
-            if not partial_restore_failed and temp_owner_hwnd > 0 and hasattr(u32, "DestroyWindow"):
+            if created_temp_hwnd > 0 and hasattr(u32, "DestroyWindow"):
                 u32.DestroyWindow.argtypes = [ctypes.c_void_p]
                 u32.DestroyWindow.restype = ctypes.c_int
-                u32.DestroyWindow(temp_owner_hwnd)
+                u32.DestroyWindow(created_temp_hwnd)
+            if restore_resolved and retained_owner_hwnd > 0 and hasattr(u32, "DestroyWindow"):
+                u32.DestroyWindow.argtypes = [ctypes.c_void_p]
+                u32.DestroyWindow.restype = ctypes.c_int
+                u32.DestroyWindow(retained_owner_hwnd)
                 self._partial_restore_owner_hwnd = 0
 
     def _restore_saved_clipboard(self):

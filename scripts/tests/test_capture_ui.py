@@ -3916,6 +3916,7 @@ class WordRibbon(unittest.TestCase):
                 self._buffers = {}
                 self._open_hwnd = 0
                 self._clipboard_owner = 0
+                self.last_empty_owner = 0
                 self._seq = 1
                 self.window_pids = {5: 7, 50: 7}
                 self.delayed_formats = set()
@@ -4055,6 +4056,8 @@ class WordRibbon(unittest.TestCase):
             def _destroy_window(self, hwnd):
                 addr = hwnd.value if isinstance(hwnd, ctypes.c_void_p) else int(hwnd or 0)
                 self.destroyed_windows.append(addr)
+                if addr and self._clipboard_owner == addr:
+                    self._clipboard_owner = 0
                 return 1
 
             def _open_clipboard(self, hwnd):
@@ -4079,6 +4082,7 @@ class WordRibbon(unittest.TestCase):
                 if not self.empty_ok:
                     return 0
                 self._clipboard_owner = self._open_hwnd
+                self.last_empty_owner = self._open_hwnd
                 self.formats.clear()
                 self.data.clear()
                 self._seq += 1
@@ -4252,7 +4256,7 @@ class WordRibbon(unittest.TestCase):
             fake_w32.set_ok = True
             l_clip._restore_saved_clipboard()
             self.assertIsNone(l_clip._saved_clipboard)
-            self.assertGreater(fake_w32._clipboard_owner, 0)
+            self.assertGreater(fake_w32.last_empty_owner, 0)
             self.assertEqual(fake_w32.created_windows, fake_w32.destroyed_windows)
             self.assertEqual(fake_w32.formats, [13, 2, 14, 9, 3])
             h_text = fake_w32.data[13]
@@ -4338,7 +4342,22 @@ class WordRibbon(unittest.TestCase):
                 l_synth._restore_saved_clipboard()
             self.assertIsNotNone(l_synth._saved_clipboard)
             self.assertEqual(w32_synth.formats, [1, 16])
-            # Second restoration attempt succeeds and restores [1, 2, 16] with original bitmap and locale.
+            # Intervening attempt fails on OpenClipboard (clipboard locked by another window) and must not destroy
+            # the retained recovery owner window.
+            w32_synth.open_ok = False
+            with self.assertRaises(cu.Refused):
+                l_synth._restore_saved_clipboard()
+            self.assertIsNotNone(l_synth._saved_clipboard)
+            self.assertGreater(w32_synth._clipboard_owner, 0)
+            # Intervening attempt fails on EmptyClipboard and also preserves the retained recovery owner window.
+            w32_synth.open_ok = True
+            w32_synth.empty_ok = False
+            with self.assertRaises(cu.Refused):
+                l_synth._restore_saved_clipboard()
+            self.assertIsNotNone(l_synth._saved_clipboard)
+            self.assertGreater(w32_synth._clipboard_owner, 0)
+            # Final restoration attempt succeeds and restores [1, 2, 16] with original bitmap and locale.
+            w32_synth.empty_ok = True
             w32_synth.fail_set_formats.clear()
             l_synth._restore_saved_clipboard()
             self.assertIsNone(l_synth._saved_clipboard)
