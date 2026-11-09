@@ -554,6 +554,13 @@ class Win:
         if callable(hook):
             hook()
 
+    def close_window(self, hwnd):
+        """Post WM_CLOSE (0x0010) to a specific top-level window handle so only that window closes (prompting if dirty)."""
+        if not isinstance(hwnd, int) or isinstance(hwnd, bool) or hwnd == 0:
+            raise Refused("cannot close window without a bound top-level window handle")
+        if self.user32.IsWindow(hwnd) and not self.user32.PostMessageW(hwnd, 0x0010, 0, 0):
+            raise OSError(f"PostMessageW(WM_CLOSE) failed for hwnd {hwnd}")
+
 
 def profile_monitor(monitors):
     for m in monitors:
@@ -674,7 +681,8 @@ class Launched:
             raise Unsafe("Outlook is not started by the capture tool: starting it sends the Outbox; capture it "
                          "attended (D02 T01 §15)")
         self.proc, self.created, self._created_meta, self.owned, self.started = None, [], [], False, None
-        self.app, self.hwnd, self._cancelled = None, None, False
+        self.app, self.hwnd, self._owned_window_hwnd, self._cancelled = None, None, None, False
+        self.closed_window_hwnds = []
         self._marshaled_app, self.cleanup_errors = None, []
         if not separate:
             # One instance only: start the process ourselves, then use the app only if its window belongs to that
@@ -827,7 +835,54 @@ class Launched:
         name = str(getattr(doc, "Name", "") or "")
         if "." in name:
             return False
+        saved_after = getattr(doc, "Saved", True)
+        if saved_after is None or not bool(saved_after):
+            return False
         return True
+
+    @staticmethod
+    def _enumerate_collection(docs_col, count, app):
+        if count == 0:
+            return []
+        live = None
+        last_exc = None
+        if hasattr(docs_col, "Item"):
+            try:
+                live = [docs_col.Item(i) for i in range(1, count + 1)]
+            except Exception as exc1:
+                try:
+                    live = [docs_col.Item(i) for i in range(count)]
+                except Exception:
+                    last_exc = exc1
+        if live is None and hasattr(docs_col, "__iter__"):
+            try:
+                live = list(docs_col)
+            except Exception as exc2:
+                last_exc = last_exc or exc2
+        if live is None and last_exc is None and hasattr(app, "made"):
+            live = [d for d in app.made if not getattr(d, "closed", False)]
+        if live is None:
+            if last_exc is not None:
+                raise last_exc
+            raise RuntimeError(f"collection of {count} document(s) is not enumerable")
+        return live
+
+    def _post_close_owned_window(self):
+        hwnd = getattr(self, "_owned_window_hwnd", None) or getattr(self, "hwnd", None)
+        if not isinstance(hwnd, int) or isinstance(hwnd, bool) or hwnd == 0:
+            raise Refused(f"the {self.exe} window handle is not bound, so target-bound window close was refused")
+        win = Win()
+        close_fn = getattr(win, "close_window", None)
+        if callable(close_fn):
+            close_fn(hwnd)
+        elif hasattr(win, "user32"):
+            if win.user32.IsWindow(hwnd) and not win.user32.PostMessageW(hwnd, 0x0010, 0, 0):
+                raise OSError(f"PostMessageW(WM_CLOSE) failed for hwnd {hwnd}")
+        else:
+            raise Refused(f"Win() exposes no close_window method for {self.exe} hwnd {hwnd}")
+        if not hasattr(self, "closed_window_hwnds") or self.closed_window_hwnds is None:
+            self.closed_window_hwnds = []
+        self.closed_window_hwnds.append(hwnd)
 
     def _emergency_close_com(self, target_tid=None):
         import gc
@@ -838,6 +893,7 @@ class Launched:
             failures.append(f"could not unmarshal {self.exe} application proxy for emergency cleanup")
             return failures
         docs, docs_col, count = None, None, None
+        post_docs, post_count = None, None
         owned_docs = None
         to_close = []
         enum_failed = False
@@ -849,30 +905,7 @@ class Launched:
                 owned_docs = self._unmarshal_docs(target_tid=target_tid)
                 docs_col = self._documents_of(app)
                 count = int(docs_col.Count)
-                if count == 0:
-                    docs = []
-                else:
-                    docs = None
-                    last_exc = None
-                    if hasattr(docs_col, "Item"):
-                        try:
-                            docs = [docs_col.Item(i) for i in range(1, count + 1)]
-                        except Exception as exc1:
-                            try:
-                                docs = [docs_col.Item(i) for i in range(count)]
-                            except Exception:
-                                last_exc = exc1
-                    if docs is None and hasattr(docs_col, "__iter__"):
-                        try:
-                            docs = list(docs_col)
-                        except Exception as exc2:
-                            last_exc = last_exc or exc2
-                    if docs is None and last_exc is None and hasattr(app, "made"):
-                        docs = [d for d in app.made if not getattr(d, "closed", False)]
-                    if docs is None:
-                        if last_exc is not None:
-                            raise last_exc
-                        raise RuntimeError(f"collection of {count} document(s) is not enumerable")
+                docs = self._enumerate_collection(docs_col, count, app)
             except Exception as exc:
                 enum_failed = True
                 failures.append(f"enumerate documents failed ({type(exc).__name__}: {exc})")
@@ -920,12 +953,44 @@ class Launched:
                     unowned_count += sum(1 for d in docs if not getattr(d, "closed", False))
                 if self.key == "powerpoint":
                     # PowerPoint's Presentation.Close() and DocumentWindow.Close() discard unsaved changes without
-                    # prompting, whereas Application.Quit() prompts when a presentation is dirty and exits cleanly
-                    # when only our unmodified blank presentation is open and all COM references are released.
-                    if unowned_count == 0 and not failures and all(self._is_unmodified_blank_doc(d) for d in to_close):
+                    # prompting, and Application.Quit() closes unrelated saved presentations without prompting.
+                    # Re-verify the Presentations collection after property reads and close only the bound top-level
+                    # PPTFrameClass window via WM_CLOSE after releasing COM references.
+                    all_clean = (
+                        unowned_count == 0
+                        and not failures
+                        and bool(to_close)
+                        and all(self._is_unmodified_blank_doc(d) for d in to_close)
+                    )
+                    if all_clean:
+                        try:
+                            post_count = int(docs_col.Count)
+                            post_docs = self._enumerate_collection(docs_col, post_count, app)
+                        except Exception as exc:
+                            enum_failed = True
+                            failures.append(f"enumerate documents failed ({type(exc).__name__}: {exc})")
+                            post_count, post_docs = count, []
+                        if not enum_failed:
+                            if post_count != len(to_close) or len(post_docs) != len(to_close):
+                                unowned_count += max(1, abs(post_count - len(to_close)), abs(len(post_docs) - len(to_close)))
+                            else:
+                                post_matched = set()
+                                for d in post_docs:
+                                    if getattr(d, "closed", False):
+                                        unowned_count += 1
+                                        continue
+                                    m_doc = next(
+                                        (tc for tc in to_close if id(tc) not in post_matched and self._same_doc(d, tc)),
+                                        None,
+                                    )
+                                    if m_doc is None:
+                                        unowned_count += 1
+                                    else:
+                                        post_matched.add(id(m_doc))
+                    if all_clean and not enum_failed and unowned_count == 0 and not failures:
                         remaining = 0
                     else:
-                        remaining = max(count or 0, len(to_close) + unowned_count, 1)
+                        remaining = max(count or 0, post_count or 0, len(to_close) + unowned_count, 1)
                 else:
                     for doc in to_close:
                         if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
@@ -947,16 +1012,26 @@ class Launched:
                         f"the {self.exe} instance holds {still_open} document(s) this tool did not create, so it was left running"
                     )
         finally:
+            d = None
+            m_doc = None
             doc = None
             docs = None
+            post_docs = None
             docs_col = None
             owned_docs = None
             to_close = None
             can_quit = (not enum_failed) and (not failures) and (remaining == 0) and (unowned_count == 0)
             try:
                 if can_quit:
-                    app.Quit()
-                    quitted = True
+                    if self.key == "powerpoint":
+                        app = None
+                        self.created, self._created_meta, self.app = [], [], None
+                        gc.collect()
+                        self._post_close_owned_window()
+                        quitted = True
+                    else:
+                        app.Quit()
+                        quitted = True
             except Exception as exc:
                 failures.append(f"quit failed ({type(exc).__name__}: {exc})")
             finally:
@@ -1011,6 +1086,8 @@ class Launched:
                 wh = self.window_handle()
                 if wh is not None:
                     self.hwnd = Win().top(wh)
+                    if self._owned_window_hwnd is None:
+                        self._owned_window_hwnd = self.hwnd
             except Exception:
                 pass
         if self.proc is None and self.hwnd is not None:
@@ -1062,6 +1139,7 @@ class Launched:
             wh = self.window_handle()
             if wh is not None:
                 self.hwnd = Win().top(wh)
+                self._owned_window_hwnd = self.hwnd
             if self.proc is None and self.hwnd is not None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
             if getattr(self, "_cancelled", False):
@@ -1296,31 +1374,13 @@ class Launched:
         total = self.open_documents()
         open_created = [d for d in self.created if not getattr(d, "closed", False)]
         if total != len(open_created):
-            return max(1, total - len(open_created))
+            return max(1, abs(total - len(open_created)))
         if total == 0:
             return 0
         docs_col = self.documents()
-        live = None
-        last_exc = None
-        if hasattr(docs_col, "Item"):
-            try:
-                live = [docs_col.Item(i) for i in range(1, total + 1)]
-            except Exception as exc1:
-                try:
-                    live = [docs_col.Item(i) for i in range(total)]
-                except Exception:
-                    last_exc = exc1
-        if live is None and hasattr(docs_col, "__iter__"):
-            try:
-                live = list(docs_col)
-            except Exception as exc2:
-                last_exc = last_exc or exc2
-        if live is None and last_exc is None and hasattr(self.app, "made"):
-            live = [d for d in self.app.made if not getattr(d, "closed", False)]
-        if live is None:
-            if last_exc is not None:
-                raise last_exc
-            raise RuntimeError(f"collection of {total} document(s) is not enumerable")
+        live = self._enumerate_collection(docs_col, total, self.app)
+        post_live = None
+        m_doc = None
         try:
             if len(live) != len(open_created):
                 return max(1, abs(len(live) - len(open_created)))
@@ -1344,12 +1404,40 @@ class Launched:
                         raise Refused(f"the {self.exe} document this tool created changed identity")
                 if not self._is_unmodified_blank_doc(match):
                     raise Refused(f"the {self.exe} document has unsaved changes or a file path")
+            post_total = self.open_documents()
+            if post_total != len(open_created):
+                return max(1, abs(post_total - len(open_created)))
+            post_live = self._enumerate_collection(docs_col, post_total, self.app)
+            if len(post_live) != len(open_created):
+                return max(1, abs(len(post_live) - len(open_created)))
+            post_matched = set()
+            for d in post_live:
+                if getattr(d, "closed", False):
+                    return 1
+                m_doc = next(
+                    (c for c in open_created if id(c) not in post_matched and self._same_doc(d, c)),
+                    None,
+                )
+                if m_doc is None:
+                    return 1
+                post_matched.add(id(m_doc))
+            owned_hwnd = getattr(self, "_owned_window_hwnd", None) or getattr(self, "hwnd", None)
+            if isinstance(owned_hwnd, int) and not isinstance(owned_hwnd, bool) and owned_hwnd != 0:
+                try:
+                    cur_wh = self.window_handle()
+                except Exception:
+                    cur_wh = None
+                if isinstance(cur_wh, int) and not isinstance(cur_wh, bool) and cur_wh != 0:
+                    if Win().top(cur_wh) != owned_hwnd:
+                        return 1
             return 0
         finally:
             d = None
+            m_doc = None
             match = None
             created_doc = None
             live = None
+            post_live = None
             docs_col = None
             open_created = None
 
@@ -1388,7 +1476,17 @@ class Launched:
                     failure = f"{type(exc).__name__}: {exc}"
             try:
                 if others == 0:
-                    self.app.Quit()
+                    if self.key == "powerpoint":
+                        import gc
+                        self.created, self._created_meta, self.document_refs, self.app = [], [], None, None
+                        gc.collect()
+                        try:
+                            self._post_close_owned_window()
+                        except Exception as exc:
+                            others = None
+                            failure = f"{type(exc).__name__}: {exc}"
+                    else:
+                        self.app.Quit()
             finally:
                 if others == 0:
                     # Excel and PowerPoint stay alive while a COM reference to them is held, so every one is

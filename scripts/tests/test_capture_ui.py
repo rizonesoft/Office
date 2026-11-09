@@ -552,15 +552,17 @@ class Launch(unittest.TestCase):
             self.assertEqual(quiet.made[0].close_args, [((), {})])
             self.assertNotIn("Saved", quiet.made[0].__dict__)
         quiet_ppt = FakeApp(count=0)
-        self.launched(quiet_ppt, key="powerpoint").close()
-        self.assertTrue(quiet_ppt.quit)
-        self.assertEqual(quiet_ppt.quit_args, [((), {})])
+        launched_quiet_ppt = self.launched(quiet_ppt, key="powerpoint")
+        launched_quiet_ppt.close()
+        self.assertFalse(quiet_ppt.quit)
+        self.assertEqual(quiet_ppt.quit_args, [])
         self.assertEqual(quiet_ppt.made[0].close_args, [])
         self.assertFalse(quiet_ppt.made[0].closed)
+        self.assertEqual(launched_quiet_ppt.closed_window_hwnds, [5])
         self.assertNotIn("Saved", quiet_ppt.made[0].__dict__)
         # If an intervening edit flips Saved=False AFTER the initial Saved inspection succeeds (on the Name read at the
         # end of _is_unmodified_blank_doc, after Saved was already read as True), or during _release_marshaled_app,
-        # neither doc.Close() nor app.Quit() discards work on either normal or emergency cleanup.
+        # neither doc.Close() nor app.Quit() nor WM_CLOSE discards work on either normal or emergency cleanup.
         for key in ("word", "excel", "powerpoint", "visio"):
             interleaved = FakeApp(count=0)
             interleaved.Hwnd = 5
@@ -613,6 +615,7 @@ class Launch(unittest.TestCase):
             self.assertTrue(errs)
             self.assertFalse(doc.closed)
             self.assertFalse(interleaved.quit)
+            self.assertEqual(launched_interleaved.closed_window_hwnds, [])
 
             wrapped._saved = True
             doc.Saved = True
@@ -624,10 +627,11 @@ class Launch(unittest.TestCase):
             self.assertTrue(wrapped.inspected_clean)
             self.assertFalse(doc.closed)
             self.assertFalse(interleaved.quit)
+            self.assertEqual(launched_interleaved.closed_window_hwnds, [])
 
         # If a foreign presentation is opened or the owned presentation becomes dirty in PowerPoint during
-        # _release_marshaled_app, or if PowerPoint's Presentations collection cannot be enumerated, cleanup refuses
-        # and never calls Quit().
+        # _release_marshaled_app, or during the final Saved/property verification itself, or if PowerPoint's
+        # Presentations collection cannot be enumerated, cleanup refuses without closing any window or calling Quit().
         ppt_late_dirty = FakeApp(count=0)
         launched_late_dirty = self.launched(ppt_late_dirty, key="powerpoint")
         orig_dirty_release = launched_late_dirty._release_marshaled_app
@@ -641,6 +645,7 @@ class Launch(unittest.TestCase):
             launched_late_dirty.close()
         self.assertFalse(ppt_late_dirty.made[0].closed)
         self.assertFalse(ppt_late_dirty.quit)
+        self.assertEqual(launched_late_dirty.closed_window_hwnds, [])
 
         ppt_late_foreign = FakeApp(count=0)
         launched_late_foreign = self.launched(ppt_late_foreign, key="powerpoint")
@@ -654,6 +659,61 @@ class Launch(unittest.TestCase):
         with self.assertRaises(cu.Refused):
             launched_late_foreign.close()
         self.assertFalse(ppt_late_foreign.quit)
+        self.assertEqual(launched_late_foreign.closed_window_hwnds, [])
+
+        # Injecting a foreign saved presentation DURING the final Saved read in close() or _emergency_close_com()
+        # is detected by the post-property-read collection re-check and refuses without closing any window or quitting.
+        for inject_at_saved_read in (4, 8):
+            ppt_saved_race = FakeApp(count=0)
+            launched_saved_race = self.launched(ppt_saved_race, key="powerpoint")
+            base_doc = ppt_saved_race.made[0]
+
+            class ForeignDuringSavedReadDoc:
+                def __init__(self, inner, app_ref, trigger_read):
+                    self._inner = inner
+                    self._app = app_ref
+                    self._trigger = trigger_read
+                    self.Path = ""
+                    self.FullName = "Presentation1"
+                    self.Name = "Presentation1"
+                    self.closed = False
+                    self.close_args = inner.close_args
+                    self.saved_reads = 0
+                    self.injected = False
+
+                @property
+                def Saved(self):
+                    self.saved_reads += 1
+                    if self.saved_reads >= self._trigger and not self.injected:
+                        self.injected = True
+                        foreign = self._app.Presentations.Add()
+                        foreign.Saved = -1
+                        foreign.Name = "ForeignSaved"
+                        foreign.FullName = "C:\\Work\\ForeignSaved.pptx"
+                        foreign.Path = "C:\\Work"
+                    return -1
+
+                def Close(self, *args, **kwargs):
+                    return self._inner.Close(*args, **kwargs)
+
+            race_doc = ForeignDuringSavedReadDoc(base_doc, ppt_saved_race, inject_at_saved_read)
+            ppt_saved_race.made = [race_doc]
+            launched_saved_race.created = [race_doc]
+            launched_saved_race._created_meta = [{"name": "Presentation1", "full_name": "Presentation1"}]
+            launched_saved_race._marshal_app(ppt_saved_race)
+            launched_saved_race._marshaled_docs = [("direct", race_doc, None)]
+            if inject_at_saved_read == 4:
+                race_errs = launched_saved_race._emergency_close_com()
+                self.assertTrue(race_doc.injected)
+                self.assertTrue(race_errs)
+                self.assertFalse(ppt_saved_race.quit)
+                self.assertEqual(launched_saved_race.closed_window_hwnds, [])
+            else:
+                with self.assertRaises(cu.Refused):
+                    launched_saved_race.close()
+                self.assertTrue(race_doc.injected)
+                self.assertFalse(ppt_saved_race.quit)
+                self.assertEqual(launched_saved_race.closed_window_hwnds, [])
 
         ppt_unenumerable = FakeApp(count=0)
         launched_unenumerable = self.launched(ppt_unenumerable, key="powerpoint")
@@ -671,6 +731,7 @@ class Launch(unittest.TestCase):
         with self.assertRaises(cu.Refused):
             launched_unenumerable.close()
         self.assertFalse(ppt_unenumerable.quit)
+        self.assertEqual(launched_unenumerable.closed_window_hwnds, [])
 
     def test_core_tabs_come_from_the_baseline(self):
         self.assertIn("TabHome", cu.baseline_core_tabs("word"))
