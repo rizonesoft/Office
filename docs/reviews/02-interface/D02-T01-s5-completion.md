@@ -57,3 +57,29 @@ OVERALL: needs-attention
 
 1. `extend`: Extended `D02 T01 §5` checklist items 2, 4 and 6 so `scripts/capture-ui.py` prepares document and session state before expanding state-dependent ribbon menus (including creating a scratch mail-merge recipient CSV `R:\scratch\fixtures\word-recipients.csv` and attaching it via `MailMerge.OpenDataSource` when capturing `Mailings` so merge-dependent menus such as `Insert Merge Field`, `Rules`, `Finish & Merge` and `Start Mail Merge` expand, and seeding selection/clipboard/citation/comment/revision/table state where needed), reconciles any expandable controls that genuinely expose no child items in Word inside `design/inventory/REFERENCE.md`, and requires `validate_word_ribbon(records)` to verify merge-dependent `Mailings` menu expansions (`Insert Merge Field`, `Rules`, `Finish & Merge`) and fail on any unreconciled empty expandable menu/splitButton/gallery or expansion failure note (`capture-ui: expand failed to open a popup`).
 2. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so `scripts/capture-ui.py` and `validate_word_ribbon(records)` enforce KeyTip completeness across all 11 built-in `tab` records, all 10 `contextualTab` records, and every top-level `control` record: distinguishing controls that genuinely expose no UIA `CurrentAccessKey` in Word (reconciled explicitly in `design/inventory/REFERENCE.md` and `validate_word_ribbon`'s allowlist) from failed/missing KeyTip reads, verifying known tab and control KeyTips (`Home` `H`, `Insert` `N`, `Table Design` `JT`, `Bold` `1`), and adding deletion unit tests in `scripts/tests/test_capture_ui.py` proving that removing tab or control `keytip` values fails validation.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T11:15:19Z
+- Effort: medium
+- Type: adversarial
+- Lines: 11
+- Digest: 71fddf5ee9528885
+
+SECTION: D02 T01 §5
+PURPOSE: completion
+CONTRACT: sha256:55bbb8be8e450db51d6efa24ca1f0e8399da74e5a9ed374c5ecab3d4c5ebfb63
+
+1. **P2 | extend: Preserve command availability and selection states.** [TODO-01-parity-inventory.md:206](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:206) prepares state to open menus, but does not require recording the conditions that enable commands or determine checked and mixed states. The validator specified at line 208 accepts an inventory without that information; the current record builder also omits it ([capture-ui.py:141](D:/GitHub/Office/scripts/capture-ui.py:141)). For example, captures of Bold with plain, bold and mixed-format selections can produce indistinguishable records, leaving the consumer without the observed state rules. D02 T02 §4 owns the shared command-state model and visual states, but does not own measuring these per-command conditions. Extend this section to record relevant state conditions and observed results, in structured fields or explicit behaviour descriptions, with representative state-change checks.
+
+2. **P2 | extend: Include expanded-menu KeyTips in completeness validation.** [TODO-01-parity-inventory.md:208](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:208) explicitly limits KeyTip checks to tabs and top-level controls. Removing every `keytip` from the recursively captured `menuItem` records would satisfy that contract, leaving keyboard routes through nested menus undocumented. D02 T01 §17 owns shortcut chords, while D02 T02 §4 consumes inventory sequences for Alt navigation; neither owns recovering these missing menu KeyTips. Require capture and validation of exposed KeyTips throughout expanded menus, reconcile genuine absences, and add a deletion test for a nested menu item's KeyTip.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Dispositions
+
+1. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so every `control` and `menuItem` `behaviour` sentence records its observed enablement precondition and (for `toggleButton`, `checkBox`, `radioButton`, `gallery` and stateful `menuItem` records) its checked/selected/mixed selection-state rules observed across representative document states (for example plain, bold and mixed-format selections for `Bold`, table/object selection for contextual commands, and attached recipient source for `Mailings` merge commands), and `validate_word_ribbon(records)` verifies representative enablement and toggle/checked/mixed state descriptions with mutation unit tests in `scripts/tests/test_capture_ui.py`.
+2. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so `scripts/capture-ui.py` and `validate_word_ribbon(records)` also enforce `keytip` capture and validation across expanded `menuItem` and nested submenu records (reconciling `menuItem` records such as `galleryItem` or unkeyed entries that genuinely expose no UIA `CurrentAccessKey` in Word inside `design/inventory/REFERENCE.md`), with deletion unit tests in `scripts/tests/test_capture_ui.py` covering nested `menuItem` `keytip` values alongside tab and top-level control `keytip` values.
