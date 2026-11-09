@@ -83,3 +83,26 @@ OVERALL: needs-attention
 
 1. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so every `control` and `menuItem` `behaviour` sentence records its observed enablement precondition and (for `toggleButton`, `checkBox`, `radioButton`, `gallery` and stateful `menuItem` records) its checked/selected/mixed selection-state rules observed across representative document states (for example plain, bold and mixed-format selections for `Bold`, table/object selection for contextual commands, and attached recipient source for `Mailings` merge commands), and `validate_word_ribbon(records)` verifies representative enablement and toggle/checked/mixed state descriptions with mutation unit tests in `scripts/tests/test_capture_ui.py`.
 2. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so `scripts/capture-ui.py` and `validate_word_ribbon(records)` also enforce `keytip` capture and validation across expanded `menuItem` and nested submenu records (reconciling `menuItem` records such as `galleryItem` or unkeyed entries that genuinely expose no UIA `CurrentAccessKey` in Word inside `design/inventory/REFERENCE.md`), with deletion unit tests in `scripts/tests/test_capture_ui.py` covering nested `menuItem` `keytip` values alongside tab and top-level control `keytip` values.
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T11:20:10Z
+- Effort: medium
+- Type: adversarial
+- Lines: 9
+- Digest: 9162aa3fee0115e2
+
+SECTION: D02 T01 §5
+PURPOSE: completion
+CONTRACT: sha256:0731bb8afe173380badd93019ba33771f8fc1b833e88e83ad3c66f3854596c15
+
+1. **P2 | extend: Additional built-in ribbon contexts have no capture owner.** The fixed list at [TODO-01-parity-inventory.md:205](/D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:205) omits baseline tabs including [Graphics Format](/D:/GitHub/Office/design/inventory/word/baseline.json:3954), [3D Model Format](/D:/GitHub/Office/design/inventory/word/baseline.json:4082), [Outlining](/D:/GitHub/Office/design/inventory/word/baseline.json:1054) and [Background Removal](/D:/GitHub/Office/design/inventory/word/baseline.json:1126). Selecting an SVG or entering background-removal mode is outside the prescribed fixture triggers, so building exactly this plan can omit those command surfaces while satisfying `11 10`. Their availability in the reference build is neither established nor reconciled. §6 owns dialogs and panes; §18 detects missing baseline identifiers but does not capture these tabs. Extend §5 to reconcile all baseline ribbon tabs against their triggering states, capture each available tab with its descendants, and record evidence for unavailable or superseded tabs. Make validation require that reconciled set, with deletion tests for additional contexts.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Dispositions
+
+1. `extend`: Extended `D02 T01 §5` intro, checklist items 2, 3, 6 and 9, and the test checkpoint to reconcile all 20 `coreTab` and 23 `contextualTab` tab rows in `design/inventory/word/baseline.json` (while `placement == "backstage"` tabs belong to `D02 T01 §6`): extending `R:\scratch\fixtures\word-contextual.docx` and `scripts/capture-ui.py` to trigger and capture every additional built-in mode and object ribbon tab available in Word `16.0.20527.20150` (`TabGraphicsToolsFormat` via an SVG graphic, `Tab3DModelToolsFormat` via a 3D model, `TabOutlining` via Outline view, `TabBackgroundRemoval` via picture background-removal mode, `TabLearningTools` via Immersive Reader, and any other triggerable baseline tab) with its groups, controls and `behaviour`, recording documented evidence in `design/inventory/REFERENCE.md` for every superseded legacy `.doc` or unavailable/cloud-only baseline tab (`TabChartToolsDesign`, `TabChartToolsLayout`, `TabChartToolsFormat`, `TabDrawingToolsFormatClassic`, `TabPictureToolsFormatClassic`, `TabTextBoxToolsFormat`, `TabWordArtToolsFormat`, `TabDiagramToolsFormatClassic`, `TabOrganizationChartToolsFormat`, `TabInkToolsPens`, `TabAddIns`, `TabSyntex`, `TabConflicts`, `TabBroadcastPresentation`, `TabBlogPost`, `TabBlogInsert`, `TabPrintPreview`), and requiring `validate_word_ribbon(records)` to verify that the union of captured tab/contextualTab `idMso`s and the reconciled unavailable/superseded baseline set equals the full baseline `coreTab` + `contextualTab` set, with deletion unit tests in `scripts/tests/test_capture_ui.py` covering the additional contexts.
