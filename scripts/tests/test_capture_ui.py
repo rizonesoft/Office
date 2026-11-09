@@ -336,8 +336,11 @@ class FakeApp:
                 self.closed = True
                 app.count -= 1
 
-        self.Presentations = self.Documents = Docs()
+        self.Projects = self.Presentations = self.Documents = Docs()
         self.Visible = False
+
+    def FileNew(self):
+        return self.Projects.Add()
 
     def Quit(self, SaveChanges=None):
         self.quit = True
@@ -385,13 +388,27 @@ class Launch(unittest.TestCase):
         self.assertEqual((app.count, app.quit, app.made), (0, False, []))
 
     def test_project_is_refused_until_ownership_can_be_proven(self):
-        real = cu.Launched.running
+        real = cu.Launched.running, cu.Win, cu.wait_for
         cu.Launched.running = staticmethod(lambda exe: False)
+        cu.Win = lambda: type("W", (), {"top": lambda self, h: h, "main_window": lambda self, pid, cls=None: None})()
+        cu.wait_for = lambda fn, seconds=0, step=0: fn()
         try:
+            windowless_proj = FakeApp(count=0)
             with self.assertRaises(cu.Unsafe):
-                cu.Launched("project", dispatch=lambda progid: self.fail("dispatched"), starter=lambda exe: 7)
+                cu.Launched(
+                    "project",
+                    dispatch=lambda progid: windowless_proj,
+                    starter=lambda exe: 7,
+                    owner=lambda hwnd, exe: Proc(7),
+                )
+            self.assertEqual((windowless_proj.count, windowless_proj.quit, windowless_proj.made), (0, False, []))
+            owned_proj = FakeApp(count=0)
+            launched_proj = self.launched(owned_proj, key="project", started=7, window_pid=7)
+            self.assertEqual(len(owned_proj.made), 1)
+            launched_proj.close()
+            self.assertEqual((owned_proj.made[0].closed, owned_proj.quit, owned_proj.count), (True, True, 0))
         finally:
-            cu.Launched.running = real
+            cu.Launched.running, cu.Win, cu.wait_for = real
 
     def test_an_instance_whose_documents_cannot_be_counted_is_left_running(self):
         app = FakeApp(count=0)
@@ -2031,6 +2048,13 @@ class ShellChrome(unittest.TestCase):
         with self.assertRaises(cu.Refused):
             cu.validate_shell_chrome(wrong_ident)
 
+        # Non-string or blank behaviour/label/source (such as None, 123, [] or "") is refused.
+        for bad_val in (None, 123, [], "   "):
+            bad_beh = [dict(r) for r in base]
+            bad_beh[0]["behaviour"] = bad_val
+            with self.assertRaises(cu.Refused):
+                cu.validate_shell_chrome(bad_beh)
+
     def test_main_shell_writes_and_merges_valid_inventory(self):
         real_ib, real_rb, real_sleep = cu.installed_build, cu.reference_build, cu.time.sleep
         cu.installed_build = lambda: BUILD
@@ -2557,7 +2581,8 @@ class ShellChrome(unittest.TestCase):
                         orig_base_kt(False)
                     if status_lbl[0] in rebuilt_base_root.kids:
                         rebuilt_base_root.kids.remove(status_lbl[0])
-                    status_lbl[0] = E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
+                    new_text = "Page 1 of 1" if active else "Page 1 of 2"
+                    status_lbl[0] = E("Button", new_text, "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
                     rebuilt_base_root.kids.append(status_lbl[0])
 
                 rebuilt_base_root.on_keytips = _rebuilt_baseline_on_open_and_dismiss

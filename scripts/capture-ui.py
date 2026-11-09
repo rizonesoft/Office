@@ -682,9 +682,6 @@ class Launched:
             if self.running(exe):
                 raise Unsafe(f"{exe} is running and allows one instance only, so the tool would drive the operator's "
                              f"own window; close {exe} first")
-            if key == "project":
-                raise Unsafe("Project shows no window before a project exists, so ownership cannot be proven before "
-                             "the tool creates one; its capture is built in D02 T01 §13")
             self.started = (starter or start_process)(exe)
         self._apartment = _Apartment(
             daemon=True,
@@ -924,6 +921,11 @@ class Launched:
                             doc.Close(SaveChanges=0)
                         elif self.key == "excel":
                             doc.Close(SaveChanges=False)
+                        elif self.key == "project" and not hasattr(doc, "Close"):
+                            if hasattr(app, "FileCloseEx"):
+                                app.FileCloseEx(0)
+                            else:
+                                app.FileClose(0)
                         else:
                             doc.Saved = True
                             doc.Close()
@@ -1021,14 +1023,21 @@ class Launched:
             dispatch = win32com.client.DispatchEx if separate else win32com.client.Dispatch
         self.app = dispatch(progid)
         if self.started is not None:
-            proc = (owner or OwnProcess)(Win().top(self.window_handle()), exe)
+            wh = self.window_handle()
+            if not isinstance(wh, int) or isinstance(wh, bool) or wh == 0:
+                self.app = None
+                raise Unsafe(f"{exe} shows no window for process {self.started}, so ownership cannot be proven")
+            proc = (owner or OwnProcess)(Win().top(wh), exe)
             if proc.pid != self.started:
                 proc.close()
                 self.app = None
                 raise Unsafe(f"the {exe} window belongs to process {proc.pid}, not the one this tool started")
             self.proc = proc
-        elif self.open_documents():
+        if self.open_documents():
             # Dispatch handed back an instance that already holds documents: someone else's. Touch nothing.
+            if self.proc is not None:
+                self.proc.close()
+                self.proc = None
             self.app = None
             raise Unsafe(f"{exe} already holds documents, so it is not an instance this tool started")
         self.owned = True
@@ -1157,34 +1166,51 @@ class Launched:
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
                               "ribbon acts on someone else's")
 
+    def _new_project(self):
+        res = self.app.FileNew()
+        if res is None or isinstance(res, bool):
+            try:
+                proj = getattr(self.app, "ActiveProject", None)
+                if proj is not None:
+                    return proj
+            except Exception:
+                pass
+            try:
+                projs = self.documents()
+                if int(projs.Count) >= 1 and hasattr(projs, "Item"):
+                    return projs.Item(1)
+            except Exception:
+                pass
+        return res
+
     def new_document(self):
         return {"word": lambda: self.app.Documents.Add(), "excel": lambda: self.app.Workbooks.Add(),
                 "powerpoint": lambda: self.app.Presentations.Add(), "visio": lambda: self.app.Documents.Add(""),
-                "project": lambda: self.app.FileNew()}[self.key]()
+                "project": self._new_project}[self.key]()
 
     def window_handle(self):
-        if self.key == "powerpoint":
-            try:
-                raw = getattr(self.app, "HWND", None)
-            except Exception:
-                raw = None
-            if isinstance(raw, int) and not isinstance(raw, bool):
-                return raw
+        if self.key in ("powerpoint", "project"):
+            win_cls = "PPTFrameClass" if self.key == "powerpoint" else "JWinproj-WhimperMainClass"
             try:
                 aw = getattr(self.app, "ActiveWindow", None)
-                aw_hwnd = getattr(aw, "HWND", None) if aw is not None else None
+                aw_hwnd = (getattr(aw, "Hwnd", None) or getattr(aw, "HWND", None)) if aw is not None else None
             except Exception:
                 aw_hwnd = None
-            if isinstance(aw_hwnd, int) and not isinstance(aw_hwnd, bool):
+            if isinstance(aw_hwnd, int) and not isinstance(aw_hwnd, bool) and aw_hwnd != 0:
                 return aw_hwnd
+            try:
+                raw = getattr(self.app, "HWND", None) or getattr(self.app, "Hwnd", None)
+            except Exception:
+                raw = None
+            if isinstance(raw, int) and not isinstance(raw, bool) and raw != 0:
+                return raw
             if self.started is not None:
-                found = wait_for(lambda: Win().main_window(self.started, "PPTFrameClass"), seconds=10.0)
+                found = wait_for(lambda: Win().main_window(self.started, win_cls), seconds=10.0)
                 if found is not None:
                     return found
-            return raw
+            return aw_hwnd if aw_hwnd is not None else raw
         return {"word": lambda: self.app.ActiveWindow.Hwnd, "excel": lambda: self.app.Hwnd,
-                "visio": lambda: self.app.WindowHandle32,
-                "project": lambda: self.app.ActiveWindow.Hwnd}[self.key]()
+                "visio": lambda: self.app.WindowHandle32}[self.key]()
 
     def language(self):
         return self._call_com(self._language_impl)
@@ -1228,6 +1254,11 @@ class Launched:
                     doc.Close(SaveChanges=0)
                 elif self.key == "excel":
                     doc.Close(SaveChanges=False)
+                elif self.key == "project" and not hasattr(doc, "Close"):
+                    if hasattr(self.app, "FileCloseEx"):
+                        self.app.FileCloseEx(0)
+                    else:
+                        self.app.FileClose(0)
                 else:
                     doc.Saved = True
                     doc.Close()
@@ -1268,7 +1299,18 @@ def start_process(exe):
     with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Office\ClickToRun\Configuration") as key:
         root = winreg.QueryValueEx(key, "InstallationPath")[0]
     child = subprocess.Popen([str(Path(root) / "root" / "Office16" / exe)])
-    time.sleep(8)  # the program registers its COM server once it is up
+    if exe.upper() == "WINPROJ.EXE":
+        win = Win()
+        for _ in range(16):
+            time.sleep(0.5)
+            dlg = win.main_window(child.pid, "#32770")
+            if dlg:
+                win.user32.PostMessageW(dlg, 0x0100, 0x0D, 0)  # VK_RETURN to dismiss startup separator notice
+                win.user32.PostMessageW(dlg, 0x0101, 0x0D, 0)
+            if win.main_window(child.pid, "JWinproj-WhimperMainClass"):
+                break
+    else:
+        time.sleep(8)  # the program registers its COM server once it is up
     return child.pid
 
 
@@ -2158,13 +2200,15 @@ def validate_shell_chrome(records):
         if rid in by_id:
             raise Refused(f"duplicate shell record id {rid!r}")
         by_id[rid] = rec
-        if not str(rec.get("behaviour", "")).strip():
+        if not isinstance(rec.get("label"), str) or not rec["label"].strip():
+            raise Refused(f"shell record {rid!r} is missing a non-blank string label")
+        if not isinstance(rec.get("behaviour"), str) or not rec["behaviour"].strip():
             raise Refused(f"shell record {rid!r} is missing a non-blank behaviour sentence")
-        if not str(rec.get("source", "")).strip():
+        if not isinstance(rec.get("source"), str) or not rec["source"].strip():
             raise Refused(f"shell record {rid!r} is missing source")
-        if rec.get("label") and _NO_CONTROL_RE.search(str(rec["label"])):
+        if _NO_CONTROL_RE.search(rec["label"]):
             raise Refused(f"shell record {rid!r} label contains control or bidi characters")
-        if _EMAIL_RE.search(str(rec.get("label", ""))) or _EMAIL_RE.search(str(rec.get("behaviour", ""))):
+        if _EMAIL_RE.search(rec["label"]) or _EMAIL_RE.search(rec["behaviour"]):
             raise Refused(f"shell record {rid!r} contains an unsanitised email address")
 
     spec_by_id = {item["id"]: item for item in _SHELL_SPEC}
@@ -2910,10 +2954,6 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                         still_open = True
                         break
                 elif cur_vrect != prev_vrect:
-                    still_open = True
-                    break
-            elif eid not in before_state:
-                if sig_excess or key_excess:
                     still_open = True
                     break
             elif (sig in opened_sigs and sig_excess) or (key in opened_keys and key_excess):
