@@ -826,3 +826,45 @@ OVERALL: needs-attention
 ### Round 17 disposition
 
 - **Finding 1 (P1, non-TxF fallback loses concurrent saves during publication and rollback):** Fixed at the owning layer (`scripts/lib/office_com.py`: `_non_txf_replace`, `_non_txf_unlink`, `_non_txf_restore`, and `_posix_rename_over`). On non-TxF volumes (`_NO_TXF_ERRORS`), all three operations now acquire a per-destination named kernel mutex (`CreateMutexW`) and open `h_lock` on `dst` via `CreateFileW` without `FILE_SHARE_WRITE` before reading (`ReadFile`), holding `h_lock` open across content verification, `on_enlisted(dst)`, `CreateHardLinkW`, and `SetFileInformationByHandle` (`FileRenameInfoEx` with `FILE_RENAME_FLAG_REPLACE_IF_EXISTS | FILE_RENAME_FLAG_POSIX_SEMANTICS` for replace/restore, and `FileDispositionInfo` for unlink) before closing `h_lock` in `finally:`. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
+
+## Round 18: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T01:44:17Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 1e554ce911489664
+
+## adversarial: needs-attention
+
+1. **[P2] Unicode output paths can rename over the wrong file.** `scripts/lib/office_com.py:239` sets `FileNameLength` to `len(name) * 2`, counting Python characters rather than UTF-16 bytes. **Precondition:** `--merge` on a non-TxF volume with a supplementary Unicode character in the output path. A read-only probe of the actual rename buffer for `R:\scratch\capture-📄.json` decoded the destination as `R:\scratch\capture-📄.jso`. The replacement therefore targets a different filename, potentially overwriting that file, while leaving the intended output unchanged and reporting success. Calculate the buffer length and copy size from the UTF-16 encoding.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P2]** affects both publication and rollback: `_non_txf_replace` calls the malformed rename at `scripts/lib/office_com.py:270`; `_non_txf_restore` uses it at line 337.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** violates the atomic output contract at `todo/02-interface/TODO-01-parity-inventory.md:151`: the requested destination is not necessarily the destination replaced.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** conflicts with the preservation requirement at `docs/product-principles.md:15`, because replacement can target an unrelated file.
+
+## record: advisory
+
+50 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited `0`. The reproduction inspected the actual Windows argument buffer using an API double; no native rename or live Office capture ran. No files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 18 disposition
+
+- **Finding 1 (P2, Unicode output paths can rename over the wrong file):** Fixed at the owning layer (`scripts/lib/office_com.py`: `_posix_rename_over`). `_posix_rename_over` now encodes the destination path with `name.encode("utf-16-le")` and computes `FileNameLength` and the `FILE_RENAME_INFO` buffer size from `len(name_bytes)` rather than `len(name) * 2`, so supplementary Unicode characters (UTF-16 surrogate pairs) never truncate the trailing bytes of the destination filename. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).

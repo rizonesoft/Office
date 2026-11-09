@@ -692,22 +692,32 @@ class Writes(unittest.TestCase):
                 return 1
 
             def SetFileInformationByHandle(self, h, info_class, buf, size):
-                events.append(("SetFileInformationByHandle", h, info_class))
+                import ctypes
+                raw = ctypes.string_at(buf, size) if info_class == 22 else b""
+                events.append(("SetFileInformationByHandle", h, info_class, raw))
                 return 1
 
         events.clear()
+        unicode_dst = Path("capture-\U0001f4c4.json")
         cu.transacted_replace(
-            Path("staged.new"), Path("out.json"), Path("out.old"), b"expected",
+            Path("staged.new"), unicode_dst, Path("out.old"), b"expected",
             on_enlisted=lambda d: events.append(("on_enlisted", str(d))),
             ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
             open_osf=lambda h, mode: (events.append(("open_osf", h)) or 303),
             fdopen=lambda fd, mode: io.BytesIO(b"expected"),
         )
-        # h_lock (501) is closed only AFTER SetFileInformationByHandle(502, 22).
-        self.assertLess(
-            events.index(("SetFileInformationByHandle", 502, 22)),
-            events.index(("CloseHandle", 501)),
+        rename_idx, rename_raw = next(
+            (idx, e[3]) for idx, e in enumerate(events)
+            if isinstance(e, tuple) and e[:3] == ("SetFileInformationByHandle", 502, 22)
         )
+        # h_lock (501) is closed only AFTER SetFileInformationByHandle(502, 22), and supplementary Unicode
+        # characters in the destination path encode their full UTF-16LE byte length without truncating the tail.
+        self.assertLess(rename_idx, events.index(("CloseHandle", 501)))
+        import ctypes as _ct, os as _os
+        len_off = _ct.sizeof(_ct.c_void_p) * 2
+        fn_len = int.from_bytes(rename_raw[len_off:len_off + 4], "little")
+        decoded_dst = rename_raw[len_off + 4:len_off + 4 + fn_len].decode("utf-16-le")
+        self.assertEqual(decoded_dst, _os.path.abspath(str(unicode_dst)))
         events.clear()
         self.assertTrue(cu.transacted_unlink(
             Path("out.json"), b"expected",
@@ -716,7 +726,7 @@ class Writes(unittest.TestCase):
             open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"expected"),
         ))
         self.assertLess(
-            events.index(("SetFileInformationByHandle", 501, 13)),
+            events.index(("SetFileInformationByHandle", 501, 13, b"")),
             events.index(("CloseHandle", 501)),
         )
         events.clear()
@@ -726,7 +736,7 @@ class Writes(unittest.TestCase):
             open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"modified"),
             status_out=unlink_status,
         ))
-        self.assertNotIn(("SetFileInformationByHandle", 501, 13), events)
+        self.assertNotIn(("SetFileInformationByHandle", 501, 13, b""), events)
         events.clear()
         unlinked.clear()
         self.assertFalse(cu.transacted_restore(

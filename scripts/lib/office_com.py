@@ -233,11 +233,14 @@ def _posix_rename_over(src, dst, kernel32, invalid):
         return False
     try:
         name = os.path.abspath(str(dst))
-        buf = ctypes.create_string_buffer(24 + (len(name) + 1) * 2)
+        name_bytes = name.encode("utf-16-le")
+        len_offset = ctypes.sizeof(ctypes.c_void_p) * 2
+        name_offset = len_offset + 4
+        buf = ctypes.create_string_buffer(name_offset + len(name_bytes) + 4)
         # Flags = FILE_RENAME_FLAG_REPLACE_IF_EXISTS (1) | FILE_RENAME_FLAG_POSIX_SEMANTICS (2) = 3
         ctypes.memmove(buf, ctypes.byref(wintypes.DWORD(3)), 4)
-        ctypes.memmove(ctypes.byref(buf, 16), ctypes.byref(wintypes.DWORD(len(name) * 2)), 4)
-        ctypes.memmove(ctypes.byref(buf, 20), ctypes.create_unicode_buffer(name), (len(name) + 1) * 2)
+        ctypes.memmove(ctypes.byref(buf, len_offset), ctypes.byref(wintypes.DWORD(len(name_bytes))), 4)
+        ctypes.memmove(ctypes.byref(buf, name_offset), name_bytes, len(name_bytes))
         return bool(kernel32.SetFileInformationByHandle(h_src, 22, buf, len(buf)))
     finally:
         kernel32.CloseHandle(h_src)
