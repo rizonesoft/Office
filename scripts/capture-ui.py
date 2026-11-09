@@ -329,6 +329,7 @@ class Element:
         self.access_key = raw.CurrentAccessKey or ""
         self.class_name = raw.CurrentClassName or ""
         self.control_type = uia.type_name(raw.CurrentControlType)
+        self.is_offscreen = bool(getattr(raw, "CurrentIsOffscreen", False))
         r = raw.CurrentBoundingRectangle
         self.rect = (r.left, r.top, r.right, r.bottom) if r.right > r.left and r.bottom > r.top else None
 
@@ -2170,6 +2171,16 @@ def validate_shell_chrome(records):
     if missing:
         raise Refused(f"shell chrome inventory is missing required records: {missing}")
 
+    spec_by_id = {item["id"]: item for item in _SHELL_SPEC}
+    for rid, rec in by_id.items():
+        spec = spec_by_id.get(rid)
+        if spec is not None:
+            for field in ("kind", "controlType", "app", "window", "parent", "keytip"):
+                if rec.get(field) != spec.get(field):
+                    raise Refused(
+                        f"shell record {rid!r} has {field}={rec.get(field)!r}, expected {spec.get(field)!r}"
+                    )
+
     for rid, (field, expected_val) in REQUIRED_SHELL_IDENTIFIERS.items():
         rec = by_id.get(rid)
         if rec is None:
@@ -2652,7 +2663,14 @@ def build_shell_chrome_records(build=None, app_name=None):
     return out
 
 
+def _is_offscreen(el):
+    off = getattr(el, "is_offscreen", False)
+    return bool(off() if callable(off) else off)
+
+
 def _live_rect_bounds(el, ox, oy):
+    if _is_offscreen(el):
+        return None
     rect = getattr(el, "rect", None)
     if not rect or len(rect) != 4 or rect == (0, 0, 10, 10):
         return None
@@ -2665,6 +2683,8 @@ def _live_rect_bounds(el, ox, oy):
 def _find_in(elements, pred):
     for e in elements:
         try:
+            if _is_offscreen(e):
+                continue
             if pred(e):
                 return e
         except Exception:
@@ -2773,7 +2793,7 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
             prev_vrect = before_state.get(eid, _ABSENT)
-            if prev_vrect is _ABSENT or (vrect is not None and vrect != prev_vrect):
+            if vrect is not None and (prev_vrect is _ABSENT or vrect != prev_vrect):
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
         if has_popups and uia is not None:
@@ -2782,8 +2802,10 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                     p_root = uia.element(h)
                     for el in [p_root] + list(descendants(p_root, 25)):
                         eid = _element_identity(el)
-                        surface_collected.append(el)
-                        opened_state[eid] = (_ABSENT, _visible_rect_tuple(el))
+                        vrect = _visible_rect_tuple(el)
+                        if vrect is not None:
+                            surface_collected.append(el)
+                            opened_state[eid] = (_ABSENT, vrect)
     finally:
         try:
             if surface_key == "keytips":
@@ -2815,10 +2837,10 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             eid = _element_identity(el)
             if eid not in opened_state:
                 continue
-            prev_vrect, open_vrect = opened_state[eid]
+            prev_vrect, _open_vrect = opened_state[eid]
             cur_vrect = _visible_rect_tuple(el)
-            if prev_vrect is _ABSENT:
-                if open_vrect is None or cur_vrect is not None:
+            if prev_vrect is _ABSENT or prev_vrect is None:
+                if cur_vrect is not None:
                     still_open = True
                     break
             elif cur_vrect != prev_vrect:

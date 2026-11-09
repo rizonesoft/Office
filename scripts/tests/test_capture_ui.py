@@ -32,9 +32,10 @@ class E:
     """A fake UI Automation element that yields fresh wrapper instances on traversal while preserving runtime_id."""
     counter = 0
 
-    def __init__(self, ctype, name="", aid="", key="", cls="", rect=(0, 0, 10, 10), kids=(), toggle=False):
+    def __init__(self, ctype, name="", aid="", key="", cls="", rect=(0, 0, 10, 10), kids=(), toggle=False, is_offscreen=False):
         self.control_type, self.name, self.automation_id, self.access_key = ctype, name, aid, key
         self.class_name, self.rect, self.kids, self.toggle = cls, rect, list(kids), toggle
+        self.is_offscreen = is_offscreen
         E.counter += 1
         self.rid = (E.counter,)
 
@@ -1838,11 +1839,13 @@ class ShellChrome(unittest.TestCase):
             "CurrentAccessKey": "",
             "CurrentClassName": "",
             "CurrentControlType": 50000,
+            "CurrentIsOffscreen": 1,
             "CurrentBoundingRectangle": type("Rect", (), {"left": 0, "top": 0, "right": 10, "bottom": 10})(),
         })()
         uia = type("U", (), {"type_name": lambda self, tid: "Button"})()
         el = cu.Element(uia, raw)
         self.assertEqual(el.name, "Editor (F7)")
+        self.assertTrue(el.is_offscreen)
 
     def test_account_and_email_labels_are_sanitised(self):
         self.assertEqual(cu.sanitize_shell_label("Derick Payne", uia_id="MeControlWidget"), "Account")
@@ -1995,6 +1998,20 @@ class ShellChrome(unittest.TestCase):
         target_p["bounds"] = {"x": 825, "y": 16, "width": 293, "height": 18}
         with self.assertRaises(cu.Refused):
             cu.validate_shell_chrome(outside_parent)
+
+        # Wrong record kind (e.g. changing shell.statusbar.customizeMenu from contextMenu to region) is refused.
+        wrong_kind = [dict(r) for r in base]
+        target_k = next(r for r in wrong_kind if r["id"] == "shell.statusbar.customizeMenu")
+        target_k["kind"] = "region"
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(wrong_kind)
+
+        # Wrong controlType on a canonical record is refused.
+        wrong_ctype = [dict(r) for r in base]
+        target_ct = next(r for r in wrong_ctype if r["id"] == "shell.qat.save")
+        target_ct["controlType"] = "toggleButton"
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(wrong_ctype)
 
     def test_main_shell_writes_and_merges_valid_inventory(self):
         real_ib, real_rb, real_sleep = cu.installed_build, cu.reference_build, cu.time.sleep
@@ -2382,22 +2399,39 @@ class ShellChrome(unittest.TestCase):
                 self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
 
                 # 3b. Delayed asynchronous surface dismissal (closing on the 2nd UIA poll after PostMessageW Escape)
-                #     succeeds via bounded polling, and pre-existing hidden UIA nodes (rect=None before expand,
-                #     revealed in place under the same runtime_id on expand, and reverting to rect=None on collapse)
-                #     are collected and verified closed on collapse.
+                #     succeeds via bounded polling; pre-existing hidden UIA nodes (both rect=None and is_offscreen=True
+                #     with fixed positive rect before expand, revealed in place under the same runtime_id on expand,
+                #     and reverting on collapse) are collected and verified closed on collapse; and lazily allocated
+                #     hidden descendants retained after collapse do not trigger a false cleanup refusal.
                 inplace_root = make_shell_root(app_name="word")
                 hidden_item = E("MenuItem", "Hidden Inplace Item", "AutoSaveSwitch", rect=None)
-                inplace_root.kids.append(hidden_item)
+                offscreen_item = E(
+                    "MenuItem", "Offscreen Inplace Item", "OffscreenMenuCmd",
+                    rect=(261, 67, 495, 95), is_offscreen=True,
+                )
+                retained_lazy_hidden = E("Pane", "Retained Lazy Hidden", "", rect=None)
+                retained_lazy_offscreen = E(
+                    "MenuItem", "Retained Lazy Offscreen", "",
+                    rect=(261, 95, 495, 123), is_offscreen=True,
+                )
+                inplace_root.kids.extend([hidden_item, offscreen_item])
                 qat_inplace_trig = next(e for e in inplace_root.kids if e.name == "Customize Quick Access Toolbar")
                 orig_exp, orig_col = qat_inplace_trig.expand, qat_inplace_trig.collapse
 
                 def inplace_exp():
                     orig_exp()
                     hidden_item.rect = (261, 39, 495, 67)
+                    offscreen_item.is_offscreen = False
+                    if retained_lazy_hidden not in inplace_root.kids:
+                        inplace_root.kids.append(retained_lazy_hidden)
+                    if retained_lazy_offscreen not in inplace_root.kids:
+                        inplace_root.kids.append(retained_lazy_offscreen)
 
                 def inplace_col():
                     orig_col()
                     hidden_item.rect = None
+                    offscreen_item.is_offscreen = True
+                    # retained_lazy_hidden and retained_lazy_offscreen remain in inplace_root.kids after collapse.
 
                 qat_inplace_trig.expand, qat_inplace_trig.collapse = inplace_exp, inplace_col
                 dismiss_delay = [0]
@@ -2424,14 +2458,22 @@ class ShellChrome(unittest.TestCase):
                     good_win, launched,
                 )
                 self.assertTrue(any(e.runtime_id() == hidden_item.runtime_id() for e in collected_inplace))
+                self.assertTrue(any(e.runtime_id() == offscreen_item.runtime_id() for e in collected_inplace))
+                self.assertFalse(any(e.runtime_id() == retained_lazy_hidden.runtime_id() for e in collected_inplace))
+                self.assertFalse(any(e.runtime_id() == retained_lazy_offscreen.runtime_id() for e in collected_inplace))
                 collected_delayed_kt = cu._open_and_collect_shell_surface(
                     "keytips", None, inplace_root,
                     type("U", (), {"element": lambda self, h: get_inplace_root()})(),
                     good_win, launched,
                 )
                 self.assertGreaterEqual(len(collected_delayed_kt), 5)
-                # If an in-place revealed node fails to revert to hidden on collapse, cleanup verification refuses it.
-                qat_inplace_trig.collapse = lambda: orig_col()
+                # If an offscreen-toggled node fails to revert to is_offscreen=True on collapse, cleanup refuses it.
+                def _col_leave_offscreen_visible():
+                    orig_col()
+                    hidden_item.rect = None
+                    # offscreen_item.is_offscreen remains False!
+
+                qat_inplace_trig.collapse = _col_leave_offscreen_visible
                 with self.assertRaises(cu.Refused):
                     cu._open_and_collect_shell_surface(
                         "qat.customize", qat_inplace_trig, inplace_root,
