@@ -1551,6 +1551,34 @@ class CaptureIntegration(unittest.TestCase):
                 self.assertIn("word.insert.pages", merged_main)
                 self.assertIn("word.home.adobe-acrobat", merged_sidecar)
                 self.assertIn("word.insert.new", merged_sidecar)
+
+                # 9. An unpopulated or unstable Ribbon Tabs container is refused rather than publishing [].
+                empty_tabs_out = Path(tmp) / "empty_tabs.json"
+                empty_tabs_root = E("Window", "Document1 - Word", kids=[
+                    E("Tab", "Ribbon Tabs", kids=[]),
+                    home_lower,
+                ])
+                empty_tabs_uia = type("U", (), {"element": lambda self, h: empty_tabs_root})()
+                clock = [0.0]
+
+                def fast_monotonic():
+                    val = clock[0]
+                    clock[0] += 2.0
+                    return val
+
+                real_mono = cu.time.monotonic
+                cu.time.monotonic = fast_monotonic
+                try:
+                    err_empty = io.StringIO()
+                    with contextlib.redirect_stderr(err_empty):
+                        rc_empty = cu.main(["--app", "word", "--all-tabs", "--out", str(empty_tabs_out)],
+                                           launcher=lambda app: launched, uia_factory=lambda: empty_tabs_uia,
+                                           win_factory=lambda: win)
+                    self.assertEqual(rc_empty, 1)
+                    self.assertFalse(empty_tabs_out.exists())
+                    self.assertIn("ribbon tabs did not populate or stabilise", err_empty.getvalue())
+                finally:
+                    cu.time.monotonic = real_mono
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

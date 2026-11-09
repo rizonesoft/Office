@@ -1245,7 +1245,7 @@ def capture(args, launched, uia, win):
     problems = profile_problems(state, monitor, launched.language(), ribbon_h)
     identifiers = baseline_ids(args.app)
     ctx = Context(args.app, expected, identifiers, origin=None if problems else state["origin"])
-    tab_elements = [t for t in tabs_bar.children() if t.control_type == "TabItem"]
+    tab_elements = ribbon_tabs(tabs_bar)
     names = [t.name for t in tab_elements]
     wanted = names if args.all_tabs else [args.tab]
     unknown = [w for w in wanted if w not in names]
@@ -1263,14 +1263,14 @@ def capture(args, launched, uia, win):
         if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
             ctx.drop_geometry(f"the window moved or changed size before tab {tab.name!r}")
         tab.select()
-        if not wait_for(lambda: first_group_name(uia.element(launched.hwnd)) == tab.name):
-            raise Refused(f"tab {tab.name!r} did not open")
+        lower = lower_for_tab(uia, launched.hwnd, tab.name)
         launched.check_alone()
-        lower = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
         tab_records = walk_tab(tab, order, lower, ctx)
         if args.expand:
             tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
         records += tab_records
+    if not records:
+        raise Refused("no verified ribbon records were captured")
     if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
         ctx.drop_geometry("the window moved or changed size during the capture")
     if ctx.origin is None:
@@ -1338,6 +1338,86 @@ def first_group_name(root):
     lower = find(root, lambda e: e.name == "Lower Ribbon")
     first = next((c for c in lower.children() if c.control_type == "Group"), None) if lower else None
     return first.name if first else None
+
+
+def ribbon_tabs(tabs_bar):
+    """The TabItem children of Ribbon Tabs once populated and stable across consecutive readings."""
+    def attempt():
+        try:
+            return [t for t in tabs_bar.children() if t.control_type == "TabItem" and t.name]
+        except Gone:
+            return None
+
+    def signature(items):
+        return tuple((t.runtime_id(), t.name, getattr(t, "automation_id", "")) for t in items)
+
+    last, last_sig, stable = None, None, 0
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline and stable < 2:
+        items = attempt()
+        if not items:
+            stable, last, last_sig = 0, None, None
+            time.sleep(0.2)
+            continue
+        sig = signature(items)
+        if last_sig is not None and sig == last_sig:
+            stable += 1
+        else:
+            stable = 0
+        last, last_sig = items, sig
+        time.sleep(0.2)
+    if not last or stable < 2:
+        raise Refused("the ribbon tabs did not populate or stabilise in the app's window")
+    return last
+
+
+def lower_for_tab(uia, hwnd, tab_name):
+    """The Lower Ribbon element for tab_name once its groups and controls are populated and stable."""
+    def attempt():
+        try:
+            root = uia.element(hwnd)
+            if first_group_name(root) != tab_name:
+                return None
+            lower = find(root, lambda e: e.name == "Lower Ribbon")
+            if not lower:
+                return None
+            containers = [c for c in lower.children() if c.control_type == "Group"]
+            groups = [g for c in containers for g in c.children() if g.control_type == "Group"]
+            if not groups:
+                return None
+            sig = []
+            total_controls = 0
+            for g in groups:
+                members = [
+                    (el.runtime_id(), el.control_type, el.name, getattr(el, "automation_id", ""))
+                    for el, _ in controls_of(g) if control_type(el)
+                ]
+                total_controls += len(members)
+                sig.append((g.runtime_id(), g.name, getattr(g, "automation_id", ""), tuple(members)))
+            if total_controls == 0:
+                return None
+            return lower, tuple(sig)
+        except Gone:
+            return None
+
+    last_lower, last_sig, stable = None, None, 0
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline and stable < 2:
+        res = attempt()
+        if res is None:
+            stable, last_lower, last_sig = 0, None, None
+            time.sleep(0.2)
+            continue
+        lower, sig = res
+        if last_sig is not None and sig == last_sig:
+            stable += 1
+        else:
+            stable = 0
+        last_lower, last_sig = lower, sig
+        time.sleep(0.2)
+    if last_lower is None or stable < 2:
+        raise Refused(f"tab {tab_name!r} did not open or its controls did not stabilise")
+    return last_lower
 
 
 def expand_all(records, lower, ctx, launched, uia, win):

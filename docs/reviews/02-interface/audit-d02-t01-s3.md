@@ -651,3 +651,48 @@ OVERALL: needs-attention
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (48 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
 
+
+## Round 14: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T00:51:53Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 8ea5c6f87486780d
+
+## adversarial: needs-attention
+
+1. **[P2] An unpopulated ribbon is accepted as a successful capture.** `scripts/capture-ui.py:1248` reads tab children once, after waiting only for the ribbon containers to exist. **Precondition:** Office exposes those containers before their children finish populating during startup or rebuilding. With `--all-tabs`, an empty tab list passes validation and skips capture entirely. Reproduced through `main()` using the existing window fixture with empty `Ribbon Tabs` children and an in-memory publisher: exit `0`, published `[]`, summary `0 records; bounds recorded under fhd-100`. Wait for populated, stable tab discovery and refuse an empty capture.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P2]** reaches publication at `scripts/capture-ui.py:1633`; consumers receive an empty inventory with a successful exit status.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** violates the tab-capture requirement at `todo/02-interface/TODO-01-parity-inventory.md:145`. Reporting missing baseline tabs does not establish successful discovery.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** produces misleading success feedback, contrary to `docs/product-principles.md:22`.
+
+## record: advisory
+
+50 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited `0`. The reproduction used in-memory doubles. No live Office capture ran, and no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 14 disposition
+
+1. **[P2] An unpopulated ribbon is accepted as a successful capture:** Fixed in `capture`, `ribbon_tabs`, and `lower_for_tab` (`scripts/capture-ui.py`). `ribbon_tabs` waits until `Ribbon Tabs` has non-empty `TabItem` children whose `(runtime_id(), name, automation_id)` signature is stable across consecutive readings (`stable >= 2`), raising `Refused("the ribbon tabs did not populate or stabilise in the app's window")` otherwise. `lower_for_tab` similarly waits until `Lower Ribbon` for each selected tab has populated groups and controls whose signature is stable across consecutive readings (`stable >= 2`). Finally, `capture` raises `Refused("no verified ribbon records were captured")` if `records` is empty after walking the requested tabs. Added a regression test in `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten` (`scripts/tests/test_capture_ui.py`) confirming that an unpopulated `Ribbon Tabs` container with `--all-tabs` returns exit code 1 and does not publish `[]`.
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (48 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
