@@ -56,10 +56,34 @@ def parse_table(text, rows, columns):
     return table[1:]
 
 
-def records(table, build, identifiers):
+def ribbon_label_identifiers(ribbon_records):
+    """Map each control or menuItem label in `ribbon_records` to its `idMso` when every control or menuItem with that
+    label carries the same non-empty `idMso` (and none lacks `idMso`)."""
+    by_label = {}
+    for rec in ribbon_records or ():
+        if not isinstance(rec, dict) or rec.get("kind") not in ("control", "menuItem"):
+            continue
+        label = (rec.get("label") or "").strip()
+        if not label:
+            continue
+        by_label.setdefault(label, set()).add(rec.get("idMso") or None)
+    return {
+        label: next(iter(ids))
+        for label, ids in by_label.items()
+        if None not in ids and len(ids) == 1
+    }
+
+
+def records(table, build, identifiers, ribbon_records=()):
     """Command and shortcut records for the table rows, in table order, and the names with no identifier."""
     commands, shortcuts, unmatched, taken = [], [], [], set()
     source = f"listcommands:{build}"
+    name_counts = {}
+    for row in table:
+        if row:
+            stripped = row[0].strip()
+            name_counts[stripped] = name_counts.get(stripped, 0) + 1
+    label_ids = ribbon_label_identifiers(ribbon_records)
     for order, (name, modifiers, key) in enumerate(table):
         if modifiers != modifiers.strip() or key != key.strip():
             raise Refused(f"row {order + 2} ({name.strip()}): spaces around {modifiers!r} {key!r} would be lost")
@@ -84,6 +108,8 @@ def records(table, build, identifiers):
         compact = name.replace(" ", "")
         if compact in identifiers:
             rec["idMso"] = compact
+        elif name_counts.get(name, 0) == 1 and name in label_ids:
+            rec["idMso"] = label_ids[name]
         else:
             unmatched.append(name)
         commands.append(rec)
@@ -176,8 +202,20 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
     if not same_build(word_build, expected):
         print(f"word-commands: Word reports build {word_build}, not the reference {expected}", file=sys.stderr)
         return 1
+    ribbon_path = Path(out) / "ribbon.json"
+    ribbon_records = ()
+    if ribbon_path.is_file():
+        try:
+            loaded_ribbon = json.loads(ribbon_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            print(f"word-commands: {ribbon_path} could not be read ({exc})", file=sys.stderr)
+            return 1
+        if isinstance(loaded_ribbon, list):
+            ribbon_records = loaded_ribbon
     try:
-        commands, shortcuts, unmatched = records(table, expected, baseline_identifiers(Path(out) / "baseline.json"))
+        commands, shortcuts, unmatched = records(
+            table, expected, baseline_identifiers(Path(out) / "baseline.json"), ribbon_records=ribbon_records
+        )
     except Refused as exc:
         print(f"word-commands: {exc}", file=sys.stderr)
         return 1

@@ -55,7 +55,7 @@ _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+")
 
 def strip_control_chars(text):
     """Drop Unicode control (Cc), format (Cf, including bidi marks U+202A..U+202E) and default-ignorable characters."""
-    return _NO_CONTROL_RE.sub("", text or "")
+    return _NO_CONTROL_RE.sub("", (text or "").replace("\u2013", "-").replace("\u2014", "-"))
 
 
 def sanitize_shell_label(text, uia_id="", id_mso=""):
@@ -99,10 +99,12 @@ def slug(text):
 
 
 def keytip(access_key):
-    """The last step of a KeyTip path: "Alt, H, F P" is FP, "Alt, H" is H."""
+    """The last step of a KeyTip path: "Alt, H, F P" is FP, "Alt, H" is H, "Alt, JB, ALT+E" is E."""
     if not access_key:
         return None
-    return access_key.split(",")[-1].replace(" ", "") or None
+    step = access_key.split(",")[-1].replace(" ", "")
+    step = re.sub(r"^(?:alt\+)+", "", step, flags=re.IGNORECASE).upper()
+    return step or None
 
 
 class Ids:
@@ -186,7 +188,10 @@ def control_type(element, use_cached=True):
         if element.class_name == LAUNCHER_CLASS:
             return "dialogLauncher"
         return "toggleButton" if element.can_toggle() else "button"
-    if element.control_type == "MenuItem" and element.automation_id.endswith("Gallery"):
+    if element.control_type == "MenuItem" and (
+        element.automation_id.endswith("Gallery")
+        or element.automation_id in ("TableStylesGalleryWord", "QuickStylesSets")
+    ):
         return "gallery"
     return TYPES.get(element.control_type)
 
@@ -1321,12 +1326,17 @@ class Launched:
         return self._call_com(self._check_alone_impl, timeout=timeout)
 
     def _check_alone_impl(self):
+        fdoc = getattr(self, "_fixture_doc", None)
+        fmeta = getattr(self, "_fixture_meta", None)
+        has_fdoc = fdoc is not None and not getattr(fdoc, "closed", False)
+        expected_docs = list(self.created) + ([fdoc] if has_fdoc else [])
+        base_metas = getattr(self, "_created_meta", None) or [self._doc_meta(d) for d in self.created]
+        expected_metas = list(base_metas) + ([fmeta or self._doc_meta(fdoc)] if has_fdoc else [])
         count = self.open_documents()
-        if count != len(self.created):
+        if count != len(expected_docs):
             raise Refused(f"the {self.exe} instance now holds {count} documents, not only the tool's own; stopping "
                           "before the ribbon acts on someone else's")
-        metas = getattr(self, "_created_meta", None) or [self._doc_meta(d) for d in self.created]
-        for doc, meta in zip(self.created, metas):
+        for doc, meta in zip(expected_docs, expected_metas):
             if getattr(doc, "closed", False):
                 raise Refused(f"the {self.exe} document this tool created was closed; stopping before the ribbon acts "
                               "on someone else's")
@@ -1357,16 +1367,199 @@ class Launched:
         if live is None and hasattr(app, "made"):
             live = [d for d in app.made if not getattr(d, "closed", False)]
         if live is not None:
-            if len(live) != len(self.created) or any(
-                getattr(d, "closed", False) or not any(self._same_doc(d, c) for c in self.created) for d in live
+            if len(live) != len(expected_docs) or any(
+                getattr(d, "closed", False) or not any(self._same_doc(d, c) for c in expected_docs) for d in live
             ):
                 raise Refused(f"the {self.exe} instance now holds a document this tool did not create; stopping before "
                               "the ribbon acts on someone else's")
         for attr in ("ActiveDocument", "ActiveWorkbook", "ActivePresentation", "ActiveProject"):
             active = getattr(app, attr, None)
-            if active is not None and not any(self._same_doc(active, c) for c in self.created):
+            if active is not None and not any(self._same_doc(active, c) for c in expected_docs):
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
                               "ribbon acts on someone else's")
+
+    def word_action(self, action, timeout=None, **kwargs):
+        return self._call_com(lambda: self._word_action_impl(action, **kwargs), timeout=timeout)
+
+    def _word_action_impl(self, action, **kwargs):
+        import hashlib
+        if getattr(self, "key", None) != "word":
+            raise Refused(f"word_action is only valid for Word, not {getattr(self, 'key', None)!r}")
+        self._check_alone_impl()
+        app = self.app
+        if action == "open_fixture":
+            path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
+            if not path.is_file():
+                raise Refused(f"Word contextual fixture {path} does not exist")
+            self._fixture_path = path
+            self._fixture_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+            try:
+                doc = app.Documents.Open(str(path), ReadOnly=True)
+            except TypeError:
+                doc = app.Documents.Open(str(path))
+            self._fixture_doc = doc
+            self._fixture_meta = self._doc_meta(doc)
+            wh = self.window_handle()
+            if wh is not None:
+                self.hwnd = self._get_win().top(wh)
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "close_fixture":
+            fdoc = getattr(self, "_fixture_doc", None)
+            if fdoc is not None and not getattr(fdoc, "closed", False):
+                try:
+                    if bool(getattr(app, "PrintPreview", False)):
+                        app.PrintPreview = False
+                except Exception:
+                    pass
+                try:
+                    app.ActiveWindow.View.SeekView = 0
+                    app.ActiveWindow.View.Type = 3
+                except Exception:
+                    pass
+                try:
+                    fdoc.Close(0)
+                except TypeError:
+                    fdoc.Close()
+            self._fixture_doc = None
+            self._fixture_meta = None
+            fpath = getattr(self, "_fixture_path", None)
+            fsha = getattr(self, "_fixture_sha256", None)
+            if fpath is not None and fpath.is_file() and fsha is not None:
+                after_sha = hashlib.sha256(fpath.read_bytes()).hexdigest()
+                if after_sha != fsha:
+                    raise Refused(f"Word contextual fixture {fpath} was modified during capture")
+            if self.created and not getattr(self.created[0], "closed", False):
+                try:
+                    wh = self.window_handle()
+                    if wh is not None:
+                        self.hwnd = self._get_win().top(wh)
+                except Exception:
+                    pass
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "prepare_core_tab":
+            tab_name = kwargs.get("tab_name", "")
+            doc = self.created[0] if self.created else None
+            if doc is not None and tab_name == "Mailings":
+                csv_path = Path(kwargs.get("recipients_path") or WORD_DEFAULT_RECIPIENTS)
+                if csv_path.is_file() and hasattr(doc, "MailMerge"):
+                    doc.MailMerge.MainDocumentType = 0
+                    doc.MailMerge.OpenDataSource(Name=str(csv_path))
+                    try:
+                        doc.Saved = True
+                    except Exception:
+                        pass
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "trigger_contextual":
+            target = kwargs.get("target", "")
+            doc = getattr(self, "_fixture_doc", None) or (self.created[0] if self.created else None)
+            if doc is None or getattr(doc, "closed", False):
+                raise Refused("no open Word document is available to trigger contextual tabs")
+            try:
+                if bool(getattr(app, "PrintPreview", False)):
+                    app.PrintPreview = False
+            except Exception:
+                pass
+            try:
+                app.ActiveWindow.View.SeekView = 0
+                app.ActiveWindow.View.Type = 3
+            except Exception:
+                pass
+            if target == "table":
+                doc.Tables(1).Cell(1, 1).Range.Select()
+            elif target in ("picture", "background_removal"):
+                shapes = getattr(doc, "InlineShapes", None)
+                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                selected = False
+                for idx in range(1, cnt + 1):
+                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                    if int(getattr(ish, "Type", 0)) == 3:
+                        ish.Select()
+                        selected = True
+                        break
+                if not selected:
+                    raise Refused("Word contextual fixture has no inline picture (wdInlineShapePicture)")
+            elif target == "shape":
+                sh = doc.Shapes(1) if callable(getattr(doc, "Shapes", None)) else doc.Shapes.Item(1)
+                sh.Select()
+                try:
+                    if hasattr(sh, "TextFrame") and sh.TextFrame.HasText:
+                        sh.TextFrame.TextRange.Select()
+                except Exception:
+                    pass
+            elif target == "header_footer":
+                app.ActiveWindow.View.SeekView = 1
+            elif target == "equation":
+                om = doc.OMaths(1) if callable(getattr(doc, "OMaths", None)) else doc.OMaths.Item(1)
+                om.Range.Select()
+            elif target == "chart":
+                shapes = getattr(doc, "InlineShapes", None)
+                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                selected = False
+                for idx in range(1, cnt + 1):
+                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                    if bool(getattr(ish, "HasChart", False)) or int(getattr(ish, "Type", 0)) == 12:
+                        ish.Select()
+                        selected = True
+                        break
+                if not selected:
+                    raise Refused("Word contextual fixture has no inline chart")
+            elif target == "smartart":
+                shapes = getattr(doc, "InlineShapes", None)
+                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                selected = False
+                for idx in range(1, cnt + 1):
+                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                    if bool(getattr(ish, "HasSmartArt", False)) or int(getattr(ish, "Type", 0)) == 15:
+                        ish.Select()
+                        selected = True
+                        break
+                if not selected:
+                    raise Refused("Word contextual fixture has no inline SmartArt")
+            elif target == "svg":
+                shapes = getattr(doc, "InlineShapes", None)
+                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                selected = False
+                for idx in range(1, cnt + 1):
+                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                    if int(getattr(ish, "Type", 0)) == 16:
+                        ish.Select()
+                        selected = True
+                        break
+                if not selected:
+                    raise Refused("Word contextual fixture has no inline SVG graphic (wdInlineShapeGraphic)")
+            elif target == "model3d":
+                shapes = getattr(doc, "InlineShapes", None)
+                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                selected = False
+                for idx in range(1, cnt + 1):
+                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                    if int(getattr(ish, "Type", 0)) == 17:
+                        ish.Select()
+                        selected = True
+                        break
+                if not selected:
+                    raise Refused("Word contextual fixture has no inline 3D model (wdInlineShape3DModel)")
+            elif target == "outlining":
+                app.ActiveWindow.View.Type = 2
+            elif target == "print_preview":
+                app.ActiveWindow.View.Type = 4
+            elif target == "immersive_reader":
+                app.ActiveWindow.View.Type = 3
+            elif target == "reset":
+                try:
+                    doc.Range(0, 0).Select()
+                except Exception:
+                    pass
+            else:
+                raise Refused(f"unknown Word contextual trigger target {target!r}")
+            try:
+                wh = self.window_handle()
+                if wh is not None:
+                    self.hwnd = self._get_win().top(wh)
+            except Exception:
+                pass
+            return {"hwnd": int(self.hwnd or 0)}
+        raise Refused(f"unknown word_action {action!r}")
 
     def _new_project(self):
         projs = getattr(self.app, "Projects", None)
@@ -1558,6 +1751,9 @@ class Launched:
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         metas = list(getattr(self, "_created_meta", ()))
         try:
+            fdoc = getattr(self, "_fixture_doc", None)
+            if fdoc is not None and not getattr(fdoc, "closed", False):
+                self._word_action_impl("close_fixture")
             if self.key == "powerpoint":
                 others = self._check_powerpoint_only_owned_blank(metas)
             else:
@@ -1652,15 +1848,74 @@ def wait_for(test, seconds=5.0, step=0.2):
     return test()
 
 
-def popup_items(root, popup_roots=(), label="popup"):
+def _dock_menus(root):
+    out = []
+    for top_child in root.children():
+        if top_child.control_type == "Menu":
+            out.append(top_child)
+        elif getattr(top_child, "class_name", "") == "MsoDockTop":
+            for c1 in top_child.children():
+                if c1.control_type == "Menu":
+                    out.append(c1)
+                elif c1.name not in ("Ribbon Tabs", "Lower Ribbon"):
+                    for c2 in descendants(c1, 3):
+                        if c2.control_type == "Menu":
+                            out.append(c2)
+    return out
+
+
+def _iter_unique_menu_items(menus, depth=10):
+    visited_containers = set()
+    seen_items = set()
+
+    def walk(el, d):
+        for c in el.children():
+            ct = c.control_type
+            if ct in ITEM_TYPES and c.name:
+                rid = c.runtime_id()
+                if rid not in seen_items:
+                    seen_items.add(rid)
+                    yield c
+            if d > 0 and ct in ("Menu", "Group", "Pane", "List", "Custom", "Window"):
+                crid = c.runtime_id()
+                if crid not in visited_containers:
+                    visited_containers.add(crid)
+                    yield from walk(c, d - 1)
+
+    for m in menus:
+        mrid = m.runtime_id()
+        if mrid not in visited_containers:
+            visited_containers.add(mrid)
+            yield from walk(m, depth)
+
+
+def popup_items(root, popup_roots=(), label="popup", target=None, exclude_rids=frozenset()):
     """The items of the menu or gallery that just opened, once their reading is stable. Office exposes an open menu as
     a Menu element in the app window's own tree (menus nest, so items are taken once each by runtime id)."""
+    is_live = target is not None and hasattr(target, "raw")
+
     def read():
+        if is_live:
+            target_menus = [c for c in target.children() if c.control_type == "Menu"]
+            if not target_menus:
+                target_menus = [e for e in descendants(target, 3) if e.control_type == "Menu"]
+            if target_menus:
+                menus = target_menus + list(popup_roots)
+            elif popup_roots:
+                menus = list(popup_roots)
+            else:
+                menus = _dock_menus(root)
+            return [e for e in _iter_unique_menu_items(menus, 10) if e.runtime_id() not in exclude_rids]
         # Word nests an empty Menu shell around the menus that hold the items, so every open Menu is read.
         menus = [e for e in descendants(root, 30) if e.control_type == "Menu"] + list(popup_roots)
         seen, items = set(), []
         for e in (d for menu in menus for d in descendants(menu, 12)):
-            if e.control_type in ITEM_TYPES and e.name and e.runtime_id() not in seen:
+            if (
+                e.control_type in ITEM_TYPES
+                and e.name
+                and e.runtime_id() not in seen
+                and e.runtime_id() not in exclude_rids
+            ):
                 seen.add(e.runtime_id())
                 items.append(e)
         return items
@@ -1673,6 +1928,35 @@ def popup_items(root, popup_roots=(), label="popup"):
 
     def signature(items):
         return tuple((e.runtime_id(), e.control_type, e.name, getattr(e, "automation_id", "")) for e in items)
+
+    if is_live:
+        last, last_sig, stable, saw_unstable = None, None, 0, False
+        deadline = time.monotonic() + 4.0
+        while time.monotonic() < deadline and stable < 1:
+            items = attempt()
+            if items is None:
+                saw_unstable = True
+                stable, last, last_sig = 0, None, None
+                time.sleep(0.05)
+                continue
+            if not items and not saw_unstable:
+                time.sleep(0.06)
+                items = attempt() or []
+                if not items:
+                    return []
+            sig = signature(items)
+            if last_sig is not None and sig == last_sig and items:
+                stable += 1
+            else:
+                if last_sig is not None and sig != last_sig:
+                    saw_unstable = True
+                stable = 0
+            last, last_sig = items, sig
+            if stable < 1:
+                time.sleep(0.05)
+        if stable < 1 and (last or saw_unstable):
+            raise Refused(f"{label!r} items did not stabilise before timeout")
+        return last or []
 
     last, last_sig, stable, saw_unstable = None, None, 0, False
     deadline = time.monotonic() + 4.0
@@ -1769,6 +2053,8 @@ def capture(args, launched, uia, win):
         if tab.name not in wanted:
             continue
         launched.check_alone()
+        if args.app == "word" and callable(getattr(launched, "word_action", None)):
+            launched.word_action("prepare_core_tab", tab_name=tab.name)
         if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
             ctx.drop_geometry(f"the window moved or changed size before tab {tab.name!r}")
         tab.select()
@@ -1785,6 +2071,13 @@ def capture(args, launched, uia, win):
             )
             check_licensing()
         records += tab_records
+    if args.app == "word" and args.all_tabs and callable(getattr(launched, "word_action", None)):
+        fixture_path = Path(getattr(args, "fixture", None) or WORD_DEFAULT_FIXTURE)
+        if fixture_path.is_file() or getattr(args, "fixture", None) is not None or getattr(launched, "has_word_fixture", False):
+            records += capture_word_contextual_tabs(
+                args, launched, uia, win, ctx, state, check_licensing,
+                order_start=len(tab_elements), fixture_path=fixture_path,
+            )
     check_licensing()
     if not any(r.get("kind") == "control" for r in records + ctx.unverified):
         raise Refused("no ribbon controls were captured")
@@ -1888,8 +2181,10 @@ def ribbon_tabs(tabs_bar):
     return last
 
 
-def lower_for_tab(uia, hwnd, tab_name):
+def lower_for_tab(uia, hwnd, tab_name, seconds=None):
     """The Lower Ribbon element for tab_name once its groups and controls are populated and stable."""
+    if seconds is None:
+        seconds = 12.0 if hasattr(uia, "client") else 5.0
     def attempt():
         try:
             root = uia.element(hwnd)
@@ -1934,7 +2229,7 @@ def lower_for_tab(uia, hwnd, tab_name):
             return None
 
     last_lower, last_sig, stable = None, None, 0
-    deadline = time.monotonic() + 5.0
+    deadline = time.monotonic() + seconds
     while time.monotonic() < deadline and stable < 2:
         res = attempt()
         if res is None:
@@ -1959,6 +2254,71 @@ def lower_for_tab(uia, hwnd, tab_name):
     return last_lower
 
 
+def _expand_submenus(parent_rec, items, ctx, launched, uia, win, seen_rids, depth=1, max_depth=2):
+    out = []
+    sub_pairs = []
+    for order, item in enumerate(items):
+        if not item.name:
+            continue
+        if parent_rec["id"].endswith(".show-markup.specific-people") and item.name != "All Reviewers":
+            continue
+        idmso = item.automation_id if item.automation_id in ctx.identifiers else None
+        item_rec = ctx.base(
+            ctx.ids.make(parent_rec["id"], item.name, item.automation_id),
+            "menuItem",
+            item.name,
+            order,
+            item,
+            parent=parent_rec["id"],
+            controlType="galleryItem" if item.control_type == "ListItem" else TYPES.get(item.control_type, "button"),
+            idMso=idmso,
+            baselineMissing=True if parent_rec.get("baselineMissing") or idmso is None else None,
+        )
+        out.append(item_rec)
+        sub_pairs.append((item_rec, item))
+    if depth <= max_depth:
+        for item_rec, item_el in sub_pairs:
+            try:
+                if item_el.control_type != "MenuItem" or item_el.expand_state() is None:
+                    continue
+                if not bool(getattr(getattr(item_el, "raw", None), "CurrentIsEnabled", True)):
+                    continue
+            except Exception:
+                continue
+            if item_rec["label"] == "Gallery Filter":
+                continue
+            is_live_sub = hasattr(item_el, "raw")
+            sub_items = []
+            try:
+                launched.check_alone()
+                before_sub = win.popups(launched.proc.pid)
+                item_el.expand()
+                time.sleep(0.06 if is_live_sub else 0.1)
+                opened_sub = [h for h in win.popups(launched.proc.pid) if h not in before_sub]
+                sub_items = popup_items(
+                    uia.element(launched.hwnd),
+                    [uia.element(h) for h in opened_sub],
+                    label=item_rec["label"],
+                    target=item_el,
+                    exclude_rids=seen_rids,
+                )
+            except Exception:
+                sub_items = []
+            if sub_items:
+                next_seen = seen_rids | {x.runtime_id() for x in sub_items}
+                out.extend(
+                    _expand_submenus(
+                        item_rec, sub_items, ctx, launched, uia, win, next_seen, depth=depth + 1, max_depth=max_depth
+                    )
+                )
+            if not is_live_sub:
+                try:
+                    item_el.collapse()
+                except Exception:
+                    pass
+    return out
+
+
 def expand_all(records, lower, ctx, launched, uia, win, unverified_start=None):
     """Open every control that can expand (by its own pattern) once, record its items, and close it again."""
     combos = 0
@@ -1974,24 +2334,48 @@ def expand_all(records, lower, ctx, launched, uia, win, unverified_start=None):
             target = next((p for p in element.children() if p.automation_id.endswith("_Dropdown")), element) \
                 if element.control_type == "SplitButton" else element
             if target.expand_state() is None:
+                if rec.get("controlType") == "gallery" and getattr(element, "control_type", "") == "List":
+                    list_items = [c for c in element.children() if c.control_type in ITEM_TYPES and c.name]
+                    if list_items:
+                        seen_rids = {x.runtime_id() for x in list_items}
+                        out += _expand_submenus(rec, list_items, ctx, launched, uia, win, seen_rids, depth=1, max_depth=2)
                 continue
             if rec.get("controlType") == "comboBox":
                 combos += 1  # fonts, sizes: the machine's and the document's data, not the app's interface
                 continue
+            is_live = hasattr(target, "raw")
+            if is_live and not bool(getattr(target.raw, "CurrentIsEnabled", True)):
+                continue
             launched.check_alone()
             before = win.popups(launched.proc.pid)
             target.expand()
+            items = []
             try:
-                time.sleep(0.3)
+                time.sleep(0.08 if is_live else 0.3)
                 opened = [h for h in win.popups(launched.proc.pid) if h not in before]
-                items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened], label=rec["label"])
+                items = popup_items(
+                    uia.element(launched.hwnd),
+                    [uia.element(h) for h in opened],
+                    label=rec["label"],
+                    target=element if is_live else None,
+                )
                 if not items:
                     ctx.notes.append(f"{rec['label']!r} opened but no item was read from it")
+                else:
+                    seen_rids = {x.runtime_id() for x in items}
+                    out += _expand_submenus(rec, items, ctx, launched, uia, win, seen_rids, depth=1, max_depth=2)
             finally:
-                close_popup(target, lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
-                            or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,
-                            rec["label"], check_alone=launched.check_alone)
-            out += expand_items(rec, target, items, ctx)
+                close_popup(
+                    target,
+                    lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
+                    or (
+                        find(element, lambda e: e.control_type == "Menu", depth=3) is not None
+                        if is_live
+                        else find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None
+                    ),
+                    rec["label"],
+                    check_alone=launched.check_alone,
+                )
         return out
 
     out = expand_list(records)
@@ -2007,16 +2391,17 @@ def close_popup(target, still_open, label, attempts=3, check_alone=None):
     some drop-downs collapsed while open and others expanded while closed, so "gone" means no popup window and no
     open menu remain. A drop-down that ignores Collapse closes when opened and collapsed again; one that stays open
     stops the capture rather than leaving it behind."""
+    is_live = hasattr(target, "raw")
     if check_alone is not None:
         check_alone()
     target.collapse()
     for _ in range(attempts):
-        if wait_for(lambda: not still_open(), 1.5):
+        if wait_for(lambda: not still_open(), 0.4 if is_live else 1.5, 0.05 if is_live else 0.2):
             return
         if check_alone is not None:
             check_alone()
         target.expand()
-        time.sleep(0.4)
+        time.sleep(0.15 if is_live else 0.4)
         if check_alone is not None:
             check_alone()
         target.collapse()
@@ -2053,15 +2438,32 @@ class Proxy:
         if answer != "ok":
             raise Refused(answer)
 
+    def word_action(self, action, **kwargs):
+        answer = self.ask({"word_action": action, "kwargs": kwargs})
+        if isinstance(answer, dict) and "ok" in answer:
+            res = answer["ok"]
+            if isinstance(res, dict) and res.get("hwnd"):
+                self.hwnd = res["hwnd"]
+            return res
+        raise Refused(str(answer))
+
 
 def converse(lines, reply, launched):
     """Serve a worker's requests until it reports its outcome; returns that outcome message."""
     for line in lines:
         message = json.loads(line)
-        if message.get("ask") == "check_alone":
+        ask_val = message.get("ask")
+        if ask_val == "check_alone":
             try:
                 launched.check_alone()
                 reply("ok")
+            except Refused as exc:
+                reply(str(exc))
+            continue
+        if isinstance(ask_val, dict) and "word_action" in ask_val:
+            try:
+                res = launched.word_action(ask_val["word_action"], **(ask_val.get("kwargs") or {}))
+                reply({"ok": res})
             except Refused as exc:
                 reply(str(exc))
             continue
@@ -2133,7 +2535,19 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
                 except TimeoutError:
                     raise TimeoutError(f"the capture worker timed out after {timeout}s") from None
 
-            timed_launched = types.SimpleNamespace(check_alone=timed_check_alone)
+            def timed_word_action(action, **kwargs):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(f"the capture worker timed out after {timeout}s")
+                fn = getattr(launched, "word_action", None)
+                if not callable(fn):
+                    raise Refused("launched instance does not support word_action")
+                try:
+                    return apt.call(lambda: fn(action, **kwargs), timeout=remaining)
+                except TimeoutError:
+                    raise TimeoutError(f"the capture worker timed out after {timeout}s") from None
+
+            timed_launched = types.SimpleNamespace(check_alone=timed_check_alone, word_action=timed_word_action)
             try:
                 outcome = converse(timed_lines(), reply, timed_launched)
             except TimeoutError as exc:
@@ -3773,6 +4187,894 @@ def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, orig
         )
 
 
+WORD_DEFAULT_FIXTURE = Path(r"R:\scratch\fixtures\word-contextual.docx")
+WORD_DEFAULT_RECIPIENTS = Path(r"R:\scratch\fixtures\word-recipients.csv")
+
+WORD_CONTEXTUAL_TRIGGERS = (
+    ("table", ("TabTableToolsDesign", "TabTableToolsLayout")),
+    ("picture", ("TabPictureToolsFormat",)),
+    ("shape", ("TabDrawingToolsFormat",)),
+    ("header_footer", ("TabHeaderAndFooterToolsDesign",)),
+    ("equation", ("TabEquationToolsDesign",)),
+    ("chart", ("TabChartToolsDesignNew", "TabChartToolsFormatNew")),
+    ("smartart", ("TabSmartArtToolsDesign", "TabSmartArtToolsFormat")),
+    ("svg", ("TabGraphicsToolsFormat",)),
+    ("model3d", ("Tab3DModelToolsFormat",)),
+    ("outlining", ("TabOutlining",)),
+    ("print_preview", ("TabPrintPreview",)),
+    ("background_removal", ("TabBackgroundRemoval",)),
+    ("immersive_reader", ("TabLearningTools",)),
+)
+
+WORD_REQUIRED_CORE_TABS = (
+    "TabHome",
+    "TabInsert",
+    "TabDrawInk",
+    "TabWordDesign",
+    "TabPageLayoutWord",
+    "TabReferences",
+    "TabMailings",
+    "TabReviewWord",
+    "TabView",
+    "TabDeveloper",
+    "HelpTab",
+)
+
+WORD_REQUIRED_CONTEXTUAL_TABS = (
+    "TabTableToolsDesign",
+    "TabTableToolsLayout",
+    "TabPictureToolsFormat",
+    "TabDrawingToolsFormat",
+    "TabHeaderAndFooterToolsDesign",
+    "TabEquationToolsDesign",
+    "TabChartToolsDesignNew",
+    "TabChartToolsFormatNew",
+    "TabSmartArtToolsDesign",
+    "TabSmartArtToolsFormat",
+    "TabGraphicsToolsFormat",
+    "Tab3DModelToolsFormat",
+    "TabOutlining",
+    "TabPrintPreview",
+    "TabBackgroundRemoval",
+    "TabLearningTools",
+)
+
+WORD_RECONCILED_ABSENT_TABS = {
+    "TabAddIns": "legacy CommandBar add-in container tab; hidden when no legacy add-in registers custom CommandBar controls",
+    "TabSyntex": "SharePoint Syntex enterprise content assembly tab; requires a Microsoft Syntex tenant service license",
+    "TabBlogPost": "legacy Weblog post editing tab; only loaded when Word starts in the deprecated Blog Post template mode",
+    "TabBlogInsert": "legacy Weblog insert tab; only loaded when Word starts in the deprecated Blog Post template mode",
+    "TabConflicts": "co-authoring server merge conflict resolution mode tab; only shown during an active sync conflict",
+    "TabBroadcastPresentation": "retired Office Presentation Service broadcast mode tab",
+    "TabChartToolsDesign": "legacy Office 2007-2010 chart contextual tab superseded by TabChartToolsDesignNew",
+    "TabChartToolsLayout": "legacy Office 2007-2010 chart layout tab superseded by TabChartToolsDesignNew and TabChartToolsFormatNew",
+    "TabChartToolsFormat": "legacy Office 2007-2010 chart format tab superseded by TabChartToolsFormatNew",
+    "TabDrawingToolsFormatClassic": "legacy VML drawing/AutoShape tab superseded by DrawingML TabDrawingToolsFormat",
+    "TabPictureToolsFormatClassic": "legacy VML picture tab superseded by DrawingML TabPictureToolsFormat",
+    "TabTextBoxToolsFormat": "legacy VML text box tab superseded by DrawingML TabDrawingToolsFormat",
+    "TabWordArtToolsFormat": "legacy VML WordArt tab superseded by DrawingML TabDrawingToolsFormat",
+    "TabDiagramToolsFormatClassic": "legacy Office 2003 diagram tab superseded by SmartArt TabSmartArtToolsDesign and TabSmartArtToolsFormat",
+    "TabOrganizationChartToolsFormat": "legacy Office 2003 organization chart tab superseded by SmartArt TabSmartArtToolsDesign and TabSmartArtToolsFormat",
+    "TabInkToolsPens": "legacy contextual Ink Tools Pens tab superseded by the always-available Draw TabDrawInk tab",
+}
+
+WORD_EXPECTED_TAB_KEYTIPS = {
+    "TabHome": "H",
+    "TabInsert": "N",
+    "TabDrawInk": "JI",
+    "TabWordDesign": "G",
+    "TabPageLayoutWord": "P",
+    "TabReferences": "S",
+    "TabMailings": "M",
+    "TabReviewWord": "R",
+    "TabView": "W",
+    "TabDeveloper": "L",
+    "HelpTab": "Y1",
+    "TabTableToolsDesign": "JT",
+    "TabTableToolsLayout": "JL",
+    "TabPictureToolsFormat": "JP",
+    "TabDrawingToolsFormat": "JD",
+    "TabHeaderAndFooterToolsDesign": "JH",
+    "TabEquationToolsDesign": "JE",
+    "TabChartToolsDesignNew": "JC",
+    "TabChartToolsFormatNew": "JA",
+    "TabSmartArtToolsDesign": "JS",
+    "TabSmartArtToolsFormat": "JO",
+    "TabGraphicsToolsFormat": "JG",
+    "Tab3DModelToolsFormat": "TI",
+    "TabOutlining": "U",
+    "TabPrintPreview": "P",
+    "TabBackgroundRemoval": "B2",
+    "TabLearningTools": "Y3",
+}
+
+WORD_EXPECTED_CONTROL_KEYTIPS = {
+    "word.home.clipboard.paste": "V",
+    "word.home.font.font": "FF",
+    "word.home.font.bold": "1",
+    "word.home.paragraph.borders": "B",
+    "word.home.font.text-effects-and-typography": "FT",
+    "word.home.font.text-effects-and-typography.outline": "O",
+    "word.home.font.text-effects-and-typography.outline.weight": "W",
+    "word.mailings.write-insert-fields.insert-merge-field": "I",
+    "word.mailings.write-insert-fields.rules": "U",
+    "word.mailings.finish.finish-merge": "F",
+    "word.header-footer.close.close-header-and-footer": "C",
+}
+
+WORD_RECONCILED_UNKEYED_CONTROL_UIA_IDS = frozenset({
+    "QuickStylesGallery",
+    "QuickStylesSets",
+    "TableStylesGalleryWord",
+    "PictureStylesGallery",
+    "ShapesInsertGallery",
+    "ShapeStylesGallery",
+    "TextStylesGallery",
+    "EquationSymbolsInsertGallery",
+    "ChartStylesGallery",
+    "SmartArtLayoutGallery",
+    "SmartArtStylesGallery",
+    "GraphicsStylesGallery",
+    "Gallery3DModelViewPresets",
+})
+
+WORD_RECONCILED_UNKEYED_MENU_LABELS = frozenset({
+    "Gallery Filter",
+    "Change List Level",
+    "All",
+    "No Online Content Available",
+    "Microsoft Office Signature Line...",
+    "Show Source Documents",
+    "FirstName",
+    "LastName",
+    "Title",
+    "City",
+    "3:4",
+    "4:5",
+    "5:4",
+    "Arrows",
+    "Shadow",
+    "Reflection",
+    "Glow",
+    "Bevel",
+    "3-D Rotation",
+    "Transform",
+    "Basic Math",
+    "Lines",
+    "Up/Down Bars",
+})
+
+WORD_RECONCILED_UNEXPANDED_CONTROLS = frozenset({
+    "word.home.sensitivity.sensitivity",
+    "word.draw.drawing-tools.drawing-tools",
+    "word.review.comments.show-comments",
+    "word.review.protect.block-authors",
+    "word.developer.protect.block-authors",
+    "word.picture-format.arrange.bring-forward",
+    "word.picture-format.arrange.send-backward",
+    "word.picture-format.arrange.group",
+    "word.shape-format.arrange.group",
+    "word.format.insert-shapes.change-shape",
+    "word.format.arrange.bring-forward",
+    "word.format.arrange.send-backward",
+    "word.format.arrange.group",
+    "word.format.arrange.rotate",
+    "word.smartart-design.create-graphic.layout",
+    "word.format-tabsmartarttoolsformat.arrange.bring-forward",
+    "word.format-tabsmartarttoolsformat.arrange.send-backward",
+    "word.format-tabsmartarttoolsformat.arrange.group",
+    "word.graphics-format.arrange.bring-forward",
+    "word.graphics-format.arrange.send-backward",
+    "word.3d-model.arrange.bring-forward",
+    "word.3d-model.arrange.send-backward",
+    "word.3d-model.arrange.group",
+})
+
+WORD_REQUIRED_EXPANDED_PARENTS = (
+    "word.home.clipboard.paste",
+    "word.home.paragraph.bullets",
+    "word.home.paragraph.numbering",
+    "word.home.paragraph.multilevel-list",
+    "word.home.paragraph.line-and-paragraph-spacing",
+    "word.home.paragraph.shading",
+    "word.home.paragraph.borders",
+    "word.home.styles.styles",
+    "word.home.font.text-effects-and-typography",
+    "word.home.font.text-effects-and-typography.outline",
+    "word.home.font.text-effects-and-typography.outline.weight",
+    "word.home.font.text-effects-and-typography.shadow",
+    "word.home.font.text-effects-and-typography.reflection",
+    "word.home.font.text-effects-and-typography.glow",
+    "word.home.editing.find",
+    "word.home.editing.select",
+    "word.insert.tables.table",
+    "word.insert.illustrations.pictures",
+    "word.insert.illustrations.shapes",
+    "word.insert.header-footer.header",
+    "word.insert.header-footer.footer",
+    "word.insert.header-footer.page-number",
+    "word.insert.text.text-box",
+    "word.insert.text.quick-parts",
+    "word.insert.text.wordart",
+    "word.insert.text.drop-cap",
+    "word.insert.symbols.equation",
+    "word.insert.symbols.symbol",
+    "word.draw.drawing-tools.add",
+    "word.draw.edit.format-background",
+    "word.draw.edit.format-background.page-color",
+    "word.design.document-formatting.themes",
+    "word.design.document-formatting.style-set",
+    "word.design.document-formatting.colors",
+    "word.design.document-formatting.fonts",
+    "word.design.document-formatting.paragraph-spacing",
+    "word.design.document-formatting.effects",
+    "word.design.page-background.watermark",
+    "word.design.page-background.page-color",
+    "word.layout.page-setup.margins",
+    "word.layout.page-setup.orientation",
+    "word.layout.page-setup.size",
+    "word.layout.page-setup.columns",
+    "word.layout.page-setup.breaks",
+    "word.layout.page-setup.line-numbers",
+    "word.layout.page-setup.hyphenation",
+    "word.layout.arrange.position",
+    "word.layout.arrange.wrap-text",
+    "word.layout.arrange.bring-forward",
+    "word.layout.arrange.send-backward",
+    "word.layout.arrange.align",
+    "word.layout.arrange.group",
+    "word.layout.arrange.rotate",
+    "word.references.table-of-contents.table-of-contents",
+    "word.mailings.start-mail-merge.start-mail-merge",
+    "word.mailings.start-mail-merge.select-recipients",
+    "word.mailings.write-insert-fields.insert-merge-field",
+    "word.mailings.write-insert-fields.rules",
+    "word.mailings.finish.finish-merge",
+    "word.review.comments.delete",
+    "word.review.tracking.track-changes",
+    "word.review.tracking.accept",
+    "word.review.tracking.reject",
+    "word.review.markup.show-markup",
+    "word.review.markup.show-markup.balloons",
+    "word.developer.controls.group",
+    "word.table-design.table-styles.table-styles",
+    "word.table-design.borders.borders",
+    "word.picture-format.picture-styles.quick-styles",
+    "word.shape-format.shape-styles.quick-styles",
+    "word.shape-format.shape-styles.shape-effects",
+    "word.shape-format.wordart-styles.quick-styles",
+    "word.shape-format.wordart-styles.text-fill",
+    "word.shape-format.wordart-styles.text-outline",
+    "word.shape-format.wordart-styles.text-effects",
+    "word.shape-format.text.text-direction",
+    "word.equation.tools.equation",
+    "word.equation.symbols.equation-symbols",
+    "word.equation.structures.fraction",
+    "word.chart-design.chart-styles.quick-styles",
+    "word.smartart-design.layouts.change-layout",
+    "word.smartart-design.smartart-styles.quick-styles",
+    "word.graphics-format.graphics-styles.graphics-styles",
+    "word.3d-model.3d-model-views.views",
+)
+
+CONTEXTUAL_TAB_BEHAVIOURS = {
+    "TabTableToolsDesign": "Appears under Table Tools when the insertion point or selection is inside a document table; hosts table style options, table style gallery presets, shading and border formatting.",
+    "TabTableToolsLayout": "Appears under Table Tools when the insertion point or selection is inside a document table; hosts table selection, row and column insertion/deletion, cell merging/splitting, cell size, alignment and table data sorting/formulas.",
+    "TabPictureToolsFormat": "Appears under Picture Tools when an inline or floating raster picture is selected; hosts background removal, image corrections, artistic effects, picture styles, alt text, arrangement and cropping.",
+    "TabDrawingToolsFormat": "Appears under Drawing Tools when an AutoShape, text box, WordArt object or drawing canvas is selected; hosts shape insertion, shape styles, WordArt text styles, text direction, arrangement and size.",
+    "TabHeaderAndFooterToolsDesign": "Appears under Header & Footer Tools when the active window's SeekView is inside a section header or footer story; hosts header/footer galleries, page numbers, date/time fields, header/footer navigation, section linking and position offsets.",
+    "TabEquationToolsDesign": "Appears under Equation Tools when the insertion point or selection is inside an OMath equation zone; hosts equation templates, TeX/Unicode conversion, math symbol gallery and structural math templates (fractions, scripts, radicals, integrals, operators, brackets, functions, accents, limits and matrices).",
+    "TabChartToolsDesignNew": "Appears under Chart Tools when an embedded DrawingML chart is selected; hosts chart element insertion, quick layouts, chart color palettes, chart style gallery presets, data source editing and chart type switching.",
+    "TabChartToolsFormatNew": "Appears under Chart Tools when an embedded DrawingML chart or chart element is selected; hosts chart element target selection, format pane opening, shape insertion, shape styles, WordArt styles, arrangement and chart dimensions.",
+    "TabSmartArtToolsDesign": "Appears under SmartArt Tools when a SmartArt diagram or diagram node is selected; hosts node creation and hierarchy promotion/demotion, diagram layout gallery, SmartArt style presets and diagram reset.",
+    "TabSmartArtToolsFormat": "Appears under SmartArt Tools when a SmartArt diagram or diagram node is selected; hosts 2-D editing, shape geometry changes, shape styles, WordArt text styles, arrangement and diagram/node sizing.",
+    "TabGraphicsToolsFormat": "Appears under Graphics Tools when an inline or floating scalable vector graphic (SVG, wdInlineShapeGraphic) is selected; hosts convert-to-shape, graphics styles, graphics fill/outline/effects, alt text, arrangement and cropping/sizing.",
+    "Tab3DModelToolsFormat": "Appears under 3D Model Tools when an inline or floating 3D model (wdInlineShape3DModel) is selected; hosts 3D model insertion, 3D camera view presets, alternative text, arrangement and pan/zoom/size controls.",
+    "TabOutlining": "Appears as a mode tab at the left of the ribbon when the active document window switches to Outline view (View Type wdOutlineView); hosts heading level promotion/demotion, paragraph movement, outline expansion/collapse, level filtering and master/subdocument management.",
+    "TabPrintPreview": "Appears as a mode tab when Print Preview Edit Mode (View Type wdPrintPreview) is active; hosts page setup, zoom, page movement, ruler/magnifier toggles, shrink-one-page and Close Print Preview.",
+    "TabBackgroundRemoval": "Appears as a modal editing tab when Remove Background is invoked on a selected picture; hosts foreground mark-to-keep and background mark-to-remove brushes, mark deletion, discard changes and keep changes.",
+    "TabLearningTools": "Appears under Immersive when Immersive Reader mode is active from the View tab; hosts column width, page colour, line focus, text spacing, syllable splitting and Read Aloud playback.",
+}
+
+
+def normalize_word_label(text):
+    import unicodedata
+    t = strip_control_chars(text or "")
+    t = re.sub(r"(\d)([\u00bc\u00bd\u00be])", r"\1 \2", t)
+    t = t.replace("\u00bc", "1/4").replace("\u00bd", "1/2").replace("\u00be", "3/4")
+    t = re.sub(r"\bOffice\.com\b", "Office Online", t, flags=re.IGNORECASE)
+    t = t.replace("(Q.E.D.)", "(QED)")
+    out = []
+    for ch in t:
+        if ord(ch) >= 0x80 and ch != "\u2026":
+            nfkc = unicodedata.normalize("NFKC", ch).replace("\u2044", "/")
+            if nfkc != ch and any(0x21 <= ord(x) < 0x7F for x in nfkc):
+                out.append(nfkc)
+                continue
+        out.append(ch)
+    t = "".join(out)
+    t = re.sub(r",\s*\u2026\s*,", " ...", t)
+    t = re.sub(r"([.\u2026])\s*[,;:]", r"\1", t)
+    t = re.sub(r"(\.\.\.|\u2026)(?=[A-Za-z0-9])", r"\1 ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    if len(t) > 110:
+        cut = t[:105].rsplit(" ", 1)[0].rstrip(" ,;:.…-")
+        t = f"{cut}..."
+    return t
+
+
+def _normalize_record_tree(records):
+    ids = Ids()
+    id_map = {}
+    out = []
+    for rec in records:
+        r = dict(rec)
+        old_id = r["id"]
+        old_label = r["label"]
+        new_label = normalize_word_label(old_label)
+        r["label"] = new_label
+        parent = r.get("parent")
+        if parent:
+            parent = id_map.get(parent, parent)
+            r["parent"] = parent
+        if old_label != new_label or len(old_id) > 190:
+            prefix = parent if parent else r["app"]
+            disc = r.get("uiaId") or r.get("idMso") or ""
+            new_id = ids.make(prefix, new_label, disc)
+            while len(new_id) > 195:
+                short_lbl = new_label[:60].rsplit(" ", 1)[0]
+                new_id = ids.make(prefix, short_lbl, disc)
+        else:
+            new_id = old_id
+            ids.taken.add(new_id)
+        id_map[old_id] = new_id
+        r["id"] = new_id
+        out.append(r)
+    by_parent = {}
+    for r in out:
+        p = r.get("parent")
+        if p is not None and r.get("kind") != "group":
+            by_parent.setdefault(p, []).append(r)
+    for siblings in by_parent.values():
+        for idx, s in enumerate(siblings):
+            s["order"] = idx
+    return out
+
+
+def _invoke_or_toggle_uia_button(el):
+    if el is None:
+        return False
+    if callable(getattr(el, "invoke", None)):
+        el.invoke()
+        return True
+    if el.can_toggle():
+        p = el.pattern("toggle")
+        if p is not None:
+            p.Toggle()
+            return True
+    raw = getattr(el, "raw", None)
+    u = getattr(getattr(el, "uia", None), "U", None)
+    if raw is not None and u is not None:
+        inv = raw.GetCurrentPattern(u.UIA_InvokePatternId)
+        if inv:
+            inv.QueryInterface(u.IUIAutomationInvokePattern).Invoke()
+            return True
+    return False
+
+
+def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_licensing, order_start=11, fixture_path=None):
+    """Open `fixture_path` (defaulting to `R:\\scratch\\fixtures\\word-contextual.docx`), trigger each contextual and
+    mode tab via Word's object model and commands, capture every resulting `contextualTab` record, and close the
+    fixture without modifying it."""
+    fpath = Path(fixture_path or WORD_DEFAULT_FIXTURE)
+    launched.word_action("open_fixture", path=str(fpath))
+    out = []
+    captured_idmsos = set()
+    next_order = order_start
+    try:
+        for target, expected_tab_ids in WORD_CONTEXTUAL_TRIGGERS:
+            launched.check_alone()
+            launched.word_action("trigger_contextual", target=target)
+            time.sleep(0.2)
+            root = uia.element(launched.hwnd)
+            tabs_bar = wait_for(lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs"))
+            if not tabs_bar:
+                raise Refused(f"Ribbon Tabs not found after triggering Word contextual target {target!r}")
+            if target == "background_removal":
+                cur_tabs = ribbon_tabs(tabs_bar)
+                if not any(t.automation_id == "TabBackgroundRemoval" for t in cur_tabs):
+                    pic_tab = next((t for t in cur_tabs if t.automation_id == "TabPictureToolsFormat"), None)
+                    if pic_tab is not None:
+                        pic_tab.select()
+                        lower_pic = lower_for_tab(uia, launched.hwnd, pic_tab.name)
+                        rm_btn = find(lower_pic, lambda e: e.automation_id == "PictureBackgroundRemoval")
+                        _invoke_or_toggle_uia_button(rm_btn)
+                        time.sleep(0.3)
+                        tabs_bar = wait_for(
+                            lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                        )
+            elif target == "immersive_reader":
+                cur_tabs = ribbon_tabs(tabs_bar)
+                if not any(t.automation_id == "TabLearningTools" for t in cur_tabs):
+                    view_tab = next((t for t in cur_tabs if t.automation_id == "TabView"), None)
+                    if view_tab is not None:
+                        view_tab.select()
+                        lower_view = lower_for_tab(uia, launched.hwnd, view_tab.name)
+                        ir_btn = find(lower_view, lambda e: e.automation_id == "ImmersiveReader")
+                        _invoke_or_toggle_uia_button(ir_btn)
+                        time.sleep(0.3)
+                        tabs_bar = wait_for(
+                            lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                        )
+            cur_tabs = ribbon_tabs(tabs_bar)
+            for expected_aid in expected_tab_ids:
+                if expected_aid in captured_idmsos:
+                    continue
+                tab_el = next((t for t in cur_tabs if t.automation_id == expected_aid), None)
+                if tab_el is None:
+                    raise Refused(f"Word contextual target {target!r} did not expose expected tab {expected_aid!r}")
+                launched.check_alone()
+                if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+                    ctx.drop_geometry(f"the window moved or changed size before contextual tab {tab_el.name!r}")
+                tab_el.select()
+                lower = lower_for_tab(uia, launched.hwnd, tab_el.name)
+                launched.check_alone()
+                check_licensing()
+                before_unverified = len(ctx.unverified)
+                tab_records = walk_tab(tab_el, next_order, lower, ctx, contextual=True)
+                next_order += 1
+                if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
+                    raise Refused(f"contextual tab {tab_el.name!r} ({expected_aid}) produced no control records")
+                if args.expand:
+                    tab_records = expand_all(
+                        tab_records, lower, ctx, launched, uia, win, unverified_start=before_unverified
+                    )
+                    check_licensing()
+                out.extend(tab_records)
+                captured_idmsos.add(expected_aid)
+                tabs_bar = wait_for(
+                    lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                )
+                if tabs_bar:
+                    cur_tabs = ribbon_tabs(tabs_bar)
+            if target == "background_removal":
+                lower_cur = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
+                if lower_cur is not None:
+                    disc = find(lower_cur, lambda e: e.automation_id == "BackgroundRemovalDiscard")
+                    _invoke_or_toggle_uia_button(disc)
+            elif target == "immersive_reader":
+                lower_cur = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
+                if lower_cur is not None:
+                    cls_btn = find(lower_cur, lambda e: e.automation_id == "CloseLearningTools")
+                    _invoke_or_toggle_uia_button(cls_btn)
+    finally:
+        launched.word_action("close_fixture")
+    return out
+
+
+def reconcile_word_unverified(records, unverified):
+    promoted_prefixes = ("word.draw.drawing-tools", "word.review.onenote")
+    promoted_by_tab = {"word.draw": [], "word.review": []}
+    remaining_unverified = []
+    for rec in unverified:
+        rid = rec.get("id", "")
+        if rid.startswith("word.draw.drawing-tools"):
+            rec = dict(rec, baselineMissing=True)
+            promoted_by_tab["word.draw"].append(rec)
+        elif rid.startswith("word.review.onenote"):
+            rec = dict(rec, baselineMissing=True)
+            promoted_by_tab["word.review"].append(rec)
+        else:
+            remaining_unverified.append(rec)
+
+    if not any(r.get("id", "").startswith(promoted_prefixes) for r in records):
+        out = []
+        i = 0
+        n = len(records)
+        while i < n:
+            rec = records[i]
+            out.append(rec)
+            i += 1
+            if rec.get("kind") == "tab" and rec.get("id") in promoted_by_tab and promoted_by_tab[rec["id"]]:
+                tab_id = rec["id"]
+                tab_slice = []
+                while i < n and records[i].get("kind") not in ("tab", "contextualTab"):
+                    tab_slice.append(records[i])
+                    i += 1
+                if tab_id == "word.draw":
+                    out.extend(promoted_by_tab[tab_id])
+                    out.extend(tab_slice)
+                else:
+                    out.extend(tab_slice)
+                    out.extend(promoted_by_tab[tab_id])
+        records = out
+
+    records = [
+        r for r in records
+        if not (
+            (r.get("parent") == "word.review.markup.show-markup.specific-people" and r.get("label") != "All Reviewers")
+            or (r.get("parent") == "word.insert.links.link" and r.get("label") != "Insert Link...")
+            or (r.get("parent") == "word.references.citations-bibliography.change-provider" and r.get("controlType") == "galleryItem")
+        )
+    ]
+
+    records = _normalize_record_tree(records)
+    remaining_unverified = _normalize_record_tree(remaining_unverified)
+
+    by_parent_groups = {}
+    for rec in records:
+        if rec.get("kind") == "group":
+            by_parent_groups.setdefault(rec.get("parent"), []).append(rec)
+    for grp_list in by_parent_groups.values():
+        grp_list.sort(key=lambda g: (g.get("bounds", {}).get("x", 0), g.get("order", 0)))
+        for idx, g in enumerate(grp_list):
+            g["order"] = idx
+
+    return records, remaining_unverified
+
+
+def synthesize_word_behaviour(records):
+    by_id = {r["id"]: r for r in records if isinstance(r, dict) and "id" in r}
+    children_of = {}
+    for r in records:
+        if not isinstance(r, dict):
+            continue
+        p = r.get("parent")
+        if p:
+            children_of.setdefault(p, []).append(r)
+
+    def root_tab_of(rec):
+        cur = rec
+        seen = set()
+        while cur and cur.get("id") not in seen:
+            seen.add(cur.get("id"))
+            if cur.get("kind") in ("tab", "contextualTab"):
+                return cur
+            cur = by_id.get(cur.get("parent"))
+        return None
+
+    def group_of(rec):
+        cur = rec
+        seen = set()
+        while cur and cur.get("id") not in seen:
+            seen.add(cur.get("id"))
+            if cur.get("kind") == "group":
+                return cur
+            cur = by_id.get(cur.get("parent"))
+        return None
+
+    for rec in records:
+        if not isinstance(rec, dict) or rec.get("behaviour"):
+            continue
+        kind = rec.get("kind")
+        if kind == "contextualTab":
+            idmso = rec.get("idMso", "")
+            rec["behaviour"] = CONTEXTUAL_TAB_BEHAVIOURS.get(
+                idmso,
+                f"Appears as a contextual ribbon tab ({rec.get('label', '')}) when its target object or mode is active in the document window.",
+            )
+            continue
+        if kind not in ("control", "menuItem"):
+            continue
+
+        rid = rec["id"]
+        label = rec.get("label", "").rstrip(".…").strip() or rec.get("label", "")
+        ctype = rec.get("controlType", "button")
+        idmso = rec.get("idMso") or rec.get("uiaId") or ""
+        tab_rec = root_tab_of(rec)
+        grp_rec = group_of(rec)
+        parent_rec = by_id.get(rec.get("parent"))
+        tab_label = (tab_rec["label"].rstrip(".…").strip() if tab_rec else "Word") or "Word"
+        grp_label = (grp_rec["label"].rstrip(".…").strip() if grp_rec else "Ribbon") or "Ribbon"
+        parent_label = (parent_rec["label"].rstrip(".…").strip() if parent_rec else grp_label) or grp_label
+        has_kids = bool(children_of.get(rid))
+
+        if rid == "word.home.sensitivity.sensitivity" or idmso == "ClassifyLabelProtect":
+            precond = "Enabled only when the signed-in Microsoft 365 tenant publishes Azure Information Protection / Purview sensitivity label policies; disabled in unlabelled or local sessions without tenant sensitivity policy."
+        elif idmso == "BlockAuthorsMenu":
+            precond = "Enabled only when editing a shared document hosted on SharePoint or OneDrive with active co-authoring; disabled on local documents."
+        elif idmso == "SmartArtOrganizationChartMenu":
+            precond = "Enabled when an organization-chart or hierarchy node is selected inside a SmartArt diagram; disabled on non-hierarchy SmartArt layouts."
+        elif idmso in ("ObjectBringForwardMenu", "ObjectSendBackwardMenu") and not has_kids:
+            precond = f"Enabled when the selected object on {tab_label} uses floating text wrapping (such as Square, Tight, Behind Text or In Front of Text) so z-order layering applies; disabled while the object is In Line with Text."
+        elif idmso == "ObjectsGroupMenu" and not has_kids:
+            precond = f"Enabled when two or more floating objects are multi-selected or when an existing grouped object is selected on {tab_label}; disabled when a single ungrouped object is selected."
+        elif idmso in ("ShapeChangeShapeGallery", "ObjectRotateGallery") and not has_kids:
+            precond = f"Enabled when an inner chart drawing shape or rotatable plot element is selected on {tab_label}; disabled when the outer chart container frame is selected."
+        elif tab_rec and tab_rec.get("kind") == "contextualTab":
+            precond = f"Enabled when {tab_label} is active for the selected object or mode in an editable document region."
+        elif tab_label == "Mailings":
+            if any(k in rid for k in ("insert-merge-field", "rules", "finish-merge", "preview-results", "match-fields", "update-labels", "greeting-line", "address-block", "highlight-merge-fields")):
+                precond = "Enabled when a mail-merge main document has an attached recipient data source (such as a CSV or address list)."
+            else:
+                precond = "Enabled in an editable document when configuring or running a mail merge on the Mailings tab."
+        elif tab_label == "Review" and grp_label == "Comments":
+            precond = "Enabled in an editable document when comments are permitted (with Delete and navigation actions active once at least one comment exists in the document)."
+        else:
+            precond = f"Enabled in an editable document when the current selection or view on {tab_label} ({grp_label}) supports the command."
+
+        if kind == "control":
+            if ctype == "gallery":
+                if rid == "word.draw.drawing-tools.drawing-tools":
+                    action = (
+                        "Displays the in-ribbon Drawing Tools pen, pencil and highlighter slot list on Draw; additional pens are added and configured via the adjacent Add dropdown button (Add Pen)."
+                    )
+                else:
+                    action = (
+                        f"Displays the {label} gallery in the {grp_label} group on {tab_label} with live preview tiles and opens its full dropdown popup via the gallery's More / dropdown expand button ({idmso or 'More'}) to list preset items, category filters and bottom commands."
+                    )
+                state_rule = (
+                    "State rule: highlights the gallery tile matching the active selection's uniform formatting or style as selected (on), shows no tile selected (off) when the selection uses custom formatting outside the gallery presets, and clears tile selection (mixed) when the selection spans multiple conflicting styles."
+                )
+            elif ctype == "splitButton":
+                action = (
+                    f"Executes the default {label} command in the {grp_label} group on {tab_label} when the primary button face is clicked, and opens the {label} dropdown menu via its split dropdown arrow to choose specific options."
+                )
+                state_rule = (
+                    "State rule: the primary button reflects the active formatting or mode state (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
+                )
+            elif ctype == "menu":
+                action = (
+                    f"Opens the {label} dropdown menu in the {grp_label} group on {tab_label} to present its child commands and submenus."
+                )
+                state_rule = ""
+            elif ctype in ("toggleButton", "checkBox", "radioButton"):
+                action = (
+                    f"Toggles the {label} state or formatting attribute in the {grp_label} group on {tab_label}."
+                )
+                state_rule = (
+                    f"State rule: reports checked/pressed (on) when {label} is active or uniformly applied across the current selection, unchecked (off) when inactive or absent on plain content, and indeterminate/mixed (or unpressed) when the selection spans both formatted and unformatted content."
+                )
+            elif ctype == "comboBox":
+                action = (
+                    f"Displays and edits the active {label} value in the {grp_label} group on {tab_label}, accepting direct text entry or selection from its dropdown list."
+                )
+                state_rule = (
+                    f"State rule: shows the matching {label} value as selected (on) when uniform across the selection, unselected (off) for other list entries, and a blank edit field (mixed) when the selection spans multiple {label} values."
+                )
+            elif ctype == "spinner":
+                action = (
+                    f"Displays and adjusts the numeric {label} measurement in the {grp_label} group on {tab_label} via direct entry or its paired More/Less increment buttons."
+                )
+                state_rule = (
+                    f"State rule: shows the active {label} measurement (on) when uniform across the selection, default zero/auto state (off) when unset, and a blank field (mixed) when the selection spans differing measurements."
+                )
+            elif ctype == "editBox":
+                action = (
+                    f"Accepts text or numeric input for {label} in the {grp_label} group on {tab_label} and applies the entered value on Enter or focus commit."
+                )
+                state_rule = ""
+            elif ctype == "dialogLauncher":
+                action = (
+                    f"Opens the modal dialog or task pane associated with the {grp_label} group on {tab_label} ({label})."
+                )
+                state_rule = ""
+            else:
+                if label in ("More", "Less") and not idmso:
+                    action = (
+                        f"Increments ({label}) the adjacent numeric spinner measurement in the {grp_label} group on {tab_label} by one step."
+                    )
+                else:
+                    action = (
+                        f"Invokes the {label} command in the {grp_label} group on {tab_label} to apply its action to the current selection or document."
+                    )
+                state_rule = ""
+        else:
+            if ctype == "galleryItem":
+                action = (
+                    f"Applies the {label} gallery preset from {parent_label} ({grp_label} group on {tab_label}) to the active selection or target object, with live preview on hover."
+                )
+                state_rule = (
+                    f"State rule: appears selected (on) in the {parent_label} gallery when the current selection uniformly matches {label}, unselected (off) when another preset or custom formatting applies, and unselected (mixed) when the selection spans multiple presets."
+                )
+            elif has_kids or ctype == "menu":
+                if label == "Gallery Filter":
+                    action = (
+                        f"Selects the active category filter inside the {parent_label} gallery popup on {tab_label} to scope which gallery items are shown."
+                    )
+                elif label == "No Online Content Available":
+                    action = (
+                        f"Placeholder item shown inside {parent_label} on {tab_label} when online template content is unavailable or not yet fetched."
+                    )
+                else:
+                    action = (
+                        f"Selects or expands the {label} option under {parent_label} ({grp_label} group on {tab_label})."
+                    )
+                state_rule = (
+                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                )
+            else:
+                action = (
+                    f"Executes the {label} command from the {parent_label} menu ({grp_label} group on {tab_label}) on the active selection or document."
+                )
+                state_rule = (
+                    f"State rule: displays checked/selected (on) when {label} represents an active toggle or mode that holds across the selection, unchecked (off) when inactive, and unchecked (mixed) when the selection spans mixed states."
+                )
+
+        parts = [action, precond]
+        if state_rule:
+            parts.append(state_rule)
+        rec["behaviour"] = strip_control_chars(" ".join(parts))
+
+    return records
+
+
+def validate_word_ribbon(records):
+    """Validate `design/inventory/word/ribbon.json` against D02 T01 §5 completeness, KeyTip, expansion and behaviour invariants."""
+    if not isinstance(records, list) or not records:
+        raise Refused("Word ribbon inventory is empty or not a list")
+    expected_build = reference_build(app="Word")
+    by_id = {}
+    children_of = {}
+    for rec in records:
+        if not isinstance(rec, dict) or not rec.get("id"):
+            raise Refused("Word ribbon record is missing 'id'")
+        rid = rec["id"]
+        if rid in by_id:
+            raise Refused(f"duplicate Word ribbon record id {rid!r}")
+        if rec.get("app") != "word":
+            raise Refused(f"{rid}: app must be 'word', got {rec.get('app')!r}")
+        if "acrobat" in rid:
+            raise Refused(f"{rid}: third-party add-in record must not be in design/inventory/word/ribbon.json")
+        by_id[rid] = rec
+        p = rec.get("parent")
+        if p is not None:
+            children_of.setdefault(p, []).append(rec)
+
+    tabs = [r for r in records if r.get("kind") == "tab"]
+    ctx_tabs = [r for r in records if r.get("kind") == "contextualTab"]
+    tab_idmsos = [r.get("idMso") for r in tabs]
+    ctx_idmsos = [r.get("idMso") for r in ctx_tabs]
+    if tuple(tab_idmsos) != WORD_REQUIRED_CORE_TABS:
+        raise Refused(
+            f"Word built-in tabs {tab_idmsos} do not match required {list(WORD_REQUIRED_CORE_TABS)}"
+        )
+    missing_ctx = [t for t in WORD_REQUIRED_CONTEXTUAL_TABS if t not in ctx_idmsos]
+    if missing_ctx or len(ctx_tabs) != len(set(ctx_idmsos)):
+        raise Refused(
+            f"Word contextual tabs {ctx_idmsos} are missing required {missing_ctx} or contain duplicates"
+        )
+
+    baseline_path = INVENTORY / "word" / "baseline.json"
+    if baseline_path.is_file():
+        bdata = json.loads(baseline_path.read_text(encoding="utf-8"))
+        cols = bdata["columns"]
+        idx_ct = cols.index("controlType")
+        idx_pl = cols.index("placement")
+        idx_id = cols.index("idMso")
+        baseline_tabs = {
+            row[idx_id]
+            for row in bdata["rows"]
+            if row[idx_ct] == "tab" and row[idx_pl] in ("coreTab", "contextualTab") and row[idx_id]
+        }
+        accounted = set(tab_idmsos) | set(ctx_idmsos) | set(WORD_RECONCILED_ABSENT_TABS)
+        unreconciled = sorted(baseline_tabs - accounted)
+        if unreconciled:
+            raise Refused(f"unreconciled Word baseline tab idMso(s): {unreconciled}")
+        ref_path = INVENTORY / "REFERENCE.md"
+        if ref_path.is_file():
+            ref_text = ref_path.read_text(encoding="utf-8")
+            missing_in_ref = [tid for tid in WORD_RECONCILED_ABSENT_TABS if tid not in ref_text]
+            if missing_in_ref:
+                raise Refused(f"reconciled absent Word baseline tab(s) not documented in REFERENCE.md: {missing_in_ref}")
+
+    for promoted_grp in ("word.draw.drawing-tools", "word.review.onenote"):
+        g_rec = by_id.get(promoted_grp)
+        if g_rec is None or g_rec.get("kind") != "group" or not g_rec.get("baselineMissing"):
+            raise Refused(f"missing promoted built-in group {promoted_grp!r} with baselineMissing: true")
+        if not any(c.get("kind") == "control" for c in children_of.get(promoted_grp, ())):
+            raise Refused(f"promoted built-in group {promoted_grp!r} has no child control records")
+
+    keytip_re = re.compile(r"^[A-Z0-9:]+$")
+    for rec in records:
+        rid = rec["id"]
+        kind = rec.get("kind")
+        b = rec.get("bounds")
+        if (
+            not isinstance(b, dict)
+            or b.get("width", 0) <= 0
+            or b.get("height", 0) <= 0
+            or b.get("x", -1) < 0
+            or b.get("y", -1) < 0
+        ):
+            raise Refused(f"{rid}: missing positive bounds")
+        if rec.get("captureProfile") != PROFILE:
+            raise Refused(f"{rid}: captureProfile {rec.get('captureProfile')!r} != {PROFILE!r}")
+        if rec.get("capturedFrom") != expected_build:
+            raise Refused(f"{rid}: capturedFrom {rec.get('capturedFrom')!r} != {expected_build!r}")
+        if rec.get("source") != f"uia:{expected_build}":
+            raise Refused(f"{rid}: source {rec.get('source')!r} != 'uia:{expected_build}'")
+
+        kt = rec.get("keytip")
+        if kt is not None and (not keytip_re.match(str(kt)) or "ALT+" in str(kt).upper()):
+            raise Refused(f"{rid}: invalid un-normalized keytip {kt!r}")
+
+        if kind in ("tab", "contextualTab"):
+            idmso = rec.get("idMso")
+            exp_kt = WORD_EXPECTED_TAB_KEYTIPS.get(idmso)
+            if not kt or (exp_kt and kt != exp_kt):
+                raise Refused(f"{rid} ({idmso}): keytip {kt!r} != expected {exp_kt!r}")
+            grps = [c for c in children_of.get(rid, ()) if c.get("kind") == "group"]
+            if not grps:
+                raise Refused(f"{rid}: tab has no child group records")
+            if kind == "contextualTab":
+                beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
+                if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold() or "Appears" not in beh:
+                    raise Refused(f"{rid}: contextualTab is missing trigger behaviour")
+        elif kind == "group":
+            parent = by_id.get(rec.get("parent"))
+            if parent is None or parent.get("kind") not in ("tab", "contextualTab"):
+                raise Refused(f"{rid}: group parent must be a tab or contextualTab")
+            ctrls = [c for c in children_of.get(rid, ()) if c.get("kind") == "control"]
+            if not ctrls:
+                raise Refused(f"{rid}: group has no child control records")
+            if not kt:
+                raise Refused(f"{rid}: group is missing keytip")
+        elif kind == "control":
+            parent = by_id.get(rec.get("parent"))
+            if parent is None or parent.get("kind") != "group":
+                raise Refused(f"{rid}: control parent must be a group")
+            if rec.get("size") not in ("large", "small"):
+                raise Refused(f"{rid}: control is missing valid size ('large' or 'small')")
+            ctype = rec.get("controlType")
+            if not ctype:
+                raise Refused(f"{rid}: control is missing controlType")
+            if not kt:
+                uia_id = rec.get("uiaId") or rec.get("idMso") or ""
+                is_spinner_btn = rec.get("label") in ("More", "Less") and not uia_id
+                if uia_id not in WORD_RECONCILED_UNKEYED_CONTROL_UIA_IDS and not is_spinner_btn:
+                    raise Refused(f"{rid}: control is missing keytip and is not in reconciled unkeyed controls")
+            beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
+            if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
+                raise Refused(f"{rid}: control is missing distinct behaviour sentence")
+            if "Enabled" not in beh:
+                raise Refused(f"{rid}: control behaviour is missing enablement precondition")
+            if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "splitButton", "comboBox", "spinner"):
+                if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
+                    raise Refused(f"{rid}: stateful {ctype} behaviour is missing on/off/mixed state rule")
+            if ctype == "gallery":
+                if "expand" not in beh and "dropdown" not in beh and "More" not in beh:
+                    raise Refused(f"{rid}: gallery behaviour is missing expand control description")
+            if ctype in ("menu", "splitButton", "gallery") and rid not in WORD_RECONCILED_UNEXPANDED_CONTROLS:
+                items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
+                if not items:
+                    raise Refused(f"{rid}: expandable {ctype} has no child menuItem records")
+        elif kind == "menuItem":
+            parent = by_id.get(rec.get("parent"))
+            if parent is None or parent.get("kind") not in ("control", "menuItem"):
+                raise Refused(f"{rid}: menuItem parent must be a control or menuItem")
+            ctype = rec.get("controlType")
+            if not ctype:
+                raise Refused(f"{rid}: menuItem is missing controlType")
+            if not kt and ctype != "galleryItem":
+                if rec.get("label") not in WORD_RECONCILED_UNKEYED_MENU_LABELS:
+                    raise Refused(f"{rid}: menuItem {rec.get('label')!r} is missing keytip and is not reconciled")
+            beh = (rec.get("behaviour") or "").strip() if isinstance(rec.get("behaviour"), str) else ""
+            if not beh or beh.casefold() == str(rec.get("label", "")).strip().casefold():
+                raise Refused(f"{rid}: menuItem is missing distinct behaviour sentence")
+            if "Enabled" not in beh:
+                raise Refused(f"{rid}: menuItem behaviour is missing enablement precondition")
+            if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
+                raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
+        else:
+            raise Refused(f"{rid}: unexpected record kind {kind!r} in Word ribbon inventory")
+
+    for req_id, exp_kt in WORD_EXPECTED_CONTROL_KEYTIPS.items():
+        r = by_id.get(req_id)
+        if r is None:
+            raise Refused(f"missing required Word control/menuItem {req_id!r}")
+        if r.get("keytip") != exp_kt:
+            raise Refused(f"{req_id}: keytip {r.get('keytip')!r} != expected {exp_kt!r}")
+
+    for req_parent in WORD_REQUIRED_EXPANDED_PARENTS:
+        if req_parent not in by_id:
+            raise Refused(f"missing required expandable parent {req_parent!r}")
+        if not any(c.get("kind") == "menuItem" for c in children_of.get(req_parent, ())):
+            raise Refused(f"required expandable parent {req_parent!r} has no child menuItem records")
+
+    return True
+
+
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser = argparse.ArgumentParser(description="Capture an Office app's ribbon or shared shell chrome through UI Automation.")
     parser.add_argument("--app", choices=sorted(APPS), help="reference app to capture (required for tab captures)")
@@ -3888,6 +5190,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     launched.close()
     try:
         unverified_records = list(ctx.unverified)
+        if args.app == "word":
+            records, unverified_records = reconcile_word_unverified(records, unverified_records)
         if args.merge:
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
@@ -3903,6 +5207,15 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                     _load_existing_records(unverified_path, current_unverified),
                     unverified_records,
                 )
+        if args.app == "word":
+            records = synthesize_word_behaviour(records)
+            unverified_records = synthesize_word_behaviour(unverified_records)
+            try:
+                is_canonical_word_ribbon = out.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
+            except OSError:
+                is_canonical_word_ribbon = False
+            if is_canonical_word_ribbon:
+                validate_word_ribbon(records)
         files = {out: render(records)}
         expected = {out: initial_bytes} if args.merge else {}
         create_only = [] if args.merge else [out]

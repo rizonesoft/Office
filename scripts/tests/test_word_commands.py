@@ -143,6 +143,47 @@ class Records(unittest.TestCase):
             with self.assertRaises(wc.Refused):
                 wc.records([row], BUILD, set())
 
+    def test_single_row_commands_link_to_unambiguous_ribbon_control_labels(self):
+        ribbon = [
+            {"id": "word.home.p.left", "kind": "control", "label": "Align Left", "idMso": "AlignLeft"},
+            {"id": "word.home.f.grow", "kind": "control", "label": "Increase Font Size", "idMso": "FontSizeIncreaseWord"},
+            {"id": "word.ctx.f.grow", "kind": "control", "label": "Increase Font Size", "idMso": "FontSizeIncreaseWord"},
+            {"id": "word.insert.c.chart", "kind": "control", "label": "Chart", "idMso": "ChartInsert"},
+            {"id": "word.home.ambig.a", "kind": "control", "label": "Format", "idMso": "FormatOne"},
+            {"id": "word.home.ambig.b", "kind": "menuItem", "label": "Format", "idMso": "FormatTwo"},
+            {"id": "word.home.partial.a", "kind": "control", "label": "Partial", "idMso": "PartialId"},
+            {"id": "word.home.partial.b", "kind": "menuItem", "label": "Partial"},
+            {"id": "word.home.menu.keep", "kind": "menuItem", "label": "Keep Text Only", "idMso": "PasteTextOnly"},
+        ]
+        self.assertEqual(
+            wc.ribbon_label_identifiers(ribbon),
+            {
+                "Align Left": "AlignLeft",
+                "Increase Font Size": "FontSizeIncreaseWord",
+                "Chart": "ChartInsert",
+                "Keep Text Only": "PasteTextOnly",
+            },
+        )
+        rows = [
+            ["Increase Font Size", "Ctrl+Shift+", ">"],
+            ["Keep Text Only", "", ""],
+            ["Chart", "", ""],
+            ["Chart", "", ""],
+            ["Chart", "", ""],
+            ["Format", "", ""],
+            ["Partial", "", ""],
+        ]
+        commands, _, unmatched = wc.records(rows, BUILD, set(), ribbon_records=ribbon)
+        by_id = {c["id"]: c for c in commands}
+        self.assertEqual(by_id["word.command.increase-font-size"].get("idMso"), "FontSizeIncreaseWord")
+        self.assertEqual(by_id["word.command.keep-text-only"].get("idMso"), "PasteTextOnly")
+        self.assertIsNone(by_id["word.command.chart"].get("idMso"))
+        self.assertIsNone(by_id["word.command.chart-2"].get("idMso"))
+        self.assertIsNone(by_id["word.command.chart-3"].get("idMso"))
+        self.assertIsNone(by_id["word.command.format"].get("idMso"))
+        self.assertIsNone(by_id["word.command.partial"].get("idMso"))
+        self.assertEqual(unmatched, ["Chart", "Chart", "Chart", "Format", "Partial"])
+
 
 class Proc:
     def __init__(self, exits=True):

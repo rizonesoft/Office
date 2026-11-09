@@ -41,6 +41,7 @@ def is_baseline(path):
 
 
 _SHELL_VALIDATOR = None
+_WORD_RIBBON_VALIDATOR = None
 
 
 def is_shell_chrome(path, data):
@@ -71,6 +72,34 @@ def check_shell_chrome(f, data):
         _SHELL_VALIDATOR = mod.validate_shell_chrome
     try:
         _SHELL_VALIDATOR(data)
+    except Exception as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
+def is_word_ribbon(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word ribbon inventory (`design/inventory/word/ribbon.json`)."""
+    p = Path(path)
+    return (
+        p.name.casefold() == "ribbon.json"
+        and p.parent.name.casefold() == "word"
+        and Path(inventory).resolve() == INVENTORY.resolve()
+        and p.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
+    )
+
+
+def check_word_ribbon(f, data):
+    """Problems in word/ribbon.json beyond the record schema: required built-in and contextual tabs, baseline tab
+    reconciliation, non-empty hierarchies, bounds, KeyTips, expanded submenus and galleries, and behaviour rules."""
+    global _WORD_RIBBON_VALIDATOR
+    if _WORD_RIBBON_VALIDATOR is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("capture_ui", ROOT / "scripts" / "capture-ui.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _WORD_RIBBON_VALIDATOR = mod.validate_word_ribbon
+    try:
+        _WORD_RIBBON_VALIDATOR(data)
     except Exception as exc:
         return [f"{f}: {exc}"]
     return []
@@ -530,6 +559,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             continue
         if is_shell_chrome(f, data):
             problems += check_shell_chrome(f, data)
+        if is_word_ribbon(f, inventory):
+            problems += check_word_ribbon(f, data)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The
         # locations the schema already reported are gathered once per file, not once per record.
         reported = {p.split(": ", 1)[0] for p in schema_problems}
@@ -579,9 +610,9 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                     problems.append(f"{where}: target {target} is ambiguous, defined at {places(seen[target])}")
                 elif kinds[target] not in TARGET_KINDS:
                     problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
-            if require_behaviour and rec.get("kind") == "control":
+            if require_behaviour and rec.get("kind") in ("contextualTab", "control", "menuItem"):
                 if not str(rec.get("behaviour", "")).strip(ECMA_SPACE):  # the schema's whitespace, not Python's
-                    problems.append(f"{where}: control {rid} has no behaviour")
+                    problems.append(f"{where}: {rec['kind']} {rid} has no behaviour")
     return problems
 
 

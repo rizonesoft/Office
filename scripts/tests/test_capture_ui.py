@@ -3136,5 +3136,269 @@ class ShellChrome(unittest.TestCase):
             cu.installed_build, cu.reference_build, cu.time.sleep = real_ib, real_rb, real_sleep
 
 
+class WordRibbon(unittest.TestCase):
+    def test_validate_word_ribbon_accepts_committed_inventory_and_refuses_mutations(self):
+        records = json.loads((cu.INVENTORY / "word" / "ribbon.json").read_text(encoding="utf-8"))
+        self.assertTrue(cu.validate_word_ribbon(records))
+        self.assertEqual(sum(r["kind"] == "tab" for r in records), 11)
+        self.assertGreaterEqual(sum(r["kind"] == "contextualTab" for r in records), 16)
+        self.assertEqual(ci.check([str(cu.INVENTORY / "word" / "ribbon.json")], require_behaviour=True), [])
+
+        # 1. Deleting any built-in core tab is refused.
+        for tid in ("TabHome", "TabDrawInk", "TabDeveloper", "HelpTab"):
+            missing_core = [r for r in records if r.get("idMso") != tid]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(missing_core)
+
+        # 2. Deleting any contextual or mode tab (including SVG, 3D Model, Outlining, Print Preview,
+        #    Background Removal, or Immersive Reader) is refused.
+        for ctx_tid in (
+            "TabTableToolsDesign",
+            "TabHeaderAndFooterToolsDesign",
+            "TabChartToolsFormatNew",
+            "TabSmartArtToolsFormat",
+            "TabGraphicsToolsFormat",
+            "Tab3DModelToolsFormat",
+            "TabOutlining",
+            "TabPrintPreview",
+            "TabBackgroundRemoval",
+            "TabLearningTools",
+        ):
+            missing_ctx = [r for r in records if r.get("idMso") != ctx_tid]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(missing_ctx)
+
+        # 3. Deleting a promoted baselineMissing built-in group or injecting a third-party Acrobat record is refused.
+        for promoted in ("word.draw.drawing-tools", "word.review.onenote"):
+            missing_promoted = [
+                r for r in records
+                if r["id"] != promoted and not str(r.get("parent", "")).startswith(promoted)
+            ]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(missing_promoted)
+        with_acrobat = list(records) + [{
+            "id": "word.acrobat",
+            "app": "word",
+            "kind": "tab",
+            "label": "Acrobat",
+            "order": 99,
+            "bounds": {"x": 10, "y": 48, "width": 50, "height": 30},
+            "captureProfile": "fhd-100",
+            "capturedFrom": BUILD,
+            "source": f"uia:{BUILD}",
+        }]
+        with self.assertRaises(cu.Refused):
+            cu.validate_word_ribbon(with_acrobat)
+
+        # 4. Missing or un-normalized KeyTips on tabs, groups, controls or nested menuItems are refused.
+        for target_id, bad_kt in (
+            ("word.home", "Alt+H"),
+            ("word.home.clipboard", None),
+            ("word.home.clipboard.paste", "X"),
+            ("word.home.font.text-effects-and-typography.outline.weight", None),
+            ("word.mailings.write-insert-fields.rules", None),
+            ("word.header-footer.close.close-header-and-footer", "X"),
+        ):
+            mutated = [dict(r) for r in records]
+            rec = next(r for r in mutated if r["id"] == target_id)
+            if bad_kt is None:
+                rec.pop("keytip", None)
+            else:
+                rec["keytip"] = bad_kt
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(mutated)
+
+        # 5. Removing child menuItems from required expanded menus, submenus or galleries is refused.
+        for parent_id in (
+            "word.home.paragraph.borders",
+            "word.home.font.text-effects-and-typography.outline",
+            "word.home.font.text-effects-and-typography.outline.weight",
+            "word.mailings.write-insert-fields.insert-merge-field",
+            "word.mailings.write-insert-fields.rules",
+            "word.mailings.finish.finish-merge",
+            "word.home.styles.styles",
+        ):
+            unexpanded = [r for r in records if r.get("parent") != parent_id]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(unexpanded)
+
+        # 6. Removing behaviour, enablement preconditions, gallery expand descriptions, or on/off/mixed state rules is refused.
+        for target_id, bad_beh in (
+            ("word.table-design", "Table Design"),
+            ("word.home.font.bold", "Toggles Bold on the selection. Enabled in an editable document."),
+            ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
+            ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
+        ):
+            mutated_beh = [dict(r) for r in records]
+            rec = next(r for r in mutated_beh if r["id"] == target_id)
+            rec["behaviour"] = bad_beh
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(mutated_beh)
+
+    def test_recursive_submenu_expansion_and_dynamic_reviewer_filtering(self):
+        class SubMenu(E):
+            def __init__(self, name, aid="", key="", sub_kids=()):
+                super().__init__("MenuItem", name, aid, key=key, rect=(20, 120, 140, 144))
+                self.open = False
+                self.sub_kids = list(sub_kids)
+
+            def expand_state(self):
+                return 1 if self.open else 0
+
+            def expand(self):
+                self.open = True
+
+            def collapse(self):
+                self.open = False
+
+        weight_items = [SubMenu("1/2 pt", "OutlineWeight1", key="Alt, H, F T, O, W, 1")]
+        outline_item = SubMenu("Outline", "TextEffectOutlineGallery", key="Alt, H, F T, O", sub_kids=[
+            SubMenu("Weight", "OutlineWeightMenu", key="Alt, H, F T, O, W", sub_kids=weight_items),
+        ])
+        specific_people = SubMenu("Specific People", "ReviewShowMarkupSpecificPeople", key="Alt, R, M K, P", sub_kids=[
+            SubMenu("All Reviewers", "ReviewAllReviewers", key="Alt, R, M K, P, A"),
+            SubMenu("Jane Operator", "", key="Alt, R, M K, P, 1"),
+        ])
+        top_drop = SubMenu("Show Markup", "ReviewShowMarkupMenu", key="Alt, R, M K", sub_kids=[outline_item, specific_people])
+        ctx = cu.Context("word", BUILD, {"ReviewShowMarkupMenu", "TextEffectOutlineGallery"}, origin=(0, 0))
+        parent_rec = ctx.base(
+            "word.review.markup.show-markup", "control", "Show Markup", 0, top_drop,
+            parent="word.review.markup", controlType="menu", idMso="ReviewShowMarkupMenu",
+        )
+        active_popups = []
+
+        def current_popups(_self, _pid):
+            handles = []
+            if top_drop.open:
+                handles.append(101)
+            if outline_item.open:
+                handles.append(102)
+            if outline_item.sub_kids[0].open:
+                handles.append(103)
+            if specific_people.open:
+                handles.append(104)
+            return handles
+
+        def element_for_handle(_self, h):
+            if h == 101:
+                return E("Window", "Top", kids=[E("Menu", "Top", kids=top_drop.sub_kids)])
+            if h == 102:
+                return E("Window", "Sub1", kids=[E("Menu", "Sub1", kids=outline_item.sub_kids)])
+            if h == 103:
+                return E("Window", "Sub2", kids=[E("Menu", "Sub2", kids=weight_items)])
+            if h == 104:
+                return E("Window", "SubPeople", kids=[E("Menu", "SubPeople", kids=specific_people.sub_kids)])
+            return E("Window", "Doc")
+
+        launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": lambda self: None})()
+        uia = type("U", (), {"element": element_for_handle})()
+        win = type("W", (), {"popups": current_popups})()
+        real_wait, real_sleep = cu.wait_for, cu.time.sleep
+        cu.wait_for = lambda test, seconds=0, step=0: test()
+        cu.time.sleep = lambda s: None
+        try:
+            expanded = cu.expand_all([parent_rec], None, ctx, launched, uia, win)
+        finally:
+            cu.wait_for, cu.time.sleep = real_wait, real_sleep
+        by_id = {r["id"]: r for r in expanded}
+        self.assertIn("word.review.markup.show-markup.outline", by_id)
+        self.assertIn("word.review.markup.show-markup.outline.weight", by_id)
+        self.assertIn("word.review.markup.show-markup.outline.weight.1-2-pt", by_id)
+        self.assertEqual(by_id["word.review.markup.show-markup.outline.weight"]["keytip"], "W")
+        self.assertIn("word.review.markup.show-markup.specific-people.all-reviewers", by_id)
+        self.assertFalse(any("jane" in rid for rid in by_id))
+
+    def test_word_contextual_tab_triggering_and_fixture_integrity(self):
+        import argparse
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture_file = Path(tmp) / "word-contextual.docx"
+            fixture_file.write_bytes(b"original-fixture-bytes")
+            actions = []
+            active_ctx_tabs = []
+
+            ctx_tab_defs = {
+                "table": [("Table Design", "TabTableToolsDesign", "Alt, JT"), ("Layout", "TabTableToolsLayout", "Alt, JL")],
+                "picture": [("Picture Format", "TabPictureToolsFormat", "Alt, JP")],
+                "shape": [("Shape Format", "TabDrawingToolsFormat", "Alt, JD")],
+                "header_footer": [("Header & Footer", "TabHeaderAndFooterToolsDesign", "Alt, JH")],
+                "equation": [("Equation", "TabEquationToolsDesign", "Alt, JE")],
+                "chart": [("Chart Design", "TabChartToolsDesignNew", "Alt, JC"), ("Format", "TabChartToolsFormatNew", "Alt, JA")],
+                "smartart": [("SmartArt Design", "TabSmartArtToolsDesign", "Alt, JS"), ("Format", "TabSmartArtToolsFormat", "Alt, JO")],
+                "svg": [("Graphics Format", "TabGraphicsToolsFormat", "Alt, JG")],
+                "model3d": [("3D Model", "Tab3DModelToolsFormat", "Alt, TI")],
+                "outlining": [("Outlining", "TabOutlining", "Alt, U")],
+                "print_preview": [("Print Preview", "TabPrintPreview", "Alt, P")],
+                "background_removal": [("Background Removal", "TabBackgroundRemoval", "Alt, B2")],
+                "immersive_reader": [("Immersive Reader", "TabLearningTools", "Alt, Y3")],
+            }
+            selected_tab = ["Home"]
+
+            def word_action(_self, action, **kwargs):
+                actions.append((action, kwargs))
+                if action == "trigger_contextual":
+                    active_ctx_tabs[:] = ctx_tab_defs.get(kwargs.get("target"), [])
+                elif action == "close_fixture":
+                    active_ctx_tabs.clear()
+                return {"hwnd": 5}
+
+            tree_cache = {}
+
+            def make_tab_item(name, aid, kt):
+                t = E("TabItem", name, aid, kt, rect=(60, 48, 130, 78))
+                t.select = lambda n=name: selected_tab.__setitem__(0, n)
+                return t
+
+            def current_root(_self, _h):
+                key = (selected_tab[0], tuple(active_ctx_tabs))
+                if key not in tree_cache:
+                    tab_items = [make_tab_item("Home", "TabHome", "Alt, H")] + [
+                        make_tab_item(n, aid, kt) for n, aid, kt in active_ctx_tabs
+                    ]
+                    t_name = selected_tab[0]
+                    grp = E("Group", "Tools", key="Alt, H, Z T", rect=(10, 82, 120, 174), kids=[
+                        E("Button", "Bold", "Bold", "Alt, H, 1", rect=(14, 90, 60, 160)),
+                    ])
+                    lower = E("Pane", "Lower Ribbon", rect=(0, 78, 1920, 178), kids=[E("Group", t_name, kids=[grp])])
+                    tree_cache[key] = E("Window", "word-contextual.docx - Word", kids=[
+                        E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=tab_items),
+                        lower,
+                    ])
+                return E._wrap(tree_cache[key])
+
+            launched = type("L", (), {
+                "hwnd": 5,
+                "proc": type("P", (), {"pid": 7})(),
+                "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                "language": lambda self: 1033,
+                "check_alone": lambda self: None,
+                "word_action": word_action,
+            })()
+            win = type("W", (), {
+                "monitors": lambda self: [Profile.MONITOR],
+                "place": lambda self, h, m: None,
+                "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
+            })()
+            uia = type("U", (), {"element": current_root})()
+            args = argparse.Namespace(
+                app="word", tab=None, all_tabs=True, expand=False, layout="classic",
+                merge=False, out=None, fixture=str(fixture_file),
+            )
+            real_ib, real_rb, real_sleep = cu.installed_build, cu.reference_build, cu.time.sleep
+            cu.installed_build = lambda: BUILD
+            cu.reference_build = lambda app="Word": BUILD
+            cu.time.sleep = lambda s: None
+            try:
+                recs, problems, _ctx = cu.capture(args, launched, uia, win)
+            finally:
+                cu.installed_build, cu.reference_build, cu.time.sleep = real_ib, real_rb, real_sleep
+            self.assertEqual(problems, [])
+            ctx_captured = [r["idMso"] for r in recs if r["kind"] == "contextualTab"]
+            self.assertEqual(tuple(ctx_captured), cu.WORD_REQUIRED_CONTEXTUAL_TABS)
+            self.assertEqual(actions[0][0], "prepare_core_tab")
+            self.assertEqual(actions[1], ("open_fixture", {"path": str(fixture_file)}))
+            self.assertEqual(actions[-1], ("close_fixture", {}))
+            self.assertEqual(fixture_file.read_bytes(), b"original-fixture-bytes")
+
+
 if __name__ == "__main__":
     unittest.main()
