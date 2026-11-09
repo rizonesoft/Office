@@ -3257,6 +3257,12 @@ class WordRibbon(unittest.TestCase):
             "disabled when the insertion point is inside a single table cell",
             by_id["word.table-layout.merge.merge-cells"]["behaviour"],
         )
+        self.assertIn("Labels mail-merge main document", by_id["word.mailings.write-insert-fields.update-labels"]["behaviour"])
+        self.assertIn("first label", by_id["word.mailings.write-insert-fields.update-labels"]["behaviour"])
+        self.assertIn(
+            "with or without an attached recipient data source",
+            by_id["word.mailings.write-insert-fields.update-labels"]["behaviour"],
+        )
         self.assertFalse(hasattr(cu, "synthesize_word_behaviour"))
         less_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "Less"]
         more_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "More"]
@@ -3302,6 +3308,10 @@ class WordRibbon(unittest.TestCase):
             (
                 "word.table-layout.merge.merge-cells",
                 "Invokes the Merge Cells command in the Merge group on Table Layout to apply its action to the current selection or document. Enabled when Table Layout is active for the selected object or mode in an editable document region.",
+            ),
+            (
+                "word.mailings.write-insert-fields.update-labels",
+                "Invokes the Update Labels command in the Write & Insert Fields group on Mailings to apply its action to the current selection or document. Enabled when a mail-merge main document has an attached recipient data source (such as a CSV or address list).",
             ),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
@@ -3665,12 +3675,36 @@ class WordRibbon(unittest.TestCase):
                 def Item(self, idx):
                     return self.items[idx - 1]
 
+            clipboard_state = [[(2, "bitmap", 999)]]
+            copied_texts = []
+            allow_range_copy = [True]
+
+            class FakeRange:
+                def __init__(self, doc):
+                    self.doc = doc
+
+                @property
+                def Text(self):
+                    return self.doc.range_text
+
+                @Text.setter
+                def Text(self, val):
+                    self.doc.range_text = val
+
+                def Copy(self):
+                    copied_texts.append(self.doc.range_text)
+                    clipboard_state[0] = [(13, "hglobal", self.doc.range_text.encode("utf-16-le"))]
+
+                def Select(self):
+                    pass
+
             class FakeDoc:
                 def __init__(self, name="Document1", full_name="Document1", inline_types=()):
                     self.Name = name
                     self.FullName = full_name
                     self.Saved = True
                     self.closed = False
+                    self.range_text = ""
                     self.Shapes = FakeShapesCol()
                     self.InlineShapes = FakeInlineCol(inline_types)
                     self.MailMerge = type(
@@ -3683,7 +3717,9 @@ class WordRibbon(unittest.TestCase):
                     )()
 
                 def Range(self, _s, _e):
-                    return type("Rg", (), {"Select": lambda _self: None})()
+                    if not allow_range_copy[0]:
+                        return type("RgNoCopy", (), {"Select": lambda _self: None})()
+                    return FakeRange(self)
 
                 def Close(self, _save=0):
                     self.closed = True
@@ -3725,18 +3761,37 @@ class WordRibbon(unittest.TestCase):
                 },
             )()
             real_launched._win = type("W", (), {"top": lambda _s, h: h})()
+            real_launched._clipboard_saver = lambda: list(clipboard_state[0])
+            real_launched._clipboard_restorer = lambda snap: clipboard_state.__setitem__(0, list(snap))
 
-            # Layout preparation creates and multi-selects PrepLayoutShape1 + PrepLayoutShape2; switching to Home deletes them.
+            # Layout preparation creates and multi-selects PrepLayoutShape1 + PrepLayoutShape2; switching to Home deletes them,
+            # saves the operator's original clipboard (even if it held a bitmap), seeds rich text via Range(0, 0).Copy(),
+            # clears Range(0, 0).Text back to empty, and switching away from Home restores the operator's original clipboard.
             real_launched._word_action_impl("prepare_core_tab", tab_name="Layout")
             self.assertIn(("PrepLayoutShape1", "PrepLayoutShape2"), selected_ranges)
             self.assertTrue(real_doc.Saved)
             real_launched._word_action_impl("prepare_core_tab", tab_name="Home")
             self.assertTrue(real_doc.Shapes.by_name["PrepLayoutShape1"].deleted)
             self.assertTrue(real_doc.Shapes.by_name["PrepLayoutShape2"].deleted)
+            self.assertEqual(copied_texts, ["Sample"])
+            self.assertEqual(real_doc.range_text, "")
+            self.assertTrue(real_doc.Saved)
+            self.assertEqual(clipboard_state[0], [(13, "hglobal", "Sample".encode("utf-16-le"))])
+            self.assertEqual(real_launched._saved_clipboard, [(2, "bitmap", 999)])
 
-            # Mailings preparation attaches recipients CSV and refuses a missing CSV.
+            # Mailings preparation restores the operator's original clipboard, attaches recipients CSV, and refuses a missing CSV.
             real_launched._word_action_impl("prepare_core_tab", tab_name="Mailings", recipients_path=str(recipients_csv))
+            self.assertIsNone(real_launched._saved_clipboard)
+            self.assertEqual(clipboard_state[0], [(2, "bitmap", 999)])
             self.assertEqual(opened_sources, [str(recipients_csv)])
+
+            # If Range(0, 0) lacks Copy(), Home preparation refuses and still restores the operator's original clipboard.
+            allow_range_copy[0] = False
+            with self.assertRaises(cu.Refused):
+                real_launched._word_action_impl("prepare_core_tab", tab_name="Home")
+            self.assertIsNone(real_launched._saved_clipboard)
+            self.assertEqual(clipboard_state[0], [(2, "bitmap", 999)])
+            allow_range_copy[0] = True
             with self.assertRaises(cu.Refused):
                 real_launched._word_action_impl(
                     "prepare_core_tab", tab_name="Mailings", recipients_path=str(Path(tmp) / "missing.csv")

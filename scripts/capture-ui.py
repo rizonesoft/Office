@@ -1140,6 +1140,10 @@ class Launched:
                         f"the {self.exe} instance holds {still_open} document(s) this tool did not create, so it was left running"
                     )
         finally:
+            try:
+                self._restore_saved_clipboard()
+            except Exception as exc:
+                failures.append(f"restore clipboard failed ({type(exc).__name__}: {exc})")
             d = None
             m_doc = None
             doc = None
@@ -1380,6 +1384,123 @@ class Launched:
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
                               "ribbon acts on someone else's")
 
+    def _save_clipboard(self):
+        saver = getattr(self, "_clipboard_saver", None)
+        if callable(saver):
+            return saver()
+        import ctypes
+        u32 = ctypes.windll.user32
+        k32 = ctypes.windll.kernel32
+        gdi32 = ctypes.windll.gdi32
+        u32.GetClipboardData.restype = ctypes.c_void_p
+        u32.GetClipboardData.argtypes = [ctypes.c_uint]
+        u32.CopyImage.restype = ctypes.c_void_p
+        u32.CopyImage.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_uint]
+        gdi32.CopyEnhMetaFileW.restype = ctypes.c_void_p
+        gdi32.CopyEnhMetaFileW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        k32.GlobalLock.restype = ctypes.c_void_p
+        k32.GlobalLock.argtypes = [ctypes.c_void_p]
+        k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        k32.GlobalSize.restype = ctypes.c_size_t
+        k32.GlobalSize.argtypes = [ctypes.c_void_p]
+        opened = False
+        for _ in range(10):
+            if u32.OpenClipboard(0):
+                opened = True
+                break
+            time.sleep(0.02)
+        if not opened:
+            raise Refused("could not open the system clipboard to preserve operator clipboard state")
+        items = []
+        try:
+            fmt = u32.EnumClipboardFormats(0)
+            while fmt:
+                if fmt in (3, 9) or (0x0080 <= fmt <= 0x008E) or (0x0200 <= fmt <= 0x03FF):
+                    fmt = u32.EnumClipboardFormats(fmt)
+                    continue
+                h = u32.GetClipboardData(fmt)
+                if h:
+                    if fmt == 2:
+                        dup_bmp = u32.CopyImage(h, 0, 0, 0, 0)
+                        if dup_bmp:
+                            items.append((fmt, "bitmap", dup_bmp))
+                    elif fmt == 14:
+                        dup_emf = gdi32.CopyEnhMetaFileW(h, None)
+                        if dup_emf:
+                            items.append((fmt, "emf", dup_emf))
+                    else:
+                        sz = int(k32.GlobalSize(h) or 0)
+                        ptr = k32.GlobalLock(h) if sz > 0 else None
+                        if ptr:
+                            try:
+                                raw_bytes = ctypes.string_at(ptr, sz)
+                            finally:
+                                k32.GlobalUnlock(h)
+                            items.append((fmt, "hglobal", raw_bytes))
+                fmt = u32.EnumClipboardFormats(fmt)
+        finally:
+            u32.CloseClipboard()
+        return items
+
+    def _restore_clipboard(self, snapshot):
+        restorer = getattr(self, "_clipboard_restorer", None)
+        if callable(restorer):
+            return restorer(snapshot)
+        import ctypes
+        u32 = ctypes.windll.user32
+        k32 = ctypes.windll.kernel32
+        gdi32 = ctypes.windll.gdi32
+        u32.SetClipboardData.restype = ctypes.c_void_p
+        u32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
+        k32.GlobalAlloc.restype = ctypes.c_void_p
+        k32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
+        k32.GlobalFree.argtypes = [ctypes.c_void_p]
+        k32.GlobalLock.restype = ctypes.c_void_p
+        k32.GlobalLock.argtypes = [ctypes.c_void_p]
+        k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        gdi32.DeleteObject.argtypes = [ctypes.c_void_p]
+        gdi32.DeleteEnhMetaFile.argtypes = [ctypes.c_void_p]
+        opened = False
+        for _ in range(10):
+            if u32.OpenClipboard(0):
+                opened = True
+                break
+            time.sleep(0.02)
+        if not opened:
+            raise Refused("could not open the system clipboard to restore operator clipboard state")
+        try:
+            u32.EmptyClipboard()
+            for fmt, kind, payload in snapshot or ():
+                if kind == "hglobal" and isinstance(payload, (bytes, bytearray)):
+                    n = len(payload)
+                    hmem = k32.GlobalAlloc(0x0042, max(1, n))
+                    if hmem:
+                        ptr = k32.GlobalLock(hmem)
+                        if ptr:
+                            try:
+                                if n > 0:
+                                    ctypes.memmove(ptr, bytes(payload), n)
+                            finally:
+                                k32.GlobalUnlock(hmem)
+                            if not u32.SetClipboardData(fmt, hmem):
+                                k32.GlobalFree(hmem)
+                        else:
+                            k32.GlobalFree(hmem)
+                elif kind == "bitmap" and payload:
+                    if not u32.SetClipboardData(2, payload):
+                        gdi32.DeleteObject(payload)
+                elif kind == "emf" and payload:
+                    if not u32.SetClipboardData(14, payload):
+                        gdi32.DeleteEnhMetaFile(payload)
+        finally:
+            u32.CloseClipboard()
+
+    def _restore_saved_clipboard(self):
+        if hasattr(self, "_saved_clipboard") and self._saved_clipboard is not None:
+            saved = self._saved_clipboard
+            self._saved_clipboard = None
+            self._restore_clipboard(saved)
+
     def word_action(self, action, timeout=None, **kwargs):
         return self._call_com(lambda: self._word_action_impl(action, **kwargs), timeout=timeout)
 
@@ -1387,9 +1508,13 @@ class Launched:
         import hashlib
         if getattr(self, "key", None) != "word":
             raise Refused(f"word_action is only valid for Word, not {getattr(self, 'key', None)!r}")
+        if action == "restore_clipboard":
+            self._restore_saved_clipboard()
+            return {"hwnd": int(self.hwnd or 0)}
         self._check_alone_impl()
         app = self.app
         if action == "open_fixture":
+            self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
             if not path.is_file():
                 raise Refused(f"Word contextual fixture {path} does not exist")
@@ -1406,6 +1531,7 @@ class Launched:
                 self.hwnd = self._get_win().top(wh)
             return {"hwnd": int(self.hwnd or 0)}
         if action == "close_fixture":
+            self._restore_saved_clipboard()
             fdoc = getattr(self, "_fixture_doc", None)
             if fdoc is not None and not getattr(fdoc, "closed", False):
                 try:
@@ -1440,6 +1566,8 @@ class Launched:
             return {"hwnd": int(self.hwnd or 0)}
         if action == "prepare_core_tab":
             tab_name = kwargs.get("tab_name", "")
+            if tab_name != "Home":
+                self._restore_saved_clipboard()
             doc = self.created[0] if self.created else None
             if doc is not None:
                 if tab_name == "Layout":
@@ -1469,11 +1597,28 @@ class Launched:
                                     sh_obj.Delete()
                             except Exception:
                                 pass
-                    try:
-                        if hasattr(doc, "Range"):
-                            doc.Range(0, 0).Select()
-                    except Exception:
-                        pass
+                    if tab_name == "Home":
+                        if getattr(self, "_saved_clipboard", None) is None:
+                            self._saved_clipboard = self._save_clipboard()
+                        rng = doc.Range(0, 0) if hasattr(doc, "Range") else None
+                        if rng is None or not hasattr(rng, "Copy"):
+                            self._restore_saved_clipboard()
+                            raise Refused("Word document Range does not support Copy() to seed Home clipboard state")
+                        try:
+                            rng.Text = "Sample"
+                            rng.Copy()
+                            rng.Text = ""
+                            if hasattr(rng, "Select"):
+                                rng.Select()
+                        except Exception as exc:
+                            self._restore_saved_clipboard()
+                            raise Refused(f"failed to seed Home clipboard state ({type(exc).__name__}: {exc})") from None
+                    else:
+                        try:
+                            if hasattr(doc, "Range"):
+                                doc.Range(0, 0).Select()
+                        except Exception:
+                            pass
                 if tab_name == "Mailings":
                     csv_path = Path(kwargs.get("recipients_path") or WORD_DEFAULT_RECIPIENTS)
                     if not csv_path.is_file():
@@ -1836,6 +1981,7 @@ class Launched:
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         metas = list(getattr(self, "_created_meta", ()))
         try:
+            self._restore_saved_clipboard()
             fdoc = getattr(self, "_fixture_doc", None)
             if fdoc is not None and not getattr(fdoc, "closed", False):
                 self._word_action_impl("close_fixture")
@@ -1857,6 +2003,11 @@ class Launched:
         except Exception as exc:  # reported below: the instance is left running and the run refuses
             failure = f"{type(exc).__name__}: {exc}"
         finally:
+            try:
+                self._restore_saved_clipboard()
+            except Exception as exc:
+                if failure is None:
+                    failure = f"{type(exc).__name__}: {exc}"
             doc = None
             self._release_marshaled_app()
             if others == 0:
@@ -2134,28 +2285,35 @@ def capture(args, launched, uia, win):
     ctx.notes.append(f"baseline core tabs not shown in this window: {sorted(core - shown) or 'none'}")
     ctx.notes.append("File (Backstage) is not a ribbon tab; its pages are captured by the app's Backstage section")
     records = []
-    for order, tab in enumerate(tab_elements):
-        if tab.name not in wanted:
-            continue
-        launched.check_alone()
-        if args.app == "word" and callable(getattr(launched, "word_action", None)):
-            launched.word_action("prepare_core_tab", tab_name=tab.name)
-        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
-            ctx.drop_geometry(f"the window moved or changed size before tab {tab.name!r}")
-        tab.select()
-        lower = lower_for_tab(uia, launched.hwnd, tab.name)
-        launched.check_alone()
-        check_licensing()
-        before_unverified = len(ctx.unverified)
-        tab_records = walk_tab(tab, order, lower, ctx)
-        if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
-            raise Refused(f"tab {tab.name!r} produced no control records")
-        if args.expand:
-            tab_records = expand_all(
-                tab_records, lower, ctx, launched, uia, win, unverified_start=before_unverified
-            )
+    try:
+        for order, tab in enumerate(tab_elements):
+            if tab.name not in wanted:
+                continue
+            launched.check_alone()
+            if args.app == "word" and callable(getattr(launched, "word_action", None)):
+                launched.word_action("prepare_core_tab", tab_name=tab.name)
+            if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+                ctx.drop_geometry(f"the window moved or changed size before tab {tab.name!r}")
+            tab.select()
+            lower = lower_for_tab(uia, launched.hwnd, tab.name)
+            launched.check_alone()
             check_licensing()
-        records += tab_records
+            before_unverified = len(ctx.unverified)
+            tab_records = walk_tab(tab, order, lower, ctx)
+            if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
+                raise Refused(f"tab {tab.name!r} produced no control records")
+            if args.expand:
+                tab_records = expand_all(
+                    tab_records, lower, ctx, launched, uia, win, unverified_start=before_unverified
+                )
+                check_licensing()
+            records += tab_records
+    finally:
+        if args.app == "word" and getattr(launched, "_saved_clipboard", None) is not None:
+            if callable(getattr(launched, "_restore_saved_clipboard", None)):
+                launched._restore_saved_clipboard()
+            elif callable(getattr(launched, "word_action", None)):
+                launched.word_action("restore_clipboard")
     if args.app == "word" and args.all_tabs and getattr(args, "layout", "classic") == "classic" and callable(getattr(launched, "word_action", None)):
         fixture_path = Path(getattr(args, "fixture", None) or WORD_DEFAULT_FIXTURE)
         records += capture_word_contextual_tabs(
@@ -6502,6 +6660,16 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                     ):
                         raise Refused(
                             f"{rid}: Merge Cells must specify that two or more adjacent cells are required and that it is disabled inside a single table cell"
+                        )
+                if rid == "word.mailings.write-insert-fields.update-labels" or rec.get("idMso") == "MailMergeUpdateLabels":
+                    if (
+                        "Labels mail-merge main document" not in beh
+                        or "first label" not in beh
+                        or "with or without an attached recipient data source" not in beh
+                        or "Enabled when a mail-merge main document has an attached recipient data source" in beh
+                    ):
+                        raise Refused(
+                            f"{rid}: Update Labels must describe copying the first label's layout across the sheet and require a Labels mail-merge main document (with or without attached recipients)"
                         )
                 if rec.get("label") == "Less" and not (rec.get("uiaId") or rec.get("idMso")) and "Decrements (Less)" not in beh:
                     raise Refused(f"{rid}: Less spinner button must describe decrementing, got {beh!r}")
