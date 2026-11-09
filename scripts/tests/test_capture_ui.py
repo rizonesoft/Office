@@ -323,7 +323,7 @@ class FakeApp:
             def Count(self):
                 return app.count
 
-            def Add(self):
+            def Add(self, *args):
                 app.count += 1
                 doc = Doc()
                 app.made.append(doc)
@@ -332,11 +332,15 @@ class FakeApp:
         class Doc:
             closed = False
 
-            def Close(self, SaveChanges=None):
+            def __init__(self):
+                self.close_args = []
+
+            def Close(self, *args, **kwargs):
                 self.closed = True
+                self.close_args.append((args, kwargs))
                 app.count -= 1
 
-        self.Projects = self.Presentations = self.Documents = Docs()
+        self.Workbooks = self.Projects = self.Presentations = self.Documents = Docs()
         self.Visible = False
 
     def FileNew(self):
@@ -519,11 +523,22 @@ class Launch(unittest.TestCase):
         app.count += 1  # the operator opens a presentation in the instance while the capture runs
         with self.assertRaises(cu.Refused):
             launched.close()
-        self.assertEqual((app.made[0].closed, app.quit, app.count), (True, False, 1))
-        quiet = FakeApp(count=0)
-        self.launched(quiet, key="word").close()
-        self.assertTrue(quiet.quit)
-        self.assertEqual(quiet.quit_args, [((), {})])
+        self.assertEqual((app.made[0].closed, app.made[0].close_args, app.quit, app.count), (True, [((), {})], False, 1))
+        for key in ("word", "excel", "powerpoint", "visio"):
+            quiet = FakeApp(count=0)
+            quiet.Hwnd = 5
+            quiet.WindowHandle32 = 5
+            self.launched(quiet, key=key).close()
+            self.assertTrue(quiet.quit)
+            self.assertEqual(quiet.quit_args, [((), {})])
+            self.assertEqual(quiet.made[0].close_args, [((), {})])
+            self.assertNotIn("Saved", quiet.made[0].__dict__)
+        dirty = FakeApp(count=0)
+        launched_dirty = self.launched(dirty, key="word")
+        dirty.made[0].Saved = False
+        with self.assertRaises(cu.Refused):
+            launched_dirty._close_owned_doc(dirty.made[0], app=dirty)
+        self.assertEqual(dirty.made[0].close_args, [])
 
     def test_core_tabs_come_from_the_baseline(self):
         self.assertIn("TabHome", cu.baseline_core_tabs("word"))
@@ -1180,7 +1195,7 @@ class Round3(unittest.TestCase):
             "class Doc:\n"
             "    Name = 'Doc1'; FullName = 'Doc1'\n"
             "    def __init__(self, tid): self._owner_tid = tid\n"
-            "    def Close(self, SaveChanges=0):\n"
+            "    def Close(self):\n"
             "        require_com(self._owner_tid)\n"
             "        state['doc_closed'] = True; Docs.Count = 0\n"
             "class Docs:\n"
@@ -1196,7 +1211,7 @@ class Round3(unittest.TestCase):
             "        self._owner_tid = threading.get_ident()\n"
             "        require_com(self._owner_tid)\n"
             "        self.Documents = Docs(self._owner_tid)\n"
-            "    def Quit(self, SaveChanges=0):\n"
+            "    def Quit(self):\n"
             "        require_com(self._owner_tid)\n"
             "        state['quit'] = True\n"
             "atexit.register(lambda: print('ATEXIT:' + json.dumps(state), flush=True))\n"
@@ -1245,7 +1260,7 @@ class Round3(unittest.TestCase):
             "        require_com(self._owner_tid)\n"
             "        tok = self._doc_token\n"
             "        return lambda: Doc(threading.get_ident(), tok)\n"
-            "    def Close(self, SaveChanges=0):\n"
+            "    def Close(self):\n"
             "        require_com(self._owner_tid)\n"
             "        self.closed = True; state['doc_closed'] = True; shared_docs.clear()\n"
             "class Docs:\n"
@@ -1289,7 +1304,7 @@ class Round3(unittest.TestCase):
             "            state['unmarshaled_on_new_sta'] = True\n"
             "            return App(tid=new_tid)\n"
             "        return unmarshal\n"
-            "    def Quit(self, SaveChanges=0):\n"
+            "    def Quit(self):\n"
             "        require_com(self._owner_tid)\n"
             "        state['quit'] = True\n"
             "def make_owner(hwnd, exe):\n"
@@ -1441,7 +1456,7 @@ class Round3(unittest.TestCase):
             "    def close(self): pass\n"
             "class Doc:\n"
             "    Name = 'Doc1'; FullName = 'Doc1'; Saved = -1; closed = False; _doc_token = 'doc-fail'\n"
-            "    def Close(self, SaveChanges=0): self.closed = True; Docs.items.clear()\n"
+            "    def Close(self): self.closed = True; Docs.items.clear()\n"
             "class Docs:\n"
             "    items = []\n"
             "    @property\n"
@@ -1459,7 +1474,7 @@ class Round3(unittest.TestCase):
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
             "    ActiveWindow = AW()\n"
-            "    def Quit(self, SaveChanges=0): pass\n"
+            "    def Quit(self): pass\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
             "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=lambda h, e: Proc(), init_timeout=0.05))\n"
             "sys.exit(rc)\n"
@@ -2702,6 +2717,51 @@ class ShellChrome(unittest.TestCase):
                 )
                 self.assertGreaterEqual(len(collected_rebuilt_base), 5)
                 self.assertFalse(any(e.name.startswith("Page 1 of") for e in collected_rebuilt_base))
+                # An unnamed KeyTip badge Pane carrying access_key and compact badge bounds is collected (and matched by
+                # _match_shell_element), and refuses if it stays visible after dismissal.
+                unnamed_kt_root = make_shell_root(app_name="word")
+                unnamed_badge = [None]
+                orig_unnamed_kt = unnamed_kt_root.on_keytips
+
+                def _unnamed_access_key_keytips(active):
+                    if active:
+                        orig_unnamed_kt(True)
+                        for k in list(unnamed_kt_root.kids):
+                            if k.control_type == "Pane" and k.name == "F":
+                                unnamed_kt_root.kids.remove(k)
+                        unnamed_badge[0] = E("Pane", "", "", key="Alt, F", rect=(22, 71, 37, 88))
+                        unnamed_kt_root.kids.append(unnamed_badge[0])
+                    else:
+                        orig_unnamed_kt(False)
+                        if unnamed_badge[0] in unnamed_kt_root.kids:
+                            unnamed_kt_root.kids.remove(unnamed_badge[0])
+
+                unnamed_kt_root.on_keytips = _unnamed_access_key_keytips
+                collected_unnamed_kt = cu._open_and_collect_shell_surface(
+                    "keytips", None, unnamed_kt_root,
+                    type("U", (), {"element": lambda self, h: E._wrap(unnamed_kt_root)})(),
+                    good_win, launched,
+                )
+                self.assertTrue(
+                    any(e.name == "" and cu.keytip(e.access_key) == "F" for e in collected_unnamed_kt)
+                )
+                unnamed_stuck_root = make_shell_root(app_name="word")
+                orig_unnamed_stuck_kt = unnamed_stuck_root.on_keytips
+
+                def _unnamed_access_key_stuck(active):
+                    if active:
+                        orig_unnamed_stuck_kt(True)
+                        unnamed_stuck_root.kids.append(E("Pane", "", "", key="Alt, F", rect=(22, 71, 37, 88)))
+                    else:
+                        orig_unnamed_stuck_kt(False)
+
+                unnamed_stuck_root.on_keytips = _unnamed_access_key_stuck
+                with self.assertRaises(cu.Refused):
+                    cu._open_and_collect_shell_surface(
+                        "keytips", None, unnamed_stuck_root,
+                        type("U", (), {"element": lambda self, h: E._wrap(unnamed_stuck_root)})(),
+                        good_win, launched,
+                    )
 
                 # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
                 #    and on a complete Word window refreshes Word bounds while preserving Excel bounds and custom behaviour.

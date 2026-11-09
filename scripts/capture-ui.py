@@ -1176,14 +1176,9 @@ class Launched:
         return res
 
     def _close_owned_doc(self, doc, app=None):
-        if self.key == "word":
-            doc.Close(SaveChanges=0)
-            return
-        if self.key == "excel":
-            doc.Close(SaveChanges=False)
-            return
+        if not self._is_unmodified_blank_doc(doc):
+            raise Refused(f"the {self.exe} document has unsaved changes or a file path")
         if hasattr(doc, "Close"):
-            doc.Saved = True
             doc.Close()
             return
         if self.key == "project":
@@ -2823,7 +2818,13 @@ def _is_surface_candidate(surface_key, el, ancestors=()):
         if ctype not in ("Pane", "Text", "ToolTip", "Custom"):
             return False
         if not name:
-            return False
+            vrect = _visible_rect_tuple(el)
+            return bool(
+                keytip(getattr(el, "access_key", ""))
+                and vrect is not None
+                and vrect[2] <= 36
+                and vrect[3] <= 24
+            )
         if "keytip" in name.casefold():
             return True
         if re.fullmatch(r"[A-Z0-9]{1,4}", name):
@@ -2868,8 +2869,9 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         if vrect is not None:
             ctype = getattr(el, "control_type", "")
             aid = getattr(el, "automation_id", "") or ""
-            sig = (ctype, aid, getattr(el, "name", ""), vrect)
-            key = (ctype, aid, getattr(el, "name", ""))
+            kt = keytip(getattr(el, "access_key", ""))
+            sig = (ctype, aid, getattr(el, "name", ""), kt, vrect)
+            key = (ctype, aid, getattr(el, "name", ""), kt)
             rkey = (ctype, vrect)
             anchor = (ctype, vrect[0], vrect[1], vrect[3])
             before_sig_counts[sig] = before_sig_counts.get(sig, 0) + 1
@@ -2942,7 +2944,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                     kept_aid_counts[(ctype, aid)] = kept_aid_counts.get((ctype, aid), 0) + 1
             if vrect is not None and before_state.get(eid, _ABSENT) == vrect:
                 ctype = getattr(el, "control_type", "")
-                sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                kt = keytip(getattr(el, "access_key", ""))
+                sig = (ctype, getattr(el, "automation_id", ""), getattr(el, "name", ""), kt, vrect)
                 rkey = (ctype, vrect)
                 kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
                 kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
@@ -2956,7 +2959,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 ctype = getattr(el, "control_type", "")
                 aid = getattr(el, "automation_id", "") or ""
                 name = getattr(el, "name", "") or ""
-                sig = (ctype, aid, name, vrect)
+                kt = keytip(getattr(el, "access_key", ""))
+                sig = (ctype, aid, name, kt, vrect)
                 rkey = (ctype, vrect)
                 anchor = (ctype, vrect[0], vrect[1], vrect[3])
                 if prev_vrect is _ABSENT and (
@@ -2965,6 +2969,7 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                     or (aid and kept_aid_counts.get((ctype, aid), 0) < before_aid_counts.get((ctype, aid), 0))
                     or (
                         not name
+                        and not kt
                         and used_disappeared_anchors.get(anchor, 0) < disappeared_anchors.get(anchor, 0)
                     )
                 ):
@@ -2974,12 +2979,12 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                         kept_rect_counts[rkey] = kept_rect_counts.get(rkey, 0) + 1
                     if aid and kept_aid_counts.get((ctype, aid), 0) < before_aid_counts.get((ctype, aid), 0):
                         kept_aid_counts[(ctype, aid)] = kept_aid_counts.get((ctype, aid), 0) + 1
-                    if not name and used_disappeared_anchors.get(anchor, 0) < disappeared_anchors.get(anchor, 0):
+                    if not name and not kt and used_disappeared_anchors.get(anchor, 0) < disappeared_anchors.get(anchor, 0):
                         used_disappeared_anchors[anchor] = used_disappeared_anchors.get(anchor, 0) + 1
                     continue
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
-                key = (ctype, aid, getattr(el, "name", ""))
+                key = (ctype, aid, getattr(el, "name", ""), kt)
                 opened_sigs.add(sig)
                 opened_keys.add(key)
         if has_popups and uia is not None:
@@ -2992,16 +2997,19 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                         if vrect is not None:
                             surface_collected.append(el)
                             opened_state[eid] = (_ABSENT, vrect)
+                            kt = keytip(getattr(el, "access_key", ""))
                             sig = (
                                 getattr(el, "control_type", ""),
                                 getattr(el, "automation_id", ""),
                                 getattr(el, "name", ""),
+                                kt,
                                 vrect,
                             )
                             key = (
                                 getattr(el, "control_type", ""),
                                 getattr(el, "automation_id", ""),
                                 getattr(el, "name", ""),
+                                kt,
                             )
                             opened_sigs.add(sig)
                             opened_keys.add(key)
@@ -3038,8 +3046,9 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         for el in after_nodes:
             vrect = _visible_rect_tuple(el)
             if vrect is not None:
-                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
-                key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
+                kt = keytip(getattr(el, "access_key", ""))
+                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), kt, vrect)
+                key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), kt)
                 after_sig_counts[sig] = after_sig_counts.get(sig, 0) + 1
                 after_key_counts[key] = after_key_counts.get(key, 0) + 1
         still_open = False
@@ -3050,16 +3059,19 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 continue
             if not _is_surface_candidate(surface_key, el, ancestors):
                 continue
+            kt = keytip(getattr(el, "access_key", ""))
             sig = (
                 getattr(el, "control_type", ""),
                 getattr(el, "automation_id", ""),
                 getattr(el, "name", ""),
+                kt,
                 cur_vrect,
             )
             key = (
                 getattr(el, "control_type", ""),
                 getattr(el, "automation_id", ""),
                 getattr(el, "name", ""),
+                kt,
             )
             sig_excess = after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0)
             key_excess = after_key_counts.get(key, 0) > before_key_counts.get(key, 0)
