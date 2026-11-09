@@ -1,0 +1,117 @@
+{
+  "ref": "D02 T01 \u00a74",
+  "title": "Shell Chrome Inventory",
+  "implementation_sha": "c465fa97d049c2334fa8adac8e4a4ab2fbd3e791",
+  "date": "2026-11-09",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 14,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 15,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 16,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 17,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 18,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 19,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 20,
+      "report": "docs/reviews/02-interface/D02-T01-s4.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-inventory.py --require-behaviour design/inventory/shell/chrome.json -> exit 0",
+    "python -m unittest discover -s scripts/tests -p test_capture_ui.py -> Ran 54 tests OK",
+    "validate_shell_chrome(design/inventory/shell/chrome.json) -> 274 records (>= 110)"
+  ],
+  "rounds_spent": 20,
+  "round_cap": 33,
+  "completion": "docs/reviews/02-interface/D02-T01-s4-completion.md",
+  "completion_rules": 2
+}

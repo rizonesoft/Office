@@ -42,7 +42,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 1 | §1 | Inventory schema checker | D00 T01 §1 | [x] |
 | 2 | §2 | Reference build setup | -- | [x] |
 | 3 | §3 | UIA capture tool | §1, §2, §21 | [x] |
-| 4 | §4 | Shell chrome inventory | §3, §23, §24, §26 | [ ] |
+| 4 | §4 | Shell chrome inventory | §3, §23, §24, §26 | [x] |
 | 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [ ] |
 | 6 | §6 | Word panes, dialogs | §5 | [ ] |
 | 7 | §7 | Excel ribbon | §3, §19, §23, §24, §26 | [ ] |
@@ -158,7 +158,7 @@ Hand-transcribing thousands of controls is slow and error-prone. A capture tool 
 
 ## 4. Shell Chrome Inventory
 
-> **Started:** 2026-11-09T02:53:45Z
+> **Duration:** 2026-11-09T02:53:45Z .. 2026-11-09T09:42:10Z (6h 48m 25s)
 
 The shell is shared by every app: title bar (AutoSave toggle, Quick Access Toolbar, document name and save state, search box, account, minimise, maximise, close), the ribbon tab row (File, tabs, Comments, Editing mode, Share), ribbon display options, the KeyTips layer, the Backstage frame, and the common parts of the status bar.
 
@@ -181,6 +181,9 @@ The shell is shared by every app: title bar (AutoSave toggle, Quick Access Toolb
 - [x] Commit: `inventory: capture shared shell chrome`
 
 **Test checkpoint:** `python scripts/check-inventory.py --require-behaviour design/inventory/shell/chrome.json` exits 0, `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes, and `python -c "import importlib.util, json; s=importlib.util.spec_from_file_location('c','scripts/capture-ui.py'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); d=json.load(open('design/inventory/shell/chrome.json',encoding='utf-8')); m.validate_shell_chrome(d); print(len(d))"` exits 0 and prints at least 110.
+
+> **Verified:** 2026-11-09 | §4 | c465fa97d049c2334fa8adac8e4a4ab2fbd3e791
+> **Review:** `docs/reviews/d02-t01-s4.json`
 
 ## 5. Word Ribbon
 
