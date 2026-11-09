@@ -3313,6 +3313,14 @@ class WordRibbon(unittest.TestCase):
                 "word.mailings.write-insert-fields.update-labels",
                 "Invokes the Update Labels command in the Write & Insert Fields group on Mailings to apply its action to the current selection or document. Enabled when a mail-merge main document has an attached recipient data source (such as a CSV or address list).",
             ),
+            (
+                "word.references.citations-bibliography.manage-sources",
+                "Invokes the Manage Sources command in the Citations & Bibliography group on References to apply its action to the current selection or document. Enabled in an editable document when the current selection or view on References (Citations & Bibliography) supports the command.",
+            ),
+            (
+                "word.home.clipboard.paste.paste-special",
+                "Executes the Paste Special command from the Paste menu (Clipboard group on Home) on the active selection or document. Enabled in an editable document. State rule: on, off, mixed.",
+            ),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
             ("word.home.clipboard.paste", "Executes Paste. Enabled in an editable document. State rule: on, off, mixed."),
@@ -3477,8 +3485,36 @@ class WordRibbon(unittest.TestCase):
 
     def test_word_contextual_tab_triggering_and_fixture_integrity(self):
         import argparse
-        with tempfile.TemporaryDirectory() as tmp:
-            fixture_file = Path(tmp) / "word-contextual.docx"
+        mem_files = {}
+
+        class _MemPath:
+            def __init__(self, p):
+                self._path = str(p)
+                self.name = Path(self._path).name
+
+            def __str__(self):
+                return self._path
+
+            def __truediv__(self, other):
+                return _MemPath(f"{self._path}\\{other}")
+
+            def is_file(self):
+                return self._path in mem_files
+
+            def read_bytes(self):
+                return mem_files[self._path]
+
+            def write_bytes(self, data):
+                mem_files[self._path] = bytes(data)
+
+            def write_text(self, text, encoding="utf-8"):
+                mem_files[self._path] = text.encode(encoding)
+
+        tmp = _MemPath(r"R:\scratch\fake-ctx")
+        real_cu_path = cu.Path
+        cu.Path = lambda p: p if isinstance(p, _MemPath) else _MemPath(p)
+        try:
+            fixture_file = tmp / "word-contextual.docx"
             fixture_file.write_bytes(b"original-fixture-bytes")
             actions = []
             active_ctx_tabs = []
@@ -3624,7 +3660,7 @@ class WordRibbon(unittest.TestCase):
 
             # Exercise the real Launched._word_action_impl for open_fixture, close_fixture, prepare_core_tab
             # (Layout floating shapes and Mailings recipients), and inline SVG (Type 17) vs 3D model (Type 19).
-            recipients_csv = Path(tmp) / "word-recipients.csv"
+            recipients_csv = tmp / "word-recipients.csv"
             recipients_csv.write_text("FirstName,LastName\nAda,Lovelace\n", encoding="utf-8")
             selected_inline = []
             selected_ranges = []
@@ -3805,7 +3841,7 @@ class WordRibbon(unittest.TestCase):
             allow_range_copy[0] = True
             with self.assertRaises(cu.Refused):
                 real_launched._word_action_impl(
-                    "prepare_core_tab", tab_name="Mailings", recipients_path=str(Path(tmp) / "missing.csv")
+                    "prepare_core_tab", tab_name="Mailings", recipients_path=str(tmp / "missing.csv")
                 )
 
             # open_fixture + inline Type 17 (svg) succeeds, whereas model3d refuses when only Type 17 is present.
@@ -3830,13 +3866,14 @@ class WordRibbon(unittest.TestCase):
 
             # Missing fixture path is refused when open_fixture runs.
             with self.assertRaises(cu.Refused):
-                real_launched._word_action_impl("open_fixture", path=str(Path(tmp) / "nonexistent.docx"))
+                real_launched._word_action_impl("open_fixture", path=str(tmp / "nonexistent.docx"))
 
             # CLI parser accepts --fixture.
-            rc_missing_app = cu.main(["--all-tabs", "--expand", "--fixture", str(fixture_file), "--out", str(Path(tmp) / "out.json")]) if False else None
             with self.assertRaises(SystemExit) as cm:
                 cu.main(["--app", "word", "--all-tabs", "--fixture", str(fixture_file), "--help"])
             self.assertEqual(cm.exception.code, 0)
+        finally:
+            cu.Path = real_cu_path
 
     def test_word_home_clipboard_recovery_formats_and_draw_undo(self):
         import argparse
@@ -3869,6 +3906,11 @@ class WordRibbon(unittest.TestCase):
                 self.set_ok = True
                 self._next_handle = 1000
                 self._buffers = {}
+                self._open_hwnd = 0
+                self._clipboard_owner = 0
+                self.owner_hwnd_ok = True
+                self.created_windows = []
+                self.destroyed_windows = []
 
                 class _Fn:
                     def __init__(self, fn):
@@ -3884,12 +3926,14 @@ class WordRibbon(unittest.TestCase):
                     (),
                     {
                         "OpenClipboard": _Fn(self._open_clipboard),
-                        "CloseClipboard": _Fn(lambda: 1),
+                        "CloseClipboard": _Fn(self._close_clipboard),
                         "EmptyClipboard": _Fn(self._empty_clipboard),
                         "EnumClipboardFormats": _Fn(self._enum_formats),
                         "GetClipboardData": _Fn(self._get_data),
                         "SetClipboardData": _Fn(self._set_data),
                         "CopyImage": _Fn(self._copy_image),
+                        "CreateWindowExW": _Fn(self._create_window),
+                        "DestroyWindow": _Fn(self._destroy_window),
                     },
                 )()
                 self.kernel32 = type(
@@ -3964,12 +4008,33 @@ class WordRibbon(unittest.TestCase):
                 raw = ctypes.string_at(ctypes.byref(mfp), ctypes.sizeof(_METAFILEPICT))
                 return self.seed_hglobal(3, raw)
 
-            def _open_clipboard(self, _hwnd):
-                return 1 if self.open_ok else 0
+            def _create_window(self, *_args):
+                if not self.owner_hwnd_ok:
+                    return 0
+                h = self._alloc_handle()
+                self.created_windows.append(h)
+                return h
+
+            def _destroy_window(self, hwnd):
+                addr = hwnd.value if isinstance(hwnd, ctypes.c_void_p) else int(hwnd or 0)
+                self.destroyed_windows.append(addr)
+                return 1
+
+            def _open_clipboard(self, hwnd):
+                if not self.open_ok:
+                    return 0
+                addr = hwnd.value if isinstance(hwnd, ctypes.c_void_p) else int(hwnd or 0)
+                self._open_hwnd = addr
+                return 1
+
+            def _close_clipboard(self):
+                self._open_hwnd = 0
+                return 1
 
             def _empty_clipboard(self):
                 if not self.empty_ok:
                     return 0
+                self._clipboard_owner = self._open_hwnd
                 self.formats.clear()
                 self.data.clear()
                 return 1
@@ -3987,7 +4052,7 @@ class WordRibbon(unittest.TestCase):
                 return self.data.get(fmt, 0)
 
             def _set_data(self, fmt, h):
-                if not self.set_ok:
+                if not self.set_ok or self._clipboard_owner <= 0:
                     return 0
                 if fmt not in self.formats:
                     self.formats.append(fmt)
@@ -4116,19 +4181,34 @@ class WordRibbon(unittest.TestCase):
                 l_clip._restore_saved_clipboard()
             self.assertIsNotNone(l_clip._saved_clipboard)
 
-            # Second restoration attempt fails on SetClipboardData (set_ok=False):
-            # _restore_saved_clipboard raises Refused and still retains _saved_clipboard with valid handles.
+            # Second restoration attempt fails when no valid owner HWND can be obtained (owner_hwnd_ok=False and hwnd=0):
+            # refuses before calling OpenClipboard(0) + EmptyClipboard(), preserving _saved_clipboard.
             fake_w32.open_ok = True
+            fake_w32.owner_hwnd_ok = False
+            with self.assertRaises(cu.Refused):
+                l_clip._restore_saved_clipboard()
+            self.assertIsNotNone(l_clip._saved_clipboard)
+            # Also verify that calling OpenClipboard(0) + EmptyClipboard() leaves _clipboard_owner == 0 and causes SetClipboardData to fail.
+            self.assertEqual(fake_w32._open_clipboard(0), 1)
+            self.assertEqual(fake_w32._empty_clipboard(), 1)
+            self.assertEqual(fake_w32._set_data(13, 9999), 0)
+            fake_w32._close_clipboard()
+
+            # Third restoration attempt fails on SetClipboardData (set_ok=False):
+            # _restore_saved_clipboard raises Refused and still retains _saved_clipboard with valid handles.
+            fake_w32.owner_hwnd_ok = True
             fake_w32.set_ok = False
             with self.assertRaises(cu.Refused):
                 l_clip._restore_saved_clipboard()
             self.assertIsNotNone(l_clip._saved_clipboard)
 
-            # Third restoration attempt succeeds once the clipboard is writable again, restoring all 5 formats
-            # and freeing the saved snapshot's duplicate GDI handles.
+            # Fourth restoration attempt succeeds once the clipboard is writable again, restoring all 5 formats
+            # under a non-null owner HWND and freeing the saved snapshot's duplicate GDI handles.
             fake_w32.set_ok = True
             l_clip._restore_saved_clipboard()
             self.assertIsNone(l_clip._saved_clipboard)
+            self.assertGreater(fake_w32._clipboard_owner, 0)
+            self.assertEqual(fake_w32.created_windows, fake_w32.destroyed_windows)
             self.assertEqual(fake_w32.formats, [13, 2, 14, 9, 3])
             h_text = fake_w32.data[13]
             self.assertEqual(ctypes.string_at(fake_w32._global_lock(h_text), fake_w32._global_size(h_text)), orig_text)

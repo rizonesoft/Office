@@ -1574,100 +1574,148 @@ class Launched:
         gdi32.DeleteObject.argtypes = [ctypes.c_void_p]
         gdi32.DeleteEnhMetaFile.argtypes = [ctypes.c_void_p]
         gdi32.DeleteMetaFile.argtypes = [ctypes.c_void_p]
+        u32.OpenClipboard.restype = ctypes.c_int
+        u32.OpenClipboard.argtypes = [ctypes.c_void_p]
+        owner_hwnd = int(getattr(self, "_clipboard_owner_hwnd", 0) or 0)
+        temp_owner_hwnd = 0
+        if owner_hwnd <= 0 and hasattr(u32, "CreateWindowExW"):
+            u32.CreateWindowExW.restype = ctypes.c_void_p
+            u32.CreateWindowExW.argtypes = [
+                ctypes.c_uint,
+                ctypes.c_wchar_p,
+                ctypes.c_wchar_p,
+                ctypes.c_uint,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+            ]
+            temp_owner_hwnd = int(
+                u32.CreateWindowExW(
+                    0,
+                    "STATIC",
+                    "OfficeCaptureClipboardOwner",
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    ctypes.c_void_p(-3),
+                    None,
+                    None,
+                    None,
+                )
+                or 0
+            )
+            owner_hwnd = temp_owner_hwnd
+        if owner_hwnd <= 0:
+            owner_hwnd = int(getattr(self, "hwnd", 0) or 0)
+        if owner_hwnd <= 0:
+            raise Refused("could not obtain a valid window handle to take clipboard ownership for restoration")
         opened = False
-        for _ in range(25):
-            if u32.OpenClipboard(0):
-                opened = True
-                break
-            time.sleep(0.02)
-        if not opened:
-            raise Refused("could not open the system clipboard to restore operator clipboard state")
         try:
-            if not u32.EmptyClipboard():
-                raise Refused("could not empty the system clipboard to restore operator clipboard state")
-            for fmt, kind, payload in snapshot or ():
-                if kind == "hglobal":
-                    if not isinstance(payload, (bytes, bytearray)):
-                        raise Refused(f"invalid clipboard hglobal payload for format 0x{fmt:04x}")
-                    n = len(payload)
-                    hmem = k32.GlobalAlloc(0x0042, max(1, n))
-                    if not hmem:
-                        raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
-                    ptr = k32.GlobalLock(hmem)
-                    if not ptr:
-                        k32.GlobalFree(hmem)
-                        raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
-                    try:
-                        if n > 0:
-                            ctypes.memmove(ptr, bytes(payload), n)
-                    finally:
-                        k32.GlobalUnlock(hmem)
-                    if not u32.SetClipboardData(fmt, hmem):
-                        k32.GlobalFree(hmem)
-                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
-                elif kind == "bitmap":
-                    if not payload:
-                        raise Refused(f"missing bitmap handle while restoring clipboard format 0x{fmt:04x}")
-                    dup_bmp = u32.CopyImage(payload, 0, 0, 0, 0)
-                    if not dup_bmp:
-                        raise Refused(f"CopyImage failed while restoring clipboard format 0x{fmt:04x}")
-                    if not u32.SetClipboardData(fmt, dup_bmp):
-                        gdi32.DeleteObject(dup_bmp)
-                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
-                elif kind == "emf":
-                    if not payload:
-                        raise Refused(f"missing enhanced metafile handle while restoring clipboard format 0x{fmt:04x}")
-                    dup_emf = gdi32.CopyEnhMetaFileW(payload, None)
-                    if not dup_emf:
-                        raise Refused(f"CopyEnhMetaFileW failed while restoring clipboard format 0x{fmt:04x}")
-                    if not u32.SetClipboardData(fmt, dup_emf):
-                        gdi32.DeleteEnhMetaFile(dup_emf)
-                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
-                elif kind == "palette":
-                    if not isinstance(payload, (bytes, bytearray)) or len(payload) == 0 or len(payload) % 4 != 0:
-                        raise Refused(f"invalid palette payload while restoring clipboard format 0x{fmt:04x}")
-                    count = len(payload) // 4
-                    logpal = ctypes.create_string_buffer(4 + len(payload))
-                    struct.pack_into("<HH", logpal, 0, 0x0300, count)
-                    ctypes.memmove(ctypes.addressof(logpal) + 4, bytes(payload), len(payload))
-                    hpal = gdi32.CreatePalette(ctypes.cast(logpal, ctypes.c_void_p))
-                    if not hpal:
-                        raise Refused(f"CreatePalette failed while restoring clipboard format 0x{fmt:04x}")
-                    if not u32.SetClipboardData(fmt, hpal):
-                        gdi32.DeleteObject(hpal)
-                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
-                elif kind == "mfpict":
-                    if not isinstance(payload, tuple) or len(payload) != 4:
-                        raise Refused(f"invalid metafile-picture payload while restoring clipboard format 0x{fmt:04x}")
-                    mm, x_ext, y_ext, mf_bytes = payload
-                    if not isinstance(mf_bytes, (bytes, bytearray)) or len(mf_bytes) == 0:
-                        raise Refused(f"empty metafile-picture bits while restoring clipboard format 0x{fmt:04x}")
-                    mf_buf = ctypes.create_string_buffer(bytes(mf_bytes), len(mf_bytes))
-                    hmf = gdi32.SetMetaFileBitsEx(len(mf_bytes), ctypes.cast(mf_buf, ctypes.c_void_p))
-                    if not hmf:
-                        raise Refused(f"SetMetaFileBitsEx failed while restoring clipboard format 0x{fmt:04x}")
-                    hmem = k32.GlobalAlloc(0x0042, ctypes.sizeof(_METAFILEPICT))
-                    if not hmem:
-                        gdi32.DeleteMetaFile(hmf)
-                        raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
-                    ptr = k32.GlobalLock(hmem)
-                    if not ptr:
-                        gdi32.DeleteMetaFile(hmf)
-                        k32.GlobalFree(hmem)
-                        raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
-                    try:
-                        mfp_struct = _METAFILEPICT(mm=int(mm), xExt=int(x_ext), yExt=int(y_ext), hMF=hmf)
-                        ctypes.memmove(ptr, ctypes.byref(mfp_struct), ctypes.sizeof(_METAFILEPICT))
-                    finally:
-                        k32.GlobalUnlock(hmem)
-                    if not u32.SetClipboardData(fmt, hmem):
-                        gdi32.DeleteMetaFile(hmf)
-                        k32.GlobalFree(hmem)
-                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
-                else:
-                    raise Refused(f"unsupported clipboard snapshot kind {kind!r} for format 0x{fmt:04x}")
+            for _ in range(25):
+                if u32.OpenClipboard(owner_hwnd):
+                    opened = True
+                    break
+                time.sleep(0.02)
+            if not opened:
+                raise Refused("could not open the system clipboard to restore operator clipboard state")
+            try:
+                if not u32.EmptyClipboard():
+                    raise Refused("could not empty the system clipboard to restore operator clipboard state")
+                for fmt, kind, payload in snapshot or ():
+                    if kind == "hglobal":
+                        if not isinstance(payload, (bytes, bytearray)):
+                            raise Refused(f"invalid clipboard hglobal payload for format 0x{fmt:04x}")
+                        n = len(payload)
+                        hmem = k32.GlobalAlloc(0x0042, max(1, n))
+                        if not hmem:
+                            raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
+                        ptr = k32.GlobalLock(hmem)
+                        if not ptr:
+                            k32.GlobalFree(hmem)
+                            raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
+                        try:
+                            if n > 0:
+                                ctypes.memmove(ptr, bytes(payload), n)
+                        finally:
+                            k32.GlobalUnlock(hmem)
+                        if not u32.SetClipboardData(fmt, hmem):
+                            k32.GlobalFree(hmem)
+                            raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                    elif kind == "bitmap":
+                        if not payload:
+                            raise Refused(f"missing bitmap handle while restoring clipboard format 0x{fmt:04x}")
+                        dup_bmp = u32.CopyImage(payload, 0, 0, 0, 0)
+                        if not dup_bmp:
+                            raise Refused(f"CopyImage failed while restoring clipboard format 0x{fmt:04x}")
+                        if not u32.SetClipboardData(fmt, dup_bmp):
+                            gdi32.DeleteObject(dup_bmp)
+                            raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                    elif kind == "emf":
+                        if not payload:
+                            raise Refused(f"missing enhanced metafile handle while restoring clipboard format 0x{fmt:04x}")
+                        dup_emf = gdi32.CopyEnhMetaFileW(payload, None)
+                        if not dup_emf:
+                            raise Refused(f"CopyEnhMetaFileW failed while restoring clipboard format 0x{fmt:04x}")
+                        if not u32.SetClipboardData(fmt, dup_emf):
+                            gdi32.DeleteEnhMetaFile(dup_emf)
+                            raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                    elif kind == "palette":
+                        if not isinstance(payload, (bytes, bytearray)) or len(payload) == 0 or len(payload) % 4 != 0:
+                            raise Refused(f"invalid palette payload while restoring clipboard format 0x{fmt:04x}")
+                        count = len(payload) // 4
+                        logpal = ctypes.create_string_buffer(4 + len(payload))
+                        struct.pack_into("<HH", logpal, 0, 0x0300, count)
+                        ctypes.memmove(ctypes.addressof(logpal) + 4, bytes(payload), len(payload))
+                        hpal = gdi32.CreatePalette(ctypes.cast(logpal, ctypes.c_void_p))
+                        if not hpal:
+                            raise Refused(f"CreatePalette failed while restoring clipboard format 0x{fmt:04x}")
+                        if not u32.SetClipboardData(fmt, hpal):
+                            gdi32.DeleteObject(hpal)
+                            raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                    elif kind == "mfpict":
+                        if not isinstance(payload, tuple) or len(payload) != 4:
+                            raise Refused(f"invalid metafile-picture payload while restoring clipboard format 0x{fmt:04x}")
+                        mm, x_ext, y_ext, mf_bytes = payload
+                        if not isinstance(mf_bytes, (bytes, bytearray)) or len(mf_bytes) == 0:
+                            raise Refused(f"empty metafile-picture bits while restoring clipboard format 0x{fmt:04x}")
+                        mf_buf = ctypes.create_string_buffer(bytes(mf_bytes), len(mf_bytes))
+                        hmf = gdi32.SetMetaFileBitsEx(len(mf_bytes), ctypes.cast(mf_buf, ctypes.c_void_p))
+                        if not hmf:
+                            raise Refused(f"SetMetaFileBitsEx failed while restoring clipboard format 0x{fmt:04x}")
+                        hmem = k32.GlobalAlloc(0x0042, ctypes.sizeof(_METAFILEPICT))
+                        if not hmem:
+                            gdi32.DeleteMetaFile(hmf)
+                            raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
+                        ptr = k32.GlobalLock(hmem)
+                        if not ptr:
+                            gdi32.DeleteMetaFile(hmf)
+                            k32.GlobalFree(hmem)
+                            raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
+                        try:
+                            mfp_struct = _METAFILEPICT(mm=int(mm), xExt=int(x_ext), yExt=int(y_ext), hMF=hmf)
+                            ctypes.memmove(ptr, ctypes.byref(mfp_struct), ctypes.sizeof(_METAFILEPICT))
+                        finally:
+                            k32.GlobalUnlock(hmem)
+                        if not u32.SetClipboardData(fmt, hmem):
+                            gdi32.DeleteMetaFile(hmf)
+                            k32.GlobalFree(hmem)
+                            raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                    else:
+                        raise Refused(f"unsupported clipboard snapshot kind {kind!r} for format 0x{fmt:04x}")
+            finally:
+                u32.CloseClipboard()
         finally:
-            u32.CloseClipboard()
+            if temp_owner_hwnd > 0 and hasattr(u32, "DestroyWindow"):
+                u32.DestroyWindow.argtypes = [ctypes.c_void_p]
+                u32.DestroyWindow.restype = ctypes.c_int
+                u32.DestroyWindow(temp_owner_hwnd)
 
     def _restore_saved_clipboard(self):
         if hasattr(self, "_saved_clipboard") and self._saved_clipboard is not None:
@@ -6698,6 +6746,16 @@ WORD_REQUIRED_MENU_CHILDREN = {
 }
 
 
+WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES = (
+    "to apply its action",
+    "supports the command",
+    "on the active selection or document.",
+    "is active for the selected object or mode in an editable document region",
+    "Opens the modal dialog or task pane associated with the",
+    "state or formatting attribute in the",
+)
+
+
 def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, require_expanded=True):
     """Validate `design/inventory/word/ribbon.json` against D02 T01 §5 completeness, KeyTip, expansion and behaviour invariants."""
     if not isinstance(records, list) or not records:
@@ -6858,6 +6916,12 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                     raise Refused(f"{rid}: control is missing distinct behaviour sentence")
                 if "Enabled" not in beh:
                     raise Refused(f"{rid}: control behaviour is missing enablement precondition")
+                for bad_phrase in WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES:
+                    if bad_phrase in beh:
+                        raise Refused(f"{rid}: control behaviour contains circular placeholder phrase {bad_phrase!r}")
+                if rid == "word.references.citations-bibliography.manage-sources" or rec.get("idMso") == "BibliographyManageSources":
+                    if "Source Manager" not in beh or "Master List" not in beh:
+                        raise Refused(f"{rid}: Manage Sources must describe opening the Source Manager dialog and accessing the Master List")
                 if rid == "word.table-layout.merge.merge-cells" or rec.get("idMso") == "MergeCells":
                     if (
                         "two or more adjacent cells" not in beh
@@ -6941,6 +7005,9 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                     raise Refused(f"{rid}: menuItem is missing distinct behaviour sentence")
                 if "Enabled" not in beh:
                     raise Refused(f"{rid}: menuItem behaviour is missing enablement precondition")
+                for bad_phrase in WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES:
+                    if bad_phrase in beh:
+                        raise Refused(f"{rid}: menuItem behaviour contains circular placeholder phrase {bad_phrase!r}")
                 if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
                     raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
                 if ctype == "galleryItem":
