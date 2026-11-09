@@ -3690,6 +3690,7 @@ class WordRibbon(unittest.TestCase):
                 @Text.setter
                 def Text(self, val):
                     self.doc.range_text = val
+                    self.doc.undo_stack.append(("text", val))
 
                 def Copy(self):
                     copied_texts.append(self.doc.range_text)
@@ -3705,6 +3706,8 @@ class WordRibbon(unittest.TestCase):
                     self.Saved = True
                     self.closed = False
                     self.range_text = ""
+                    self.undo_stack = []
+                    self.undo_clear_count = 0
                     self.Shapes = FakeShapesCol()
                     self.InlineShapes = FakeInlineCol(inline_types)
                     self.MailMerge = type(
@@ -3721,16 +3724,21 @@ class WordRibbon(unittest.TestCase):
                         return type("RgNoCopy", (), {"Select": lambda _self: None})()
                     return FakeRange(self)
 
+                def UndoClear(self):
+                    self.undo_stack.clear()
+                    self.undo_clear_count += 1
+
                 def Close(self, _save=0):
                     self.closed = True
 
             real_doc = FakeDoc()
             real_doc.Shapes.AddShape = lambda _t, _l, _top, _w, _h: (
+                real_doc.undo_stack.append(("add_shape",)),
                 real_doc.Shapes.by_name.setdefault(
                     "PrepLayoutShape1" if "PrepLayoutShape1" not in real_doc.Shapes.by_name else "PrepLayoutShape2",
                     FakeShape("PrepLayoutShape1" if "PrepLayoutShape1" not in real_doc.Shapes.by_name else "PrepLayoutShape2"),
-                )
-            )
+                ),
+            )[1]
             opened_fixtures = []
 
             class FakeDocs:
@@ -3766,7 +3774,8 @@ class WordRibbon(unittest.TestCase):
 
             # Layout preparation creates and multi-selects PrepLayoutShape1 + PrepLayoutShape2; switching to Home deletes them,
             # saves the operator's original clipboard (even if it held a bitmap), seeds rich text via Range(0, 0).Copy(),
-            # clears Range(0, 0).Text back to empty, and switching away from Home restores the operator's original clipboard.
+            # clears Range(0, 0).Text back to empty, clears the undo history via UndoClear(), and switching away from Home
+            # restores the operator's original clipboard.
             real_launched._word_action_impl("prepare_core_tab", tab_name="Layout")
             self.assertIn(("PrepLayoutShape1", "PrepLayoutShape2"), selected_ranges)
             self.assertTrue(real_doc.Saved)
@@ -3775,6 +3784,8 @@ class WordRibbon(unittest.TestCase):
             self.assertTrue(real_doc.Shapes.by_name["PrepLayoutShape2"].deleted)
             self.assertEqual(copied_texts, ["Sample"])
             self.assertEqual(real_doc.range_text, "")
+            self.assertEqual(real_doc.undo_stack, [])
+            self.assertGreaterEqual(real_doc.undo_clear_count, 1)
             self.assertTrue(real_doc.Saved)
             self.assertEqual(clipboard_state[0], [(13, "hglobal", "Sample".encode("utf-16-le"))])
             self.assertEqual(real_launched._saved_clipboard, [(2, "bitmap", 999)])
@@ -3826,6 +3837,472 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 cu.main(["--app", "word", "--all-tabs", "--fixture", str(fixture_file), "--help"])
             self.assertEqual(cm.exception.code, 0)
+
+    def test_word_home_clipboard_recovery_formats_and_draw_undo(self):
+        import argparse
+        import ctypes
+        import struct
+
+        class _METAFILEPICT(ctypes.Structure):
+            _fields_ = [
+                ("mm", ctypes.c_long),
+                ("xExt", ctypes.c_long),
+                ("yExt", ctypes.c_long),
+                ("hMF", ctypes.c_void_p),
+            ]
+
+        class FakeWin32Clipboard:
+            def __init__(self):
+                self.formats = []
+                self.data = {}
+                self.hglobals = {}
+                self.bitmaps = {}
+                self.emfs = {}
+                self.palettes = {}
+                self.metafiles = {}
+                self.deleted_objects = []
+                self.deleted_emfs = []
+                self.deleted_mfs = []
+                self.freed_hglobals = []
+                self.open_ok = True
+                self.empty_ok = True
+                self.set_ok = True
+                self._next_handle = 1000
+                self._buffers = {}
+
+                class _Fn:
+                    def __init__(self, fn):
+                        self.fn = fn
+                        self.restype = None
+                        self.argtypes = None
+
+                    def __call__(self, *a):
+                        return self.fn(*a)
+
+                self.user32 = type(
+                    "U32",
+                    (),
+                    {
+                        "OpenClipboard": _Fn(self._open_clipboard),
+                        "CloseClipboard": _Fn(lambda: 1),
+                        "EmptyClipboard": _Fn(self._empty_clipboard),
+                        "EnumClipboardFormats": _Fn(self._enum_formats),
+                        "GetClipboardData": _Fn(self._get_data),
+                        "SetClipboardData": _Fn(self._set_data),
+                        "CopyImage": _Fn(self._copy_image),
+                    },
+                )()
+                self.kernel32 = type(
+                    "K32",
+                    (),
+                    {
+                        "GlobalSize": _Fn(self._global_size),
+                        "GlobalLock": _Fn(self._global_lock),
+                        "GlobalUnlock": _Fn(lambda _h: 1),
+                        "GlobalAlloc": _Fn(self._global_alloc),
+                        "GlobalFree": _Fn(self._global_free),
+                    },
+                )()
+                self.gdi32 = type(
+                    "GDI32",
+                    (),
+                    {
+                        "CopyEnhMetaFileW": _Fn(self._copy_emf),
+                        "GetPaletteEntries": _Fn(self._get_palette_entries),
+                        "CreatePalette": _Fn(self._create_palette),
+                        "GetMetaFileBitsEx": _Fn(self._get_mf_bits),
+                        "SetMetaFileBitsEx": _Fn(self._set_mf_bits),
+                        "DeleteObject": _Fn(self._delete_object),
+                        "DeleteEnhMetaFile": _Fn(self._delete_emf),
+                        "DeleteMetaFile": _Fn(self._delete_mf),
+                    },
+                )()
+
+            def _alloc_handle(self):
+                h = self._next_handle
+                self._next_handle += 1
+                return h
+
+            def seed_hglobal(self, fmt, raw_bytes):
+                h = self._alloc_handle()
+                buf = ctypes.create_string_buffer(bytes(raw_bytes), len(raw_bytes))
+                self._buffers[h] = buf
+                self.hglobals[h] = len(raw_bytes)
+                if fmt not in self.formats:
+                    self.formats.append(fmt)
+                self.data[fmt] = h
+                return h
+
+            def seed_bitmap(self, fmt, tag):
+                h = self._alloc_handle()
+                self.bitmaps[h] = tag
+                if fmt not in self.formats:
+                    self.formats.append(fmt)
+                self.data[fmt] = h
+                return h
+
+            def seed_emf(self, fmt, tag):
+                h = self._alloc_handle()
+                self.emfs[h] = tag
+                if fmt not in self.formats:
+                    self.formats.append(fmt)
+                self.data[fmt] = h
+                return h
+
+            def seed_palette(self, entries_bytes):
+                h = self._alloc_handle()
+                self.palettes[h] = bytes(entries_bytes)
+                if 9 not in self.formats:
+                    self.formats.append(9)
+                self.data[9] = h
+                return h
+
+            def seed_mfpict(self, mm, x_ext, y_ext, mf_bytes):
+                hmf = self._alloc_handle()
+                self.metafiles[hmf] = bytes(mf_bytes)
+                mfp = _METAFILEPICT(mm=mm, xExt=x_ext, yExt=y_ext, hMF=hmf)
+                raw = ctypes.string_at(ctypes.byref(mfp), ctypes.sizeof(_METAFILEPICT))
+                return self.seed_hglobal(3, raw)
+
+            def _open_clipboard(self, _hwnd):
+                return 1 if self.open_ok else 0
+
+            def _empty_clipboard(self):
+                if not self.empty_ok:
+                    return 0
+                self.formats.clear()
+                self.data.clear()
+                return 1
+
+            def _enum_formats(self, prev):
+                if prev == 0:
+                    return self.formats[0] if self.formats else 0
+                try:
+                    idx = self.formats.index(prev)
+                except ValueError:
+                    return 0
+                return self.formats[idx + 1] if idx + 1 < len(self.formats) else 0
+
+            def _get_data(self, fmt):
+                return self.data.get(fmt, 0)
+
+            def _set_data(self, fmt, h):
+                if not self.set_ok:
+                    return 0
+                if fmt not in self.formats:
+                    self.formats.append(fmt)
+                self.data[fmt] = h
+                return h
+
+            def _copy_image(self, h, _t, _w, _h_px, _flags):
+                if h not in self.bitmaps:
+                    return 0
+                nh = self._alloc_handle()
+                self.bitmaps[nh] = self.bitmaps[h]
+                return nh
+
+            def _copy_emf(self, h, _path):
+                if h not in self.emfs:
+                    return 0
+                nh = self._alloc_handle()
+                self.emfs[nh] = self.emfs[h]
+                return nh
+
+            def _get_palette_entries(self, h, _start, count, dst_ptr):
+                pal = self.palettes.get(h)
+                if not pal:
+                    return 0
+                total = len(pal) // 4
+                if not dst_ptr:
+                    return total
+                n = min(count, total)
+                ctypes.memmove(dst_ptr, pal, n * 4)
+                return n
+
+            def _create_palette(self, logpal_ptr):
+                addr = logpal_ptr.value if isinstance(logpal_ptr, ctypes.c_void_p) else int(logpal_ptr or 0)
+                if not addr:
+                    return 0
+                ver, count = struct.unpack("<HH", ctypes.string_at(addr, 4))
+                if ver != 0x0300 or count <= 0:
+                    return 0
+                raw = ctypes.string_at(addr + 4, count * 4)
+                h = self._alloc_handle()
+                self.palettes[h] = raw
+                return h
+
+            def _get_mf_bits(self, hmf, size, dst_ptr):
+                bits = self.metafiles.get(hmf)
+                if not bits:
+                    return 0
+                if not dst_ptr:
+                    return len(bits)
+                n = min(size, len(bits))
+                ctypes.memmove(dst_ptr, bits, n)
+                return n
+
+            def _set_mf_bits(self, size, src_ptr):
+                if not src_ptr or size <= 0:
+                    return 0
+                raw = ctypes.string_at(src_ptr, size)
+                hmf = self._alloc_handle()
+                self.metafiles[hmf] = raw
+                return hmf
+
+            def _global_size(self, h):
+                return self.hglobals.get(h, 0)
+
+            def _global_lock(self, h):
+                buf = self._buffers.get(h)
+                return ctypes.addressof(buf) if buf is not None else 0
+
+            def _global_alloc(self, _flags, size):
+                h = self._alloc_handle()
+                buf = ctypes.create_string_buffer(size)
+                self._buffers[h] = buf
+                self.hglobals[h] = size
+                return h
+
+            def _global_free(self, h):
+                self.freed_hglobals.append(h)
+                self._buffers.pop(h, None)
+                self.hglobals.pop(h, None)
+                return 0
+
+            def _delete_object(self, h):
+                self.deleted_objects.append(h)
+                self.bitmaps.pop(h, None)
+                self.palettes.pop(h, None)
+                return 1
+
+            def _delete_emf(self, h):
+                self.deleted_emfs.append(h)
+                self.emfs.pop(h, None)
+                return 1
+
+            def _delete_mf(self, h):
+                self.deleted_mfs.append(h)
+                self.metafiles.pop(h, None)
+                return 1
+
+        real_sleep = cu.time.sleep
+        cu.time.sleep = lambda _s: None
+        try:
+            # 1. Native _save_clipboard and _restore_clipboard round-trip HGLOBAL, CF_BITMAP (2), CF_ENHMETAFILE (14),
+            #    CF_PALETTE (9), and CF_METAFILEPICT (3), and retain _saved_clipboard across failed restoration attempts.
+            fake_w32 = FakeWin32Clipboard()
+            orig_text = "OperatorText\x00".encode("utf-16-le")
+            orig_pal = b"\x10\x20\x30\x00\x40\x50\x60\x00"
+            orig_mf = b"WMF-BINARY-PAYLOAD"
+            fake_w32.seed_hglobal(13, orig_text)
+            fake_w32.seed_bitmap(2, "operator-bmp")
+            fake_w32.seed_emf(14, "operator-emf")
+            fake_w32.seed_palette(orig_pal)
+            fake_w32.seed_mfpict(8, 1200, 900, orig_mf)
+
+            l_clip = cu.Launched.__new__(cu.Launched)
+            l_clip._clipboard_win32 = fake_w32
+            l_clip._saved_clipboard = l_clip._save_clipboard()
+            self.assertEqual([item[0] for item in l_clip._saved_clipboard], [13, 2, 14, 9, 3])
+
+            # Simulate Home seeding overwriting the clipboard.
+            fake_w32._empty_clipboard()
+            fake_w32.seed_hglobal(13, "Sample\x00".encode("utf-16-le"))
+
+            # First restoration attempt fails because another app holds the clipboard (open_ok=False):
+            # _restore_saved_clipboard raises Refused and retains _saved_clipboard for retry.
+            fake_w32.open_ok = False
+            with self.assertRaises(cu.Refused):
+                l_clip._restore_saved_clipboard()
+            self.assertIsNotNone(l_clip._saved_clipboard)
+
+            # Second restoration attempt fails on SetClipboardData (set_ok=False):
+            # _restore_saved_clipboard raises Refused and still retains _saved_clipboard with valid handles.
+            fake_w32.open_ok = True
+            fake_w32.set_ok = False
+            with self.assertRaises(cu.Refused):
+                l_clip._restore_saved_clipboard()
+            self.assertIsNotNone(l_clip._saved_clipboard)
+
+            # Third restoration attempt succeeds once the clipboard is writable again, restoring all 5 formats
+            # and freeing the saved snapshot's duplicate GDI handles.
+            fake_w32.set_ok = True
+            l_clip._restore_saved_clipboard()
+            self.assertIsNone(l_clip._saved_clipboard)
+            self.assertEqual(fake_w32.formats, [13, 2, 14, 9, 3])
+            h_text = fake_w32.data[13]
+            self.assertEqual(ctypes.string_at(fake_w32._global_lock(h_text), fake_w32._global_size(h_text)), orig_text)
+            self.assertEqual(fake_w32.bitmaps[fake_w32.data[2]], "operator-bmp")
+            self.assertEqual(fake_w32.emfs[fake_w32.data[14]], "operator-emf")
+            self.assertEqual(fake_w32.palettes[fake_w32.data[9]], orig_pal)
+            mfp_restored = _METAFILEPICT.from_address(fake_w32._global_lock(fake_w32.data[3]))
+            self.assertEqual((mfp_restored.mm, mfp_restored.xExt, mfp_restored.yExt), (8, 1200, 900))
+            self.assertEqual(fake_w32.metafiles[mfp_restored.hMF], orig_mf)
+
+            # 2. Unsupported private (0x0200), owner-display (0x0080), GDI (0x0300), or null-handle formats
+            #    cause _save_clipboard to refuse before Home preparation modifies the clipboard.
+            for bad_fmt in (0x0200, 0x0080, 0x0300):
+                w32_bad = FakeWin32Clipboard()
+                w32_bad.seed_bitmap(2, "bmp-before-bad")
+                w32_bad.formats.append(bad_fmt)
+                w32_bad.data[bad_fmt] = 777
+                l_bad = cu.Launched.__new__(cu.Launched)
+                l_bad._clipboard_win32 = w32_bad
+                with self.assertRaises(cu.Refused):
+                    l_bad._save_clipboard()
+                # Partial duplicate bitmap handle was cleaned up on refusal.
+                self.assertEqual(len(w32_bad.deleted_objects), 1)
+
+            # 3. Home-to-Draw sequence: prepare_core_tab("Home") clears undo history via UndoClear() so subsequent
+            #    Draw tab capture observes "Can't Undo" (word.draw.undo.can-t-undo) rather than an enabled Undo command.
+            w32_seq = FakeWin32Clipboard()
+            w32_seq.seed_hglobal(13, orig_text)
+
+            class SeqRange:
+                def __init__(self, doc):
+                    self.doc = doc
+
+                @property
+                def Text(self):
+                    return self.doc.text
+
+                @Text.setter
+                def Text(self, val):
+                    self.doc.text = val
+                    self.doc.undo_stack.append(val)
+
+                def Copy(self):
+                    w32_seq._empty_clipboard()
+                    w32_seq.seed_hglobal(13, (self.doc.text + "\x00").encode("utf-16-le"))
+
+                def Select(self):
+                    pass
+
+            class SeqDoc:
+                def __init__(self):
+                    self.Name = "Document1"
+                    self.FullName = "Document1"
+                    self.Saved = True
+                    self.closed = False
+                    self.text = ""
+                    self.undo_stack = []
+                    self.Shapes = None
+
+                def Range(self, _s, _e):
+                    return SeqRange(self)
+
+                def UndoClear(self):
+                    self.undo_stack.clear()
+
+            seq_doc = SeqDoc()
+            seq_launched = cu.Launched.__new__(cu.Launched)
+            seq_launched.key = "word"
+            seq_launched.exe = "WINWORD.EXE"
+            seq_launched.hwnd = 5
+            seq_launched.created = [seq_doc]
+            seq_launched._created_meta = [cu.Launched._doc_meta(seq_doc)]
+            seq_launched.proc = type("P", (), {"pid": 7, "exited": lambda _s, _w=0: False})()
+            seq_launched.app = type(
+                "App",
+                (),
+                {
+                    "Build": "16.0.20527",
+                    "Version": "16.0",
+                    "Documents": type("Docs", (), {"Count": 1})(),
+                    "ActiveWindow": type("AW", (), {"Hwnd": 5})(),
+                },
+            )()
+            seq_launched._win = type("W", (), {"top": lambda _s, h: h})()
+            seq_launched._clipboard_win32 = w32_seq
+            seq_launched.language = lambda: 1033
+
+            active_core_tab = ["Home"]
+            tree_cache = {}
+
+            def make_core_tab(name, aid, kt):
+                t = E("TabItem", name, aid, kt, rect=(60, 48, 130, 78))
+                t.select = lambda n=name: active_core_tab.__setitem__(0, n)
+                return t
+
+            def seq_root(_self, _h):
+                undo_lbl = "Undo Typing" if seq_doc.undo_stack else "Can't Undo"
+                key = (active_core_tab[0], undo_lbl)
+                if key not in tree_cache:
+                    tabs = [
+                        make_core_tab("Home", "TabHome", "Alt, H"),
+                        make_core_tab("Draw", "TabDrawInk", "Alt, JI"),
+                    ]
+                    if active_core_tab[0] == "Home":
+                        grp = E(
+                            "Group",
+                            "Clipboard",
+                            key="Alt, H, Z C",
+                            rect=(10, 82, 120, 174),
+                            kids=[E("Button", "Paste", "Paste", "Alt, H, V", rect=(14, 90, 60, 160))],
+                        )
+                    else:
+                        grp = E(
+                            "Group",
+                            "Undo",
+                            key="Alt, JI, Z U",
+                            rect=(10, 82, 120, 174),
+                            kids=[E("Button", undo_lbl, "Undo", "Alt, JI, Z", rect=(14, 90, 60, 160))],
+                        )
+                    lower = E(
+                        "Pane",
+                        "Lower Ribbon",
+                        rect=(0, 78, 1920, 178),
+                        kids=[E("Group", active_core_tab[0], kids=[grp])],
+                    )
+                    tree_cache[key] = E(
+                        "Window",
+                        "Document1 - Word",
+                        kids=[E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=tabs), lower],
+                    )
+                return E._wrap(tree_cache[key])
+
+            win = type(
+                "W",
+                (),
+                {
+                    "monitors": lambda self: [Profile.MONITOR],
+                    "place": lambda self, h, m: None,
+                    "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
+                },
+            )()
+            uia = type("U", (), {"element": seq_root})()
+            real_ib, real_rb = cu.installed_build, cu.reference_build
+            cu.installed_build = lambda: BUILD
+            cu.reference_build = lambda app="Word": BUILD
+            try:
+                for tab_arg in ("Home", "Draw"):
+                    args = argparse.Namespace(
+                        app="word", tab=tab_arg, all_tabs=False, expand=False, layout="classic",
+                        merge=False, out=None, fixture=None,
+                    )
+                    recs, _probs, _ctx = cu.capture(args, seq_launched, uia, win)
+                    if tab_arg == "Draw":
+                        draw_ids = {r["id"] for r in recs}
+                        self.assertIn("word.draw.undo.can-t-undo", draw_ids)
+                self.assertEqual(seq_doc.undo_stack, [])
+                self.assertIsNone(seq_launched._saved_clipboard)
+                h_restored = w32_seq.data[13]
+                self.assertEqual(
+                    ctypes.string_at(w32_seq._global_lock(h_restored), w32_seq._global_size(h_restored)),
+                    orig_text,
+                )
+
+                # If UndoClear is missing from the document, Home and Draw preparation refuse and restore the clipboard.
+                delattr(SeqDoc, "UndoClear")
+                with self.assertRaises(cu.Refused):
+                    seq_launched._word_action_impl("prepare_core_tab", tab_name="Home")
+                self.assertIsNone(seq_launched._saved_clipboard)
+                with self.assertRaises(cu.Refused):
+                    seq_launched._word_action_impl("prepare_core_tab", tab_name="Draw")
+            finally:
+                cu.installed_build, cu.reference_build = real_ib, real_rb
+        finally:
+            cu.time.sleep = real_sleep
 
 
 if __name__ == "__main__":

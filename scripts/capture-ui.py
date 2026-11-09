@@ -1384,27 +1384,63 @@ class Launched:
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
                               "ribbon acts on someone else's")
 
+    def _free_clipboard_snapshot(self, snapshot):
+        if not snapshot or callable(getattr(self, "_clipboard_restorer", None)):
+            return
+        try:
+            import ctypes
+            win32 = getattr(self, "_clipboard_win32", None)
+            gdi32 = win32.gdi32 if win32 is not None else ctypes.windll.gdi32
+            gdi32.DeleteObject.argtypes = [ctypes.c_void_p]
+            gdi32.DeleteEnhMetaFile.argtypes = [ctypes.c_void_p]
+        except Exception:
+            return
+        for _fmt, kind, payload in snapshot:
+            if not payload or not isinstance(payload, int):
+                continue
+            try:
+                if kind == "bitmap":
+                    gdi32.DeleteObject(payload)
+                elif kind == "emf":
+                    gdi32.DeleteEnhMetaFile(payload)
+            except Exception:
+                pass
+
     def _save_clipboard(self):
         saver = getattr(self, "_clipboard_saver", None)
         if callable(saver):
             return saver()
         import ctypes
-        u32 = ctypes.windll.user32
-        k32 = ctypes.windll.kernel32
-        gdi32 = ctypes.windll.gdi32
+
+        class _METAFILEPICT(ctypes.Structure):
+            _fields_ = [
+                ("mm", ctypes.c_long),
+                ("xExt", ctypes.c_long),
+                ("yExt", ctypes.c_long),
+                ("hMF", ctypes.c_void_p),
+            ]
+
+        win32 = getattr(self, "_clipboard_win32", None)
+        u32 = win32.user32 if win32 is not None else ctypes.windll.user32
+        k32 = win32.kernel32 if win32 is not None else ctypes.windll.kernel32
+        gdi32 = win32.gdi32 if win32 is not None else ctypes.windll.gdi32
         u32.GetClipboardData.restype = ctypes.c_void_p
         u32.GetClipboardData.argtypes = [ctypes.c_uint]
         u32.CopyImage.restype = ctypes.c_void_p
         u32.CopyImage.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_uint]
         gdi32.CopyEnhMetaFileW.restype = ctypes.c_void_p
         gdi32.CopyEnhMetaFileW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        gdi32.GetPaletteEntries.restype = ctypes.c_uint
+        gdi32.GetPaletteEntries.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p]
+        gdi32.GetMetaFileBitsEx.restype = ctypes.c_uint
+        gdi32.GetMetaFileBitsEx.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p]
         k32.GlobalLock.restype = ctypes.c_void_p
         k32.GlobalLock.argtypes = [ctypes.c_void_p]
         k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
         k32.GlobalSize.restype = ctypes.c_size_t
         k32.GlobalSize.argtypes = [ctypes.c_void_p]
         opened = False
-        for _ in range(10):
+        for _ in range(25):
             if u32.OpenClipboard(0):
                 opened = True
                 break
@@ -1415,29 +1451,87 @@ class Launched:
         try:
             fmt = u32.EnumClipboardFormats(0)
             while fmt:
-                if fmt in (3, 9) or (0x0080 <= fmt <= 0x008E) or (0x0200 <= fmt <= 0x03FF):
-                    fmt = u32.EnumClipboardFormats(fmt)
-                    continue
+                if fmt == 0x0080 or (0x0084 <= fmt <= 0x008D) or (0x0200 <= fmt <= 0x03FF):
+                    raise Refused(
+                        f"clipboard contains non-preservable format 0x{fmt:04x}; refusing to overwrite operator clipboard"
+                    )
                 h = u32.GetClipboardData(fmt)
-                if h:
-                    if fmt == 2:
-                        dup_bmp = u32.CopyImage(h, 0, 0, 0, 0)
-                        if dup_bmp:
-                            items.append((fmt, "bitmap", dup_bmp))
-                    elif fmt == 14:
-                        dup_emf = gdi32.CopyEnhMetaFileW(h, None)
-                        if dup_emf:
-                            items.append((fmt, "emf", dup_emf))
-                    else:
-                        sz = int(k32.GlobalSize(h) or 0)
-                        ptr = k32.GlobalLock(h) if sz > 0 else None
-                        if ptr:
-                            try:
-                                raw_bytes = ctypes.string_at(ptr, sz)
-                            finally:
-                                k32.GlobalUnlock(h)
-                            items.append((fmt, "hglobal", raw_bytes))
+                if not h:
+                    raise Refused(
+                        f"clipboard format 0x{fmt:04x} returned no data handle; refusing to overwrite operator clipboard"
+                    )
+                if fmt in (2, 0x0082):
+                    dup_bmp = u32.CopyImage(h, 0, 0, 0, 0)
+                    if not dup_bmp:
+                        raise Refused(
+                            f"clipboard bitmap format 0x{fmt:04x} could not be duplicated; refusing to overwrite operator clipboard"
+                        )
+                    items.append((fmt, "bitmap", dup_bmp))
+                elif fmt in (14, 0x008E):
+                    dup_emf = gdi32.CopyEnhMetaFileW(h, None)
+                    if not dup_emf:
+                        raise Refused(
+                            f"clipboard enhanced metafile format 0x{fmt:04x} could not be duplicated; refusing to overwrite operator clipboard"
+                        )
+                    items.append((fmt, "emf", dup_emf))
+                elif fmt == 9:
+                    entry_count = int(gdi32.GetPaletteEntries(h, 0, 0, None) or 0)
+                    if entry_count <= 0:
+                        raise Refused(
+                            "clipboard palette format CF_PALETTE has no readable entries; refusing to overwrite operator clipboard"
+                        )
+                    pal_buf = ctypes.create_string_buffer(entry_count * 4)
+                    read_count = int(
+                        gdi32.GetPaletteEntries(h, 0, entry_count, ctypes.cast(pal_buf, ctypes.c_void_p)) or 0
+                    )
+                    if read_count != entry_count:
+                        raise Refused(
+                            "clipboard palette format CF_PALETTE entries could not be read; refusing to overwrite operator clipboard"
+                        )
+                    items.append((fmt, "palette", pal_buf.raw))
+                elif fmt in (3, 0x0083):
+                    sz = int(k32.GlobalSize(h) or 0)
+                    ptr = k32.GlobalLock(h) if sz >= ctypes.sizeof(_METAFILEPICT) else None
+                    if not ptr:
+                        raise Refused(
+                            f"clipboard metafile-picture format 0x{fmt:04x} could not be locked; refusing to overwrite operator clipboard"
+                        )
+                    try:
+                        mfp = _METAFILEPICT.from_address(ptr)
+                        if not mfp.hMF:
+                            raise Refused(
+                                f"clipboard metafile-picture format 0x{fmt:04x} has no metafile handle; refusing to overwrite operator clipboard"
+                            )
+                        mf_size = int(gdi32.GetMetaFileBitsEx(mfp.hMF, 0, None) or 0)
+                        if mf_size <= 0:
+                            raise Refused(
+                                f"clipboard metafile-picture format 0x{fmt:04x} bits could not be sized; refusing to overwrite operator clipboard"
+                            )
+                        mf_buf = ctypes.create_string_buffer(mf_size)
+                        if int(gdi32.GetMetaFileBitsEx(mfp.hMF, mf_size, ctypes.cast(mf_buf, ctypes.c_void_p)) or 0) != mf_size:
+                            raise Refused(
+                                f"clipboard metafile-picture format 0x{fmt:04x} bits could not be read; refusing to overwrite operator clipboard"
+                            )
+                        mfp_payload = (int(mfp.mm), int(mfp.xExt), int(mfp.yExt), mf_buf.raw)
+                    finally:
+                        k32.GlobalUnlock(h)
+                    items.append((fmt, "mfpict", mfp_payload))
+                else:
+                    sz = int(k32.GlobalSize(h) or 0)
+                    ptr = k32.GlobalLock(h) if sz > 0 else None
+                    if not ptr:
+                        raise Refused(
+                            f"clipboard format 0x{fmt:04x} could not be locked as HGLOBAL; refusing to overwrite operator clipboard"
+                        )
+                    try:
+                        raw_bytes = ctypes.string_at(ptr, sz)
+                    finally:
+                        k32.GlobalUnlock(h)
+                    items.append((fmt, "hglobal", raw_bytes))
                 fmt = u32.EnumClipboardFormats(fmt)
+        except BaseException:
+            self._free_clipboard_snapshot(items)
+            raise
         finally:
             u32.CloseClipboard()
         return items
@@ -1447,21 +1541,41 @@ class Launched:
         if callable(restorer):
             return restorer(snapshot)
         import ctypes
-        u32 = ctypes.windll.user32
-        k32 = ctypes.windll.kernel32
-        gdi32 = ctypes.windll.gdi32
+        import struct
+
+        class _METAFILEPICT(ctypes.Structure):
+            _fields_ = [
+                ("mm", ctypes.c_long),
+                ("xExt", ctypes.c_long),
+                ("yExt", ctypes.c_long),
+                ("hMF", ctypes.c_void_p),
+            ]
+
+        win32 = getattr(self, "_clipboard_win32", None)
+        u32 = win32.user32 if win32 is not None else ctypes.windll.user32
+        k32 = win32.kernel32 if win32 is not None else ctypes.windll.kernel32
+        gdi32 = win32.gdi32 if win32 is not None else ctypes.windll.gdi32
         u32.SetClipboardData.restype = ctypes.c_void_p
         u32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
+        u32.CopyImage.restype = ctypes.c_void_p
+        u32.CopyImage.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_uint]
         k32.GlobalAlloc.restype = ctypes.c_void_p
         k32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
         k32.GlobalFree.argtypes = [ctypes.c_void_p]
         k32.GlobalLock.restype = ctypes.c_void_p
         k32.GlobalLock.argtypes = [ctypes.c_void_p]
         k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        gdi32.CopyEnhMetaFileW.restype = ctypes.c_void_p
+        gdi32.CopyEnhMetaFileW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        gdi32.CreatePalette.restype = ctypes.c_void_p
+        gdi32.CreatePalette.argtypes = [ctypes.c_void_p]
+        gdi32.SetMetaFileBitsEx.restype = ctypes.c_void_p
+        gdi32.SetMetaFileBitsEx.argtypes = [ctypes.c_uint, ctypes.c_void_p]
         gdi32.DeleteObject.argtypes = [ctypes.c_void_p]
         gdi32.DeleteEnhMetaFile.argtypes = [ctypes.c_void_p]
+        gdi32.DeleteMetaFile.argtypes = [ctypes.c_void_p]
         opened = False
-        for _ in range(10):
+        for _ in range(25):
             if u32.OpenClipboard(0):
                 opened = True
                 break
@@ -1469,37 +1583,98 @@ class Launched:
         if not opened:
             raise Refused("could not open the system clipboard to restore operator clipboard state")
         try:
-            u32.EmptyClipboard()
+            if not u32.EmptyClipboard():
+                raise Refused("could not empty the system clipboard to restore operator clipboard state")
             for fmt, kind, payload in snapshot or ():
-                if kind == "hglobal" and isinstance(payload, (bytes, bytearray)):
+                if kind == "hglobal":
+                    if not isinstance(payload, (bytes, bytearray)):
+                        raise Refused(f"invalid clipboard hglobal payload for format 0x{fmt:04x}")
                     n = len(payload)
                     hmem = k32.GlobalAlloc(0x0042, max(1, n))
-                    if hmem:
-                        ptr = k32.GlobalLock(hmem)
-                        if ptr:
-                            try:
-                                if n > 0:
-                                    ctypes.memmove(ptr, bytes(payload), n)
-                            finally:
-                                k32.GlobalUnlock(hmem)
-                            if not u32.SetClipboardData(fmt, hmem):
-                                k32.GlobalFree(hmem)
-                        else:
-                            k32.GlobalFree(hmem)
-                elif kind == "bitmap" and payload:
-                    if not u32.SetClipboardData(2, payload):
-                        gdi32.DeleteObject(payload)
-                elif kind == "emf" and payload:
-                    if not u32.SetClipboardData(14, payload):
-                        gdi32.DeleteEnhMetaFile(payload)
+                    if not hmem:
+                        raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
+                    ptr = k32.GlobalLock(hmem)
+                    if not ptr:
+                        k32.GlobalFree(hmem)
+                        raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
+                    try:
+                        if n > 0:
+                            ctypes.memmove(ptr, bytes(payload), n)
+                    finally:
+                        k32.GlobalUnlock(hmem)
+                    if not u32.SetClipboardData(fmt, hmem):
+                        k32.GlobalFree(hmem)
+                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                elif kind == "bitmap":
+                    if not payload:
+                        raise Refused(f"missing bitmap handle while restoring clipboard format 0x{fmt:04x}")
+                    dup_bmp = u32.CopyImage(payload, 0, 0, 0, 0)
+                    if not dup_bmp:
+                        raise Refused(f"CopyImage failed while restoring clipboard format 0x{fmt:04x}")
+                    if not u32.SetClipboardData(fmt, dup_bmp):
+                        gdi32.DeleteObject(dup_bmp)
+                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                elif kind == "emf":
+                    if not payload:
+                        raise Refused(f"missing enhanced metafile handle while restoring clipboard format 0x{fmt:04x}")
+                    dup_emf = gdi32.CopyEnhMetaFileW(payload, None)
+                    if not dup_emf:
+                        raise Refused(f"CopyEnhMetaFileW failed while restoring clipboard format 0x{fmt:04x}")
+                    if not u32.SetClipboardData(fmt, dup_emf):
+                        gdi32.DeleteEnhMetaFile(dup_emf)
+                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                elif kind == "palette":
+                    if not isinstance(payload, (bytes, bytearray)) or len(payload) == 0 or len(payload) % 4 != 0:
+                        raise Refused(f"invalid palette payload while restoring clipboard format 0x{fmt:04x}")
+                    count = len(payload) // 4
+                    logpal = ctypes.create_string_buffer(4 + len(payload))
+                    struct.pack_into("<HH", logpal, 0, 0x0300, count)
+                    ctypes.memmove(ctypes.addressof(logpal) + 4, bytes(payload), len(payload))
+                    hpal = gdi32.CreatePalette(ctypes.cast(logpal, ctypes.c_void_p))
+                    if not hpal:
+                        raise Refused(f"CreatePalette failed while restoring clipboard format 0x{fmt:04x}")
+                    if not u32.SetClipboardData(fmt, hpal):
+                        gdi32.DeleteObject(hpal)
+                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                elif kind == "mfpict":
+                    if not isinstance(payload, tuple) or len(payload) != 4:
+                        raise Refused(f"invalid metafile-picture payload while restoring clipboard format 0x{fmt:04x}")
+                    mm, x_ext, y_ext, mf_bytes = payload
+                    if not isinstance(mf_bytes, (bytes, bytearray)) or len(mf_bytes) == 0:
+                        raise Refused(f"empty metafile-picture bits while restoring clipboard format 0x{fmt:04x}")
+                    mf_buf = ctypes.create_string_buffer(bytes(mf_bytes), len(mf_bytes))
+                    hmf = gdi32.SetMetaFileBitsEx(len(mf_bytes), ctypes.cast(mf_buf, ctypes.c_void_p))
+                    if not hmf:
+                        raise Refused(f"SetMetaFileBitsEx failed while restoring clipboard format 0x{fmt:04x}")
+                    hmem = k32.GlobalAlloc(0x0042, ctypes.sizeof(_METAFILEPICT))
+                    if not hmem:
+                        gdi32.DeleteMetaFile(hmf)
+                        raise Refused(f"GlobalAlloc failed while restoring clipboard format 0x{fmt:04x}")
+                    ptr = k32.GlobalLock(hmem)
+                    if not ptr:
+                        gdi32.DeleteMetaFile(hmf)
+                        k32.GlobalFree(hmem)
+                        raise Refused(f"GlobalLock failed while restoring clipboard format 0x{fmt:04x}")
+                    try:
+                        mfp_struct = _METAFILEPICT(mm=int(mm), xExt=int(x_ext), yExt=int(y_ext), hMF=hmf)
+                        ctypes.memmove(ptr, ctypes.byref(mfp_struct), ctypes.sizeof(_METAFILEPICT))
+                    finally:
+                        k32.GlobalUnlock(hmem)
+                    if not u32.SetClipboardData(fmt, hmem):
+                        gdi32.DeleteMetaFile(hmf)
+                        k32.GlobalFree(hmem)
+                        raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
+                else:
+                    raise Refused(f"unsupported clipboard snapshot kind {kind!r} for format 0x{fmt:04x}")
         finally:
             u32.CloseClipboard()
 
     def _restore_saved_clipboard(self):
         if hasattr(self, "_saved_clipboard") and self._saved_clipboard is not None:
             saved = self._saved_clipboard
-            self._saved_clipboard = None
             self._restore_clipboard(saved)
+            self._free_clipboard_snapshot(saved)
+            self._saved_clipboard = None
 
     def word_action(self, action, timeout=None, **kwargs):
         return self._call_com(lambda: self._word_action_impl(action, **kwargs), timeout=timeout)
@@ -1604,13 +1779,22 @@ class Launched:
                         if rng is None or not hasattr(rng, "Copy"):
                             self._restore_saved_clipboard()
                             raise Refused("Word document Range does not support Copy() to seed Home clipboard state")
+                        if not callable(getattr(doc, "UndoClear", None)):
+                            self._restore_saved_clipboard()
+                            raise Refused("Word document does not support UndoClear() to reset undo history after Home preparation")
                         try:
                             rng.Text = "Sample"
                             rng.Copy()
                             rng.Text = ""
                             if hasattr(rng, "Select"):
                                 rng.Select()
+                            doc.UndoClear()
                         except Exception as exc:
+                            try:
+                                if callable(getattr(doc, "UndoClear", None)):
+                                    doc.UndoClear()
+                            except Exception:
+                                pass
                             self._restore_saved_clipboard()
                             raise Refused(f"failed to seed Home clipboard state ({type(exc).__name__}: {exc})") from None
                     else:
@@ -1619,6 +1803,20 @@ class Launched:
                                 doc.Range(0, 0).Select()
                         except Exception:
                             pass
+                        if tab_name == "Draw":
+                            if not callable(getattr(doc, "UndoClear", None)):
+                                raise Refused("Word document does not support UndoClear() to reset undo history before Draw capture")
+                            try:
+                                doc.UndoClear()
+                            except Exception as exc:
+                                raise Refused(
+                                    f"failed to clear Word undo history before Draw capture ({type(exc).__name__}: {exc})"
+                                ) from None
+                        elif callable(getattr(doc, "UndoClear", None)):
+                            try:
+                                doc.UndoClear()
+                            except Exception:
+                                pass
                 if tab_name == "Mailings":
                     csv_path = Path(kwargs.get("recipients_path") or WORD_DEFAULT_RECIPIENTS)
                     if not csv_path.is_file():
@@ -1978,10 +2176,13 @@ class Launched:
             open_created = None
 
     def _close_impl(self, wait=60.0):
-        others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
+        others, failure, clipboard_failure = None, None, None  # unknown until counted: an instance whose contents are unknown is never quit
         metas = list(getattr(self, "_created_meta", ()))
         try:
-            self._restore_saved_clipboard()
+            try:
+                self._restore_saved_clipboard()
+            except Exception as exc:
+                clipboard_failure = f"{type(exc).__name__}: {exc}"
             fdoc = getattr(self, "_fixture_doc", None)
             if fdoc is not None and not getattr(fdoc, "closed", False):
                 self._word_action_impl("close_fixture")
@@ -2003,11 +2204,6 @@ class Launched:
         except Exception as exc:  # reported below: the instance is left running and the run refuses
             failure = f"{type(exc).__name__}: {exc}"
         finally:
-            try:
-                self._restore_saved_clipboard()
-            except Exception as exc:
-                if failure is None:
-                    failure = f"{type(exc).__name__}: {exc}"
             doc = None
             self._release_marshaled_app()
             if others == 0:
@@ -2042,6 +2238,12 @@ class Launched:
                 gone = self.proc is None or (others == 0 and self.proc.exited(wait))
                 if self.proc is not None:
                     self.proc.close()
+                if getattr(self, "_saved_clipboard", None) is not None:
+                    try:
+                        self._restore_saved_clipboard()
+                        clipboard_failure = None
+                    except Exception as exc:
+                        clipboard_failure = f"{type(exc).__name__}: {exc}"
         if others:
             raise Refused(f"the {self.exe} instance holds {others} document(s) this tool did not create, so it was "
                           "left running")
@@ -2050,6 +2252,8 @@ class Launched:
                           "was left running")
         if not gone:
             raise Refused(f"the {self.exe} instance this tool started did not exit")
+        if clipboard_failure is not None:
+            raise Refused(f"the operator clipboard could not be restored ({clipboard_failure})")
 
 
 def start_process(exe):
@@ -2309,10 +2513,12 @@ def capture(args, launched, uia, win):
                 check_licensing()
             records += tab_records
     finally:
-        if args.app == "word" and getattr(launched, "_saved_clipboard", None) is not None:
-            if callable(getattr(launched, "_restore_saved_clipboard", None)):
+        if args.app == "word":
+            if getattr(launched, "_saved_clipboard", None) is not None and callable(
+                getattr(launched, "_restore_saved_clipboard", None)
+            ):
                 launched._restore_saved_clipboard()
-            elif callable(getattr(launched, "word_action", None)):
+            elif isinstance(launched, Proxy) and callable(getattr(launched, "word_action", None)):
                 launched.word_action("restore_clipboard")
     if args.app == "word" and args.all_tabs and getattr(args, "layout", "classic") == "classic" and callable(getattr(launched, "word_action", None)):
         fixture_path = Path(getattr(args, "fixture", None) or WORD_DEFAULT_FIXTURE)
