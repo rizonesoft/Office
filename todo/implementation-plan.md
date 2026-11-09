@@ -67,7 +67,7 @@ Sections: 16 | Checklist items: 82
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 42 | Checklist items: 271
+Sections: 42 | Checklist items: 272
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -92,7 +92,7 @@ Sections: 42 | Checklist items: 271
 | [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 6     |
 | [ ]    | D02 T01 §13 | Project Ribbon            | office, windows-host, display-session | 6     |
 | [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 8     |
+| [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 9     |
 | [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
@@ -182,4 +182,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 55/125 verified sections, 14 ready to run now.
 
-Checklist: 334/790 items completed (includes Commit items).
+Checklist: 334/791 items completed (includes Commit items).
