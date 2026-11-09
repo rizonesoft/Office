@@ -1449,22 +1449,37 @@ class Launched:
                 return True
         return False
 
-    def _is_valid_seeded_sig(self, sig):
+    @staticmethod
+    def _decode_clipboard_text(fmt, raw_bytes):
+        if not isinstance(raw_bytes, (bytes, bytearray)):
+            return None
+        raw = bytes(raw_bytes)
+        if fmt == 13:
+            for i in range(0, len(raw) - 1, 2):
+                if raw[i : i + 2] == b"\x00\x00":
+                    try:
+                        return raw[:i].decode("utf-16-le")
+                    except UnicodeDecodeError:
+                        return None
+            return None
+        if fmt == 1:
+            nul = raw.find(b"\x00")
+            if nul < 0:
+                return None
+            return raw[:nul].decode("latin1")
+        return None
+
+    def _is_valid_seeded_sig(self, sig, seq_advanced=False):
         if not isinstance(sig, tuple) or len(sig) != 2:
             return False
         fmts, text_payload = sig
         if not fmts:
             return False
-        saved_handles = getattr(self, "_saved_clipboard_handles", ())
-        if saved_handles and fmts == saved_handles:
-            return False
-        sample_payloads = (
-            "Sample\x00".encode("utf-16-le"),
-            "Sample\r\x00".encode("utf-16-le"),
-            b"Sample\x00",
-            b"Sample\r\x00",
-        )
-        return text_payload in sample_payloads
+        if not seq_advanced:
+            saved_handles = getattr(self, "_saved_clipboard_handles", ())
+            if saved_handles and fmts == saved_handles:
+                return False
+        return text_payload in ("Sample", "Sample\r", "Sample\r\n")
 
     def _peek_clipboard_sig_while_open(self, u32, k32):
         import ctypes
@@ -1476,21 +1491,33 @@ class Launched:
         k32.GlobalSize.restype = ctypes.c_size_t
         k32.GlobalSize.argtypes = [ctypes.c_void_p]
         fmts = []
-        text_payload = None
+        texts = {}
         fmt = int(u32.EnumClipboardFormats(0) or 0)
         while fmt:
             h_raw = u32.GetClipboardData(fmt)
             h = int(h_raw or 0)
             fmts.append((fmt, h))
-            if fmt in (13, 1) and h and text_payload is None:
-                sz = int(k32.GlobalSize(h) or 0)
-                ptr = k32.GlobalLock(h) if sz > 0 else None
-                if ptr:
-                    try:
-                        text_payload = ctypes.string_at(ptr, sz)
-                    finally:
-                        k32.GlobalUnlock(h)
+            if fmt in (13, 1):
+                decoded = None
+                if h:
+                    sz = int(k32.GlobalSize(h) or 0)
+                    ptr = k32.GlobalLock(h) if sz > 0 else None
+                    if ptr:
+                        try:
+                            raw = ctypes.string_at(ptr, sz)
+                        finally:
+                            k32.GlobalUnlock(h)
+                        decoded = self._decode_clipboard_text(fmt, raw)
+                texts[fmt] = decoded
             fmt = int(u32.EnumClipboardFormats(fmt) or 0)
+        if 13 in texts and 1 in texts:
+            text_payload = texts[13] if texts[13] == texts[1] else None
+        elif 13 in texts:
+            text_payload = texts[13]
+        elif 1 in texts:
+            text_payload = texts[1]
+        else:
+            text_payload = None
         return (tuple(fmts), text_payload)
 
     def _record_seeded_clipboard_state(self):
@@ -1513,7 +1540,8 @@ class Launched:
             seq = self._get_clipboard_seq(u32)
             saved_seq = getattr(self, "_saved_clipboard_seq", None)
             seq_advanced = saved_seq is None or seq is None or seq != saved_seq
-            if self._is_clipboard_owned_by_instance(u32) and self._is_valid_seeded_sig(sig) and seq_advanced:
+            has_seq = saved_seq is not None and seq is not None and seq != saved_seq
+            if self._is_clipboard_owned_by_instance(u32) and self._is_valid_seeded_sig(sig, seq_advanced=has_seq) and seq_advanced:
                 self._clipboard_externally_modified = False
                 self._seeded_clipboard_sig = sig
                 self._seeded_clipboard_seq = seq
@@ -1768,7 +1796,9 @@ class Launched:
                     elif seeded_sig is not None and cur_sig != seeded_sig:
                         external_change = True
                     elif not partial_retry and seeded_seq is None and seeded_sig is None:
-                        if not self._is_valid_seeded_sig(cur_sig):
+                        saved_seq = getattr(self, "_saved_clipboard_seq", None)
+                        has_seq = saved_seq is not None and cur_seq is not None and cur_seq != saved_seq
+                        if not self._is_valid_seeded_sig(cur_sig, seq_advanced=has_seq) or (saved_seq is not None and cur_seq is not None and cur_seq == saved_seq):
                             external_change = True
                 if external_change:
                     self._seeded_clipboard_seq = None

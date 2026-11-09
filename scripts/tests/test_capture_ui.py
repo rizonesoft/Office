@@ -4284,6 +4284,29 @@ class WordRibbon(unittest.TestCase):
             )
             self.assertEqual(w32_delay.bitmaps[w32_delay.data[2]], "delayed-operator-bmp")
 
+            # 2a-ii. Padded HGLOBAL allocation (GlobalSize larger than null-terminated string length, e.g. trailing
+            #        zero or slack bytes after the UTF-16LE null terminator) is parsed up to its null terminator and
+            #        restores both the original operator text and bitmap.
+            w32_pad = FakeWin32Clipboard()
+            w32_pad.seed_hglobal(13, orig_text)
+            w32_pad.seed_bitmap(2, "padded-operator-bmp")
+            l_pad = cu.Launched.__new__(cu.Launched)
+            l_pad.hwnd = 5
+            l_pad.proc = type("P", (), {"pid": 7})()
+            l_pad._clipboard_win32 = w32_pad
+            l_pad._saved_clipboard = l_pad._save_clipboard()
+            w32_pad.seed_word_copy("Sample\x00".encode("utf-16-le") + b"\x00\x00\xaa\xbb", owner_hwnd=5)
+            l_pad._record_seeded_clipboard_state()
+            self.assertFalse(l_pad._clipboard_externally_modified)
+            l_pad._restore_saved_clipboard()
+            self.assertIsNone(l_pad._saved_clipboard)
+            h_pad_text = w32_pad.data[13]
+            self.assertEqual(
+                ctypes.string_at(w32_pad._global_lock(h_pad_text), w32_pad._global_size(h_pad_text)),
+                orig_text,
+            )
+            self.assertEqual(w32_pad.bitmaps[w32_pad.data[2]], "padded-operator-bmp")
+
             # 2b. If an external application modifies the clipboard BEFORE _record_seeded_clipboard_state() acquires it
             #     (either with new content or with the same text from a foreign/unowned window), _record_seeded_clipboard_state
             #     refuses to accept it as the restoration baseline and _restore_saved_clipboard preserves the external content.
