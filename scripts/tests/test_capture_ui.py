@@ -3917,6 +3917,8 @@ class WordRibbon(unittest.TestCase):
                 self._open_hwnd = 0
                 self._clipboard_owner = 0
                 self._seq = 1
+                self.window_pids = {5: 7, 50: 7}
+                self.delayed_formats = set()
                 self.owner_hwnd_ok = True
                 self.created_windows = []
                 self.destroyed_windows = []
@@ -3941,6 +3943,8 @@ class WordRibbon(unittest.TestCase):
                         "GetClipboardData": _Fn(self._get_data),
                         "SetClipboardData": _Fn(self._set_data),
                         "GetClipboardSequenceNumber": _Fn(lambda: self._seq),
+                        "GetClipboardOwner": _Fn(lambda: self._clipboard_owner),
+                        "GetWindowThreadProcessId": _Fn(self._get_window_thread_pid),
                         "CopyImage": _Fn(self._copy_image),
                         "CreateWindowExW": _Fn(self._create_window),
                         "DestroyWindow": _Fn(self._destroy_window),
@@ -4022,6 +4026,23 @@ class WordRibbon(unittest.TestCase):
                 raw = ctypes.string_at(ctypes.byref(mfp), ctypes.sizeof(_METAFILEPICT))
                 return self.seed_hglobal(3, raw)
 
+            def seed_word_copy(self, text="Sample\x00", owner_hwnd=50, delayed=False):
+                self._open_clipboard(owner_hwnd)
+                self._empty_clipboard()
+                raw = text.encode("utf-16-le") if isinstance(text, str) else bytes(text)
+                h = self.seed_hglobal(13, raw)
+                if delayed:
+                    self.delayed_formats.add(13)
+                self._close_clipboard()
+                return h
+
+            def _get_window_thread_pid(self, hwnd, pid_ptr):
+                addr = hwnd.value if isinstance(hwnd, ctypes.c_void_p) else int(hwnd or 0)
+                pid = self.window_pids.get(addr, 0)
+                if pid_ptr:
+                    ctypes.cast(pid_ptr, ctypes.POINTER(ctypes.c_ulong))[0] = pid
+                return 1 if pid else 0
+
             def _create_window(self, *_args):
                 if not self.owner_hwnd_ok:
                     return 0
@@ -4064,6 +4085,9 @@ class WordRibbon(unittest.TestCase):
                 return self.formats[idx + 1] if idx + 1 < len(self.formats) else 0
 
             def _get_data(self, fmt):
+                if fmt in self.delayed_formats:
+                    self.delayed_formats.discard(fmt)
+                    self._seq += 1
                 return self.data.get(fmt, 0)
 
             def _set_data(self, fmt, h):
@@ -4182,13 +4206,14 @@ class WordRibbon(unittest.TestCase):
             fake_w32.seed_mfpict(8, 1200, 900, orig_mf)
 
             l_clip = cu.Launched.__new__(cu.Launched)
+            l_clip.proc = type("P", (), {"pid": 7})()
             l_clip._clipboard_win32 = fake_w32
             l_clip._saved_clipboard = l_clip._save_clipboard()
             self.assertEqual([item[0] for item in l_clip._saved_clipboard], [13, 2, 14, 9, 3])
 
-            # Simulate Home seeding overwriting the clipboard.
-            fake_w32._empty_clipboard()
-            fake_w32.seed_hglobal(13, "Sample\x00".encode("utf-16-le"))
+            # Simulate Home seeding overwriting the clipboard under Word's clipboard owner HWND (50 -> pid 7).
+            fake_w32.seed_word_copy("Sample\x00", owner_hwnd=50)
+            l_clip._record_seeded_clipboard_state()
 
             # First restoration attempt fails because another app holds the clipboard (open_ok=False):
             # _restore_saved_clipboard raises Refused and retains _saved_clipboard for retry.
@@ -4204,11 +4229,6 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(cu.Refused):
                 l_clip._restore_saved_clipboard()
             self.assertIsNotNone(l_clip._saved_clipboard)
-            # Also verify that calling OpenClipboard(0) + EmptyClipboard() leaves _clipboard_owner == 0 and causes SetClipboardData to fail.
-            self.assertEqual(fake_w32._open_clipboard(0), 1)
-            self.assertEqual(fake_w32._empty_clipboard(), 1)
-            self.assertEqual(fake_w32._set_data(13, 9999), 0)
-            fake_w32._close_clipboard()
 
             # Third restoration attempt fails on SetClipboardData (set_ok=False):
             # _restore_saved_clipboard raises Refused and still retains _saved_clipboard with valid handles.
@@ -4234,18 +4254,84 @@ class WordRibbon(unittest.TestCase):
             mfp_restored = _METAFILEPICT.from_address(fake_w32._global_lock(fake_w32.data[3]))
             self.assertEqual((mfp_restored.mm, mfp_restored.xExt, mfp_restored.yExt), (8, 1200, 900))
             self.assertEqual(fake_w32.metafiles[mfp_restored.hMF], orig_mf)
+            # Also verify that calling OpenClipboard(0) + EmptyClipboard() leaves _clipboard_owner == 0 and causes SetClipboardData to fail.
+            self.assertEqual(fake_w32._open_clipboard(0), 1)
+            self.assertEqual(fake_w32._empty_clipboard(), 1)
+            self.assertEqual(fake_w32._set_data(13, 9999), 0)
+            fake_w32._close_clipboard()
 
-            # 2. If another application modifies the clipboard after Home seeding (either after _record_seeded_clipboard_state
-            #    or via direct seeding), _restore_saved_clipboard preserves the newer external clipboard content,
-            #    frees the saved snapshot's duplicate GDI handles, and clears _saved_clipboard.
+            # 2a. Delayed rendering during _record_seeded_clipboard_state() advances the sequence number on the first
+            #     GetClipboardData read; recording the sequence after materializing the signature restores the original snapshot.
+            w32_delay = FakeWin32Clipboard()
+            w32_delay.seed_hglobal(13, orig_text)
+            w32_delay.seed_bitmap(2, "delayed-operator-bmp")
+            l_delay = cu.Launched.__new__(cu.Launched)
+            l_delay.hwnd = 5
+            l_delay.proc = type("P", (), {"pid": 7})()
+            l_delay._clipboard_win32 = w32_delay
+            l_delay._saved_clipboard = l_delay._save_clipboard()
+            w32_delay.seed_word_copy("Sample\x00", owner_hwnd=5, delayed=True)
+            seq_before_peek = w32_delay._seq
+            l_delay._record_seeded_clipboard_state()
+            self.assertEqual(w32_delay._seq, seq_before_peek + 1)
+            self.assertEqual(l_delay._seeded_clipboard_seq, seq_before_peek + 1)
+            l_delay._restore_saved_clipboard()
+            self.assertIsNone(l_delay._saved_clipboard)
+            h_delay_text = w32_delay.data[13]
+            self.assertEqual(
+                ctypes.string_at(w32_delay._global_lock(h_delay_text), w32_delay._global_size(h_delay_text)),
+                orig_text,
+            )
+            self.assertEqual(w32_delay.bitmaps[w32_delay.data[2]], "delayed-operator-bmp")
+
+            # 2b. If an external application modifies the clipboard BEFORE _record_seeded_clipboard_state() acquires it
+            #     (either with new content or with the same text from a foreign/unowned window), _record_seeded_clipboard_state
+            #     refuses to accept it as the restoration baseline and _restore_saved_clipboard preserves the external content.
+            for ext_hwnd, ext_payload, ext_bmp in (
+                (999, "NEW_EXTERNAL\x00".encode("utf-16-le"), "ext-pre-bmp-1"),
+                (0, "NEW_EXTERNAL\x00".encode("utf-16-le"), "ext-pre-bmp-2"),
+                (999, "Sample\x00".encode("utf-16-le"), "ext-same-text-foreign-owner"),
+                (0, "Sample\x00".encode("utf-16-le"), "ext-same-text-no-owner"),
+            ):
+                w32_pre = FakeWin32Clipboard()
+                w32_pre.seed_hglobal(13, orig_text)
+                w32_pre.seed_bitmap(2, "old-pre-bmp")
+                l_pre = cu.Launched.__new__(cu.Launched)
+                l_pre.hwnd = 5
+                l_pre.proc = type("P", (), {"pid": 7})()
+                l_pre._clipboard_win32 = w32_pre
+                l_pre._saved_clipboard = l_pre._save_clipboard()
+                w32_pre.seed_word_copy("Sample\x00", owner_hwnd=5)
+                # External app replaces clipboard before _record_seeded_clipboard_state() runs.
+                w32_pre._open_clipboard(ext_hwnd)
+                w32_pre._empty_clipboard()
+                w32_pre.seed_hglobal(13, ext_payload)
+                w32_pre.seed_bitmap(2, ext_bmp)
+                w32_pre._close_clipboard()
+                l_pre._record_seeded_clipboard_state()
+                self.assertTrue(l_pre._clipboard_externally_modified)
+                l_pre._restore_saved_clipboard()
+                self.assertIsNone(l_pre._saved_clipboard)
+                self.assertEqual(len(w32_pre.deleted_objects), 1)
+                h_pre_text = w32_pre.data[13]
+                self.assertEqual(
+                    ctypes.string_at(w32_pre._global_lock(h_pre_text), w32_pre._global_size(h_pre_text)),
+                    ext_payload,
+                )
+                self.assertEqual(w32_pre.bitmaps[w32_pre.data[2]], ext_bmp)
+
+            # 2c. If another application modifies the clipboard AFTER _record_seeded_clipboard_state,
+            #     _restore_saved_clipboard preserves the newer external clipboard content,
+            #     frees the saved snapshot's duplicate GDI handles, and clears _saved_clipboard.
             w32_ext = FakeWin32Clipboard()
             w32_ext.seed_hglobal(13, orig_text)
             w32_ext.seed_bitmap(2, "old-operator-bmp")
             l_ext = cu.Launched.__new__(cu.Launched)
+            l_ext.hwnd = 5
+            l_ext.proc = type("P", (), {"pid": 7})()
             l_ext._clipboard_win32 = w32_ext
             l_ext._saved_clipboard = l_ext._save_clipboard()
-            w32_ext._empty_clipboard()
-            w32_ext.seed_hglobal(13, "Sample\x00".encode("utf-16-le"))
+            w32_ext.seed_word_copy("Sample\x00", owner_hwnd=5)
             l_ext._record_seeded_clipboard_state()
             # External app copies new text and a new bitmap during the capture window.
             newer_text = "NewerExternalCopy\x00".encode("utf-16-le")
@@ -4292,8 +4378,7 @@ class WordRibbon(unittest.TestCase):
                     self.doc.undo_stack.append(val)
 
                 def Copy(self):
-                    w32_seq._empty_clipboard()
-                    w32_seq.seed_hglobal(13, (self.doc.text + "\x00").encode("utf-16-le"))
+                    w32_seq.seed_word_copy(self.doc.text + "\x00", owner_hwnd=5)
 
                 def Select(self):
                     pass

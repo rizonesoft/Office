@@ -1418,6 +1418,54 @@ class Launched:
             pass
         return int(fn() or 0)
 
+    def _is_clipboard_owned_by_instance(self, u32):
+        import ctypes
+        fn = getattr(u32, "GetClipboardOwner", None)
+        if not callable(fn):
+            return False
+        try:
+            fn.restype = ctypes.c_void_p
+            fn.argtypes = []
+        except Exception:
+            pass
+        owner_hwnd = int(fn() or 0)
+        if owner_hwnd <= 0:
+            return False
+        instance_hwnd = int(getattr(self, "hwnd", 0) or 0)
+        clip_owner_hwnd = int(getattr(self, "_clipboard_owner_hwnd", 0) or 0)
+        if owner_hwnd in (instance_hwnd, clip_owner_hwnd) and owner_hwnd > 0:
+            return True
+        instance_pid = int(getattr(getattr(self, "proc", None), "pid", 0) or 0)
+        pid_fn = getattr(u32, "GetWindowThreadProcessId", None)
+        if instance_pid > 0 and callable(pid_fn):
+            try:
+                pid_fn.restype = ctypes.c_ulong
+                pid_fn.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+            except Exception:
+                pass
+            owner_pid = ctypes.c_ulong(0)
+            pid_fn(ctypes.c_void_p(owner_hwnd), ctypes.byref(owner_pid))
+            if int(owner_pid.value or 0) == instance_pid:
+                return True
+        return False
+
+    def _is_valid_seeded_sig(self, sig):
+        if not isinstance(sig, tuple) or len(sig) != 2:
+            return False
+        fmts, text_payload = sig
+        if not fmts:
+            return False
+        saved_handles = getattr(self, "_saved_clipboard_handles", ())
+        if saved_handles and fmts == saved_handles:
+            return False
+        sample_payloads = (
+            "Sample\x00".encode("utf-16-le"),
+            "Sample\r\x00".encode("utf-16-le"),
+            b"Sample\x00",
+            b"Sample\r\x00",
+        )
+        return text_payload in sample_payloads
+
     def _peek_clipboard_sig_while_open(self, u32, k32):
         import ctypes
         u32.GetClipboardData.restype = ctypes.c_void_p
@@ -1461,8 +1509,18 @@ class Launched:
         if not opened:
             raise Refused("could not open the system clipboard to verify seeded Home clipboard state")
         try:
-            self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
-            self._seeded_clipboard_sig = self._peek_clipboard_sig_while_open(u32, k32)
+            sig = self._peek_clipboard_sig_while_open(u32, k32)
+            seq = self._get_clipboard_seq(u32)
+            saved_seq = getattr(self, "_saved_clipboard_seq", None)
+            seq_advanced = saved_seq is None or seq is None or seq != saved_seq
+            if self._is_clipboard_owned_by_instance(u32) and self._is_valid_seeded_sig(sig) and seq_advanced:
+                self._clipboard_externally_modified = False
+                self._seeded_clipboard_sig = sig
+                self._seeded_clipboard_seq = seq
+            else:
+                self._clipboard_externally_modified = True
+                self._seeded_clipboard_sig = None
+                self._seeded_clipboard_seq = None
         finally:
             u32.CloseClipboard()
 
@@ -1591,14 +1649,18 @@ class Launched:
                         k32.GlobalUnlock(h)
                     items.append((fmt, "hglobal", raw_bytes))
                 fmt = u32.EnumClipboardFormats(fmt)
+            saved_seq = self._get_clipboard_seq(u32)
         except BaseException:
             self._free_clipboard_snapshot(items)
             raise
         finally:
             u32.CloseClipboard()
         self._saved_clipboard_handles = tuple(raw_handles)
+        self._saved_clipboard_seq = saved_seq
         self._seeded_clipboard_seq = None
         self._seeded_clipboard_sig = None
+        self._clipboard_externally_modified = False
+        self._partial_restore_in_progress = False
         return items
 
     def _restore_clipboard(self, snapshot):
@@ -1692,28 +1754,27 @@ class Launched:
                 raise Refused("could not open the system clipboard to restore operator clipboard state")
             emptied_by_us = False
             try:
-                cur_seq = self._get_clipboard_seq(u32)
                 cur_sig = self._peek_clipboard_sig_while_open(u32, k32)
+                cur_seq = self._get_clipboard_seq(u32)
                 seeded_seq = getattr(self, "_seeded_clipboard_seq", None)
                 seeded_sig = getattr(self, "_seeded_clipboard_sig", None)
-                external_change = False
-                if seeded_seq is not None and cur_seq is not None and cur_seq != seeded_seq:
-                    external_change = True
-                elif seeded_sig is not None and cur_sig != seeded_sig:
-                    external_change = True
-                elif seeded_seq is None and seeded_sig is None:
-                    cur_fmts, cur_text = cur_sig
-                    saved_handles = getattr(self, "_saved_clipboard_handles", ())
-                    sample_bytes = "Sample\x00".encode("utf-16-le")
-                    if (
-                        cur_fmts
-                        and cur_fmts != saved_handles
-                        and not (len(cur_fmts) == 1 and cur_fmts[0][0] == 13 and cur_text == sample_bytes)
-                    ):
+                partial_retry = bool(getattr(self, "_partial_restore_in_progress", False))
+                external_change = bool(getattr(self, "_clipboard_externally_modified", False))
+                if not external_change:
+                    if not partial_retry and not self._is_clipboard_owned_by_instance(u32):
                         external_change = True
+                    elif seeded_seq is not None and cur_seq is not None and cur_seq != seeded_seq:
+                        external_change = True
+                    elif seeded_sig is not None and cur_sig != seeded_sig:
+                        external_change = True
+                    elif not partial_retry and seeded_seq is None and seeded_sig is None:
+                        if not self._is_valid_seeded_sig(cur_sig):
+                            external_change = True
                 if external_change:
                     self._seeded_clipboard_seq = None
                     self._seeded_clipboard_sig = None
+                    self._clipboard_externally_modified = False
+                    self._partial_restore_in_progress = False
                     return False
                 if not u32.EmptyClipboard():
                     raise Refused("could not empty the system clipboard to restore operator clipboard state")
@@ -1801,11 +1862,14 @@ class Launched:
                         raise Refused(f"unsupported clipboard snapshot kind {kind!r} for format 0x{fmt:04x}")
                 self._seeded_clipboard_seq = None
                 self._seeded_clipboard_sig = None
+                self._clipboard_externally_modified = False
+                self._partial_restore_in_progress = False
                 return True
             except BaseException:
                 if emptied_by_us:
-                    self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
                     self._seeded_clipboard_sig = self._peek_clipboard_sig_while_open(u32, k32)
+                    self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
+                    self._partial_restore_in_progress = True
                 raise
             finally:
                 u32.CloseClipboard()
