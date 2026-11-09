@@ -912,10 +912,10 @@ class Round3(unittest.TestCase):
         self.assertIn("MAIN_RC:2", proc.stdout)
         self.assertIn('AT_MAIN_RETURN:{"doc_closed": false, "quit": false}', proc.stdout)
         self.assertIn('ATEXIT:{"doc_closed": true, "quit": true}', proc.stdout)
-        # 2) When an owned instance's Documents.Add() blocks beyond the atexit shutdown budget (waits on an unset
-        #    Event forever), ownership (hwnd and proc) is bound before Documents.Add(), and _abandon_hung_launch
-        #    marshals the COM proxy onto a COM-initialized emergency apartment, closes open documents, calls App.Quit(),
-        #    verifies proc.exited(), and closes proc before the CLI process exits with code 2.
+        # 2) When an owned instance's post-Add window lookup blocks beyond the atexit shutdown budget (waits on an
+        #    unset Event forever), ownership (hwnd, proc, and marshaled created document) is bound before the hang,
+        #    and _abandon_hung_launch marshals the COM proxies onto a COM-initialized emergency apartment, closes
+        #    only the owned document, calls App.Quit(), verifies proc.exited(), and closes proc before exit.
         probe_hung_add = (
             "import atexit, ctypes, importlib.util, json, sys, threading\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
@@ -940,8 +940,12 @@ class Round3(unittest.TestCase):
             "    def close(self): state['proc_closed'] = bool(state['exited_checked'])\n"
             "shared_docs = []\n"
             "class Doc:\n"
-            "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
-            "    def __init__(self, tid): self._owner_tid = tid\n"
+            "    Name = 'Doc1'; FullName = 'Doc1'; Saved = -1; closed = False\n"
+            "    def __init__(self, tid, tok='doc-1'): self._owner_tid = tid; self._doc_token = tok\n"
+            "    def __com_marshal__(self):\n"
+            "        require_com(self._owner_tid)\n"
+            "        tok = self._doc_token\n"
+            "        return lambda: Doc(threading.get_ident(), tok)\n"
             "    def Close(self, SaveChanges=0):\n"
             "        require_com(self._owner_tid)\n"
             "        self.closed = True; state['doc_closed'] = True; shared_docs.clear()\n"
@@ -954,17 +958,22 @@ class Round3(unittest.TestCase):
             "    def Add(self):\n"
             "        require_com(self._owner_tid)\n"
             "        shared_docs.append(Doc(self._owner_tid))\n"
-            "        never.wait()\n"
             "        return shared_docs[-1]\n"
             "    def Item(self, i):\n"
             "        require_com(self._owner_tid)\n"
-            "        return Doc(self._owner_tid)\n"
+            "        return Doc(self._owner_tid, shared_docs[0]._doc_token)\n"
             "    def __iter__(self):\n"
             "        require_com(self._owner_tid)\n"
-            "        return iter([Doc(self._owner_tid) for _ in list(shared_docs)])\n"
+            "        return iter([Doc(self._owner_tid, d._doc_token) for d in list(shared_docs)])\n"
+            "class AW:\n"
+            "    @property\n"
+            "    def Hwnd(self):\n"
+            "        if shared_docs:\n"
+            "            never.wait()\n"
+            "        return 42\n"
             "class App:\n"
             "    Visible = False\n"
-            "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
+            "    ActiveWindow = AW()\n"
             "    def __init__(self, tid=None):\n"
             "        self._owner_tid = tid or threading.get_ident()\n"
             "        require_com(self._owner_tid)\n"
@@ -1008,19 +1017,22 @@ class Round3(unittest.TestCase):
             '"doc_closed": true, "quit": true, "exited_checked": true, "proc_closed": true}',
             proc_hung_add.stdout,
         )
-        # 2b) Emergency cleanup preserves unowned documents, never sets Saved=True on dirty/foreign documents,
-        #     and refuses to quit when foreign documents remain or document enumeration fails.
+        # 2b) Both normal and emergency cleanup honor PowerPoint's MsoTriState (msoTrue = -1, msoFalse = 0),
+        #     refuse to close dirty owned documents (Saved = 0), refuse to close any document when created=[]
+        #     (even if a sole blank presentation is open while Add() is pending), preserve unowned documents,
+        #     and refuse to quit when foreign/dirty documents remain or document enumeration fails.
         class Pres:
-            def __init__(self, name, saved=True):
+            def __init__(self, name, saved=-1, path=""):
                 self.Name, self.FullName = name, name
+                self.Path = path
                 self.Saved = saved
                 self.closed = False
 
             def Close(self):
                 self.closed = True
 
-        own_pres = Pres("Presentation1", saved=True)
-        foreign_pres = Pres("Presentation2", saved=False)
+        own_pres = Pres("Presentation1", saved=-1)  # msoTrue = -1
+        foreign_pres = Pres("Presentation2", saved=0)  # msoFalse = 0
 
         class PresCol:
             def __init__(self, items):
@@ -1054,9 +1066,50 @@ class Round3(unittest.TestCase):
         errs = ppt_launched._emergency_close_com()
         self.assertTrue(own_pres.closed)
         self.assertFalse(foreign_pres.closed)
-        self.assertFalse(foreign_pres.Saved)
+        self.assertEqual(foreign_pres.Saved, 0)
         self.assertFalse(ppt_app.quit)
         self.assertTrue(any("did not create, so it was left running" in e for e in errs), errs)
+
+        # Dirty owned presentation (Saved = 0, msoFalse) is preserved by BOTH emergency and normal cleanup.
+        dirty_own = Pres("Presentation1", saved=0)
+        dirty_app = PptApp(PresCol([dirty_own]))
+        dirty_launched = cu.Launched.__new__(cu.Launched)
+        dirty_launched.key, dirty_launched.exe, dirty_launched.owned = "powerpoint", "POWERPNT.EXE", True
+        dirty_launched.app = dirty_app
+        dirty_launched.created = [dirty_own]
+        dirty_launched._created_meta = [cu.Launched._doc_meta(dirty_own)]
+        dirty_launched.proc = None
+        dirty_launched.cleanup_errors = []
+        dirty_launched._marshal_app(dirty_app)
+        dirty_errs = dirty_launched._emergency_close_com()
+        self.assertFalse(dirty_own.closed)
+        self.assertEqual(dirty_own.Saved, 0)
+        self.assertFalse(dirty_app.quit)
+        self.assertTrue(any("unsaved changes" in e for e in dirty_errs), dirty_errs)
+        with self.assertRaises(cu.Refused):
+            dirty_launched._close_impl()
+        self.assertFalse(dirty_own.closed)
+        self.assertEqual(dirty_own.Saved, 0)
+        self.assertFalse(dirty_app.quit)
+
+        # Sole open presentation while Add() is pending (created=[]) is never treated as owned (tested for both
+        # Saved = 0 and Saved = -1).
+        for initial_saved in (0, -1):
+            sole_pres = Pres("Presentation1", saved=initial_saved)
+            sole_app = PptApp(PresCol([sole_pres]))
+            sole_launched = cu.Launched.__new__(cu.Launched)
+            sole_launched.key, sole_launched.exe, sole_launched.owned = "powerpoint", "POWERPNT.EXE", True
+            sole_launched.app = sole_app
+            sole_launched.created = []
+            sole_launched._created_meta = []
+            sole_launched.proc = None
+            sole_launched.cleanup_errors = []
+            sole_launched._marshal_app(sole_app)
+            sole_errs = sole_launched._emergency_close_com()
+            self.assertFalse(sole_pres.closed)
+            self.assertEqual(sole_pres.Saved, initial_saved)
+            self.assertFalse(sole_app.quit)
+            self.assertTrue(any("did not create, so it was left running" in e for e in sole_errs), sole_errs)
 
         # When document enumeration fails in emergency cleanup, Quit is never called.
         class BrokenCol:
@@ -1088,7 +1141,7 @@ class Round3(unittest.TestCase):
             "    def exited(self, s): return False\n"
             "    def close(self): pass\n"
             "class Doc:\n"
-            "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
+            "    Name = 'Doc1'; FullName = 'Doc1'; Saved = -1; closed = False; _doc_token = 'doc-fail'\n"
             "    def Close(self, SaveChanges=0): self.closed = True; Docs.items.clear()\n"
             "class Docs:\n"
             "    items = []\n"
@@ -1096,12 +1149,17 @@ class Round3(unittest.TestCase):
             "    def Count(self): return len(self.items)\n"
             "    def Add(self):\n"
             "        self.items.append(Doc())\n"
-            "        never.wait()\n"
             "        return self.items[-1]\n"
             "    def __iter__(self): return iter(list(self.items))\n"
+            "class AW:\n"
+            "    @property\n"
+            "    def Hwnd(self):\n"
+            "        if Docs.items:\n"
+            "            never.wait()\n"
+            "        return 42\n"
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
-            "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
+            "    ActiveWindow = AW()\n"
             "    def Quit(self, SaveChanges=0): pass\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
             "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=lambda h, e: Proc(), init_timeout=0.05))\n"

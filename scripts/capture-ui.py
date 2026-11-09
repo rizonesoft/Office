@@ -638,6 +638,24 @@ class Launched:
             return
         self._marshaled_app = ("direct", app, getattr(getattr(self, "_apartment", None), "ident", None))
 
+    def _marshal_doc(self, doc):
+        if not hasattr(self, "_marshaled_docs") or self._marshaled_docs is None:
+            self._marshaled_docs = []
+        ole = getattr(doc, "_oleobj_", None)
+        if ole is not None:
+            try:
+                import pythoncom
+                stream = pythoncom.CoMarshalInterThreadInterfaceInStream(pythoncom.IID_IDispatch, ole)
+                self._marshaled_docs.append(("stream", stream))
+                return
+            except Exception:
+                pass
+        marshal_fn = getattr(doc, "__com_marshal__", None)
+        if callable(marshal_fn):
+            self._marshaled_docs.append(("custom", marshal_fn()))
+            return
+        self._marshaled_docs.append(("direct", doc, getattr(getattr(self, "_apartment", None), "ident", None)))
+
     def _release_marshaled_app(self):
         token = getattr(self, "_marshaled_app", None)
         self._marshaled_app = None
@@ -648,6 +666,16 @@ class Launched:
                 pythoncom.CoReleaseMarshalData(token[1])
             except Exception:
                 pass
+        doc_tokens = getattr(self, "_marshaled_docs", None) or []
+        self._marshaled_docs = []
+        for dtoken in doc_tokens:
+            if dtoken and dtoken[0] == "stream":
+                try:
+                    import pythoncom
+                    dtoken[1].Seek(0, 0)
+                    pythoncom.CoReleaseMarshalData(dtoken[1])
+                except Exception:
+                    pass
 
     def _unmarshal_app(self, target_tid=None):
         token = getattr(self, "_marshaled_app", None)
@@ -673,11 +701,34 @@ class Launched:
             return app, prev_tid, kind
         return None, None, None
 
+    def _unmarshal_docs(self, target_tid=None):
+        doc_tokens = getattr(self, "_marshaled_docs", None)
+        self._marshaled_docs = []
+        if not doc_tokens:
+            return list(getattr(self, "created", ()))
+        out = []
+        for token in doc_tokens:
+            kind = token[0]
+            if kind == "stream":
+                import pythoncom
+                import win32com.client
+                disp = pythoncom.CoGetInterfaceAndReleaseStream(token[1], pythoncom.IID_IDispatch)
+                out.append(win32com.client.Dispatch(disp))
+            elif kind == "custom":
+                out.append(token[1]())
+            elif kind == "direct":
+                doc, prev_tid = token[1], token[2]
+                if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
+                    doc._owner_tid = target_tid
+                out.append(doc)
+        return out
+
     @staticmethod
     def _is_unmodified_blank_doc(doc):
         if getattr(doc, "closed", False):
             return False
-        if getattr(doc, "Saved", True) is False:
+        saved = getattr(doc, "Saved", True)
+        if saved is None or not bool(saved):
             return False
         if getattr(doc, "Path", ""):
             return False
@@ -693,11 +744,12 @@ class Launched:
         import gc
         failures = []
         self._emergency_quitted = False
-        app, prev_tid, kind = self._unmarshal_app(target_tid=target_tid)
+        app, prev_tid, _kind = self._unmarshal_app(target_tid=target_tid)
         if app is None:
             failures.append(f"could not unmarshal {self.exe} application proxy for emergency cleanup")
             return failures
         docs, docs_col, count = None, None, None
+        owned_docs = None
         to_close = []
         enum_failed = False
         unowned_count = 0
@@ -705,6 +757,7 @@ class Launched:
         quitted = False
         try:
             try:
+                owned_docs = self._unmarshal_docs(target_tid=target_tid)
                 docs_col = self._documents_of(app)
                 count = int(docs_col.Count)
                 if count == 0:
@@ -731,11 +784,10 @@ class Launched:
             if not enum_failed:
                 if len(docs) < count:
                     unowned_count += count - len(docs)
-                created_list = list(getattr(self, "created", ()))
                 metas = list(getattr(self, "_created_meta", ()))
-                if created_list:
+                if owned_docs:
                     matched_ids = set()
-                    for idx, created_doc in enumerate(created_list):
+                    for idx, created_doc in enumerate(owned_docs):
                         meta = metas[idx] if idx < len(metas) else None
                         match = None
                         for d in docs:
@@ -744,16 +796,6 @@ class Launched:
                             if self._same_doc(d, created_doc):
                                 match = d
                                 break
-                        if match is None and kind in ("stream", "custom") and meta is not None:
-                            if meta.get("name") is not None or meta.get("full_name") is not None:
-                                candidates = [
-                                    d for d in docs
-                                    if id(d) not in matched_ids
-                                    and self._doc_meta(d) == meta
-                                    and self._is_unmodified_blank_doc(d)
-                                ]
-                                if len(candidates) == 1:
-                                    match = candidates[0]
                         if match is None:
                             if not getattr(created_doc, "closed", False):
                                 failures.append(
@@ -778,16 +820,6 @@ class Launched:
                     for d in docs:
                         if id(d) not in matched_ids and not getattr(d, "closed", False):
                             unowned_count += 1
-                elif getattr(self, "_adding_document", False):
-                    if count == 0 and len(docs) == 0:
-                        to_close = []
-                    elif count == 1 and len(docs) == 1 and self._is_unmodified_blank_doc(docs[0]):
-                        to_close = [docs[0]]
-                    else:
-                        unowned_count = max(count, len(docs), 1)
-                        failures.append(
-                            f"the {self.exe} instance holds {unowned_count} document(s) whose ownership could not be established, so it was left running"
-                        )
                 else:
                     unowned_count += sum(1 for d in docs if not getattr(d, "closed", False))
                 for doc in to_close:
@@ -818,6 +850,7 @@ class Launched:
             doc = None
             docs = None
             docs_col = None
+            owned_docs = None
             to_close = None
             can_quit = (not enum_failed) and (not failures) and (remaining == 0) and (unowned_count == 0)
             try:
@@ -915,19 +948,17 @@ class Launched:
             self._try_bind_window(owner)
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
-            self._adding_document = True
-            try:
-                doc = self.new_document()
-                self.created.append(doc)
-                self._created_meta.append(self._doc_meta(doc))
-            finally:
-                self._adding_document = False
+            doc = self.new_document()
+            self.created.append(doc)
+            self._created_meta.append(self._doc_meta(doc))
+            self._marshal_doc(doc)
             doc = None
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
-            if self.hwnd is None:
-                self.hwnd = Win().top(self.window_handle())
-            if self.proc is None:
+            wh = self.window_handle()
+            if wh is not None:
+                self.hwnd = Win().top(wh)
+            if self.proc is None and self.hwnd is not None:
                 self.proc = (owner or OwnProcess)(self.hwnd, exe)
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
@@ -952,7 +983,16 @@ class Launched:
         if a is b:
             return True
         ole_a, ole_b = getattr(a, "_oleobj_", None), getattr(b, "_oleobj_", None)
-        return ole_a is not None and ole_a == ole_b
+        if ole_a is not None and ole_b is not None:
+            if ole_a == ole_b:
+                return True
+            try:
+                import pythoncom
+                return ole_a.QueryInterface(pythoncom.IID_IUnknown) == ole_b.QueryInterface(pythoncom.IID_IUnknown)
+            except Exception:
+                return False
+        tok_a, tok_b = getattr(a, "_doc_token", None), getattr(b, "_doc_token", None)
+        return tok_a is not None and tok_a == tok_b
 
     @staticmethod
     def running(exe):

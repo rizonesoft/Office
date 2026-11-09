@@ -551,3 +551,57 @@ OVERALL: needs-attention
 1. **[P1] Emergency startup cleanup discards documents the tool does not own:** Fixed in `Launched._emergency_close_com`, `Launched._is_unmodified_blank_doc`, `Launched._abandon_hung_launch`, `Launched._recover_hung_launch`, `Launched._init_com`, and `Launched._close_impl` (`scripts/capture-ui.py`). `_emergency_close_com` now restricts document closure strictly to owned unmodified blank documents: when `self.created` is non-empty, only open documents matching `self.created` (with unchanged `self._created_meta` and ` _is_unmodified_blank_doc(doc)` true, so `Saved` is never `False` and `Path`/file extension are absent) are closed, while any unowned document in `self._documents_of(app)` is left untouched without setting `Saved = True` or calling `Close()`. When `self.created` is empty, a document is closed only if `self._adding_document` is `True`, `Count == 1`, and the single document satisfies `_is_unmodified_blank_doc(doc)`. `app.Quit()` (and `self.proc.exited(0.5)`) is invoked only when document enumeration succeeded (`not enum_failed`), no cleanup errors occurred (`not failures`), `unowned_count == 0`, and `remaining == 0`; otherwise the application is left running and the reason is recorded in `failures` / `self.cleanup_errors`. Also removed raw `WM_CLOSE` posting so window closure never bypasses COM ownership checks. Added regression tests in `Round3.test_replacement_document_and_close_reference_release` (`scripts/tests/test_capture_ui.py`) covering two presentations (only the first in `self.created` and the foreign presentation having `Saved = False`) as well as document-enumeration failure.
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 12: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T00:25:38Z
+- Effort: medium
+- Type: adversarial
+- Lines: 36
+- Digest: 5d872149d5d629a0
+
+## adversarial: needs-attention
+
+1. **[P1] Cleanup still discards unsaved PowerPoint changes.** `scripts/capture-ui.py:680` tests `Saved is False`. PowerPoint returns an `MsoTriState` integer, where `msoFalse` is `0`; `0 is False` fails. Consequently, an unsaved presentation with no path passes as “unmodified,” and cleanup sets `Saved = True` and closes it at `:804` or `:1081`. Microsoft explicitly documents that this suppresses saving and loses changes. See [Presentation.Saved](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentation.saved) and [MsoTriState](https://learn.microsoft.com/en-us/office/vba/api/office.msotristate).
+
+   **Precondition:** concurrent PowerPoint use during capture or a stalled startup. The emergency branch at `:784` also treats a sole presentation as owned while `Add()` is pending, without an ownership identity.
+
+   **Reproduction:** supply `Name=FullName="Presentation1"`, `Path=""`, `Saved=0`. Both normal and emergency cleanup accepted and closed it. With `created=[]`, `_adding_document=True`, and that presentation as the sole open document, emergency cleanup likewise returned no errors, marked it saved, closed it and quit.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P1]**: the cleanup guard does not honor PowerPoint’s COM return type. Normalize the value and establish document ownership independently of document count.
+
+## source-defect: needs-attention
+
+Finding **1 [P1]** violates the own-document-only contract in `todo/02-interface/TODO-01-parity-inventory.md:141`.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P1]** violates the “Never lose work” requirement in `docs/product-principles.md`.
+
+## record: needs-attention
+
+2. **[P3] The new regression does not prove dirty-document protection.** `scripts/tests/test_capture_ui.py:1022` creates a clean owned presentation and a dirty foreign presentation. The foreign presentation bypasses the blank-document predicate because ownership matching already excludes it. The fixture also uses Python booleans instead of PowerPoint’s integer enum.
+
+   **Reproduction:** replacing `_is_unmodified_blank_doc` with an unconditional `True` in memory still passed `test_replacement_document_and_close_reference_release`. Therefore, the protection claimed at `docs/reviews/02-interface/audit-d02-t01-s3.md:551` is not established. Test dirty owned documents and the pending-`Add()` branch with actual enum values.
+
+Verification: 49 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited 0. Failure and mutation probes used in-memory doubles. No live Office capture ran; no files were modified.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 12 disposition
+
+1. **[P1] Cleanup still discards unsaved PowerPoint changes:** Fixed in `Launched._is_unmodified_blank_doc`, `Launched._marshal_doc`, `Launched._unmarshal_docs`, `Launched._emergency_close_com`, `Launched._close_impl`, and `Launched._same_doc` (`scripts/capture-ui.py`). `_is_unmodified_blank_doc` now reads `saved = getattr(doc, "Saved", True)` and rejects `saved is None or not bool(saved)`, which handles PowerPoint `MsoTriState` integer `0` (`msoFalse`) as well as `False` and `None` while accepting `-1` (`msoTrue`), `1`, and `True`; both `_emergency_close_com` and `_close_impl` refuse to set `Saved = True` or close a document when `_is_unmodified_blank_doc` returns `False`. Furthermore, created document proxies are marshaled across COM apartments via `_marshal_doc` / `_unmarshal_docs`, and `_emergency_close_com` requires explicit COM object identity matching (`self._same_doc` against `owned_docs` from `self.created` / `self._marshaled_docs`), removing the `created = []` / `_adding_document` count-based fallback so a sole presentation open while `Add()` is pending is never treated as owned.
+2. **[P3] The new regression does not prove dirty-document protection:** Fixed in `Round3.test_replacement_document_and_close_reference_release` (`scripts/tests/test_capture_ui.py`). Updated the fixtures to use PowerPoint `MsoTriState` integer values (`Saved = -1` for `msoTrue`, `Saved = 0` for `msoFalse`), added direct assertions that both `_emergency_close_com` and `_close_impl` refuse to close a dirty owned presentation (`Saved = 0`, leaving `dirty_own.closed == False` and `dirty_own.Saved == 0`, so replacing `_is_unmodified_blank_doc` with `True` fails the test), and verified that when `created = []` (`_adding_document = True`) a sole open presentation (`Saved = 0` or `Saved = -1`) is left untouched without calling `Close()` or `Quit()`.
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
