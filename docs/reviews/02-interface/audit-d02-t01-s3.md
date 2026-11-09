@@ -954,3 +954,46 @@ OVERALL: needs-attention
 - **Finding 1 (P2, cleanup failure leaves an untracked partial publication):** Fixed at the owning layer (`scripts/lib/office_com.py`: `publish`). `publish` now registers `path` in `placed` immediately after `link(staged[path], path)` (as well as after `transacted_replace` and `rename`) and removes `path` from `staged` before unlinking the staged temporary file, and guards the `finally` temporary-file cleanup against `OSError`, so any failure during staged-file cleanup triggers rollback of already-placed destinations via `transacted_unlink` / `transacted_restore`. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
 - **Finding 2 (P3, Round 19 cites a nonexistent regression test):** Updated `### Round 19 disposition` above to cite `Round3.test_expand_reads_items_from_a_separate_popup_window` (`scripts/tests/test_capture_ui.py`).
 
+
+## Round 21: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T02:21:55Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 8255e947573887fe
+
+## adversarial: needs-attention
+
+1. **[P2] Backup cleanup reports failure after publication has committed.** `scripts/lib/office_com.py:585` unconditionally deletes backups outside the rollback handler. **Precondition:** a Windows scanner temporarily holds a backup without delete sharing. Reproduce by making backup `unlink()` raise `PermissionError` after both replacements succeed. The in-memory reproduction raised while both destinations contained their new bytes and both backups remained. Treat post-commit cleanup failure separately, preserving an accurate publication outcome and reporting retained backup paths.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P2]** propagates through `scripts/capture-ui.py:1789`. The handler catches only `Refused`, so this error produces a traceback and nonzero exit after changing the inventory, without the normal publication summary.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** contradicts `scripts/lib/office_com.py:513`, which promises restoration for failures the process survives. This is a catchable cleanup exception, not process termination.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** leaves the operator to determine whether publication succeeded and clean up retained backups, contrary to the clear-feedback requirement in `docs/product-principles.md`.
+
+## record: advisory
+
+47 selected tests passed. The whole-inventory checker exited 0. The failure reproduction used in-memory filesystem doubles. No live Office capture or filesystem-writing tests ran; no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 21 disposition
+
+- **Finding 1 (P2, backup cleanup reports failure after publication has committed):** Fixed at the owning layer (`scripts/lib/office_com.py`: `publish`). Once every destination is in place, post-commit cleanup iterates over `aside.values()` catching `OSError` per backup so all remaining backups are still unlinked, reports any retained backup paths on `sys.stderr` (`publish: backup cleanup could not remove ...`), and returns normally without raising so `capture-ui.py` preserves its committed publication outcome and summary. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
+

@@ -767,6 +767,35 @@ class Writes(unittest.TestCase):
                 )
         self.assertEqual(rolled_back, [("main.json", b"main")])
 
+        # If unlinking a backup (.old) fails after all destinations have been replaced, publish()
+        # preserves the committed outcome (does not raise or roll back), attempts cleanup of every
+        # remaining backup, and reports the retained backup path on stderr.
+        unlinked_backups = []
+
+        def unlink_fails_on_first_old(self_path):
+            name = str(self_path)
+            unlinked_backups.append(name)
+            if name.startswith("main.json.") and name.endswith(".old"):
+                raise PermissionError("scanner holds backup")
+
+        err_cleanup = io.StringIO()
+        with _mock.patch("tempfile.mkstemp", side_effect=[(11, "main.json.1.new"), (12, "side.json.2.new")]), \
+             _mock.patch("os.close"), \
+             _mock.patch.object(Path, "mkdir"), \
+             _mock.patch.object(Path, "read_bytes", side_effect=[b"main", b"side"]), \
+             _mock.patch.object(Path, "is_file", return_value=True), \
+             _mock.patch.object(Path, "exists", return_value=True), \
+             _mock.patch.object(Path, "unlink", autospec=True, side_effect=unlink_fails_on_first_old), \
+             contextlib.redirect_stderr(err_cleanup):
+            cu.publish(
+                {Path("main.json"): "main", Path("side.json"): "side"},
+                write=lambda p, d: None,
+                link=lambda s, d: None,
+                rename=lambda s, d: None,
+            )
+        self.assertEqual(len(unlinked_backups), 2)
+        self.assertIn("publish: backup cleanup could not remove main.json.", err_cleanup.getvalue())
+
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):

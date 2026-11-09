@@ -510,8 +510,9 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
     files first, so a full disk fails before anything changes. Each original is then kept as a hard link (no data
     written, no moment without the file) and each new file replaces its destination in one atomic rename, so every
     destination always holds either its old or its new content, even if the process is killed. A failure that the
-    process survives renames the kept originals back. With two or more files, a kill between their renames leaves
-    some new and some old; rerunning the producing script repairs that."""
+    process survives renames the kept originals back; once every destination is in place, any backup that cannot be
+    unlinked is reported on standard error without failing the committed publication. With two or more files, a kill
+    between their renames leaves some new and some old; rerunning the producing script repairs that."""
     write = write or (lambda path, data: path.write_bytes(data))
     no_overwrite = {Path(p) for p in create_only}
     expected = {Path(p): b for p, b in (expected_bytes or {}).items()}
@@ -581,5 +582,11 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                     tmp.unlink()
             except OSError:
                 pass
+    retained_backups = []
     for old in aside.values():
-        old.unlink()
+        try:
+            old.unlink()
+        except OSError:
+            retained_backups.append(old)
+    if retained_backups:
+        print("publish: backup cleanup could not remove " + ", ".join(str(b) for b in retained_backups), file=sys.stderr)
