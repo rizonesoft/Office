@@ -23,6 +23,12 @@ COMPLETE: no
 HIGHEST: P2
 OVERALL: needs-attention
 
+## Outcome (round 1)
+
+1. extended
+2. extended
+3. extended
+
 ## Round 2: astra (`gpt-6-astra` via `codex`)
 
 - Writer: claude
@@ -43,3 +49,8 @@ CONTRACT: sha256:252266d7f9f263d948f275b90411a7a68807560b6e5cd3d0e4dd7697cc9412d
 COMPLETE: no
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. extended
+2. extended

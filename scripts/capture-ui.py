@@ -1320,6 +1320,24 @@ def capture(args, launched, uia, win):
     problems = profile_problems(state, monitor, launched.language(), ribbon_h)
     identifiers = baseline_ids(args.app)
     ctx = Context(args.app, expected, identifiers, origin=None if problems else state["origin"])
+    if getattr(args, "shell", False):
+        launched.check_alone()
+        check_licensing()
+        records = build_shell_chrome_records(expected)
+        if ctx.origin is not None:
+            apply_live_shell_measurements(records, args.app, root, tabs_bar, lower, ctx.origin, expected)
+        check_licensing()
+        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+            ctx.drop_geometry("the window moved or changed size during the capture")
+        if ctx.origin is None:
+            for rec in records:
+                if rec.get("app") != "outlook":
+                    for key in ("bounds", "captureProfile", "size"):
+                        rec.pop(key, None)
+            for why in ctx.dropped_reasons:
+                if why not in problems:
+                    problems.append(why)
+        return records, problems, ctx
     tab_elements = ribbon_tabs(tabs_bar)
     names = [t.name for t in tab_elements]
     wanted = names if args.all_tabs else [args.tab]
@@ -1900,6 +1918,20 @@ REQUIRED_SHELL_IDENTIFIERS = {
 }
 
 
+def _can_inherit_shared_children(ovr_rec, shared_rec):
+    if shared_rec is None:
+        return False
+    if ovr_rec.get("kind") != shared_rec.get("kind"):
+        return False
+    if ovr_rec.get("controlType") != shared_rec.get("controlType"):
+        return False
+    if ovr_rec.get("controlType") in (
+        "button", "toggleButton", "checkBox", "editBox", "label", "slider", "spinner", "dialogLauncher"
+    ):
+        return False
+    return True
+
+
 def effective_shell(records, app, window=None):
     """Resolve the effective shell record list for `app` (and `window` for Outlook: 'explorer' or 'compose').
 
@@ -1914,15 +1946,21 @@ def effective_shell(records, app, window=None):
        `shell.tabrow.editingMode`'s mode items in Excel or `shell.qat.customize`'s menu items when not overridden) is
        recursively pruned unless explicitly overridden under `<prefix>`.
     5. A leaf override `<prefix><leaf>` inside a non-overridden container replaces `shell.<leaf>` if present (and any
-       shared children under `shell.<leaf>` have their `parent` remapped to `<prefix><leaf>` unless `<prefix><leaf>`
-       defines its own override children) or appends to the container if new.
-    6. Every retained record's `parent` is remapped to the active container id in the resolved graph so no record has
+       shared children under `shell.<leaf>` have their `parent` remapped to `<prefix><leaf>` only when `<prefix><leaf>`
+       has the same `kind` and compatible container `controlType` and defines no override children of its own) or
+       appends to the container if new.
+    6. `shell.keytips.layer` is a root overlay region retained in every app; each KeyTip badge child is retained (or
+       replaced by `<prefix>keytips.<name>`) if and only if its corresponding target control on the title bar, QAT or
+       tab row is present in the resolved shell.
+    7. Every retained record's `parent` is remapped to the active container id in the resolved graph so no record has
        an orphaned `parent`.
     """
     if app not in APPS and app != "shell":
         raise ValueError(f"unknown app {app!r}")
     shared = [dict(r) for r in records if r.get("app") == "shell" and str(r.get("id", "")).startswith("shell.")]
     if app in ("shell", "word"):
+        if window is not None:
+            raise ValueError(f"window context {window!r} is only valid for outlook, not {app!r}")
         return shared
     if app == "outlook":
         win_ctx = window or "explorer"
@@ -1957,9 +1995,9 @@ def effective_shell(records, app, window=None):
         if parent:
             shared_children_of.setdefault(parent, []).append(r)
 
-    # Identify container overrides: any shared path that has an override record AND at least one override child.
     overridden_containers = {
-        sid for sid in ovr_by_shared if sid in ovr_children_of and len(ovr_children_of[sid]) > 0
+        sid for sid in ovr_by_shared
+        if sid != "shell.keytips.layer" and sid in ovr_children_of and len(ovr_children_of[sid]) > 0
     }
     excluded_shared_ids = set()
     for cid in overridden_containers:
@@ -1967,14 +2005,11 @@ def effective_shell(records, app, window=None):
         for shared_child in shared_children_of.get(cid, ()):
             if shared_child["id"] not in ovr_child_sids:
                 excluded_shared_ids.add(shared_child["id"])
-                tail = shared_child["id"].split(".", 2)[-1]
-                excluded_shared_ids.add(f"shell.keytips.{tail}")
 
-    # Walk from roots to build the active set of canonical shared paths and their resolved records.
     resolved = []
     active_id_for_shared = {}
 
-    def emit_Record(rec, parent_shared_id):
+    def emit_record(rec, parent_shared_id):
         out = dict(rec)
         if parent_shared_id is not None:
             out["parent"] = active_id_for_shared.get(parent_shared_id, parent_shared_id)
@@ -1986,18 +2021,17 @@ def effective_shell(records, app, window=None):
         ovr = ovr_by_shared.get(sid)
         chosen = ovr if ovr is not None else shared_by_id[sid]
         active_id_for_shared[sid] = chosen["id"]
-        emit_Record(chosen, parent_sid)
+        emit_record(chosen, parent_sid)
         if sid in overridden_containers:
             for child_ovr in ovr_children_of.get(sid, ()):
                 child_sid = to_shared_id(child_ovr["id"])
                 walk_override_subtree(child_ovr, child_sid, sid)
         else:
-            for child_shared in shared_children_of.get(sid, ()):
-                if child_shared["id"] in excluded_shared_ids:
-                    continue
-                if chosen["id"].startswith(prefix) and child_shared.get("keytip") and chosen.get("keytip") == child_shared.get("keytip"):
-                    continue
-                walk_shared(child_shared["id"], sid)
+            if ovr is None or _can_inherit_shared_children(ovr, shared_by_id.get(sid)):
+                for child_shared in shared_children_of.get(sid, ()):
+                    if child_shared["id"] in excluded_shared_ids:
+                        continue
+                    walk_shared(child_shared["id"], sid)
             for child_ovr in ovr_children_of.get(sid, ()):
                 child_sid = to_shared_id(child_ovr["id"])
                 if child_sid not in shared_by_id:
@@ -2005,26 +2039,69 @@ def effective_shell(records, app, window=None):
 
     def walk_override_subtree(ovr_rec, sid, parent_sid):
         active_id_for_shared[sid] = ovr_rec["id"]
-        emit_Record(ovr_rec, parent_sid)
+        emit_record(ovr_rec, parent_sid)
         if sid in overridden_containers:
             for child_ovr in ovr_children_of.get(sid, ()):
                 child_sid = to_shared_id(child_ovr["id"])
                 walk_override_subtree(child_ovr, child_sid, sid)
         else:
-            for child_shared in shared_children_of.get(sid, ()):
-                walk_shared(child_shared["id"], sid)
+            if _can_inherit_shared_children(ovr_rec, shared_by_id.get(sid)):
+                for child_shared in shared_children_of.get(sid, ()):
+                    if child_shared["id"] in excluded_shared_ids:
+                        continue
+                    walk_shared(child_shared["id"], sid)
+            elif sid == "shell.tabrow.search" and "shell.titlebar.search" in excluded_shared_ids:
+                # Project relocates TellMeControlAnchor search from the title bar to the tab row; retain the search
+                # input, voice button and flyout subtree under project.shell.tabrow.search.
+                active_id_for_shared["shell.titlebar.search"] = ovr_rec["id"]
+                for child_shared in shared_children_of.get("shell.titlebar.search", ()):
+                    walk_shared(child_shared["id"], "shell.titlebar.search")
             for child_ovr in ovr_children_of.get(sid, ()):
                 child_sid = to_shared_id(child_ovr["id"])
                 if child_sid not in shared_by_id:
                     walk_override_subtree(child_ovr, child_sid, sid)
 
-    roots = [r for r in shared if not r.get("parent")]
+    roots = [r for r in shared if not r.get("parent") and r["id"] != "shell.keytips.layer"]
     for root in roots:
         walk_shared(root["id"], None)
     for ovr in overrides:
         sid = to_shared_id(ovr["id"])
-        if not ovr.get("parent") and sid not in active_id_for_shared:
+        if not ovr.get("parent") and sid != "shell.keytips.layer" and sid not in active_id_for_shared:
             walk_override_subtree(ovr, sid, None)
+
+    # Resolve KeyTips layer based on the controls active in the resolved title bar, QAT and tab row.
+    if "shell.keytips.layer" in shared_by_id:
+        active_targets = set()
+        for r in resolved:
+            sid = to_shared_id(r["id"])
+            for seg in ("shell.titlebar.", "shell.qat.", "shell.tabrow."):
+                if sid.startswith(seg):
+                    tail = sid[len(seg):]
+                    if "." not in tail:
+                        active_targets.add(tail)
+        layer_rec = ovr_by_shared.get("shell.keytips.layer", shared_by_id["shell.keytips.layer"])
+        active_id_for_shared["shell.keytips.layer"] = layer_rec["id"]
+        emit_record(layer_rec, None)
+        emitted_kt_sids = set()
+        for kt_shared in shared_children_of.get("shell.keytips.layer", ()):
+            kt_sid = kt_shared["id"]
+            target_name = kt_sid.split(".")[-1]
+            if target_name not in active_targets:
+                continue
+            chosen_kt = ovr_by_shared.get(kt_sid, kt_shared)
+            active_id_for_shared[kt_sid] = chosen_kt["id"]
+            emit_record(chosen_kt, "shell.keytips.layer")
+            emitted_kt_sids.add(kt_sid)
+        for kt_ovr in ovr_children_of.get("shell.keytips.layer", ()):
+            kt_sid = to_shared_id(kt_ovr["id"])
+            if kt_sid in emitted_kt_sids:
+                continue
+            target_name = kt_sid.split(".")[-1]
+            if target_name in active_targets:
+                active_id_for_shared[kt_sid] = kt_ovr["id"]
+                emit_record(kt_ovr, "shell.keytips.layer")
+                emitted_kt_sids.add(kt_sid)
+
     return resolved
 
 
@@ -2082,6 +2159,10 @@ def validate_shell_chrome(records):
                 raise Refused(f"outlook shell record {rid!r} has invalid source {source!r}")
 
     # Verify effective_shell resolution and invariants across all apps and Outlook window contexts.
+    leaf_control_types = (
+        "button", "toggleButton", "checkBox", "editBox", "label", "slider", "spinner", "dialogLauncher"
+    )
+    required_titlebar_tails = ("systemMenu", "qat", "caption", "account", "minimize", "maximize", "close")
     contexts = [
         ("word", None),
         ("excel", None),
@@ -2093,11 +2174,30 @@ def validate_shell_chrome(records):
     ]
     for app, win_ctx in contexts:
         eff = effective_shell(records, app, window=win_ctx)
-        eff_ids = {r["id"] for r in eff}
+        eff_by_id = {r["id"]: r for r in eff}
+        children_count = {}
         for r in eff:
             p = r.get("parent")
-            if p and p not in eff_ids:
-                raise Refused(f"effective_shell({app!r}, {win_ctx!r}) left orphan parent {p!r} on {r['id']!r}")
+            if p:
+                if p not in eff_by_id:
+                    raise Refused(f"effective_shell({app!r}, {win_ctx!r}) left orphan parent {p!r} on {r['id']!r}")
+                children_count[p] = children_count.get(p, 0) + 1
+        for r in eff:
+            if r.get("kind") == "control" and r.get("controlType") in leaf_control_types:
+                if children_count.get(r["id"], 0) > 0:
+                    raise Refused(
+                        f"effective_shell({app!r}, {win_ctx!r}) attached child records under non-container "
+                        f"{r.get('controlType')} {r['id']!r}"
+                    )
+        # Every resolved shell must retain full title bar controls and an active KeyTips layer.
+        for tail in required_titlebar_tails:
+            if not any(rid.endswith(f".titlebar.{tail}") for rid in eff_by_id):
+                raise Refused(f"effective_shell({app!r}, {win_ctx!r}) is missing titlebar.{tail}")
+        if not any(rid.endswith(".titlebar.search") or rid.endswith(".tabrow.search") for rid in eff_by_id):
+            raise Refused(f"effective_shell({app!r}, {win_ctx!r}) is missing search")
+        kt_layers = [rid for rid in eff_by_id if rid == "shell.keytips.layer" or rid.endswith(".shell.keytips.layer")]
+        if not kt_layers or children_count.get(kt_layers[0], 0) < 5:
+            raise Refused(f"effective_shell({app!r}, {win_ctx!r}) is missing KeyTips layer or its active badges")
 
     word_ids = {r["id"] for r in effective_shell(records, "word")}
     if "shell.tabrow.editingMode" not in word_ids or "shell.tabrow.editingMode.editing" not in word_ids:
@@ -2122,6 +2222,8 @@ def validate_shell_chrome(records):
         raise Refused("Visio effective shell must exclude autosave")
     if "visio.shell.tabrow.closeDocument" not in visio_ids:
         raise Refused("Visio effective shell is missing closeDocument")
+    if any(rid.startswith("shell.tabrow.share.") for rid in visio_ids):
+        raise Refused("Visio effective shell must prune menu items under direct button visio.shell.tabrow.share")
 
     proj_ids = {r["id"] for r in effective_shell(records, "project")}
     if "shell.titlebar.autosave" in proj_ids or "shell.qat.autosave" in proj_ids:
@@ -2450,7 +2552,7 @@ def build_shell_chrome_records(build=None):
         # 7. KeyTips layer (shell.keytips.*)
         R("shell.keytips.layer", "shell", "region", "KeyTips Layer",
           "Overlays alphanumeric keyboard access badges across the title bar and ribbon tab row when Alt or F10 is pressed and released.",
-          parent="shell.region.titlebar", order=10, bounds=(0, 0, 1920, 78)),
+          order=7, bounds=(0, 0, 1920, 78)),
         R("shell.keytips.autosave", "shell", "control", "AutoSave KeyTip",
           "Triggers the AutoSave toggle on the Quick Access Toolbar when 1 is pressed in KeyTip mode.",
           parent="shell.keytips.layer", order=0, bounds=(42, 9, 118, 29), control_type_val="label",
@@ -2499,7 +2601,7 @@ def build_shell_chrome_records(build=None):
         # 8. Backstage frame (shell.backstage.*)
         R("shell.backstage.frame", "shell", "region", "Backstage Frame",
           "Replaces the ribbon and document workspace with the full-window File Backstage view when the File tab is activated.",
-          order=7, bounds=(0, 0, 1920, 1032), uia_id="BackstageView"),
+          order=8, bounds=(0, 0, 1920, 1032), uia_id="BackstageView"),
         R("shell.backstage.titlebar", "shell", "region", "Backstage Title Bar",
           "Spans the top 48 pixels of the Backstage view, keeping the document title and window caption buttons accessible.",
           parent="shell.backstage.frame", order=0, bounds=(42, 0, 939, 48)),
@@ -2632,11 +2734,19 @@ def build_shell_chrome_records(build=None):
         R("powerpoint.shell.tabrow.presentInTeams", "powerpoint", "control", "Present in Teams",
           "Shares the active presentation directly into a live Microsoft Teams meeting from PowerPoint's tab row.",
           parent="powerpoint.shell.region.tabrow", order=3, bounds=(1707, 51, 124, 24), control_type_val="toggleButton",
-          keytip_val="ZP", baseline_missing=True),
+          keytip_val="ZT", baseline_missing=True),
         R("powerpoint.shell.tabrow.share", "powerpoint", "control", "Share",
           "Opens the presentation Share menu on the right end of PowerPoint's tab row.",
           parent="powerpoint.shell.region.tabrow", order=4, bounds=(1839, 48, 69, 30), control_type_val="menu",
           keytip_val="ZS", baseline_missing=True),
+        R("powerpoint.shell.keytips.fromBeginning", "powerpoint", "control", "Start From Beginning KeyTip",
+          "Triggers Start From Beginning on PowerPoint's Quick Access Toolbar when 5 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=4, bounds=(258, 9, 28, 29), control_type_val="label",
+          keytip_val="5", baseline_missing=True),
+        R("powerpoint.shell.keytips.presentInTeams", "powerpoint", "control", "Present in Teams KeyTip",
+          "Triggers Present in Teams on PowerPoint's tab row when Z then T is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=9, bounds=(1707, 51, 124, 24), control_type_val="label",
+          keytip_val="ZT", baseline_missing=True),
 
         # 12. Per-app overrides: Visio (visio.shell.*)
         R("visio.shell.region.titlebar", "visio", "region", "Visio Title Bar",
@@ -2711,6 +2821,18 @@ def build_shell_chrome_records(build=None):
           "Closes the active MDI drawing document window on the right end of Visio's tab row without exiting Visio.",
           parent="visio.shell.region.tabrow", order=4, bounds=(1874, 48, 46, 30), control_type_val="button",
           baseline_missing=True),
+        R("visio.shell.keytips.save", "visio", "control", "Save KeyTip",
+          "Triggers Save on Visio's Quick Access Toolbar when 1 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=1, bounds=(42, 9, 28, 29), control_type_val="label",
+          keytip_val="1", baseline_missing=True),
+        R("visio.shell.keytips.undo", "visio", "control", "Undo KeyTip",
+          "Triggers Undo on Visio's Quick Access Toolbar when 2 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=2, bounds=(71, 9, 37, 29), control_type_val="label",
+          keytip_val="2", baseline_missing=True),
+        R("visio.shell.keytips.redo", "visio", "control", "Redo KeyTip",
+          "Triggers Redo on Visio's Quick Access Toolbar when 3 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=3, bounds=(109, 9, 28, 29), control_type_val="label",
+          keytip_val="3", baseline_missing=True),
 
         # 13. Per-app overrides: Project (project.shell.*, live-measured from WINPROJ.EXE JWinproj-WhimperMainClass)
         R("project.shell.region.titlebar", "project", "region", "Project Title Bar",
@@ -2773,22 +2895,42 @@ def build_shell_chrome_records(build=None):
           "Focuses the Tell Me command search box placed inline on Project's tab row immediately to the right of the Help tab.",
           parent="project.shell.region.tabrow", order=2, bounds=(387, 48, 329, 30), control_type_val="menu",
           uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True),
+        R("project.shell.keytips.save", "project", "control", "Save KeyTip",
+          "Triggers Save on Project's Quick Access Toolbar when 1 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=1, bounds=(42, 9, 28, 29), control_type_val="label",
+          keytip_val="1", baseline_missing=True),
+        R("project.shell.keytips.undo", "project", "control", "Undo KeyTip",
+          "Triggers Undo on Project's Quick Access Toolbar when 2 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=2, bounds=(71, 9, 37, 29), control_type_val="label",
+          keytip_val="2", baseline_missing=True),
+        R("project.shell.keytips.redo", "project", "control", "Redo KeyTip",
+          "Triggers Redo on Project's Quick Access Toolbar when 3 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=3, bounds=(109, 9, 37, 29), control_type_val="label",
+          keytip_val="3", baseline_missing=True),
+        R("project.shell.keytips.search", "project", "control", "Search KeyTip",
+          "Focuses Project's tab-row Tell Me search box when Q is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=5, bounds=(387, 48, 329, 30), control_type_val="label",
+          keytip_val="Q", baseline_missing=True),
 
         # 14. Per-app overrides: classic Outlook explorer window (outlook.explorer.shell.*, baseline-backed; live UIA in §15)
         R("outlook.explorer.shell.region.titlebar", "outlook", "region", "Outlook Explorer Title Bar",
           "Hosts the system menu, explorer Quick Access Toolbar, module caption, search box, account widget and window caption buttons in classic Outlook's main window.",
           order=0, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.systemMenu", "outlook", "control", "System",
+          "Opens classic Outlook's explorer window system menu.",
+          parent="outlook.explorer.shell.region.titlebar", order=0, control_type_val="menu",
+          uia_id="MenuBar", keytip_val="Space", baseline_missing=True, source_override=base_src),
         R("outlook.explorer.shell.titlebar.qat", "outlook", "region", "Outlook Explorer Quick Access Toolbar",
           "Holds Send/Receive All Folders, Undo, Simplified Ribbon toggle, Minimize the Ribbon and Find a Contact in classic Outlook's explorer window.",
           parent="outlook.explorer.shell.region.titlebar", order=1, source_override=base_src),
         R("outlook.explorer.shell.qat.sendReceiveAll", "outlook", "control", "Send/Receive All Folders",
           "Synchronises all mail, calendar and contact folders with connected mail servers from Outlook's explorer Quick Access Toolbar.",
           parent="outlook.explorer.shell.titlebar.qat", order=0, control_type_val="button",
-          id_mso="SendReceiveAll", source_override=base_src),
+          id_mso="SendReceiveAll", keytip_val="1", source_override=base_src),
         R("outlook.explorer.shell.qat.undo", "outlook", "control", "Undo",
           "Reverses the last folder or item action in Outlook's explorer window.",
           parent="outlook.explorer.shell.titlebar.qat", order=1, control_type_val="splitButton",
-          id_mso="Undo", source_override=base_src),
+          id_mso="Undo", keytip_val="2", source_override=base_src),
         R("outlook.explorer.shell.qat.singleLineRibbonToggle", "outlook", "control", "Simplified Ribbon",
           "Toggles the explorer ribbon between the three-row Classic layout and the single-line Simplified layout.",
           parent="outlook.explorer.shell.titlebar.qat", order=2, control_type_val="toggleButton",
@@ -2801,26 +2943,72 @@ def build_shell_chrome_records(build=None):
           "Searches the address book for a contact directly from Outlook's explorer Quick Access Toolbar.",
           parent="outlook.explorer.shell.titlebar.qat", order=4, control_type_val="comboBox",
           id_mso="FindContactCombo", source_override=base_src),
+        R("outlook.explorer.shell.titlebar.caption", "outlook", "control", "Inbox - Outlook",
+          "Displays the active folder name and Outlook title across the explorer title bar.",
+          parent="outlook.explorer.shell.region.titlebar", order=2, control_type_val="label",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.search", "outlook", "control", "Search",
+          "Focuses classic Outlook's title bar search box for mail, calendar, contacts and commands.",
+          parent="outlook.explorer.shell.region.titlebar", order=3, control_type_val="menu",
+          uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.account", "outlook", "control", "Account",
+          "Opens the Account flyout in classic Outlook's explorer title bar.",
+          parent="outlook.explorer.shell.region.titlebar", order=4, control_type_val="menu",
+          uia_id="MeControlWidget", keytip_val="ZP", baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.minimize", "outlook", "control", "Minimize",
+          "Minimises the classic Outlook explorer window.",
+          parent="outlook.explorer.shell.region.titlebar", order=5, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.maximize", "outlook", "control", "Restore Down",
+          "Restores or maximises the classic Outlook explorer window.",
+          parent="outlook.explorer.shell.region.titlebar", order=6, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.close", "outlook", "control", "Close",
+          "Closes the classic Outlook explorer window.",
+          parent="outlook.explorer.shell.region.titlebar", order=7, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.region.tabrow", "outlook", "region", "Outlook Explorer Ribbon Tab Row",
+          "Hosts the File tab and module ribbon tabs across classic Outlook's explorer tab row.",
+          order=1, source_override=base_src),
+        R("outlook.explorer.shell.tabrow.file", "outlook", "control", "File Tab",
+          "Opens the classic Outlook Backstage view.",
+          parent="outlook.explorer.shell.region.tabrow", order=0, control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.tabrow.tabs", "outlook", "region", "Ribbon Tabs",
+          "Contains classic Outlook's explorer module and contextual ribbon tabs.",
+          parent="outlook.explorer.shell.region.tabrow", order=1, source_override=base_src),
+        R("outlook.explorer.shell.keytips.sendReceiveAll", "outlook", "control", "Send/Receive All Folders KeyTip",
+          "Triggers Send/Receive All Folders on Outlook's explorer Quick Access Toolbar when 1 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=0, control_type_val="label",
+          keytip_val="1", baseline_missing=True, source_override=base_src),
+        R("outlook.explorer.shell.keytips.undo", "outlook", "control", "Undo KeyTip",
+          "Triggers Undo on Outlook's explorer Quick Access Toolbar when 2 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=1, control_type_val="label",
+          keytip_val="2", baseline_missing=True, source_override=base_src),
 
         # 15. Per-app overrides: classic Outlook item/compose window (outlook.compose.shell.*, baseline-backed; live UIA in §15)
         R("outlook.compose.shell.region.titlebar", "outlook", "region", "Outlook Item Window Title Bar",
-          "Hosts the system menu, item-window Quick Access Toolbar, item subject caption, search box and caption buttons in classic Outlook inspector windows.",
+          "Hosts the system menu, item-window Quick Access Toolbar, item subject caption, search box, account widget and caption buttons in classic Outlook inspector windows.",
           order=0, source_override=base_src),
+        R("outlook.compose.shell.titlebar.systemMenu", "outlook", "control", "System",
+          "Opens the classic Outlook item window system menu.",
+          parent="outlook.compose.shell.region.titlebar", order=0, control_type_val="menu",
+          uia_id="MenuBar", keytip_val="Space", baseline_missing=True, source_override=base_src),
         R("outlook.compose.shell.titlebar.qat", "outlook", "region", "Outlook Item Window Quick Access Toolbar",
           "Holds Save, Undo, Redo, Simplified Ribbon toggle and Minimize the Ribbon in classic Outlook item windows.",
           parent="outlook.compose.shell.region.titlebar", order=1, source_override=base_src),
         R("outlook.compose.shell.qat.save", "outlook", "control", "Save",
           "Saves the open mail draft, appointment, contact or task in Outlook's item window.",
           parent="outlook.compose.shell.titlebar.qat", order=0, control_type_val="button",
-          id_mso="FileSave", source_override=base_src),
+          id_mso="FileSave", keytip_val="1", source_override=base_src),
         R("outlook.compose.shell.qat.undo", "outlook", "control", "Undo",
           "Undoes the last editing action inside the Outlook item window.",
           parent="outlook.compose.shell.titlebar.qat", order=1, control_type_val="splitButton",
-          id_mso="Undo", source_override=base_src),
+          id_mso="Undo", keytip_val="2", source_override=base_src),
         R("outlook.compose.shell.qat.redo", "outlook", "control", "Redo",
           "Redoes the last undone editing action inside the Outlook item window.",
           parent="outlook.compose.shell.titlebar.qat", order=2, control_type_val="splitButton",
-          id_mso="RedoOrRepeat", source_override=base_src),
+          id_mso="RedoOrRepeat", keytip_val="3", source_override=base_src),
         R("outlook.compose.shell.qat.singleLineRibbonToggle", "outlook", "control", "Simplified Ribbon",
           "Toggles the item window's ribbon between the Classic layout and the single-line Simplified layout.",
           parent="outlook.compose.shell.titlebar.qat", order=3, control_type_val="toggleButton",
@@ -2829,9 +3017,139 @@ def build_shell_chrome_records(build=None):
           "Collapses or expands the ribbon inside the Outlook item window.",
           parent="outlook.compose.shell.titlebar.qat", order=4, control_type_val="toggleButton",
           id_mso="MinimizeRibbon", source_override=base_src),
+        R("outlook.compose.shell.titlebar.caption", "outlook", "control", "Untitled - Message (HTML)",
+          "Displays the active item subject and message format across the Outlook inspector title bar.",
+          parent="outlook.compose.shell.region.titlebar", order=2, control_type_val="label",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.titlebar.search", "outlook", "control", "Search",
+          "Focuses the search box inside the classic Outlook item window.",
+          parent="outlook.compose.shell.region.titlebar", order=3, control_type_val="menu",
+          uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.titlebar.account", "outlook", "control", "Account",
+          "Opens the Account flyout in the classic Outlook item window title bar.",
+          parent="outlook.compose.shell.region.titlebar", order=4, control_type_val="menu",
+          uia_id="MeControlWidget", keytip_val="ZP", baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.titlebar.minimize", "outlook", "control", "Minimize",
+          "Minimises the classic Outlook item window.",
+          parent="outlook.compose.shell.region.titlebar", order=5, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.titlebar.maximize", "outlook", "control", "Restore Down",
+          "Restores or maximises the classic Outlook item window.",
+          parent="outlook.compose.shell.region.titlebar", order=6, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.titlebar.close", "outlook", "control", "Close",
+          "Closes the classic Outlook item window.",
+          parent="outlook.compose.shell.region.titlebar", order=7, control_type_val="button",
+          baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.region.tabrow", "outlook", "region", "Outlook Item Window Ribbon Tab Row",
+          "Hosts the File tab and inspector ribbon tabs across classic Outlook's item window tab row.",
+          order=1, source_override=base_src),
+        R("outlook.compose.shell.tabrow.file", "outlook", "control", "File Tab",
+          "Opens the classic Outlook item window Backstage view.",
+          parent="outlook.compose.shell.region.tabrow", order=0, control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.tabrow.tabs", "outlook", "region", "Ribbon Tabs",
+          "Contains classic Outlook's item window core and contextual ribbon tabs.",
+          parent="outlook.compose.shell.region.tabrow", order=1, source_override=base_src),
+        R("outlook.compose.shell.keytips.save", "outlook", "control", "Save KeyTip",
+          "Triggers Save on Outlook's item window Quick Access Toolbar when 1 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=1, control_type_val="label",
+          keytip_val="1", baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.keytips.undo", "outlook", "control", "Undo KeyTip",
+          "Triggers Undo on Outlook's item window Quick Access Toolbar when 2 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=2, control_type_val="label",
+          keytip_val="2", baseline_missing=True, source_override=base_src),
+        R("outlook.compose.shell.keytips.redo", "outlook", "control", "Redo KeyTip",
+          "Triggers Redo on Outlook's item window Quick Access Toolbar when 3 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=3, control_type_val="label",
+          keytip_val="3", baseline_missing=True, source_override=base_src),
     ]
     validate_shell_chrome(records)
     return records
+
+
+def _live_rect_bounds(el, ox, oy):
+    rect = getattr(el, "rect", None)
+    if not rect or len(rect) != 4 or rect == (0, 0, 10, 10):
+        return None
+    l, t, r, b = rect
+    if r <= l or b <= t:
+        return None
+    return {"x": l - ox, "y": t - oy, "width": r - l, "height": b - t}
+
+
+def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, origin, expected_build):
+    """Overlay live UIA measurements from `root` onto matching shell chrome records."""
+    ox, oy = origin
+    by_id = {r["id"]: r for r in records}
+    prefix = "shell." if app_name == "word" else f"{app_name}.shell."
+    element_map = {
+        f"{prefix}region.ribbon": lower,
+        f"{prefix}tabrow.tabs": tabs_bar,
+        f"{prefix}titlebar.systemMenu": find(root, lambda e: getattr(e, "automation_id", "") == "MenuBar"),
+        f"{prefix}titlebar.qat": find(root, lambda e: e.control_type == "ToolBar" and "Quick Access" in (e.name or "")),
+        f"{prefix}titlebar.autosave": find(root, lambda e: getattr(e, "automation_id", "") == "AutoSaveSwitch"),
+        f"{prefix}qat.autosave": find(root, lambda e: getattr(e, "automation_id", "") == "AutoSaveSwitch"),
+        f"{prefix}qat.save": find(root, lambda e: getattr(e, "automation_id", "") == "FileSave"),
+        f"{prefix}qat.undo": find(
+            root,
+            lambda e: getattr(e, "automation_id", "") == "Undo"
+            or (e.control_type == "SplitButton" and (e.name or "").startswith("Undo")),
+        ),
+        f"{prefix}qat.undo.dropdown": find(root, lambda e: getattr(e, "automation_id", "") == "Undo_Dropdown"),
+        f"{prefix}qat.redo": find(
+            root,
+            lambda e: getattr(e, "automation_id", "") in ("RedoOrRepeat", "Redo")
+            and e.control_type in ("Button", "SplitButton"),
+        ),
+        f"{prefix}qat.fromBeginning": find(root, lambda e: getattr(e, "automation_id", "") == "SlideShowFromBeginning"),
+        f"{prefix}qat.customize": find(root, lambda e: e.name == "Customize Quick Access Toolbar"),
+        f"{prefix}titlebar.search": find(root, lambda e: getattr(e, "automation_id", "") == "TellMeControlAnchor"),
+        f"{prefix}tabrow.search": find(root, lambda e: getattr(e, "automation_id", "") == "TellMeControlAnchor"),
+        f"{prefix}search.input": find(root, lambda e: getattr(e, "automation_id", "") == "TellMeTextBoxAutomationId"),
+        f"{prefix}titlebar.account": find(root, lambda e: getattr(e, "automation_id", "") == "MeControlWidget"),
+        f"{prefix}titlebar.minimize": find(root, lambda e: e.control_type == "Button" and e.name == "Minimize"),
+        f"{prefix}titlebar.maximize": find(
+            root, lambda e: e.control_type == "Button" and e.name in ("Restore Down", "Maximize")
+        ),
+        f"{prefix}titlebar.close": find(root, lambda e: e.control_type == "Button" and e.name == "Close"),
+        f"{prefix}tabrow.file": find(root, lambda e: getattr(e, "automation_id", "") == "FileTabButton"),
+        f"{prefix}tabrow.comments": find(root, lambda e: e.control_type == "Button" and e.name == "Comments"),
+        f"{prefix}tabrow.editingMode": find(
+            root,
+            lambda e: e.name in ("Editing", "Reviewing", "Viewing")
+            and e.control_type in ("ComboBox", "MenuItem", "Button"),
+        ),
+        f"{prefix}tabrow.presentInTeams": find(root, lambda e: e.name == "Present in Teams"),
+        f"{prefix}tabrow.share": find(
+            root, lambda e: e.name in ("Share", "Share...") and e.control_type in ("MenuItem", "Button", "SplitButton")
+        ),
+        f"{prefix}ribbonDisplay.button": find(root, lambda e: e.name == "Ribbon Display Options"),
+        f"{prefix}region.statusbar": find(
+            root, lambda e: getattr(e, "automation_id", "") == "StatusBar" or e.control_type == "StatusBar"
+        ),
+        f"{prefix}statusbar.bar": find(
+            root, lambda e: getattr(e, "automation_id", "") == "StatusBar" or e.control_type == "StatusBar"
+        ),
+        f"{prefix}statusbar.displaySettings": find(root, lambda e: e.name == "Display Settings"),
+        f"{prefix}statusbar.zoomOut": find(root, lambda e: e.name == "Zoom Out"),
+        f"{prefix}statusbar.zoomSlider": find(root, lambda e: e.control_type == "Slider" and "Zoom" in (e.name or "")),
+        f"{prefix}statusbar.zoomIn": find(root, lambda e: e.name == "Zoom In"),
+    }
+    for rid, el in element_map.items():
+        rec = by_id.get(rid)
+        if rec is None or el is None:
+            continue
+        b = _live_rect_bounds(el, ox, oy)
+        if b is not None:
+            rec["bounds"] = b
+            rec["captureProfile"] = PROFILE
+            if rec.get("kind") == "control":
+                rec["size"] = "large" if b["height"] >= LARGE_HEIGHT else "small"
+        if getattr(el, "name", ""):
+            rec["label"] = sanitize_shell_label(el.name, rec.get("uiaId", ""), rec.get("idMso", ""))
+        rec["source"] = f"uia:{expected_build}"
+        rec["capturedFrom"] = expected_build
 
 
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
@@ -2852,11 +3170,52 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
             return 1
         initial_bytes = out.read_bytes() if args.merge and out.exists() else None
+        shell_apps = (args.app or "word",) if (args.app or uia_factory or win_factory) else (
+            "word", "excel", "powerpoint", "visio", "project"
+        )
+        records = None
+        for app_name in shell_apps:
+            app_args = argparse.Namespace(**dict(vars(args), app=app_name))
+            try:
+                launched = launcher(app_name)
+            except Unsafe as exc:
+                print(f"capture-ui: {exc}", file=sys.stderr)
+                return 2
+            except Exception as exc:
+                print(f"capture-ui: {APPS[app_name][1]} could not be started ({type(exc).__name__}: {exc})",
+                      file=sys.stderr)
+                return 2
+            try:
+                if uia_factory or win_factory:
+                    app_records, app_problems, _ctx = capture(
+                        app_args, launched, (uia_factory or Uia)(), (win_factory or Win)()
+                    )
+                else:
+                    app_records, app_problems, _ctx = capture_in_worker(app_args, launched)
+            except Unsafe as exc:
+                print(f"capture-ui: {exc}", file=sys.stderr)
+                launched.close()
+                return 2
+            except (Refused, Gone) as exc:
+                msg = exc if isinstance(exc, Refused) else "an element vanished while it was read: " + str(exc)
+                print(f"capture-ui: {msg}", file=sys.stderr)
+                launched.close()
+                return 1
+            except BaseException:
+                launched.close()
+                raise
+            launched.close()
+            if app_problems:
+                print(f"capture-ui: no bounds under {PROFILE}: {'; '.join(app_problems)}", file=sys.stderr)
+                return 1
+            if records is None:
+                records = app_records
+            else:
+                measured_by_id = {
+                    r["id"]: r for r in app_records if r.get("app") == app_name
+                }
+                records = [measured_by_id.get(r["id"], r) for r in records]
         try:
-            expected_build = reference_build()
-            if installed_build() != expected_build:
-                raise Refused(f"the installed build {installed_build()} is not the reference {expected_build}")
-            records = build_shell_chrome_records(expected_build)
             if args.merge:
                 current_bytes = out.read_bytes() if out.exists() else None
                 if current_bytes != initial_bytes:
