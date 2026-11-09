@@ -29,7 +29,7 @@ IDS = {"TabHome", "PasteMenu", "Paste", "Cut", "Bold", "FontDialog", "QuickStyle
 
 
 class E:
-    """A fake UI Automation element."""
+    """A fake UI Automation element that yields fresh wrapper instances on traversal while preserving runtime_id."""
     counter = 0
 
     def __init__(self, ctype, name="", aid="", key="", cls="", rect=(0, 0, 10, 10), kids=(), toggle=False):
@@ -38,8 +38,14 @@ class E:
         E.counter += 1
         self.rid = (E.counter,)
 
+    @classmethod
+    def _wrap(cls, other):
+        w = cls.__new__(cls)
+        w.__dict__ = other.__dict__
+        return w
+
     def children(self):
-        return iter(self.kids)
+        return (E._wrap(k) for k in self.kids)
 
     def can_toggle(self):
         return self.toggle
@@ -2049,7 +2055,7 @@ class ShellChrome(unittest.TestCase):
                     ctype = "Pane"
                 elif rec.get("kind") == "contextMenu":
                     ctype = "Menu"
-                elif sid.startswith("shell.keytips."):
+                elif sid.startswith("shell.keytips.") or rec.get("controlType") == "label":
                     ctype = "Text"
                 else:
                     ctype = "Button"
@@ -2077,7 +2083,14 @@ class ShellChrome(unittest.TestCase):
                     top_kids.append(el)
                     trigger_els[rid] = el
 
-            win_el = E("Window", "Document1 - Word", kids=top_kids)
+            app_titles = {
+                "word": "Document1 - Word",
+                "excel": "Book1 - Excel",
+                "powerpoint": "Presentation1 - PowerPoint",
+                "visio": "Drawing1 - Visio Professional",
+                "project": "Project1 - Project Professional",
+            }
+            win_el = E("Window", app_titles.get(app_name, "Document1 - Word"), rect=(0, 0, 1920, 1080), kids=top_kids)
             merged_deferred = {}
             for trig_id, popup_els in deferred_groups.items():
                 fallback_id = "shell." + trig_id.split(".shell.", 1)[1] if ".shell." in trig_id else trig_id
@@ -2126,16 +2139,19 @@ class ShellChrome(unittest.TestCase):
 
                     trig.select, trig.on_dismiss = _make_select_dismiss(resolved_id, popup_els)
                 else:
-                    trig.expand_state = lambda: 0
+                    state_box = [0]
+                    trig.expand_state = lambda s=state_box: s[0]
 
-                    def _make_expand_collapse(t_id, p_els):
+                    def _make_expand_collapse(t_id, p_els, s=state_box):
                         def _exp():
+                            s[0] = 1
                             expand_events.append(("expand", t_id))
                             for pe in p_els:
                                 if pe not in win_el.kids:
                                     win_el.kids.append(pe)
 
                         def _col():
+                            s[0] = 0
                             expand_events.append(("collapse", t_id))
                             for pe in p_els:
                                 if pe in win_el.kids:
@@ -2172,9 +2188,14 @@ class ShellChrome(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 out_path = Path(tmp) / "shell" / "chrome.json"
-                # 1. Verify fixture realism: no element has a record ID in automation_id, and status bar / system menu
-                #    do not have synthetic ExpandCollapse patterns.
+                # 1. Verify fixture realism: no element has a record ID in automation_id, status bar / system menu
+                #    do not have synthetic ExpandCollapse patterns, and E.children() yields fresh wrappers with
+                #    distinct id() and identical runtime_id().
                 sample_root = make_shell_root()
+                first_pass = list(sample_root.children())
+                second_pass = list(sample_root.children())
+                self.assertNotEqual(id(first_pass[0]), id(second_pass[0]))
+                self.assertEqual(first_pass[0].runtime_id(), second_pass[0].runtime_id())
                 for el in [sample_root] + list(cu.descendants(sample_root, 25)):
                     self.assertFalse(el.automation_id.startswith("shell."))
                     self.assertNotIn(".shell.", el.automation_id)
@@ -2184,7 +2205,8 @@ class ShellChrome(unittest.TestCase):
                 self.assertIsNone(getattr(sys_el, "expand_state", lambda: None)())
 
                 # 2. Failing launcher, empty window, minimal window (only Ribbon Tabs and Lower Ribbon),
-                #    missing context-menu/KeyTips win support, or missing fhd-100 monitor must fail without publishing.
+                #    missing context-menu/KeyTips win support, no-op KeyTips (unchanged tree), failed collapse,
+                #    or missing fhd-100 monitor must fail without publishing.
                 with contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(
                         cu.main(["--shell", "--out", str(out_path)],
@@ -2215,8 +2237,42 @@ class ShellChrome(unittest.TestCase):
                     self.assertEqual(
                         cu.main(["--shell", "--app", "word", "--out", str(out_path)],
                                 launcher=lambda a: launched,
-                                uia_factory=lambda: type("U", (), {"element": lambda self, h: make_shell_root()})(),
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: E._wrap(make_shell_root())})(),
                                 win_factory=lambda: no_interact_win),
+                        1,
+                    )
+                    self.assertFalse(out_path.exists())
+                    # Unchanged tree on KeyTips activation must not match existing Save button into shell.keytips.save.
+                    noop_keytips_root = make_shell_root()
+                    noop_keytips_root.on_keytips = lambda _active: None
+                    self.assertEqual(
+                        cu.main(["--shell", "--app", "word", "--out", str(out_path)],
+                                launcher=lambda a: launched,
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: E._wrap(noop_keytips_root)})(),
+                                win_factory=lambda: good_win),
+                        1,
+                    )
+                    self.assertFalse(out_path.exists())
+                    # Collapse exception or unclosed surface must refuse capture.
+                    broken_collapse_root = make_shell_root()
+                    qat_trig = next(e for e in broken_collapse_root.kids if e.name == "Customize Quick Access Toolbar")
+                    qat_trig.collapse = lambda: (_ for _ in ()).throw(RuntimeError("collapse failed"))
+                    self.assertEqual(
+                        cu.main(["--shell", "--app", "word", "--out", str(out_path)],
+                                launcher=lambda a: launched,
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: E._wrap(broken_collapse_root)})(),
+                                win_factory=lambda: good_win),
+                        1,
+                    )
+                    self.assertFalse(out_path.exists())
+                    stuck_open_root = make_shell_root()
+                    qat_stuck = next(e for e in stuck_open_root.kids if e.name == "Customize Quick Access Toolbar")
+                    qat_stuck.collapse = lambda: None
+                    self.assertEqual(
+                        cu.main(["--shell", "--app", "word", "--out", str(out_path)],
+                                launcher=lambda a: launched,
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: E._wrap(stuck_open_root)})(),
+                                win_factory=lambda: good_win),
                         1,
                     )
                     self.assertFalse(out_path.exists())
@@ -2231,7 +2287,7 @@ class ShellChrome(unittest.TestCase):
                     self.assertEqual(
                         cu.main(["--shell", "--out", str(out_path)],
                                 launcher=lambda a: launched,
-                                uia_factory=lambda: type("U", (), {"element": lambda self, h: make_shell_root()})(),
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: E._wrap(make_shell_root())})(),
                                 win_factory=lambda: no_mon_win),
                         1,
                     )
@@ -2246,7 +2302,7 @@ class ShellChrome(unittest.TestCase):
                 def get_root():
                     if root_instance[0] is None:
                         root_instance[0] = make_shell_root(app_name=active_app[0])
-                    return root_instance[0]
+                    return E._wrap(root_instance[0])
 
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
@@ -2272,6 +2328,22 @@ class ShellChrome(unittest.TestCase):
                 by_id = {r["id"]: r for r in data}
                 self.assertEqual(by_id["shell.qat.customize.hide-quick-access-toolbar"]["bounds"]["x"], 261)
                 self.assertEqual(by_id["shell.ribbonDisplay.hide-quick-access-toolbar"]["bounds"]["x"], 1712)
+                self.assertEqual(
+                    by_id["excel.shell.titlebar.caption"]["bounds"],
+                    {"x": 287, "y": 0, "width": 497, "height": 48},
+                )
+                self.assertEqual(
+                    by_id["shell.keytips.save"]["bounds"],
+                    {"x": 167, "y": 22, "width": 16, "height": 16},
+                )
+                bad_keytip_save = [
+                    dict(r, bounds={"x": 161, "y": 9, "width": 28, "height": 29})
+                    if r["id"] == "shell.keytips.save"
+                    else r
+                    for r in data
+                ]
+                with self.assertRaises(cu.Refused):
+                    cu.validate_shell_chrome(bad_keytip_save)
                 bad_ribbon_display = [
                     dict(r, bounds={"x": 261, "y": 465, "width": 234, "height": 28})
                     if r["id"] == "shell.ribbonDisplay.hide-quick-access-toolbar"
@@ -2289,7 +2361,7 @@ class ShellChrome(unittest.TestCase):
                         rec["behaviour"] = "Custom hand-written search behaviour."
                         rec["bounds"] = {"x": 1, "y": 2, "width": 3, "height": 4}
                     elif rec["id"] == "excel.shell.qat.redo":
-                        rec["bounds"] = {"x": 444, "y": 9, "width": 38, "height": 29}
+                        rec["bounds"] = {"x": 231, "y": 9, "width": 38, "height": 29}
                 out_path.write_text(cu.render(data), encoding="utf-8")
 
                 with contextlib.redirect_stderr(io.StringIO()):
@@ -2310,7 +2382,7 @@ class ShellChrome(unittest.TestCase):
                             "U",
                             (),
                             {
-                                "element": lambda self, h: (
+                                "element": lambda self, h: E._wrap(
                                     root_instance[0]
                                     or root_instance.__setitem__(
                                         0,
@@ -2335,7 +2407,7 @@ class ShellChrome(unittest.TestCase):
                     merged["shell.titlebar.search"]["bounds"],
                     {"x": 790, "y": 8, "width": 360, "height": 32},
                 )
-                self.assertEqual(merged["excel.shell.qat.redo"]["bounds"]["x"], 444)
+                self.assertEqual(merged["excel.shell.qat.redo"]["bounds"]["x"], 231)
         finally:
             cu.installed_build, cu.reference_build, cu.time.sleep = real_ib, real_rb, real_sleep
 

@@ -2248,6 +2248,33 @@ def validate_shell_chrome(records):
                     continue
                 if r["id"].endswith(".customizeMenu"):
                     continue
+                if ".keytips." in r["id"] and not r["id"].endswith(".layer"):
+                    rb = r["bounds"]
+                    if rb["width"] > 36 or rb["height"] > 24:
+                        raise Refused(
+                            f"effective_shell({app!r}) KeyTip badge {r['id']!r} bounds {rb} exceeds badge dimensions"
+                        )
+                    target_tail = "." + r["id"].split(".")[-1]
+                    targets = [
+                        t for t in eff
+                        if t["id"].endswith(target_tail)
+                        and ".keytips." not in t["id"]
+                        and t.get("kind") != "menuItem"
+                        and "bounds" in t
+                    ]
+                    if targets:
+                        tb = targets[0]["bounds"]
+                        if (
+                            rb == tb
+                            or rb["x"] < tb["x"]
+                            or rb["x"] + rb["width"] > tb["x"] + tb["width"]
+                            or rb["y"] > tb["y"] + tb["height"]
+                            or rb["y"] + rb["height"] < tb["y"]
+                        ):
+                            raise Refused(
+                                f"effective_shell({app!r}) KeyTip badge {r['id']!r} bounds {rb} is not a badge "
+                                f"overlay on target {targets[0]['id']!r} bounds {tb}"
+                            )
                 if r.get("kind") == "menuItem" or r["id"].endswith(".flyout"):
                     rb, pb = r["bounds"], p["bounds"]
                     if not (
@@ -2589,6 +2616,10 @@ _SHELL_SPEC = (
     {'id': 'outlook.compose.shell.keytips.save', 'app': 'outlook', 'kind': 'control', 'label': 'Save KeyTip', 'behaviour': "Triggers Save on Outlook's item window Quick Access Toolbar when 1 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 1, 'controlType': 'label', 'keytip': '1', 'baselineMissing': True},
     {'id': 'outlook.compose.shell.keytips.undo', 'app': 'outlook', 'kind': 'control', 'label': 'Undo KeyTip', 'behaviour': "Triggers Undo on Outlook's item window Quick Access Toolbar when 2 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 2, 'controlType': 'label', 'keytip': '2', 'baselineMissing': True},
     {'id': 'outlook.compose.shell.keytips.redo', 'app': 'outlook', 'kind': 'control', 'label': 'Redo KeyTip', 'behaviour': "Triggers Redo on Outlook's item window Quick Access Toolbar when 3 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 3, 'controlType': 'label', 'keytip': '3', 'baselineMissing': True},
+    {'id': 'excel.shell.keytips.comments', 'app': 'excel', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the workbook Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
+    {'id': 'powerpoint.shell.keytips.comments', 'app': 'powerpoint', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the presentation Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
+    {'id': 'visio.shell.keytips.comments', 'app': 'visio', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the drawing Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
+    {'id': 'visio.shell.keytips.share', 'app': 'visio', 'kind': 'control', 'label': 'Share KeyTip', 'behaviour': "Triggers the Share command on Visio's tab row when Z then S is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 10, 'controlType': 'label', 'keytip': 'ZS', 'baselineMissing': True},
 )
 
 
@@ -2648,6 +2679,23 @@ def _shell_surface_key(sid):
     return "base"
 
 
+def _element_identity(el):
+    if hasattr(el, "runtime_id"):
+        try:
+            rid = el.runtime_id()
+            if rid:
+                return ("rid", tuple(rid))
+        except Exception:
+            pass
+    return (
+        "sig",
+        getattr(el, "control_type", ""),
+        getattr(el, "automation_id", ""),
+        getattr(el, "name", ""),
+        getattr(el, "rect", None),
+    )
+
+
 def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launched):
     if launched is not None and hasattr(launched, "check_alone"):
         launched.check_alone()
@@ -2655,19 +2703,19 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     pid = getattr(getattr(launched, "proc", None), "pid", None)
     has_popups = win is not None and hasattr(win, "popups") and pid is not None
     before_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-    before_ids = {id(el) for el in [before_root] + list(descendants(before_root, 25))}
+    before_ids = {_element_identity(el) for el in [before_root] + list(descendants(before_root, 25))}
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
     if surface_key == "keytips":
-        if win is None or not hasattr(win, "activate_keytips"):
-            raise Refused("cannot activate KeyTips without window keyboard support")
+        if win is None or not hasattr(win, "activate_keytips") or not hasattr(win, "deactivate_keytips"):
+            raise Refused("cannot activate or deactivate KeyTips without window keyboard support")
         win.activate_keytips(hwnd, root)
     elif surface_key == "statusbar.customizeMenu":
         if target is None:
             raise Refused("cannot open status bar context menu without status bar element")
-        if win is None or not hasattr(win, "open_context_menu"):
-            raise Refused("cannot open status bar context menu without window context-click support")
+        if win is None or not hasattr(win, "open_context_menu") or not hasattr(win, "dismiss_surface"):
+            raise Refused("cannot open or dismiss status bar context menu without window support")
         win.open_context_menu(hwnd, target)
     else:
         if target is None:
@@ -2684,50 +2732,60 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 "does not support ExpandCollapse or SelectionItem"
             )
         if can_expand:
+            if not callable(getattr(target, "collapse", None)):
+                raise Refused(f"shell trigger {getattr(target, 'name', surface_key)!r} is missing collapse support")
             target.expand()
         else:
+            if win is None or not hasattr(win, "dismiss_surface"):
+                raise Refused(f"cannot dismiss shell surface {surface_key!r} without window dismissal support")
             target.select()
     surface_collected = []
+    opened_ids = set()
+    cleanup_err = None
     try:
         time.sleep(0.1)
         live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
         for el in [live_root] + list(descendants(live_root, 25)):
-            if id(el) not in before_ids:
+            eid = _element_identity(el)
+            if eid not in before_ids:
                 surface_collected.append(el)
+                opened_ids.add(eid)
         if has_popups and uia is not None:
             for h in win.popups(pid):
                 if h not in before_popups:
                     p_root = uia.element(h)
                     for el in [p_root] + list(descendants(p_root, 25)):
                         surface_collected.append(el)
+                        opened_ids.add(_element_identity(el))
     finally:
-        if surface_key == "keytips":
-            if win is not None and hasattr(win, "deactivate_keytips"):
-                try:
-                    win.deactivate_keytips(hwnd, root)
-                except Exception:
-                    pass
-        elif surface_key in ("statusbar.customizeMenu", "backstage"):
-            if win is not None and hasattr(win, "dismiss_surface"):
-                try:
-                    win.dismiss_surface(hwnd, target)
-                except Exception:
-                    pass
-            if can_expand:
-                try:
-                    target.collapse()
-                except Exception:
-                    pass
-        elif can_expand:
-            try:
-                target.collapse()
-            except Exception:
-                pass
-        elif win is not None and hasattr(win, "dismiss_surface"):
-            try:
+        try:
+            if surface_key == "keytips":
+                win.deactivate_keytips(hwnd, root)
+            elif surface_key == "statusbar.customizeMenu":
                 win.dismiss_surface(hwnd, target)
-            except Exception:
-                pass
+            elif surface_key == "backstage":
+                if can_expand:
+                    target.collapse()
+                else:
+                    win.dismiss_surface(hwnd, target)
+            elif can_expand:
+                target.collapse()
+            else:
+                win.dismiss_surface(hwnd, target)
+        except Exception as exc:
+            cleanup_err = Refused(f"failed to close shell surface {surface_key!r}: {exc}")
+    if cleanup_err is not None:
+        raise cleanup_err
+    if can_expand and getattr(target, "expand_state", lambda: 0)() not in (0, None):
+        raise Refused(f"shell surface {surface_key!r} remained expanded after collapse")
+    after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
+    after_ids = {_element_identity(el) for el in [after_root] + list(descendants(after_root, 25))}
+    if opened_ids & after_ids:
+        raise Refused(f"shell surface {surface_key!r} remained open after cleanup")
+    if has_popups:
+        after_popups = [h for h in win.popups(pid) if h not in before_popups]
+        if after_popups:
+            raise Refused(f"shell surface {surface_key!r} popup window remained open after cleanup")
     return surface_collected
 
 
@@ -2739,6 +2797,14 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
         return lower
     if sid == "shell.tabrow.tabs":
         return tabs_bar
+    if sid == "shell.titlebar.caption":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and e.control_type in ("Text", "TitleBar", "Pane", "Custom")
+            and (not e.rect or (e.rect[1] - origin[1] < 48 and e.rect[3] - e.rect[1] <= 48))
+            and (e.name == rec["label"] or getattr(e, "automation_id", "") in ("TitleBar", "WindowTitle", "AppTitle")),
+        )
     if sid == "shell.titlebar.systemMenu":
         return _find_in(
             collected,
@@ -2948,26 +3014,41 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
             and e.control_type in ITEM_TYPES
             and e.name == rec["label"],
         )
+    if sid == "shell.keytips.layer":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and e.control_type in ("Pane", "ToolTip", "Custom")
+            and e.name == rec["label"],
+        )
     if sid.startswith("shell.keytips.") and sid != "shell.keytips.layer":
         return _find_in(
             collected,
             lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and e.control_type in ("Text", "ToolTip", "Custom")
+            and e.rect is not None
+            and (e.rect[2] - e.rect[0]) <= 36
+            and (e.rect[3] - e.rect[1]) <= 24
             and (
                 (rec.get("keytip") and keytip(getattr(e, "access_key", "")) == rec["keytip"])
-                or e.name == rec["label"]
+                or e.name in (rec["label"], rec.get("keytip"))
             ),
         )
     if rec.get("uiaId"):
         by_uia = _find_in(
             collected,
             lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and e.control_type != "Window"
             and getattr(e, "automation_id", "") == rec["uiaId"]
             and e.name == rec["label"],
         )
         if by_uia is not None:
             return by_uia
     return _find_in(
-        collected, lambda e: not is_record_id(getattr(e, "automation_id", "")) and e.name == rec["label"]
+        collected,
+        lambda e: not is_record_id(getattr(e, "automation_id", ""))
+        and e.control_type != "Window"
+        and e.name == rec["label"],
     )
 
 
@@ -2976,7 +3057,7 @@ def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, orig
     """Observe shell chrome elements in `root` (and opened menus, Backstage and KeyTips) and assign live geometry."""
     ox, oy = origin
     prefix = "shell." if app_name == "word" else f"{app_name}.shell."
-    base_elements = [root] + list(descendants(root, 25))
+    base_elements = list(descendants(root, 25))
     surface_triggers = (
         ("qat.customize", "shell.qat.customize"),
         ("tabrow.editingMode", "shell.tabrow.editingMode"),
