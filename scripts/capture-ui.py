@@ -1439,15 +1439,50 @@ class Launched:
         if action == "prepare_core_tab":
             tab_name = kwargs.get("tab_name", "")
             doc = self.created[0] if self.created else None
-            if doc is not None and tab_name == "Mailings":
-                csv_path = Path(kwargs.get("recipients_path") or WORD_DEFAULT_RECIPIENTS)
-                if csv_path.is_file() and hasattr(doc, "MailMerge"):
-                    doc.MailMerge.MainDocumentType = 0
-                    doc.MailMerge.OpenDataSource(Name=str(csv_path))
+            if doc is not None:
+                if tab_name == "Layout":
+                    shapes_col = getattr(doc, "Shapes", None)
+                    if shapes_col is not None:
+                        for idx_s, (sname, left) in enumerate((("PrepLayoutShape1", 50), ("PrepLayoutShape2", 130)), 1):
+                            found_s = None
+                            try:
+                                found_s = shapes_col(sname) if callable(shapes_col) else shapes_col.Item(sname)
+                            except Exception:
+                                found_s = None
+                            if found_s is None and hasattr(shapes_col, "AddShape"):
+                                created_s = shapes_col.AddShape(1, left, 50, 60, 40)
+                                try:
+                                    created_s.Name = sname
+                                except Exception:
+                                    pass
+                        if hasattr(shapes_col, "Range"):
+                            shapes_col.Range(["PrepLayoutShape1", "PrepLayoutShape2"]).Select()
+                else:
+                    shapes_col = getattr(doc, "Shapes", None)
+                    if shapes_col is not None:
+                        for sname in ("PrepLayoutShape1", "PrepLayoutShape2"):
+                            try:
+                                sh_obj = shapes_col(sname) if callable(shapes_col) else shapes_col.Item(sname)
+                                if sh_obj is not None and hasattr(sh_obj, "Delete"):
+                                    sh_obj.Delete()
+                            except Exception:
+                                pass
                     try:
-                        doc.Saved = True
+                        if hasattr(doc, "Range"):
+                            doc.Range(0, 0).Select()
                     except Exception:
                         pass
+                if tab_name == "Mailings":
+                    csv_path = Path(kwargs.get("recipients_path") or WORD_DEFAULT_RECIPIENTS)
+                    if not csv_path.is_file():
+                        raise Refused(f"Word mail-merge recipients fixture {csv_path} does not exist")
+                    if hasattr(doc, "MailMerge"):
+                        doc.MailMerge.MainDocumentType = 0
+                        doc.MailMerge.OpenDataSource(Name=str(csv_path))
+                try:
+                    doc.Saved = True
+                except Exception:
+                    pass
             return {"hwnd": int(self.hwnd or 0)}
         if action == "trigger_contextual":
             target = kwargs.get("target", "")
@@ -1563,7 +1598,7 @@ class Launched:
                     cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                     for idx in range(1, cnt + 1):
                         ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                        if int(getattr(ish, "Type", 0)) == 16:
+                        if int(getattr(ish, "Type", 0)) in (17, 18):
                             ish.Select()
                             selected = True
                             break
@@ -1581,7 +1616,7 @@ class Launched:
                     cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                     for idx in range(1, cnt + 1):
                         ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                        if int(getattr(ish, "Type", 0)) in (17, 19):
+                        if int(getattr(ish, "Type", 0)) in (19, 20):
                             ish.Select()
                             selected = True
                             break
@@ -2119,13 +2154,12 @@ def capture(args, launched, uia, win):
             )
             check_licensing()
         records += tab_records
-    if args.app == "word" and args.all_tabs and callable(getattr(launched, "word_action", None)):
+    if args.app == "word" and args.all_tabs and getattr(args, "layout", "classic") == "classic" and callable(getattr(launched, "word_action", None)):
         fixture_path = Path(getattr(args, "fixture", None) or WORD_DEFAULT_FIXTURE)
-        if fixture_path.is_file() or getattr(args, "fixture", None) is not None or getattr(launched, "has_word_fixture", False):
-            records += capture_word_contextual_tabs(
-                args, launched, uia, win, ctx, state, check_licensing,
-                order_start=len(tab_elements), fixture_path=fixture_path,
-            )
+        records += capture_word_contextual_tabs(
+            args, launched, uia, win, ctx, state, check_licensing,
+            order_start=len(tab_elements), fixture_path=fixture_path,
+        )
     check_licensing()
     if not any(r.get("kind") == "control" for r in records + ctx.unverified):
         raise Refused("no ribbon controls were captured")
@@ -4404,18 +4438,183 @@ WORD_RECONCILED_UNEXPANDED_CONTROLS = frozenset({
     "word.format.insert-shapes.change-shape",
 })
 
-WORD_TOGGLE_SPLIT_BUTTON_IDS = frozenset({
+WORD_SELECTION_FORMAT_SPLIT_BUTTON_IDS = frozenset({
     "word.home.font.underline",
     "word.home.paragraph.bullets",
     "word.home.paragraph.numbering",
     "word.home.paragraph.borders",
+    "word.table-design.borders.borders",
+})
+
+WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS = frozenset({
     "word.home.voice.dictate",
     "word.review.markup.reviewing-pane",
     "word.review.tracking.track-changes",
     "word.review.ink.hide-ink",
-    "word.table-design.borders.borders",
     "word.picture-format.size.crop",
     "word.graphics-format.size.crop",
+})
+
+WORD_TOGGLE_SPLIT_BUTTON_IDS = WORD_SELECTION_FORMAT_SPLIT_BUTTON_IDS | WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS
+
+WORD_SELECTION_FORMAT_TOGGLE_IDS = frozenset({
+    "word.home.font.bold",
+    "word.home.font.italic",
+    "word.home.font.strikethrough",
+    "word.home.font.subscript",
+    "word.home.font.superscript",
+    "word.home.paragraph.align-left",
+    "word.home.paragraph.center",
+    "word.home.paragraph.align-right",
+    "word.home.paragraph.justify",
+    "word.table-layout.alignment.align-top-left",
+    "word.table-layout.alignment.align-top-center",
+    "word.table-layout.alignment.align-top-right",
+    "word.table-layout.alignment.align-center-left",
+    "word.table-layout.alignment.align-center",
+    "word.table-layout.alignment.align-center-right",
+    "word.table-layout.alignment.align-bottom-left",
+    "word.table-layout.alignment.align-bottom-center",
+    "word.table-layout.alignment.align-bottom-right",
+    "word.table-layout.data.repeat-header-rows",
+    "word.equation.conversions.unicode",
+    "word.equation.conversions.latex",
+    "word.equation.conversions.text",
+})
+
+WORD_VIEW_MODE_TOGGLE_IDS = frozenset({
+    "word.view.views.read-mode",
+    "word.view.views.print-layout",
+    "word.view.views.web-layout",
+    "word.view.views.outline",
+    "word.view.views.draft",
+    "word.view.immersive.focus",
+    "word.view.immersive.immersive-reader",
+    "word.view.page-movement.vertical",
+    "word.view.page-movement.side-to-side",
+    "word.immersive-reader.immersive-reader.text-spacing",
+    "word.immersive-reader.immersive-reader.syllables",
+})
+
+WORD_PANE_TOGGLE_IDS = frozenset({
+    "word.home.add-ins.add-ins",
+    "word.layout.arrange.selection-pane",
+    "word.review.protect.restrict-editing",
+    "word.view.show.navigation-pane",
+    "word.view.sharepoint.properties",
+    "word.developer.protect.restrict-editing",
+    "word.picture-format.accessibility.alt-text",
+    "word.picture-format.arrange.selection-pane",
+    "word.shape-format.accessibility.alt-text",
+    "word.shape-format.arrange.selection-pane",
+    "word.format.accessibility.alt-text",
+    "word.format.arrange.selection-pane",
+    "word.smartart-design.create-graphic.text-pane",
+    "word.format-tabsmartarttoolsformat.accessibility.alt-text",
+    "word.format-tabsmartarttoolsformat.arrange.selection-pane",
+    "word.graphics-format.accessibility.alt-text",
+    "word.graphics-format.arrange.selection-pane",
+    "word.3d-model.accessibility.alt-text",
+    "word.3d-model.arrange.selection-pane",
+})
+
+WORD_VISIBILITY_TOGGLE_IDS = frozenset({
+    "word.home.paragraph.show-all",
+    "word.draw.stencils.ruler",
+    "word.view.show.ruler",
+    "word.view.show.gridlines",
+    "word.table-layout.table.view-gridlines",
+    "word.outlining.outline-tools.show-text-formatting",
+    "word.outlining.outline-tools.show-first-line-only",
+    "word.outlining.master-document.show-document",
+    "word.outlining.master-document.collapse-subdocuments",
+    "word.print-preview.preview.show-ruler",
+    "word.print-preview.preview.magnifier",
+})
+
+WORD_TOOL_MODE_TOGGLE_IDS = frozenset({
+    "word.home.clipboard.format-painter",
+    "word.draw.convert.ink-to-shape",
+    "word.draw.replay.ink-replay",
+    "word.developer.controls.design-mode",
+    "word.table-design.borders.border-painter",
+    "word.table-layout.draw.draw-table",
+    "word.table-layout.draw.eraser",
+    "word.picture-format.adjust.remove-background",
+    "word.format-tabsmartarttoolsformat.shapes.edit-in-2-d",
+    "word.3d-model.size.pan-zoom",
+    "word.background-removal.refine.mark-areas-to-keep",
+    "word.background-removal.refine.mark-areas-to-remove",
+})
+
+WORD_INSERTION_GALLERY_IDS = frozenset({
+    "word.home.font.change-case",
+    "word.insert.pages.cover-page",
+    "word.insert.tables.table",
+    "word.insert.illustrations.shapes",
+    "word.insert.illustrations.screenshot",
+    "word.insert.header-footer.header",
+    "word.insert.header-footer.footer",
+    "word.insert.text.text-box",
+    "word.insert.text.quick-parts",
+    "word.insert.text.wordart",
+    "word.insert.symbols.symbol",
+    "word.layout.page-setup.breaks",
+    "word.layout.arrange.rotate",
+    "word.references.table-of-contents.table-of-contents",
+    "word.references.citations-bibliography.bibliography",
+    "word.picture-format.arrange.rotate",
+    "word.shape-format.insert-shapes.shapes",
+    "word.shape-format.arrange.rotate",
+    "word.header-footer.header-footer.header",
+    "word.header-footer.header-footer.footer",
+    "word.header-footer.insert.quick-parts",
+    "word.equation.tools.equation",
+    "word.equation.symbols.equation-symbols",
+    "word.equation.structures.fraction",
+    "word.equation.structures.script",
+    "word.equation.structures.radical",
+    "word.equation.structures.integral",
+    "word.equation.structures.large-operator",
+    "word.equation.structures.bracket",
+    "word.equation.structures.function",
+    "word.equation.structures.accent",
+    "word.equation.structures.limit-and-log",
+    "word.equation.structures.operator",
+    "word.equation.structures.matrix",
+    "word.format.insert-shapes.shapes",
+    "word.format.insert-shapes.change-shape",
+    "word.format.arrange.rotate",
+    "word.format-tabsmartarttoolsformat.shapes.change-shape",
+    "word.format-tabsmartarttoolsformat.arrange.rotate",
+    "word.graphics-format.arrange.rotate",
+})
+
+WORD_SINGLE_TARGET_GALLERY_IDS = frozenset({
+    "word.design.document-formatting.themes",
+    "word.design.document-formatting.style-set",
+    "word.design.document-formatting.colors",
+    "word.design.document-formatting.fonts",
+    "word.design.document-formatting.effects",
+    "word.design.page-background.watermark",
+    "word.layout.page-setup.margins",
+    "word.layout.page-setup.orientation",
+    "word.layout.page-setup.size",
+    "word.layout.page-setup.columns",
+    "word.references.citations-bibliography.change-provider",
+    "word.chart-design.chart-layouts.quick-layout",
+    "word.chart-design.chart-styles.change-colors",
+    "word.smartart-design.layouts.change-layout",
+    "word.smartart-design.smartart-styles.change-colors",
+    "word.print-preview.page-setup.margins",
+    "word.print-preview.page-setup.orientation",
+    "word.print-preview.page-setup.size",
+})
+
+WORD_SELECTION_COMBOBOX_IDS = frozenset({
+    "word.home.font.font",
+    "word.home.font.font-size",
+    "word.outlining.outline-tools.outline-level",
 })
 
 WORD_REQUIRED_SUBMENU_PARENTS = (
@@ -5082,20 +5281,36 @@ def synthesize_word_behaviour(records):
                     action = (
                         "Displays the in-ribbon Drawing Tools pen, pencil and highlighter slot list on Draw; additional pens are added and configured via the adjacent Add dropdown button (Add Pen)."
                     )
+                    state_rule = (
+                        "State rule: highlights the active drawing tool (Select, Lasso, Eraser, or Pen/Highlighter) as selected (on), shows inactive tools unselected (off), and mixed state is not used (strictly one active drawing tool at a time)."
+                    )
                 else:
                     action = (
                         f"Displays the {label} gallery in the {grp_label} group on {tab_label} with live preview tiles and opens its full dropdown popup via the gallery's More / dropdown expand button ({idmso or 'More'}) to list preset items, category filters and bottom commands."
                     )
-                state_rule = (
-                    "State rule: highlights the gallery tile matching the active selection's uniform formatting or style as selected (on), shows no tile selected (off) when the selection uses custom formatting outside the gallery presets, and clears tile selection (mixed) when the selection spans multiple conflicting styles."
-                )
+                    if rid in WORD_INSERTION_GALLERY_IDS:
+                        state_rule = (
+                            "State rule: opens its preset catalog when expanded (on) and closes when collapsed (off); tiles act as one-shot insertion or transformation commands and mixed state is not used."
+                        )
+                    elif rid in WORD_SINGLE_TARGET_GALLERY_IDS:
+                        state_rule = (
+                            "State rule: highlights the tile matching the active document, section, or object preset as selected (on), shows no tile selected (off) when custom settings outside the presets are in effect, and clears tile selection (mixed) when a multi-section or multi-object selection spans differing presets."
+                        )
+                    else:
+                        state_rule = (
+                            "State rule: highlights the gallery tile matching the active selection's uniform formatting or style as selected (on), shows no tile selected (off) when the selection uses custom formatting outside the gallery presets, and clears tile selection (mixed) when the selection spans multiple conflicting styles."
+                        )
             elif ctype == "splitButton":
                 action = (
                     f"Executes the default {label} command in the {grp_label} group on {tab_label} when the primary button face is clicked, and opens the {label} dropdown menu via its split dropdown arrow to choose specific options."
                 )
-                if rid in WORD_TOGGLE_SPLIT_BUTTON_IDS:
+                if rid in WORD_SELECTION_FORMAT_SPLIT_BUTTON_IDS:
                     state_rule = (
-                        "State rule: the primary button reflects the active formatting or mode state (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
+                        "State rule: the primary button reflects the active formatting state on the selection (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
+                    )
+                elif rid in WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS:
+                    state_rule = (
+                        f"State rule: the primary button reflects the active {label} mode or pane state (checked/on when {label} is active in the document or window, unchecked/off when inactive, and mixed state is not used because {label} is strictly binary on/off)."
                     )
                 else:
                     state_rule = ""
@@ -5108,16 +5323,42 @@ def synthesize_word_behaviour(records):
                 action = (
                     f"Toggles the {label} state or formatting attribute in the {grp_label} group on {tab_label}."
                 )
-                state_rule = (
-                    f"State rule: reports checked/pressed (on) when {label} is active or uniformly applied across the current selection, unchecked (off) when inactive or absent on plain content, and indeterminate/mixed (or unpressed) when the selection spans both formatted and unformatted content."
-                )
+                if rid in WORD_SELECTION_FORMAT_TOGGLE_IDS:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) when {label} is uniformly applied across the current selection, unchecked (off) when absent on the selection, and indeterminate/mixed (or unpressed) when the selection spans both {label} and non-{label} content."
+                    )
+                elif rid in WORD_VIEW_MODE_TOGGLE_IDS:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) when the active document window is in {label} view or display mode, unchecked (off) when another view or display mode is active, and mixed state is not used (strictly binary on/off across the active window, independent of text selection)."
+                    )
+                elif rid in WORD_PANE_TOGGLE_IDS:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) while the {label} task pane or flyout is open in the document window, unchecked (off) when the pane or flyout is closed, and mixed state is not used (strictly binary on/off)."
+                    )
+                elif rid in WORD_VISIBILITY_TOGGLE_IDS:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) when {label} display is shown in the active window, unchecked (off) when hidden, and mixed state is not used (strictly binary on/off)."
+                    )
+                elif rid in WORD_TOOL_MODE_TOGGLE_IDS:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) while the {label} interactive tool or editing mode is active, unchecked (off) when inactive, and mixed state is not used (strictly binary on/off)."
+                    )
+                else:
+                    state_rule = (
+                        f"State rule: reports checked/pressed (on) when the {label} option is enabled on the active document, section, table, or diagram, unchecked (off) when disabled, and mixed state is not used (strictly binary on/off, independent of character formatting)."
+                    )
             elif ctype == "comboBox":
                 action = (
                     f"Displays and edits the active {label} value in the {grp_label} group on {tab_label}, accepting direct text entry or selection from its dropdown list."
                 )
-                state_rule = (
-                    f"State rule: shows the matching {label} value as selected (on) when uniform across the selection, unselected (off) for other list entries, and a blank edit field (mixed) when the selection spans multiple {label} values."
-                )
+                if rid in WORD_SELECTION_COMBOBOX_IDS:
+                    state_rule = (
+                        f"State rule: shows the matching {label} value as selected (on) when uniform across the selection, unselected (off) for other list entries, and a blank edit field (mixed) when the selection spans multiple {label} values."
+                    )
+                else:
+                    state_rule = (
+                        f"State rule: shows the active {label} setting as selected (on), unselected (off) for inactive list entries, and mixed state is not used (always displays the single active setting)."
+                    )
             elif ctype == "spinner":
                 action = (
                     f"Displays and adjusts the numeric {label} measurement in the {grp_label} group on {tab_label} via direct entry or its paired More/Less increment buttons."
@@ -5150,40 +5391,117 @@ def synthesize_word_behaviour(records):
                     )
                 state_rule = ""
         else:
+            parent_id = rec.get("parent") or ""
             if ctype == "galleryItem":
-                action = (
-                    f"Applies the {label} gallery preset from {parent_label} ({grp_label} group on {tab_label}) to the active selection or target object, with live preview on hover."
-                )
-                state_rule = (
-                    f"State rule: appears selected (on) in the {parent_label} gallery when the current selection uniformly matches {label}, unselected (off) when another preset or custom formatting applies, and unselected (mixed) when the selection spans multiple presets."
-                )
+                if parent_id in WORD_INSERTION_GALLERY_IDS or parent_id.startswith(tuple(f"{g}." for g in WORD_INSERTION_GALLERY_IDS)):
+                    action = (
+                        f"Inserts or applies the {label} item from {parent_label} ({grp_label} group on {tab_label}) at the active insertion point or selection."
+                    )
+                    state_rule = (
+                        "State rule: acts as a one-shot insertion or transformation tile (unselected/off at rest, highlighted/on only while focused or hovered in the open gallery, and mixed state is not used)."
+                    )
+                else:
+                    action = (
+                        f"Applies the {label} gallery preset from {parent_label} ({grp_label} group on {tab_label}) to the active selection or target object, with live preview on hover."
+                    )
+                    state_rule = (
+                        f"State rule: appears selected (on) in the {parent_label} gallery when the current selection uniformly matches {label}, unselected (off) when another preset or custom formatting applies, and unselected (mixed) when the selection spans multiple presets."
+                    )
             elif has_kids or rid in WORD_REQUIRED_SUBMENU_PARENTS:
                 action = (
                     f"Selects or expands the {label} submenu under {parent_label} ({grp_label} group on {tab_label})."
                 )
                 state_rule = (
-                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                    "State rule: expands its cascade popup (on) while hovered or keyboard-selected, collapses (off) when focus moves to another item or the menu closes, and mixed state is not used (container submenu item)."
                 )
             elif label == "Gallery Filter":
                 action = (
                     f"Selects the active category filter inside the {parent_label} gallery popup on {tab_label} to scope which gallery items are shown."
                 )
                 state_rule = (
-                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                    "State rule: shows the active filter category (on) for the currently selected gallery scope, unselected (off) for inactive filter entries, and mixed state is not used."
                 )
             elif label == "No Online Content Available":
                 action = (
                     f"Placeholder item shown inside {parent_label} on {tab_label} when online template content is unavailable or not yet fetched."
                 )
                 state_rule = (
-                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                    "State rule: remains disabled and unselected (off) at all times; checked (on) and mixed states are not used."
+                )
+            elif any(
+                seg in rid
+                for seg in (
+                    ".line-numbers.none",
+                    ".line-numbers.continuous",
+                    ".line-numbers.restart-each-page",
+                    ".line-numbers.restart-each-section",
+                    ".line-numbers.suppress-for-current-paragraph",
+                    ".hyphenation.none",
+                    ".hyphenation.automatic",
+                    ".wrap-text.move-with-text",
+                    ".wrap-text.fix-position-on-page",
+                    ".smartart-design.create-graphic.layout.",
+                    ".equation.conversions.convert.current-",
+                    ".crop.aspect-ratio.",
+                )
+            ):
+                action = (
+                    f"Applies or toggles the {label} option from the {parent_label} menu ({grp_label} group on {tab_label}) on the active selection, section, or object."
+                )
+                state_rule = (
+                    f"State rule: shows checked/highlighted (on) when {label} is uniformly applied across the selected paragraphs, sections, or objects, unchecked (off) when absent, and unchecked (mixed) when the selection spans differing settings."
+                )
+            elif any(
+                seg in rid
+                for seg in (
+                    ".high-contrast-only",
+                    ".view-gridlines",
+                    ".use-alignment-guides",
+                    ".align-to-page",
+                    ".align-to-margin",
+                    ".align-selected-objects",
+                    ".start-mail-merge.letters",
+                    ".start-mail-merge.e-mail-messages",
+                    ".start-mail-merge.envelopes",
+                    ".start-mail-merge.labels",
+                    ".start-mail-merge.directory",
+                    ".start-mail-merge.normal-word-document",
+                    ".filter-all-markup.mentions-me",
+                    ".filter-all-markup.active-only",
+                    ".filter-all-markup.resolved-only",
+                    ".show-markup.insertions-and-deletions",
+                    ".show-markup.formatting",
+                    ".show-markup.highlight-updates",
+                    ".show-markup.other-authors",
+                    ".show-markup.balloons.",
+                    ".show-markup.specific-people.all-reviewers",
+                    ".reviewing-pane.reviewing-pane-vertical",
+                    ".reviewing-pane.reviewing-pane-horizontal",
+                    ".track-changes.for-everyone",
+                    ".track-changes.just-mine",
+                    ".track-changes.lock-tracking",
+                    ".hide-ink.hide-ink",
+                    ".switch-windows.1-document1",
+                    ".border-styles.border-sampler",
+                    ".size.crop.crop",
+                    ".edit-shape.edit-points",
+                    ".edit-shape.reroute-connectors",
+                    ".immersive-reader.column-width.",
+                    ".immersive-reader.line-focus.",
+                )
+            ):
+                action = (
+                    f"Toggles or selects the {label} mode from the {parent_label} menu ({grp_label} group on {tab_label})."
+                )
+                state_rule = (
+                    f"State rule: shows a check mark or radio indicator (on) when {label} is the active document, view, or object setting, unchecked (off) when inactive, and mixed state is not used (strictly binary on/off)."
                 )
             else:
                 action = (
                     f"Executes the {label} command from the {parent_label} menu ({grp_label} group on {tab_label}) on the active selection or document."
                 )
                 state_rule = (
-                    f"State rule: displays checked/selected (on) when {label} represents an active toggle or mode that holds across the selection, unchecked (off) when inactive, and unchecked (mixed) when the selection spans mixed states."
+                    "State rule: acts as a one-shot command item (unselected/off at rest, highlighted/on only while focused in the open menu, and mixed state is not used)."
                 )
 
         parts = [action, precond]
@@ -5331,6 +5649,17 @@ def validate_word_ribbon(records):
             ):
                 if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
                     raise Refused(f"{rid}: stateful {ctype} behaviour is missing on/off/mixed state rule")
+                if ctype in ("toggleButton", "checkBox", "radioButton"):
+                    if rid in WORD_SELECTION_FORMAT_TOGGLE_IDS:
+                        if "mixed state is not used" in beh:
+                            raise Refused(f"{rid}: selection-formatting toggle must describe its mixed state")
+                    else:
+                        if "mixed state is not used" not in beh or "spans both formatted and unformatted content" in beh or "spans mixed formatting" in beh:
+                            raise Refused(f"{rid}: binary {ctype} must state that mixed state is not used and must not claim mixed formatting state")
+                elif ctype == "splitButton":
+                    if rid in WORD_BINARY_TOGGLE_SPLIT_BUTTON_IDS:
+                        if "mixed state is not used" not in beh or "spans mixed formatting" in beh:
+                            raise Refused(f"{rid}: binary toggle splitButton must state that mixed state is not used")
             elif ctype == "splitButton" and "State rule:" in beh:
                 raise Refused(f"{rid}: non-toggle splitButton must not fabricate a checked/mixed state rule")
             if ctype == "gallery":
@@ -5380,6 +5709,18 @@ def validate_word_ribbon(records):
     return True
 
 
+def merge_word_ribbon(existing, fresh, unverified=(), *, full_capture=True):
+    """Merge fresh Word ribbon records into existing records, validating full-capture completeness on `fresh` before
+    merging so old records in `existing` cannot conceal missing tabs, contextual tabs, controls, or submenus."""
+    if full_capture:
+        validate_word_ribbon(synthesize_word_behaviour([dict(r) for r in fresh]))
+    merged = merge(existing, fresh, unverified)
+    merged = synthesize_word_behaviour(merged)
+    if full_capture:
+        validate_word_ribbon(merged)
+    return merged
+
+
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser = argparse.ArgumentParser(description="Capture an Office app's ribbon or shared shell chrome through UI Automation.")
     parser.add_argument("--app", choices=sorted(APPS), help="reference app to capture (required for tab captures)")
@@ -5390,6 +5731,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
+    parser.add_argument("--fixture", help="contextual fixture document path (default R:\\scratch\\fixtures\\word-contextual.docx)")
     parser.add_argument("--out", help="output file (default design/inventory/<app>/ribbon[-simplified].json or shell/chrome.json)")
     args = parser.parse_args(argv)
     if args.shell:
@@ -5495,14 +5837,27 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     launched.close()
     try:
         unverified_records = list(ctx.unverified)
+        is_canonical_word_ribbon = False
         if args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
+            try:
+                is_canonical_word_ribbon = out.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
+            except OSError:
+                is_canonical_word_ribbon = False
+            if is_canonical_word_ribbon and args.all_tabs:
+                validate_word_ribbon(synthesize_word_behaviour([dict(r) for r in records]))
         if args.merge:
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
-                records = merge(_load_existing_records(out, current_bytes), records, unverified_records)
+                existing_records = _load_existing_records(out, current_bytes)
+                if args.app == "word" and is_canonical_word_ribbon:
+                    records = merge_word_ribbon(
+                        existing_records, records, unverified_records, full_capture=bool(args.all_tabs)
+                    )
+                else:
+                    records = merge(existing_records, records, unverified_records)
         if args.merge or unverified_records:
             current_unverified = unverified_path.read_bytes() if unverified_path.exists() else None
             if current_unverified != initial_unverified:
@@ -5515,10 +5870,6 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         if args.app == "word":
             records = synthesize_word_behaviour(records)
             unverified_records = synthesize_word_behaviour(unverified_records)
-            try:
-                is_canonical_word_ribbon = out.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
-            except OSError:
-                is_canonical_word_ribbon = False
             if is_canonical_word_ribbon:
                 validate_word_ribbon(records)
         files = {out: render(records)}

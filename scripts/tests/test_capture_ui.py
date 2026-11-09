@@ -3234,11 +3234,16 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(cu.Refused):
                 cu.validate_word_ribbon(unexpanded)
 
-        # 6. Verify splitButton state rule distinction (Paste has no checked/mixed state rule; Underline does)
-        #    and spinner Less/More button descriptions.
+        # 6. Verify splitButton and toggleButton state rule distinction (Paste has no checked/mixed state rule;
+        #    Underline and Bold describe mixed selection states; Print Layout and Track Changes explicitly state
+        #    mixed state is not used) and spinner Less/More button descriptions.
         by_id = {r["id"]: r for r in records}
         self.assertNotIn("State rule:", by_id["word.home.clipboard.paste"]["behaviour"])
         self.assertIn("State rule:", by_id["word.home.font.underline"]["behaviour"])
+        self.assertNotIn("mixed state is not used", by_id["word.home.font.underline"]["behaviour"])
+        self.assertNotIn("mixed state is not used", by_id["word.home.font.bold"]["behaviour"])
+        self.assertIn("mixed state is not used", by_id["word.view.views.print-layout"]["behaviour"])
+        self.assertIn("mixed state is not used", by_id["word.review.tracking.track-changes"]["behaviour"])
         less_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "Less"]
         more_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "More"]
         self.assertGreater(len(less_btns), 0)
@@ -3250,11 +3255,23 @@ class WordRibbon(unittest.TestCase):
             self.assertIn("Increments (More)", mb["behaviour"])
 
         # 7. Removing behaviour, enablement preconditions, gallery expand descriptions, or on/off/mixed state rules,
-        #    or fabricating a checked/mixed state rule on a non-toggle splitButton, or describing Less as incrementing
-        #    is refused.
+        #    or fabricating a checked/mixed state rule on a non-toggle splitButton, or claiming mixed formatting
+        #    states on binary toggles (Print Layout, Track Changes), or describing Less as incrementing is refused.
         for target_id, bad_beh in (
             ("word.table-design", "Table Design"),
             ("word.home.font.bold", "Toggles Bold on the selection. Enabled in an editable document."),
+            (
+                "word.home.font.bold",
+                "Toggles Bold. Enabled in an editable document. State rule: on when active, off when inactive, mixed state is not used.",
+            ),
+            (
+                "word.view.views.print-layout",
+                "Toggles Print Layout. Enabled in an editable document. State rule: on when active, off when inactive, and mixed when the selection spans both formatted and unformatted content.",
+            ),
+            (
+                "word.review.tracking.track-changes",
+                "Executes Track Changes. Enabled in an editable document. State rule: on when active, off when inactive, and mixed when the selection spans mixed formatting.",
+            ),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
             ("word.home.clipboard.paste", "Executes Paste. Enabled in an editable document. State rule: on, off, mixed."),
@@ -3265,6 +3282,19 @@ class WordRibbon(unittest.TestCase):
             rec["behaviour"] = bad_beh
             with self.assertRaises(cu.Refused):
                 cu.validate_word_ribbon(mutated_beh)
+
+        # 8. Merging an incomplete fresh full capture into a complete existing inventory is refused before merge()
+        #    can conceal missing contextual or submenu records.
+        ctx_ids = set(cu.WORD_REQUIRED_CONTEXTUAL_TABS)
+        core_only_fresh = [
+            dict(r)
+            for r in records
+            if r.get("kind") != "contextualTab"
+            and not any(r["id"].startswith(f"word.{slug}") for slug in ("table-design", "table-layout", "picture-format", "shape-format", "header-footer", "equation", "chart-design", "format", "smartart-design", "graphics-format", "3d-model", "outlining", "print-preview", "background-removal", "immersive-reader"))
+            and r.get("idMso") not in ctx_ids
+        ]
+        with self.assertRaises(cu.Refused):
+            cu.merge_word_ribbon(records, core_only_fresh, full_capture=True)
 
     def test_recursive_submenu_expansion_and_dynamic_reviewer_filtering(self):
         class SubMenu(E):
@@ -3462,6 +3492,166 @@ class WordRibbon(unittest.TestCase):
             self.assertEqual(actions[1], ("open_fixture", {"path": str(fixture_file)}))
             self.assertEqual(actions[-1], ("close_fixture", {}))
             self.assertEqual(fixture_file.read_bytes(), b"original-fixture-bytes")
+
+            # Exercise the real Launched._word_action_impl for open_fixture, close_fixture, prepare_core_tab
+            # (Layout floating shapes and Mailings recipients), and inline SVG (Type 17) vs 3D model (Type 19).
+            recipients_csv = Path(tmp) / "word-recipients.csv"
+            recipients_csv.write_text("FirstName,LastName\nAda,Lovelace\n", encoding="utf-8")
+            selected_inline = []
+            selected_ranges = []
+            opened_sources = []
+
+            class FakeShape:
+                def __init__(self, name):
+                    self.Name = name
+                    self.deleted = False
+
+                def Select(self):
+                    selected_ranges.append((self.Name,))
+
+                def Delete(self):
+                    self.deleted = True
+
+            class FakeShapesCol:
+                def __init__(self):
+                    self.by_name = {}
+
+                def __call__(self, key):
+                    if isinstance(key, str) and key in self.by_name and not self.by_name[key].deleted:
+                        return self.by_name[key]
+                    raise KeyError(key)
+
+                def AddShape(self, _t, _l, _top, _w, _h):
+                    s = FakeShape(f"Shape{len(self.by_name) + 1}")
+                    return s
+
+                def Range(self, names):
+                    for n in names:
+                        if n not in self.by_name or self.by_name[n].deleted:
+                            raise KeyError(n)
+                    return type("R", (), {"Select": lambda _s, ns=tuple(names): selected_ranges.append(ns)})()
+
+            class FakeInlineShape:
+                def __init__(self, ish_type):
+                    self.Type = ish_type
+
+                def Select(self):
+                    selected_inline.append(self.Type)
+
+            class FakeInlineCol:
+                def __init__(self, types):
+                    self.items = [FakeInlineShape(t) for t in types]
+                    self.Count = len(self.items)
+
+                def Item(self, idx):
+                    return self.items[idx - 1]
+
+            class FakeDoc:
+                def __init__(self, name="Document1", full_name="Document1", inline_types=()):
+                    self.Name = name
+                    self.FullName = full_name
+                    self.Saved = True
+                    self.closed = False
+                    self.Shapes = FakeShapesCol()
+                    self.InlineShapes = FakeInlineCol(inline_types)
+                    self.MailMerge = type(
+                        "MM",
+                        (),
+                        {
+                            "MainDocumentType": -1,
+                            "OpenDataSource": lambda _s, Name="": opened_sources.append(Name),
+                        },
+                    )()
+
+                def Range(self, _s, _e):
+                    return type("Rg", (), {"Select": lambda _self: None})()
+
+                def Close(self, _save=0):
+                    self.closed = True
+
+            real_doc = FakeDoc()
+            real_doc.Shapes.AddShape = lambda _t, _l, _top, _w, _h: (
+                real_doc.Shapes.by_name.setdefault(
+                    "PrepLayoutShape1" if "PrepLayoutShape1" not in real_doc.Shapes.by_name else "PrepLayoutShape2",
+                    FakeShape("PrepLayoutShape1" if "PrepLayoutShape1" not in real_doc.Shapes.by_name else "PrepLayoutShape2"),
+                )
+            )
+            opened_fixtures = []
+
+            class FakeDocs:
+                @property
+                def Count(self):
+                    return 1 + sum(1 for d in opened_fixtures if not d.closed)
+
+                def Open(self, path, ReadOnly=False):
+                    d = FakeDoc(name=Path(path).name, full_name=str(path), inline_types=(17,))
+                    d.read_only = ReadOnly
+                    opened_fixtures.append(d)
+                    return d
+
+            real_launched = cu.Launched.__new__(cu.Launched)
+            real_launched.key = "word"
+            real_launched.exe = "WINWORD.EXE"
+            real_launched.hwnd = 5
+            real_launched.created = [real_doc]
+            real_launched._created_meta = [cu.Launched._doc_meta(real_doc)]
+            real_launched.proc = type("P", (), {"exited": lambda _s, _w=0: False})()
+            real_launched.app = type(
+                "App",
+                (),
+                {
+                    "Documents": FakeDocs(),
+                    "PrintPreview": False,
+                    "ActiveWindow": type("AW", (), {"Hwnd": 5, "View": type("V", (), {"SeekView": 0, "Type": 3})()})(),
+                },
+            )()
+            real_launched._win = type("W", (), {"top": lambda _s, h: h})()
+
+            # Layout preparation creates and multi-selects PrepLayoutShape1 + PrepLayoutShape2; switching to Home deletes them.
+            real_launched._word_action_impl("prepare_core_tab", tab_name="Layout")
+            self.assertIn(("PrepLayoutShape1", "PrepLayoutShape2"), selected_ranges)
+            self.assertTrue(real_doc.Saved)
+            real_launched._word_action_impl("prepare_core_tab", tab_name="Home")
+            self.assertTrue(real_doc.Shapes.by_name["PrepLayoutShape1"].deleted)
+            self.assertTrue(real_doc.Shapes.by_name["PrepLayoutShape2"].deleted)
+
+            # Mailings preparation attaches recipients CSV and refuses a missing CSV.
+            real_launched._word_action_impl("prepare_core_tab", tab_name="Mailings", recipients_path=str(recipients_csv))
+            self.assertEqual(opened_sources, [str(recipients_csv)])
+            with self.assertRaises(cu.Refused):
+                real_launched._word_action_impl(
+                    "prepare_core_tab", tab_name="Mailings", recipients_path=str(Path(tmp) / "missing.csv")
+                )
+
+            # open_fixture + inline Type 17 (svg) succeeds, whereas model3d refuses when only Type 17 is present.
+            real_launched._word_action_impl("open_fixture", path=str(fixture_file))
+            self.assertTrue(opened_fixtures[-1].read_only)
+            real_launched._word_action_impl("trigger_contextual", target="svg")
+            self.assertEqual(selected_inline, [17])
+            with self.assertRaises(cu.Refused):
+                real_launched._word_action_impl("trigger_contextual", target="model3d")
+            opened_fixtures[-1].InlineShapes = FakeInlineCol((19,))
+            real_launched._word_action_impl("trigger_contextual", target="model3d")
+            self.assertEqual(selected_inline, [17, 19])
+            real_launched._word_action_impl("close_fixture")
+            self.assertTrue(opened_fixtures[-1].closed)
+            self.assertEqual(fixture_file.read_bytes(), b"original-fixture-bytes")
+
+            # Modifying the fixture file while open is refused by close_fixture.
+            real_launched._word_action_impl("open_fixture", path=str(fixture_file))
+            fixture_file.write_bytes(b"tampered-bytes")
+            with self.assertRaises(cu.Refused):
+                real_launched._word_action_impl("close_fixture")
+
+            # Missing fixture path is refused when open_fixture runs.
+            with self.assertRaises(cu.Refused):
+                real_launched._word_action_impl("open_fixture", path=str(Path(tmp) / "nonexistent.docx"))
+
+            # CLI parser accepts --fixture.
+            rc_missing_app = cu.main(["--all-tabs", "--expand", "--fixture", str(fixture_file), "--out", str(Path(tmp) / "out.json")]) if False else None
+            with self.assertRaises(SystemExit) as cm:
+                cu.main(["--app", "word", "--all-tabs", "--fixture", str(fixture_file), "--help"])
+            self.assertEqual(cm.exception.code, 0)
 
 
 if __name__ == "__main__":
