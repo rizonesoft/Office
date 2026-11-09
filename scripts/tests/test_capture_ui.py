@@ -2518,31 +2518,31 @@ class ShellChrome(unittest.TestCase):
                         good_win, launched,
                     )
                 # Conversely, if an unrelated baseline element (such as a status bar indicator) is recreated with a
-                # new runtime_id at identical bounds during KeyTip dismissal while all KeyTip badges close, cleanup
-                # succeeds.
+                # new runtime_id at identical bounds during KeyTip activation or dismissal while all KeyTip badges
+                # close, cleanup succeeds and the reconstructed baseline element is not mistaken for a surface control.
                 rebuilt_base_root = make_shell_root(app_name="word")
-                status_lbl = E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
-                rebuilt_base_root.kids.append(status_lbl)
+                status_lbl = [E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))]
+                rebuilt_base_root.kids.append(status_lbl[0])
                 orig_base_kt = rebuilt_base_root.on_keytips
 
-                def _rebuilt_baseline_on_dismiss(active):
+                def _rebuilt_baseline_on_open_and_dismiss(active):
                     if active:
                         orig_base_kt(True)
                     else:
                         orig_base_kt(False)
-                        if status_lbl in rebuilt_base_root.kids:
-                            rebuilt_base_root.kids.remove(status_lbl)
-                        rebuilt_base_root.kids.append(
-                            E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
-                        )
+                    if status_lbl[0] in rebuilt_base_root.kids:
+                        rebuilt_base_root.kids.remove(status_lbl[0])
+                    status_lbl[0] = E("Button", "Page 1 of 1", "StatusBarPageNumber", rect=(8, 1054, 88, 1076))
+                    rebuilt_base_root.kids.append(status_lbl[0])
 
-                rebuilt_base_root.on_keytips = _rebuilt_baseline_on_dismiss
+                rebuilt_base_root.on_keytips = _rebuilt_baseline_on_open_and_dismiss
                 collected_rebuilt_base = cu._open_and_collect_shell_surface(
                     "keytips", None, rebuilt_base_root,
                     type("U", (), {"element": lambda self, h: E._wrap(rebuilt_base_root)})(),
                     good_win, launched,
                 )
                 self.assertGreaterEqual(len(collected_rebuilt_base), 5)
+                self.assertFalse(any(e.name == "Page 1 of 1" for e in collected_rebuilt_base))
 
                 # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
                 #    and on a complete Word window refreshes Word bounds while preserving Excel bounds and custom behaviour.

@@ -2751,17 +2751,14 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         _element_identity(el): _visible_rect_tuple(el)
         for el in before_nodes
     }
-    before_visible_sigs = {
-        (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
-        for el in before_nodes
-        for vrect in (_visible_rect_tuple(el),)
-        if vrect is not None
-    }
-    before_visible_keys = {
-        (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
-        for el in before_nodes
-        if _visible_rect_tuple(el) is not None
-    }
+    before_sig_counts = {}
+    before_visible_keys = set()
+    for el in before_nodes:
+        vrect = _visible_rect_tuple(el)
+        if vrect is not None:
+            sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+            before_sig_counts[sig] = before_sig_counts.get(sig, 0) + 1
+            before_visible_keys.add((getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", "")))
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2805,16 +2802,27 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     try:
         time.sleep(0.1)
         live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-        for el in [live_root] + list(descendants(live_root, 25)):
+        live_nodes = [live_root] + list(descendants(live_root, 25))
+        kept_sig_counts = {}
+        for el in live_nodes:
+            eid = _element_identity(el)
+            vrect = _visible_rect_tuple(el)
+            if vrect is not None and before_state.get(eid, _ABSENT) == vrect:
+                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
+        for el in live_nodes:
             eid = _element_identity(el)
             vrect = _visible_rect_tuple(el)
             prev_vrect = before_state.get(eid, _ABSENT)
             if vrect is not None and (prev_vrect is _ABSENT or vrect != prev_vrect):
+                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                if prev_vrect is _ABSENT and kept_sig_counts.get(sig, 0) < before_sig_counts.get(sig, 0):
+                    kept_sig_counts[sig] = kept_sig_counts.get(sig, 0) + 1
+                    continue
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
-                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
                 key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
-                if sig not in before_visible_sigs:
+                if sig not in before_sig_counts:
                     opened_only_sigs.add(sig)
                 if key not in before_visible_keys:
                     opened_only_keys.add(key)
@@ -2839,7 +2847,7 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                                 getattr(el, "automation_id", ""),
                                 getattr(el, "name", ""),
                             )
-                            if sig not in before_visible_sigs:
+                            if sig not in before_sig_counts:
                                 opened_only_sigs.add(sig)
                             if key not in before_visible_keys:
                                 opened_only_keys.add(key)
@@ -2869,16 +2877,30 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     for attempt in range(10):
         expand_closed = not can_expand or getattr(target, "expand_state", lambda: 0)() in (0, None)
         after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
+        after_nodes = [after_root] + list(descendants(after_root, 25))
+        after_sig_counts = {}
+        for el in after_nodes:
+            vrect = _visible_rect_tuple(el)
+            if vrect is not None:
+                sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                after_sig_counts[sig] = after_sig_counts.get(sig, 0) + 1
         still_open = False
-        for el in [after_root] + list(descendants(after_root, 25)):
+        for el in after_nodes:
             eid = _element_identity(el)
             cur_vrect = _visible_rect_tuple(el)
             if eid in opened_state:
                 prev_vrect, _open_vrect = opened_state[eid]
                 if prev_vrect is _ABSENT or prev_vrect is None:
                     if cur_vrect is not None:
-                        still_open = True
-                        break
+                        sig = (
+                            getattr(el, "control_type", ""),
+                            getattr(el, "automation_id", ""),
+                            getattr(el, "name", ""),
+                            cur_vrect,
+                        )
+                        if after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0):
+                            still_open = True
+                            break
                 elif cur_vrect != prev_vrect:
                     still_open = True
                     break
@@ -2894,7 +2916,9 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                     getattr(el, "automation_id", ""),
                     getattr(el, "name", ""),
                 )
-                if sig in opened_only_sigs or key in opened_only_keys:
+                if (
+                    sig in opened_only_sigs and after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0)
+                ) or key in opened_only_keys:
                     still_open = True
                     break
         tree_closed = not still_open
