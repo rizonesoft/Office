@@ -3249,6 +3249,9 @@ class WordRibbon(unittest.TestCase):
         self.assertIn("mixed state is not used", by_id["word.table-design.table-styles.table-styles"]["behaviour"])
         self.assertIn("mixed state is not used", by_id["word.header-footer.position.header-position-from-top"]["behaviour"])
         self.assertNotIn("mixed state is not used", by_id["word.layout.page-setup.margins"]["behaviour"])
+        self.assertIn("beginning of the document", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
+        self.assertIn("replaces the existing cover page", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
+        self.assertNotIn("at the active insertion point or selection", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
         self.assertFalse(hasattr(cu, "synthesize_word_behaviour"))
         less_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "Less"]
         more_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "More"]
@@ -3263,7 +3266,7 @@ class WordRibbon(unittest.TestCase):
         # 7. Removing behaviour, enablement preconditions, gallery expand descriptions, or on/off/mixed state rules,
         #    or fabricating a checked/mixed state rule on a non-toggle splitButton, or claiming mixed formatting
         #    states on binary toggles (Print Layout, Track Changes) or document-wide galleries (Themes), or describing
-        #    Less as incrementing is refused.
+        #    Less as incrementing, or claiming cover pages insert at the active insertion point is refused.
         for target_id, bad_beh in (
             ("word.table-design", "Table Design"),
             ("word.home.font.bold", "Toggles Bold on the selection. Enabled in an editable document."),
@@ -3287,6 +3290,10 @@ class WordRibbon(unittest.TestCase):
                 "word.layout.page-setup.margins",
                 "Displays the Margins gallery via dropdown expand button (PageMarginsGallery). Enabled in an editable document. State rule: highlights selected (on), off when custom, and mixed state is not used.",
             ),
+            (
+                "word.insert.pages.cover-page.austin",
+                "Inserts or applies the Austin item from Cover Page (Pages group on Insert) at the active insertion point or selection. Enabled in an editable document. State rule: unselected (off), highlighted (on), and mixed state is not used.",
+            ),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
             ("word.home.clipboard.paste", "Executes Paste. Enabled in an editable document. State rule: on, off, mixed."),
@@ -3298,8 +3305,9 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(cu.Refused):
                 cu.validate_word_ribbon(mutated_beh)
 
-        # 8. Deleting any required control (such as Italic or Cut) or group or menuItem, or merging an incomplete
-        #    fresh full capture into a complete existing inventory, is refused before merge() can restore stale records.
+        # 8. Deleting any required control (such as Italic or Cut), group, or menuItem leaf (such as Keep Text Only or
+        #    Austin cover page) is refused by both standalone validate_word_ribbon() and merge_word_ribbon() (both full
+        #    captures and single-tab captures) before merge() can restore stale records.
         for missing_id in ("word.home.font.italic", "word.home.clipboard.cut", "word.home.font"):
             missing_recs = [dict(r) for r in records if r["id"] != missing_id and not str(r.get("parent", "")).startswith(missing_id)]
             with self.assertRaises(cu.Refused):
@@ -3307,9 +3315,30 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(cu.Refused):
                 cu.merge_word_ribbon(records, missing_recs, full_capture=True)
 
-        missing_leaf = [dict(r) for r in records if r["id"] != "word.home.clipboard.paste.keep-text-only"]
-        with self.assertRaises(cu.Refused):
-            cu.merge_word_ribbon(records, missing_leaf, full_capture=True)
+        for leaf_id in ("word.home.clipboard.paste.keep-text-only", "word.insert.pages.cover-page.austin"):
+            missing_leaf = [dict(r) for r in records if r["id"] != leaf_id]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(missing_leaf)
+            with self.assertRaises(cu.Refused):
+                cu.merge_word_ribbon(records, missing_leaf, full_capture=True)
+
+        # Single-tab capture (`--tab Home --merge` -> full_capture=False) preserves behaviour when complete, and
+        # refuses missing controls or menu leaves within the requested tab before merging.
+        fresh_home = [
+            {k: v for k, v in r.items() if k != "behaviour"}
+            for r in records
+            if r["id"] == "word.home" or r["id"].startswith("word.home.")
+        ]
+        merged_home = cu.merge_word_ribbon(records, fresh_home, full_capture=False)
+        self.assertEqual(len(merged_home), len(records))
+        for missing_home_id in ("word.home.font.italic", "word.home.clipboard.paste.keep-text-only", "word.home.font"):
+            incomplete_home = [
+                r for r in fresh_home if r["id"] != missing_home_id and not str(r.get("parent", "")).startswith(missing_home_id)
+            ]
+            with self.assertRaises(cu.Refused):
+                cu.validate_word_ribbon(incomplete_home, require_behaviour=False, full_capture=False)
+            with self.assertRaises(cu.Refused):
+                cu.merge_word_ribbon(records, incomplete_home, full_capture=False)
 
         ctx_ids = set(cu.WORD_REQUIRED_CONTEXTUAL_TABS)
         core_only_fresh = [

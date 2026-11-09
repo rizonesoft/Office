@@ -30,11 +30,13 @@ Exit 0 written; 1 when a capture step fails (a menu that will not close, an unkn
 --merge); 2 when the app cannot be launched safely or the requested layout does not exist in this build.
 """
 import argparse
+import base64
 import json
 from pathlib import Path
 import re
 import sys
 import time
+import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
@@ -4607,6 +4609,8 @@ WORD_DOCUMENT_GALLERY_IDS = frozenset({
 WORD_SINGLE_CONTAINER_GALLERY_IDS = frozenset({
     "word.insert.text.drop-cap",
     "word.table-design.table-styles.table-styles",
+    "word.table-design.borders.border-styles",
+    "word.table-design.borders.pen-color",
     "word.picture-format.adjust.corrections",
     "word.picture-format.adjust.color",
     "word.picture-format.adjust.artistic-effects",
@@ -4655,11 +4659,14 @@ WORD_NO_MIXED_GALLERY_IDS = (
     | WORD_DOCUMENT_GALLERY_IDS
     | WORD_SINGLE_CONTAINER_GALLERY_IDS
     | frozenset({
+        "word.home.clipboard.paste",
         "word.draw.drawing-tools.drawing-tools",
         "word.insert.header-footer.page-number",
         "word.header-footer.header-footer.page-number",
+        "word.header-footer.insert.document-info",
         "word.insert.symbols.equation",
         "word.developer.controls.legacy-tools",
+        "word.shape-format.insert-shapes.edit-shape",
     })
 )
 
@@ -5984,7 +5991,325 @@ def reconcile_word_unverified(records, unverified):
     return records, remaining_unverified
 
 
-def validate_word_ribbon(records, *, require_behaviour=True):
+_WORD_REQUIRED_MENU_CHILDREN_B85 = (
+    'c-rlK>2l*Z(%`%F@21u|eAK?m#`lAgD2roB)R2^q-q?5Fyl@f#DN9w|Q-cVHMF5Eekhl|h{NF!5nsz%|Zi{2Htq%'
+    'I5c(1FEZbtwA_}~BMk8QOpFNdC@|M>HdL$&MSr*F>ie_d|g;HRx$_ZYcu`o1~BN4aj^t76wSCyK5P&4&(gn&jjp3'
+    '0S!bh0>0bq74EMilQ7KC!lLdWl9nUIO%`>^hi=}|8?nl9VT-0`?@Q()qB0EAbZz0P^JNhp=hhF>NOnV@nZh;B8u{'
+    '~ExP)zDuA+W%hPK$D-ZSS2~p99ZYu>g)v2#q9n^H95ceH_AM5S*Q0buV!EN33ZN0wqRk3f{`Y)h=c{qHzDeqO=*B'
+    'gmfxQlc7TG`=a*}m2%9n)2ZYSUNSqFMh7J~~LabX7r#N2qr3da1V+M&pPpUfX(ms81Au-;lrW>(gr&C(OEq^kUbv'
+    'A7#5m0=W@?N*Jo9M<_+qCmCqXuIQ`JK3>9W+g#3wnLnTfC;p1&I5%D0*A4X-l!GlQKI(qY1^xMlO2<k-|4?r-K=<'
+    '!U*;WKse6;2H3{?$e;2ys!3yq4&Ie4U8S24+RW!)s#b=BjMdtLP;&z04aT;tU{HV}CzznTjSsWWCz4BD=O36Cq78'
+    'nkZ2pB#oUD~ly3SNj@clY<p&#2}He$JNJ0U6zS{4}<x2&&xcmM0#DYOZ@YX!HoIyk7`>p5sGtDpJ;j?arLze+|{3'
+    'jrYQW$iV>n0HncBFTyl9E;&k2G&Ax1VNbF$skN`t;u=H*Vj)4^iR~A|;KWQZ?KVcQ`>;6C?hN2)YaAjWtk~Oa966'
+    '(t}B~@+Pw9o^sT8-4obf{jTKk!2$`WC_%z{TNQY@3f0=lf2@XH;vb{kg4SHT|-dWE`6ksa9h}Nou1%?yfA>Q0ZHx'
+    'Q{LO^VD}Bw;nWaGc}J%->_3{oxTQcX0F|o49g4RHgDGBbul1>e&8pzOm%zI05C##NG{S>hB@SMxp22;GI`R-TRiy'
+    'dG!?Jj*zHm&Q8ZW}sf^y$h3u|teT68_E9<Y8Dl#0WpYLR$6;dLsWr%Ku$rBVjjZIv=})Ed9X@?U^FIEp#R8p}GNK'
+    '1K6Tl0W`c$+y*C))hlgb&}&VoI1p+)tOgN?&F)vHOrSN8iOVFVfA^2m{VU<YdIQESJkHMcyPbtajFE8SPQ#Gc}>m'
+    '!eW~$G&uczZMRtcdmdl?D^SLyiEA#niKA+6zv-x~6pFhm!{K5L3r|R1EU$8)80CwAA(;OO}0`#@J9AJApz?rq8S`'
+    'Q)@p~z(@az&IpH5=HSk1$&{4&rdiBAT*{ro_v6jHWzAQ=X$KFVU1A@s>Wslj2mE$H_2XPUu=5g&d%x8GaGf`D>xS'
+    'milX@zaI71lm2?vUoZOWhyJ2g%BLx1Zi<<ka^|aW18`ZN(P0d~u+}E<r}@SMZS}c<8>qsf@;93cUB_Tz1Ih5pH8W'
+    '$o+3olO%pb+#VZMZai-jHa@Qm>fbW|$8I#?Vr$NF%A(_q;i<y%G7wfcH(tLj9#tl#3Rg3S{-5Z*`8&@mSac0UR@5'
+    'zxJQYd}oYd)>eYpj)Q%!Sy%-fl4g<T%Kv8hn4={mx?y6Lw$xDa8(kcqdUVL7H2Em@|z>v*VO_rft=NDM;G8AJq_`'
+    '?%Nma{U2~|n9Wh-_TWCPF<vsM+z;0f=9?FgmrAQG;dTlRA20V0M=zI@n^$u^|3K&oK-M-usHR1F^WH{D`Hw^(7eI'
+    '`y@?eN;pTQneSVV^L0q13MXn$qT7bFy1p?5lFimvewC&wT?Y{kl8D!V7nf?UxlF7;J8C7+*D9<l%mU7c-Mv;seC>'
+    '^B)1M4CYk0g9U~%lz{2rwT_~!R<*o=ZkiU4fG%o|voKQx)dY`BrC$?{v}-~!)am8v4ffsQwE^DM#?9y_;<&#YEj&'
+    'KJx@q3z0DOV7PY9=%X4T0_!14EiamBHB5twL`SH}?vxT8jUk796m0wrMi$Ep8XHNcH3ttNDvebXFNyQE7^UhcKNK'
+    '2}|E0)7;3ASVlwN81L@GjN#g9n3-i*lJ+Q!NWKF>%Y#G)AAM=h##<!(e>LY#2O$9d9*tKqJb%kr_gPAGWA{`kSD4'
+    'TDLUX;Y<=16tNuu9MtwLGU3u!5yl$dd*m&wrnB!+C23GttFh<Vh26-Wdjm*~&7lLk7%@MwOiwV)3Y4LBX1KfV;3e'
+    '{Zr7S2^FhQ&;%8*iGp(qWwhfELvb$O*^a*U}1i_3_M`76&17-R)_gLb`tJYdAt|%5x1j0wB@WPr+4`M!Fq)x*XS4'
+    'I{?O-)6zzRtGjU5%gt7C7I1NdcECdXUg<bpO9|>)!p#J(C=ehn4=mP%2n&)QTnd-wo3<Of9?X*lrc=MKGzZ3z5Rk'
+    '$lAGtFn4O^2kp(g<4u}U8%3WC8k3<gP01Nd;L+ArFz`U*N9X~cUHvXa&fTqfIwu0k-)%M;PQt$Nt^WS@rJd&Ae`?'
+    'yUDx>0sJifq_8G>P_8lE_F{=_hZ?;5$F3IF7$kzZ<{l3j4&gqic&Q`ahG_idgqY^jikQ7TAX1I@8w(pm4}hdpBq}'
+    '*ftb{k4%Q1q`CgvkV%fK4eGqOqbx#BHmsb(Hdye!<a)jL;1_S3`x6Ma~^R_L7*wSH}OWR^^FnPVcLS`H>8IhxX+H'
+    '#l<HP}~sn4P%VL9IIA(w&I)&jZ-xp`$U6ZQ_a2b&b|ZJP6u=3!-oPR?xwZfOS+~!2(upa0(CxIn_yw2IJGA#NwcZ'
+    'wfEnbrtUN-9>vcG*w!TcsLzxV@f2)Bf#`uR{OC1?mwZfkh__2+rYYsOP-FP<5NxbYe|Z?T+f59Rzy%mm!%cSx<0i'
+    'Q@a?|4Enn&rid>p6O;xR?9=f^a?o>KIB8l%_K2)&--^m<Cr>nTmIMU-BP3G{kQj<3g&@wH0PYc)o%)d;;-aeA#1^'
+    'jf9qwT#khK7n4($?>&_j4!*Zd~yv2u1769JwPlw*`<}8;*rWuN-SIt(UohQP(P9bYyOZV)Z;^(P>&C3LOnht3HA6'
+    '8Bh=$Vlu)Kj%>c0Z1)8IvXyWo8<U(n96*gtCHkX#qUvRSJjZ#>i!V16#FF0YV>;A}o`vIFb9Fp2M<{_STc;-M}tM'
+    'Cu42-*Xi0&W#h)cK15>@cOb<&O7H{vsw)i3dhzVDaaIcp30$H&-7Rb7^1I<}05I)ihnpj*lI3bb|u{zj?_S-82S?'
+    '&JTfB6rDy`AOO#AaFWrfg*xj^CD&|1y?~<s>vm*tSD8UqGfp}TA!*8YIH%DgjH&TENS6TrXhsL7=Fp7`4g~Vxon-'
+    'R`#A)~qig<VH=93;SE12B!-5l4Ae5*rgw@1O7x;ku$SHsWJd}_p#I44;nvMoR8AB#s|;qWv-PbV}H@bD)q02Try>'
+    '+z(^iR<>#?d2Q(Z|KlU%Lc|dMPLhNd=;>$Z#^}f;O!d4axMp&s4$Q4QA3CIyOE0cz=t-S3Rj*3y}t+}57r6^9Y7S'
+    'NQh|3ot~)XCa)0<Dxsc1@pkAe|^Y4U4<l}NaF6ZNNJ}&3uay~BS<MKU^%N0ne;VBUhMzD2vC_*6L#LQJpt#jM#st'
+    '%KxgDTNldI1jy9t=iF`k*v;>bq?4{S3}RL?$|dNot`}LBflq-$Dt<wvMNRFzq>&zAqyQbodJ=m75E300T)dg5M)a'
+    '>$Zv|_4Q#J%f&Jw(T1Z;RuqO3TYdrvB*PR-rqkIO53Bg}4bKNKc1bd9GBk;QhoMon21PG{xlM=B1Y#1(nFvb)sw_'
+    'J?36{}9h0hJ7O{>HNXt*c9Logm+FNczaGl6ZqsrC(YbUP(a^;ycZL#$t8ozA@)OMQn~4;<?<GP2hju5Ge}&*BqMe'
+    '7TURsf}aot%}WU;LyXw-^0DB3zsJXz=9<L1S=8TE@(7IAYgqxjA7Xw8kCF^80hN5Zmis@KH#X=c|e?n?yc>qYP(n'
+    '`ur!;Jb&XH&36R#nf(h4u;Fi;WG&~j3b&qA`36#!T)7AhZHVr22NCRowvAlPM&o_P3CZH=Hc1o9jI}6fetX4#BJ('
+    'N*4n6IO;wPYf!-HW3r$Kf=(Y7(+)43$HzQIu1m3AHm7M^R6OCe+@X9YsDJp3vKqb`<wSU_u;N6h`r1m&Yz<Ds?7<'
+    '!@E1oTbxXAu-w*41tAW(hcoXeEU>HKPQmI<;}9s3H@e}-=3D5bOGgKrGMZxz!Y4;$8gH5k*_buIPEUlyN_o3eYCG'
+    'NG@k+FvV$H>)gaQi_<*oV{1ya(-X-vcsOv8ZG5FQkY?PsjRL5rh0fW)K#nutga=tSbu3%m+OpdH+4yfp(Y(p_*lC'
+    'A$ER02(IT;${L+k9R^8>=;7@!r`M}lYlnOv@&V??<TcWflg|%0=}*m6Dgo8eGTwbitIsZq+Npu%4P~tEa*vevEZ+'
+    '+&P3|i4Y(5i+EH^Itpd5O8cSExE?nR>gXUUV21}e)*{+T+3&rAdWMSd!W^%35!eHUG&XN^Nr1C-fP#^2~g~EnZn^'
+    '-D`96Zt$@PNka5zH{9I>Ks7SH}YyuTC(-l<MHSSaWGd>f=L=S16ogN{zZpi=u`jHS(dxYZT5grAF@!@NUN{<N=M>'
+    'CzxT<fUbcn+lu(X=LDFqahT-P=J#2A5T^@q<S=tN9?Qh~qmrj|lmiN?7u^PiHwe96pbGMR1p?qM!by!XTv^~~PT*'
+    'm0FPn7Yc!M3l>znJAGqK87Hx-0gQjOKgQ<jDs8|;@gx$0Lp`f`d6Xi6GytOa&`L+vsqRrTry;_3q@isYHYKup`7U'
+    'Fhpu9VqddW?W5!L-R^Jj~K7dq>s1XhrPb_gVLr~|JyAuNuE9pFum;>`1_4F<z3N)tDA4ueY(rPp#=>v+XJddaK?T'
+    'c%R|y=HF19q#a~t1pwQCj?x&bW%qv1J7nt&>qpuNa;YvRA@YGiz$(<aDL9_z8MK*Fs0bQkje`I=sDntLJ>?w?cpP'
+    'CeGye~*i=5mZAf+34&;;Dom=mK4lMA>ONN->it3EkP&pAizyKNmtb0Sgwl_?%CGntv`QKrJWXT1>3hv=SGSpr+tD'
+    'ikSv@e~)oaVN8vHXx?=k1oVktQQRN_f+S+uUR`G%*f_(l%>#lgCtOu_rex4EI&^VbU0ZZC&viv}7cGi4{u4BlSm5'
+    'D&>32LQ)3!qK-uhI=IN^~ZroViGVj}WPu4vUD$0UCH$o&WfYfijdL>fvPNdf>Qh`LldP%#a_C7}7LFH|Ii6*qqDJ'
+    '653nh&uY~uN1Fbq5S3I8#ZV{fMkGnlCX&ku4^hiHA|$BX-$}#<y!d`2X-3XYuX#ik|^bi1>#dLG_J^eXg0PWX}^h'
+    'bBSlsO)Knv@j%4SxbX%cVT~g`<F^vOnE^A=fCQ2nb?b+-kNYlf46o5d|9j&D(ChTZ6AXh07TV6EQDwrf0ADg4>9e'
+    'sk29dXx_lE*R8khuc>(*pj|Ee)@LN{^b?N_fOOf?`JzN1Q_TrD|&KHYdOGs7f)U`4?!3fL@2e$q{5Gla$<H>)AVn'
+    '5&(B5RXvbcpJ+w@3M38p1dc}~rQizA$)JkSHgF^c4V*&=EeyvV*v>FfI2KKz4xvzEyGx`4Qx<m3I#|Ios%y7B$%u'
+    'yQ2-bj51fV<x>$lk_0br)0c2P3_2#iLL_wNKPZ8RgGJT|ef$ND7Md50qynlXER3GraU1y_<FJf9*rF?6WFULHbyg'
+    'jOTOwqu|J<-y(IH4nkmavK>Uux<txYgMsJ3(IaKb;!U|lO@9Uk_khHPByPFXp(I`Z!p+t_3z>-Fx)|2<+QKrJ^=('
+    'r^{$T0@=Y5f_6aoK%0N6UcqFa@HYmDi^0q;{C%7PdvaN~%O}LX`dkGE#QbX&|4#lxT+Zw^SvXetbsHe`+B<pk%q8'
+    'Xa?j3xS~n^^PFa$aP?jm^-=dKwwR<>9;!^$iGAhN53fU>F4l$RP+{oxA!F9?G0jyrTh{;IIJ#^kpnQk?(j3QLGMi'
+    ';6AjZ0HuO$?8_kHeF!t{-yw2?jjgus-ps32fb^hXh>~b=2z|SRn==?3tHWb~c^AekWeWPDEI#X7c><V5_H=MC?Y0'
+    'Y#u+XqT>y$g(VDXR{JQ+q#DKqPc;vZOW^+NOSea}+O`~|$Xw@M#!$f}T*k)>HlhEbs-QBW9d4QaE(bcpKMWE2{2`'
+    '5IP}Rb*9=%nQR-i)};eF>E+U3Dd!dhIxKu^O<04iCDjMS|;WqZY4ETw}YWWYxwyKw(D2O0(-W}8#<Er<<|jsb%mB'
+    'pIMuI)H!~l^Xf<wC_lOqvP(NGuh_9X<A<AsL7_F534HT$~jcPdu?9~b_U(2p~6Gl8%ka`zw)fH_?HzC~BEvo;vD8'
+    '^2&2Dc)7Eia(HRGw_XfSVAa$#AIJ=8X;E-v?<60z&ubk8%yx&B)<E$tq+wVbcx_YV;6Me%z;X0TIq;WgEA<4_3T{'
+    'z((+esO6w~J7$rCEkL)wzDM_Hgzly6UTAUWxffN{E6`0yXuH6{qpEc)LNE*VCEJ9(ir<J6Um$6Rq0c+w169+$zDK'
+    'j=fl+OP^f;()Ynz+rIb5;O*5SP;CYW+Kq3eQo=6BpS97|Mi;&mJZ%0XL+7Ik96o%c6WK%GWPl+h#c{hMhjf@}se*'
+    '0a4CuLz{w5#y!=4hr0(@3xr%FR4N!I1n`Fu^TsWxM<n3v$u6k4~Brdd(};ZI?-q|s8<;AtJ`{+RXf!&`}TGCqsO~'
+    '}n&PP1T=(}yZ5EN6S358U3f+y?jahsB<}TuMzrHctHoCz$Q~i$2@;i<o>&CIXFFIrNTrBW_0}G&T+ruB><>>4y%k'
+    'z~rjaqkipf#=7QR7(C&}3Iz+0~ZqUS!&+p}Q(EBlt@SCA%&XLk*^g9WcUdk1rH<oWoFs)cyCHRl1u?uxZ8p)_%g$'
+    'Bmm=h=PKsygP)$rI1R4Em!1g2hJwhh%{-7CG|A=z4NbHK(F{zs`A|U<Za$E2(#=mFn0QkFWQ`}%TuMu}l_25`H3*'
+    '`uB#>ki2_n`$N*pwfjTFsw>r;(Q!Uh|k%rPX!cmV_AB(nsGmCWH2F9|##rg$h}i%mZD+{7TcT#zAs0w@LqabbcKa'
+    '6$YgyQzaVB7+op%#l|5$-#E|K*N>>(G1$^Lj_yw1NrUs(+4fai!=Cyi8R<t4Yt>V88$bBWYAg<DA-sJ#&4^aJZLK'
+    'MbXYdiZ>OCUY@`h^Y~djL(Eg?c5p0_c;5W=pOSWoc`$~b1wt9S98%3X_%B1Zsl_5p7(QUA+fMpyRAE<I583T|3gM'
+    'UeQ-vZz`a?d1SGDE;dU=rRn8khw2tOz==(Tz0$Hb%JAb~=VOMY54iGy$9-R$}XP0blWfhg9Cvq;lcLXyrmDi4{Pc'
+    'qLvFjMlKgRK`$3DPOuwK_A@-z>(f0uP?0k~y7ojH+1+=_;DF`Yjd6(s9+Cobe5t*%EOOVt-4gw_u@jniatH%PKJ^'
+    '{)=DN%rY{u4h-H~_$h!luvrH_*n%lBa7$CyaG?|D&jSC{;#{Xs5(=Ze{8#V8h=6~%lu9kCeXS`2e7Bp32i(Y+5o$'
+    'ti}E9Ve*lD22<8Q)1zEoRThg^0G&&LLH!pqZa`1VwDweWRwMJWG9De2lMNM%K6wwV2u-*f|qj`hI`BgYSxGP-)NR'
+    'r*j-+frmVzS44z@E0=9?Kl?;x=AmyQN`MV{{@Y)Snp}Z7sKrN|bUrE&8>UE3ek;+8YVaYcBrDwm(@Q6dQn%b}7o}'
+    '3f2zeG0at21E(@76Aw=B8QXrty(kAHyY_whTIEIdJac%|MGFGH2Cfz@-m3Sg;vx<-^%aHG@3*Ac5kZ6wJ%SM!rmG'
+    '<jd4XzD#W7%XlMSCNy$BpV&$bm~5ttF4ayAIo41Om}senNj7zAht4PU=zMaQ&ZqY2d_t$rM|zcAcq61XN=>1=t_Q'
+    'P0DcNI0_85^pMr4l>*<(cZ7?C|j3_V8JZX#~pg5_dv4&@v{TcLa|%;(a4uFU77`Ft{;&*t;ReEzVCc(A^$^5%<s-'
+    '#aW`gJ~$e-xekbE`cB{$1mw*P(GYQUa`VS1B@$m_}lF|xoEj~2LL|y0l=V)m$5Ql#>yA~SZR0b0^$1@@^fkaecFi'
+    '~KpA!jMtXU)1e1haVCROfqug}K0k><^{SL;s$qJ!FxzM^k683=ICOMG<pb#tMaz3LT#gK=>2~&AHVxwt@h7%MT?!'
+    'G$?2gB(zLqcv|@U>94YWOx^^9KW9rJGoT_4b+~<27GJ@>L{XMe<c7Uq$j&Bwt0s&g*EOluHRcR%%}1xh69$)@!Et'
+    '!o|p&_T`yINQZ~Q!Y{5cw7RyIZAJ-E_cWzI`K>OLQQnXm@32Nv`HoaByOHve*oTcu5&Wuf0@O!DNwo2s@?GS*K|W'
+    '?(bGvx7wqqSs1(cq{BH47Ct@H0xqKX`!CaV)3BP;>ONIOWhNMM&@s$mh>25?LAiR`9C$`~cI4SYGLvJQxCl+x9hz'
+    'VQe<Qxgs!;mh+^OLjBB)xmp-AD~K7<9*`;UU*MvL;%0ZPR<sTZVzli5b~ktv68O8HTbvQ!LuWIw(i()Ew4dPsWq('
+    '%yg=*Vy2YWOgU~Rrl0>UV_0gSMKDxKn<_nAkfW0g%j0$Zxd$F_9@dGPr+Vgq@@48)gsSI!pwif+3TBN`jN{6!9>*'
+    'fN_xAbV*kk|E(@^GTp(58GdF0wzGW~+KYD0f2#C@GD6jmX!Ce2vK0h<uI6*NA+L2wo$M=p*gDj>-j|K|U(Qi3B^q'
+    ';PiP*xVn91*)Y0wpPmUqR5AnKPFpPv#cruZ>y85mDnAkfHojg9iPqnK8ipl~6}U)I_2!Ceq8Mf>INE(DD(#>*_Iy'
+    'r5b585Ec|^KX>C!h)_8cE9h*b;Y_RIouI!1nU(xTAdOa57z#3%mwUNylb`kv+xg-D$dxXwyCPJgqAT(z~l05|WXx'
+    'M)DoOTa<-2`;)*4czsu13}8Lj3Ah9%zr0<Y$VWsx@M?Oh~ZEkw`!6jiZzrzsG0!+k=70^N_Do?47skD2=uiJ7O=p'
+    'YQ(GQcr{G-u)zH)d<j3a30-$KEkpzABVA@}OomFJBQD0kd!X{sh`BpY8wLLNL5J9S+u!gpHPoYs>9xL_wr2+>T08'
+    '|-nDXOAVjFO!Miv<6s)oAkt<BZ*Yqq$3mP$ZB^bYbJkT0NdZN|BxdbhqYD;Vc*+FCW|u9T2o@7J#==uK7YF`AOE*'
+    '&Edh?VO|luI!L6`1c@7Fb!y9$^znfOMqG%zSZf3b!hQALQW&iPpbo2RBT~gWwk1`hW5!ZNTIMSqxG-KMwT_f3!RP'
+    '{8a@hay2v&jR+4Th%%feneA}Oq}JDf!>xGXOH9`%KL6}y27ZS7i%#)Jf^7ri*;$~TZ?^p#~VXZP>}YzY`2djixXq'
+    'uUWO?G`UA1QISQ1Zh$^iI&DGZ5#s+S0R?mbomY)vTqF=j%-7V@lm!QtO7wR%^|DIWY$dEgvL73iU&&da?ZjutTws'
+    '?W^;~ovI2{BFqqMvUU#ey)fbv{ro|A}$6g)8PUIT9InYt&LKSOx2Fd^g-`pRtZ?<G`4IJWhPFx9s^z8{%B}1vOSl'
+    '43C#fmJ+tf`H+BDV*~<_RDnLxa3X!x58Cm=>~Ta}josi6qhnQ^ctSn-z6xK>p$VsvgS|nrW_2=Sv?-V2hc4F5u^!'
+    '$eNE6i>eu@q#sG%u-O8uPGI{8m&~5GDwBXti?GxFWsD<PrFd9jh?KpTziHjZz+D8*$+-<gdroe)o>a94y$7am%P$'
+    'ua#;LeC#7P2%xI;a6EMHF*TI&QuFmEo#8mCh#FB%HsQo(fDq3JAnmClKruS_hk3){jEKYHOOFZ}F<U%apqJ}?mrK'
+    'f*`3@awR&vfxP^#fK~f6*o#YTZxn%7}ujfmSL*oh7&&w4BJYF#5i_3K1$N>k(H1_(@xt6!b2u#G{Vy1qkFIj#}`@'
+    '&EUdg21`A5iN7QYNd_865tA0okRwUxRqGH1J1qqla#WY_>kA`Vn!%r3ED!!%F2UWRIrC%fUA82Tluq17tP+f?qK8'
+    'h{^601FHGQ>Jr)ndSBQ2?ZMB!WdTpnKsDYe7W&=w7(p{s@m?8&z@?hZ#=_O?{#ZDv#rD&0eCerL&n-)eLH9ic&eE'
+    'zr6}sRWqw<{zFtXQ={}hT30jGu&k_^l{K@n=6{*8=GcOewKcPBLzZpGvJF|bA<H&o*@mB^t(n?`vnJ!O(PT{ZK~`'
+    'n_?^9(=jR(W?GD8A|m*q!sn2a~H3!pyPrldRW4kcK@JP;jH`T5D56IDPz5|H6}B(w?v`#^$J2{4v@76AqwQn@9hD'
+    '=1-IPkLRDa_Q5`$I<kqV{HhP(Ry3pNBu#pk%j<Ay7HC<uZ8j@ahAV<%8O7COiPtK2o(cNDniV_+pvx`?_FsPeF`X'
+    'j4g99|(3g68K}HWp^QY>^68wp%3@Sir-ye!eWz`aRNk?>-mv3eHR+evN`Bs*1W%*W?CC-1U;%aP@&YG*gR&(`Rs+'
+    '7^r%es`mNS89y17pgR`IwuJx%rrzkGc7nn~%Bqn0viqr6@n%yg~oNwJ1|H|2q^Jvv<~@ch;ZnhV@#1tJ$$?cC4Ck'
+    'tonC)Q2kl1QvaKLqRvoE7k33#ALk!zE)9is^C@fx`O&JQwr=P^cYLT`9@MJVYGOroShJR@8{;Xex~jFp1VSx;Y>L'
+    ')+HW5bYpLGQ34G$ZF<8a-wsvr+j74kKv6cy-_YZ|ynHJ4J6CLUPUsMjyMi>y<>RWoYgOf5gi55<A0v4~BVV2ZpqY'
+    'i)3ytgU7EQBl|dE_xYX45p$NC6ke2VLCF`NHmaP^1TsT&5Cd)DyN#M%3(8)tpR1i)}mpBQ#K1cuxzy;TP?^|3$oR'
+    'MY_%X;Eyz|2{vN9Z>;XR8Ex6KdLEQ7L@p?Pr6nv5+@Nwtg(;R+Ja`HXq*n8BOchnp8xC`nLzta<(O^<t+PP&y&`;'
+    'ykY@wv<Bjx;t28*F?s$B-D~1q_Ij%n~G4GKWvRB=FGf`(@o9l-CxYdTwHnTrS9vJ^>U1g19h23b-JClik!o8<kpo'
+    'q?LYhu$?~8u%$sXgSPrm!PfdfetZ4&L5uOk0_?6xgT2&Xdp($8b3;f5t@VI{jrCyswtC5frjl$voSo<>?6%WR3O3'
+    'RP7`AYbeJJ)}K?K`o1NaTI(~_+k*}hVsqpcp_)<)4MsWNH1OJzt=ZFC##s$(4+ABFRB>O%(JnUnDT!}B<D?<G2!A'
+    '@DSvgm>Snlc3(?wF4X7SQB7lgiCFwV`x((8`(q?zzJd{woVt&HS!cEl?yjUD;GLRtN`K^wML9mty0hldinOUVg#F'
+    'dgrAkH^uovZeqS9GnD!;vC6PHU=}4%Ponii&HhpCIu8Y_~np|kMag=Qw{bCzOsnPf!VasUDp?tPklx-Gen?=8&&7'
+    '!f1pKTLm^?<A%kktdSdO%hW$m#*N*(OTuwQ@@~$83(EJx@Lt=5uL2SLXB4d_I}aXY=`DK7Uw6JXqgWdGp1$uMF9m'
+    '&+lu^C)w|Yi(~p;j^?D(@u<JemwHS`04v?Z8mw1TDQUeWpH=f&HJ?@USv8+k^I0`pY`NWHOVm+%w#@QNEwfA|s@4'
+    'P%vO3{0!iw@mn6!gLiv)HlrWzK3Z2-3<pU7@Xq>NEQ+rXeSu(*QQB7c-HgcF?;+2GBc4c;W&=;j+hz5(PLK)wOw8'
+    '$iAR<Qu?!jM<2m<Q2Q{Kg4=Xs)m1ym7477Gkf~Xo<9HSo<4u2OV8{)Fbm>kLA?J;LA>lGF!MGtZzJ<IGH)aEHZpJ'
+    'HCrjdGcYwdn9boqR_unchn7yjyQ*1uP=2L7w#pY9NKE?jsGJ4s4+JAuiwCpGC*NKf~hiLhPnop?tgqlyN`GlHJsD'
+    'GnFwEqClXa67<XE1ip`+CzA+1FXn*IA4{cXxUgD`?dFSuA6AgO=T(*=+RKIQgai&|;Oin`5+C0l&3}G{4c{;{e;t'
+    'KZT@{ue5!QNZ#vBrI;4r9RbcZH8@kCRgmJ~dWz)fnoGMevGs=Q!u%2F_;rJQ6RU&{%O<D8Khd1$wROnWJ+pPsUuN'
+    'C&>cROBH}-jTd$P!J7CFu$$G@G(@we82EP$LD<C!s@8RMBTo*CnrG5%cv<g2&d|0K(xS2r%pTHj07`fAc=$?M-y^'
+    '7{H=@T*O>POf3L;F_-(`HGRR82O5kuNe7?alLf-)f;ZMnV9$7yyxaUH}AQ5&&_-8Pmy=Mb}#<hrC+bE@ZT#78?Bz'
+    'Ps>t0uw~k7_dv$Y;i9lJWl__wGiEzt_aI1-Mj}zgZg08<)Uc@Ij8lT`{e1co?3C_eP_z|DrYh9WwKV!|F1h$w4ww'
+    'wmGng;eb4eV(MX1l15PKy+fH7h27EvA7jr-7}efjv$Gdy1|vUHumbX@W*2t|atJvRr4Bb0veaD9c40+oDC0GBG|$'
+    'Km9n?nUj~+&^axROI|(c|06AqkMzBu?<Fy3`9H$UpXe0_eqaM1FVt-SN)<yLlth~TX0fztE2^@%%Qf#LKWsp{nts'
+    'F;LwBly^SyN-ND7@11k<$wZ3@Un0t{<iGnDwna43&kHOUdh8cH8j%>aS;Xtx19hOPh^QcXFQUo;Ug=s-6DSpLuzM'
+    ';?ji>aT`&bwGY>PAqH*V%e`GOuMf>_19TNHXHS|tv2ebG2c*1Ut=xnc0<K(K-harYT+O($U}Aq6{ysUlnNa52-Yn'
+    '{%?^rD@`~p}`ENQ5ZN6Z_Z0R*+b6L9sg@ho9E@UX$Xq!+->7`JB#5(y?ByJ6mmk%6tI3RHJ*#_Wklxx;Hmi#1F>g'
+    'MoZ?eON(zAGVAKhkM}#0|4LwPi~B_)bl~*$-l^5g-Wn)q6`}RIWiWb8af7TCwEH#gC+h`jJ4)AY2$Pl3GVfm0)yT'
+    '4kh+KELqiNU#u_dHLeoY+7U@%nfl=@a=~SB>Gvqo->cXSRA_70TJ|^zQZIUO+vc*SQ8`R9Dh0Cguc<`?YzY`2dji'
+    'xXpU?<GE7K=jSO_FsRtVChauO|#Q`$HN9<D+xm+A6db1-`cU+rLRM};*w*ViX20Ll{e`2fl)^vo@>AoyH&R=9#8d'
+    'Fbda2Jeg*z&g^32f8hC&BHXT_6HQ)eI3`$fi8BaJOMTdaKIhwL-kecO46;^!}{2(Bl8Ib*dYhqvMyAyhG(D*z#ZT'
+    'PZ4J-}Jhu&~Ty#!c2}0}b2^Dcdsjyg6Yuw1PFFm{!D38=A3LipJpQs32q~V537hDTjv$=@P1rtf64W<Al=!6mw`8'
+    'B{jtM{vVEKfjjsKNQthZ34|703nb<P(esuMAX!Ks}mB@`iPZtU6szv}E?YRhfkDay(+E{R;pFW&2oRh?KpTziHjZ'
+    '04t;|H(mp))}u619~XPS_qHJM|K&o$I0eGj!bs`5V9$Y8&#3}kEjVs;Z!X3fr&B5~WI1!G)#v%pbe0TB=S0p|CKh'
+    'aRw1ppj^ukYG_}L4;cwr?VU?LWNgpYFJ*I{X80fmP(iu72@Aa0awwh}2jFs?^|EW=dE-N7*j?nsuhoWwZlavvq>('
+    '#T3kA$7)vB?Q;OUDLpf@<RMWdZ(cD@y0wmw05!w{u7SK%aL@o$_r}GU~(z@BCby`9MQ0gXq<6Ov)$^58dfd9BTBI'
+    '(uhLg=&cq61kK+waJ`Zx(I5xDx+IS_(LfnE@R6~~%QfWKF9ikzfJCufz-LyNfavJLA9^t(R+UyX_inmA$49)JW->'
+    'rx^UBS9+yB#1Dl{TfCC*;E#kzSq-chCW%M9flOl2p9nVH+&XOz)i8SY4p={@2a8HqCJc)s;o~KKM{N343))TRHUG'
+    '4n(>!^Vh-|eEyhYI;6&&P)d(E9UhK3A@Mb1jzhDtx=b2#W4Nvzb5rnLGv;WAKV6P%9(Z`wZg#3`MW)U~5Hy<!AR|'
+    '|ombf)qJsyS`@h}PtZD+d4iM_IRGp{nJ@p>phUzn3w>eh}}_z}p4F^6EvU<DU$&;zC?>{q9(SGyoMkZx7W`1Re67'
+    '(gt^h5@|#fcY;5R{?rfZ)j_UOWZ3@8va`7FQXY{hy8To(3NZE`@t_U_V(z>NHG@oqP)!-+LhwrqsZ)mEjy58C*CI'
+    'Jc7QN_paQwHRtIQe%T}V9ck@u>Lf=^D`itrGS=6vSAwz8Lg%|oRK~#DzD!R-Zo34a&+1z|C%qLPozXI_+WIl{q45'
+    'OA7AB~PD>WK&00{Z$i55_Knu}gh!F)u`O^SLmeOFnABkl<yON#VvU<TytBs@l{>2eczpd)kE;Rd3k@?RYDX61BZ;'
+    '!p<gDWzw4Z?Lu&I#FvJXya~bv2=lvqFY7~zrt_|C;b8sq7Nu(!9CwAWR}5>3h%XQ{?R7{d4UI&&{#o<any~g<=Lr'
+    ')Ux!)d0Vq`|O>Y7bBMdzP1maZ)3-lNIcT+v#P861kQX<`&(Qm?B5qQeS6I6#stA#Es=MvC%LO@RbYSS85<DQObY8'
+    'UyXRHW~#KX!UXO4vUc(DY}KYKWX?}QN+E6j(u$V83&`Ecf7H;dN*dFRxa6N@yo<5?Ul<+0v<urPaqKaRZzM1(c<='
+    'P{w_lum1u4l2|sC=PcPwnqZ}=9wEax6LxGvOqZd~&@VaMiA@GKa6F-g7_qpszzDDKf>t0TX5&>LVV0`w(^{cDH_K'
+    'K2cLnK(2b*EU6x>~>&uU;E6pbHH@R?HuR&vSYDGG9fx-L}j!Rx!A0kg;DCu`55V5ZtF}u)I}YSZUg-%M%ctZSaEi'
+    '6qFTWt|{8_CHuqOg^ae*Ea}H+&HhdCeX<iuH)2>RPC}T}7npy<jYrNsJovV+V0ZYh$UWSYF>(wT)@i0Igwj?6%qs'
+    'PIyuVxDf~lmLHYNp=wqsjlZ&k(ix|F;)r4-1sshOEt_1YX3=W<XY%LV#*22UPac7IFn;pO(dJZ(sRg>6)$G3{_p?'
+    'k~1Qb|79k-+?$_><gMyF~>&s*=l$VDq9hcAOl9Qst8}-j0B*kSMMFHILdI>rtB)Qg$Aq8Mj}w!4s`eAo74g2dsCi'
+    'iBl@d?OD4R1e#ldO^Gd=B2sA7U|H&ylo2kxX`&n#1i|uEz{VcYh#rCIL<FNdtr1sbB8s#718pU*t?K_Yk@W0LtNw'
+    '$9RkumJ-UfU`)vfcp`a2{CL-+a;=eb{k*z@VE~RLnM9L3R|B{ZvI5mgL5@VGtQA%C*nxfJe(!RZkeL3p6xJSTY)y'
+    'u)JrwC1gquiPfGp8DgERYB5-H6#yB_6uTKQpnKsD8}W<w(Y<iH{Sh9)Hmc+(4(~w<O?@I6Z#9mMB0<tHu<)Ej9fw'
+    'x$lAZJ5%@c%*JCuFus%vL|wp5xem1aw&zn`Vj>61U3C(R6z%n->8k<1Xu43W$b`L21=Y5T1?wVM++yc?aic(ssSR'
+    ')<UWN<dyX=^Y4!a6x&29?3Bcv=%lX-3!}(*|Os(x_XqZ&(3KTbFUXrIeBj)+ojDJR6J_pLBLf-EQ6M7RAVy{4j4)'
+    's5H1VS#9ddl>{&FQQ1S^SpHT7%C7)383FW6-TDode{@cwgU02&*Yh!6z-LfV3ds%XyM(=FC{dY9q?)5!h6b|w>n-'
+    'cfZ>+QOA7F@mRV_j;|^}JMi!L}D&+;^-s`n_)0#hkUu)2A+rb~@Q3;L9Alc;QxRA{}<DZV1leVPjFYxmC9#6VOW5'
+    'b`<NDxj;Rsc-v99o^O39UWf;gp#)Uxb|Rofc97Od9YIcuRX|#vXywd@&3D3lC(L)kd?(Cz!h9#pcfxOSt<h8w9gb'
+    '(Len{6jIq+!%S$G)H0g_zPAwD|kplwzQS<(tAiMq&PQpM=gr59n$pcq_|r1ivff)<b?Gj7A^i&b+Au{z1L<p&r=S'
+    '|5}pmICc>sKbfWj4ly)^c)<+EaJh{rRr_YKF6RDExa2W!-6`VEp7!8ID_`ney%sj)Gt)J4Y~u*<wbWyN{cPTE>MI'
+    'rLZ{=w7S!hL$Tmep2Lok@-~i6TVr)UHH~~F4PpsK&|MP@u?-B)?E9C|WMfdCnzDqyS&m-NYAJ{(<U8f&J&{1Ww9K'
+    'nOO4#nbqVaJ+mQi3sA!Rh4=r@cvzRF&*_Q3I*1q)kMME{ZwAuOMisaBjZwroRN87cihk%1AW$<-J7AY0NnpZ6o!?'
+    'L-DjMHb<HXe8Idg_6@kFhhs1a)BY^fj==>Rd1~0ja2c8uhlM?cleMpl8vp8a1JGtCsyEk8;Xjiy%llNk_VM4L&M='
+    'S9wEqQgkIZp@YB-6MDe!a`omsPzJ&^J2QhNJ>n5$5O&atfv=;Gsc$r_@4tBrTsL@*lOfqvqh%<CvziHdcx85xKZ!'
+    'Pu_E6u{*bb!5{k=`MD%h*qJda{-oAF468)J6{$I%UA4t#m-mke8tXJ?0m%zKD#RJee||14pxk$)d@G`1LsyZCo-x'
+    '`#vA6=_d=T#AR`0zCmeyR<9T0pH5sfmpJ+uAEGyWlU_YUuGJwKlxj@0Fupoq|HaK~nHa3VIw{Ds@ZOnsC9rgtcMA'
+    'OiWbE)OP;F#`M3BYsE`F!|NLT3(@-W#w`GTXwvw`3y;>QnqsY{2H5Ij+=T^P%nVv8ZMHi-QQZ&Itw!wqT0{(2-%8'
+    'le!h_k0ba4Xt@{wy`}&<xbMJVh0Op!p9(<(emi>Da$bwaix6wisdo=4w?0Ap=<%wn&UNWbc6y?xwDJtHgpIb`UFh'
+    'k+L2FVRtHIm=uMO}JXJ&`Ig4qve64kwZsfprDqyxMZi6?}ng=gxmd20jX)hA^KJ2a8RR!FuJ{ExB|oamM527<qZB'
+    'xI%a+lYMgtU*NC7VxjL1)S)B=|+IRg=F%$`i|M(AfmtD-tSnovZ3E>=r<es{U;duy>g~rX>ahp*r(bW94$55^u5i'
+    'd@6`mp_ptd%R(wax&E|W*VZQe&s@{8~`~-u&qh)4Gy}!Gq-fM=yy+`!@ZSzWzV0Gq#W>HCWVz%5C$jCa-ItPc#4y'
+    '=d1GYbKPis9U80Frn_>?DBZwK@@>3<N)l`pB0NMol3S_Tj2)9LbVUkrnuh`-Y8>Qm8;vsb^c@CY%+0Z*mopMGePP'
+    'ktk7uC5pFaZ><9dtV18ILD!_(*IH2>*6ixhjq$uay34&7GTTAx@Ls0fhMEXuYqBH~JK7_UTUy|%Wq*4jZzUn$?U<'
+    'qh&nb6?#hS~<ZlH+=mfg}ihxqK6_7A<@o2lgoS@j?=H5Rey5=;>d2JKQ+C$ks2KvWcVfD2>UT$eKyy(pQCazoz8m'
+    'dkEDc^h^koQcY*W~y@7%wuannXt8JSmBi8Uk@z1{>`p`v+LjN`Zv4&&8~m5>)*e}^{-|KXXn3Z=fAMpfLJQ(U*H('
+    'rl&AM{a7~2u@~xx)c*En!f`T3(@!~<u<DC=%n0pg>e7)&~^{Q7?!NLKBC;pgfY9HZp$h)0lp<1mCv4Kr;j0@}&Z8'
+    'oJEKD*;OB#9^0>k-M5DlwJrglgf_h<CwmhC8Nua3E|dBGOkfR&j{ytQh-d2Zx=e5@TKFS7$a}7r(=<L4l;f)$>5?'
+    '9%LIy&2Pep?sZ7okT&G1>u*K4t6LO;VqSdnN>3^`A$*0kqpOj-W!8n85F)>=z;hI?b@xKrHhp=I{s5m!Ah7}`FV+'
+    'IM5gTl&aC2K<*m^_xai7iwM94dZ4H;NMyuaN6tMV*`sL{gvhL6a%Va6j6aiO={`X1e*5xNKcd!dEH)!nEHvV!%^v'
+    '-wnk5knk2s#>=qJU550Q**4jr64|f2kM>4EC~#ovY^j9;zK#y`X0@0o9zW1cp=gbC8o)0<j#oj-h{rZ;Qq0_`@|&'
+    'qUYIxUHMz69Z8(;2xZm(Pj`yOzqD7swdC&WsDF7lOB~#a83g1T4OS>bDR*f0!+1`xz9VHU0dt%&_U|R}=x9_%@0l'
+    'xxois<~U-&X*8ynPct9?N29F1NRJP2arXi@<&AhP+LD#()h6Zf!DCZ|-I0dbe<ozDJAU?Ajy$NKJ9*Wtf!rMQs+5'
+    'n^(I-3Hr!%p+~v-+w0huUnsr@dF$%tRc#AbxB4AG?m2?sB#Ao7uu#%l`5n=%V)qVV3c{VDy0nerE%Iqz0$-KpIc}'
+    'Qs7xTv@qOD$Qy!uue8kYMliFv$fWXR`q7@V48i5@KR6{SNe!a|O(MJE20R8HDZlFtkcvrNIGESNK<ZRc2TO!JUc@'
+    'Fv>spuCP{ln2nK2`8<qK9X`qW#VRk)a`<G{)@P9YEmI91a*D7;(4Xm0z!JfN62PH$3J9h;d8F-SS+mXrS-kCz8|g'
+    'cC+qv!`ksF-ESw7q=fc9duy8IcoC^!*!os<<a4s#JOAF`H!nw3?E-jo(3+Kwhxw3GsESxI~=gPvlvT&{}oR1dHM+'
+    '@hph4azE`Do#Mv~WIJIG-$>PZrK63+I!C^U1>bWZ^X5!e~%I$DRqSt?!hGLILP9Oya9gxYENx05yxi;2ZJ8*z+!r'
+    's?=DUIe;+mU<<3zVmYy4bYNizmUdue_<*WDF#g;6(=jVfOaXQ<ds(AM4U0CpF^hyRW3FI~kAf7L;o~_R3(uCy7Dl'
+    'nG0h|~`8jfQTaA0@P#>Ref5m%!f03+RLrA1HJ!CZf{bLU7^zU$LDhVD0W<!m<-*K)GCUnp)H?H%NSPWD$1L`>W0N'
+    'Wg`1RpC*krJArK>LVT+EkP${acj*@2_hq!UlW=0t<xoF(pmRNC38qpwX;JfQoBbK4!X&!A`Eh5t?P6Om^5{3C~PH'
+    'Eim+fBX_?KA=Lp42=gpg|Huu5{qXVT1k)SEU@bWc`6=mQwo8KtO>KF@39smrGim+j*4>bh64Y(oI0O$EY_sZZI!K'
+    'Kk4K9IrGhTb1^@f<R#bo@}GE%qqE8;%*0!_`8Iq@`911vHybsL#=!j=*|;(5=1$Dnqgxkf|q#JJd^|QuPWE93$}c'
+    'KD+<S?mx5p&%ek0r<#`_fdGXAKaudx$l4Pd(1H&wJ4XR+&6|T-430u<7@WV4^>)jm#1zyPz4h~qZDx_I2UscUHJ`'
+    '013vTt)ti$?z%rU&^!})^GzhvAQr+~Iy^?IpA&%n2{$ftvf3`2A=vaHEc6$od3po9zRUON$gN*FcNLG-WJ5pW`+2'
+    ';^bWnKptSdy4J?{DG#a`6~i%>!67SC(Cxp0bZqJ1+-UazQC}0A<dHy5E?#<4<#=H_w`j-nA<Wn2al2KDkgcZtefP'
+    'zu6nkk>?`wJSv|+Mb}AG5d7yDHxD0y3gI;Ipu)<%0oeb+p47H3RcA)HF%g|8Rk)WZH)r;>~*&ST9Y4uT4#f|ur!{'
+    '|7j?ap&@1&YYq<P<?l6zX0W8uQv_X)g;CC^Vxqs^~)E%Zpx#?DFWo?aop$AV5WGnI;l|u?yVQpIVm?&WFbM!LXm$'
+    '=3R+;Eacow(*3rQ#0)@Q&amQC<s0401ua{4P&a#PT%0hhfq;p6x-@i!v@J4dQw;GEmFWoNA}F;{r4}v%<VtYdGLA'
+    'x7;z;*j@Z@tUJtrf!k$jdyM2SuV8XIF4V#{2mZTH3@0LpieY+wn3%GwZx71!xgRtGL4@K%pYx|VXXjS5-i*|uWi6'
+    '|@vS+0K$>E`hE7SP{zlj}?VhfNY2wvLN%?M9Hap@$j(J<H|P4(BZnGBH|T=nT{gtTBR8zE8DVW#Zj=Wx<S#+c<v5'
+    'ZKbTGU%r9^>`UI!R3*gzlkonI8JgFZfeueSNCyFoe2vp*^bp1$vZGf>jfB2j~QYt_{7js}BGm;m``~WTeTyQcV{P'
+    '8(oJRdQzIDoh!@Q$BfC@9M(V0a`9OUkh?U(2@|N`N9(3@A|xq@a$hfNgmIMiE|S*w&bi*^;R&$OJM1U?dX`-Or2S'
+    '^9S2P)A1`vd4$%y6c5k%BmqkhM}y~{r3P2gPXPV$gpFOju=yc0gf@RJfW`a>M0@=FF{gR~O`(Ow;`v7b?BwOVfa='
+    'm49&rpY!(vgafI|$_HSy)r`Nj&&e-uk#PQTb->y`CwWdWK4m7&I;%Lf}CIua|h1P1ofju*|sGhOumve-(<AH(z23'
+    '|~3Az5IxPF23mCatkXmyp?P(WKWx!cBCiNk}qs4hPI3faRP>}BelOlNj%L3sHKew&xoklP@ikUgqnL_XS5WiY|W~'
+    '3Bbc-KM8Ebh(<K@-pTKsNTzBELjuyypu_-tGq{6)jGi7L{F5JeLLC0FQ>xyK9Sf-d+l(ME^v9|m;Fj?T<g_h0W*A'
+    'xf))?c{$4l4T5;`Kuq`NZPw<f<+ine9tAb&y&*iF#M5Ka~}>4L)8?Lf>A5dtb81G+tcjC|~dJff7i6AR}H}KD3xs'
+    '&N#?o*_%r3dpg+)74=RwT(lD>md3j`IMtYRRa0f(oUPT&%I&`{XhaweLmi5Bizg>*gE^8}Kh~|=)O@L@@o%C!(74'
+    '*@Jwv37*-Gx=&7_`79M@<P?~S^d!|V1!Udi|Z4iYmk9=B}#uhn+USWT5=n_&d;{jLKc7-hrhh}Ei3#smuM<FL#2l'
+    '6luk5SE<0w!**%#j~y>1-$}mDW_Fr-5uab6qG9ZJ!|d}b?^{EJ5Aq^Y5_1MK@%4qURC|8EstiOo`dZ(+znz@SQ3Z'
+    '2z%&^><zJqltO4ACrSOf31(S0p9Y7V|bz{$oNF9{byAC<#d^&j`UZV~!mu~p!$qmDv<3=p}h@~H~qKF<$C*rXHYq'
+    'ffQcqrby$j4<U@<$-@=`j%bya+_TyaXcWa|H_eOE`<z_J}?BmA$_Y@XN%*fjKgG?q(*3Wp36)T9!ghWXM#i;$jH1'
+    'Im)?`^e`vI&KzW12|$$1Cg~xLkR%1rKB=@cf99awB1W2a(55&-ZF8~*8>b+mty2J@=Bcz``wsT4;JpNqH2dB|a&>'
+    'T+);TQ45{zNudVsJqzl>}eJevm3roppm@N619n+DIO!KZoOitVp$%N#NBs|?PKPFzj-roN@ey-JS3^6eyW7Za!Og'
+    'gmv?gV~%{UfLp&_E5+zcVcd~VihYlmAXjaU5wT$ojYA_Dpi#f#~y|l)^IweDfJm?(K1Pm<v2Bc{2qo?vh-DQ3@nr'
+    '5XE{FpQgvI6mA-NgzIw7vJpKZI8V=LeZP<<Y(+v{`ZUmz_m~Tid&JNS`b|Ppeb7GbQn8!iP(;(N&0OrS|MHnY#j5'
+    '7Jz+IhB)kmv5t*O78YpRptP@^f~6&Ym#Kf9bP!qz-p`-j3k^t)IEQHtU^=9n)xEqii23^K~*`C-ZeOUnlc*GG8b2'
+    'b%HM6L~K~?#@c-aGkc)7Dmf$YqchcG3-5DP_pL2?CV7cBbRgqZ+>hJFoJ=Hupz<Rz2Y8<@BwBy_X&9C`K43VW%C4'
+    '%cZnGsFrVO~Esa1Gf-m=LsW%>Bl5{2C4d>pK!_2LtlK9(j%esmJZ`>4bv|Ex^n6aRd>YL*1UnfL?Dr`w8QYFp8OM'
+    '<ppRsE2zc!4LCApOn8>ftiECbO{(dK7!g4$Oh2ST`aqqSj$YTiNu4h7bW)&$&YplOOW8fRY*J*m>BKRz(g?{Ku0V'
+    'Fxfa7*3(18#|ERNtW@FU#*^U!bc9g<p$AOFw(cg|M*Ufw7=LHiBpB0-?N0C7~69)jiSapgfk)~md?Br1G&>FAU(s'
+    'fMq1z^NhwFT6GisQd8mA<-rQJS(6XI)l@u?pB8PGfhsk&(%R+zd%t(`a@urBQsTw+vTzAQwp-BxN`kXN<~3de5J>'
+    'R165UH7q#`t4vRFhaiK5Gfc0aIuo|)w#LvbHf<p>9I+3X(&usDVmc;6WFavFA26Yj<iLfMWE_x??16%Lnb^peDUE'
+    '!Y+Q^rQjeHqz<jaIcf)wbqR%*axGhKA4c52A6hHAh>OEpZgsZ%?2KB-6Nle=_2wNK|0I(0tMtF*5Zq&~D!==McmH'
+    'b9*jDw&~@87i5fk{K$Qp^_OY-x8D=*>~lJZI0g@!T#I$b74N0=5u8}AI;~J`Fu8?FXr=yRm6k!ZIw4)+~rzfaSBZ'
+    '9=mpBMRsgrTi&7dOcR=B!-32s0!bt;+D|NQp?K-(Uxp)TvKK22?pp2KXGG4~Y7ywvlx6xf#HHPL~gnt`$Vh2!$nS'
+    'qgB9xWarVHeoBpX(?$U2>r1k8Kr>ag!B7iE^QJeI)DwyG?Q;2S6c42IzSjubIPyshpVu*~|@~;RJ<78Ev?23>c1_'
+    '83%HOBKF~<{x)CAqXPn1=_b}-{bu##ZC5)qMb9T%6iIm;($YxclExN*DydkdVAq|>GrHl^IaK_)M%zplYR+ehV@B'
+    'nPjFNfC11VrVsdh9H<eA%tWAkQl)T(}@0Jj}xQxW3jK?Rk^9UqKbPLZyZIHL*Hr3B}2Zfyjg@i`O9&%Sm#Ra=Y1r'
+    ';6ElegrvkW61%F^x{Mgl&3D@MM4}sd3`3neN^ne22N!QHhU3;mcSTf(yH5jigx=s7B9q*<aL--k~%5Yko8#MYPZL'
+    'u6gk{;!piZ@Fw&MlaZ{DYEYfWv1241|;`<FMszs7WE1dmaPMfW43XcPpAvfw@*0xe?e$p)mjZ_^AoOPhBa_L8g2x'
+    'UF9-G<3lhm7BVCuzOPII&`bkt;z*T<w^itDxeX+NwxZTXGwzBDG@&7gj6QyU`-l6l#t%!t>FniGm&>qlsQ=Dw<`J'
+    'wmNL@7q)dHi|1^E=%O_(W$X|koZ54YmD%Z_&=bTUhX{%3`l!qds0irCyJIHkQ=C$$=8=($0;{tPdX+@ep6p!`e^8'
+    'oAxsxo}JRYe@it;f1^rJ{;PF8xOo73*O<kva+&z1-t>3c!nOWIZWKf-_?q#yhPC+^WQ-RhIbu03<&K41rKVzWb3%'
+    'g}vxhZ^+qn{wBgopokso!MDucGj7lb!KOs*;(g5z*%Q@)j7#kr#@nn6)2cCs0sBSU}r5_-)qdRMUiByYuW1BxYae'
+    'dq_e*@a7ZfNle%IJVrX?kW(~h)c7XH(?J(W)1;HPL65KriBJoi{Hod$ILksLSz`zRocm<USsI~#iaI6&6fu(<HGP'
+    '*Lbr`$L;skBNZ-ZdaW>u+o;N*p9$1iEjl_IS2xLnZ9M78aa>;EODesUR&wP6WNgz1PUrwBiT`_>(?}iVBoSUPVxM'
+    '3mK(ozix(ARjOj!2CqDD&xG|3H5h$hS`&~{GuK}W{k5D{-Vmv{4Ix{eQs&&Y?<sK$ZRgYYT_HR2>?p;;7&i1TYiy'
+    '`d;+Qy;6mSRNL#0OKg!a#_XodD1@Dqw4zh;dxdnO=7`3`3Ih}@=iw2|;Rr(T1Rz8<Gog~xU~ju>!(XnI{x4<;vY$'
+    '@a=u32<{l$0axb(}v0KNnU2J63WL4_$Py1jOZg@f652mFbV}mBl{Fdg8^?HzAXrN9BK~lbUPA{F2h>jGm!eFhRY}'
+    'Ml-J@^8>ba75tb!N4;Oe?p6!W0&pyNTw^Jqb!)({rLjs3@*9-cMRv*0N(Osz7k@U7opc4aq;t@fw)G>tg=5-JSS{'
+    '*PGL@DJ{tVK>0*|e!*&@LhzOm=wcYpJ0eW9$@Q94GU8%83UFF~~}0J&Qo1?llUB3*rzx@02HDt=cj6QPWGYj+|lK'
+    ')Z3=|yle1?Mr9Z5OHp@ahHuZp3v0X)iyADjnroPvz;J3<xCA9H55h%5Uq3WY;4!Ez*a1;DUYD6J0Efh$9xnLqPBX'
+    'wR9us-|8-Rl~l##H7sl1bYydHk*$nF9cR(({%rl_Hd84qX}l<0`8T0lsRk$9%u5X8fWmq+wwO$*ssKS7^+%EbEtY'
+    '=^u|NeWqx<kN(Sq(y|{%=$7+3d55pS7dCf+C*#FR?0gUe}!r(DY}9RGEl)`QW$=E1?fX0LtC%t!Vo6V7t0!;tq^p'
+    'JNJ|d#cm^1Wy`7D6gpG0piF0?89KljX4RQo?Wpf<a9EZIV1P944HO3LF!QD)81hN0thB%xS%dME=z-uqoM88+d{a'
+    'Za>QleoUR?y(y;xBjC6)<zK=hyN4I-Xz0^Xqti9nY`h`E@+Mj_23${5qar$EUrHCyv|vLp)#ODOt87T1eIYYHy%}'
+    '1NQI?9z1&Lxdcvp*1VOwG2U+Oo<D>dXq*R|qK}0p!r1EJg_I~N&gsB)4zH(tmQW#oSZSBg3#WmLRC6hn#LXA^+7a'
+    'w~CQQC~(2QC*Q_BzX{0&TvMQpkRQ)C&?M`oR@ja>OrQP=@4jAgIF&Q$cGWHM4LOh>lqAjdRh5R)dP72!-&PBl}N!'
+    ')6{^1ImQ0MZ*fGE_NPRzS`xhUB24ot6jd@<*Qx3+WkFOJKB=-<?fr8I}SvYdrQ)WBoik1el6x;*@g_6JedcQgVwr'
+    'yprQ4yAew<SFCQvs-OC5^t$q3F1M6Q3fPBeDnoDWPwh~0Vp$0*;l?0M(B0<F3M~Q>RvDDDqweA~fY!Wuu_+*YDF~'
+    '$oR5GR=>NUUTIpLj{&0WrJF8Vw+@X$_xxZeoyJF36BR0Tcs*xG+HqxFCL$-PA!FwUR@)m40%toj%a8r9m`<w)#-P'
+    '*7`txd;Ro5i}Bn7Os`0Tz0_cPJ(yv0Lr4a#^?-tn^<ezAddY*P+LlYacG^k7M%n<w77nrxO*7h7Q$lUC0sMy9X~|'
+    'ZNY+otR(N>RdYoq9sRGGBhr81<bHo6U>X`9&iC>(R~K4icaToT?l4mXb6vlf@k5HKH?gm>-9B|$v{a}I2DV@-gK5'
+    'iYfzj-gGFY-AHn04Io**g9Q6VCQa8i*1ZlF5DQcT<9dR0*F)8a>2*Q<w7Uu<pQP%#**If53Ir<aChb5eugJ|eZXf'
+    'ta_m=@{;ozjtP_gRVH%%w=xd?BmilX@zaI71lm2?vUoZOWhyEhnKKV4IfRV!S%5&f+`ZJhVboOMBJsJEmPX<%R<U'
+    'ibp!PI7C?*-X=LH1to+j%dzX8LEp1=(*w_FIts7G%E#*>6GiTku`K1ygt2|0ItEQ`?k%72L~L!BmQ8F9pA&mx9T?'
+    '|Ev8Ij8%-RLg!mUzBS}qL%ucSTSLAz<Xc0~eY|*2p!)+oVQMa(arvU&I7M>`Bd^(pXF5L}4GIe#K8=DvrdGYtmSo'
+    'UkhkG<qp!_5j$|z4Yjd$`QBYBPu6fG@oCsDCFMewV_2~eN+B+<ri%6F0L2KktE&F$jRJfU^!6i|9~ie%GmwhpsXi'
+    'K>;7gse_@jIg2y6ejH;(ISCeim8T0U>m?K$tSX#5-DSp&^9pWuPm-0wg|zIhbJD>*Bwx2YC7Rdc6t74$#mkTJiV7'
+    '4sk)u&BUxR2hcyE5kc=>r2sPRc6$vo2(bsiJH`Th^Ly=%_kwlD3ddcGz1`J%W#u+caI=F7J=XDU;ajL~S=|@Mlhg'
+    'sj^YeOEcurOA)+w4W$zvE|1w4lkW4ZN0i-K8?XXztLDqa_IB-aE9Fvu-Z%D9R3?+Ba(D;Y5#)O-UYnz+Mb2pdU@6'
+    'ZQTmxrqf#qV&pqPz7ym-LB12@J3+n^<U2v|PGDpfX{&X#D#!|arI?1Gv5i`Dgsa=LnN-x{y?R@oNq!VRYz|}`fct'
+    'XW7(06sKv4OSm_q}CUJ|Xp{WJ_q9GlA{gPqsbQ#aYLIkmDqs>Sd5&}CVvxS=p1G&!n+cLCy=!XP}e$e50iADskl3'
+    '{>Khe^w^(iGRjwg>z*l=267}B6G*JF;-z^$8*zkW9>qDhjFys#6TpPt0hR=YNU=_JU=LV9U4=b7mP8iKp9kzv!s>'
+    'Tw<e3?6k2{XET$X=3(D(66bp<r4`t;QFC_9W@;6>lF;Sj^c;rf^)t5#lrOmi3vntA!nN15yt8%024MxT&(9kGhN!'
+    'TYLC>0U%7Re_hR(sZDh;_26#bCQp03_0AyW<Q1-3xzM<|^7p_rmS=M|cF=sFI^Ny#FdR_35M?tWKJ&L`+M%J1Nv1'
+    'l;aj{8AN||iCL&S3w8fJLfxrB`JW`!ooYuG>&{}`S*-i_7V93H|5>g(b7M0%HgjV$H#T!)GdK1wa^0ydHw!`k6d~'
+    'vo$+HynZ!ZO%>VCs~G9v&*CFDo(ezcWh@KDwh*GfAQ>X`c4rt-xJsr+oXl@nD!8>%A@VMtdMf}6essS@BB=`0>nb'
+    'V%ivkglMFbv@ZEFqcc8Rz8lVFCA+`sEn3<JC-{d#2TBt^=T&-6~Shud`X<;2d?rW6a>>!B@aTy0F#Okk6t#c<I8D'
+    'RS|gnTN*D~ksXg?i%>N-zhNJmY^<xPRoK*%DptQ*&FDd7)eemWRRlZT>8&$qh<r`JLQDym-xXim2O}}dY%>wSfR='
+    '|CV#C52z#zcVgaVZ~{@^L92m-2BbAD8lR>3VTsk>R~|KmKRQ{-!GWi{)`aE30RpALyQDwrMM5M#1nt@9WL1+-{B6'
+    'Y#k`d9iQP$%o=@lRZf(W+OmOoxL`~P3S^+wWgmmnRT0nPWIGo4Wb9i74sd(r&I^5f^J4*@=Tta`pAmM-Ik>^UE<2'
+    'Q@BWF7Ys3g`{eBvOdQ+&r+>Z{=Cg_yYt`aq6vB%u6p0Dlu))b+z?a1l6&V@G8=zHGm+<d1p_4vQqRFW2hRh&+3R$'
+    'gq}aEs?6yZY+33+F}{uR3JH2XxOH5W4F6LVV|K#Kw<7$&VSCe9oklXSsxtlK)8^eO%Ya`RFxzJPt@RbsR6%BUWy8'
+    'm!?Mn<rw3?vr%Iy!4rX#m(bqjyJeX*D&>lTHR<Y5CWDFt^Z*Nkr@@c3dU>I+t)11=k4SI=T`X5S|bJmDCXcBbQE9'
+    'zD{U0~`dzT$+eU*N~klnZm{)eNzH4dR!;<Nq2qR;pkZuA${+0JdQ17@mD<jpC^pow_<K3#d$CBkv<d!p*Ki5sP7j'
+    'T+=BhJl;7nN}ZiB6t7~@SL2r@2DL<})fm(Yp&rMe9uev(;HoC(X2y!wGWQN*C*{!KBShGxK|Fh;E{jNA7SXyaVs%'
+    '+es>>o?mt~|b%V=GevAQfL)nys4%PLZrRkSXvSY1|=>avR0<uOv1$7o$1V|96)RF}tiU7jL!d5YHMDOQ)KNp*Q*t'
+    '#cAbl;ymG=ek0#E^_pkybSqzKwW)A1$0?s9Hj`~yUx)2%)mzruEcP3?N}F1i)2Ij?A`C&e6S<MbxYNNHnNMgveyC'
+    '75&*R)INhiS@DGSj_A0opQ7NOSzAA}QP3PrX+RZK#JNb1Q%szqfgv~A%^$|3d<TyPVfmuv|Sx$giO@Miv0P_@qNj'
+    '7>~v!^wDTGOXBep>T~1dum%1J#-KN7L-)j{+^G04=8gt)>7yP62wN%Lfnt5@&fkWvb955vH^Ddx}hF9bm`ADkOf1'
+    'RnYd9irR|`DO|}}`ofCQQZHVFeOFMpB+0sxNP=dRlL*By`eN1GLadHhZTV3UHSkziS0AvT)?2=RD(ZD4^ME2T_Ej'
+    'xNLU1k2$Dqtx&%E`_ThF}p%v;aA^~_uUhH$sDy>h^qhM<i&t4!rxHSel<SIxU>-c|Fi8ho+ltLU{GtQ{bGM-;|;v'
+    '3?`L0F$5EUjj#x6Xsrc;f0r8c;$t8cmZ-jrwbWIx~~JV)I~CNnM_?JQy-J5Pj0GLjYXvLi%7K>kqR#&Rb50XxrkK'
+    'HL%WPrZyBlHGE%)|q<YIp^_G$9dD&Ny>a8NxTScn3id1hEsopA5J)ZQTxJX6a#6>D`nMz!x5+75EUJITI^`sYzkF'
+    ';b6uoweajsdL303OExyw*KOTK7EGy63UhJ&(2Sd8~EMW377*whmvc2W#Xo(r#Bgb&*V6CR10*)W>A1*ATB7i%8`c'
+    'k!mj@6<$QDx`<SA5viVsb{VPOGE%)|q<YIp^_G$9EhE+Qvacf5TScn3id1hEsopA5y;Y=odW{^!MJhU6BcqASRN^'
+    'X?_?SxcTHvga!T3l^!fRv_U^xb`8UuJ71Mph+9BJM2SnHn0TK7EGy63UhJ&(06yhg%fb-nv4tm7=cMIS)Bg3Y=+D'
+    'ekeDg?nZjIEoit{Z}=^XPaG3qIdF1d?(Vo_)|xH)F)-C5>1jpr7p)4i^PQsKohY7*3GsRh{cf<BYzcGJWHZ+kl{='
+    'O8JN`}e#HtFLxEXWp;|w^fzub^CowAy5qcAD*=0NjT;%vrHanJRYE6C+D?Oh{kfj#jp`OBIDgV-;!8?q!pV0^v({'
+    '0v$)IDlqQ>bI{(rvT3pb*&nkN^39{~ukopHT'
+)
+WORD_REQUIRED_MENU_CHILDREN = {
+    parent_id: tuple(
+        tok[1:] if tok.startswith("/") else f"{parent_id}.{tok}"
+        for tok in child_tokens
+    )
+    for parent_id, child_tokens in json.loads(
+        zlib.decompress(base64.b85decode(_WORD_REQUIRED_MENU_CHILDREN_B85)).decode("utf-8")
+    ).items()
+}
+
+
+def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, require_expanded=True):
     """Validate `design/inventory/word/ribbon.json` against D02 T01 §5 completeness, KeyTip, expansion and behaviour invariants."""
     if not isinstance(records, list) or not records:
         raise Refused("Word ribbon inventory is empty or not a list")
@@ -6010,40 +6335,55 @@ def validate_word_ribbon(records, *, require_behaviour=True):
     ctx_tabs = [r for r in records if r.get("kind") == "contextualTab"]
     tab_idmsos = [r.get("idMso") for r in tabs]
     ctx_idmsos = [r.get("idMso") for r in ctx_tabs]
-    if tuple(tab_idmsos) != WORD_REQUIRED_CORE_TABS:
-        raise Refused(
-            f"Word built-in tabs {tab_idmsos} do not match required {list(WORD_REQUIRED_CORE_TABS)}"
-        )
-    missing_ctx = [t for t in WORD_REQUIRED_CONTEXTUAL_TABS if t not in ctx_idmsos]
-    if missing_ctx or len(ctx_tabs) != len(set(ctx_idmsos)):
-        raise Refused(
-            f"Word contextual tabs {ctx_idmsos} are missing required {missing_ctx} or contain duplicates"
-        )
+    if full_capture:
+        captured_tab_ids = None
+        if tuple(tab_idmsos) != WORD_REQUIRED_CORE_TABS:
+            raise Refused(
+                f"Word built-in tabs {tab_idmsos} do not match required {list(WORD_REQUIRED_CORE_TABS)}"
+            )
+        missing_ctx = [t for t in WORD_REQUIRED_CONTEXTUAL_TABS if t not in ctx_idmsos]
+        if missing_ctx or len(ctx_tabs) != len(set(ctx_idmsos)):
+            raise Refused(
+                f"Word contextual tabs {ctx_idmsos} are missing required {missing_ctx} or contain duplicates"
+            )
 
-    baseline_path = INVENTORY / "word" / "baseline.json"
-    if baseline_path.is_file():
-        bdata = json.loads(baseline_path.read_text(encoding="utf-8"))
-        cols = bdata["columns"]
-        idx_ct = cols.index("controlType")
-        idx_pl = cols.index("placement")
-        idx_id = cols.index("idMso")
-        baseline_tabs = {
-            row[idx_id]
-            for row in bdata["rows"]
-            if row[idx_ct] == "tab" and row[idx_pl] in ("coreTab", "contextualTab") and row[idx_id]
-        }
-        accounted = set(tab_idmsos) | set(ctx_idmsos) | set(WORD_RECONCILED_ABSENT_TABS)
-        unreconciled = sorted(baseline_tabs - accounted)
-        if unreconciled:
-            raise Refused(f"unreconciled Word baseline tab idMso(s): {unreconciled}")
-        ref_path = INVENTORY / "REFERENCE.md"
-        if ref_path.is_file():
-            ref_text = ref_path.read_text(encoding="utf-8")
-            missing_in_ref = [tid for tid in WORD_RECONCILED_ABSENT_TABS if tid not in ref_text]
-            if missing_in_ref:
-                raise Refused(f"reconciled absent Word baseline tab(s) not documented in REFERENCE.md: {missing_in_ref}")
+        baseline_path = INVENTORY / "word" / "baseline.json"
+        if baseline_path.is_file():
+            bdata = json.loads(baseline_path.read_text(encoding="utf-8"))
+            cols = bdata["columns"]
+            idx_ct = cols.index("controlType")
+            idx_pl = cols.index("placement")
+            idx_id = cols.index("idMso")
+            baseline_tabs = {
+                row[idx_id]
+                for row in bdata["rows"]
+                if row[idx_ct] == "tab" and row[idx_pl] in ("coreTab", "contextualTab") and row[idx_id]
+            }
+            accounted = set(tab_idmsos) | set(ctx_idmsos) | set(WORD_RECONCILED_ABSENT_TABS)
+            unreconciled = sorted(baseline_tabs - accounted)
+            if unreconciled:
+                raise Refused(f"unreconciled Word baseline tab idMso(s): {unreconciled}")
+            ref_path = INVENTORY / "REFERENCE.md"
+            if ref_path.is_file():
+                ref_text = ref_path.read_text(encoding="utf-8")
+                missing_in_ref = [tid for tid in WORD_RECONCILED_ABSENT_TABS if tid not in ref_text]
+                if missing_in_ref:
+                    raise Refused(f"reconciled absent Word baseline tab(s) not documented in REFERENCE.md: {missing_in_ref}")
+    else:
+        captured_tab_ids = {r["id"] for r in tabs + ctx_tabs if r.get("id")}
+        if not captured_tab_ids:
+            raise Refused("Word ribbon partial capture has no tab or contextualTab records")
+        for rec in records:
+            rid = rec["id"]
+            if rid not in captured_tab_ids and not any(rid.startswith(f"{t}.") for t in captured_tab_ids):
+                raise Refused(f"{rid}: record does not belong to captured tab(s) {sorted(captured_tab_ids)}")
+
+    def _in_scope(rec_id):
+        return full_capture or any(rec_id == t or rec_id.startswith(f"{t}.") for t in captured_tab_ids)
 
     for promoted_grp in ("word.draw.drawing-tools", "word.review.onenote"):
+        if not _in_scope(promoted_grp):
+            continue
         g_rec = by_id.get(promoted_grp)
         if g_rec is None or g_rec.get("kind") != "group" or not g_rec.get("baselineMissing"):
             raise Refused(f"missing promoted built-in group {promoted_grp!r} with baselineMissing: true")
@@ -6051,11 +6391,15 @@ def validate_word_ribbon(records, *, require_behaviour=True):
             raise Refused(f"promoted built-in group {promoted_grp!r} has no child control records")
 
     for req_grp in WORD_REQUIRED_GROUP_IDS:
+        if not _in_scope(req_grp):
+            continue
         g_rec = by_id.get(req_grp)
         if g_rec is None or g_rec.get("kind") != "group":
             raise Refused(f"missing required Word group {req_grp!r}")
 
     for req_ctrl in WORD_REQUIRED_CONTROL_IDS:
+        if not _in_scope(req_ctrl):
+            continue
         c_rec = by_id.get(req_ctrl)
         if c_rec is None or c_rec.get("kind") != "control":
             raise Refused(f"missing required Word control {req_ctrl!r}")
@@ -6169,7 +6513,7 @@ def validate_word_ribbon(records, *, require_behaviour=True):
                 if ctype == "gallery":
                     if "expand" not in beh and "dropdown" not in beh and "More" not in beh:
                         raise Refused(f"{rid}: gallery behaviour is missing expand control description")
-            if ctype in ("menu", "splitButton", "gallery") and rid not in WORD_RECONCILED_UNEXPANDED_CONTROLS:
+            if require_expanded and ctype in ("menu", "splitButton", "gallery") and rid not in WORD_RECONCILED_UNEXPANDED_CONTROLS:
                 items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
                 if not items:
                     raise Refused(f"{rid}: expandable {ctype} has no child menuItem records")
@@ -6193,13 +6537,23 @@ def validate_word_ribbon(records, *, require_behaviour=True):
                     raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
                 if ctype == "galleryItem":
                     parent_id = rec.get("parent") or ""
+                    if parent_id == "word.insert.pages.cover-page" or parent_id.startswith("word.insert.pages.cover-page."):
+                        if (
+                            "beginning of the document" not in beh
+                            or "replaces the existing cover page" not in beh
+                            or "at the active insertion point or selection" in beh
+                        ):
+                            raise Refused(
+                                f"{rid}: cover-page galleryItem must describe inserting at the beginning of the document "
+                                "and replacing an existing cover page, not inserting at the active insertion point"
+                            )
                     if parent_id in WORD_NO_MIXED_GALLERY_IDS or parent_id.startswith(WORD_NO_MIXED_GALLERY_PREFIXES):
                         if "mixed state is not used" not in beh or "spans multiple presets" in beh:
                             raise Refused(f"{rid}: galleryItem under single-scope/document-scope gallery must state that mixed state is not used")
                     else:
                         if "mixed state is not used" in beh:
                             raise Refused(f"{rid}: galleryItem under multi-target gallery must describe its mixed state")
-            if "Selects or expands" in beh or rid in WORD_REQUIRED_SUBMENU_PARENTS:
+            if require_expanded and ("Selects or expands" in beh or rid in WORD_REQUIRED_SUBMENU_PARENTS):
                 sub_items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
                 if not sub_items:
                     raise Refused(f"{rid}: submenu menuItem has no child menuItem records")
@@ -6207,6 +6561,10 @@ def validate_word_ribbon(records, *, require_behaviour=True):
             raise Refused(f"{rid}: unexpected record kind {kind!r} in Word ribbon inventory")
 
     for req_id, exp_kt in WORD_EXPECTED_CONTROL_KEYTIPS.items():
+        if not _in_scope(req_id):
+            continue
+        if not require_expanded and req_id not in WORD_REQUIRED_CONTROL_IDS:
+            continue
         r = by_id.get(req_id)
         if r is None:
             raise Refused(f"missing required Word control/menuItem {req_id!r}")
@@ -6214,31 +6572,69 @@ def validate_word_ribbon(records, *, require_behaviour=True):
             raise Refused(f"{req_id}: keytip {r.get('keytip')!r} != expected {exp_kt!r}")
 
     for req_parent in tuple(WORD_REQUIRED_EXPANDED_PARENTS) + tuple(WORD_REQUIRED_SUBMENU_PARENTS):
+        if not _in_scope(req_parent):
+            continue
+        if not require_expanded and req_parent in WORD_REQUIRED_SUBMENU_PARENTS:
+            continue
         if req_parent not in by_id:
             raise Refused(f"missing required expandable parent {req_parent!r}")
-        if not any(c.get("kind") == "menuItem" for c in children_of.get(req_parent, ())):
+        if require_expanded and not any(c.get("kind") == "menuItem" for c in children_of.get(req_parent, ())):
             raise Refused(f"required expandable parent {req_parent!r} has no child menuItem records")
+
+    if require_expanded:
+        for req_parent, req_children in WORD_REQUIRED_MENU_CHILDREN.items():
+            if not _in_scope(req_parent):
+                continue
+            if req_parent not in by_id:
+                raise Refused(f"missing required expandable parent {req_parent!r}")
+            for req_child_id in req_children:
+                c_rec = by_id.get(req_child_id)
+                if c_rec is None or c_rec.get("kind") != "menuItem" or c_rec.get("parent") != req_parent:
+                    raise Refused(f"missing required Word menuItem {req_child_id!r} under {req_parent!r}")
 
     return True
 
 
-def merge_word_ribbon(existing, fresh, unverified=(), *, full_capture=True):
-    """Merge fresh Word ribbon records into existing records, validating full-capture completeness on `fresh` before
-    merging so old records in `existing` cannot conceal missing tabs, contextual tabs, groups, controls, or submenus."""
+def merge_word_ribbon(existing, fresh, unverified=(), *, full_capture=True, require_expanded=True):
+    """Merge fresh Word ribbon records into existing records, validating fresh completeness (across all tabs when
+    `full_capture=True`, or within the captured tab(s) when `full_capture=False`) before merging so old records in
+    `existing` cannot conceal missing tabs, contextual tabs, groups, controls, or menu items."""
+    validate_word_ribbon(
+        fresh, require_behaviour=False, full_capture=full_capture, require_expanded=require_expanded
+    )
+    fresh_ids = {r.get("id") for r in fresh if isinstance(r, dict) and r.get("id")}
     if full_capture:
-        validate_word_ribbon(fresh, require_behaviour=False)
-        fresh_ids = {r.get("id") for r in fresh if isinstance(r, dict) and r.get("id")}
         missing_existing = [
-            r["id"] for r in existing if isinstance(r, dict) and r.get("id") and r["id"] not in fresh_ids
+            r["id"]
+            for r in existing
+            if isinstance(r, dict)
+            and r.get("id")
+            and (require_expanded or r.get("kind") != "menuItem")
+            and r["id"] not in fresh_ids
         ]
-        if missing_existing:
-            raise Refused(
-                f"fresh full Word ribbon capture is missing {len(missing_existing)} existing record(s), "
-                f"including {missing_existing[0]!r}"
-            )
+    else:
+        captured_tabs = {
+            r["id"] for r in fresh if isinstance(r, dict) and r.get("kind") in ("tab", "contextualTab") and r.get("id")
+        }
+        missing_existing = [
+            r["id"]
+            for r in existing
+            if isinstance(r, dict)
+            and r.get("id")
+            and (r["id"] in captured_tabs or any(r["id"].startswith(f"{t}.") for t in captured_tabs))
+            and (require_expanded or r.get("kind") != "menuItem")
+            and r["id"] not in fresh_ids
+        ]
+    if missing_existing:
+        raise Refused(
+            f"fresh Word ribbon capture is missing {len(missing_existing)} existing record(s), "
+            f"including {missing_existing[0]!r}"
+        )
     merged = merge(existing, fresh, unverified)
-    if full_capture:
-        validate_word_ribbon(merged, require_behaviour=True)
+    merged_is_full = full_capture or (
+        len([r for r in merged if isinstance(r, dict) and r.get("kind") == "tab"]) == len(WORD_REQUIRED_CORE_TABS)
+    )
+    validate_word_ribbon(merged, require_behaviour=True, full_capture=merged_is_full, require_expanded=True)
     return merged
 
 
@@ -6365,8 +6761,13 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 is_canonical_word_ribbon = out.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
             except OSError:
                 is_canonical_word_ribbon = False
-            if is_canonical_word_ribbon and args.all_tabs:
-                validate_word_ribbon(records, require_behaviour=False)
+            if is_canonical_word_ribbon:
+                validate_word_ribbon(
+                    records,
+                    require_behaviour=False,
+                    full_capture=bool(args.all_tabs),
+                    require_expanded=bool(args.expand),
+                )
         if args.merge:
             current_bytes = out.read_bytes() if out.exists() else None
             if current_bytes != initial_bytes:
@@ -6375,7 +6776,11 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 existing_records = _load_existing_records(out, current_bytes)
                 if args.app == "word" and is_canonical_word_ribbon:
                     records = merge_word_ribbon(
-                        existing_records, records, unverified_records, full_capture=bool(args.all_tabs)
+                        existing_records,
+                        records,
+                        unverified_records,
+                        full_capture=bool(args.all_tabs),
+                        require_expanded=bool(args.expand),
                     )
                 else:
                     records = merge(existing_records, records, unverified_records)
