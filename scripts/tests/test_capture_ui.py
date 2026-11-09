@@ -710,8 +710,10 @@ class Writes(unittest.TestCase):
             (idx, e[3]) for idx, e in enumerate(events)
             if isinstance(e, tuple) and e[:3] == ("SetFileInformationByHandle", 502, 22)
         )
-        # h_lock (501) is closed only AFTER SetFileInformationByHandle(502, 22), and supplementary Unicode
+        # h_lock (501) is opened with FILE_SHARE_READ | FILE_SHARE_DELETE (1 | 4, excluding FILE_SHARE_WRITE)
+        # and closed only AFTER SetFileInformationByHandle(502, 22), and supplementary Unicode
         # characters in the destination path encode their full UTF-16LE byte length without truncating the tail.
+        self.assertIn(("CreateFileW", str(unicode_dst), 0x80000000, 1 | 4, 501), events)
         self.assertLess(rename_idx, events.index(("CloseHandle", 501)))
         import ctypes as _ct, os as _os
         len_off = _ct.sizeof(_ct.c_void_p) * 2
@@ -725,6 +727,7 @@ class Writes(unittest.TestCase):
             ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
             open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"expected"),
         ))
+        self.assertIn(("CreateFileW", "out.json", 0x80000000 | 0x00010000, 1, 501), events)
         self.assertLess(
             events.index(("SetFileInformationByHandle", 501, 13, b"")),
             events.index(("CloseHandle", 501)),
@@ -744,6 +747,7 @@ class Writes(unittest.TestCase):
             ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
             open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"modified"),
         ))
+        self.assertIn(("CreateFileW", "out.json", 0x80000000, 1 | 4, 501), events)
         self.assertEqual(unlinked, ["out.old"])
         self.assertFalse(any(isinstance(e, tuple) and e[0] == "SetFileInformationByHandle" for e in events))
 

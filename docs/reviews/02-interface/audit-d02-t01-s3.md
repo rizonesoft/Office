@@ -997,3 +997,75 @@ OVERALL: needs-attention
 
 - **Finding 1 (P2, backup cleanup reports failure after publication has committed):** Fixed at the owning layer (`scripts/lib/office_com.py`: `publish`). Once every destination is in place, post-commit cleanup iterates over `aside.values()` catching `OSError` per backup so all remaining backups are still unlinked, reports any retained backup paths on `sys.stderr` (`publish: backup cleanup could not remove ...`), and returns normally without raising so `capture-ui.py` preserves its committed publication outcome and summary. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
 
+
+## Round 22: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T02:31:33Z
+- Effort: medium
+- Type: adversarial
+- Lines: 22
+- Digest: 98fa53b82c90a208
+
+## adversarial: approve
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: approve
+
+## record: needs-attention
+
+1. **[P3] The non-TxF regression test passes with concurrent-write protection removed.** `scripts/tests/test_capture_ui.py:715` checks handle-close ordering but does not establish write exclusion. Reproduced without modifying files: replace the destination handle’s share flags in `_non_txf_replace()` (`scripts/lib/office_com.py:259`) from `1 | 4` to `1 | 2 | 4` in memory, then run `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch`. It still passes. This mutation permits concurrent in-place writes between verification and replacement on the supported non-TxF path. Add coverage that fails when this exclusion is removed. This finding concerns test coverage, not a demonstrated defect in the current implementation.
+
+Verification: 50 selected tests passed; the whole-inventory checker exited 0. Live Office capture and filesystem-writing tests were not completed under the read-only restriction. No files were modified.
+
+HIGHEST: P3
+OVERALL: needs-attention
+
+### Round 22 disposition (severity cutoff: stopped-low-severity)
+
+- **Finding 1 (P3, the non-TxF regression test passes with concurrent-write protection removed):** Fixed at the owning layer (`scripts/tests/test_capture_ui.py`: `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch`). Added assertions verifying that `CreateFileW` opens the destination lock handle (`501`) with share mode `1 | 4` (`FILE_SHARE_READ | FILE_SHARE_DELETE`, excluding `FILE_SHARE_WRITE`) in `_non_txf_replace` and `_non_txf_restore` and share mode `1` (`FILE_SHARE_READ`, excluding `FILE_SHARE_WRITE` and `FILE_SHARE_DELETE`) in `_non_txf_unlink`. Because Round 22 is past Round 8 (`SEVERITY_CUTOFF_ROUND = 8`) and has `HIGHEST: P3` with all other lenses approving or advisory, the review loop ends at Round 22 with `stopped-low-severity`.
+
+## Checkpoint at the current tip
+
+```text
+python scripts/todo-graph.py resolve "D02 T01 §3"
+-> exit 3 ("done": true, "receipt": "docs/reviews/d02-t01-s3.json")
+
+python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json
+group 'Adobe Acrobat' on 'Home': no control the baseline knows, so its provenance is unverified
+baseline core tabs not shown in this window: ['TabAddIns', 'TabBackgroundRemoval', 'TabBlogInsert', 'TabBlogPost', 'TabBroadcastPresentation', 'TabConflicts', 'TabDeveloper', 'TabDrawInk', 'TabOutlining', 'TabPrintPreview', 'TabSyntex']
+File (Backstage) is not a ribbon tab; its pages are captured by the app's Backstage section
+4 unverified records in D:\GitHub\Office\build\capture-ui\word-unverified.json
+R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100
+-> exit 0
+
+python scripts/check-inventory.py R:\scratch\word-home.json
+-> exit 0
+
+python scripts/check-inventory.py design/inventory
+-> exit 0
+
+python -m unittest discover -s scripts/tests -p "test_capture_ui.py"
+----------------------------------------------------------------------
+Ran 48 tests in 22.306s
+
+OK
+
+python -m unittest discover -s scripts/tests -p "test_word_commands.py"
+----------------------------------------------------------------------
+Ran 18 tests in 0.283s
+
+OK
+```
+
+`D02 T01 §3` remains verified (`exit 3`, `done: true`) with all audit findings across Rounds 1 through 22 fixed and covered by regression tests.
+
