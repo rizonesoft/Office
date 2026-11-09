@@ -747,6 +747,26 @@ class Writes(unittest.TestCase):
         self.assertEqual(unlinked, ["out.old"])
         self.assertFalse(any(isinstance(e, tuple) and e[0] == "SetFileInformationByHandle" for e in events))
 
+        # If unlinking the staged temporary file fails after link() creates a create_only destination,
+        # the destination is already registered in placed and rolled back via transacted_unlink.
+        import unittest.mock as _mock
+        rolled_back = []
+        with _mock.patch("tempfile.mkstemp", side_effect=[(11, "main.json.1.new"), (12, "side.json.2.new")]), \
+             _mock.patch("os.close"), \
+             _mock.patch.object(Path, "mkdir"), \
+             _mock.patch.object(Path, "read_bytes", side_effect=[b"main", b"side"]), \
+             _mock.patch.object(Path, "exists", return_value=True), \
+             _mock.patch.object(Path, "unlink", side_effect=[PermissionError("scanner lock"), None]), \
+             _mock.patch("office_com.transacted_unlink", side_effect=lambda p, b, status_out=None: (rolled_back.append((str(p), b)) or True)):
+            with self.assertRaises(PermissionError):
+                cu.publish(
+                    {Path("main.json"): "main", Path("side.json"): "side"},
+                    write=lambda p, d: None,
+                    link=lambda s, d: None,
+                    create_only={Path("main.json"), Path("side.json")},
+                )
+        self.assertEqual(rolled_back, [("main.json", b"main")])
+
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):

@@ -531,24 +531,24 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
                     link(staged[path], path)  # atomic no-overwrite creation
                 except FileExistsError:
                     raise Refused(f"{path} exists; pass --merge to update it") from None
-                staged[path].unlink()
-                del staged[path]
                 placed.append(path)
+                tmp_staged = staged.pop(path)
+                tmp_staged.unlink()
                 continue
             if path in expected:
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
                 transacted_replace(staged[path], path, backup, expected[path], on_enlisted=on_enlisted)
                 aside[path] = backup
-                del staged[path]
                 placed.append(path)
+                del staged[path]
                 continue
             if path.is_file():
                 backup = path.with_name(f"{path.name}.{os.getpid()}.{os.urandom(6).hex()}.old")
                 link(path, backup)  # a second name for the original: the destination never goes missing
                 aside[path] = backup  # registered only once it exists, so a rollback restores the original
             rename(staged[path], path)
-            del staged[path]  # placed: no longer a leftover to clean up
             placed.append(path)
+            del staged[path]  # placed: no longer a leftover to clean up
     except BaseException as exc:
         unremoved = []
         for path in placed:
@@ -576,7 +576,10 @@ def publish(files, write=None, rename=os.replace, link=os.link, create_only=(), 
         raise
     finally:
         for tmp in staged.values():
-            if tmp.exists():
-                tmp.unlink()
+            try:
+                if tmp.exists():
+                    tmp.unlink()
+            except OSError:
+                pass
     for old in aside.values():
         old.unlink()

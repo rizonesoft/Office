@@ -907,4 +907,50 @@ OVERALL: needs-attention
 
 ### Round 19 disposition
 
-- **Finding 1 (P2, `--expand` silently omits menus in unverified groups and tabs):** Fixed at the owning layer (`scripts/capture-ui.py`: `capture` and `expand_all`). `capture` now passes `unverified_start=before_unverified` to `expand_all`, and `expand_all` expands controls in both `tab_records` and `ctx.unverified[unverified_start:]`, retaining the expanded `menuItem` records in `ctx.unverified` immediately after their parent control and accumulating combo-box counts across the whole tab. Added regression coverage in `Round3.test_expand_opens_through_the_dropdown_part_and_closes` (`scripts/tests/test_capture_ui.py`).
+- **Finding 1 (P2, `--expand` silently omits menus in unverified groups and tabs):** Fixed at the owning layer (`scripts/capture-ui.py`: `capture` and `expand_all`). `capture` now passes `unverified_start=before_unverified` to `expand_all`, and `expand_all` expands controls in both `tab_records` and `ctx.unverified[unverified_start:]`, retaining the expanded `menuItem` records in `ctx.unverified` immediately after their parent control and accumulating combo-box counts across the whole tab. Added regression coverage in `Round3.test_expand_reads_items_from_a_separate_popup_window` (`scripts/tests/test_capture_ui.py`).
+
+## Round 20: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T02:06:18Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: be388c5a315a9be1
+
+## adversarial: needs-attention
+
+1. **[P2] Cleanup failure leaves an untracked partial publication.** `scripts/lib/office_com.py:534` unlinks the staged file after creating the destination hard link, but registers the destination in `placed` only at line 536. **Precondition:** that unlink raises, for example because a Windows scanner temporarily holds the staged file without delete sharing. Reproduced with in-memory filesystem doubles: `publish()` raised `PermissionError`, the main output remained, the sidecar was absent, and rollback was never attempted. Register successful creation before performing fallible cleanup.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding **1 [P2]** affects the main-output and sidecar pair passed to `publish()` at `scripts/capture-ui.py:1789`. Retrying without `--merge` then refuses because the incomplete run left its main output behind.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** contradicts `scripts/lib/office_com.py:513`, which promises rollback for failures the process survives. This reproduction uses a catchable exception, not process termination.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** leaves recovery to the operator despite the automatic-recovery requirement in `docs/product-principles.md:15`.
+
+## record: needs-attention
+
+2. **[P3] Round 19 cites a nonexistent regression test.** `docs/reviews/02-interface/audit-d02-t01-s3.md:910` names `Round3.test_expand_opens_through_the_dropdown_part_and_closes`. No such test exists. The added assertions are in `test_expand_reads_items_from_a_separate_popup_window` at `scripts/tests/test_capture_ui.py:801`. Selecting the documented test fails test loading; correct the evidence pointer.
+
+Verification: 50 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited 0. No live Office capture ran, and no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 20 disposition
+
+- **Finding 1 (P2, cleanup failure leaves an untracked partial publication):** Fixed at the owning layer (`scripts/lib/office_com.py`: `publish`). `publish` now registers `path` in `placed` immediately after `link(staged[path], path)` (as well as after `transacted_replace` and `rename`) and removes `path` from `staged` before unlinking the staged temporary file, and guards the `finally` temporary-file cleanup against `OSError`, so any failure during staged-file cleanup triggers rollback of already-placed destinations via `transacted_unlink` / `transacted_restore`. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
+- **Finding 2 (P3, Round 19 cites a nonexistent regression test):** Updated `### Round 19 disposition` above to cite `Round3.test_expand_reads_items_from_a_separate_popup_window` (`scripts/tests/test_capture_ui.py`).
+
