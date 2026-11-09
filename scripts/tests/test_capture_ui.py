@@ -3919,6 +3919,8 @@ class WordRibbon(unittest.TestCase):
                 self._seq = 1
                 self.window_pids = {5: 7, 50: 7}
                 self.delayed_formats = set()
+                self.fail_set_formats = set()
+                self.synthesize_locale_on_close = False
                 self.owner_hwnd_ok = True
                 self.created_windows = []
                 self.destroyed_windows = []
@@ -4063,6 +4065,13 @@ class WordRibbon(unittest.TestCase):
                 return 1
 
             def _close_clipboard(self):
+                if (
+                    self.synthesize_locale_on_close
+                    and self._clipboard_owner > 0
+                    and any(f in self.formats for f in (1, 7, 13))
+                    and 16 not in self.formats
+                ):
+                    self.seed_hglobal(16, b"\x09\x04\x00\x00")
                 self._open_hwnd = 0
                 return 1
 
@@ -4091,7 +4100,7 @@ class WordRibbon(unittest.TestCase):
                 return self.data.get(fmt, 0)
 
             def _set_data(self, fmt, h):
-                if not self.set_ok or self._clipboard_owner <= 0:
+                if not self.set_ok or fmt in self.fail_set_formats or self._clipboard_owner <= 0:
                     return 0
                 if fmt not in self.formats:
                     self.formats.append(fmt)
@@ -4306,6 +4315,38 @@ class WordRibbon(unittest.TestCase):
                 orig_text,
             )
             self.assertEqual(w32_pad.bitmaps[w32_pad.data[2]], "padded-operator-bmp")
+
+            # 2a-iii. Partial restoration failure after restoring CF_TEXT (1) and before restoring CF_BITMAP (2) and
+            #         CF_LOCALE (16), where CloseClipboard() synthesizes CF_LOCALE (16) and advances the sequence number:
+            #         the next retry recognizes its own close-time synthesis and restores [1, 2, 16].
+            w32_synth = FakeWin32Clipboard()
+            w32_synth.synthesize_locale_on_close = True
+            ansi_orig = b"OperatorAnsi\x00"
+            locale_orig = b"\x09\x08\x00\x00"
+            w32_synth.seed_hglobal(1, ansi_orig)
+            w32_synth.seed_bitmap(2, "synth-operator-bmp")
+            w32_synth.seed_hglobal(16, locale_orig)
+            l_synth = cu.Launched.__new__(cu.Launched)
+            l_synth.proc = type("P", (), {"pid": 7})()
+            l_synth._clipboard_win32 = w32_synth
+            l_synth._saved_clipboard = l_synth._save_clipboard()
+            w32_synth.seed_word_copy("Sample\x00", owner_hwnd=50)
+            l_synth._record_seeded_clipboard_state()
+            # First restoration attempt writes CF_TEXT (1), fails on CF_BITMAP (2), and CloseClipboard() synthesizes CF_LOCALE (16).
+            w32_synth.fail_set_formats.add(2)
+            with self.assertRaises(cu.Refused):
+                l_synth._restore_saved_clipboard()
+            self.assertIsNotNone(l_synth._saved_clipboard)
+            self.assertEqual(w32_synth.formats, [1, 16])
+            # Second restoration attempt succeeds and restores [1, 2, 16] with original bitmap and locale.
+            w32_synth.fail_set_formats.clear()
+            l_synth._restore_saved_clipboard()
+            self.assertIsNone(l_synth._saved_clipboard)
+            self.assertEqual(w32_synth.formats, [1, 2, 16])
+            self.assertEqual(w32_synth.bitmaps[w32_synth.data[2]], "synth-operator-bmp")
+            h_loc = w32_synth.data[16]
+            self.assertEqual(ctypes.string_at(w32_synth._global_lock(h_loc), w32_synth._global_size(h_loc)), locale_orig)
+            self.assertEqual(w32_synth.created_windows, w32_synth.destroyed_windows)
 
             # 2b. If an external application modifies the clipboard BEFORE _record_seeded_clipboard_state() acquires it
             #     (either with new content or with the same text from a foreign/unowned window), _record_seeded_clipboard_state
