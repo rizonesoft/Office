@@ -868,3 +868,43 @@ OVERALL: needs-attention
 ### Round 18 disposition
 
 - **Finding 1 (P2, Unicode output paths can rename over the wrong file):** Fixed at the owning layer (`scripts/lib/office_com.py`: `_posix_rename_over`). `_posix_rename_over` now encodes the destination path with `name.encode("utf-16-le")` and computes `FileNameLength` and the `FILE_RENAME_INFO` buffer size from `len(name_bytes)` rather than `len(name) * 2`, so supplementary Unicode characters (UTF-16 surrogate pairs) never truncate the trailing bytes of the destination filename. Added regression coverage in `Writes.test_transacted_replace_enlists_before_reading_and_rolls_back_on_mismatch` (`scripts/tests/test_capture_ui.py`).
+
+## Round 19: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T01:57:43Z
+- Effort: medium
+- Type: adversarial
+- Lines: 26
+- Digest: 64861105ec45ef8c
+
+## adversarial: approve
+
+## consistency: approve
+
+## integration: needs-attention
+
+1. **[P2] `--expand` silently omits menus in unverified groups and tabs.** `scripts/capture-ui.py:1296` passes only `tab_records` to `expand_all()`. Controls routed to `ctx.unverified` never reach expansion. **Precondition:** capture a new built-in group or tab absent from the older baseline. Reproduced through `capture()` with identical UIA doubles: baseline membership produced one expansion and a `menuItem`; removing membership produced zero expansions and only sidecar `group` and `control` records. Both captures returned successfully. Expand the current tab’s unverified controls too, retaining their items in the sidecar.
+
+## source-defect: needs-attention
+
+Finding **1 [P2]** violates the expansion requirement at `todo/02-interface/TODO-01-parity-inventory.md:147`. Baseline uncertainty should determine provenance and destination, not silently remove menu coverage.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** leaves newer interface features incompletely inventoried without reporting expansion omissions, contrary to the completeness rationale at `todo/02-interface/TODO-01-parity-inventory.md:645`.
+
+## record: advisory
+
+50 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited `0`. Reproduction used in-memory doubles. No live Office capture ran; no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 19 disposition
+
+- **Finding 1 (P2, `--expand` silently omits menus in unverified groups and tabs):** Fixed at the owning layer (`scripts/capture-ui.py`: `capture` and `expand_all`). `capture` now passes `unverified_start=before_unverified` to `expand_all`, and `expand_all` expands controls in both `tab_records` and `ctx.unverified[unverified_start:]`, retaining the expanded `menuItem` records in `ctx.unverified` immediately after their parent control and accumulating combo-box counts across the whole tab. Added regression coverage in `Round3.test_expand_opens_through_the_dropdown_part_and_closes` (`scripts/tests/test_capture_ui.py`).

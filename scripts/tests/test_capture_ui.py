@@ -814,22 +814,39 @@ class Round3(unittest.TestCase):
                 self.open = False
 
         drop = Drop()
+        unv_drop = Drop()
         popup = E("Window", "Select", kids=[E("MenuItem", "Select All", "SelectAll"), E("MenuItem", "Selection Pane")])
         ctx = cu.Context("word", BUILD, {"SelectMenu", "SelectAll"})
         rec = ctx.base("word.home.editing.select", "control", "Select", 0, drop, parent="word.home.editing",
                        controlType="menu", idMso="SelectMenu")
+        unv_group = ctx.base("word.home.addin", "group", "Addin", 1, E("Group", "Addin"), parent="word.home",
+                             baselineMissing=True)
+        unv_rec = ctx.base("word.home.addin.menu", "control", "AddinMenu", 0, unv_drop, parent="word.home.addin",
+                           controlType="menu", baselineMissing=True)
+        ctx.unverified.extend([unv_group, unv_rec])
         launched = type("L", (), {"proc": type("P", (), {"pid": 1})(), "hwnd": 5, "check_alone": lambda self: None})()
         uia = type("U", (), {"element": lambda self, h: popup if h == 77 else E("Window", "Doc")})()
-        win = type("W", (), {"popups": lambda self, pid: [77] if drop.open else []})()
-        real = cu.wait_for
+        win = type("W", (), {"popups": lambda self, pid: [77] if (drop.open or unv_drop.open) else []})()
+        real, real_sleep = cu.wait_for, cu.time.sleep
         cu.wait_for = lambda test, seconds=0, step=0: test()
+        cu.time.sleep = lambda s: None
         try:
-            out = cu.expand_all([rec], None, ctx, launched, uia, win)
+            out = cu.expand_all([rec], None, ctx, launched, uia, win, unverified_start=0)
         finally:
-            cu.wait_for = real
+            cu.wait_for, cu.time.sleep = real, real_sleep
         self.assertEqual([r["label"] for r in out[1:]], ["Select All", "Selection Pane"])
         self.assertEqual(out[1]["idMso"], "SelectAll")
         self.assertFalse(drop.open)
+        self.assertFalse(unv_drop.open)
+        self.assertEqual(
+            [(r["kind"], r["label"], r.get("parent"), r.get("baselineMissing")) for r in ctx.unverified],
+            [
+                ("group", "Addin", "word.home", True),
+                ("control", "AddinMenu", "word.home.addin", True),
+                ("menuItem", "Select All", "word.home.addin.menu", True),
+                ("menuItem", "Selection Pane", "word.home.addin.menu", True),
+            ],
+        )
 
     def test_expand_checks_ownership_before_each_ui_action(self):
         class Drop(E):

@@ -1293,7 +1293,9 @@ def capture(args, launched, uia, win):
         if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
             raise Refused(f"tab {tab.name!r} produced no control records")
         if args.expand:
-            tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
+            tab_records = expand_all(
+                tab_records, lower, ctx, launched, uia, win, unverified_start=before_unverified
+            )
             check_licensing()
         records += tab_records
     check_licensing()
@@ -1470,35 +1472,44 @@ def lower_for_tab(uia, hwnd, tab_name):
     return last_lower
 
 
-def expand_all(records, lower, ctx, launched, uia, win):
+def expand_all(records, lower, ctx, launched, uia, win, unverified_start=None):
     """Open every control that can expand (by its own pattern) once, record its items, and close it again."""
-    out, combos = [], 0
-    for rec in records:
-        out.append(rec)
-        element = ctx.elements.get(rec["id"])
-        if rec.get("kind") != "control" or element is None:
-            continue
-        target = next((p for p in element.children() if p.automation_id.endswith("_Dropdown")), element) \
-            if element.control_type == "SplitButton" else element
-        if target.expand_state() is None:
-            continue
-        if rec.get("controlType") == "comboBox":
-            combos += 1  # fonts, sizes: the machine's and the document's data, not the app's interface
-            continue
-        launched.check_alone()
-        before = win.popups(launched.proc.pid)
-        target.expand()
-        try:
-            time.sleep(0.3)
-            opened = [h for h in win.popups(launched.proc.pid) if h not in before]
-            items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened], label=rec["label"])
-            if not items:
-                ctx.notes.append(f"{rec['label']!r} opened but no item was read from it")
-        finally:
-            close_popup(target, lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
-                        or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,
-                        rec["label"], check_alone=launched.check_alone)
-        out += expand_items(rec, target, items, ctx)
+    combos = 0
+
+    def expand_list(batch):
+        nonlocal combos
+        out = []
+        for rec in batch:
+            out.append(rec)
+            element = ctx.elements.get(rec["id"])
+            if rec.get("kind") != "control" or element is None:
+                continue
+            target = next((p for p in element.children() if p.automation_id.endswith("_Dropdown")), element) \
+                if element.control_type == "SplitButton" else element
+            if target.expand_state() is None:
+                continue
+            if rec.get("controlType") == "comboBox":
+                combos += 1  # fonts, sizes: the machine's and the document's data, not the app's interface
+                continue
+            launched.check_alone()
+            before = win.popups(launched.proc.pid)
+            target.expand()
+            try:
+                time.sleep(0.3)
+                opened = [h for h in win.popups(launched.proc.pid) if h not in before]
+                items = popup_items(uia.element(launched.hwnd), [uia.element(h) for h in opened], label=rec["label"])
+                if not items:
+                    ctx.notes.append(f"{rec['label']!r} opened but no item was read from it")
+            finally:
+                close_popup(target, lambda: [h for h in win.popups(launched.proc.pid) if h not in before]
+                            or find(uia.element(launched.hwnd), lambda e: e.control_type == "Menu", depth=30) is not None,
+                            rec["label"], check_alone=launched.check_alone)
+            out += expand_items(rec, target, items, ctx)
+        return out
+
+    out = expand_list(records)
+    if unverified_start is not None and len(ctx.unverified) > unverified_start:
+        ctx.unverified[unverified_start:] = expand_list(ctx.unverified[unverified_start:])
     if combos:
         ctx.notes.append(f"{combos} combo box list(s) on this tab not expanded (system or document data)")
     return out
