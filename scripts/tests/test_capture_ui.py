@@ -3324,6 +3324,14 @@ class WordRibbon(unittest.TestCase):
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
             ("word.home.clipboard.paste", "Executes Paste. Enabled in an editable document. State rule: on, off, mixed."),
+            (
+                "word.print-preview.preview.magnifier",
+                "Shows or hides Magnifier visual guides or non-printing formatting marks. Enabled when Print Preview is active. State rule: on, off, and mixed state is not used.",
+            ),
+            (
+                "word.developer.controls.legacy-tools",
+                "Opens the Legacy Tools palette for Legacy Forms and ActiveX controls. Enabled in an editable OpenXML document (DOCX or DOCM) when the insertion point is in a region that permits form controls. State rule: on, off, and mixed state is not used.",
+            ),
             (less_btns[0]["id"], "Increments (Less) the adjacent numeric spinner measurement. Enabled in an editable document."),
         ):
             mutated_beh = [dict(r) for r in records]
@@ -3908,6 +3916,7 @@ class WordRibbon(unittest.TestCase):
                 self._buffers = {}
                 self._open_hwnd = 0
                 self._clipboard_owner = 0
+                self._seq = 1
                 self.owner_hwnd_ok = True
                 self.created_windows = []
                 self.destroyed_windows = []
@@ -3931,6 +3940,7 @@ class WordRibbon(unittest.TestCase):
                         "EnumClipboardFormats": _Fn(self._enum_formats),
                         "GetClipboardData": _Fn(self._get_data),
                         "SetClipboardData": _Fn(self._set_data),
+                        "GetClipboardSequenceNumber": _Fn(lambda: self._seq),
                         "CopyImage": _Fn(self._copy_image),
                         "CreateWindowExW": _Fn(self._create_window),
                         "DestroyWindow": _Fn(self._destroy_window),
@@ -3975,6 +3985,7 @@ class WordRibbon(unittest.TestCase):
                 if fmt not in self.formats:
                     self.formats.append(fmt)
                 self.data[fmt] = h
+                self._seq += 1
                 return h
 
             def seed_bitmap(self, fmt, tag):
@@ -3983,6 +3994,7 @@ class WordRibbon(unittest.TestCase):
                 if fmt not in self.formats:
                     self.formats.append(fmt)
                 self.data[fmt] = h
+                self._seq += 1
                 return h
 
             def seed_emf(self, fmt, tag):
@@ -3991,6 +4003,7 @@ class WordRibbon(unittest.TestCase):
                 if fmt not in self.formats:
                     self.formats.append(fmt)
                 self.data[fmt] = h
+                self._seq += 1
                 return h
 
             def seed_palette(self, entries_bytes):
@@ -3999,6 +4012,7 @@ class WordRibbon(unittest.TestCase):
                 if 9 not in self.formats:
                     self.formats.append(9)
                 self.data[9] = h
+                self._seq += 1
                 return h
 
             def seed_mfpict(self, mm, x_ext, y_ext, mf_bytes):
@@ -4037,6 +4051,7 @@ class WordRibbon(unittest.TestCase):
                 self._clipboard_owner = self._open_hwnd
                 self.formats.clear()
                 self.data.clear()
+                self._seq += 1
                 return 1
 
             def _enum_formats(self, prev):
@@ -4057,6 +4072,7 @@ class WordRibbon(unittest.TestCase):
                 if fmt not in self.formats:
                     self.formats.append(fmt)
                 self.data[fmt] = h
+                self._seq += 1
                 return h
 
             def _copy_image(self, h, _t, _w, _h_px, _flags):
@@ -4219,7 +4235,31 @@ class WordRibbon(unittest.TestCase):
             self.assertEqual((mfp_restored.mm, mfp_restored.xExt, mfp_restored.yExt), (8, 1200, 900))
             self.assertEqual(fake_w32.metafiles[mfp_restored.hMF], orig_mf)
 
-            # 2. Unsupported private (0x0200), owner-display (0x0080), GDI (0x0300), or null-handle formats
+            # 2. If another application modifies the clipboard after Home seeding (either after _record_seeded_clipboard_state
+            #    or via direct seeding), _restore_saved_clipboard preserves the newer external clipboard content,
+            #    frees the saved snapshot's duplicate GDI handles, and clears _saved_clipboard.
+            w32_ext = FakeWin32Clipboard()
+            w32_ext.seed_hglobal(13, orig_text)
+            w32_ext.seed_bitmap(2, "old-operator-bmp")
+            l_ext = cu.Launched.__new__(cu.Launched)
+            l_ext._clipboard_win32 = w32_ext
+            l_ext._saved_clipboard = l_ext._save_clipboard()
+            w32_ext._empty_clipboard()
+            w32_ext.seed_hglobal(13, "Sample\x00".encode("utf-16-le"))
+            l_ext._record_seeded_clipboard_state()
+            # External app copies new text and a new bitmap during the capture window.
+            newer_text = "NewerExternalCopy\x00".encode("utf-16-le")
+            w32_ext._empty_clipboard()
+            w32_ext.seed_hglobal(13, newer_text)
+            w32_ext.seed_bitmap(2, "newer-external-bmp")
+            l_ext._restore_saved_clipboard()
+            self.assertIsNone(l_ext._saved_clipboard)
+            self.assertEqual(len(w32_ext.deleted_objects), 1)
+            h_ext_text = w32_ext.data[13]
+            self.assertEqual(ctypes.string_at(w32_ext._global_lock(h_ext_text), w32_ext._global_size(h_ext_text)), newer_text)
+            self.assertEqual(w32_ext.bitmaps[w32_ext.data[2]], "newer-external-bmp")
+
+            # 3. Unsupported private (0x0200), owner-display (0x0080), GDI (0x0300), or null-handle formats
             #    cause _save_clipboard to refuse before Home preparation modifies the clipboard.
             for bad_fmt in (0x0200, 0x0080, 0x0300):
                 w32_bad = FakeWin32Clipboard()

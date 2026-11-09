@@ -1406,6 +1406,66 @@ class Launched:
             except Exception:
                 pass
 
+    def _get_clipboard_seq(self, u32):
+        import ctypes
+        fn = getattr(u32, "GetClipboardSequenceNumber", None)
+        if not callable(fn):
+            return None
+        try:
+            fn.restype = ctypes.c_uint
+            fn.argtypes = []
+        except Exception:
+            pass
+        return int(fn() or 0)
+
+    def _peek_clipboard_sig_while_open(self, u32, k32):
+        import ctypes
+        u32.GetClipboardData.restype = ctypes.c_void_p
+        u32.GetClipboardData.argtypes = [ctypes.c_uint]
+        k32.GlobalLock.restype = ctypes.c_void_p
+        k32.GlobalLock.argtypes = [ctypes.c_void_p]
+        k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        k32.GlobalSize.restype = ctypes.c_size_t
+        k32.GlobalSize.argtypes = [ctypes.c_void_p]
+        fmts = []
+        text_payload = None
+        fmt = int(u32.EnumClipboardFormats(0) or 0)
+        while fmt:
+            h_raw = u32.GetClipboardData(fmt)
+            h = int(h_raw or 0)
+            fmts.append((fmt, h))
+            if fmt in (13, 1) and h and text_payload is None:
+                sz = int(k32.GlobalSize(h) or 0)
+                ptr = k32.GlobalLock(h) if sz > 0 else None
+                if ptr:
+                    try:
+                        text_payload = ctypes.string_at(ptr, sz)
+                    finally:
+                        k32.GlobalUnlock(h)
+            fmt = int(u32.EnumClipboardFormats(fmt) or 0)
+        return (tuple(fmts), text_payload)
+
+    def _record_seeded_clipboard_state(self):
+        if callable(getattr(self, "_clipboard_saver", None)) or callable(getattr(self, "_clipboard_restorer", None)):
+            return
+        import ctypes
+        win32 = getattr(self, "_clipboard_win32", None)
+        u32 = win32.user32 if win32 is not None else ctypes.windll.user32
+        k32 = win32.kernel32 if win32 is not None else ctypes.windll.kernel32
+        opened = False
+        for _ in range(25):
+            if u32.OpenClipboard(0):
+                opened = True
+                break
+            time.sleep(0.02)
+        if not opened:
+            raise Refused("could not open the system clipboard to verify seeded Home clipboard state")
+        try:
+            self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
+            self._seeded_clipboard_sig = self._peek_clipboard_sig_while_open(u32, k32)
+        finally:
+            u32.CloseClipboard()
+
     def _save_clipboard(self):
         saver = getattr(self, "_clipboard_saver", None)
         if callable(saver):
@@ -1448,6 +1508,7 @@ class Launched:
         if not opened:
             raise Refused("could not open the system clipboard to preserve operator clipboard state")
         items = []
+        raw_handles = []
         try:
             fmt = u32.EnumClipboardFormats(0)
             while fmt:
@@ -1460,6 +1521,7 @@ class Launched:
                     raise Refused(
                         f"clipboard format 0x{fmt:04x} returned no data handle; refusing to overwrite operator clipboard"
                     )
+                raw_handles.append((int(fmt), int(h)))
                 if fmt in (2, 0x0082):
                     dup_bmp = u32.CopyImage(h, 0, 0, 0, 0)
                     if not dup_bmp:
@@ -1534,6 +1596,9 @@ class Launched:
             raise
         finally:
             u32.CloseClipboard()
+        self._saved_clipboard_handles = tuple(raw_handles)
+        self._seeded_clipboard_seq = None
+        self._seeded_clipboard_sig = None
         return items
 
     def _restore_clipboard(self, snapshot):
@@ -1625,9 +1690,34 @@ class Launched:
                 time.sleep(0.02)
             if not opened:
                 raise Refused("could not open the system clipboard to restore operator clipboard state")
+            emptied_by_us = False
             try:
+                cur_seq = self._get_clipboard_seq(u32)
+                cur_sig = self._peek_clipboard_sig_while_open(u32, k32)
+                seeded_seq = getattr(self, "_seeded_clipboard_seq", None)
+                seeded_sig = getattr(self, "_seeded_clipboard_sig", None)
+                external_change = False
+                if seeded_seq is not None and cur_seq is not None and cur_seq != seeded_seq:
+                    external_change = True
+                elif seeded_sig is not None and cur_sig != seeded_sig:
+                    external_change = True
+                elif seeded_seq is None and seeded_sig is None:
+                    cur_fmts, cur_text = cur_sig
+                    saved_handles = getattr(self, "_saved_clipboard_handles", ())
+                    sample_bytes = "Sample\x00".encode("utf-16-le")
+                    if (
+                        cur_fmts
+                        and cur_fmts != saved_handles
+                        and not (len(cur_fmts) == 1 and cur_fmts[0][0] == 13 and cur_text == sample_bytes)
+                    ):
+                        external_change = True
+                if external_change:
+                    self._seeded_clipboard_seq = None
+                    self._seeded_clipboard_sig = None
+                    return False
                 if not u32.EmptyClipboard():
                     raise Refused("could not empty the system clipboard to restore operator clipboard state")
+                emptied_by_us = True
                 for fmt, kind, payload in snapshot or ():
                     if kind == "hglobal":
                         if not isinstance(payload, (bytes, bytearray)):
@@ -1709,6 +1799,14 @@ class Launched:
                             raise Refused(f"SetClipboardData failed while restoring clipboard format 0x{fmt:04x}")
                     else:
                         raise Refused(f"unsupported clipboard snapshot kind {kind!r} for format 0x{fmt:04x}")
+                self._seeded_clipboard_seq = None
+                self._seeded_clipboard_sig = None
+                return True
+            except BaseException:
+                if emptied_by_us:
+                    self._seeded_clipboard_seq = self._get_clipboard_seq(u32)
+                    self._seeded_clipboard_sig = self._peek_clipboard_sig_while_open(u32, k32)
+                raise
             finally:
                 u32.CloseClipboard()
         finally:
@@ -1833,6 +1931,7 @@ class Launched:
                         try:
                             rng.Text = "Sample"
                             rng.Copy()
+                            self._record_seeded_clipboard_state()
                             rng.Text = ""
                             if hasattr(rng, "Select"):
                                 rng.Select()
@@ -4891,8 +4990,6 @@ WORD_SELECTION_FORMAT_TOGGLE_IDS = frozenset({
     "word.table-layout.alignment.align-bottom-center",
     "word.table-layout.alignment.align-bottom-right",
     "word.table-layout.data.repeat-header-rows",
-    "word.equation.conversions.unicode",
-    "word.equation.conversions.latex",
     "word.equation.conversions.text",
 })
 
@@ -6919,6 +7016,20 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                 for bad_phrase in WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES:
                     if bad_phrase in beh:
                         raise Refused(f"{rid}: control behaviour contains circular placeholder phrase {bad_phrase!r}")
+                if rid == "word.print-preview.preview.magnifier" or rec.get("idMso") == "Magnifier":
+                    if (
+                        "zoom" not in beh.casefold()
+                        or "pointer" not in beh.casefold()
+                        or "visual guides or non-printing formatting marks" in beh
+                    ):
+                        raise Refused(
+                            f"{rid}: Magnifier must describe switching the Print Preview pointer between the Magnifier zoom cursor and the editing insertion pointer"
+                        )
+                if rid == "word.developer.controls.legacy-tools" or rec.get("idMso") == "ControlsGalleryClassic":
+                    if "97-2003" not in beh or "saved in OpenXML format" in beh:
+                        raise Refused(
+                            f"{rid}: Legacy Tools must record that it is enabled in legacy Word 97-2003 (DOC/DOT) compatibility-mode documents as well as OpenXML documents"
+                        )
                 if rid == "word.references.citations-bibliography.manage-sources" or rec.get("idMso") == "BibliographyManageSources":
                     if "Source Manager" not in beh or "Master List" not in beh:
                         raise Refused(f"{rid}: Manage Sources must describe opening the Source Manager dialog and accessing the Master List")
@@ -7008,6 +7119,11 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                 for bad_phrase in WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES:
                     if bad_phrase in beh:
                         raise Refused(f"{rid}: menuItem behaviour contains circular placeholder phrase {bad_phrase!r}")
+                if rid.startswith("word.developer.controls.legacy-tools."):
+                    if "97-2003" not in beh or "saved in OpenXML format" in beh:
+                        raise Refused(
+                            f"{rid}: Legacy Tools item must record that it is enabled in legacy Word 97-2003 (DOC/DOT) compatibility-mode documents as well as OpenXML documents"
+                        )
                 if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
                     raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
                 if ctype == "galleryItem":
