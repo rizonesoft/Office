@@ -3208,26 +3208,57 @@ class WordRibbon(unittest.TestCase):
             with self.assertRaises(cu.Refused):
                 cu.validate_word_ribbon(mutated)
 
-        # 5. Removing child menuItems from required expanded menus, submenus or galleries is refused.
+        # 5. Removing child menuItems from required expanded menus, submenus (including underline-color and contextual
+        #    arrangement/layout menus) or galleries is refused.
         for parent_id in (
             "word.home.paragraph.borders",
+            "word.home.font.underline.underline-color",
             "word.home.font.text-effects-and-typography.outline",
             "word.home.font.text-effects-and-typography.outline.weight",
             "word.mailings.write-insert-fields.insert-merge-field",
             "word.mailings.write-insert-fields.rules",
             "word.mailings.finish.finish-merge",
             "word.home.styles.styles",
+            "word.picture-format.arrange.bring-forward",
+            "word.picture-format.arrange.group",
+            "word.shape-format.arrange.group",
+            "word.format.arrange.bring-forward",
+            "word.format.arrange.group",
+            "word.format.arrange.rotate",
+            "word.smartart-design.create-graphic.layout",
+            "word.format-tabsmartarttoolsformat.arrange.group",
+            "word.graphics-format.arrange.bring-forward",
+            "word.3d-model.arrange.group",
         ):
-            unexpanded = [r for r in records if r.get("parent") != parent_id]
+            unexpanded = [r for r in records if not str(r.get("parent", "")).startswith(parent_id)]
             with self.assertRaises(cu.Refused):
                 cu.validate_word_ribbon(unexpanded)
 
-        # 6. Removing behaviour, enablement preconditions, gallery expand descriptions, or on/off/mixed state rules is refused.
+        # 6. Verify splitButton state rule distinction (Paste has no checked/mixed state rule; Underline does)
+        #    and spinner Less/More button descriptions.
+        by_id = {r["id"]: r for r in records}
+        self.assertNotIn("State rule:", by_id["word.home.clipboard.paste"]["behaviour"])
+        self.assertIn("State rule:", by_id["word.home.font.underline"]["behaviour"])
+        less_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "Less"]
+        more_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "More"]
+        self.assertGreater(len(less_btns), 0)
+        self.assertGreater(len(more_btns), 0)
+        for lb in less_btns:
+            self.assertIn("Decrements (Less)", lb["behaviour"])
+            self.assertNotIn("Increments (Less)", lb["behaviour"])
+        for mb in more_btns:
+            self.assertIn("Increments (More)", mb["behaviour"])
+
+        # 7. Removing behaviour, enablement preconditions, gallery expand descriptions, or on/off/mixed state rules,
+        #    or fabricating a checked/mixed state rule on a non-toggle splitButton, or describing Less as incrementing
+        #    is refused.
         for target_id, bad_beh in (
             ("word.table-design", "Table Design"),
             ("word.home.font.bold", "Toggles Bold on the selection. Enabled in an editable document."),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
+            ("word.home.clipboard.paste", "Executes Paste. Enabled in an editable document. State rule: on, off, mixed."),
+            (less_btns[0]["id"], "Increments (Less) the adjacent numeric spinner measurement. Enabled in an editable document."),
         ):
             mutated_beh = [dict(r) for r in records]
             rec = next(r for r in mutated_beh if r["id"] == target_id)
@@ -3243,6 +3274,8 @@ class WordRibbon(unittest.TestCase):
                 self.sub_kids = list(sub_kids)
 
             def expand_state(self):
+                if not self.sub_kids:
+                    return None
                 return 1 if self.open else 0
 
             def expand(self):
@@ -3308,6 +3341,36 @@ class WordRibbon(unittest.TestCase):
         self.assertIn("word.review.markup.show-markup.specific-people.all-reviewers", by_id)
         self.assertFalse(any("jane" in rid for rid in by_id))
 
+        # Enabled submenu that fails to open its popup raises Refused instead of silently dropping children.
+        broken_sub = SubMenu("Broken Submenu", "BrokenSubMenu", key="Alt, R, M K, B", sub_kids=[
+            SubMenu("Leaf", "BrokenLeaf", key="Alt, R, M K, B, L"),
+        ])
+        broken_top = SubMenu("Show Markup", "ReviewShowMarkupMenu", key="Alt, R, M K", sub_kids=[broken_sub])
+        broken_rec = ctx.base(
+            "word.review.markup.show-markup", "control", "Show Markup", 0, broken_top,
+            parent="word.review.markup", controlType="menu", idMso="ReviewShowMarkupMenu",
+        )
+
+        def broken_popups(_self, _pid):
+            return [101] if broken_top.open else []
+
+        def broken_element(_self, h):
+            if h == 101:
+                return E("Window", "Top", kids=[E("Menu", "Top", kids=broken_top.sub_kids)])
+            return E("Window", "Doc")
+
+        cu.wait_for = lambda test, seconds=0, step=0: test()
+        cu.time.sleep = lambda s: None
+        try:
+            with self.assertRaises(cu.Refused):
+                cu.expand_all(
+                    [broken_rec], None, ctx, launched,
+                    type("U", (), {"element": broken_element})(),
+                    type("W", (), {"popups": broken_popups})(),
+                )
+        finally:
+            cu.wait_for, cu.time.sleep = real_wait, real_sleep
+
     def test_word_contextual_tab_triggering_and_fixture_integrity(self):
         import argparse
         with tempfile.TemporaryDirectory() as tmp:
@@ -3324,6 +3387,7 @@ class WordRibbon(unittest.TestCase):
                 "equation": [("Equation", "TabEquationToolsDesign", "Alt, JE")],
                 "chart": [("Chart Design", "TabChartToolsDesignNew", "Alt, JC"), ("Format", "TabChartToolsFormatNew", "Alt, JA")],
                 "smartart": [("SmartArt Design", "TabSmartArtToolsDesign", "Alt, JS"), ("Format", "TabSmartArtToolsFormat", "Alt, JO")],
+                "smartart_multi": [("SmartArt Design", "TabSmartArtToolsDesign", "Alt, JS"), ("Format", "TabSmartArtToolsFormat", "Alt, JO")],
                 "svg": [("Graphics Format", "TabGraphicsToolsFormat", "Alt, JG")],
                 "model3d": [("3D Model", "Tab3DModelToolsFormat", "Alt, TI")],
                 "outlining": [("Outlining", "TabOutlining", "Alt, U")],

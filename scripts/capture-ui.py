@@ -1467,76 +1467,124 @@ class Launched:
             if target == "table":
                 doc.Tables(1).Cell(1, 1).Range.Select()
             elif target in ("picture", "background_removal"):
-                shapes = getattr(doc, "InlineShapes", None)
-                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                 selected = False
-                for idx in range(1, cnt + 1):
-                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                    if int(getattr(ish, "Type", 0)) == 3:
-                        ish.Select()
-                        selected = True
-                        break
+                try:
+                    doc.Shapes.Range(["FixturePic1", "FixturePic2"]).Select()
+                    selected = True
+                except Exception:
+                    pass
+                if not selected:
+                    shapes = getattr(doc, "InlineShapes", None)
+                    cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                    for idx in range(1, cnt + 1):
+                        ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                        if int(getattr(ish, "Type", 0)) == 3:
+                            ish.Select()
+                            selected = True
+                            break
                 if not selected:
                     raise Refused("Word contextual fixture has no inline picture (wdInlineShapePicture)")
             elif target == "shape":
-                sh = doc.Shapes(1) if callable(getattr(doc, "Shapes", None)) else doc.Shapes.Item(1)
-                sh.Select()
+                selected = False
                 try:
-                    if hasattr(sh, "TextFrame") and sh.TextFrame.HasText:
-                        sh.TextFrame.TextRange.Select()
+                    doc.Shapes.Range(["FixtureShape1", "FixtureShape2"]).Select()
+                    selected = True
                 except Exception:
                     pass
+                if not selected:
+                    sh = doc.Shapes(1) if callable(getattr(doc, "Shapes", None)) else doc.Shapes.Item(1)
+                    sh.Select()
+                    try:
+                        if hasattr(sh, "TextFrame") and sh.TextFrame.HasText:
+                            sh.TextFrame.TextRange.Select()
+                    except Exception:
+                        pass
             elif target == "header_footer":
                 app.ActiveWindow.View.SeekView = 1
             elif target == "equation":
                 om = doc.OMaths(1) if callable(getattr(doc, "OMaths", None)) else doc.OMaths.Item(1)
                 om.Range.Select()
             elif target == "chart":
-                shapes = getattr(doc, "InlineShapes", None)
-                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                 selected = False
-                for idx in range(1, cnt + 1):
-                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                    if bool(getattr(ish, "HasChart", False)) or int(getattr(ish, "Type", 0)) == 12:
-                        ish.Select()
-                        selected = True
-                        break
+                try:
+                    doc.Shapes.Range(["FixtureChart1", "FixtureChart2"]).Select()
+                    selected = True
+                except Exception:
+                    pass
+                if not selected:
+                    shapes = getattr(doc, "InlineShapes", None)
+                    cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                    for idx in range(1, cnt + 1):
+                        ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                        if bool(getattr(ish, "HasChart", False)) or int(getattr(ish, "Type", 0)) == 12:
+                            ish.Select()
+                            selected = True
+                            break
                 if not selected:
                     raise Refused("Word contextual fixture has no inline chart")
             elif target == "smartart":
-                shapes = getattr(doc, "InlineShapes", None)
-                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                 selected = False
-                for idx in range(1, cnt + 1):
-                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                    if bool(getattr(ish, "HasSmartArt", False)) or int(getattr(ish, "Type", 0)) == 15:
-                        ish.Select()
-                        selected = True
-                        break
+                try:
+                    sa_sh = doc.Shapes("FixtureSmartArt1")
+                    sa_sh.Select()
+                    sa_sh.SmartArt.AllNodes(1).Shapes.Select()
+                    selected = True
+                except Exception:
+                    pass
+                if not selected:
+                    shapes = getattr(doc, "InlineShapes", None)
+                    cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                    for idx in range(1, cnt + 1):
+                        ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                        if bool(getattr(ish, "HasSmartArt", False)) or int(getattr(ish, "Type", 0)) == 15:
+                            ish.Select()
+                            try:
+                                ish.SmartArt.AllNodes(1).Shapes.Select()
+                            except Exception:
+                                pass
+                            selected = True
+                            break
                 if not selected:
                     raise Refused("Word contextual fixture has no inline SmartArt")
+            elif target == "smartart_multi":
+                try:
+                    doc.Shapes.Range(["FixtureSmartArt1", "FixtureSmartArt2"]).Select()
+                except Exception:
+                    pass
             elif target == "svg":
-                shapes = getattr(doc, "InlineShapes", None)
-                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                 selected = False
-                for idx in range(1, cnt + 1):
-                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                    if int(getattr(ish, "Type", 0)) == 16:
-                        ish.Select()
-                        selected = True
-                        break
+                try:
+                    doc.Shapes("FixtureSvg1").Select()
+                    selected = True
+                except Exception:
+                    pass
+                if not selected:
+                    shapes = getattr(doc, "InlineShapes", None)
+                    cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                    for idx in range(1, cnt + 1):
+                        ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                        if int(getattr(ish, "Type", 0)) == 16:
+                            ish.Select()
+                            selected = True
+                            break
                 if not selected:
                     raise Refused("Word contextual fixture has no inline SVG graphic (wdInlineShapeGraphic)")
             elif target == "model3d":
-                shapes = getattr(doc, "InlineShapes", None)
-                cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
                 selected = False
-                for idx in range(1, cnt + 1):
-                    ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
-                    if int(getattr(ish, "Type", 0)) == 17:
-                        ish.Select()
-                        selected = True
-                        break
+                try:
+                    doc.Shapes.Range(["Fixture3D1", "Fixture3D2"]).Select()
+                    selected = True
+                except Exception:
+                    pass
+                if not selected:
+                    shapes = getattr(doc, "InlineShapes", None)
+                    cnt = int(getattr(shapes, "Count", 0)) if shapes is not None else 0
+                    for idx in range(1, cnt + 1):
+                        ish = shapes.Item(idx) if hasattr(shapes, "Item") else shapes(idx)
+                        if int(getattr(ish, "Type", 0)) in (17, 19):
+                            ish.Select()
+                            selected = True
+                            break
                 if not selected:
                     raise Refused("Word contextual fixture has no inline 3D model (wdInlineShape3DModel)")
             elif target == "outlining":
@@ -2302,15 +2350,18 @@ def _expand_submenus(parent_rec, items, ctx, launched, uia, win, seen_rids, dept
                     target=item_el,
                     exclude_rids=seen_rids,
                 )
-            except Exception:
-                sub_items = []
-            if sub_items:
-                next_seen = seen_rids | {x.runtime_id() for x in sub_items}
-                out.extend(
-                    _expand_submenus(
-                        item_rec, sub_items, ctx, launched, uia, win, next_seen, depth=depth + 1, max_depth=max_depth
-                    )
+            except Refused:
+                raise
+            except Exception as exc:
+                raise Refused(f"failed to expand submenu {item_rec['id']!r} ({item_rec['label']!r}): {exc}") from exc
+            if not sub_items:
+                raise Refused(f"submenu {item_rec['id']!r} ({item_rec['label']!r}) opened no child menu items")
+            next_seen = seen_rids | {x.runtime_id() for x in sub_items}
+            out.extend(
+                _expand_submenus(
+                    item_rec, sub_items, ctx, launched, uia, win, next_seen, depth=depth + 1, max_depth=max_depth
                 )
+            )
             if not is_live_sub:
                 try:
                     item_el.collapse()
@@ -4350,25 +4401,179 @@ WORD_RECONCILED_UNEXPANDED_CONTROLS = frozenset({
     "word.review.comments.show-comments",
     "word.review.protect.block-authors",
     "word.developer.protect.block-authors",
-    "word.picture-format.arrange.bring-forward",
-    "word.picture-format.arrange.send-backward",
-    "word.picture-format.arrange.group",
-    "word.shape-format.arrange.group",
     "word.format.insert-shapes.change-shape",
-    "word.format.arrange.bring-forward",
-    "word.format.arrange.send-backward",
-    "word.format.arrange.group",
-    "word.format.arrange.rotate",
-    "word.smartart-design.create-graphic.layout",
-    "word.format-tabsmartarttoolsformat.arrange.bring-forward",
-    "word.format-tabsmartarttoolsformat.arrange.send-backward",
-    "word.format-tabsmartarttoolsformat.arrange.group",
-    "word.graphics-format.arrange.bring-forward",
-    "word.graphics-format.arrange.send-backward",
-    "word.3d-model.arrange.bring-forward",
-    "word.3d-model.arrange.send-backward",
-    "word.3d-model.arrange.group",
 })
+
+WORD_TOGGLE_SPLIT_BUTTON_IDS = frozenset({
+    "word.home.font.underline",
+    "word.home.paragraph.bullets",
+    "word.home.paragraph.numbering",
+    "word.home.paragraph.borders",
+    "word.home.voice.dictate",
+    "word.review.markup.reviewing-pane",
+    "word.review.tracking.track-changes",
+    "word.review.ink.hide-ink",
+    "word.table-design.borders.borders",
+    "word.picture-format.size.crop",
+    "word.graphics-format.size.crop",
+})
+
+WORD_REQUIRED_SUBMENU_PARENTS = (
+    "word.home.font.underline.underline-color",
+    "word.home.font.text-effects-and-typography.outline",
+    "word.home.font.text-effects-and-typography.shadow",
+    "word.home.font.text-effects-and-typography.reflection",
+    "word.home.font.text-effects-and-typography.glow",
+    "word.home.font.text-effects-and-typography.number-styles",
+    "word.home.font.text-effects-and-typography.ligatures",
+    "word.home.font.text-effects-and-typography.outline.weight",
+    "word.home.font.text-effects-and-typography.outline.dashes",
+    "word.home.font.text-effects-and-typography.glow.more-glow-colors",
+    "word.home.font.font-color.gradient",
+    "word.home.paragraph.multilevel-list.all",
+    "word.insert.pages.cover-page.more-cover-pages-from-office-online",
+    "word.insert.tables.table.quick-tables",
+    "word.insert.header-footer.header.more-headers-from-office-online",
+    "word.insert.header-footer.footer.more-footers-from-office-online",
+    "word.insert.header-footer.page-number.top-of-page",
+    "word.insert.header-footer.page-number.bottom-of-page",
+    "word.insert.header-footer.page-number.page-margins",
+    "word.insert.header-footer.page-number.current-position",
+    "word.insert.header-footer.page-number.top-of-page.more-page-numbers-from-office-online",
+    "word.insert.header-footer.page-number.bottom-of-page.more-page-numbers-from-office-online",
+    "word.insert.header-footer.page-number.page-margins.more-page-numbers-from-office-online",
+    "word.insert.header-footer.page-number.current-position.more-page-numbers-from-office-online",
+    "word.insert.text.text-box.more-text-boxes-from-office-online",
+    "word.insert.text.quick-parts.autotext",
+    "word.insert.text.quick-parts.document-property",
+    "word.insert.symbols.equation.more-equations-from-office-online",
+    "word.draw.edit.format-background.page-color",
+    "word.design.page-background.watermark.more-watermarks-from-office-online",
+    "word.references.table-of-contents.table-of-contents.more-tables-of-contents-from-office-online",
+    "word.review.markup.show-markup.balloons",
+    "word.review.markup.show-markup.specific-people",
+    "word.picture-format.adjust.color.more-variations",
+    "word.picture-format.picture-styles.picture-border.weight",
+    "word.picture-format.picture-styles.picture-border.sketched",
+    "word.picture-format.picture-styles.picture-border.dashes",
+    "word.picture-format.picture-styles.picture-effects.preset",
+    "word.picture-format.picture-styles.picture-effects.shadow",
+    "word.picture-format.picture-styles.picture-effects.reflection",
+    "word.picture-format.picture-styles.picture-effects.glow",
+    "word.picture-format.picture-styles.picture-effects.soft-edges",
+    "word.picture-format.picture-styles.picture-effects.bevel",
+    "word.picture-format.picture-styles.picture-effects.3-d-rotation",
+    "word.picture-format.picture-styles.picture-effects.glow.more-glow-colors",
+    "word.picture-format.size.crop.crop-to-shape",
+    "word.picture-format.size.crop.aspect-ratio",
+    "word.shape-format.insert-shapes.edit-shape.change-shape",
+    "word.shape-format.shape-styles.quick-styles.all",
+    "word.shape-format.shape-styles.quick-styles.other-theme-fills",
+    "word.shape-format.shape-styles.shape-fill.gradient",
+    "word.shape-format.shape-styles.shape-fill.texture",
+    "word.shape-format.shape-styles.shape-outline.weight",
+    "word.shape-format.shape-styles.shape-outline.sketched",
+    "word.shape-format.shape-styles.shape-outline.dashes",
+    "word.shape-format.shape-styles.shape-effects.preset",
+    "word.shape-format.shape-styles.shape-effects.shadow",
+    "word.shape-format.shape-styles.shape-effects.reflection",
+    "word.shape-format.shape-styles.shape-effects.glow",
+    "word.shape-format.shape-styles.shape-effects.soft-edges",
+    "word.shape-format.shape-styles.shape-effects.bevel",
+    "word.shape-format.shape-styles.shape-effects.3-d-rotation",
+    "word.shape-format.shape-styles.shape-effects.glow.more-glow-colors",
+    "word.shape-format.wordart-styles.text-fill.gradient",
+    "word.shape-format.wordart-styles.text-outline.weight",
+    "word.shape-format.wordart-styles.text-outline.dashes",
+    "word.shape-format.wordart-styles.text-effects.shadow",
+    "word.shape-format.wordart-styles.text-effects.reflection",
+    "word.shape-format.wordart-styles.text-effects.glow",
+    "word.shape-format.wordart-styles.text-effects.bevel",
+    "word.shape-format.wordart-styles.text-effects.3-d-rotation",
+    "word.shape-format.wordart-styles.text-effects.transform",
+    "word.shape-format.wordart-styles.text-effects.glow.more-glow-colors",
+    "word.header-footer.header-footer.header.more-headers-from-office-online",
+    "word.header-footer.header-footer.footer.more-footers-from-office-online",
+    "word.header-footer.header-footer.page-number.top-of-page",
+    "word.header-footer.header-footer.page-number.bottom-of-page",
+    "word.header-footer.header-footer.page-number.page-margins",
+    "word.header-footer.header-footer.page-number.current-position",
+    "word.header-footer.header-footer.page-number.top-of-page.more-page-numbers-from-office-online",
+    "word.header-footer.header-footer.page-number.bottom-of-page.more-page-numbers-from-office-online",
+    "word.header-footer.header-footer.page-number.page-margins.more-page-numbers-from-office-online",
+    "word.header-footer.header-footer.page-number.current-position.more-page-numbers-from-office-online",
+    "word.header-footer.insert.document-info.document-property",
+    "word.header-footer.insert.quick-parts.autotext",
+    "word.header-footer.insert.quick-parts.document-property",
+    "word.equation.tools.equation.more-equations-from-office-online",
+    "word.equation.symbols.equation-symbols.basic-math",
+    "word.chart-design.chart-layouts.add-chart-element.axes",
+    "word.chart-design.chart-layouts.add-chart-element.axis-titles",
+    "word.chart-design.chart-layouts.add-chart-element.chart-title",
+    "word.chart-design.chart-layouts.add-chart-element.data-labels",
+    "word.chart-design.chart-layouts.add-chart-element.data-table",
+    "word.chart-design.chart-layouts.add-chart-element.error-bars",
+    "word.chart-design.chart-layouts.add-chart-element.gridlines",
+    "word.chart-design.chart-layouts.add-chart-element.legend",
+    "word.chart-design.chart-layouts.add-chart-element.trendline",
+    "word.format.shape-styles.quick-styles.all",
+    "word.format.shape-styles.shape-fill.gradient",
+    "word.format.shape-styles.shape-fill.texture",
+    "word.format.shape-styles.shape-outline.weight",
+    "word.format.shape-styles.shape-outline.dashes",
+    "word.format.shape-styles.shape-effects.preset",
+    "word.format.shape-styles.shape-effects.shadow",
+    "word.format.shape-styles.shape-effects.glow",
+    "word.format.shape-styles.shape-effects.soft-edges",
+    "word.format.shape-styles.shape-effects.bevel",
+    "word.format.shape-styles.shape-effects.3-d-rotation",
+    "word.format.shape-styles.shape-effects.glow.more-glow-colors",
+    "word.format.wordart-styles.text-fill.gradient",
+    "word.format.wordart-styles.text-fill.texture",
+    "word.format.wordart-styles.text-outline.weight",
+    "word.format.wordart-styles.text-outline.dashes",
+    "word.format.wordart-styles.text-effects.shadow",
+    "word.format.wordart-styles.text-effects.reflection",
+    "word.format.wordart-styles.text-effects.glow",
+    "word.format.wordart-styles.text-effects.glow.more-glow-colors",
+    "word.format-tabsmartarttoolsformat.shape-styles.quick-styles.all",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-fill.gradient",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-fill.texture",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-outline.weight",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-outline.sketched",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-outline.dashes",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.preset",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.shadow",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.reflection",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.glow",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.soft-edges",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.bevel",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.3-d-rotation",
+    "word.format-tabsmartarttoolsformat.shape-styles.shape-effects.glow.more-glow-colors",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-fill.gradient",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-fill.texture",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-outline.weight",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-outline.dashes",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.shadow",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.reflection",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.glow",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.bevel",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.3-d-rotation",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.transform",
+    "word.format-tabsmartarttoolsformat.wordart-styles.text-effects.glow.more-glow-colors",
+    "word.graphics-format.graphics-styles.graphics-outline.weight",
+    "word.graphics-format.graphics-styles.graphics-outline.dashes",
+    "word.graphics-format.graphics-styles.graphics-effects.preset",
+    "word.graphics-format.graphics-styles.graphics-effects.shadow",
+    "word.graphics-format.graphics-styles.graphics-effects.reflection",
+    "word.graphics-format.graphics-styles.graphics-effects.glow",
+    "word.graphics-format.graphics-styles.graphics-effects.soft-edges",
+    "word.graphics-format.graphics-styles.graphics-effects.bevel",
+    "word.graphics-format.graphics-styles.graphics-effects.3-d-rotation",
+    "word.graphics-format.graphics-styles.graphics-effects.glow.more-glow-colors",
+    "word.graphics-format.size.crop.crop-to-shape",
+    "word.graphics-format.size.crop.aspect-ratio",
+)
 
 WORD_REQUIRED_EXPANDED_PARENTS = (
     "word.home.clipboard.paste",
@@ -4379,6 +4584,7 @@ WORD_REQUIRED_EXPANDED_PARENTS = (
     "word.home.paragraph.shading",
     "word.home.paragraph.borders",
     "word.home.styles.styles",
+    "word.home.font.underline.underline-color",
     "word.home.font.text-effects-and-typography",
     "word.home.font.text-effects-and-typography.outline",
     "word.home.font.text-effects-and-typography.outline.weight",
@@ -4440,6 +4646,9 @@ WORD_REQUIRED_EXPANDED_PARENTS = (
     "word.table-design.table-styles.table-styles",
     "word.table-design.borders.borders",
     "word.picture-format.picture-styles.quick-styles",
+    "word.picture-format.arrange.bring-forward",
+    "word.picture-format.arrange.send-backward",
+    "word.picture-format.arrange.group",
     "word.shape-format.shape-styles.quick-styles",
     "word.shape-format.shape-styles.shape-effects",
     "word.shape-format.wordart-styles.quick-styles",
@@ -4447,14 +4656,28 @@ WORD_REQUIRED_EXPANDED_PARENTS = (
     "word.shape-format.wordart-styles.text-outline",
     "word.shape-format.wordart-styles.text-effects",
     "word.shape-format.text.text-direction",
+    "word.shape-format.arrange.group",
     "word.equation.tools.equation",
     "word.equation.symbols.equation-symbols",
     "word.equation.structures.fraction",
     "word.chart-design.chart-styles.quick-styles",
+    "word.format.arrange.bring-forward",
+    "word.format.arrange.send-backward",
+    "word.format.arrange.group",
+    "word.format.arrange.rotate",
+    "word.smartart-design.create-graphic.layout",
     "word.smartart-design.layouts.change-layout",
     "word.smartart-design.smartart-styles.quick-styles",
+    "word.format-tabsmartarttoolsformat.arrange.bring-forward",
+    "word.format-tabsmartarttoolsformat.arrange.send-backward",
+    "word.format-tabsmartarttoolsformat.arrange.group",
     "word.graphics-format.graphics-styles.graphics-styles",
+    "word.graphics-format.arrange.bring-forward",
+    "word.graphics-format.arrange.send-backward",
     "word.3d-model.3d-model-views.views",
+    "word.3d-model.arrange.bring-forward",
+    "word.3d-model.arrange.send-backward",
+    "word.3d-model.arrange.group",
 )
 
 CONTEXTUAL_TAB_BEHAVIOURS = {
@@ -4562,6 +4785,64 @@ def _invoke_or_toggle_uia_button(el):
     return False
 
 
+WORD_CONTEXTUAL_TAB_GROUPS = {
+    "TabTableToolsDesign": ("Table Tools", "Table Design"),
+    "TabTableToolsLayout": ("Table Tools", "Layout"),
+    "TabPictureToolsFormat": ("Picture Tools", "Picture Format"),
+    "TabDrawingToolsFormat": ("Drawing Tools", "Shape Format"),
+    "TabHeaderAndFooterToolsDesign": ("Header & Footer Tools", "Header & Footer"),
+    "TabEquationToolsDesign": ("Equation Tools", "Equation"),
+    "TabChartToolsDesignNew": ("Chart Tools", "Chart Design"),
+    "TabChartToolsFormatNew": ("Chart Tools", "Format"),
+    "TabSmartArtToolsDesign": ("SmartArt Tools", "SmartArt Design"),
+    "TabSmartArtToolsFormat": ("SmartArt Tools", "Format"),
+    "TabGraphicsToolsFormat": ("Graphics Tools", "Graphics Format"),
+    "Tab3DModelToolsFormat": ("3D Model Tools", "3D Model"),
+    "TabOutlining": (None, "Outlining"),
+    "TabPrintPreview": (None, "Print Preview"),
+    "TabBackgroundRemoval": (None, "Background Removal"),
+    "TabLearningTools": ("Immersive", "Immersive Reader"),
+}
+
+
+def _find_word_contextual_tab(tabs_bar, expected_aid):
+    grp_name, tab_name = WORD_CONTEXTUAL_TAB_GROUPS.get(expected_aid, (None, None))
+    for child in tabs_bar.children():
+        if child.control_type == "TabItem" and child.automation_id == expected_aid:
+            return child
+        if child.control_type == "Group":
+            for sub in child.children():
+                if sub.control_type == "TabItem" and sub.automation_id == expected_aid:
+                    return sub
+    for child in tabs_bar.children():
+        if grp_name is None and child.control_type == "TabItem" and tab_name and child.name == tab_name:
+            child.automation_id = expected_aid
+            return child
+        if child.control_type == "Group" and (grp_name is None or child.name == grp_name):
+            for sub in child.children():
+                if sub.control_type == "TabItem" and tab_name and sub.name == tab_name:
+                    sub.automation_id = expected_aid
+                    return sub
+    return None
+
+
+def _select_word_tab(tab_el, uia, hwnd):
+    try:
+        tab_el.select()
+    except Exception:
+        pass
+    raw = getattr(tab_el, "raw", None)
+    if raw is not None and first_group_name(uia.element(hwnd)) != tab_el.name:
+        if not wait_for(lambda: first_group_name(uia.element(hwnd)) == tab_el.name, 1.0, 0.15):
+            try:
+                u = uia.U
+                leg = raw.GetCurrentPattern(u.UIA_LegacyIAccessiblePatternId)
+                if leg:
+                    leg.QueryInterface(u.IUIAutomationLegacyIAccessiblePattern).DoDefaultAction()
+            except Exception:
+                pass
+
+
 def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_licensing, order_start=11, fixture_path=None):
     """Open `fixture_path` (defaulting to `R:\\scratch\\fixtures\\word-contextual.docx`), trigger each contextual and
     mode tab via Word's object model and commands, capture every resulting `contextualTab` record, and close the
@@ -4581,11 +4862,10 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
             if not tabs_bar:
                 raise Refused(f"Ribbon Tabs not found after triggering Word contextual target {target!r}")
             if target == "background_removal":
-                cur_tabs = ribbon_tabs(tabs_bar)
-                if not any(t.automation_id == "TabBackgroundRemoval" for t in cur_tabs):
-                    pic_tab = next((t for t in cur_tabs if t.automation_id == "TabPictureToolsFormat"), None)
+                if _find_word_contextual_tab(tabs_bar, "TabBackgroundRemoval") is None:
+                    pic_tab = _find_word_contextual_tab(tabs_bar, "TabPictureToolsFormat")
                     if pic_tab is not None:
-                        pic_tab.select()
+                        _select_word_tab(pic_tab, uia, launched.hwnd)
                         lower_pic = lower_for_tab(uia, launched.hwnd, pic_tab.name)
                         rm_btn = find(lower_pic, lambda e: e.automation_id == "PictureBackgroundRemoval")
                         _invoke_or_toggle_uia_button(rm_btn)
@@ -4594,11 +4874,11 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
                             lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
                         )
             elif target == "immersive_reader":
-                cur_tabs = ribbon_tabs(tabs_bar)
-                if not any(t.automation_id == "TabLearningTools" for t in cur_tabs):
+                if _find_word_contextual_tab(tabs_bar, "TabLearningTools") is None:
+                    cur_tabs = ribbon_tabs(tabs_bar)
                     view_tab = next((t for t in cur_tabs if t.automation_id == "TabView"), None)
                     if view_tab is not None:
-                        view_tab.select()
+                        _select_word_tab(view_tab, uia, launched.hwnd)
                         lower_view = lower_for_tab(uia, launched.hwnd, view_tab.name)
                         ir_btn = find(lower_view, lambda e: e.automation_id == "ImmersiveReader")
                         _invoke_or_toggle_uia_button(ir_btn)
@@ -4606,17 +4886,22 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
                         tabs_bar = wait_for(
                             lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
                         )
-            cur_tabs = ribbon_tabs(tabs_bar)
             for expected_aid in expected_tab_ids:
                 if expected_aid in captured_idmsos:
                     continue
-                tab_el = next((t for t in cur_tabs if t.automation_id == expected_aid), None)
+                if expected_aid == "TabSmartArtToolsFormat":
+                    launched.word_action("trigger_contextual", target="smartart_multi")
+                    time.sleep(0.2)
+                    tabs_bar = wait_for(
+                        lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                    )
+                tab_el = _find_word_contextual_tab(tabs_bar, expected_aid) if tabs_bar else None
                 if tab_el is None:
                     raise Refused(f"Word contextual target {target!r} did not expose expected tab {expected_aid!r}")
                 launched.check_alone()
                 if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
                     ctx.drop_geometry(f"the window moved or changed size before contextual tab {tab_el.name!r}")
-                tab_el.select()
+                _select_word_tab(tab_el, uia, launched.hwnd)
                 lower = lower_for_tab(uia, launched.hwnd, tab_el.name)
                 launched.check_alone()
                 check_licensing()
@@ -4635,8 +4920,6 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
                 tabs_bar = wait_for(
                     lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
                 )
-                if tabs_bar:
-                    cur_tabs = ribbon_tabs(tabs_bar)
             if target == "background_removal":
                 lower_cur = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
                 if lower_cur is not None:
@@ -4810,9 +5093,12 @@ def synthesize_word_behaviour(records):
                 action = (
                     f"Executes the default {label} command in the {grp_label} group on {tab_label} when the primary button face is clicked, and opens the {label} dropdown menu via its split dropdown arrow to choose specific options."
                 )
-                state_rule = (
-                    "State rule: the primary button reflects the active formatting or mode state (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
-                )
+                if rid in WORD_TOGGLE_SPLIT_BUTTON_IDS:
+                    state_rule = (
+                        "State rule: the primary button reflects the active formatting or mode state (checked/on when the default attribute is uniformly applied across the selection, unchecked/off when absent, and mixed/unselected when the selection spans mixed formatting)."
+                    )
+                else:
+                    state_rule = ""
             elif ctype == "menu":
                 action = (
                     f"Opens the {label} dropdown menu in the {grp_label} group on {tab_label} to present its child commands and submenus."
@@ -4850,9 +5136,13 @@ def synthesize_word_behaviour(records):
                 )
                 state_rule = ""
             else:
-                if label in ("More", "Less") and not idmso:
+                if label == "More" and not idmso:
                     action = (
                         f"Increments ({label}) the adjacent numeric spinner measurement in the {grp_label} group on {tab_label} by one step."
+                    )
+                elif label == "Less" and not idmso:
+                    action = (
+                        f"Decrements ({label}) the adjacent numeric spinner measurement in the {grp_label} group on {tab_label} by one step."
                     )
                 else:
                     action = (
@@ -4867,19 +5157,24 @@ def synthesize_word_behaviour(records):
                 state_rule = (
                     f"State rule: appears selected (on) in the {parent_label} gallery when the current selection uniformly matches {label}, unselected (off) when another preset or custom formatting applies, and unselected (mixed) when the selection spans multiple presets."
                 )
-            elif has_kids or ctype == "menu":
-                if label == "Gallery Filter":
-                    action = (
-                        f"Selects the active category filter inside the {parent_label} gallery popup on {tab_label} to scope which gallery items are shown."
-                    )
-                elif label == "No Online Content Available":
-                    action = (
-                        f"Placeholder item shown inside {parent_label} on {tab_label} when online template content is unavailable or not yet fetched."
-                    )
-                else:
-                    action = (
-                        f"Selects or expands the {label} option under {parent_label} ({grp_label} group on {tab_label})."
-                    )
+            elif has_kids or rid in WORD_REQUIRED_SUBMENU_PARENTS:
+                action = (
+                    f"Selects or expands the {label} submenu under {parent_label} ({grp_label} group on {tab_label})."
+                )
+                state_rule = (
+                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                )
+            elif label == "Gallery Filter":
+                action = (
+                    f"Selects the active category filter inside the {parent_label} gallery popup on {tab_label} to scope which gallery items are shown."
+                )
+                state_rule = (
+                    f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
+                )
+            elif label == "No Online Content Available":
+                action = (
+                    f"Placeholder item shown inside {parent_label} on {tab_label} when online template content is unavailable or not yet fetched."
+                )
                 state_rule = (
                     f"State rule: shows a check mark or highlight (on) when {label} is the active option or uniformly applied to the selection, no check mark (off) when inactive, and no check mark (mixed) when the selection spans conflicting settings."
                 )
@@ -5029,9 +5324,15 @@ def validate_word_ribbon(records):
                 raise Refused(f"{rid}: control is missing distinct behaviour sentence")
             if "Enabled" not in beh:
                 raise Refused(f"{rid}: control behaviour is missing enablement precondition")
-            if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "splitButton", "comboBox", "spinner"):
+            if rec.get("label") == "Less" and not (rec.get("uiaId") or rec.get("idMso")) and "Decrements (Less)" not in beh:
+                raise Refused(f"{rid}: Less spinner button must describe decrementing, got {beh!r}")
+            if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "comboBox", "spinner") or (
+                ctype == "splitButton" and rid in WORD_TOGGLE_SPLIT_BUTTON_IDS
+            ):
                 if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
                     raise Refused(f"{rid}: stateful {ctype} behaviour is missing on/off/mixed state rule")
+            elif ctype == "splitButton" and "State rule:" in beh:
+                raise Refused(f"{rid}: non-toggle splitButton must not fabricate a checked/mixed state rule")
             if ctype == "gallery":
                 if "expand" not in beh and "dropdown" not in beh and "More" not in beh:
                     raise Refused(f"{rid}: gallery behaviour is missing expand control description")
@@ -5056,6 +5357,10 @@ def validate_word_ribbon(records):
                 raise Refused(f"{rid}: menuItem behaviour is missing enablement precondition")
             if "State rule:" not in beh or "on" not in beh or "off" not in beh or "mixed" not in beh:
                 raise Refused(f"{rid}: menuItem behaviour is missing on/off/mixed state rule")
+            if "Selects or expands" in beh or rid in WORD_REQUIRED_SUBMENU_PARENTS:
+                sub_items = [c for c in children_of.get(rid, ()) if c.get("kind") == "menuItem"]
+                if not sub_items:
+                    raise Refused(f"{rid}: submenu menuItem has no child menuItem records")
         else:
             raise Refused(f"{rid}: unexpected record kind {kind!r} in Word ribbon inventory")
 
@@ -5066,7 +5371,7 @@ def validate_word_ribbon(records):
         if r.get("keytip") != exp_kt:
             raise Refused(f"{req_id}: keytip {r.get('keytip')!r} != expected {exp_kt!r}")
 
-    for req_parent in WORD_REQUIRED_EXPANDED_PARENTS:
+    for req_parent in tuple(WORD_REQUIRED_EXPANDED_PARENTS) + tuple(WORD_REQUIRED_SUBMENU_PARENTS):
         if req_parent not in by_id:
             raise Refused(f"missing required expandable parent {req_parent!r}")
         if not any(c.get("kind") == "menuItem" for c in children_of.get(req_parent, ())):
