@@ -2517,6 +2517,31 @@ class ShellChrome(unittest.TestCase):
                         type("U", (), {"element": lambda self, h: E._wrap(rebuilt_kt_root)})(),
                         good_win, launched,
                     )
+                # If a surface pane shares (control_type, automation_id, name) with an existing baseline pane and is
+                # replaced during dismissal with a new runtime_id and shifted bounds, cleanup verification refuses it.
+                rebuilt_pane_root = make_shell_root(app_name="word")
+                rebuilt_pane_root.kids.append(E("Pane", "", "", rect=(0, 0, 100, 100)))
+                opened_unnamed_pane = [None]
+                orig_pane_kt = rebuilt_pane_root.on_keytips
+
+                def _rebuilt_shifted_pane_keytips(active):
+                    if active:
+                        orig_pane_kt(True)
+                        opened_unnamed_pane[0] = E("Pane", "", "", rect=(200, 200, 400, 400))
+                        rebuilt_pane_root.kids.append(opened_unnamed_pane[0])
+                    else:
+                        orig_pane_kt(False)
+                        if opened_unnamed_pane[0] in rebuilt_pane_root.kids:
+                            rebuilt_pane_root.kids.remove(opened_unnamed_pane[0])
+                        rebuilt_pane_root.kids.append(E("Pane", "", "", rect=(201, 200, 401, 400)))
+
+                rebuilt_pane_root.on_keytips = _rebuilt_shifted_pane_keytips
+                with self.assertRaises(cu.Refused):
+                    cu._open_and_collect_shell_surface(
+                        "keytips", None, rebuilt_pane_root,
+                        type("U", (), {"element": lambda self, h: E._wrap(rebuilt_pane_root)})(),
+                        good_win, launched,
+                    )
                 # Conversely, if an unrelated baseline element (such as a status bar indicator) is recreated with a
                 # new runtime_id at identical bounds during KeyTip activation or dismissal while all KeyTip badges
                 # close, cleanup succeeds and the reconstructed baseline element is not mistaken for a surface control.

@@ -2752,13 +2752,14 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         for el in before_nodes
     }
     before_sig_counts = {}
-    before_visible_keys = set()
+    before_key_counts = {}
     for el in before_nodes:
         vrect = _visible_rect_tuple(el)
         if vrect is not None:
             sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+            key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
             before_sig_counts[sig] = before_sig_counts.get(sig, 0) + 1
-            before_visible_keys.add((getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", "")))
+            before_key_counts[key] = before_key_counts.get(key, 0) + 1
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2796,8 +2797,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             target.select()
     surface_collected = []
     opened_state = {}
-    opened_only_sigs = set()
-    opened_only_keys = set()
+    opened_sigs = set()
+    opened_keys = set()
     cleanup_err = None
     try:
         time.sleep(0.1)
@@ -2822,10 +2823,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
                 key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
-                if sig not in before_sig_counts:
-                    opened_only_sigs.add(sig)
-                if key not in before_visible_keys:
-                    opened_only_keys.add(key)
+                opened_sigs.add(sig)
+                opened_keys.add(key)
         if has_popups and uia is not None:
             for h in win.popups(pid):
                 if h not in before_popups:
@@ -2847,10 +2846,8 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                                 getattr(el, "automation_id", ""),
                                 getattr(el, "name", ""),
                             )
-                            if sig not in before_sig_counts:
-                                opened_only_sigs.add(sig)
-                            if key not in before_visible_keys:
-                                opened_only_keys.add(key)
+                            opened_sigs.add(sig)
+                            opened_keys.add(key)
     finally:
         try:
             if surface_key == "keytips":
@@ -2879,48 +2876,49 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
         after_nodes = [after_root] + list(descendants(after_root, 25))
         after_sig_counts = {}
+        after_key_counts = {}
         for el in after_nodes:
             vrect = _visible_rect_tuple(el)
             if vrect is not None:
                 sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
                 after_sig_counts[sig] = after_sig_counts.get(sig, 0) + 1
+                after_key_counts[key] = after_key_counts.get(key, 0) + 1
         still_open = False
         for el in after_nodes:
             eid = _element_identity(el)
             cur_vrect = _visible_rect_tuple(el)
+            if cur_vrect is None:
+                continue
+            sig = (
+                getattr(el, "control_type", ""),
+                getattr(el, "automation_id", ""),
+                getattr(el, "name", ""),
+                cur_vrect,
+            )
+            key = (
+                getattr(el, "control_type", ""),
+                getattr(el, "automation_id", ""),
+                getattr(el, "name", ""),
+            )
+            sig_excess = after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0)
+            key_excess = after_key_counts.get(key, 0) > before_key_counts.get(key, 0)
             if eid in opened_state:
                 prev_vrect, _open_vrect = opened_state[eid]
                 if prev_vrect is _ABSENT or prev_vrect is None:
-                    if cur_vrect is not None:
-                        sig = (
-                            getattr(el, "control_type", ""),
-                            getattr(el, "automation_id", ""),
-                            getattr(el, "name", ""),
-                            cur_vrect,
-                        )
-                        if after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0):
-                            still_open = True
-                            break
+                    if sig_excess or key_excess:
+                        still_open = True
+                        break
                 elif cur_vrect != prev_vrect:
                     still_open = True
                     break
-            elif cur_vrect is not None:
-                sig = (
-                    getattr(el, "control_type", ""),
-                    getattr(el, "automation_id", ""),
-                    getattr(el, "name", ""),
-                    cur_vrect,
-                )
-                key = (
-                    getattr(el, "control_type", ""),
-                    getattr(el, "automation_id", ""),
-                    getattr(el, "name", ""),
-                )
-                if (
-                    sig in opened_only_sigs and after_sig_counts.get(sig, 0) > before_sig_counts.get(sig, 0)
-                ) or key in opened_only_keys:
+            elif eid not in before_state:
+                if sig_excess or key_excess:
                     still_open = True
                     break
+            elif (sig in opened_sigs and sig_excess) or (key in opened_keys and key_excess):
+                still_open = True
+                break
         tree_closed = not still_open
         popups_closed = not has_popups or not [h for h in win.popups(pid) if h not in before_popups]
         if expand_closed and tree_closed and popups_closed:
