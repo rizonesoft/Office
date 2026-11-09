@@ -2757,6 +2757,11 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
         for vrect in (_visible_rect_tuple(el),)
         if vrect is not None
     }
+    before_visible_keys = {
+        (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
+        for el in before_nodes
+        if _visible_rect_tuple(el) is not None
+    }
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2795,6 +2800,7 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     surface_collected = []
     opened_state = {}
     opened_only_sigs = set()
+    opened_only_keys = set()
     cleanup_err = None
     try:
         time.sleep(0.1)
@@ -2807,8 +2813,11 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 surface_collected.append(el)
                 opened_state[eid] = (prev_vrect, vrect)
                 sig = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""), vrect)
+                key = (getattr(el, "control_type", ""), getattr(el, "automation_id", ""), getattr(el, "name", ""))
                 if sig not in before_visible_sigs:
                     opened_only_sigs.add(sig)
+                if key not in before_visible_keys:
+                    opened_only_keys.add(key)
         if has_popups and uia is not None:
             for h in win.popups(pid):
                 if h not in before_popups:
@@ -2825,8 +2834,15 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                                 getattr(el, "name", ""),
                                 vrect,
                             )
+                            key = (
+                                getattr(el, "control_type", ""),
+                                getattr(el, "automation_id", ""),
+                                getattr(el, "name", ""),
+                            )
                             if sig not in before_visible_sigs:
                                 opened_only_sigs.add(sig)
+                            if key not in before_visible_keys:
+                                opened_only_keys.add(key)
     finally:
         try:
             if surface_key == "keytips":
@@ -2873,7 +2889,12 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                     getattr(el, "name", ""),
                     cur_vrect,
                 )
-                if eid not in before_state or sig in opened_only_sigs:
+                key = (
+                    getattr(el, "control_type", ""),
+                    getattr(el, "automation_id", ""),
+                    getattr(el, "name", ""),
+                )
+                if sig in opened_only_sigs or key in opened_only_keys:
                     still_open = True
                     break
         tree_closed = not still_open
