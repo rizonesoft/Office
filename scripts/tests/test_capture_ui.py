@@ -1858,7 +1858,7 @@ class ShellChrome(unittest.TestCase):
             cu.Win, cu.wait_for = real_win, real_wait
 
     def test_effective_shell_resolves_per_app_and_prunes_excluded_subtrees(self):
-        records = cu.build_shell_chrome_records(BUILD)
+        records = json.loads((cu.INVENTORY / "shell" / "chrome.json").read_text(encoding="utf-8"))
         self.assertTrue(cu.validate_shell_chrome(records))
 
         # 1. Word retains editingMode and its three child mode items, plus autosave.
@@ -1894,24 +1894,26 @@ class ShellChrome(unittest.TestCase):
             if r.get("parent"):
                 self.assertIn(r["parent"], excel_by_id)
 
-        # 3. PowerPoint includes SlideShowFromBeginning on QAT and Present in Teams on tab row, and remaps customize children.
+        # 3. PowerPoint includes SlideShowFromBeginning on QAT and Present in Teams on tab row, and has moved QAT customize children.
         ppt_eff = cu.effective_shell(records, "powerpoint")
         ppt_by_id = {r["id"]: r for r in ppt_eff}
         self.assertIn("powerpoint.shell.qat.fromBeginning", ppt_by_id)
         self.assertIn("powerpoint.shell.tabrow.presentInTeams", ppt_by_id)
         self.assertNotIn("shell.tabrow.editingMode", ppt_by_id)
         self.assertEqual(
-            ppt_by_id["shell.qat.customize.automatically-save"]["parent"],
+            ppt_by_id["powerpoint.shell.qat.customize.automatically-save"]["parent"],
             "powerpoint.shell.qat.customize",
         )
 
         # 4. Visio and Project omit autosave; Visio prunes menu items under its direct Share... button;
-        #    Project moves search from title bar to tab row while retaining search children; both retain KeyTips layer.
+        #    Project moves search from title bar to tab row with app-specific search children inside the anchor;
+        #    both retain KeyTips layer.
         visio_eff = cu.effective_shell(records, "visio")
         visio_ids = {r["id"] for r in visio_eff}
         self.assertNotIn("shell.titlebar.autosave", visio_ids)
         self.assertNotIn("shell.qat.autosave", visio_ids)
         self.assertIn("visio.shell.tabrow.closeDocument", visio_ids)
+        self.assertIn("visio.shell.qat.undo.dropdown", visio_ids)
         self.assertNotIn("shell.tabrow.share.share", visio_ids)
         self.assertNotIn("shell.tabrow.share.copy-link", visio_ids)
         self.assertNotIn("shell.tabrow.share.manage-access", visio_ids)
@@ -1924,7 +1926,14 @@ class ShellChrome(unittest.TestCase):
         self.assertNotIn("shell.qat.autosave", proj_by_id)
         self.assertNotIn("shell.titlebar.search", proj_by_id)
         self.assertIn("project.shell.tabrow.search", proj_by_id)
-        self.assertEqual(proj_by_id["shell.search.input"]["parent"], "project.shell.tabrow.search")
+        self.assertIn("project.shell.search.input", proj_by_id)
+        self.assertEqual(proj_by_id["project.shell.search.input"]["parent"], "project.shell.tabrow.search")
+        anchor_b = proj_by_id["project.shell.tabrow.search"]["bounds"]
+        input_b = proj_by_id["project.shell.search.input"]["bounds"]
+        self.assertGreaterEqual(input_b["x"], anchor_b["x"])
+        self.assertGreaterEqual(input_b["y"], anchor_b["y"])
+        self.assertLessEqual(input_b["x"] + input_b["width"], anchor_b["x"] + anchor_b["width"])
+        self.assertLessEqual(input_b["y"] + input_b["height"], anchor_b["y"] + anchor_b["height"])
         self.assertIn("shell.keytips.layer", proj_by_id)
         self.assertIn("project.shell.keytips.search", proj_by_id)
         self.assertNotIn("shell.keytips.autosave", proj_by_id)
@@ -1949,7 +1958,11 @@ class ShellChrome(unittest.TestCase):
         self.assertIn("outlook.compose.shell.keytips.save", ol_cmp)
 
     def test_validate_shell_chrome_refuses_missing_records_or_missing_bounds(self):
-        base = cu.build_shell_chrome_records(BUILD)
+        # Unmeasured template records from build_shell_chrome_records are refused without live UIA measurements.
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(cu.build_shell_chrome_records(BUILD))
+
+        base = json.loads((cu.INVENTORY / "shell" / "chrome.json").read_text(encoding="utf-8"))
         # Missing a required record is refused.
         without_search = [r for r in base if r["id"] != "shell.titlebar.search" and r.get("parent") != "shell.titlebar.search"]
         with self.assertRaises(cu.Refused):
@@ -1969,19 +1982,101 @@ class ShellChrome(unittest.TestCase):
         with self.assertRaises(cu.Refused):
             cu.validate_shell_chrome(zero_bounds)
 
+        # Inline child falling outside its parent container bounds is refused.
+        outside_parent = [dict(r) for r in base]
+        target_p = next(r for r in outside_parent if r["id"] == "project.shell.search.input")
+        target_p["bounds"] = {"x": 825, "y": 16, "width": 293, "height": 18}
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(outside_parent)
+
     def test_main_shell_writes_and_merges_valid_inventory(self):
         real_ib, real_rb, real_sleep = cu.installed_build, cu.reference_build, cu.time.sleep
         cu.installed_build = lambda: BUILD
         cu.reference_build = lambda app="Word": BUILD
         cu.time.sleep = lambda s: None
+        committed = json.loads((cu.INVENTORY / "shell" / "chrome.json").read_text(encoding="utf-8"))
+        expand_events = []
 
-        def make_shell_root(search_rect=(784, 8, 1152, 40)):
+        def make_minimal_root():
             tab, lower = home()
             tab.select = lambda: None
             lower.rect = (0, 78, 1920, 178)
             tabs_bar = E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=[tab])
-            search_box = E("MenuItem", "Search", "TellMeControlAnchor", rect=search_rect)
-            return E("Window", "Document1 - Word", kids=[tabs_bar, lower, search_box])
+            return E("Window", "Document1 - Word", kids=[tabs_bar, lower])
+
+        def make_shell_root(overrides=None):
+            overrides = overrides or {}
+            tab, lower = home()
+            tab.select = lambda: None
+            lower.rect = (0, 78, 1920, 178)
+            tabs_bar = E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=[tab])
+            top_kids = [tabs_bar, lower]
+            deferred_groups = {}
+            trigger_map = {
+                "qat.customize.": "qat.customize",
+                "tabrow.editingMode.": "tabrow.editingMode",
+                "tabrow.share.": "tabrow.share",
+                "ribbonDisplay.": "ribbonDisplay.button",
+                "search.": "titlebar.search",
+                "statusbar.customizeMenu": "statusbar.bar",
+                "backstage.": "tabrow.file",
+                "keytips.": "titlebar.systemMenu",
+            }
+            trigger_els = {}
+            for rec in committed:
+                if rec.get("app") == "outlook" or "bounds" not in rec:
+                    continue
+                rid = rec["id"]
+                b = overrides.get(rid, rec["bounds"])
+                rect = (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"])
+                ctype = "MenuItem" if rec.get("kind") == "menuItem" else "Button"
+                el = E(ctype, rec["label"], rid, rect=rect)
+                sid = "shell." + rid.split(".shell.", 1)[1] if ".shell." in rid else rid
+                prefix = rid.split("shell.")[0] + "shell."
+                deferred_to = None
+                for child_seg, trig_seg in trigger_map.items():
+                    if sid.startswith("shell." + child_seg) and sid != "shell." + trig_seg:
+                        if trig_seg == "titlebar.search" and prefix == "project.shell.":
+                            deferred_to = "project.shell.tabrow.search"
+                        else:
+                            deferred_to = prefix + trig_seg
+                        break
+                if deferred_to:
+                    deferred_groups.setdefault(deferred_to, []).append(el)
+                else:
+                    top_kids.append(el)
+                    trigger_els[rid] = el
+
+            win_el = E("Window", "Document1 - Word", kids=top_kids)
+            merged_deferred = {}
+            for trig_id, popup_els in deferred_groups.items():
+                fallback_id = "shell." + trig_id.split(".shell.", 1)[1] if ".shell." in trig_id else trig_id
+                resolved_id = trig_id if trig_id in trigger_els else fallback_id
+                if resolved_id in trigger_els:
+                    merged_deferred.setdefault(resolved_id, []).extend(popup_els)
+                else:
+                    top_kids.extend(popup_els)
+            for resolved_id, popup_els in merged_deferred.items():
+                trig = trigger_els[resolved_id]
+                trig.expand_state = lambda: 0
+
+                def _make_expand_collapse(t_id, p_els):
+                    def _exp():
+                        expand_events.append(("expand", t_id))
+                        for pe in p_els:
+                            if pe not in win_el.kids:
+                                win_el.kids.append(pe)
+
+                    def _col():
+                        expand_events.append(("collapse", t_id))
+                        for pe in p_els:
+                            if pe in win_el.kids:
+                                win_el.kids.remove(pe)
+
+                    return _exp, _col
+
+                trig.expand, trig.collapse = _make_expand_collapse(resolved_id, popup_els)
+            return win_el
 
         launched = type("L", (), {
             "hwnd": 5, "proc": type("P", (), {"pid": 7})(),
@@ -1995,7 +2090,8 @@ class ShellChrome(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 out_path = Path(tmp) / "shell" / "chrome.json"
-                # 1. Failing launcher or UIA factory must fail without publishing.
+                # 1. Failing launcher, empty window, minimal window (only Ribbon Tabs and Lower Ribbon),
+                #    or missing fhd-100 monitor must fail without publishing.
                 with contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(
                         cu.main(["--shell", "--out", str(out_path)],
@@ -2011,7 +2107,14 @@ class ShellChrome(unittest.TestCase):
                         1,
                     )
                     self.assertFalse(out_path.exists())
-                    # Missing fhd-100 monitor refuses rather than publishing unmeasured constants.
+                    self.assertEqual(
+                        cu.main(["--shell", "--app", "word", "--out", str(out_path)],
+                                launcher=lambda a: launched,
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: make_minimal_root()})(),
+                                win_factory=lambda: good_win),
+                        1,
+                    )
+                    self.assertFalse(out_path.exists())
                     no_mon_win = type("W", (), {
                         "monitors": lambda self: [], "place": lambda self, h, m: None,
                         "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
@@ -2025,32 +2128,75 @@ class ShellChrome(unittest.TestCase):
                     )
                     self.assertFalse(out_path.exists())
 
-                # 2. Initial live --shell capture writes valid inventory.
+                # 2. Initial live --shell capture opens menus/Backstage/KeyTips and writes valid inventory.
+                expand_events.clear()
+                root_instance = [None]
+
+                def get_root():
+                    if root_instance[0] is None:
+                        root_instance[0] = make_shell_root()
+                    return root_instance[0]
+
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
                     rc = cu.main(
                         ["--shell", "--out", str(out_path)],
-                        launcher=lambda a: launched,
-                        uia_factory=lambda: type("U", (), {"element": lambda self, h: make_shell_root()})(),
+                        launcher=lambda a: (root_instance.__setitem__(0, None) or launched),
+                        uia_factory=lambda: type("U", (), {"element": lambda self, h: get_root()})(),
                         win_factory=lambda: good_win,
                     )
                 self.assertEqual(rc, 0)
+                self.assertIn(("expand", "shell.qat.customize"), expand_events)
+                self.assertIn(("collapse", "shell.qat.customize"), expand_events)
+                self.assertIn(("expand", "shell.tabrow.file"), expand_events)
+                self.assertIn(("expand", "shell.titlebar.systemMenu"), expand_events)
                 data = json.loads(out_path.read_text(encoding="utf-8"))
                 self.assertGreaterEqual(len(data), 110)
                 self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
 
-                # 3. Second capture with --merge preserves hand-written behaviour and refreshes measured bounds.
+                # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
+                #    and on a complete Word window refreshes Word bounds while preserving Excel bounds and custom behaviour.
                 for rec in data:
                     if rec["id"] == "shell.titlebar.search":
                         rec["behaviour"] = "Custom hand-written search behaviour."
                         rec["bounds"] = {"x": 1, "y": 2, "width": 3, "height": 4}
+                    elif rec["id"] == "excel.shell.qat.redo":
+                        rec["bounds"] = {"x": 444, "y": 9, "width": 38, "height": 29}
                 out_path.write_text(cu.render(data), encoding="utf-8")
+
+                with contextlib.redirect_stderr(io.StringIO()):
+                    rc_bad_merge = cu.main(
+                        ["--shell", "--app", "word", "--merge", "--out", str(out_path)],
+                        launcher=lambda a: launched,
+                        uia_factory=lambda: type("U", (), {"element": lambda self, h: make_minimal_root()})(),
+                        win_factory=lambda: good_win,
+                    )
+                self.assertEqual(rc_bad_merge, 1)
+
+                root_instance[0] = None
                 with contextlib.redirect_stdout(io.StringIO()):
                     rc_merge = cu.main(
-                        ["--shell", "--merge", "--out", str(out_path)],
+                        ["--shell", "--app", "word", "--merge", "--out", str(out_path)],
                         launcher=lambda a: launched,
                         uia_factory=lambda: type(
-                            "U", (), {"element": lambda self, h: make_shell_root(search_rect=(790, 8, 1150, 40))}
+                            "U",
+                            (),
+                            {
+                                "element": lambda self, h: (
+                                    root_instance[0]
+                                    or root_instance.__setitem__(
+                                        0,
+                                        make_shell_root(
+                                            overrides={
+                                                "shell.titlebar.search": {
+                                                    "x": 790, "y": 8, "width": 360, "height": 32
+                                                }
+                                            }
+                                        ),
+                                    )
+                                    or root_instance[0]
+                                )
+                            },
                         )(),
                         win_factory=lambda: good_win,
                     )
@@ -2061,6 +2207,7 @@ class ShellChrome(unittest.TestCase):
                     merged["shell.titlebar.search"]["bounds"],
                     {"x": 790, "y": 8, "width": 360, "height": 32},
                 )
+                self.assertEqual(merged["excel.shell.qat.redo"]["bounds"]["x"], 444)
         finally:
             cu.installed_build, cu.reference_build, cu.time.sleep = real_ib, real_rb, real_sleep
 
