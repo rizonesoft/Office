@@ -1579,6 +1579,57 @@ class CaptureIntegration(unittest.TestCase):
                     self.assertIn("ribbon tabs did not populate or stabilise", err_empty.getvalue())
                 finally:
                     cu.time.monotonic = real_mono
+
+                # 10. Clearing the live Lower Ribbon after lower_for_tab (during the second check_alone) does not
+                # discard the validated snapshot.
+                snap_out = Path(tmp) / "snap_home.json"
+                snap_root = self._window_tree()
+                snap_lower = next(c for c in snap_root.kids if c.name == "Lower Ribbon")
+                check_calls = [0]
+
+                def check_alone_clears_lower(_self=None):
+                    check_calls[0] += 1
+                    if check_calls[0] >= 2:
+                        snap_lower.kids = []
+
+                snap_launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                               "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                               "language": lambda self: 1033, "check_alone": check_alone_clears_lower,
+                                               "close": lambda self: None})()
+                snap_uia = type("U", (), {"element": lambda self, h: snap_root})()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc_snap = cu.main(["--app", "word", "--tab", "Home", "--out", str(snap_out)],
+                                      launcher=lambda app: snap_launched, uia_factory=lambda: snap_uia,
+                                      win_factory=lambda: win)
+                self.assertEqual(rc_snap, 0)
+                self.assertEqual(len(json.loads(snap_out.read_text(encoding="utf-8"))), 11)
+
+                # 11. Capturing an entirely unverified tab succeeds and publishes its records to the unverified sidecar.
+                unv_only_out = Path(tmp) / "acrobat_only.json"
+                unv_sidecar_dir = Path(tmp) / "unverified_only"
+                cu.UNVERIFIED = unv_sidecar_dir
+                acrobat_tab = E("TabItem", "Acrobat", "ThirdPartyTab", key="Alt, B", rect=(80, 40, 140, 70))
+                acrobat_tab.select = lambda: None
+                acrobat_lower = E("Pane", "Lower Ribbon", rect=(0, 80, 1920, 200), kids=[
+                    E("Group", "Acrobat", kids=[
+                        E("Group", "Create", kids=[
+                            E("Button", "Create PDF", "AcrobatCreate", rect=(10, 90, 60, 156)),
+                        ]),
+                    ]),
+                ])
+                acrobat_root = E("Window", "Document1 - Word", kids=[
+                    E("Tab", "Ribbon Tabs", kids=[acrobat_tab]),
+                    acrobat_lower,
+                ])
+                acrobat_uia = type("U", (), {"element": lambda self, h: acrobat_root})()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc_acrobat = cu.main(["--app", "word", "--tab", "Acrobat", "--out", str(unv_only_out)],
+                                         launcher=lambda app: launched, uia_factory=lambda: acrobat_uia,
+                                         win_factory=lambda: win)
+                self.assertEqual(rc_acrobat, 0)
+                self.assertEqual(json.loads(unv_only_out.read_text(encoding="utf-8")), [])
+                sidecar_recs = json.loads((unv_sidecar_dir / "word-unverified.json").read_text(encoding="utf-8"))
+                self.assertEqual([r["kind"] for r in sidecar_recs], ["tab", "group", "control"])
             finally:
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 

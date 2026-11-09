@@ -144,13 +144,22 @@ def identifier(element, identifiers):
     """The control's idMso: its own UI Automation id, its drop-down part's id, or its first part's id, whichever the
     baseline lists first; nothing when the baseline lists none of them."""
     candidates = [element.automation_id]
-    parts = list(element.children()) if element.control_type == "SplitButton" else []
+    if element.control_type == "SplitButton":
+        parts = getattr(element, "_validated_children", None)
+        if parts is None:
+            parts = list(element.children())
+    else:
+        parts = []
     candidates += [p.automation_id[:-len("_Dropdown")] for p in parts if p.automation_id.endswith("_Dropdown")]
     candidates += [p.automation_id for p in parts]
     return next((c for c in candidates if c and c in identifiers), None)
 
 
-def control_type(element):
+def control_type(element, use_cached=True):
+    if use_cached:
+        validated = getattr(element, "_validated_control_type", None)
+        if validated is not None:
+            return validated
     if element.control_type == "Button":
         if element.class_name == LAUNCHER_CLASS:
             return "dialogLauncher"
@@ -183,10 +192,16 @@ def walk_tab(tab, order, lower, ctx, contextual=False):
     if tab_unverified:
         why = "no identifier" if not tab.automation_id else f"identifier {tab.automation_id!r} is not in the baseline"
         ctx.skipped.append(f"tab {tab.name!r}: {why}, so its provenance is unverified")
-    containers = [c for c in lower.children() if c.control_type == "Group"]
-    groups = [g for c in containers for g in c.children() if g.control_type == "Group"]
-    for g_order, group in enumerate(groups):
-        members = [(el, frame) for el, frame in controls_of(group) if control_type(el)]
+    validated = getattr(lower, "_validated_groups", None)
+    if validated is None:
+        containers = [c for c in lower.children() if c.control_type == "Group"]
+        groups = [
+            (g, [(el, frame) for el, frame in controls_of(g) if control_type(el)])
+            for c in containers for g in c.children() if g.control_type == "Group"
+        ]
+    else:
+        groups = validated
+    for g_order, (group, members) in enumerate(groups):
         ids = [identifier(el, ctx.identifiers) for el, _ in members]
         unverified = tab_unverified or (not any(ids) and (not group.automation_id or group.automation_id not in ctx.identifiers))
         if unverified and not tab_unverified:
@@ -1265,12 +1280,15 @@ def capture(args, launched, uia, win):
         tab.select()
         lower = lower_for_tab(uia, launched.hwnd, tab.name)
         launched.check_alone()
+        before_unverified = len(ctx.unverified)
         tab_records = walk_tab(tab, order, lower, ctx)
+        if not any(r.get("kind") == "control" for r in tab_records + ctx.unverified[before_unverified:]):
+            raise Refused(f"tab {tab.name!r} produced no control records")
         if args.expand:
             tab_records = expand_all(tab_records, lower, ctx, launched, uia, win)
         records += tab_records
-    if not records:
-        raise Refused("no verified ribbon records were captured")
+    if not any(r.get("kind") == "control" for r in records + ctx.unverified):
+        raise Refused("no ribbon controls were captured")
     if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
         ctx.drop_geometry("the window moved or changed size during the capture")
     if ctx.origin is None:
@@ -1386,16 +1404,32 @@ def lower_for_tab(uia, hwnd, tab_name):
             if not groups:
                 return None
             sig = []
+            snapshot = []
             total_controls = 0
             for g in groups:
-                members = [
-                    (el.runtime_id(), el.control_type, el.name, getattr(el, "automation_id", ""))
-                    for el, _ in controls_of(g) if control_type(el)
-                ]
+                members = []
+                member_sig = []
+                for el, frame in controls_of(g):
+                    ct = control_type(el, use_cached=False)
+                    if not ct:
+                        continue
+                    el._validated_control_type = ct
+                    if el.control_type == "SplitButton":
+                        parts = list(el.children())
+                        el._validated_children = parts
+                    else:
+                        parts = ()
+                    members.append((el, frame))
+                    member_sig.append((
+                        el.runtime_id(), el.control_type, ct, el.name, getattr(el, "automation_id", ""),
+                        tuple((p.runtime_id(), getattr(p, "automation_id", "")) for p in parts),
+                    ))
                 total_controls += len(members)
-                sig.append((g.runtime_id(), g.name, getattr(g, "automation_id", ""), tuple(members)))
+                snapshot.append((g, members))
+                sig.append((g.runtime_id(), g.name, getattr(g, "automation_id", ""), tuple(member_sig)))
             if total_controls == 0:
                 return None
+            lower._validated_groups = snapshot
             return lower, tuple(sig)
         except Gone:
             return None

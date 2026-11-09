@@ -696,3 +696,48 @@ OVERALL: needs-attention
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (48 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
 
+## Round 15: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T01:01:33Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 6a6bc8317601ef1b
+
+## adversarial: needs-attention
+
+1. **[P2] The record walk can discard the ribbon state that passed stability checks.** `scripts/capture-ui.py:1266` obtains a stable live element, but `:1268` enumerates its children again after another ownership check. **Precondition:** Office rebuilds the ribbon between those operations. Reproduced using the existing window fixture, clearing its groups during the second ownership check: `main()` returned `0` and published only the Home tab, reporting `1 records; bounds recorded under fhd-100`. Capture the validated snapshot, or validate the actual records before accepting them.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. **[P2] Capturing an entirely unverified tab discards its sidecar records.** `scripts/capture-ui.py:1272` refuses whenever the main record list is empty, even when `ctx.unverified` contains a populated capture. **Precondition:** use `--tab` for a new built-in tab absent from the baseline, or an add-in tab requiring provenance review. Reproduced with the existing fixture renamed to Acrobat and identifier `ThirdPartyTab`: exit `1`, zero files published. Distinguish an empty capture from a populated unverified capture so the latter reaches its documented sidecar.
+
+## source-defect: needs-attention
+
+Finding **2 [P2]** contradicts the sidecar contract documented at `scripts/capture-ui.py:22`: unverified tabs are retained for review.
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P2]** permits incomplete inventory with successful completion feedback, contrary to the reliability requirement in `docs/product-principles.md`.
+
+## record: advisory
+
+50 selected tests passed; 16 filesystem-writing tests were excluded. The whole-inventory checker exited `0`. Both reproductions used in-memory doubles and a mocked publisher. No live Office capture ran; no files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Round 15 disposition
+
+1. **[P2] The record walk can discard the ribbon state that passed stability checks (`scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`):** Fixed at the owning layer. `lower_for_tab` now caches the validated `(group, [(el, frame), ...])` snapshot (`_validated_groups`), control types (`_validated_control_type`), and split-button parts (`_validated_children`) directly on the returned `lower` element once `stable >= 2`, `walk_tab` consumes that validated snapshot without re-enumerating live UIA children after `launched.check_alone()`, and `capture` verifies that every walked tab produced at least one `control` record across `tab_records + ctx.unverified[before_unverified:]`. Added regression coverage in `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten`.
+2. **[P2] Capturing an entirely unverified tab discards its sidecar records (`scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`):** Fixed at the owning layer. `capture` now checks `any(r.get("kind") == "control" for r in records + ctx.unverified)` instead of requiring `records` alone to be non-empty, so capturing an unverified tab (`--tab Acrobat`) succeeds and publishes its records to `build/capture-ui/<app>-unverified.json`. Added regression coverage in `CaptureIntegration.test_concurrent_create_or_modify_is_never_overwritten`.
+- **Layer:** `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`
+
+
