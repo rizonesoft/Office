@@ -40,7 +40,8 @@ class E:
 
     @classmethod
     def _wrap(cls, other):
-        w = cls.__new__(cls)
+        t = type(other)
+        w = t.__new__(t)
         w.__dict__ = other.__dict__
         return w
 
@@ -2029,12 +2030,36 @@ class ShellChrome(unittest.TestCase):
             }
             trigger_els = {}
             keytip_els = []
-            for rec in cu.effective_shell(committed, app_name):
+            eff_records = cu.effective_shell(committed, app_name)
+            target_bounds_by_tail = {}
+            for rec in eff_records:
+                if ".keytips." not in rec["id"] and rec.get("kind") != "menuItem" and "bounds" in rec:
+                    tail = rec["id"].split(".")[-1]
+                    target_bounds_by_tail.setdefault(tail, overrides.get(rec["id"], rec["bounds"]))
+            for rec in eff_records:
                 if rec.get("app") == "outlook" or "bounds" not in rec:
                     continue
                 rid = rec["id"]
                 sid = "shell." + rid.split(".shell.", 1)[1] if ".shell." in rid else rid
-                if sid in ("shell.region.ribbon", "shell.tabrow.tabs"):
+                if sid in ("shell.region.ribbon", "shell.tabrow.tabs", "shell.keytips.layer"):
+                    continue
+                if sid.startswith("shell.keytips."):
+                    # Live Office exposes KeyTip badges as Pane elements named with the keytip sequence (e.g. "2",
+                    # "ZP", "F"); derive fixture badge rects from target controls rather than reading committed KeyTip
+                    # bounds so the test proves live badge observation rather than echoing committed KeyTip coordinates.
+                    if rid in overrides:
+                        b = overrides[rid]
+                    else:
+                        tail = rid.split(".")[-1]
+                        tb = target_bounds_by_tail[tail]
+                        kt = rec.get("keytip", "1")
+                        bw = 15 if len(kt) == 1 else 20
+                        bh = 19 if app_name in ("visio", "project") else 17
+                        bx = tb["x"] + max(0, (tb["width"] - bw) // 2)
+                        by = tb["y"] + min(tb["height"] - 4, 14)
+                        b = {"x": bx, "y": by, "width": bw, "height": bh}
+                    rect = (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"])
+                    keytip_els.append(E("Pane", rec["keytip"], "", rect=rect))
                     continue
                 b = overrides.get(rid, rec["bounds"])
                 rect = (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"])
@@ -2055,15 +2080,12 @@ class ShellChrome(unittest.TestCase):
                     ctype = "Pane"
                 elif rec.get("kind") == "contextMenu":
                     ctype = "Menu"
-                elif sid.startswith("shell.keytips.") or rec.get("controlType") == "label":
+                elif rec.get("controlType") == "label":
                     ctype = "Text"
                 else:
                     ctype = "Button"
                 access_key = f"Alt, {rec['keytip']}" if rec.get("keytip") else ""
                 el = E(ctype, rec["label"], aid, key=access_key, rect=rect)
-                if sid.startswith("shell.keytips."):
-                    keytip_els.append(el)
-                    continue
                 prefix = rid.split("shell.")[0] + "shell."
                 deferred_to = None
                 for child_seg, trig_seg in trigger_map.items():
@@ -2332,9 +2354,14 @@ class ShellChrome(unittest.TestCase):
                     by_id["excel.shell.titlebar.caption"]["bounds"],
                     {"x": 287, "y": 0, "width": 497, "height": 48},
                 )
+                self.assertEqual(by_id["shell.keytips.save"]["label"], "Save KeyTip")
                 self.assertEqual(
                     by_id["shell.keytips.save"]["bounds"],
-                    {"x": 167, "y": 22, "width": 16, "height": 16},
+                    {"x": 167, "y": 23, "width": 15, "height": 17},
+                )
+                self.assertEqual(
+                    by_id["shell.keytips.layer"]["bounds"],
+                    {"x": 0, "y": 0, "width": 1920, "height": 92},
                 )
                 bad_keytip_save = [
                     dict(r, bounds={"x": 161, "y": 9, "width": 28, "height": 29})
@@ -2353,6 +2380,64 @@ class ShellChrome(unittest.TestCase):
                 with self.assertRaises(cu.Refused):
                     cu.validate_shell_chrome(bad_ribbon_display)
                 self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
+
+                # 3b. Delayed asynchronous surface dismissal (closing on the 2nd UIA poll after PostMessageW Escape)
+                #     succeeds via bounded polling, and pre-existing hidden UIA nodes (rect=None before expand,
+                #     revealed in place under the same runtime_id on expand, and reverting to rect=None on collapse)
+                #     are collected and verified closed on collapse.
+                inplace_root = make_shell_root(app_name="word")
+                hidden_item = E("MenuItem", "Hidden Inplace Item", "AutoSaveSwitch", rect=None)
+                inplace_root.kids.append(hidden_item)
+                qat_inplace_trig = next(e for e in inplace_root.kids if e.name == "Customize Quick Access Toolbar")
+                orig_exp, orig_col = qat_inplace_trig.expand, qat_inplace_trig.collapse
+
+                def inplace_exp():
+                    orig_exp()
+                    hidden_item.rect = (261, 39, 495, 67)
+
+                def inplace_col():
+                    orig_col()
+                    hidden_item.rect = None
+
+                qat_inplace_trig.expand, qat_inplace_trig.collapse = inplace_exp, inplace_col
+                dismiss_delay = [0]
+                orig_on_keytips = inplace_root.on_keytips
+
+                def delayed_keytips(active):
+                    if active:
+                        orig_on_keytips(True)
+                    else:
+                        dismiss_delay[0] = 2
+
+                inplace_root.on_keytips = delayed_keytips
+
+                def get_inplace_root():
+                    if dismiss_delay[0] > 0:
+                        dismiss_delay[0] -= 1
+                        if dismiss_delay[0] == 0:
+                            orig_on_keytips(False)
+                    return E._wrap(inplace_root)
+
+                collected_inplace = cu._open_and_collect_shell_surface(
+                    "qat.customize", qat_inplace_trig, inplace_root,
+                    type("U", (), {"element": lambda self, h: get_inplace_root()})(),
+                    good_win, launched,
+                )
+                self.assertTrue(any(e.runtime_id() == hidden_item.runtime_id() for e in collected_inplace))
+                collected_delayed_kt = cu._open_and_collect_shell_surface(
+                    "keytips", None, inplace_root,
+                    type("U", (), {"element": lambda self, h: get_inplace_root()})(),
+                    good_win, launched,
+                )
+                self.assertGreaterEqual(len(collected_delayed_kt), 5)
+                # If an in-place revealed node fails to revert to hidden on collapse, cleanup verification refuses it.
+                qat_inplace_trig.collapse = lambda: orig_col()
+                with self.assertRaises(cu.Refused):
+                    cu._open_and_collect_shell_surface(
+                        "qat.customize", qat_inplace_trig, inplace_root,
+                        type("U", (), {"element": lambda self, h: get_inplace_root()})(),
+                        good_win, launched,
+                    )
 
                 # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
                 #    and on a complete Word window refreshes Word bounds while preserving Excel bounds and custom behaviour.

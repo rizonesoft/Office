@@ -1163,11 +1163,17 @@ class Launched:
 
     def window_handle(self):
         if self.key == "powerpoint":
-            raw = getattr(self.app, "HWND", None)
+            try:
+                raw = getattr(self.app, "HWND", None)
+            except Exception:
+                raw = None
             if isinstance(raw, int) and not isinstance(raw, bool):
                 return raw
-            aw = getattr(self.app, "ActiveWindow", None)
-            aw_hwnd = getattr(aw, "HWND", None) if aw is not None else None
+            try:
+                aw = getattr(self.app, "ActiveWindow", None)
+                aw_hwnd = getattr(aw, "HWND", None) if aw is not None else None
+            except Exception:
+                aw_hwnd = None
             if isinstance(aw_hwnd, int) and not isinstance(aw_hwnd, bool):
                 return aw_hwnd
             if self.started is not None:
@@ -2266,8 +2272,8 @@ def validate_shell_chrome(records):
                         tb = targets[0]["bounds"]
                         if (
                             rb == tb
-                            or rb["x"] < tb["x"]
-                            or rb["x"] + rb["width"] > tb["x"] + tb["width"]
+                            or rb["x"] > tb["x"] + tb["width"]
+                            or rb["x"] + rb["width"] < tb["x"]
                             or rb["y"] > tb["y"] + tb["height"]
                             or rb["y"] + rb["height"] < tb["y"]
                         ):
@@ -2616,10 +2622,17 @@ _SHELL_SPEC = (
     {'id': 'outlook.compose.shell.keytips.save', 'app': 'outlook', 'kind': 'control', 'label': 'Save KeyTip', 'behaviour': "Triggers Save on Outlook's item window Quick Access Toolbar when 1 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 1, 'controlType': 'label', 'keytip': '1', 'baselineMissing': True},
     {'id': 'outlook.compose.shell.keytips.undo', 'app': 'outlook', 'kind': 'control', 'label': 'Undo KeyTip', 'behaviour': "Triggers Undo on Outlook's item window Quick Access Toolbar when 2 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 2, 'controlType': 'label', 'keytip': '2', 'baselineMissing': True},
     {'id': 'outlook.compose.shell.keytips.redo', 'app': 'outlook', 'kind': 'control', 'label': 'Redo KeyTip', 'behaviour': "Triggers Redo on Outlook's item window Quick Access Toolbar when 3 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 3, 'controlType': 'label', 'keytip': '3', 'baselineMissing': True},
+    {'id': 'excel.shell.keytips.redo', 'app': 'excel', 'kind': 'control', 'label': 'Redo KeyTip', 'behaviour': "Triggers Redo on Excel's Quick Access Toolbar when 4 is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 3, 'controlType': 'label', 'keytip': '4', 'baselineMissing': True},
+    {'id': 'excel.shell.keytips.documentTitle', 'app': 'excel', 'kind': 'control', 'label': 'Document Title KeyTip', 'behaviour': "Opens the workbook title and file location flyout in Excel's title bar when B is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 4, 'controlType': 'label', 'keytip': 'B', 'baselineMissing': True},
     {'id': 'excel.shell.keytips.comments', 'app': 'excel', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the workbook Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
     {'id': 'powerpoint.shell.keytips.comments', 'app': 'powerpoint', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the presentation Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
+    {'id': 'visio.shell.keytips.search', 'app': 'visio', 'kind': 'control', 'label': 'Search KeyTip', 'behaviour': "Focuses Visio's title bar search box when Q is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 5, 'controlType': 'label', 'keytip': 'Q', 'baselineMissing': True},
+    {'id': 'visio.shell.keytips.account', 'app': 'visio', 'kind': 'control', 'label': 'Account KeyTip', 'behaviour': "Opens the Account flyout in Visio's title bar when Z then P is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 6, 'controlType': 'label', 'keytip': 'ZP', 'baselineMissing': True},
+    {'id': 'visio.shell.keytips.file', 'app': 'visio', 'kind': 'control', 'label': 'File KeyTip', 'behaviour': 'Opens the Visio Backstage view when F is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 7, 'controlType': 'label', 'keytip': 'F', 'baselineMissing': True},
     {'id': 'visio.shell.keytips.comments', 'app': 'visio', 'kind': 'control', 'label': 'Comments KeyTip', 'behaviour': 'Toggles the drawing Comments pane when Z then C is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 8, 'controlType': 'label', 'keytip': 'ZC', 'baselineMissing': True},
     {'id': 'visio.shell.keytips.share', 'app': 'visio', 'kind': 'control', 'label': 'Share KeyTip', 'behaviour': "Triggers the Share command on Visio's tab row when Z then S is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 10, 'controlType': 'label', 'keytip': 'ZS', 'baselineMissing': True},
+    {'id': 'project.shell.keytips.account', 'app': 'project', 'kind': 'control', 'label': 'Account KeyTip', 'behaviour': "Opens the Account flyout in Project's title bar when Z then P is pressed in KeyTip mode.", 'parent': 'shell.keytips.layer', 'order': 6, 'controlType': 'label', 'keytip': 'ZP', 'baselineMissing': True},
+    {'id': 'project.shell.keytips.file', 'app': 'project', 'kind': 'control', 'label': 'File KeyTip', 'behaviour': 'Opens the Project Backstage view when F is pressed in KeyTip mode.', 'parent': 'shell.keytips.layer', 'order': 7, 'controlType': 'label', 'keytip': 'F', 'baselineMissing': True},
 )
 
 
@@ -2696,6 +2709,14 @@ def _element_identity(el):
     )
 
 
+def _visible_rect_tuple(el):
+    b = _live_rect_bounds(el, 0, 0)
+    return None if b is None else (b["x"], b["y"], b["width"], b["height"])
+
+
+_ABSENT = object()
+
+
 def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launched):
     if launched is not None and hasattr(launched, "check_alone"):
         launched.check_alone()
@@ -2703,7 +2724,10 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
     pid = getattr(getattr(launched, "proc", None), "pid", None)
     has_popups = win is not None and hasattr(win, "popups") and pid is not None
     before_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-    before_ids = {_element_identity(el) for el in [before_root] + list(descendants(before_root, 25))}
+    before_state = {
+        _element_identity(el): _visible_rect_tuple(el)
+        for el in [before_root] + list(descendants(before_root, 25))
+    }
     before_popups = list(win.popups(pid)) if has_popups else []
     can_expand = False
     can_select = False
@@ -2740,23 +2764,26 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
                 raise Refused(f"cannot dismiss shell surface {surface_key!r} without window dismissal support")
             target.select()
     surface_collected = []
-    opened_ids = set()
+    opened_state = {}
     cleanup_err = None
     try:
         time.sleep(0.1)
         live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
         for el in [live_root] + list(descendants(live_root, 25)):
             eid = _element_identity(el)
-            if eid not in before_ids:
+            vrect = _visible_rect_tuple(el)
+            prev_vrect = before_state.get(eid, _ABSENT)
+            if prev_vrect is _ABSENT or (vrect is not None and vrect != prev_vrect):
                 surface_collected.append(el)
-                opened_ids.add(eid)
+                opened_state[eid] = (prev_vrect, vrect)
         if has_popups and uia is not None:
             for h in win.popups(pid):
                 if h not in before_popups:
                     p_root = uia.element(h)
                     for el in [p_root] + list(descendants(p_root, 25)):
+                        eid = _element_identity(el)
                         surface_collected.append(el)
-                        opened_ids.add(_element_identity(el))
+                        opened_state[eid] = (_ABSENT, _visible_rect_tuple(el))
     finally:
         try:
             if surface_key == "keytips":
@@ -2776,16 +2803,40 @@ def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launche
             cleanup_err = Refused(f"failed to close shell surface {surface_key!r}: {exc}")
     if cleanup_err is not None:
         raise cleanup_err
-    if can_expand and getattr(target, "expand_state", lambda: 0)() not in (0, None):
+
+    expand_closed = False
+    tree_closed = False
+    popups_closed = False
+    for attempt in range(10):
+        expand_closed = not can_expand or getattr(target, "expand_state", lambda: 0)() in (0, None)
+        after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
+        still_open = False
+        for el in [after_root] + list(descendants(after_root, 25)):
+            eid = _element_identity(el)
+            if eid not in opened_state:
+                continue
+            prev_vrect, open_vrect = opened_state[eid]
+            cur_vrect = _visible_rect_tuple(el)
+            if prev_vrect is _ABSENT:
+                if open_vrect is None or cur_vrect is not None:
+                    still_open = True
+                    break
+            elif cur_vrect != prev_vrect:
+                still_open = True
+                break
+        tree_closed = not still_open
+        popups_closed = not has_popups or not [h for h in win.popups(pid) if h not in before_popups]
+        if expand_closed and tree_closed and popups_closed:
+            break
+        if attempt < 9:
+            time.sleep(0.05)
+
+    if not expand_closed:
         raise Refused(f"shell surface {surface_key!r} remained expanded after collapse")
-    after_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
-    after_ids = {_element_identity(el) for el in [after_root] + list(descendants(after_root, 25))}
-    if opened_ids & after_ids:
+    if not tree_closed:
         raise Refused(f"shell surface {surface_key!r} remained open after cleanup")
-    if has_popups:
-        after_popups = [h for h in win.popups(pid) if h not in before_popups]
-        if after_popups:
-            raise Refused(f"shell surface {surface_key!r} popup window remained open after cleanup")
+    if not popups_closed:
+        raise Refused(f"shell surface {surface_key!r} popup window remained open after cleanup")
     return surface_collected
 
 
@@ -3025,7 +3076,7 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
         return _find_in(
             collected,
             lambda e: not is_record_id(getattr(e, "automation_id", ""))
-            and e.control_type in ("Text", "ToolTip", "Custom")
+            and e.control_type in ("Pane", "Text", "ToolTip", "Custom")
             and e.rect is not None
             and (e.rect[2] - e.rect[0]) <= 36
             and (e.rect[3] - e.rect[1]) <= 24
@@ -3107,10 +3158,28 @@ def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, orig
         rec["captureProfile"] = PROFILE
         if rec.get("kind") == "control":
             rec["size"] = "large" if b["height"] >= LARGE_HEIGHT else "small"
-        if getattr(el, "name", ""):
+        if getattr(el, "name", "") and not sid.startswith("shell.keytips."):
             rec["label"] = sanitize_shell_label(el.name, rec.get("uiaId", ""), rec.get("idMso", ""))
         rec["source"] = f"uia:{expected_build}"
         rec["capturedFrom"] = expected_build
+
+    for rec in records:
+        if rec.get("app") == "outlook" or "bounds" in rec:
+            continue
+        sid = "shell." + rec["id"][len(prefix):] if rec["id"].startswith(prefix) else rec["id"]
+        if sid == "shell.keytips.layer":
+            badge_recs = [
+                r for r in records
+                if r.get("app") != "outlook"
+                and ("shell." + r["id"][len(prefix):] if r["id"].startswith(prefix) else r["id"]).startswith("shell.keytips.")
+                and ("shell." + r["id"][len(prefix):] if r["id"].startswith(prefix) else r["id"]) != "shell.keytips.layer"
+            ]
+            if badge_recs and all("bounds" in r for r in badge_recs):
+                max_bottom = max(r["bounds"]["y"] + r["bounds"]["height"] for r in badge_recs)
+                rec["bounds"] = {"x": 0, "y": 0, "width": PROFILE_SIZE[0], "height": max(92, max_bottom)}
+                rec["captureProfile"] = PROFILE
+                rec["source"] = f"uia:{expected_build}"
+                rec["capturedFrom"] = expected_build
 
     unobserved = [r["id"] for r in records if r.get("app") != "outlook" and "bounds" not in r]
     if unobserved:
