@@ -31,3 +31,29 @@ OVERALL: needs-attention
 2. `extend`: Extended `D02 T01 §5` checklist item 4 to recursively expand nested command-bearing submenus (`menuItem` records with expand-collapse patterns, such as `Home -> Text Effects and Typography -> Outline -> Weight`) in `scripts/capture-ui.py` while preserving parent ancestry and item order, and verify a multi-level nested submenu path in `validate_word_ribbon(records)` and unit tests.
 3. `extend`: Extended `D02 T01 §5` checklist item 8 so `scripts/word-commands.py` links a `ListCommands` command without a compact-name `idMso` to a captured ribbon control by `label` only when the command name is unique in `ListCommands` and every captured ribbon control/menuItem with that `label` resolves unambiguously to a single `idMso` (with no `idMso`-less control sharing the label), retaining duplicate command names (such as the three `Chart` rows) and ambiguous control labels in `build/word-commands-unmatched.txt` with unit tests in `scripts/tests/test_word_commands.py`.
 4. `extend`: Extended `D02 T01 §5` checklist item 1 and test checkpoint to reconcile `build/capture-ui/word-unverified.json`: promote any confirmed built-in Word group or control on the 11 built-in or 10 contextual tabs that lacks a 2024 baseline identifier into `design/inventory/word/ribbon.json` with `baselineMissing: true`, exclude third-party add-in tabs/groups (such as `Acrobat`) with their exclusion reason recorded in `design/inventory/REFERENCE.md`, and verify in `validate_word_ribbon(records)` and unit tests that confirmed newer built-in groups cannot remain outside `ribbon.json` while add-in tabs are rejected.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T11:09:08Z
+- Effort: medium
+- Type: adversarial
+- Lines: 11
+- Digest: af8222316d015060
+
+SECTION: D02 T01 §5
+PURPOSE: completion
+CONTRACT: sha256:06cacec0203f9d59116186b4fa7fdd811511c1c5df1a028575d948f1db28d6a8
+
+1. **P2 | extend: document-dependent ribbon menus lack capture setup.** The [fixture requirement](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:204) enables contextual tabs, but does not establish the states needed to expand every built-in menu. For example, capturing Mailings on a blank document without a recipient source leaves merge-dependent commands unavailable. The [expander](D:/GitHub/Office/scripts/capture-ui.py:1983) attempts expansion without preparing that state; an empty result merely produces a note. Consequently, “capture every menu” can either fail or omit commands despite retaining all required tab hierarchies. Extend the section with capture prerequisites for state-dependent menus, scratch data where necessary, and explicit reconciliation of menus that cannot be expanded. Verify a merge-ready capture and require unresolved expansion failures to prevent completion. §6 owns Mail Merge Recipients’ dialog inventory, not preparation of this ribbon capture; §18’s baseline report does not perform that preparation.
+
+2. **P2 | extend: the completeness contract does not protect KeyTips.** The [validator requirement](D:/GitHub/Office/todo/02-interface/TODO-01-parity-inventory.md:208) enumerates geometry, sizes, hierarchies and behaviour but omits KeyTips, although they are an explicit deliverable. [Capture currently omits the field when access-key extraction returns nothing](D:/GitHub/Office/scripts/capture-ui.py:150), and the schema makes it optional. Removing every `keytip` therefore violates none of the proposed validator requirements, leaving downstream keyboard navigation without its reference sequences. Require reconciliation against observed KeyTips, distinguish controls with no KeyTip from failed reads, and add deletion tests for known tab and control KeyTips. §17 owns keyboard shortcuts, while D02 T02 §4 consumes the inventory to specify KeyTip sequences; neither supplies this missing capture acceptance check.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+### Dispositions
+
+1. `extend`: Extended `D02 T01 §5` checklist items 2, 4 and 6 so `scripts/capture-ui.py` prepares document and session state before expanding state-dependent ribbon menus (including creating a scratch mail-merge recipient CSV `R:\scratch\fixtures\word-recipients.csv` and attaching it via `MailMerge.OpenDataSource` when capturing `Mailings` so merge-dependent menus such as `Insert Merge Field`, `Rules`, `Finish & Merge` and `Start Mail Merge` expand, and seeding selection/clipboard/citation/comment/revision/table state where needed), reconciles any expandable controls that genuinely expose no child items in Word inside `design/inventory/REFERENCE.md`, and requires `validate_word_ribbon(records)` to verify merge-dependent `Mailings` menu expansions (`Insert Merge Field`, `Rules`, `Finish & Merge`) and fail on any unreconciled empty expandable menu/splitButton/gallery or expansion failure note (`capture-ui: expand failed to open a popup`).
+2. `extend`: Extended `D02 T01 §5` checklist item 6 and test checkpoint so `scripts/capture-ui.py` and `validate_word_ribbon(records)` enforce KeyTip completeness across all 11 built-in `tab` records, all 10 `contextualTab` records, and every top-level `control` record: distinguishing controls that genuinely expose no UIA `CurrentAccessKey` in Word (reconciled explicitly in `design/inventory/REFERENCE.md` and `validate_word_ribbon`'s allowlist) from failed/missing KeyTip reads, verifying known tab and control KeyTips (`Home` `H`, `Insert` `N`, `Table Design` `JT`, `Bold` `1`), and adding deletion unit tests in `scripts/tests/test_capture_ui.py` proving that removing tab or control `keytip` values fails validation.
