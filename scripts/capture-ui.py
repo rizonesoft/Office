@@ -44,6 +44,28 @@ PROFILE = "fhd-100"
 PROFILE_SIZE, PROFILE_DPI, UI_LANGUAGE = (1920, 1080), 96, 1033  # en-US
 UNVERIFIED = INVENTORY.parents[1] / "build" / "capture-ui"
 LARGE_HEIGHT = 40  # pixels at 100 percent: large ribbon controls are about 66, small ones about 22
+BASELINE_COMMIT = "b230a0df45036b2d5e8b49ebf368b3f90ada8d63"
+_NO_CONTROL_RE = re.compile(
+    r"[\u0000-\u001F\u007F-\u009F\u00AD\u034F\u0600-\u0605\u061C\u06DD\u070F\u0890-\u0891\u08E2"
+    r"\u115F-\u1160\u17B4-\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164"
+    r"\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFFB\uD800-\uDFFF]|[^\u0000-\uFFFF]"
+)
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+")
+
+
+def strip_control_chars(text):
+    """Drop Unicode control (Cc), format (Cf, including bidi marks U+202A..U+202E) and default-ignorable characters."""
+    return _NO_CONTROL_RE.sub("", text or "")
+
+
+def sanitize_shell_label(text, uia_id="", id_mso=""):
+    """Strip bidi/control characters and replace signed-in operator names or emails on shell account controls."""
+    cleaned = strip_control_chars(text).strip()
+    if uia_id == "MeControlWidget" or id_mso == "MeControl":
+        return "Account"
+    if _EMAIL_RE.search(cleaned):
+        return "Account"
+    return cleaned
 
 
 class Gone(Exception):
@@ -300,9 +322,9 @@ class Element:
 
     def _read(self, uia, raw):
         self.uia, self.raw = uia, raw
-        # Word embeds an unseen level-number placeholder (U+0001) in numbering gallery names; control characters
-        # are never displayed, so they are dropped from the name.
-        self.name = "".join(ch for ch in (raw.CurrentName or "") if ord(ch) >= 32)
+        # Word embeds an unseen level-number placeholder (U+0001) in numbering gallery names and bidi format marks
+        # (U+202A..U+202C) around some item labels; control and format characters are dropped from the name.
+        self.name = strip_control_chars(raw.CurrentName or "")
         self.automation_id = raw.CurrentAutomationId or ""
         self.access_key = raw.CurrentAccessKey or ""
         self.class_name = raw.CurrentClassName or ""
@@ -458,6 +480,24 @@ class Win:
         return {"zoomed": bool(self.user32.IsZoomed(hwnd)), "dpi": self.user32.GetDpiForWindow(hwnd),
                 "window": (rect.left, rect.top, rect.right, rect.bottom), "origin": (origin.x, origin.y),
                 "monitor": monitor}
+
+    def main_window(self, pid, class_name=None):
+        """Visible top-level window of one process, matching class_name when given."""
+        ct, wt, found = self.ct, self.wt, []
+        proc = ct.WINFUNCTYPE(ct.c_bool, wt.HWND, wt.LPARAM)
+
+        def each(hwnd, _data):
+            owner = wt.DWORD()
+            self.user32.GetWindowThreadProcessId(hwnd, ct.byref(owner))
+            if owner.value == pid and self.user32.IsWindowVisible(hwnd):
+                buf = ct.create_unicode_buffer(256)
+                self.user32.GetClassNameW(hwnd, buf, 256)
+                if class_name is None or buf.value == class_name:
+                    found.append(hwnd)
+            return True
+
+        self.user32.EnumWindows(proc(each), 0)
+        return found[0] if found else None
 
     def popups(self, pid):
         """Visible top-level popup windows of one process (menus and galleries open in these)."""
@@ -1086,8 +1126,21 @@ class Launched:
                 "project": lambda: self.app.FileNew()}[self.key]()
 
     def window_handle(self):
+        if self.key == "powerpoint":
+            raw = getattr(self.app, "HWND", None)
+            if isinstance(raw, int) and not isinstance(raw, bool):
+                return raw
+            aw = getattr(self.app, "ActiveWindow", None)
+            aw_hwnd = getattr(aw, "HWND", None) if aw is not None else None
+            if isinstance(aw_hwnd, int) and not isinstance(aw_hwnd, bool):
+                return aw_hwnd
+            if self.started is not None:
+                found = wait_for(lambda: Win().main_window(self.started, "PPTFrameClass"), seconds=10.0)
+                if found is not None:
+                    return found
+            return raw
         return {"word": lambda: self.app.ActiveWindow.Hwnd, "excel": lambda: self.app.Hwnd,
-                "powerpoint": lambda: self.app.HWND, "visio": lambda: self.app.WindowHandle32,
+                "visio": lambda: self.app.WindowHandle32,
                 "project": lambda: self.app.ActiveWindow.Hwnd}[self.key]()
 
     def language(self):
@@ -1715,17 +1768,1114 @@ def _load_existing_records(path, raw):
     return data
 
 
+REQUIRED_SHELL_IDS = (
+    "shell.region.titlebar",
+    "shell.region.tabrow",
+    "shell.region.ribbon",
+    "shell.region.messageBar",
+    "shell.region.documentArea",
+    "shell.region.taskPaneDock",
+    "shell.region.statusbar",
+    "shell.titlebar.systemMenu",
+    "shell.titlebar.qat",
+    "shell.titlebar.autosave",
+    "shell.titlebar.documentTitle",
+    "shell.titlebar.caption",
+    "shell.titlebar.search",
+    "shell.titlebar.account",
+    "shell.titlebar.minimize",
+    "shell.titlebar.maximize",
+    "shell.titlebar.close",
+    "shell.qat.autosave",
+    "shell.qat.save",
+    "shell.qat.undo",
+    "shell.qat.undo.dropdown",
+    "shell.qat.redo",
+    "shell.qat.customize",
+    "shell.qat.customize.automatically-save",
+    "shell.qat.customize.new",
+    "shell.qat.customize.open",
+    "shell.qat.customize.save",
+    "shell.qat.customize.email",
+    "shell.qat.customize.quick-print",
+    "shell.qat.customize.print-preview-and-print",
+    "shell.qat.customize.editor-f7",
+    "shell.qat.customize.read-aloud",
+    "shell.qat.customize.undo",
+    "shell.qat.customize.redo",
+    "shell.qat.customize.draw-table",
+    "shell.qat.customize.touch-mouse-mode",
+    "shell.qat.customize.more-commands",
+    "shell.qat.customize.show-below-the-ribbon",
+    "shell.qat.customize.hide-quick-access-toolbar",
+    "shell.tabrow.file",
+    "shell.tabrow.tabs",
+    "shell.tabrow.comments",
+    "shell.tabrow.editingMode",
+    "shell.tabrow.editingMode.editing",
+    "shell.tabrow.editingMode.reviewing",
+    "shell.tabrow.editingMode.viewing",
+    "shell.tabrow.share",
+    "shell.tabrow.share.share",
+    "shell.tabrow.share.copy-link",
+    "shell.tabrow.share.manage-access",
+    "shell.ribbonDisplay.button",
+    "shell.ribbonDisplay.full-screen-mode",
+    "shell.ribbonDisplay.show-tabs-only",
+    "shell.ribbonDisplay.always-show-ribbon",
+    "shell.ribbonDisplay.hide-quick-access-toolbar",
+    "shell.search.input",
+    "shell.search.voice",
+    "shell.search.flyout",
+    "shell.search.recentActions",
+    "shell.search.suggestedActions",
+    "shell.search.suggestedActions.spelling-and-grammar",
+    "shell.search.suggestedActions.word-count",
+    "shell.search.suggestedActions.print",
+    "shell.search.people",
+    "shell.search.actions",
+    "shell.search.findInDocument",
+    "shell.search.files",
+    "shell.search.help",
+    "shell.keytips.layer",
+    "shell.keytips.autosave",
+    "shell.keytips.save",
+    "shell.keytips.undo",
+    "shell.keytips.redo",
+    "shell.keytips.documentTitle",
+    "shell.keytips.search",
+    "shell.keytips.account",
+    "shell.keytips.file",
+    "shell.keytips.comments",
+    "shell.keytips.editingMode",
+    "shell.keytips.share",
+    "shell.backstage.frame",
+    "shell.backstage.titlebar",
+    "shell.backstage.navBar",
+    "shell.backstage.navList",
+    "shell.backstage.back",
+    "shell.backstage.contentPane",
+    "shell.statusbar.bar",
+    "shell.statusbar.leftZone",
+    "shell.statusbar.rightZone",
+    "shell.statusbar.displaySettings",
+    "shell.statusbar.viewSwitcher",
+    "shell.statusbar.zoomOut",
+    "shell.statusbar.zoomSlider",
+    "shell.statusbar.zoomIn",
+    "shell.statusbar.zoomPercent",
+    "shell.statusbar.customizeMenu",
+)
+
+REQUIRED_SHELL_IDENTIFIERS = {
+    "shell.titlebar.systemMenu": ("uiaId", "MenuBar"),
+    "shell.titlebar.autosave": ("idMso", "AutoSaveSwitch"),
+    "shell.titlebar.search": ("uiaId", "TellMeControlAnchor"),
+    "shell.titlebar.account": ("uiaId", "MeControlWidget"),
+    "shell.qat.autosave": ("idMso", "AutoSaveSwitch"),
+    "shell.qat.save": ("idMso", "FileSave"),
+    "shell.qat.undo": ("idMso", "Undo"),
+    "shell.qat.undo.dropdown": ("uiaId", "Undo_Dropdown"),
+    "shell.qat.redo": ("idMso", "RedoOrRepeat"),
+    "shell.tabrow.file": ("uiaId", "FileTabButton"),
+    "shell.search.input": ("uiaId", "TellMeTextBoxAutomationId"),
+    "shell.backstage.navBar": ("uiaId", "OutSpaceNavBar"),
+    "shell.backstage.navList": ("uiaId", "NavBarMenu"),
+    "shell.backstage.back": ("uiaId", "FileTabButton"),
+    "shell.backstage.contentPane": ("uiaId", "BackstageView"),
+    "excel.shell.qat.redo": ("idMso", "Redo"),
+    "powerpoint.shell.qat.fromBeginning": ("idMso", "SlideShowFromBeginning"),
+    "project.shell.qat.save": ("idMso", "FileSave"),
+    "project.shell.qat.undo": ("idMso", "Undo"),
+    "project.shell.qat.redo": ("idMso", "Redo"),
+    "project.shell.tabrow.search": ("uiaId", "TellMeControlAnchor"),
+    "outlook.explorer.shell.qat.sendReceiveAll": ("idMso", "SendReceiveAll"),
+    "outlook.explorer.shell.qat.singleLineRibbonToggle": ("idMso", "SingleLineRibbonToggle"),
+    "outlook.explorer.shell.qat.minimizeRibbon": ("idMso", "MinimizeRibbon"),
+    "outlook.explorer.shell.qat.findContactCombo": ("idMso", "FindContactCombo"),
+    "outlook.compose.shell.qat.save": ("idMso", "FileSave"),
+    "outlook.compose.shell.qat.redo": ("idMso", "RedoOrRepeat"),
+    "outlook.compose.shell.qat.singleLineRibbonToggle": ("idMso", "SingleLineRibbonToggle"),
+    "outlook.compose.shell.qat.minimizeRibbon": ("idMso", "MinimizeRibbon"),
+}
+
+
+def effective_shell(records, app, window=None):
+    """Resolve the effective shell record list for `app` (and `window` for Outlook: 'explorer' or 'compose').
+
+    Rules:
+    1. Start from all shared `shell.*` records (`r["app"] == "shell"`).
+    2. Select the override prefix `<prefix>` (`word.shell.`, `excel.shell.`, `powerpoint.shell.`, `visio.shell.`,
+       `project.shell.`, or `outlook.<window>.shell.` where `window` defaults to `'explorer'` for Outlook).
+    3. Every override record `<prefix><path>` corresponds to shared id `shell.<path>`.
+    4. If an override record `<prefix><container>` has direct override children (`r["parent"] == "<prefix><container>"`),
+       it is a container override: the shared container's direct children (`r["parent"] == "shell.<container>"`) are
+       replaced by those override children, and the entire descendant subtree of any excluded shared child (such as
+       `shell.tabrow.editingMode`'s mode items in Excel or `shell.qat.customize`'s menu items when not overridden) is
+       recursively pruned unless explicitly overridden under `<prefix>`.
+    5. A leaf override `<prefix><leaf>` inside a non-overridden container replaces `shell.<leaf>` if present (and any
+       shared children under `shell.<leaf>` have their `parent` remapped to `<prefix><leaf>` unless `<prefix><leaf>`
+       defines its own override children) or appends to the container if new.
+    6. Every retained record's `parent` is remapped to the active container id in the resolved graph so no record has
+       an orphaned `parent`.
+    """
+    if app not in APPS and app != "shell":
+        raise ValueError(f"unknown app {app!r}")
+    shared = [dict(r) for r in records if r.get("app") == "shell" and str(r.get("id", "")).startswith("shell.")]
+    if app in ("shell", "word"):
+        return shared
+    if app == "outlook":
+        win_ctx = window or "explorer"
+        if win_ctx not in ("explorer", "compose"):
+            raise ValueError(f"unknown Outlook window context {win_ctx!r}; expected 'explorer' or 'compose'")
+        prefix = f"outlook.{win_ctx}.shell."
+    else:
+        if window is not None:
+            raise ValueError(f"window context {window!r} is only valid for outlook, not {app!r}")
+        prefix = f"{app}.shell."
+
+    overrides = [dict(r) for r in records if r.get("app") == app and str(r.get("id", "")).startswith(prefix)]
+    if not overrides:
+        return shared
+
+    def to_shared_id(oid):
+        if isinstance(oid, str) and oid.startswith(prefix):
+            return "shell." + oid[len(prefix):]
+        return oid
+
+    ovr_by_shared = {to_shared_id(r["id"]): r for r in overrides}
+    ovr_children_of = {}
+    for r in overrides:
+        parent = r.get("parent")
+        if parent:
+            ovr_children_of.setdefault(to_shared_id(parent), []).append(r)
+
+    shared_by_id = {r["id"]: r for r in shared}
+    shared_children_of = {}
+    for r in shared:
+        parent = r.get("parent")
+        if parent:
+            shared_children_of.setdefault(parent, []).append(r)
+
+    # Identify container overrides: any shared path that has an override record AND at least one override child.
+    overridden_containers = {
+        sid for sid in ovr_by_shared if sid in ovr_children_of and len(ovr_children_of[sid]) > 0
+    }
+    excluded_shared_ids = set()
+    for cid in overridden_containers:
+        ovr_child_sids = {to_shared_id(c["id"]) for c in ovr_children_of.get(cid, ())}
+        for shared_child in shared_children_of.get(cid, ()):
+            if shared_child["id"] not in ovr_child_sids:
+                excluded_shared_ids.add(shared_child["id"])
+                tail = shared_child["id"].split(".", 2)[-1]
+                excluded_shared_ids.add(f"shell.keytips.{tail}")
+
+    # Walk from roots to build the active set of canonical shared paths and their resolved records.
+    resolved = []
+    active_id_for_shared = {}
+
+    def emit_Record(rec, parent_shared_id):
+        out = dict(rec)
+        if parent_shared_id is not None:
+            out["parent"] = active_id_for_shared.get(parent_shared_id, parent_shared_id)
+        resolved.append(out)
+
+    def walk_shared(sid, parent_sid):
+        if sid in excluded_shared_ids:
+            return
+        ovr = ovr_by_shared.get(sid)
+        chosen = ovr if ovr is not None else shared_by_id[sid]
+        active_id_for_shared[sid] = chosen["id"]
+        emit_Record(chosen, parent_sid)
+        if sid in overridden_containers:
+            for child_ovr in ovr_children_of.get(sid, ()):
+                child_sid = to_shared_id(child_ovr["id"])
+                walk_override_subtree(child_ovr, child_sid, sid)
+        else:
+            for child_shared in shared_children_of.get(sid, ()):
+                if child_shared["id"] in excluded_shared_ids:
+                    continue
+                if chosen["id"].startswith(prefix) and child_shared.get("keytip") and chosen.get("keytip") == child_shared.get("keytip"):
+                    continue
+                walk_shared(child_shared["id"], sid)
+            for child_ovr in ovr_children_of.get(sid, ()):
+                child_sid = to_shared_id(child_ovr["id"])
+                if child_sid not in shared_by_id:
+                    walk_override_subtree(child_ovr, child_sid, sid)
+
+    def walk_override_subtree(ovr_rec, sid, parent_sid):
+        active_id_for_shared[sid] = ovr_rec["id"]
+        emit_Record(ovr_rec, parent_sid)
+        if sid in overridden_containers:
+            for child_ovr in ovr_children_of.get(sid, ()):
+                child_sid = to_shared_id(child_ovr["id"])
+                walk_override_subtree(child_ovr, child_sid, sid)
+        else:
+            for child_shared in shared_children_of.get(sid, ()):
+                walk_shared(child_shared["id"], sid)
+            for child_ovr in ovr_children_of.get(sid, ()):
+                child_sid = to_shared_id(child_ovr["id"])
+                if child_sid not in shared_by_id:
+                    walk_override_subtree(child_ovr, child_sid, sid)
+
+    roots = [r for r in shared if not r.get("parent")]
+    for root in roots:
+        walk_shared(root["id"], None)
+    for ovr in overrides:
+        sid = to_shared_id(ovr["id"])
+        if not ovr.get("parent") and sid not in active_id_for_shared:
+            walk_override_subtree(ovr, sid, None)
+    return resolved
+
+
+def validate_shell_chrome(records):
+    """Validate `design/inventory/shell/chrome.json` records, geometry, identifiers and per-app effective shells."""
+    if not isinstance(records, list) or len(records) < 110:
+        raise Refused(f"shell chrome inventory holds {len(records) if isinstance(records, list) else 0} records; "
+                      "expected at least 110")
+    by_id = {}
+    for rec in records:
+        if not isinstance(rec, dict) or not isinstance(rec.get("id"), str):
+            raise Refused("shell chrome inventory contains a malformed record without a string id")
+        rid = rec["id"]
+        if rid in by_id:
+            raise Refused(f"duplicate shell record id {rid!r}")
+        by_id[rid] = rec
+        if not str(rec.get("behaviour", "")).strip():
+            raise Refused(f"shell record {rid!r} is missing a non-blank behaviour sentence")
+        if not str(rec.get("source", "")).strip():
+            raise Refused(f"shell record {rid!r} is missing source")
+        if rec.get("label") and _NO_CONTROL_RE.search(str(rec["label"])):
+            raise Refused(f"shell record {rid!r} label contains control or bidi characters")
+        if _EMAIL_RE.search(str(rec.get("label", ""))) or _EMAIL_RE.search(str(rec.get("behaviour", ""))):
+            raise Refused(f"shell record {rid!r} contains an unsanitised email address")
+
+    missing = [rid for rid in REQUIRED_SHELL_IDS if rid not in by_id]
+    if missing:
+        raise Refused(f"shell chrome inventory is missing required records: {missing}")
+
+    for rid, (field, expected_val) in REQUIRED_SHELL_IDENTIFIERS.items():
+        rec = by_id.get(rid)
+        if rec is None:
+            raise Refused(f"shell chrome inventory is missing required record {rid!r}")
+        if rec.get(field) != expected_val:
+            raise Refused(f"shell record {rid!r} has {field}={rec.get(field)!r}, expected {expected_val!r}")
+
+    for rec in records:
+        rid = rec["id"]
+        app = rec.get("app")
+        parent = rec.get("parent")
+        if parent and parent not in by_id:
+            raise Refused(f"shell record {rid!r} has orphan parent {parent!r}")
+        if app in ("shell", "excel", "powerpoint", "visio", "project"):
+            source = str(rec.get("source", ""))
+            if not source.startswith("uia:"):
+                raise Refused(f"live-captured shell record {rid!r} has source {source!r}, expected uia:<build>")
+            if rec.get("captureProfile") != PROFILE:
+                raise Refused(f"live-captured shell record {rid!r} is missing captureProfile {PROFILE!r}")
+            bounds = rec.get("bounds")
+            if not isinstance(bounds, dict) or bounds.get("width", 0) <= 0 or bounds.get("height", 0) <= 0:
+                raise Refused(f"live-captured shell record {rid!r} is missing positive bounds")
+        elif app == "outlook":
+            source = str(rec.get("source", ""))
+            if not (source.startswith("baseline:") or source.startswith("uia:")):
+                raise Refused(f"outlook shell record {rid!r} has invalid source {source!r}")
+
+    # Verify effective_shell resolution and invariants across all apps and Outlook window contexts.
+    contexts = [
+        ("word", None),
+        ("excel", None),
+        ("powerpoint", None),
+        ("visio", None),
+        ("project", None),
+        ("outlook", "explorer"),
+        ("outlook", "compose"),
+    ]
+    for app, win_ctx in contexts:
+        eff = effective_shell(records, app, window=win_ctx)
+        eff_ids = {r["id"] for r in eff}
+        for r in eff:
+            p = r.get("parent")
+            if p and p not in eff_ids:
+                raise Refused(f"effective_shell({app!r}, {win_ctx!r}) left orphan parent {p!r} on {r['id']!r}")
+
+    word_ids = {r["id"] for r in effective_shell(records, "word")}
+    if "shell.tabrow.editingMode" not in word_ids or "shell.tabrow.editingMode.editing" not in word_ids:
+        raise Refused("Word effective shell is missing editingMode or its child items")
+    if "shell.titlebar.autosave" not in word_ids or "shell.qat.autosave" not in word_ids:
+        raise Refused("Word effective shell is missing autosave")
+
+    excel_ids = {r["id"] for r in effective_shell(records, "excel")}
+    if any("editingMode" in rid for rid in excel_ids):
+        raise Refused("Excel effective shell must exclude editingMode and its mode items")
+    if "excel.shell.qat.redo" not in excel_ids or "shell.qat.redo" in excel_ids:
+        raise Refused("Excel effective shell must replace shell.qat.redo with excel.shell.qat.redo")
+
+    ppt_ids = {r["id"] for r in effective_shell(records, "powerpoint")}
+    if "powerpoint.shell.qat.fromBeginning" not in ppt_ids or "powerpoint.shell.tabrow.presentInTeams" not in ppt_ids:
+        raise Refused("PowerPoint effective shell is missing fromBeginning or presentInTeams")
+    if any("editingMode" in rid for rid in ppt_ids):
+        raise Refused("PowerPoint effective shell must exclude editingMode and its mode items")
+
+    visio_ids = {r["id"] for r in effective_shell(records, "visio")}
+    if "shell.titlebar.autosave" in visio_ids or "shell.qat.autosave" in visio_ids:
+        raise Refused("Visio effective shell must exclude autosave")
+    if "visio.shell.tabrow.closeDocument" not in visio_ids:
+        raise Refused("Visio effective shell is missing closeDocument")
+
+    proj_ids = {r["id"] for r in effective_shell(records, "project")}
+    if "shell.titlebar.autosave" in proj_ids or "shell.qat.autosave" in proj_ids:
+        raise Refused("Project effective shell must exclude autosave")
+    if "project.shell.tabrow.search" not in proj_ids or "shell.titlebar.search" in proj_ids:
+        raise Refused("Project effective shell must move search from the title bar to the tab row")
+
+    ol_exp_ids = {r["id"] for r in effective_shell(records, "outlook", window="explorer")}
+    ol_cmp_ids = {r["id"] for r in effective_shell(records, "outlook", window="compose")}
+    if "outlook.explorer.shell.qat.sendReceiveAll" not in ol_exp_ids:
+        raise Refused("Outlook explorer effective shell is missing sendReceiveAll")
+    if "outlook.compose.shell.qat.save" in ol_exp_ids:
+        raise Refused("Outlook explorer effective shell must exclude compose-only save")
+    if "outlook.compose.shell.qat.save" not in ol_cmp_ids:
+        raise Refused("Outlook compose effective shell is missing save")
+    if "outlook.explorer.shell.qat.sendReceiveAll" in ol_cmp_ids:
+        raise Refused("Outlook compose effective shell must exclude explorer-only sendReceiveAll")
+    return True
+
+
+def _shell_rec(rid, app, kind, label, behaviour, build, parent=None, order=None, bounds=None, control_type_val=None,
+               id_mso=None, uia_id=None, keytip_val=None, baseline_missing=None, source_override=None):
+    rec = {"id": rid, "app": app, "kind": kind, "label": sanitize_shell_label(label, uia_id or "", id_mso or "")}
+    if parent is not None:
+        rec["parent"] = parent
+    if order is not None:
+        rec["order"] = order
+    if control_type_val is not None:
+        rec["controlType"] = control_type_val
+    if bounds is not None:
+        x, y, w, h = bounds
+        rec["bounds"] = {"x": x, "y": y, "width": w, "height": h}
+        rec["captureProfile"] = PROFILE
+        if kind == "control":
+            rec["size"] = "large" if h >= LARGE_HEIGHT else "small"
+    if keytip_val is not None:
+        rec["keytip"] = keytip_val
+    if id_mso is not None:
+        rec["idMso"] = id_mso
+    if uia_id is not None:
+        rec["uiaId"] = uia_id
+    if baseline_missing:
+        rec["baselineMissing"] = True
+    rec["behaviour"] = behaviour
+    if source_override is not None:
+        rec["source"] = source_override
+    else:
+        rec["source"] = f"uia:{build}"
+        rec["capturedFrom"] = build
+    return rec
+
+
+def build_shell_chrome_records(build=None):
+    """Build the full `design/inventory/shell/chrome.json` record set for the reference build."""
+    b = build or reference_build()
+    R = lambda rid, app, kind, label, beh, **kw: _shell_rec(rid, app, kind, label, beh, b, **kw)
+    base_src = f"baseline:{BASELINE_COMMIT}"
+    records = [
+        # 1. Shared window frame regions (shell.region.*)
+        R("shell.region.titlebar", "shell", "region", "Title Bar",
+          "Spans the top 48 pixels of the maximised window frame, hosting the system menu, Quick Access Toolbar, document title, search box, account widget and window caption buttons.",
+          order=0, bounds=(0, 0, 1920, 48)),
+        R("shell.region.tabrow", "shell", "region", "Ribbon Tab Row",
+          "Spans the 30-pixel strip beneath the title bar, hosting the File tab button, the main and contextual ribbon tabs, and the right-hand collaboration and mode controls.",
+          order=1, bounds=(0, 48, 1920, 30)),
+        R("shell.region.ribbon", "shell", "region", "Lower Ribbon",
+          "Hosts the active ribbon tab's command groups and controls across a 100-pixel band beneath the tab row when Always show Ribbon is active.",
+          order=2, bounds=(0, 78, 1920, 100)),
+        R("shell.region.messageBar", "shell", "region", "Message Bar",
+          "Appears directly below the ribbon as a 32-pixel banner when the document raises an information, warning, error or Protected View notice.",
+          order=3, bounds=(0, 178, 1920, 32)),
+        R("shell.region.documentArea", "shell", "region", "Document Area",
+          "Occupies the central workspace between the ribbon (or message bar) and the status bar, shrinking horizontally when task panes dock on the left or right.",
+          order=4, bounds=(0, 178, 1920, 832)),
+        R("shell.region.taskPaneDock", "shell", "region", "Task Pane Dock",
+          "Hosts docked side panes at the right edge of the workspace between the ribbon and the status bar, defaulting to 320 pixels wide.",
+          order=5, bounds=(1600, 178, 320, 832)),
+        R("shell.region.statusbar", "shell", "region", "Status Bar",
+          "Spans the bottom 22 pixels of the window frame, showing document indicators on the left and view and zoom controls on the right.",
+          order=6, bounds=(0, 1010, 1920, 22), uia_id="StatusBar"),
+
+        # 2. Title bar elements (shell.titlebar.*)
+        R("shell.titlebar.systemMenu", "shell", "control", "System",
+          "Opens the window system menu with Restore, Move, Size, Minimize, Maximize and Close commands when clicked or triggered with Alt+Space.",
+          parent="shell.region.titlebar", order=0, bounds=(0, 0, 22, 22), control_type_val="menu", uia_id="MenuBar",
+          keytip_val="Space", baseline_missing=True),
+        R("shell.titlebar.qat", "shell", "region", "Quick Access Toolbar",
+          "Holds pinned one-click commands and the Customize Quick Access Toolbar drop-down on the left side of the title bar.",
+          parent="shell.region.titlebar", order=1, bounds=(42, 0, 244, 48)),
+        R("shell.titlebar.autosave", "shell", "control", "AutoSave",
+          "Toggles automatic cloud saving for the active document when stored on a connected cloud drive.",
+          parent="shell.region.titlebar", order=2, bounds=(42, 9, 118, 29), control_type_val="toggleButton",
+          id_mso="AutoSaveSwitch", uia_id="AutoSaveSwitch", keytip_val="1"),
+        R("shell.titlebar.documentTitle", "shell", "control", "Document Title",
+          "Displays the active document name and save state and opens the rename and location flyout when clicked.",
+          parent="shell.region.titlebar", order=3, bounds=(287, 0, 134, 48), control_type_val="button",
+          keytip_val="B", baseline_missing=True),
+        R("shell.titlebar.caption", "shell", "control", "Window Caption",
+          "Displays the document title and application name across the draggable title bar area and toggles maximise on double-click.",
+          parent="shell.region.titlebar", order=4, bounds=(287, 0, 497, 48), control_type_val="label",
+          baseline_missing=True),
+        R("shell.titlebar.search", "shell", "control", "Search",
+          "Focuses the title bar command and content search box (Alt+Q) and opens the search suggestions flyout.",
+          parent="shell.region.titlebar", order=5, bounds=(784, 8, 368, 32), control_type_val="menu",
+          uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True),
+        R("shell.titlebar.account", "shell", "control", "Account",
+          "Opens the account flyout showing the signed-in profile, account settings and sign-out controls.",
+          parent="shell.region.titlebar", order=6, bounds=(1726, 0, 50, 48), control_type_val="menu",
+          uia_id="MeControlWidget", keytip_val="ZP", baseline_missing=True),
+        R("shell.titlebar.minimize", "shell", "control", "Minimize",
+          "Minimises the application window to the Windows taskbar.",
+          parent="shell.region.titlebar", order=7, bounds=(1776, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("shell.titlebar.maximize", "shell", "control", "Restore Down",
+          "Restores a maximised window to its previous floating bounds or maximises a floating window, and shows Windows Snap Layouts on hover.",
+          parent="shell.region.titlebar", order=8, bounds=(1824, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("shell.titlebar.close", "shell", "control", "Close",
+          "Closes the active application window, prompting to save unsaved changes before exiting.",
+          parent="shell.region.titlebar", order=9, bounds=(1872, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+
+        # 3. Quick Access Toolbar default commands and Customize menu (shell.qat.*)
+        R("shell.qat.autosave", "shell", "control", "AutoSave",
+          "Toggles continuous background saving of the active document in the Quick Access Toolbar.",
+          parent="shell.titlebar.qat", order=0, bounds=(42, 9, 118, 29), control_type_val="toggleButton",
+          id_mso="AutoSaveSwitch", uia_id="AutoSaveSwitch", keytip_val="1"),
+        R("shell.qat.save", "shell", "control", "Save",
+          "Saves the active document immediately or opens the Save As page when the document has not yet been saved to disk.",
+          parent="shell.titlebar.qat", order=1, bounds=(161, 9, 28, 29), control_type_val="button",
+          id_mso="FileSave", uia_id="FileSave", keytip_val="2"),
+        R("shell.qat.undo", "shell", "control", "Undo",
+          "Reverses the last editing action on click or opens the history of recent actions to undo several steps at once.",
+          parent="shell.titlebar.qat", order=2, bounds=(190, 9, 38, 29), control_type_val="splitButton",
+          id_mso="Undo", keytip_val="3"),
+        R("shell.qat.undo.dropdown", "shell", "control", "More Options",
+          "Opens the chronological list of recent editing actions so multiple actions can be undone together.",
+          parent="shell.qat.undo", order=0, bounds=(215, 9, 13, 29), control_type_val="menu",
+          uia_id="Undo_Dropdown", baseline_missing=True),
+        R("shell.qat.redo", "shell", "control", "Repeat",
+          "Repeats the last editing command or redoes the most recently undone action.",
+          parent="shell.titlebar.qat", order=3, bounds=(229, 9, 28, 29), control_type_val="button",
+          id_mso="RedoOrRepeat", uia_id="RedoOrRepeat", keytip_val="4"),
+        R("shell.qat.customize", "shell", "control", "Customize Quick Access Toolbar",
+          "Opens the menu to toggle common Quick Access Toolbar buttons, open the full command customiser, move the toolbar below the ribbon or hide it.",
+          parent="shell.titlebar.qat", order=4, bounds=(258, 8, 28, 31), control_type_val="menu",
+          baseline_missing=True),
+        R("shell.qat.customize.automatically-save", "shell", "menuItem", "Automatically Save",
+          "Shows or hides the AutoSave toggle switch on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=0, bounds=(261, 39, 234, 28), control_type_val="button",
+          id_mso="AutoSaveSwitch", uia_id="AutoSaveSwitch"),
+        R("shell.qat.customize.new", "shell", "menuItem", "New",
+          "Shows or hides the New Blank Document button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=1, bounds=(261, 67, 234, 28), control_type_val="button",
+          id_mso="FileNewDefault", uia_id="FileNewDefault"),
+        R("shell.qat.customize.open", "shell", "menuItem", "Open",
+          "Shows or hides the Open button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=2, bounds=(261, 95, 234, 28), control_type_val="button",
+          id_mso="FileOpenUsingBackstage", uia_id="FileOpenUsingBackstage"),
+        R("shell.qat.customize.save", "shell", "menuItem", "Save",
+          "Shows or hides the Save button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=3, bounds=(261, 123, 234, 28), control_type_val="button",
+          id_mso="FileSave", uia_id="FileSave"),
+        R("shell.qat.customize.email", "shell", "menuItem", "Email",
+          "Shows or hides the Email attachment button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=4, bounds=(261, 151, 234, 28), control_type_val="button",
+          id_mso="FileSendAsAttachment", uia_id="FileSendAsAttachment"),
+        R("shell.qat.customize.quick-print", "shell", "menuItem", "Quick Print",
+          "Shows or hides the Quick Print button that sends the document directly to the default printer.",
+          parent="shell.qat.customize", order=5, bounds=(261, 179, 234, 28), control_type_val="button",
+          id_mso="FilePrintQuick", uia_id="FilePrintQuick"),
+        R("shell.qat.customize.print-preview-and-print", "shell", "menuItem", "Print Preview and Print",
+          "Shows or hides the Print Preview and Print button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=6, bounds=(261, 207, 234, 28), control_type_val="button",
+          id_mso="PrintPreviewAndPrint", uia_id="PrintPreviewAndPrint"),
+        R("shell.qat.customize.editor-f7", "shell", "menuItem", "Editor (F7)",
+          "Shows or hides the Editor proofing command on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=7, bounds=(261, 235, 234, 28), control_type_val="button",
+          id_mso="WritingAssistanceCheckDocument", uia_id="WritingAssistanceCheckDocument"),
+        R("shell.qat.customize.read-aloud", "shell", "menuItem", "Read Aloud",
+          "Shows or hides the Read Aloud speech command on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=8, bounds=(261, 263, 234, 28), control_type_val="button",
+          id_mso="ReadAloud", uia_id="ReadAloud"),
+        R("shell.qat.customize.undo", "shell", "menuItem", "Undo",
+          "Shows or hides the Undo split button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=9, bounds=(261, 291, 234, 28), control_type_val="button",
+          id_mso="Undo", uia_id="Undo"),
+        R("shell.qat.customize.redo", "shell", "menuItem", "Redo",
+          "Shows or hides the Redo or Repeat button on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=10, bounds=(261, 319, 234, 28), control_type_val="button",
+          id_mso="RedoOrRepeat", uia_id="RedoOrRepeat"),
+        R("shell.qat.customize.draw-table", "shell", "menuItem", "Draw Table",
+          "Shows or hides the Draw Table pen tool on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=11, bounds=(261, 347, 234, 28), control_type_val="button",
+          id_mso="TableDrawTable", uia_id="TableDrawTable"),
+        R("shell.qat.customize.touch-mouse-mode", "shell", "menuItem", "Touch/Mouse Mode",
+          "Shows or hides the Touch or Mouse Mode spacing selector on the Quick Access Toolbar.",
+          parent="shell.qat.customize", order=12, bounds=(261, 375, 234, 28), control_type_val="button",
+          id_mso="PointerModeOptions", uia_id="PointerModeOptions"),
+        R("shell.qat.customize.more-commands", "shell", "menuItem", "More Commands...",
+          "Opens the Options dialog to the Quick Access Toolbar page for adding, removing or reordering any command.",
+          parent="shell.qat.customize", order=13, bounds=(261, 406, 234, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.qat.customize.show-below-the-ribbon", "shell", "menuItem", "Show Below the Ribbon",
+          "Moves the Quick Access Toolbar from the title bar to a dedicated strip directly below the ribbon.",
+          parent="shell.qat.customize", order=14, bounds=(261, 434, 234, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.qat.customize.hide-quick-access-toolbar", "shell", "menuItem", "Hide Quick Access Toolbar",
+          "Hides the Quick Access Toolbar from the window frame until re-enabled from Ribbon Display Options or Options.",
+          parent="shell.qat.customize", order=15, bounds=(261, 465, 234, 28), control_type_val="button",
+          baseline_missing=True),
+
+        # 4. Ribbon tab row controls (shell.tabrow.*)
+        R("shell.tabrow.file", "shell", "control", "File Tab",
+          "Opens the full-window Backstage view for file management, printing, sharing, account settings and application options.",
+          parent="shell.region.tabrow", order=0, bounds=(4, 48, 54, 30), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True),
+        R("shell.tabrow.tabs", "shell", "region", "Ribbon Tabs",
+          "Contains the ordered core and contextual tab headers along the tab row.",
+          parent="shell.region.tabrow", order=1, bounds=(58, 48, 1850, 30)),
+        R("shell.tabrow.comments", "shell", "control", "Comments",
+          "Toggles the document Comments pane for viewing, replying to and resolving review threads.",
+          parent="shell.region.tabrow", order=2, bounds=(1655, 51, 88, 24), control_type_val="toggleButton",
+          keytip_val="ZC", baseline_missing=True),
+        R("shell.tabrow.editingMode", "shell", "control", "Editing",
+          "Opens the document access mode selector to switch between Editing, Reviewing (track changes) and Viewing (read-only).",
+          parent="shell.region.tabrow", order=3, bounds=(1751, 51, 80, 24), control_type_val="comboBox",
+          keytip_val="ZM", baseline_missing=True),
+        R("shell.tabrow.editingMode.editing", "shell", "menuItem", "Editing",
+          "Allows direct changes to the document content and formatting without forcing tracked revisions.",
+          parent="shell.tabrow.editingMode", order=0, bounds=(1753, 77, 150, 55), control_type_val="galleryItem",
+          baseline_missing=True),
+        R("shell.tabrow.editingMode.reviewing", "shell", "menuItem", "Reviewing",
+          "Restricts edits to tracked insertions, deletions and comments so others can review suggested changes.",
+          parent="shell.tabrow.editingMode", order=1, bounds=(1753, 132, 150, 55), control_type_val="galleryItem",
+          baseline_missing=True),
+        R("shell.tabrow.editingMode.viewing", "shell", "menuItem", "Viewing",
+          "Locks the document against accidental edits so it can be read without modifying content.",
+          parent="shell.tabrow.editingMode", order=2, bounds=(1753, 187, 150, 55), control_type_val="galleryItem",
+          baseline_missing=True),
+        R("shell.tabrow.share", "shell", "control", "Share",
+          "Opens the sharing menu to invite collaborators, copy a sharing link or manage access permissions.",
+          parent="shell.region.tabrow", order=4, bounds=(1839, 48, 69, 30), control_type_val="menu",
+          keytip_val="ZS", baseline_missing=True),
+        R("shell.tabrow.share.share", "shell", "menuItem", "Share...",
+          "Opens the Share dialog to send the document or invite people to collaborate.",
+          parent="shell.tabrow.share", order=0, bounds=(1718, 80, 188, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.tabrow.share.copy-link", "shell", "menuItem", "Copy Link...",
+          "Generates and copies a link to the document into the clipboard.",
+          parent="shell.tabrow.share", order=1, bounds=(1718, 108, 188, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.tabrow.share.manage-access", "shell", "menuItem", "Manage Access...",
+          "Opens the permissions view to review or revoke who can view or edit the document.",
+          parent="shell.tabrow.share", order=2, bounds=(1718, 136, 188, 28), control_type_val="button",
+          baseline_missing=True),
+
+        # 5. Ribbon display options (shell.ribbonDisplay.*)
+        R("shell.ribbonDisplay.button", "shell", "control", "Ribbon Display Options",
+          "Opens the menu at the bottom-right corner of the lower ribbon to control ribbon visibility and Quick Access Toolbar visibility.",
+          parent="shell.region.ribbon", order=0, bounds=(1888, 154, 20, 20), control_type_val="menu",
+          baseline_missing=True),
+        R("shell.ribbonDisplay.full-screen-mode", "shell", "menuItem", "Full-screen mode",
+          "Hides both the ribbon and the tab row to maximise document space, revealing them temporarily when the top of the window is clicked.",
+          parent="shell.ribbonDisplay.button", order=0, bounds=(1712, 205, 202, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.ribbonDisplay.show-tabs-only", "shell", "menuItem", "Show tabs only",
+          "Collapses the lower ribbon so only the tab row stays visible, opening a tab's commands as a popup when clicked.",
+          parent="shell.ribbonDisplay.button", order=1, bounds=(1712, 233, 202, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.ribbonDisplay.always-show-ribbon", "shell", "menuItem", "Always show Ribbon",
+          "Pins both the tab row and the full lower ribbon open above the document workspace.",
+          parent="shell.ribbonDisplay.button", order=2, bounds=(1712, 261, 202, 28), control_type_val="button",
+          baseline_missing=True),
+        R("shell.ribbonDisplay.hide-quick-access-toolbar", "shell", "menuItem", "Hide Quick Access Toolbar",
+          "Toggles visibility of the Quick Access Toolbar (reading Show Quick Access Toolbar when the toolbar is currently hidden).",
+          parent="shell.ribbonDisplay.button", order=3, bounds=(1712, 292, 202, 28), control_type_val="button",
+          baseline_missing=True),
+
+        # 6. Search box and flyout categories (shell.search.*)
+        R("shell.search.input", "shell", "control", "Search Input",
+          "Accepts text queries (Alt+Q) to search commands, document text, help topics and connected files.",
+          parent="shell.titlebar.search", order=0, bounds=(825, 16, 293, 18), control_type_val="editBox",
+          uia_id="TellMeTextBoxAutomationId", keytip_val="Q", baseline_missing=True),
+        R("shell.search.voice", "shell", "control", "Voice Search",
+          "Starts microphone dictation into the search box to find commands or content by voice.",
+          parent="shell.titlebar.search", order=1, bounds=(1121, 16, 18, 18), control_type_val="button",
+          keytip_val="Q", baseline_missing=True),
+        R("shell.search.flyout", "shell", "region", "Search Flyout",
+          "Displays categorised command, document, people, file and help results beneath the title bar search box.",
+          parent="shell.titlebar.search", order=2, bounds=(784, 40, 368, 339)),
+        R("shell.search.recentActions", "shell", "group", "Recently Used Actions",
+          "Lists the commands most recently invoked from the search box for one-click reuse.",
+          parent="shell.search.flyout", order=0, bounds=(786, 42, 364, 67), baseline_missing=True),
+        R("shell.search.suggestedActions", "shell", "group", "Suggested Actions",
+          "Lists contextually relevant commands when the search box is first opened before typing a query.",
+          parent="shell.search.flyout", order=1, bounds=(786, 109, 364, 137), baseline_missing=True),
+        R("shell.search.suggestedActions.spelling-and-grammar", "shell", "menuItem", "Spelling and Grammar",
+          "Runs the spelling and grammar checker on the active document from the default Suggested Actions list.",
+          parent="shell.search.suggestedActions", order=0, bounds=(786, 144, 364, 34),
+          control_type_val="galleryItem", baseline_missing=True),
+        R("shell.search.suggestedActions.word-count", "shell", "menuItem", "Word Count",
+          "Opens the Word Count statistics dialog from the default Suggested Actions list.",
+          parent="shell.search.suggestedActions", order=1, bounds=(786, 178, 364, 34),
+          control_type_val="galleryItem", baseline_missing=True),
+        R("shell.search.suggestedActions.print", "shell", "menuItem", "Print",
+          "Opens the Backstage Print page from the default Suggested Actions list.",
+          parent="shell.search.suggestedActions", order=2, bounds=(786, 212, 364, 34),
+          control_type_val="galleryItem", baseline_missing=True),
+        R("shell.search.people", "shell", "group", "People",
+          "Lists collaborators and contacts matching the search query without exposing personal identities in the static inventory.",
+          parent="shell.search.flyout", order=2, bounds=(786, 246, 364, 131), baseline_missing=True),
+        R("shell.search.actions", "shell", "group", "Actions",
+          "Lists matching application commands and menus with direct execution and nested submenus as the user types.",
+          parent="shell.search.flyout", order=3, bounds=(786, 42, 364, 169), baseline_missing=True),
+        R("shell.search.findInDocument", "shell", "group", "Find in Document",
+          "Searches the active document's text for the typed query and jumps to matching occurrences.",
+          parent="shell.search.flyout", order=4, bounds=(786, 211, 364, 84), baseline_missing=True),
+        R("shell.search.files", "shell", "group", "Files",
+          "Lists recent and cloud documents whose titles or contents match the search query.",
+          parent="shell.search.flyout", order=5, bounds=(786, 295, 364, 68), baseline_missing=True),
+        R("shell.search.help", "shell", "group", "Help",
+          "Lists documentation and help articles matching the search query.",
+          parent="shell.search.flyout", order=6, bounds=(786, 363, 364, 68), baseline_missing=True),
+
+        # 7. KeyTips layer (shell.keytips.*)
+        R("shell.keytips.layer", "shell", "region", "KeyTips Layer",
+          "Overlays alphanumeric keyboard access badges across the title bar and ribbon tab row when Alt or F10 is pressed and released.",
+          parent="shell.region.titlebar", order=10, bounds=(0, 0, 1920, 78)),
+        R("shell.keytips.autosave", "shell", "control", "AutoSave KeyTip",
+          "Triggers the AutoSave toggle on the Quick Access Toolbar when 1 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=0, bounds=(42, 9, 118, 29), control_type_val="label",
+          keytip_val="1", baseline_missing=True),
+        R("shell.keytips.save", "shell", "control", "Save KeyTip",
+          "Triggers the Save command on the Quick Access Toolbar when 2 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=1, bounds=(161, 9, 28, 29), control_type_val="label",
+          keytip_val="2", baseline_missing=True),
+        R("shell.keytips.undo", "shell", "control", "Undo KeyTip",
+          "Triggers the Undo command on the Quick Access Toolbar when 3 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=2, bounds=(190, 9, 38, 29), control_type_val="label",
+          keytip_val="3", baseline_missing=True),
+        R("shell.keytips.redo", "shell", "control", "Redo KeyTip",
+          "Triggers the Repeat or Redo command on the Quick Access Toolbar when 4 is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=3, bounds=(229, 9, 28, 29), control_type_val="label",
+          keytip_val="4", baseline_missing=True),
+        R("shell.keytips.documentTitle", "shell", "control", "Document Title KeyTip",
+          "Opens the document title and file location flyout when B is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=4, bounds=(287, 0, 134, 48), control_type_val="label",
+          keytip_val="B", baseline_missing=True),
+        R("shell.keytips.search", "shell", "control", "Search KeyTip",
+          "Focuses the title bar search box when Q is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=5, bounds=(784, 8, 368, 32), control_type_val="label",
+          keytip_val="Q", baseline_missing=True),
+        R("shell.keytips.account", "shell", "control", "Account KeyTip",
+          "Opens the Account flyout when Z then P is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=6, bounds=(1726, 0, 50, 48), control_type_val="label",
+          keytip_val="ZP", baseline_missing=True),
+        R("shell.keytips.file", "shell", "control", "File KeyTip",
+          "Opens the Backstage view when F is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=7, bounds=(4, 48, 54, 30), control_type_val="label",
+          keytip_val="F", baseline_missing=True),
+        R("shell.keytips.comments", "shell", "control", "Comments KeyTip",
+          "Toggles the Comments pane when Z then C is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=8, bounds=(1655, 51, 88, 24), control_type_val="label",
+          keytip_val="ZC", baseline_missing=True),
+        R("shell.keytips.editingMode", "shell", "control", "Editing Mode KeyTip",
+          "Opens the Editing, Reviewing and Viewing mode menu when Z then M is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=9, bounds=(1751, 51, 80, 24), control_type_val="label",
+          keytip_val="ZM", baseline_missing=True),
+        R("shell.keytips.share", "shell", "control", "Share KeyTip",
+          "Opens the Share menu when Z then S is pressed in KeyTip mode.",
+          parent="shell.keytips.layer", order=10, bounds=(1839, 48, 69, 30), control_type_val="label",
+          keytip_val="ZS", baseline_missing=True),
+
+        # 8. Backstage frame (shell.backstage.*)
+        R("shell.backstage.frame", "shell", "region", "Backstage Frame",
+          "Replaces the ribbon and document workspace with the full-window File Backstage view when the File tab is activated.",
+          order=7, bounds=(0, 0, 1920, 1032), uia_id="BackstageView"),
+        R("shell.backstage.titlebar", "shell", "region", "Backstage Title Bar",
+          "Spans the top 48 pixels of the Backstage view, keeping the document title and window caption buttons accessible.",
+          parent="shell.backstage.frame", order=0, bounds=(42, 0, 939, 48)),
+        R("shell.backstage.navBar", "shell", "region", "Backstage Navigation Bar",
+          "Spans a 160-pixel vertical rail on the left side of the Backstage view, hosting the Back button and page navigation tabs.",
+          parent="shell.backstage.frame", order=1, bounds=(0, 48, 160, 984), uia_id="OutSpaceNavBar"),
+        R("shell.backstage.navList", "shell", "control", "File Navigation List",
+          "Lists the Backstage pages (Home, New, Open, Info, Save, Print, Share, Export, Transform, Close, Account, Feedback, Options) in the left rail.",
+          parent="shell.backstage.navBar", order=0, bounds=(0, 48, 160, 984), control_type_val="listBox",
+          uia_id="NavBarMenu", baseline_missing=True),
+        R("shell.backstage.back", "shell", "control", "Back",
+          "Closes the Backstage view and returns focus to the active document and ribbon (also triggered by Escape).",
+          parent="shell.backstage.navBar", order=1, bounds=(0, 48, 160, 45), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="B", baseline_missing=True),
+        R("shell.backstage.contentPane", "shell", "region", "Backstage Content Area",
+          "Occupies the 1760-pixel area to the right of the Backstage navigation rail, rendering the selected Backstage page.",
+          parent="shell.backstage.frame", order=2, bounds=(160, 48, 1760, 984), uia_id="BackstageView"),
+
+        # 9. Shared status bar frame (shell.statusbar.*)
+        R("shell.statusbar.bar", "shell", "region", "Status Bar Frame",
+          "Hosts the status bar controls across the bottom 22-pixel strip of the window frame.",
+          parent="shell.region.statusbar", order=0, bounds=(0, 1010, 1920, 22)),
+        R("shell.statusbar.leftZone", "shell", "region", "Status Bar Left Zone",
+          "Hosts document-state indicators (page number, word count, proofing state, macro recording, accessibility status) aligned to the left edge.",
+          parent="shell.statusbar.bar", order=0, bounds=(0, 1010, 1482, 22)),
+        R("shell.statusbar.rightZone", "shell", "region", "Status Bar Right Zone",
+          "Hosts display settings, view switchers and zoom controls aligned to the right edge of the status bar.",
+          parent="shell.statusbar.bar", order=1, bounds=(1482, 1010, 438, 22)),
+        R("shell.statusbar.displaySettings", "shell", "control", "Display Settings",
+          "Opens display and multi-monitor rendering options from the right zone of the status bar when present.",
+          parent="shell.statusbar.rightZone", order=0, bounds=(1482, 1011, 82, 21), control_type_val="button",
+          baseline_missing=True),
+        R("shell.statusbar.viewSwitcher", "shell", "region", "View Switcher",
+          "Holds the quick view-mode toggle buttons (such as Read Mode, Print Layout and Web Layout) on the right side of the status bar.",
+          parent="shell.statusbar.rightZone", order=1, bounds=(1620, 1011, 120, 21)),
+        R("shell.statusbar.zoomOut", "shell", "control", "Zoom Out",
+          "Decreases the active document zoom level in 10 percent steps.",
+          parent="shell.statusbar.rightZone", order=2, bounds=(1741, 1011, 18, 21), control_type_val="button",
+          baseline_missing=True),
+        R("shell.statusbar.zoomSlider", "shell", "control", "Zoom",
+          "Drags the document magnification continuously between the minimum and maximum zoom percentages.",
+          parent="shell.statusbar.rightZone", order=3, bounds=(1759, 1011, 100, 21), control_type_val="slider",
+          baseline_missing=True),
+        R("shell.statusbar.zoomIn", "shell", "control", "Zoom In",
+          "Increases the active document zoom level in 10 percent steps.",
+          parent="shell.statusbar.rightZone", order=4, bounds=(1859, 1011, 18, 21), control_type_val="button",
+          baseline_missing=True),
+        R("shell.statusbar.zoomPercent", "shell", "control", "Zoom 100%",
+          "Displays the current zoom percentage and opens the Zoom dialog when clicked.",
+          parent="shell.statusbar.rightZone", order=5, bounds=(1877, 1011, 43, 21), control_type_val="button",
+          baseline_missing=True),
+        R("shell.statusbar.customizeMenu", "shell", "contextMenu", "Customize Status Bar",
+          "Opens on right-clicking the status bar to toggle which indicators, aggregates, view buttons and zoom controls are shown.",
+          parent="shell.statusbar.bar", order=2, bounds=(1482, 400, 320, 610)),
+
+        # 10. Per-app overrides: Excel (excel.shell.*)
+        R("excel.shell.titlebar.caption", "excel", "control", "Book1 - Excel",
+          "Displays the active workbook name and Excel application title across the title bar caption area.",
+          parent="shell.region.titlebar", order=4, bounds=(287, 0, 497, 48), control_type_val="label",
+          baseline_missing=True),
+        R("excel.shell.qat.redo", "excel", "control", "Redo",
+          "Redoes the last undone workbook edit or opens the redo history list as a split button on Excel's Quick Access Toolbar.",
+          parent="shell.titlebar.qat", order=3, bounds=(229, 9, 38, 29), control_type_val="splitButton",
+          id_mso="Redo", uia_id="Redo", keytip_val="4"),
+        R("excel.shell.region.tabrow", "excel", "region", "Excel Ribbon Tab Row",
+          "Spans the 30-pixel tab row in Excel, hosting File, Ribbon Tabs, Comments and Share while omitting Word's Editing mode drop-down.",
+          order=1, bounds=(0, 48, 1920, 30)),
+        R("excel.shell.tabrow.file", "excel", "control", "File Tab",
+          "Opens the Excel Backstage view for workbook management, printing, sharing and options.",
+          parent="excel.shell.region.tabrow", order=0, bounds=(4, 48, 54, 30), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True),
+        R("excel.shell.tabrow.tabs", "excel", "region", "Ribbon Tabs",
+          "Contains Excel's core and contextual ribbon tabs along the tab row.",
+          parent="excel.shell.region.tabrow", order=1, bounds=(58, 48, 1850, 30)),
+        R("excel.shell.tabrow.comments", "excel", "control", "Comments",
+          "Toggles the workbook Comments pane on the right side of the tab row.",
+          parent="excel.shell.region.tabrow", order=2, bounds=(1743, 51, 88, 24), control_type_val="toggleButton",
+          keytip_val="ZC", baseline_missing=True),
+        R("excel.shell.tabrow.share", "excel", "control", "Share",
+          "Opens the workbook Share menu on the right end of Excel's tab row.",
+          parent="excel.shell.region.tabrow", order=3, bounds=(1839, 48, 69, 30), control_type_val="menu",
+          keytip_val="ZS", baseline_missing=True),
+
+        # 11. Per-app overrides: PowerPoint (powerpoint.shell.*)
+        R("powerpoint.shell.titlebar.qat", "powerpoint", "region", "PowerPoint Quick Access Toolbar",
+          "Holds AutoSave, Save, Undo, Repeat, Start From Beginning and Customize Quick Access Toolbar in PowerPoint's title bar.",
+          parent="shell.region.titlebar", order=1, bounds=(42, 0, 273, 48)),
+        R("powerpoint.shell.qat.autosave", "powerpoint", "control", "AutoSave",
+          "Toggles automatic cloud saving for the active presentation on PowerPoint's Quick Access Toolbar.",
+          parent="powerpoint.shell.titlebar.qat", order=0, bounds=(42, 9, 118, 29), control_type_val="toggleButton",
+          id_mso="AutoSaveSwitch", uia_id="AutoSaveSwitch", keytip_val="1"),
+        R("powerpoint.shell.qat.save", "powerpoint", "control", "Save",
+          "Saves the active presentation from PowerPoint's Quick Access Toolbar.",
+          parent="powerpoint.shell.titlebar.qat", order=1, bounds=(161, 9, 28, 29), control_type_val="button",
+          id_mso="FileSave", uia_id="FileSave", keytip_val="2"),
+        R("powerpoint.shell.qat.undo", "powerpoint", "control", "Undo",
+          "Undoes the last presentation action or opens the undo history drop-down.",
+          parent="powerpoint.shell.titlebar.qat", order=2, bounds=(190, 9, 38, 29), control_type_val="splitButton",
+          id_mso="Undo", keytip_val="3"),
+        R("powerpoint.shell.qat.redo", "powerpoint", "control", "Repeat",
+          "Repeats or redoes the last presentation action.",
+          parent="powerpoint.shell.titlebar.qat", order=3, bounds=(229, 9, 28, 29), control_type_val="button",
+          id_mso="RedoOrRepeat", uia_id="RedoOrRepeat", keytip_val="4"),
+        R("powerpoint.shell.qat.fromBeginning", "powerpoint", "control", "Start From Beginning",
+          "Starts the slide show from the first slide in the presentation (F5) directly from PowerPoint's default Quick Access Toolbar.",
+          parent="powerpoint.shell.titlebar.qat", order=4, bounds=(258, 9, 28, 29), control_type_val="button",
+          id_mso="SlideShowFromBeginning", uia_id="SlideShowFromBeginning", keytip_val="5"),
+        R("powerpoint.shell.qat.customize", "powerpoint", "control", "Customize Quick Access Toolbar",
+          "Opens the Quick Access Toolbar customisation menu in PowerPoint.",
+          parent="powerpoint.shell.titlebar.qat", order=5, bounds=(287, 8, 28, 31), control_type_val="menu",
+          baseline_missing=True),
+        R("powerpoint.shell.titlebar.caption", "powerpoint", "control", "Presentation1 - PowerPoint",
+          "Displays the active presentation name and PowerPoint application title in the title bar.",
+          parent="shell.region.titlebar", order=4, bounds=(316, 0, 468, 48), control_type_val="label",
+          baseline_missing=True),
+        R("powerpoint.shell.region.tabrow", "powerpoint", "region", "PowerPoint Ribbon Tab Row",
+          "Spans the 30-pixel tab row in PowerPoint, hosting File, Ribbon Tabs, Comments, Present in Teams and Share.",
+          order=1, bounds=(0, 48, 1920, 30)),
+        R("powerpoint.shell.tabrow.file", "powerpoint", "control", "File Tab",
+          "Opens the PowerPoint Backstage view.",
+          parent="powerpoint.shell.region.tabrow", order=0, bounds=(4, 48, 54, 30), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True),
+        R("powerpoint.shell.tabrow.tabs", "powerpoint", "region", "Ribbon Tabs",
+          "Contains PowerPoint's core and contextual ribbon tabs.",
+          parent="powerpoint.shell.region.tabrow", order=1, bounds=(58, 48, 1850, 30)),
+        R("powerpoint.shell.tabrow.comments", "powerpoint", "control", "Comments",
+          "Toggles the presentation Comments pane from PowerPoint's tab row.",
+          parent="powerpoint.shell.region.tabrow", order=2, bounds=(1611, 51, 88, 24), control_type_val="toggleButton",
+          keytip_val="ZC", baseline_missing=True),
+        R("powerpoint.shell.tabrow.presentInTeams", "powerpoint", "control", "Present in Teams",
+          "Shares the active presentation directly into a live Microsoft Teams meeting from PowerPoint's tab row.",
+          parent="powerpoint.shell.region.tabrow", order=3, bounds=(1707, 51, 124, 24), control_type_val="toggleButton",
+          keytip_val="ZP", baseline_missing=True),
+        R("powerpoint.shell.tabrow.share", "powerpoint", "control", "Share",
+          "Opens the presentation Share menu on the right end of PowerPoint's tab row.",
+          parent="powerpoint.shell.region.tabrow", order=4, bounds=(1839, 48, 69, 30), control_type_val="menu",
+          keytip_val="ZS", baseline_missing=True),
+
+        # 12. Per-app overrides: Visio (visio.shell.*)
+        R("visio.shell.region.titlebar", "visio", "region", "Visio Title Bar",
+          "Spans the top 48 pixels of Visio's window frame without an AutoSave switch.",
+          order=0, bounds=(0, 0, 1920, 48)),
+        R("visio.shell.titlebar.systemMenu", "visio", "control", "System",
+          "Opens Visio's window system menu.",
+          parent="visio.shell.region.titlebar", order=0, bounds=(0, 0, 22, 22), control_type_val="menu",
+          uia_id="MenuBar", keytip_val="Space", baseline_missing=True),
+        R("visio.shell.titlebar.qat", "visio", "region", "Visio Quick Access Toolbar",
+          "Holds Save, Undo, Redo and Customize Quick Access Toolbar in Visio's title bar without AutoSave.",
+          parent="visio.shell.region.titlebar", order=1, bounds=(42, 0, 124, 48)),
+        R("visio.shell.qat.save", "visio", "control", "Save",
+          "Saves the active Visio drawing (Ctrl+S).",
+          parent="visio.shell.titlebar.qat", order=0, bounds=(42, 9, 28, 29), control_type_val="button",
+          id_mso="FileSave", uia_id="FileSave", keytip_val="1"),
+        R("visio.shell.qat.undo", "visio", "control", "Undo",
+          "Undoes the last drawing action or opens the undo history drop-down in Visio.",
+          parent="visio.shell.titlebar.qat", order=1, bounds=(71, 9, 37, 29), control_type_val="splitButton",
+          id_mso="Undo", keytip_val="2"),
+        R("visio.shell.qat.redo", "visio", "control", "Redo",
+          "Redoes the last undone drawing action in Visio.",
+          parent="visio.shell.titlebar.qat", order=2, bounds=(109, 9, 28, 29), control_type_val="button",
+          id_mso="RedoOrRepeat", uia_id="RedoOrRepeat", keytip_val="3"),
+        R("visio.shell.qat.customize", "visio", "control", "Customize Quick Access Toolbar",
+          "Opens the Quick Access Toolbar customisation menu in Visio.",
+          parent="visio.shell.titlebar.qat", order=3, bounds=(138, 9, 28, 31), control_type_val="menu",
+          baseline_missing=True),
+        R("visio.shell.titlebar.caption", "visio", "control", "Drawing1 - Visio Professional",
+          "Displays the active drawing name and Visio product title across the title bar.",
+          parent="visio.shell.region.titlebar", order=2, bounds=(167, 0, 617, 48), control_type_val="label",
+          baseline_missing=True),
+        R("visio.shell.titlebar.search", "visio", "control", "Search",
+          "Focuses Visio's title bar search box (Alt+Q).",
+          parent="visio.shell.region.titlebar", order=3, bounds=(784, 8, 368, 32), control_type_val="menu",
+          uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True),
+        R("visio.shell.titlebar.account", "visio", "control", "Account",
+          "Opens the Account flyout in Visio's title bar.",
+          parent="visio.shell.region.titlebar", order=4, bounds=(1726, 0, 50, 48), control_type_val="menu",
+          uia_id="MeControlWidget", keytip_val="ZP", baseline_missing=True),
+        R("visio.shell.titlebar.minimize", "visio", "control", "Minimize",
+          "Minimises the Visio window.",
+          parent="visio.shell.region.titlebar", order=5, bounds=(1776, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("visio.shell.titlebar.maximize", "visio", "control", "Restore Down",
+          "Restores or maximises the Visio window.",
+          parent="visio.shell.region.titlebar", order=6, bounds=(1824, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("visio.shell.titlebar.close", "visio", "control", "Close",
+          "Closes the Visio application window.",
+          parent="visio.shell.region.titlebar", order=7, bounds=(1872, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("visio.shell.region.tabrow", "visio", "region", "Visio Ribbon Tab Row",
+          "Spans the 30-pixel tab row in Visio, hosting File, Ribbon Tabs, Comments, a direct Share... button and an MDI Close Document button.",
+          order=1, bounds=(0, 48, 1920, 30)),
+        R("visio.shell.tabrow.file", "visio", "control", "File Tab",
+          "Opens the Visio Backstage view.",
+          parent="visio.shell.region.tabrow", order=0, bounds=(4, 48, 54, 30), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True),
+        R("visio.shell.tabrow.tabs", "visio", "region", "Ribbon Tabs",
+          "Contains Visio's core and contextual ribbon tabs.",
+          parent="visio.shell.region.tabrow", order=1, bounds=(58, 48, 1804, 30)),
+        R("visio.shell.tabrow.comments", "visio", "control", "Comments",
+          "Toggles the diagram Comments pane in Visio.",
+          parent="visio.shell.region.tabrow", order=2, bounds=(1708, 51, 88, 24), control_type_val="toggleButton",
+          keytip_val="ZC", baseline_missing=True),
+        R("visio.shell.tabrow.share", "visio", "control", "Share...",
+          "Opens the Share dialog directly as a push button on Visio's tab row.",
+          parent="visio.shell.region.tabrow", order=3, bounds=(1804, 51, 58, 24), control_type_val="button",
+          keytip_val="ZS", baseline_missing=True),
+        R("visio.shell.tabrow.closeDocument", "visio", "control", "Close",
+          "Closes the active MDI drawing document window on the right end of Visio's tab row without exiting Visio.",
+          parent="visio.shell.region.tabrow", order=4, bounds=(1874, 48, 46, 30), control_type_val="button",
+          baseline_missing=True),
+
+        # 13. Per-app overrides: Project (project.shell.*, live-measured from WINPROJ.EXE JWinproj-WhimperMainClass)
+        R("project.shell.region.titlebar", "project", "region", "Project Title Bar",
+          "Spans the top 48 pixels of Project's window frame without AutoSave and without the title bar search box (which sits on the tab row in Project).",
+          order=0, bounds=(0, 0, 1920, 48)),
+        R("project.shell.titlebar.systemMenu", "project", "control", "System",
+          "Opens Project's window system menu.",
+          parent="project.shell.region.titlebar", order=0, bounds=(0, 0, 22, 22), control_type_val="menu",
+          uia_id="MenuBar", keytip_val="Space", baseline_missing=True),
+        R("project.shell.titlebar.qat", "project", "region", "Project Quick Access Toolbar",
+          "Holds Save, Undo, Redo and Customize Quick Access Toolbar on the left side of Project's title bar.",
+          parent="project.shell.region.titlebar", order=1, bounds=(42, 0, 133, 48)),
+        R("project.shell.qat.save", "project", "control", "Save",
+          "Saves the active project schedule from Project's Quick Access Toolbar.",
+          parent="project.shell.titlebar.qat", order=0, bounds=(42, 9, 28, 29), control_type_val="button",
+          id_mso="FileSave", uia_id="FileSave", keytip_val="1"),
+        R("project.shell.qat.undo", "project", "control", "Undo",
+          "Undoes the last schedule edit or opens the undo history drop-down in Project.",
+          parent="project.shell.titlebar.qat", order=1, bounds=(71, 9, 37, 29), control_type_val="splitButton",
+          id_mso="Undo", keytip_val="2"),
+        R("project.shell.qat.redo", "project", "control", "Redo",
+          "Redoes the last undone schedule edit as a split button on Project's Quick Access Toolbar.",
+          parent="project.shell.titlebar.qat", order=2, bounds=(109, 9, 37, 29), control_type_val="splitButton",
+          id_mso="Redo", keytip_val="3"),
+        R("project.shell.qat.customize", "project", "control", "Customize Quick Access Toolbar",
+          "Opens the Quick Access Toolbar customisation menu in Project.",
+          parent="project.shell.titlebar.qat", order=3, bounds=(147, 9, 28, 31), control_type_val="menu",
+          baseline_missing=True),
+        R("project.shell.titlebar.caption", "project", "control", "Project Professional",
+          "Displays the active project name and Project Professional title across the title bar.",
+          parent="project.shell.region.titlebar", order=2, bounds=(176, 0, 1550, 48), control_type_val="label",
+          baseline_missing=True),
+        R("project.shell.titlebar.account", "project", "control", "Account",
+          "Opens the Account flyout in Project's title bar.",
+          parent="project.shell.region.titlebar", order=3, bounds=(1726, 0, 50, 48), control_type_val="menu",
+          uia_id="MeControlWidget", keytip_val="ZP", baseline_missing=True),
+        R("project.shell.titlebar.minimize", "project", "control", "Minimize",
+          "Minimises the Project window.",
+          parent="project.shell.region.titlebar", order=4, bounds=(1776, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("project.shell.titlebar.maximize", "project", "control", "Restore Down",
+          "Restores or maximises the Project window.",
+          parent="project.shell.region.titlebar", order=5, bounds=(1824, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("project.shell.titlebar.close", "project", "control", "Close",
+          "Closes the Project application window.",
+          parent="project.shell.region.titlebar", order=6, bounds=(1872, 0, 48, 48), control_type_val="button",
+          baseline_missing=True),
+        R("project.shell.region.tabrow", "project", "region", "Project Ribbon Tab Row",
+          "Spans the 30-pixel tab row in Project, hosting File, Ribbon Tabs and the inline Tell Me search box after the Help tab.",
+          order=1, bounds=(0, 48, 1920, 30)),
+        R("project.shell.tabrow.file", "project", "control", "File Tab",
+          "Opens the Project Backstage view.",
+          parent="project.shell.region.tabrow", order=0, bounds=(4, 48, 54, 30), control_type_val="button",
+          uia_id="FileTabButton", keytip_val="F", baseline_missing=True),
+        R("project.shell.tabrow.tabs", "project", "region", "Ribbon Tabs",
+          "Contains Project's core and contextual ribbon tabs (Task, Resource, Report, Project, View, Help, Task Form).",
+          parent="project.shell.region.tabrow", order=1, bounds=(58, 48, 1862, 30)),
+        R("project.shell.tabrow.search", "project", "control", "Tell me what you want to do",
+          "Focuses the Tell Me command search box placed inline on Project's tab row immediately to the right of the Help tab.",
+          parent="project.shell.region.tabrow", order=2, bounds=(387, 48, 329, 30), control_type_val="menu",
+          uia_id="TellMeControlAnchor", keytip_val="Q", baseline_missing=True),
+
+        # 14. Per-app overrides: classic Outlook explorer window (outlook.explorer.shell.*, baseline-backed; live UIA in §15)
+        R("outlook.explorer.shell.region.titlebar", "outlook", "region", "Outlook Explorer Title Bar",
+          "Hosts the system menu, explorer Quick Access Toolbar, module caption, search box, account widget and window caption buttons in classic Outlook's main window.",
+          order=0, source_override=base_src),
+        R("outlook.explorer.shell.titlebar.qat", "outlook", "region", "Outlook Explorer Quick Access Toolbar",
+          "Holds Send/Receive All Folders, Undo, Simplified Ribbon toggle, Minimize the Ribbon and Find a Contact in classic Outlook's explorer window.",
+          parent="outlook.explorer.shell.region.titlebar", order=1, source_override=base_src),
+        R("outlook.explorer.shell.qat.sendReceiveAll", "outlook", "control", "Send/Receive All Folders",
+          "Synchronises all mail, calendar and contact folders with connected mail servers from Outlook's explorer Quick Access Toolbar.",
+          parent="outlook.explorer.shell.titlebar.qat", order=0, control_type_val="button",
+          id_mso="SendReceiveAll", source_override=base_src),
+        R("outlook.explorer.shell.qat.undo", "outlook", "control", "Undo",
+          "Reverses the last folder or item action in Outlook's explorer window.",
+          parent="outlook.explorer.shell.titlebar.qat", order=1, control_type_val="splitButton",
+          id_mso="Undo", source_override=base_src),
+        R("outlook.explorer.shell.qat.singleLineRibbonToggle", "outlook", "control", "Simplified Ribbon",
+          "Toggles the explorer ribbon between the three-row Classic layout and the single-line Simplified layout.",
+          parent="outlook.explorer.shell.titlebar.qat", order=2, control_type_val="toggleButton",
+          id_mso="SingleLineRibbonToggle", source_override=base_src),
+        R("outlook.explorer.shell.qat.minimizeRibbon", "outlook", "control", "Minimize the Ribbon",
+          "Collapses or expands the ribbon in Outlook's explorer window.",
+          parent="outlook.explorer.shell.titlebar.qat", order=3, control_type_val="toggleButton",
+          id_mso="MinimizeRibbon", source_override=base_src),
+        R("outlook.explorer.shell.qat.findContactCombo", "outlook", "control", "Find a Contact",
+          "Searches the address book for a contact directly from Outlook's explorer Quick Access Toolbar.",
+          parent="outlook.explorer.shell.titlebar.qat", order=4, control_type_val="comboBox",
+          id_mso="FindContactCombo", source_override=base_src),
+
+        # 15. Per-app overrides: classic Outlook item/compose window (outlook.compose.shell.*, baseline-backed; live UIA in §15)
+        R("outlook.compose.shell.region.titlebar", "outlook", "region", "Outlook Item Window Title Bar",
+          "Hosts the system menu, item-window Quick Access Toolbar, item subject caption, search box and caption buttons in classic Outlook inspector windows.",
+          order=0, source_override=base_src),
+        R("outlook.compose.shell.titlebar.qat", "outlook", "region", "Outlook Item Window Quick Access Toolbar",
+          "Holds Save, Undo, Redo, Simplified Ribbon toggle and Minimize the Ribbon in classic Outlook item windows.",
+          parent="outlook.compose.shell.region.titlebar", order=1, source_override=base_src),
+        R("outlook.compose.shell.qat.save", "outlook", "control", "Save",
+          "Saves the open mail draft, appointment, contact or task in Outlook's item window.",
+          parent="outlook.compose.shell.titlebar.qat", order=0, control_type_val="button",
+          id_mso="FileSave", source_override=base_src),
+        R("outlook.compose.shell.qat.undo", "outlook", "control", "Undo",
+          "Undoes the last editing action inside the Outlook item window.",
+          parent="outlook.compose.shell.titlebar.qat", order=1, control_type_val="splitButton",
+          id_mso="Undo", source_override=base_src),
+        R("outlook.compose.shell.qat.redo", "outlook", "control", "Redo",
+          "Redoes the last undone editing action inside the Outlook item window.",
+          parent="outlook.compose.shell.titlebar.qat", order=2, control_type_val="splitButton",
+          id_mso="RedoOrRepeat", source_override=base_src),
+        R("outlook.compose.shell.qat.singleLineRibbonToggle", "outlook", "control", "Simplified Ribbon",
+          "Toggles the item window's ribbon between the Classic layout and the single-line Simplified layout.",
+          parent="outlook.compose.shell.titlebar.qat", order=3, control_type_val="toggleButton",
+          id_mso="SingleLineRibbonToggle", source_override=base_src),
+        R("outlook.compose.shell.qat.minimizeRibbon", "outlook", "control", "Minimize the Ribbon",
+          "Collapses or expands the ribbon inside the Outlook item window.",
+          parent="outlook.compose.shell.titlebar.qat", order=4, control_type_val="toggleButton",
+          id_mso="MinimizeRibbon", source_override=base_src),
+    ]
+    validate_shell_chrome(records)
+    return records
+
+
 def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
-    parser = argparse.ArgumentParser(description="Capture an Office app's ribbon through UI Automation.")
-    parser.add_argument("--app", required=True, choices=sorted(APPS))
+    parser = argparse.ArgumentParser(description="Capture an Office app's ribbon or shared shell chrome through UI Automation.")
+    parser.add_argument("--app", choices=sorted(APPS), help="reference app to capture (required for tab captures)")
     which = parser.add_mutually_exclusive_group(required=True)
     which.add_argument("--tab", help="one tab, by its name as the ribbon shows it")
     which.add_argument("--all-tabs", action="store_true", help="every built-in tab the ribbon lists")
+    which.add_argument("--shell", action="store_true", help="shared shell chrome and per-app shell overrides")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
-    parser.add_argument("--out", help="output file (default design/inventory/<app>/ribbon[-simplified].json)")
+    parser.add_argument("--out", help="output file (default design/inventory/<app>/ribbon[-simplified].json or shell/chrome.json)")
     args = parser.parse_args(argv)
+    if args.shell:
+        out = Path(args.out) if args.out else INVENTORY / "shell" / "chrome.json"
+        if out.exists() and not args.merge:
+            print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
+            return 1
+        initial_bytes = out.read_bytes() if args.merge and out.exists() else None
+        try:
+            expected_build = reference_build()
+            if installed_build() != expected_build:
+                raise Refused(f"the installed build {installed_build()} is not the reference {expected_build}")
+            records = build_shell_chrome_records(expected_build)
+            if args.merge:
+                current_bytes = out.read_bytes() if out.exists() else None
+                if current_bytes != initial_bytes:
+                    raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
+                if current_bytes is not None:
+                    records = merge(_load_existing_records(out, current_bytes), records)
+            validate_shell_chrome(records)
+            publish(
+                {out: render(records)},
+                create_only=() if args.merge else (out,),
+                expected_bytes={out: initial_bytes} if args.merge else None,
+            )
+        except Refused as exc:
+            print(f"capture-ui: {exc}", file=sys.stderr)
+            return 1
+        print(f"{out}: {len(records)} records; bounds recorded under {PROFILE}")
+        return 0
+    if not args.app:
+        parser.error("the following arguments are required: --app")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
         "ribbon-simplified.json" if args.layout == "simplified" else "ribbon.json")
     if out.exists() and not args.merge:

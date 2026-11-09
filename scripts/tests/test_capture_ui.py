@@ -1819,5 +1819,153 @@ class CaptureIntegration(unittest.TestCase):
                 cu.installed_build, cu.time.sleep, cu.UNVERIFIED = real_ib, real_sleep, real_unv
 
 
+class ShellChrome(unittest.TestCase):
+    def test_bidi_and_control_chars_are_stripped_from_element_names(self):
+        self.assertEqual(
+            cu.strip_control_chars("\u202a1 day ago\u202c\u0001\u200b"),
+            "1 day ago",
+        )
+        raw = type("R", (), {
+            "CurrentName": "\u202aEditor (F7)\u202c",
+            "CurrentAutomationId": "WritingAssistanceCheckDocument",
+            "CurrentAccessKey": "",
+            "CurrentClassName": "",
+            "CurrentControlType": 50000,
+            "CurrentBoundingRectangle": type("Rect", (), {"left": 0, "top": 0, "right": 10, "bottom": 10})(),
+        })()
+        uia = type("U", (), {"type_name": lambda self, tid: "Button"})()
+        el = cu.Element(uia, raw)
+        self.assertEqual(el.name, "Editor (F7)")
+
+    def test_account_and_email_labels_are_sanitised(self):
+        self.assertEqual(cu.sanitize_shell_label("Derick Payne", uia_id="MeControlWidget"), "Account")
+        self.assertEqual(cu.sanitize_shell_label("user@example.org"), "Account")
+        self.assertEqual(cu.sanitize_shell_label("\u202aSave\u202c", id_mso="FileSave"), "Save")
+
+    def test_powerpoint_window_handle_falls_back_to_main_window_discovery(self):
+        launched = cu.Launched.__new__(cu.Launched)
+        launched.key = "powerpoint"
+        launched.started = 42
+        launched.app = type("A", (), {})()  # no integer HWND or ActiveWindow.HWND
+        real_win, real_wait = cu.Win, cu.wait_for
+        cu.Win = lambda: type("W", (), {
+            "main_window": lambda self, pid, cls=None: 9001 if (pid, cls) == (42, "PPTFrameClass") else None
+        })()
+        cu.wait_for = lambda fn, seconds=0, step=0: fn()
+        try:
+            self.assertEqual(launched.window_handle(), 9001)
+        finally:
+            cu.Win, cu.wait_for = real_win, real_wait
+
+    def test_effective_shell_resolves_per_app_and_prunes_excluded_subtrees(self):
+        records = cu.build_shell_chrome_records(BUILD)
+        self.assertTrue(cu.validate_shell_chrome(records))
+
+        # 1. Word retains editingMode and its three child mode items, plus autosave.
+        word_eff = cu.effective_shell(records, "word")
+        word_ids = {r["id"] for r in word_eff}
+        for needed in (
+            "shell.tabrow.editingMode",
+            "shell.tabrow.editingMode.editing",
+            "shell.tabrow.editingMode.reviewing",
+            "shell.tabrow.editingMode.viewing",
+            "shell.titlebar.autosave",
+            "shell.qat.autosave",
+        ):
+            self.assertIn(needed, word_ids)
+
+        # 2. Excel replaces the tab row without editingMode, pruning all three mode items and the keytip with zero orphans.
+        excel_eff = cu.effective_shell(records, "excel")
+        excel_by_id = {r["id"]: r for r in excel_eff}
+        for excluded in (
+            "shell.tabrow.editingMode",
+            "shell.tabrow.editingMode.editing",
+            "shell.tabrow.editingMode.reviewing",
+            "shell.tabrow.editingMode.viewing",
+            "shell.keytips.editingMode",
+            "shell.qat.redo",
+        ):
+            self.assertNotIn(excluded, excel_by_id)
+        self.assertIn("excel.shell.qat.redo", excel_by_id)
+        self.assertEqual(excel_by_id["excel.shell.qat.redo"]["controlType"], "splitButton")
+        # Retained descendants under share remap their parent to excel.shell.tabrow.share.
+        self.assertEqual(excel_by_id["shell.tabrow.share.share"]["parent"], "excel.shell.tabrow.share")
+        for r in excel_eff:
+            if r.get("parent"):
+                self.assertIn(r["parent"], excel_by_id)
+
+        # 3. PowerPoint includes SlideShowFromBeginning on QAT and Present in Teams on tab row, and remaps customize children.
+        ppt_eff = cu.effective_shell(records, "powerpoint")
+        ppt_by_id = {r["id"]: r for r in ppt_eff}
+        self.assertIn("powerpoint.shell.qat.fromBeginning", ppt_by_id)
+        self.assertIn("powerpoint.shell.tabrow.presentInTeams", ppt_by_id)
+        self.assertNotIn("shell.tabrow.editingMode", ppt_by_id)
+        self.assertEqual(
+            ppt_by_id["shell.qat.customize.automatically-save"]["parent"],
+            "powerpoint.shell.qat.customize",
+        )
+
+        # 4. Visio and Project omit autosave; Project moves search from title bar to tab row.
+        visio_ids = {r["id"] for r in cu.effective_shell(records, "visio")}
+        self.assertNotIn("shell.titlebar.autosave", visio_ids)
+        self.assertNotIn("shell.qat.autosave", visio_ids)
+        self.assertIn("visio.shell.tabrow.closeDocument", visio_ids)
+
+        proj_by_id = {r["id"]: r for r in cu.effective_shell(records, "project")}
+        self.assertNotIn("shell.titlebar.autosave", proj_by_id)
+        self.assertNotIn("shell.qat.autosave", proj_by_id)
+        self.assertNotIn("shell.titlebar.search", proj_by_id)
+        self.assertIn("project.shell.tabrow.search", proj_by_id)
+
+        # 5. Outlook explorer and compose contexts resolve independently and exclude each other's context-only commands.
+        ol_exp = {r["id"] for r in cu.effective_shell(records, "outlook", window="explorer")}
+        ol_cmp = {r["id"] for r in cu.effective_shell(records, "outlook", window="compose")}
+        self.assertIn("outlook.explorer.shell.qat.sendReceiveAll", ol_exp)
+        self.assertIn("outlook.explorer.shell.qat.findContactCombo", ol_exp)
+        self.assertNotIn("outlook.compose.shell.qat.save", ol_exp)
+        self.assertIn("outlook.compose.shell.qat.save", ol_cmp)
+        self.assertIn("outlook.compose.shell.qat.redo", ol_cmp)
+        self.assertNotIn("outlook.explorer.shell.qat.sendReceiveAll", ol_cmp)
+        self.assertNotIn("outlook.explorer.shell.qat.findContactCombo", ol_cmp)
+
+    def test_validate_shell_chrome_refuses_missing_records_or_missing_bounds(self):
+        base = cu.build_shell_chrome_records(BUILD)
+        # Missing a required record is refused.
+        without_search = [r for r in base if r["id"] != "shell.titlebar.search" and r.get("parent") != "shell.titlebar.search"]
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(without_search)
+
+        # Missing bounds on a live-captured record is refused.
+        no_bounds = [dict(r) for r in base]
+        target = next(r for r in no_bounds if r["id"] == "shell.region.titlebar")
+        target.pop("bounds", None)
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(no_bounds)
+
+        # Zero width/height on a live-captured record is refused.
+        zero_bounds = [dict(r) for r in base]
+        target_z = next(r for r in zero_bounds if r["id"] == "project.shell.tabrow.search")
+        target_z["bounds"] = {"x": 387, "y": 48, "width": 0, "height": 30}
+        with self.assertRaises(cu.Refused):
+            cu.validate_shell_chrome(zero_bounds)
+
+    def test_main_shell_writes_and_merges_valid_inventory(self):
+        real_ib, real_rb = cu.installed_build, cu.reference_build
+        cu.installed_build = lambda: BUILD
+        cu.reference_build = lambda app="Word": BUILD
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                out_path = Path(tmp) / "shell" / "chrome.json"
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    rc = cu.main(["--shell", "--out", str(out_path)])
+                self.assertEqual(rc, 0)
+                data = json.loads(out_path.read_text(encoding="utf-8"))
+                self.assertGreaterEqual(len(data), 110)
+                self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
+        finally:
+            cu.installed_build, cu.reference_build = real_ib, real_rb
+
+
 if __name__ == "__main__":
     unittest.main()
