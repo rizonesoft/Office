@@ -5765,7 +5765,10 @@ def _invoke_or_toggle_uia_button(el):
     if callable(getattr(el, "invoke", None)):
         el.invoke()
         return True
-    if el.can_toggle():
+    if callable(getattr(el, "toggle", None)):
+        el.toggle()
+        return True
+    if el.can_toggle() and hasattr(el, "pattern"):
         p = el.pattern("toggle")
         if p is not None:
             p.Toggle()
@@ -5859,28 +5862,42 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
             if target == "background_removal":
                 if _find_word_contextual_tab(tabs_bar, "TabBackgroundRemoval") is None:
                     pic_tab = _find_word_contextual_tab(tabs_bar, "TabPictureToolsFormat")
-                    if pic_tab is not None:
-                        _select_word_tab(pic_tab, uia, launched.hwnd)
-                        lower_pic = lower_for_tab(uia, launched.hwnd, pic_tab.name)
-                        rm_btn = find(lower_pic, lambda e: e.automation_id == "PictureBackgroundRemoval")
-                        _invoke_or_toggle_uia_button(rm_btn)
-                        time.sleep(0.3)
-                        tabs_bar = wait_for(
-                            lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
-                        )
+                    if pic_tab is None:
+                        raise Refused("Picture Format tab (TabPictureToolsFormat) not found before entering Background Removal")
+                    _select_word_tab(pic_tab, uia, launched.hwnd)
+                    lower_pic = lower_for_tab(uia, launched.hwnd, pic_tab.name)
+                    rm_btn = find(
+                        lower_pic,
+                        lambda e: e.automation_id == "PictureBackgroundRemoval"
+                        or (e.control_type in ("Button", "CheckBox") and e.name == "Remove Background"),
+                    )
+                    if rm_btn is None:
+                        raise Refused("Remove Background button (PictureBackgroundRemoval) not found on Picture Format tab")
+                    _invoke_or_toggle_uia_button(rm_btn)
+                    time.sleep(0.3)
+                    tabs_bar = wait_for(
+                        lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                    )
             elif target == "immersive_reader":
                 if _find_word_contextual_tab(tabs_bar, "TabLearningTools") is None:
                     cur_tabs = ribbon_tabs(tabs_bar)
                     view_tab = next((t for t in cur_tabs if t.automation_id == "TabView"), None)
-                    if view_tab is not None:
-                        _select_word_tab(view_tab, uia, launched.hwnd)
-                        lower_view = lower_for_tab(uia, launched.hwnd, view_tab.name)
-                        ir_btn = find(lower_view, lambda e: e.automation_id == "ImmersiveReader")
-                        _invoke_or_toggle_uia_button(ir_btn)
-                        time.sleep(0.3)
-                        tabs_bar = wait_for(
-                            lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
-                        )
+                    if view_tab is None:
+                        raise Refused("View tab (TabView) not found before entering Immersive Reader")
+                    _select_word_tab(view_tab, uia, launched.hwnd)
+                    lower_view = lower_for_tab(uia, launched.hwnd, view_tab.name)
+                    ir_btn = find(
+                        lower_view,
+                        lambda e: e.automation_id in ("ToggleLearningTools", "ImmersiveReader")
+                        or (e.control_type in ("Button", "CheckBox") and e.name == "Immersive Reader"),
+                    )
+                    if ir_btn is None:
+                        raise Refused("Immersive Reader button (ToggleLearningTools) not found on View tab")
+                    _invoke_or_toggle_uia_button(ir_btn)
+                    time.sleep(0.3)
+                    tabs_bar = wait_for(
+                        lambda: find(uia.element(launched.hwnd), lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs")
+                    )
             for expected_aid in expected_tab_ids:
                 if expected_aid in captured_idmsos:
                     continue
@@ -5918,12 +5935,20 @@ def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_lic
             if target == "background_removal":
                 lower_cur = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
                 if lower_cur is not None:
-                    disc = find(lower_cur, lambda e: e.automation_id == "BackgroundRemovalDiscard")
+                    disc = find(
+                        lower_cur,
+                        lambda e: e.automation_id in ("BackgroundRemovalClose", "BackgroundRemovalDiscard")
+                        or (e.control_type == "Button" and e.name == "Discard All Changes"),
+                    )
                     _invoke_or_toggle_uia_button(disc)
             elif target == "immersive_reader":
                 lower_cur = find(uia.element(launched.hwnd), lambda e: e.name == "Lower Ribbon")
                 if lower_cur is not None:
-                    cls_btn = find(lower_cur, lambda e: e.automation_id == "CloseLearningTools")
+                    cls_btn = find(
+                        lower_cur,
+                        lambda e: e.automation_id == "CloseLearningTools"
+                        or (e.control_type == "Button" and e.name == "Close Immersive Reader"),
+                    )
                     _invoke_or_toggle_uia_button(cls_btn)
     finally:
         launched.word_action("close_fixture")
@@ -6469,6 +6494,15 @@ def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, 
                     raise Refused(f"{rid}: control is missing distinct behaviour sentence")
                 if "Enabled" not in beh:
                     raise Refused(f"{rid}: control behaviour is missing enablement precondition")
+                if rid == "word.table-layout.merge.merge-cells" or rec.get("idMso") == "MergeCells":
+                    if (
+                        "two or more adjacent cells" not in beh
+                        or "disabled when the insertion point is inside a single table cell" not in beh
+                        or "Enabled when Table Layout is active for the selected object or mode" in beh
+                    ):
+                        raise Refused(
+                            f"{rid}: Merge Cells must specify that two or more adjacent cells are required and that it is disabled inside a single table cell"
+                        )
                 if rec.get("label") == "Less" and not (rec.get("uiaId") or rec.get("idMso")) and "Decrements (Less)" not in beh:
                     raise Refused(f"{rid}: Less spinner button must describe decrementing, got {beh!r}")
                 if ctype in ("toggleButton", "checkBox", "radioButton", "gallery", "comboBox", "spinner") or (

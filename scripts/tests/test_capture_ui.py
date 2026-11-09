@@ -3252,6 +3252,11 @@ class WordRibbon(unittest.TestCase):
         self.assertIn("beginning of the document", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
         self.assertIn("replaces the existing cover page", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
         self.assertNotIn("at the active insertion point or selection", by_id["word.insert.pages.cover-page.austin"]["behaviour"])
+        self.assertIn("two or more adjacent cells", by_id["word.table-layout.merge.merge-cells"]["behaviour"])
+        self.assertIn(
+            "disabled when the insertion point is inside a single table cell",
+            by_id["word.table-layout.merge.merge-cells"]["behaviour"],
+        )
         self.assertFalse(hasattr(cu, "synthesize_word_behaviour"))
         less_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "Less"]
         more_btns = [r for r in records if r.get("kind") == "control" and r.get("label") == "More"]
@@ -3293,6 +3298,10 @@ class WordRibbon(unittest.TestCase):
             (
                 "word.insert.pages.cover-page.austin",
                 "Inserts or applies the Austin item from Cover Page (Pages group on Insert) at the active insertion point or selection. Enabled in an editable document. State rule: unselected (off), highlighted (on), and mixed state is not used.",
+            ),
+            (
+                "word.table-layout.merge.merge-cells",
+                "Invokes the Merge Cells command in the Merge group on Table Layout to apply its action to the current selection or document. Enabled when Table Layout is active for the selected object or mode in an editable document region.",
             ),
             ("word.home.styles.styles", "Displays Styles. Enabled in an editable document. State rule: on, off, mixed."),
             ("word.home.paragraph.borders.borders-and-shading", "Opens Borders and Shading. Enabled in an editable document."),
@@ -3463,6 +3472,7 @@ class WordRibbon(unittest.TestCase):
             fixture_file.write_bytes(b"original-fixture-bytes")
             actions = []
             active_ctx_tabs = []
+            invoked_buttons = []
 
             ctx_tab_defs = {
                 "table": [("Table Design", "TabTableToolsDesign", "Alt, JT"), ("Layout", "TabTableToolsLayout", "Alt, JL")],
@@ -3477,15 +3487,18 @@ class WordRibbon(unittest.TestCase):
                 "model3d": [("3D Model", "Tab3DModelToolsFormat", "Alt, TI")],
                 "outlining": [("Outlining", "TabOutlining", "Alt, U")],
                 "print_preview": [("Print Preview", "TabPrintPreview", "Alt, P")],
-                "background_removal": [("Background Removal", "TabBackgroundRemoval", "Alt, B2")],
-                "immersive_reader": [("Immersive Reader", "TabLearningTools", "Alt, Y3")],
+                # background_removal and immersive_reader start outside their mode tabs so capture_word_contextual_tabs
+                # must select Picture Format / View and invoke PictureBackgroundRemoval / ToggleLearningTools.
+                "background_removal": [("Picture Format", "TabPictureToolsFormat", "Alt, JP")],
+                "immersive_reader": [],
             }
             selected_tab = ["Home"]
+            include_learning_tools_btn = [True]
 
             def word_action(_self, action, **kwargs):
                 actions.append((action, kwargs))
                 if action == "trigger_contextual":
-                    active_ctx_tabs[:] = ctx_tab_defs.get(kwargs.get("target"), [])
+                    active_ctx_tabs[:] = list(ctx_tab_defs.get(kwargs.get("target"), []))
                 elif action == "close_fixture":
                     active_ctx_tabs.clear()
                 return {"hwnd": 5}
@@ -3498,15 +3511,55 @@ class WordRibbon(unittest.TestCase):
                 return t
 
             def current_root(_self, _h):
-                key = (selected_tab[0], tuple(active_ctx_tabs))
+                key = (selected_tab[0], tuple(active_ctx_tabs), include_learning_tools_btn[0])
                 if key not in tree_cache:
-                    tab_items = [make_tab_item("Home", "TabHome", "Alt, H")] + [
+                    tab_items = [
+                        make_tab_item("Home", "TabHome", "Alt, H"),
+                        make_tab_item("View", "TabView", "Alt, W"),
+                    ] + [
                         make_tab_item(n, aid, kt) for n, aid, kt in active_ctx_tabs
                     ]
                     t_name = selected_tab[0]
-                    grp = E("Group", "Tools", key="Alt, H, Z T", rect=(10, 82, 120, 174), kids=[
-                        E("Button", "Bold", "Bold", "Alt, H, 1", rect=(14, 90, 60, 160)),
-                    ])
+                    controls = [E("Button", "Bold", "Bold", "Alt, H, 1", rect=(14, 90, 60, 160))]
+                    if t_name == "Picture Format":
+                        rm_btn = E("CheckBox", "Remove Background", "PictureBackgroundRemoval", "Alt, JP, B G", rect=(64, 90, 120, 160))
+
+                        def _enter_bg_removal():
+                            invoked_buttons.append("PictureBackgroundRemoval")
+                            if ("Background Removal", "TabBackgroundRemoval", "Alt, B2") not in active_ctx_tabs:
+                                active_ctx_tabs.append(("Background Removal", "TabBackgroundRemoval", "Alt, B2"))
+
+                        rm_btn.toggle = _enter_bg_removal
+                        controls.append(rm_btn)
+                    elif t_name == "Background Removal":
+                        disc_btn = E("Button", "Discard All Changes", "BackgroundRemovalClose", "Alt, B2, D", rect=(64, 90, 120, 160))
+
+                        def _exit_bg_removal():
+                            invoked_buttons.append("BackgroundRemovalClose")
+                            active_ctx_tabs[:] = [t for t in active_ctx_tabs if t[1] != "TabBackgroundRemoval"]
+
+                        disc_btn.invoke = _exit_bg_removal
+                        controls.append(disc_btn)
+                    elif t_name == "View" and include_learning_tools_btn[0]:
+                        ir_btn = E("CheckBox", "Immersive Reader", "ToggleLearningTools", "Alt, W, L1", rect=(64, 90, 120, 160))
+
+                        def _enter_immersive():
+                            invoked_buttons.append("ToggleLearningTools")
+                            if ("Immersive Reader", "TabLearningTools", "Alt, Y3") not in active_ctx_tabs:
+                                active_ctx_tabs.append(("Immersive Reader", "TabLearningTools", "Alt, Y3"))
+
+                        ir_btn.toggle = _enter_immersive
+                        controls.append(ir_btn)
+                    elif t_name == "Immersive Reader":
+                        cls_btn = E("Button", "Close Immersive Reader", "CloseLearningTools", "Alt, Y3, C", rect=(64, 90, 120, 160))
+
+                        def _exit_immersive():
+                            invoked_buttons.append("CloseLearningTools")
+                            active_ctx_tabs[:] = [t for t in active_ctx_tabs if t[1] != "TabLearningTools"]
+
+                        cls_btn.invoke = _exit_immersive
+                        controls.append(cls_btn)
+                    grp = E("Group", "Tools", key="Alt, H, Z T", rect=(10, 82, 120, 174), kids=controls)
                     lower = E("Pane", "Lower Ribbon", rect=(0, 78, 1920, 178), kids=[E("Group", t_name, kids=[grp])])
                     tree_cache[key] = E("Window", "word-contextual.docx - Word", kids=[
                         E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=tab_items),
@@ -3538,14 +3591,25 @@ class WordRibbon(unittest.TestCase):
             cu.time.sleep = lambda s: None
             try:
                 recs, problems, _ctx = cu.capture(args, launched, uia, win)
+                self.assertEqual(problems, [])
+                ctx_captured = [r["idMso"] for r in recs if r["kind"] == "contextualTab"]
+                self.assertEqual(tuple(ctx_captured), cu.WORD_REQUIRED_CONTEXTUAL_TABS)
+                self.assertEqual(
+                    invoked_buttons,
+                    ["PictureBackgroundRemoval", "BackgroundRemovalClose", "ToggleLearningTools", "CloseLearningTools"],
+                )
+                self.assertEqual(actions[0], ("prepare_core_tab", {"tab_name": "Home"}))
+                self.assertEqual(actions[1], ("prepare_core_tab", {"tab_name": "View"}))
+                self.assertEqual(actions[2], ("open_fixture", {"path": str(fixture_file)}))
+                self.assertEqual(actions[-1], ("close_fixture", {}))
+                # Missing ToggleLearningTools button on View is refused and still closes the fixture cleanly.
+                include_learning_tools_btn[0] = False
+                tree_cache.clear()
+                with self.assertRaises(cu.Refused):
+                    cu.capture(args, launched, uia, win)
+                self.assertEqual(actions[-1], ("close_fixture", {}))
             finally:
                 cu.installed_build, cu.reference_build, cu.time.sleep = real_ib, real_rb, real_sleep
-            self.assertEqual(problems, [])
-            ctx_captured = [r["idMso"] for r in recs if r["kind"] == "contextualTab"]
-            self.assertEqual(tuple(ctx_captured), cu.WORD_REQUIRED_CONTEXTUAL_TABS)
-            self.assertEqual(actions[0][0], "prepare_core_tab")
-            self.assertEqual(actions[1], ("open_fixture", {"path": str(fixture_file)}))
-            self.assertEqual(actions[-1], ("close_fixture", {}))
             self.assertEqual(fixture_file.read_bytes(), b"original-fixture-bytes")
 
             # Exercise the real Launched._word_action_impl for open_fixture, close_fixture, prepare_core_tab
