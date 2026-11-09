@@ -62,7 +62,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
 | 22 | §22 | Inventory ownership check | §18 | [ ] |
 | 23 | §23 | Audit schema checker | §1 | [x] |
-| 24 | §24 | Audit capture tool | §3 | [ ] |
+| 24 | §24 | Audit capture tool | §3 | [x] |
 | 25 | §25 | Audit control ID baseline | §19 | [x] |
 | 26 | §26 | Audit Microsoft-free rule | §21 | [x] |
 | 27 | §27 | Checker mutation sweep | §23 | [ ] |
@@ -657,9 +657,12 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [x] Run audit rounds on `D02 T01 §3`'s stamped candidate and every later change to the files it owns, recording each with `--record docs/reviews/02-interface/audit-d02-t01-s3.md`, never in the section's own findings file. Done when: a round approves (`clean`), or the severity cutoff (`stopped-low-severity`, after round 8 when all findings are `P3` or advisory) or the 33-round cap (`stopped-at-33`) stops the loop with its outcome recorded and matching the receipt's verdict and `--cap-outcome`.
 - [x] Fix each finding at its owning layer in a new commit with a regression test, or file it through `add-todo` with an owner. Done when: no finding in `docs/reviews/02-interface/audit-d02-t01-s3.md` is open without a fix commit or a filed section.
 - [x] On a confirmed regression, either fix it directly in this section's commits or file the repair through `add-todo` ordered before `D02 T01 §24`, run `python scripts/todo-graph.py unstamp "D02 T01 §3" --reason "<what regressed, and the repair section>"`, list the suspect sections it prints in `docs/reviews/02-interface/audit-d02-t01-s3.md`, complete and re-stamp `D02 T01 §3` after the repair, and re-run `D02 T01 §3`'s checkpoint before stamping `D02 T01 §24`. Done when: `python scripts/todo-graph.py resolve "D02 T01 §3"` exits 3 (`done: true`) with the audit confirming the stamp (or the re-stamped repair), so `D02 T01 §24`'s dependency on `D02 T01 §3` is satisfied at stamp time.
-- [ ] Commit: `review: audit D02 T01 §3 under the current review process`
+- [x] Commit: `review: audit D02 T01 §3 under the current review process`
 
 **Test checkpoint:** `python scripts/todo-graph.py resolve "D02 T01 §3"` exits 3 (verified, either confirming the original stamp or re-stamped after any repair), `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` and `python scripts/check-inventory.py R:\scratch\word-home.json` exit 0, and `docs/reviews/02-interface/audit-d02-t01-s3.md` ends in an approving round or a recorded stop under the 33-round cap with every finding fixed or filed.
+
+> **Verified:** 2026-11-09 | §24 | 5967d5edbd6e0cec5121777294eca7d054016d04
+> **Review:** `docs/reviews/d02-t01-s24.json`
 
 ## 25. Audit Control ID Baseline
 

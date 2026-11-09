@@ -1,0 +1,131 @@
+{
+  "ref": "D02 T01 \u00a724",
+  "title": "Audit Capture Tool",
+  "implementation_sha": "5967d5edbd6e0cec5121777294eca7d054016d04",
+  "date": "2026-11-09",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 14,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 15,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 16,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 17,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 18,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 19,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 20,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 21,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 22,
+      "report": "docs/reviews/02-interface/audit-d02-t01-s3.md",
+      "verdict": "stopped-low-severity"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py resolve 'D02 T01 \u00a73' -> exit 3 (still verified)",
+    "python scripts/capture-ui.py --app word --tab Home --out R:/scratch/word-home.json -> exit 0",
+    "python scripts/check-inventory.py R:/scratch/word-home.json -> exit 0",
+    "python -m unittest discover -s scripts/tests -p test_capture_ui.py -> Ran 48 tests OK",
+    "python -m unittest discover -s scripts/tests -p test_word_commands.py -> Ran 18 tests OK",
+    "python scripts/check-inventory.py design/inventory -> exit 0"
+  ],
+  "rounds_spent": 22,
+  "round_cap": 33,
+  "completion": "docs/reviews/02-interface/D02-T01-s24-completion.md",
+  "completion_rules": 2,
+  "cap_outcome": "All findings from Rounds 1 through 21 were fixed and verified; Round 22 ended at the severity cutoff (HIGHEST: P3) and its P3 test-coverage finding was fixed in commit 5967d5edbd6e0cec5121777294eca7d054016d04 by asserting the non-TxF CreateFileW share flags (1 | 4 and 1, excluding FILE_SHARE_WRITE)"
+}
