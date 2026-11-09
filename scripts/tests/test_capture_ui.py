@@ -661,6 +661,82 @@ class Writes(unittest.TestCase):
         ))
         self.assertEqual(unlink_status, ["superseded"])
 
+        # Non-TxF volumes (WinError 6832) hold h_lock open via CreateFileW across verification, on_enlisted,
+        # CreateHardLinkW, and SetFileInformationByHandle before closing h_lock.
+        class NoTxfKernel(FakeKernel):
+            def CreateFileTransactedW(self, dst, access, share, sec, disp, flags, tpl, tx, mv, ext):
+                import ctypes
+                ctypes.set_last_error(6832)
+                events.append(("CreateFileTransactedW_no_txf", dst))
+                return 0
+
+            def CreateMutexW(self, sec, initial, name):
+                events.append("CreateMutexW")
+                return 401
+
+            def WaitForSingleObject(self, h, ms):
+                events.append(("WaitForSingleObject", h))
+                return 0
+
+            def ReleaseMutex(self, h):
+                events.append(("ReleaseMutex", h))
+                return 1
+
+            def CreateFileW(self, path, access, share, sec, disp, flags, tpl):
+                h = 502 if str(path).endswith("staged.new") or str(path).endswith("out.old") else 501
+                events.append(("CreateFileW", str(path), access, share, h))
+                return h
+
+            def CreateHardLinkW(self, backup, dst, sec):
+                events.append(("CreateHardLinkW", backup, dst))
+                return 1
+
+            def SetFileInformationByHandle(self, h, info_class, buf, size):
+                events.append(("SetFileInformationByHandle", h, info_class))
+                return 1
+
+        events.clear()
+        cu.transacted_replace(
+            Path("staged.new"), Path("out.json"), Path("out.old"), b"expected",
+            on_enlisted=lambda d: events.append(("on_enlisted", str(d))),
+            ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
+            open_osf=lambda h, mode: (events.append(("open_osf", h)) or 303),
+            fdopen=lambda fd, mode: io.BytesIO(b"expected"),
+        )
+        # h_lock (501) is closed only AFTER SetFileInformationByHandle(502, 22).
+        self.assertLess(
+            events.index(("SetFileInformationByHandle", 502, 22)),
+            events.index(("CloseHandle", 501)),
+        )
+        events.clear()
+        self.assertTrue(cu.transacted_unlink(
+            Path("out.json"), b"expected",
+            on_enlisted=lambda d: events.append(("on_enlisted", str(d))),
+            ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"expected"),
+        ))
+        self.assertLess(
+            events.index(("SetFileInformationByHandle", 501, 13)),
+            events.index(("CloseHandle", 501)),
+        )
+        events.clear()
+        self.assertFalse(cu.transacted_unlink(
+            Path("out.json"), b"expected",
+            ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"modified"),
+            status_out=unlink_status,
+        ))
+        self.assertNotIn(("SetFileInformationByHandle", 501, 13), events)
+        events.clear()
+        unlinked.clear()
+        self.assertFalse(cu.transacted_restore(
+            FakeBackupPath(), Path("out.json"), b"expected",
+            ktmw32=FakeKtm(), kernel32=NoTxfKernel(),
+            open_osf=lambda h, mode: 303, fdopen=lambda fd, mode: io.BytesIO(b"modified"),
+        ))
+        self.assertEqual(unlinked, ["out.old"])
+        self.assertFalse(any(isinstance(e, tuple) and e[0] == "SetFileInformationByHandle" for e in events))
+
 
 class Round3(unittest.TestCase):
     def test_each_apps_build_is_read_in_its_own_form(self):

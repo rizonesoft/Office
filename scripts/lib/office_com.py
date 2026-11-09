@@ -149,6 +149,32 @@ def _ktm_apis(ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
         kernel32.MoveFileTransactedW.restype = wintypes.BOOL
         kernel32.DeleteFileTransactedW.argtypes = [wintypes.LPCWSTR, wintypes.HANDLE]
         kernel32.DeleteFileTransactedW.restype = wintypes.BOOL
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+        ]
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        kernel32.ReadFile.argtypes = [
+            wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD), wintypes.LPVOID,
+        ]
+        kernel32.ReadFile.restype = wintypes.BOOL
+        kernel32.CreateHardLinkW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.LPVOID]
+        kernel32.CreateHardLinkW.restype = wintypes.BOOL
+        kernel32.MoveFileExW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD]
+        kernel32.MoveFileExW.restype = wintypes.BOOL
+        kernel32.DeleteFileW.argtypes = [wintypes.LPCWSTR]
+        kernel32.DeleteFileW.restype = wintypes.BOOL
+        kernel32.SetFileInformationByHandle.argtypes = [
+            wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD,
+        ]
+        kernel32.SetFileInformationByHandle.restype = wintypes.BOOL
+        kernel32.CreateMutexW.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR]
+        kernel32.CreateMutexW.restype = wintypes.HANDLE
+        kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel32.WaitForSingleObject.restype = wintypes.DWORD
+        kernel32.ReleaseMutex.argtypes = [wintypes.HANDLE]
+        kernel32.ReleaseMutex.restype = wintypes.BOOL
         kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
         kernel32.CloseHandle.restype = wintypes.BOOL
     return ktmw32, kernel32, open_osf or msvcrt.open_osfhandle, fdopen or os.fdopen, wintypes.HANDLE(-1).value
@@ -157,12 +183,172 @@ def _ktm_apis(ktmw32=None, kernel32=None, open_osf=None, fdopen=None):
 _NO_TXF_ERRORS = (1, 50, 6801, 6805, 6832)
 
 
+def _read_handle_bytes(h, dst, kernel32, open_osf=None, fdopen=None):
+    """Read all bytes from an open Win32 file handle without closing the handle."""
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+
+    if (open_osf is not None and open_osf is not msvcrt.open_osfhandle) or (
+        fdopen is not None and fdopen is not os.fdopen
+    ):
+        fd = open_osf(h, os.O_RDONLY)
+        with fdopen(fd, "rb") as f:
+            return f.read()
+    chunks = []
+    buf = ctypes.create_string_buffer(65536)
+    read_n = wintypes.DWORD()
+    while True:
+        if not kernel32.ReadFile(h, buf, len(buf), ctypes.byref(read_n), None):
+            raise OSError(ctypes.get_last_error(), f"ReadFile failed for {dst}")
+        if read_n.value == 0:
+            break
+        chunks.append(buf.raw[:read_n.value])
+    return b"".join(chunks)
+
+
+def _acquire_path_mutex(dst, kernel32):
+    import hashlib
+    digest = hashlib.sha256(os.path.normcase(os.path.abspath(str(dst))).encode("utf-8")).hexdigest()[:32]
+    mtx = kernel32.CreateMutexW(None, False, f"Local\\RizonesoftOfficePublish_{digest}")
+    if mtx:
+        kernel32.WaitForSingleObject(mtx, 0xFFFFFFFF)
+    return mtx
+
+
+def _release_path_mutex(mtx, kernel32):
+    if mtx:
+        kernel32.ReleaseMutex(mtx)
+        kernel32.CloseHandle(mtx)
+
+
+def _posix_rename_over(src, dst, kernel32, invalid):
+    """Atomically replace dst with src using FileRenameInfoEx POSIX semantics while the caller holds an open
+    FILE_SHARE_READ | FILE_SHARE_DELETE handle on dst that blocks concurrent os.replace and write calls."""
+    import ctypes
+    from ctypes import wintypes
+
+    h_src = kernel32.CreateFileW(str(src), 0x00010000 | 0x00100000, 1 | 2 | 4, None, 3, 0, None)
+    if h_src == invalid or not h_src:
+        return False
+    try:
+        name = os.path.abspath(str(dst))
+        buf = ctypes.create_string_buffer(24 + (len(name) + 1) * 2)
+        # Flags = FILE_RENAME_FLAG_REPLACE_IF_EXISTS (1) | FILE_RENAME_FLAG_POSIX_SEMANTICS (2) = 3
+        ctypes.memmove(buf, ctypes.byref(wintypes.DWORD(3)), 4)
+        ctypes.memmove(ctypes.byref(buf, 16), ctypes.byref(wintypes.DWORD(len(name) * 2)), 4)
+        ctypes.memmove(ctypes.byref(buf, 20), ctypes.create_unicode_buffer(name), (len(name) + 1) * 2)
+        return bool(kernel32.SetFileInformationByHandle(h_src, 22, buf, len(buf)))
+    finally:
+        kernel32.CloseHandle(h_src)
+
+
+def _non_txf_replace(src, dst, backup, expected_bytes, on_enlisted, kernel32, open_osf, fdopen, invalid):
+    import ctypes
+
+    mtx = _acquire_path_mutex(dst, kernel32)
+    h_lock = None
+    try:
+        # Hold dst open with GENERIC_READ and FILE_SHARE_READ | FILE_SHARE_DELETE (no FILE_SHARE_WRITE) throughout
+        # verification, on_enlisted, hard-link backup, and FileRenameInfoEx POSIX replacement: while h_lock is open,
+        # concurrent writes fail with ERROR_SHARING_VIOLATION (32) and MoveFileExW / os.replace fails with
+        # ERROR_ACCESS_DENIED (5).
+        h_lock = kernel32.CreateFileW(str(dst), 0x80000000, 1 | 4, None, 3, 0, None)
+        if h_lock == invalid or not h_lock:
+            h_lock = None
+            err = ctypes.get_last_error()
+            if err in (2, 3):
+                raise Refused(f"{dst} was removed while it was being written")
+            raise Refused(f"{dst} changed while it was being written (WinError {err})")
+        actual = _read_handle_bytes(h_lock, dst, kernel32, open_osf, fdopen)
+        if actual != expected_bytes:
+            raise Refused(f"{dst} changed while it was being written")
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        if not kernel32.CreateHardLinkW(str(backup), str(dst), None):
+            raise OSError(ctypes.get_last_error(), f"CreateHardLinkW failed for {backup}")
+        if not _posix_rename_over(src, dst, kernel32, invalid):
+            err = ctypes.get_last_error()
+            kernel32.DeleteFileW(str(backup))
+            raise OSError(err, f"SetFileInformationByHandle(FileRenameInfoEx) failed for {dst}")
+    finally:
+        if h_lock is not None:
+            kernel32.CloseHandle(h_lock)
+        _release_path_mutex(mtx, kernel32)
+
+
+def _non_txf_unlink(dst, expected_bytes, on_enlisted, kernel32, open_osf, fdopen, invalid, status_out):
+    import ctypes
+
+    mtx = _acquire_path_mutex(dst, kernel32)
+    h_lock = None
+    try:
+        # Open dst with GENERIC_READ | DELETE and FILE_SHARE_READ only (share=1) so no concurrent process can write
+        # or replace dst while we verify expected_bytes and mark the handle for deletion on close.
+        h_lock = kernel32.CreateFileW(str(dst), 0x80000000 | 0x00010000, 1, None, 3, 0, None)
+        if h_lock == invalid or not h_lock:
+            h_lock = None
+            err = ctypes.get_last_error()
+            if err in (2, 3):
+                if status_out is not None:
+                    status_out.append("absent")
+                return True
+            if status_out is not None:
+                status_out.append("failed")
+            return False
+        actual = _read_handle_bytes(h_lock, dst, kernel32, open_osf, fdopen)
+        if actual != expected_bytes:
+            if status_out is not None:
+                status_out.append("superseded")
+            return False
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        # FileDispositionInfo (13) with DeleteFile = TRUE (1) deletes dst when h_lock closes.
+        disp = ctypes.c_byte(1)
+        if not kernel32.SetFileInformationByHandle(h_lock, 13, ctypes.byref(disp), 1):
+            if status_out is not None:
+                status_out.append("failed")
+            return False
+        return True
+    finally:
+        if h_lock is not None:
+            kernel32.CloseHandle(h_lock)
+        _release_path_mutex(mtx, kernel32)
+
+
+def _non_txf_restore(backup, dst, expected_bytes, placed_ok, on_enlisted, kernel32, open_osf, fdopen, invalid):
+    import ctypes
+
+    mtx = _acquire_path_mutex(dst, kernel32)
+    h_lock = None
+    try:
+        h_lock = kernel32.CreateFileW(str(dst), 0x80000000, 1 | 4, None, 3, 0, None)
+        if h_lock == invalid or not h_lock:
+            h_lock = None
+            err = ctypes.get_last_error()
+            if err in (2, 3):  # dst is missing; restore backup without overwrite flag (0)
+                return bool(kernel32.MoveFileExW(str(backup), str(dst), 0)), False
+            return False, False
+        actual = _read_handle_bytes(h_lock, dst, kernel32, open_osf, fdopen)
+        if not placed_ok or actual != expected_bytes:
+            return False, True
+        if on_enlisted is not None:
+            on_enlisted(dst)
+        ok = _posix_rename_over(backup, dst, kernel32, invalid)
+        return ok, False
+    finally:
+        if h_lock is not None:
+            kernel32.CloseHandle(h_lock)
+        _release_path_mutex(mtx, kernel32)
+
+
 def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw32=None, kernel32=None, open_osf=None,
                        fdopen=None):
     """Verify dst still holds expected_bytes, hard-link dst to backup, and replace dst with src inside a single
     Windows KTM kernel transaction so no concurrent atomic save or write can interleave between check and replace."""
     import ctypes
 
+    raw_open_osf, raw_fdopen = open_osf, fdopen
     ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
     tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
     if tx == invalid or not tx:
@@ -178,20 +364,9 @@ def transacted_replace(src, dst, backup, expected_bytes, on_enlisted=None, ktmw3
             err = ctypes.get_last_error()
             if err in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
                 raise Refused(f"{dst} was removed while it was being written")
-            if err in _NO_TXF_ERRORS:  # Non-TxF volume (e.g. ReFS Dev Drive): verify via hardlinked backup
-                try:
-                    actual = Path(dst).read_bytes()
-                except FileNotFoundError:
-                    raise Refused(f"{dst} was removed while it was being written") from None
-                if actual != expected_bytes:
-                    raise Refused(f"{dst} changed while it was being written")
-                if on_enlisted is not None:
-                    on_enlisted(dst)
-                os.link(dst, backup)
-                if Path(backup).read_bytes() != expected_bytes:
-                    Path(backup).unlink(missing_ok=True)
-                    raise Refused(f"{dst} changed while it was being written")
-                os.replace(src, dst)
+            if err in _NO_TXF_ERRORS:  # Non-TxF volume (e.g. ReFS Dev Drive): handle-locked verify and POSIX replace
+                _non_txf_replace(src, dst, backup, expected_bytes, on_enlisted, kernel32, raw_open_osf, raw_fdopen,
+                                 invalid)
                 return
             raise Refused(f"{dst} changed while it was being written (WinError {err})")
         fd = open_osf(h, os.O_RDONLY)
@@ -220,6 +395,7 @@ def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel
     save or edit to a newly created output is never deleted during rollback."""
     import ctypes
 
+    raw_open_osf, raw_fdopen = open_osf, fdopen
     ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
     tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
     if tx == invalid or not tx:
@@ -238,29 +414,8 @@ def transacted_unlink(dst, expected_bytes, on_enlisted=None, ktmw32=None, kernel
                     status_out.append("absent")
                 return True
             if err in _NO_TXF_ERRORS:
-                try:
-                    actual = Path(dst).read_bytes()
-                except FileNotFoundError:
-                    if status_out is not None:
-                        status_out.append("absent")
-                    return True
-                except OSError:
-                    if status_out is not None:
-                        status_out.append("failed")
-                    return False
-                if actual != expected_bytes:
-                    if status_out is not None:
-                        status_out.append("superseded")
-                    return False
-                if on_enlisted is not None:
-                    on_enlisted(dst)
-                try:
-                    Path(dst).unlink()
-                    return True
-                except OSError:
-                    if status_out is not None:
-                        status_out.append("failed")
-                    return False
+                return _non_txf_unlink(dst, expected_bytes, on_enlisted, kernel32, raw_open_osf, raw_fdopen, invalid,
+                                       status_out)
             if status_out is not None:
                 status_out.append("failed")
             return False
@@ -297,6 +452,7 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
     destroyed."""
     import ctypes
 
+    raw_open_osf, raw_fdopen = open_osf, fdopen
     ktmw32, kernel32, open_osf, fdopen, invalid = _ktm_apis(ktmw32, kernel32, open_osf, fdopen)
     tx = ktmw32.CreateTransaction(None, None, 0, 0, 0, 0, None)
     if tx == invalid or not tx:
@@ -315,27 +471,9 @@ def transacted_restore(backup, dst, expected_bytes, placed_ok=True, on_enlisted=
                         committed = True
                         return True
             if err in _NO_TXF_ERRORS:
-                dst_path = Path(dst)
-                if not dst_path.exists():
-                    try:
-                        os.replace(backup, dst)
-                        return True
-                    except OSError:
-                        return False
-                try:
-                    actual = dst_path.read_bytes()
-                except OSError:
-                    return False
-                if not placed_ok or actual != expected_bytes:
-                    superseded = True
-                    return False
-                if on_enlisted is not None:
-                    on_enlisted(dst)
-                try:
-                    os.replace(backup, dst)
-                    return True
-                except OSError:
-                    return False
+                ok, superseded = _non_txf_restore(backup, dst, expected_bytes, placed_ok, on_enlisted, kernel32,
+                                                  raw_open_osf, raw_fdopen, invalid)
+                return ok
             return False
         fd = open_osf(h, os.O_RDONLY)
         with fdopen(fd, "rb") as f:
