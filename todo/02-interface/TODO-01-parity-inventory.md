@@ -43,7 +43,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 2 | §2 | Reference build setup | -- | [x] |
 | 3 | §3 | UIA capture tool | §1, §2, §21 | [x] |
 | 4 | §4 | Shell chrome inventory | §3, §23, §24, §26 | [x] |
-| 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [ ] |
+| 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [x] |
 | 6 | §6 | Word panes, dialogs | §5 | [ ] |
 | 7 | §7 | Excel ribbon | §3, §19, §23, §24, §26 | [ ] |
 | 8 | §8 | Excel panes, dialogs | §7 | [ ] |
@@ -187,7 +187,7 @@ The shell is shared by every app: title bar (AutoSave toggle, Quick Access Toolb
 
 ## 5. Word Ribbon
 
-> **Started:** 2026-11-09T10:58:00Z
+> **Duration:** 2026-11-09T10:58:00Z .. 2026-11-09T19:27:00Z (8h 29m 0s)
 
 Every built-in Word tab (Home, Insert, Draw, Design, Layout, References, Mailings, Review, View, Developer, Help) and every contextual or mode-triggered ribbon tab in `design/inventory/word/baseline.json` (Table Design, Table Layout, Picture Format, Shape Format, Header & Footer, Equation, Chart Design, Format [Chart Tools], SmartArt Design, Format [SmartArt Tools], plus Graphics Format `TabGraphicsToolsFormat`, 3D Model `Tab3DModelToolsFormat`, Outlining `TabOutlining`, Background Removal `TabBackgroundRemoval`, Immersive Reader `TabLearningTools`, and full reconciliation of all 20 `coreTab` and 23 `contextualTab` baseline tab rows) with groups, controls in order, sizes and KeyTips. **Corrected 2026-11-09:** `File` (`FileTabButton`) is the Backstage button on the shell tab row captured in `design/inventory/shell/chrome.json` (`shell.tabrow.file`, D02 T01 §4) and its `placement == "backstage"` pages in `design/inventory/word/backstage.json` (D02 T01 §6), whereas `Developer` (`TabDeveloper`) is the eleventh always-available built-in main ribbon tab (`coreTab` in `design/inventory/word/baseline.json`, enabled alongside `Draw` `TabDrawInk`); in Word build `16.0.20527.20150`, the Header & Footer Tools contextual tab label is `Header & Footer` (`TabHeaderAndFooterToolsDesign`) and the Chart Tools formatting contextual tab label is `Format` (`TabChartToolsFormatNew`, disambiguated from SmartArt Tools' `Format` `TabSmartArtToolsFormat` by its `idMso`).
 
@@ -212,6 +212,9 @@ Every built-in Word tab (Home, Insert, Draw, Design, Layout, References, Mailing
 - [x] Commit: `inventory: capture Word ribbon and contextual tabs`
 
 **Test checkpoint:** `python scripts/check-inventory.py --require-behaviour design/inventory/word/ribbon.json` exits 0, `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` and `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` pass, and `python -c "import importlib.util, json; s=importlib.util.spec_from_file_location('c','scripts/capture-ui.py'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); d=json.load(open('design/inventory/word/ribbon.json',encoding='utf-8')); m.validate_word_ribbon(d); print(sum(r['kind']=='tab' for r in d), sum(r['kind']=='contextualTab' for r in d))"` exits 0 and prints `11` and at least `15` (all 11 built-in `tab` records and all reconciled live-triggerable `contextualTab` records).
+
+> **Verified:** 2026-11-09 | §5 | 07550e9edf3de4b62d059abda3dc3a941f01ee24
+> **Review:** `docs/reviews/d02-t01-s5.json`
 
 ## 6. Word Panes, Dialogs
 

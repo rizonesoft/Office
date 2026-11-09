@@ -1,0 +1,88 @@
+{
+  "ref": "D02 T01 \u00a75",
+  "title": "Word Ribbon",
+  "implementation_sha": "07550e9edf3de4b62d059abda3dc3a941f01ee24",
+  "date": "2026-11-09",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 9,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 10,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 11,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 12,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 13,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 14,
+      "report": "docs/reviews/02-interface/D02-T01-s5.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/check-inventory.py --require-behaviour design/inventory/word/ribbon.json -> exit 0",
+    "python -m unittest discover -s scripts/tests -p test_capture_ui.py -> Ran 67 tests OK",
+    "python -m unittest discover -s scripts/tests -p test_word_commands.py -> Ran 6 tests OK",
+    "validate_word_ribbon(design/inventory/word/ribbon.json) -> 11 tabs, 16 contextualTabs (8685 records)"
+  ],
+  "rounds_spent": 14,
+  "round_cap": 33,
+  "completion": "docs/reviews/02-interface/D02-T01-s5-completion.md",
+  "completion_rules": 2
+}
