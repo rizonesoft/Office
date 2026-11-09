@@ -106,3 +106,26 @@ OVERALL: needs-attention
 ### Dispositions
 
 1. `extend`: Extended `D02 T01 §5` intro, checklist items 2, 3, 6 and 9, and the test checkpoint to reconcile all 20 `coreTab` and 23 `contextualTab` tab rows in `design/inventory/word/baseline.json` (while `placement == "backstage"` tabs belong to `D02 T01 §6`): extending `R:\scratch\fixtures\word-contextual.docx` and `scripts/capture-ui.py` to trigger and capture every additional built-in mode and object ribbon tab available in Word `16.0.20527.20150` (`TabGraphicsToolsFormat` via an SVG graphic, `Tab3DModelToolsFormat` via a 3D model, `TabOutlining` via Outline view, `TabBackgroundRemoval` via picture background-removal mode, `TabLearningTools` via Immersive Reader, and any other triggerable baseline tab) with its groups, controls and `behaviour`, recording documented evidence in `design/inventory/REFERENCE.md` for every superseded legacy `.doc` or unavailable/cloud-only baseline tab (`TabChartToolsDesign`, `TabChartToolsLayout`, `TabChartToolsFormat`, `TabDrawingToolsFormatClassic`, `TabPictureToolsFormatClassic`, `TabTextBoxToolsFormat`, `TabWordArtToolsFormat`, `TabDiagramToolsFormatClassic`, `TabOrganizationChartToolsFormat`, `TabInkToolsPens`, `TabAddIns`, `TabSyntex`, `TabConflicts`, `TabBroadcastPresentation`, `TabBlogPost`, `TabBlogInsert`, `TabPrintPreview`), and requiring `validate_word_ribbon(records)` to verify that the union of captured tab/contextualTab `idMso`s and the reconciled unavailable/superseded baseline set equals the full baseline `coreTab` + `contextualTab` set, with deletion unit tests in `scripts/tests/test_capture_ui.py` covering the additional contexts.
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T11:26:14Z
+- Effort: medium
+- Type: adversarial
+- Lines: 13
+- Digest: 4c9dba86e258ef11
+
+SECTION: D02 T01 §5
+PURPOSE: completion
+CONTRACT: sha256:9fb185c226279f5c3610021bc57f32283ff855bed2372d1ea17db4d35bd0bdc5
+
+No completion gaps found after challenging tab coverage, state-dependent expansion, nested KeyTips, provenance reconciliation and ambiguous command linking against the supplied contract.
+
+Adjacent responsibilities have named owners: D02 T01 §6 covers non-ribbon surfaces, §17 shortcuts, and §18 baseline coverage; D02 T02 §4 covers ribbon resizing and §13 accessibility. Product performance measurement belongs to D03 T01 §29.
+
+This approves the plan’s completeness, not an implementation or completed capture.
+
+COMPLETE: yes
+HIGHEST: none
+OVERALL: approve
