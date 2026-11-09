@@ -615,20 +615,11 @@ class Launched:
 
     def _recover_hung_launch(self, join_timeout=0.05, shutdown_timeout=1.5):
         self._cancelled = True
-        self._post_close_if_owned()
         self._apartment.close(
             join_timeout=join_timeout,
             shutdown_timeout=shutdown_timeout,
             on_abandoned=self._abandon_hung_launch,
         )
-
-    def _post_close_if_owned(self):
-        if self.owned and getattr(self, "hwnd", None):
-            try:
-                import ctypes
-                ctypes.windll.user32.PostMessageW(self.hwnd, 0x0010, 0, 0)  # WM_CLOSE
-            except Exception:
-                pass
 
     def _marshal_app(self, app):
         self._marshaled_app = None
@@ -645,7 +636,7 @@ class Launched:
         if callable(marshal_fn):
             self._marshaled_app = ("custom", marshal_fn())
             return
-        self._marshaled_app = ("direct", app, getattr(self._apartment, "ident", None))
+        self._marshaled_app = ("direct", app, getattr(getattr(self, "_apartment", None), "ident", None))
 
     def _release_marshaled_app(self):
         token = getattr(self, "_marshaled_app", None)
@@ -662,90 +653,193 @@ class Launched:
         token = getattr(self, "_marshaled_app", None)
         self._marshaled_app = None
         if not token:
-            return None, None
+            app = getattr(self, "app", None)
+            if app is not None and getattr(app, "_oleobj_", None) is None and getattr(app, "__com_marshal__", None) is None:
+                token = ("direct", app, getattr(app, "_owner_tid", None))
+            else:
+                return None, None, None
         kind = token[0]
         if kind == "stream":
             import pythoncom
             import win32com.client
             disp = pythoncom.CoGetInterfaceAndReleaseStream(token[1], pythoncom.IID_IDispatch)
-            return win32com.client.Dispatch(disp), None
+            return win32com.client.Dispatch(disp), None, kind
         if kind == "custom":
-            return token[1](), None
+            return token[1](), None, kind
         if kind == "direct":
             app, prev_tid = token[1], token[2]
             if target_tid is not None and prev_tid is not None and getattr(app, "_owner_tid", None) == prev_tid:
                 app._owner_tid = target_tid
-            return app, prev_tid
-        return None, None
+            return app, prev_tid, kind
+        return None, None, None
 
-    def _emergency_close_com(self, target_tid):
+    @staticmethod
+    def _is_unmodified_blank_doc(doc):
+        if getattr(doc, "closed", False):
+            return False
+        if getattr(doc, "Saved", True) is False:
+            return False
+        if getattr(doc, "Path", ""):
+            return False
+        full_name = str(getattr(doc, "FullName", "") or "")
+        if "\\" in full_name or "/" in full_name:
+            return False
+        name = str(getattr(doc, "Name", "") or "")
+        if "." in name:
+            return False
+        return True
+
+    def _emergency_close_com(self, target_tid=None):
         import gc
         failures = []
-        app, prev_tid = self._unmarshal_app(target_tid=target_tid)
+        self._emergency_quitted = False
+        app, prev_tid, kind = self._unmarshal_app(target_tid=target_tid)
         if app is None:
             failures.append(f"could not unmarshal {self.exe} application proxy for emergency cleanup")
             return failures
-        docs, docs_col = None, None
+        docs, docs_col, count = None, None, None
+        to_close = []
+        enum_failed = False
+        unowned_count = 0
+        remaining = None
+        quitted = False
         try:
             try:
                 docs_col = self._documents_of(app)
                 count = int(docs_col.Count)
-                if hasattr(docs_col, "Item"):
-                    try:
-                        docs = [docs_col.Item(i) for i in range(1, count + 1)]
-                    except Exception:
+                if count == 0:
+                    docs = []
+                else:
+                    if hasattr(docs_col, "Item"):
                         try:
-                            docs = [docs_col.Item(i) for i in range(count)]
-                        except Exception:
-                            docs = None
-                if docs is None and hasattr(docs_col, "__iter__"):
-                    docs = list(docs_col)
-                if docs is None and hasattr(app, "made"):
-                    docs = [d for d in app.made if not getattr(d, "closed", False)]
-            except Exception as exc:
-                failures.append(f"enumerate documents failed ({type(exc).__name__}: {exc})")
-                docs = []
-            for doc in docs or []:
-                if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
-                    doc._owner_tid = target_tid
-                if getattr(doc, "closed", False):
-                    continue
-                try:
-                    if self.key == "word":
-                        doc.Close(SaveChanges=0)
-                    elif self.key == "excel":
-                        doc.Close(SaveChanges=False)
+                            docs = [docs_col.Item(i) for i in range(1, count + 1)]
+                        except Exception as exc1:
+                            try:
+                                docs = [docs_col.Item(i) for i in range(count)]
+                            except Exception:
+                                raise exc1 from None
+                    elif hasattr(docs_col, "__iter__"):
+                        docs = list(docs_col)
+                    elif hasattr(app, "made"):
+                        docs = [d for d in app.made if not getattr(d, "closed", False)]
                     else:
-                        doc.Saved = True
-                        doc.Close()
-                except Exception as exc:
-                    failures.append(f"close document failed ({type(exc).__name__}: {exc})")
-            try:
-                remaining = int(self._documents_of(app).Count)
-                if remaining:
-                    failures.append(f"{remaining} document(s) remained open")
+                        raise RuntimeError(f"collection of {count} document(s) is not enumerable")
             except Exception as exc:
-                failures.append(f"count open documents failed ({type(exc).__name__}: {exc})")
+                enum_failed = True
+                failures.append(f"enumerate documents failed ({type(exc).__name__}: {exc})")
+                docs = None
+            if not enum_failed:
+                if len(docs) < count:
+                    unowned_count += count - len(docs)
+                created_list = list(getattr(self, "created", ()))
+                metas = list(getattr(self, "_created_meta", ()))
+                if created_list:
+                    matched_ids = set()
+                    for idx, created_doc in enumerate(created_list):
+                        meta = metas[idx] if idx < len(metas) else None
+                        match = None
+                        for d in docs:
+                            if id(d) in matched_ids:
+                                continue
+                            if self._same_doc(d, created_doc):
+                                match = d
+                                break
+                        if match is None and kind in ("stream", "custom") and meta is not None:
+                            if meta.get("name") is not None or meta.get("full_name") is not None:
+                                candidates = [
+                                    d for d in docs
+                                    if id(d) not in matched_ids
+                                    and self._doc_meta(d) == meta
+                                    and self._is_unmodified_blank_doc(d)
+                                ]
+                                if len(candidates) == 1:
+                                    match = candidates[0]
+                        if match is None:
+                            if not getattr(created_doc, "closed", False):
+                                failures.append(
+                                    f"the {self.exe} document this tool created is not among open documents, so the instance was left running"
+                                )
+                            continue
+                        matched_ids.add(id(match))
+                        if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                            if self._doc_meta(match) != meta:
+                                failures.append(
+                                    f"the {self.exe} document this tool created changed identity, so it was left open"
+                                )
+                                unowned_count += 1
+                                continue
+                        if not self._is_unmodified_blank_doc(match):
+                            failures.append(
+                                f"the {self.exe} document has unsaved changes or a file path, so it was left open"
+                            )
+                            unowned_count += 1
+                            continue
+                        to_close.append(match)
+                    for d in docs:
+                        if id(d) not in matched_ids and not getattr(d, "closed", False):
+                            unowned_count += 1
+                elif getattr(self, "_adding_document", False):
+                    if count == 0 and len(docs) == 0:
+                        to_close = []
+                    elif count == 1 and len(docs) == 1 and self._is_unmodified_blank_doc(docs[0]):
+                        to_close = [docs[0]]
+                    else:
+                        unowned_count = max(count, len(docs), 1)
+                        failures.append(
+                            f"the {self.exe} instance holds {unowned_count} document(s) whose ownership could not be established, so it was left running"
+                        )
+                else:
+                    unowned_count += sum(1 for d in docs if not getattr(d, "closed", False))
+                for doc in to_close:
+                    if target_tid is not None and prev_tid is not None and getattr(doc, "_owner_tid", None) == prev_tid:
+                        doc._owner_tid = target_tid
+                    if getattr(doc, "closed", False):
+                        continue
+                    try:
+                        if self.key == "word":
+                            doc.Close(SaveChanges=0)
+                        elif self.key == "excel":
+                            doc.Close(SaveChanges=False)
+                        else:
+                            doc.Saved = True
+                            doc.Close()
+                    except Exception as exc:
+                        failures.append(f"close document failed ({type(exc).__name__}: {exc})")
+                try:
+                    remaining = int(self._documents_of(app).Count)
+                except Exception as exc:
+                    failures.append(f"count open documents failed ({type(exc).__name__}: {exc})")
+                still_open = max(remaining or 0, unowned_count)
+                if still_open and not any("left running" in f or "left open" in f for f in failures):
+                    failures.append(
+                        f"the {self.exe} instance holds {still_open} document(s) this tool did not create, so it was left running"
+                    )
         finally:
             doc = None
             docs = None
             docs_col = None
+            to_close = None
+            can_quit = (not enum_failed) and (not failures) and (remaining == 0) and (unowned_count == 0)
             try:
-                if self.key == "word":
-                    app.Quit(SaveChanges=0)
-                else:
-                    app.Quit()
+                if can_quit:
+                    if self.key == "word":
+                        app.Quit(SaveChanges=0)
+                    else:
+                        app.Quit()
+                    quitted = True
             except Exception as exc:
                 failures.append(f"quit failed ({type(exc).__name__}: {exc})")
             finally:
                 app = None
-                self.created, self._created_meta, self.app = [], [], None
+                if quitted:
+                    self.created, self._created_meta, self.app = [], [], None
                 gc.collect()
+        self._emergency_quitted = quitted
         return failures
 
     def _abandon_hung_launch(self):
         failures = []
-        self._post_close_if_owned()
+        self._emergency_quitted = False
         if self.owned and (getattr(self, "_marshaled_app", None) is not None or self.app is not None):
             cleanup_apt = _Apartment(daemon=True, shutdown_timeout=0)
             try:
@@ -763,7 +857,7 @@ class Launched:
                 cleanup_apt.close(join_timeout=0.05, shutdown_timeout=0)
         if self.proc is not None:
             try:
-                if not self.proc.exited(0.5):
+                if getattr(self, "_emergency_quitted", False) and not self.proc.exited(0.5):
                     failures.append(f"the {self.exe} instance this tool started did not exit")
             except Exception as exc:
                 failures.append(f"waiting for {self.exe} process exit failed ({type(exc).__name__}: {exc})")
@@ -821,9 +915,13 @@ class Launched:
             self._try_bind_window(owner)
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
-            doc = self.new_document()
-            self.created.append(doc)
-            self._created_meta.append(self._doc_meta(doc))
+            self._adding_document = True
+            try:
+                doc = self.new_document()
+                self.created.append(doc)
+                self._created_meta.append(self._doc_meta(doc))
+            finally:
+                self._adding_document = False
             doc = None
             if getattr(self, "_cancelled", False):
                 raise Refused(f"{exe} startup was cancelled after timeout")
@@ -965,9 +1063,16 @@ class Launched:
     def _close_impl(self, wait=60.0):
         others, failure = None, None  # unknown until counted: an instance whose contents are unknown is never quit
         try:
-            for doc in list(self.created):
+            metas = list(getattr(self, "_created_meta", ()))
+            for idx, doc in enumerate(list(self.created)):
                 if getattr(doc, "closed", False):
                     continue
+                meta = metas[idx] if idx < len(metas) else None
+                if meta is not None and (meta.get("name") is not None or meta.get("full_name") is not None):
+                    if self._doc_meta(doc) != meta:
+                        raise Refused(f"the {self.exe} document this tool created changed identity")
+                if not self._is_unmodified_blank_doc(doc):
+                    raise Refused(f"the {self.exe} document has unsaved changes or a file path")
                 if self.key == "word":
                     doc.Close(SaveChanges=0)
                 elif self.key == "excel":

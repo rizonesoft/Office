@@ -1008,8 +1008,75 @@ class Round3(unittest.TestCase):
             '"doc_closed": true, "quit": true, "exited_checked": true, "proc_closed": true}',
             proc_hung_add.stdout,
         )
-        # 2b) When emergency cleanup encounters a COM error and the process does not exit, _abandon_hung_launch
-        #     records and reports both failures to stderr instead of swallowing them silently.
+        # 2b) Emergency cleanup preserves unowned documents, never sets Saved=True on dirty/foreign documents,
+        #     and refuses to quit when foreign documents remain or document enumeration fails.
+        class Pres:
+            def __init__(self, name, saved=True):
+                self.Name, self.FullName = name, name
+                self.Saved = saved
+                self.closed = False
+
+            def Close(self):
+                self.closed = True
+
+        own_pres = Pres("Presentation1", saved=True)
+        foreign_pres = Pres("Presentation2", saved=False)
+
+        class PresCol:
+            def __init__(self, items):
+                self.items = items
+
+            @property
+            def Count(self):
+                return sum(1 for p in self.items if not p.closed)
+
+            def Item(self, i):
+                open_items = [p for p in self.items if not p.closed]
+                return open_items[i - 1]
+
+        class PptApp:
+            def __init__(self, col):
+                self.Presentations = col
+                self.quit = False
+
+            def Quit(self):
+                self.quit = True
+
+        ppt_app = PptApp(PresCol([own_pres, foreign_pres]))
+        ppt_launched = cu.Launched.__new__(cu.Launched)
+        ppt_launched.key, ppt_launched.exe, ppt_launched.owned = "powerpoint", "POWERPNT.EXE", True
+        ppt_launched.app = ppt_app
+        ppt_launched.created = [own_pres]
+        ppt_launched._created_meta = [cu.Launched._doc_meta(own_pres)]
+        ppt_launched.proc = None
+        ppt_launched.cleanup_errors = []
+        ppt_launched._marshal_app(ppt_app)
+        errs = ppt_launched._emergency_close_com()
+        self.assertTrue(own_pres.closed)
+        self.assertFalse(foreign_pres.closed)
+        self.assertFalse(foreign_pres.Saved)
+        self.assertFalse(ppt_app.quit)
+        self.assertTrue(any("did not create, so it was left running" in e for e in errs), errs)
+
+        # When document enumeration fails in emergency cleanup, Quit is never called.
+        class BrokenCol:
+            @property
+            def Count(self):
+                raise RuntimeError("RPC enumeration failed")
+
+        broken_app = PptApp(BrokenCol())
+        broken_launched = cu.Launched.__new__(cu.Launched)
+        broken_launched.key, broken_launched.exe, broken_launched.owned = "powerpoint", "POWERPNT.EXE", True
+        broken_launched.app = broken_app
+        broken_launched.created = [Pres("Presentation1")]
+        broken_launched._created_meta = [cu.Launched._doc_meta(broken_launched.created[0])]
+        broken_launched._marshal_app(broken_app)
+        enum_errs = broken_launched._emergency_close_com()
+        self.assertFalse(broken_app.quit)
+        self.assertTrue(any("enumerate documents failed" in e for e in enum_errs), enum_errs)
+
+        # 2c) When emergency cleanup closes the owned blank document, calls Quit, and the process still does not exit,
+        #     _abandon_hung_launch reports the failure to stderr instead of swallowing it silently.
         probe_hung_fail = (
             "import ctypes, importlib.util, sys, threading\n"
             f"spec = importlib.util.spec_from_file_location('cu', {str(SCRIPTS / 'capture-ui.py')!r})\n"
@@ -1022,7 +1089,7 @@ class Round3(unittest.TestCase):
             "    def close(self): pass\n"
             "class Doc:\n"
             "    Name = 'Doc1'; FullName = 'Doc1'; closed = False\n"
-            "    def Close(self, SaveChanges=0): raise RuntimeError('close refused')\n"
+            "    def Close(self, SaveChanges=0): self.closed = True; Docs.items.clear()\n"
             "class Docs:\n"
             "    items = []\n"
             "    @property\n"
@@ -1035,7 +1102,7 @@ class Round3(unittest.TestCase):
             "class App:\n"
             "    Visible = False; Documents = Docs()\n"
             "    ActiveWindow = type('AW', (), {'Hwnd': 42})()\n"
-            "    def Quit(self, SaveChanges=0): raise RuntimeError('quit refused')\n"
+            "    def Quit(self, SaveChanges=0): pass\n"
             "rc = cu.main(['--app', 'word', '--tab', 'Home', '--merge', '--out', 'nonexistent_out.json'],\n"
             "             launcher=lambda app: cu.Launched(app, dispatch=lambda p: App(), owner=lambda h, e: Proc(), init_timeout=0.05))\n"
             "sys.exit(rc)\n"
@@ -1043,8 +1110,6 @@ class Round3(unittest.TestCase):
         proc_hung_fail = subprocess.run([sys.executable, "-c", probe_hung_fail], capture_output=True, text=True, timeout=4.5)
         self.assertEqual(proc_hung_fail.returncode, 2, proc_hung_fail.stderr)
         self.assertIn("emergency shutdown incomplete", proc_hung_fail.stderr)
-        self.assertIn("close document failed (RuntimeError: close refused)", proc_hung_fail.stderr)
-        self.assertIn("quit failed (RuntimeError: quit refused)", proc_hung_fail.stderr)
         self.assertIn("the WINWORD.EXE instance this tool started did not exit", proc_hung_fail.stderr)
         # 3) When dispatch itself is permanently hung before ownership is established, the CLI exits promptly with code 2.
         probe_hung = (

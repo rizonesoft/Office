@@ -505,3 +505,49 @@ OVERALL: needs-attention
 2. **[P3] The hung-startup regression cannot detect invalid COM cleanup:** Fixed in `Round3.test_replacement_document_and_close_reference_release` (`scripts/tests/test_capture_ui.py`), which now enforces `CoGetApartmentType == 0` and per-thread apartment proxy ownership (`threading.get_ident() == self._owner_tid`) across both `probe_delayed` and `probe_hung_add` (via `__com_marshal__` cross-apartment unmarshaling onto `cleanup_apt`'s STA thread and `proc.exited` verification before `proc.close`), plus a `probe_hung_fail` subprocess test verifying that `Close`, `Quit`, and `proc.exited` failures are reported to `sys.stderr`.
 - Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
 - Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
+
+## Round 11: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-09T00:07:50Z
+- Effort: medium
+- Type: adversarial
+- Lines: 30
+- Digest: 3c97ffd2b584dc58
+
+## adversarial: needs-attention
+
+1. **[P1] Emergency startup cleanup discards documents the tool does not own.** `scripts/capture-ui.py:695` enumerates every open document, and `:708` closes them without comparing their identities against `self.created`. For PowerPoint, `:719` sets `Saved = True` before closing, suppressing recovery of unsaved changes. The unconditional `Quit` at `:734` also runs when document enumeration fails.
+
+   **Precondition:** startup exceeds its timeout and shutdown grace period while an operator presentation has opened in the shared PowerPoint instance. This is ordinary concurrent use, already recognized by the normal-cleanup test at `scripts/tests/test_capture_ui.py:374`.
+
+   **Reproduction:** supply the emergency cleanup with two presentations, registering only the first in `self.created`. The in-memory probe returned `foreign_closed=True`, `foreign_saved=True`, `quit=True`, and no cleanup errors. Emergency cleanup must preserve unowned documents and leave the application running when ownership cannot be established.
+
+## consistency: needs-attention
+
+Finding **1 [P1]** bypasses the ownership restriction implemented by normal cleanup at `scripts/capture-ui.py:968`, which closes only `self.created` and refuses to quit when other documents remain.
+
+## integration: approve
+
+## source-defect: approve
+
+## design: advisory
+
+Surface: no.
+
+## excellence: needs-attention
+
+Finding **1 [P1]** violates the “Never lose work” requirement in `docs/product-principles.md`: timeout recovery can discard an unrelated presentation’s unsaved changes.
+
+## record: advisory
+
+49 selected tests passed; 16 tests requiring filesystem writes were excluded from this read-only review. The whole-inventory checker exited 0. The failure reproduction used in-memory doubles, not live Office. No files were modified.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+### Round 11 disposition
+
+1. **[P1] Emergency startup cleanup discards documents the tool does not own:** Fixed in `Launched._emergency_close_com`, `Launched._is_unmodified_blank_doc`, `Launched._abandon_hung_launch`, `Launched._recover_hung_launch`, `Launched._init_com`, and `Launched._close_impl` (`scripts/capture-ui.py`). `_emergency_close_com` now restricts document closure strictly to owned unmodified blank documents: when `self.created` is non-empty, only open documents matching `self.created` (with unchanged `self._created_meta` and ` _is_unmodified_blank_doc(doc)` true, so `Saved` is never `False` and `Path`/file extension are absent) are closed, while any unowned document in `self._documents_of(app)` is left untouched without setting `Saved = True` or calling `Close()`. When `self.created` is empty, a document is closed only if `self._adding_document` is `True`, `Count == 1`, and the single document satisfies `_is_unmodified_blank_doc(doc)`. `app.Quit()` (and `self.proc.exited(0.5)`) is invoked only when document enumeration succeeded (`not enum_failed`), no cleanup errors occurred (`not failures`), `unowned_count == 0`, and `remaining == 0`; otherwise the application is left running and the reason is recorded in `failures` / `self.cleanup_errors`. Also removed raw `WM_CLOSE` posting so window closure never bypasses COM ownership checks. Added regression tests in `Round3.test_replacement_document_and_close_reference_release` (`scripts/tests/test_capture_ui.py`) covering two presentations (only the first in `self.created` and the foreign presentation having `Saved = False`) as well as document-enumeration failure.
+- Layer: `scripts/capture-ui.py`, `scripts/tests/test_capture_ui.py`, `docs/reviews/02-interface/audit-d02-t01-s3.md`
+- Verified: `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` (47 tests OK), `python -m unittest discover -s scripts/tests -p "test_word_commands.py"` (18 tests OK), and `python scripts/capture-ui.py --app word --tab Home --out R:\scratch\word-home.json` (`R:\scratch\word-home.json: 55 records; bounds recorded under fhd-100`) + `python scripts/check-inventory.py R:\scratch\word-home.json` (exit 0).
