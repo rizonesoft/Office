@@ -434,6 +434,7 @@ class Win:
             (u, "IsWindowVisible"): ([HW], wintypes.BOOL),
             (u, "GetWindowThreadProcessId"): ([HW, ctypes.POINTER(wintypes.DWORD)], wintypes.DWORD),
             (u, "GetClassNameW"): ([HW, wintypes.LPWSTR, ctypes.c_int], ctypes.c_int),
+            (u, "PostMessageW"): ([HW, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM], wintypes.BOOL),
             (self.shcore, "GetDpiForMonitor"): ([HM, ctypes.c_int, ctypes.POINTER(ctypes.c_uint),
                                                  ctypes.POINTER(ctypes.c_uint)], ctypes.c_long),
         }
@@ -516,6 +517,41 @@ class Win:
 
         self.user32.EnumWindows(proc(each), 0)
         return found
+
+    def open_context_menu(self, hwnd, element):
+        """Open a control's right-click context menu on `hwnd` at `element.rect`'s centre."""
+        rect = getattr(element, "rect", None)
+        cx = (rect[0] + rect[2]) // 2 if rect else 0
+        cy = (rect[1] + rect[3]) // 2 if rect else 0
+        lparam = ((cy & 0xFFFF) << 16) | (cx & 0xFFFF)
+        self.user32.PostMessageW(hwnd, 0x007B, hwnd, lparam)  # WM_CONTEXTMENU
+        hook = getattr(element, "on_context_menu", None)
+        if callable(hook):
+            hook()
+
+    def activate_keytips(self, hwnd, root=None):
+        """Send Alt (VK_MENU) to `hwnd` to activate the window's KeyTips overlay."""
+        self.user32.PostMessageW(hwnd, 0x0104, 0x12, 0x20380001)  # WM_SYSKEYDOWN VK_MENU
+        self.user32.PostMessageW(hwnd, 0x0105, 0x12, 0xE0380001)  # WM_SYSKEYUP VK_MENU
+        hook = getattr(root, "on_keytips", None) if root is not None else None
+        if callable(hook):
+            hook(True)
+
+    def deactivate_keytips(self, hwnd, root=None):
+        """Send Escape (VK_ESCAPE) to `hwnd` to dismiss the window's KeyTips overlay."""
+        self.user32.PostMessageW(hwnd, 0x0100, 0x1B, 0)  # WM_KEYDOWN VK_ESCAPE
+        self.user32.PostMessageW(hwnd, 0x0101, 0x1B, 0)  # WM_KEYUP VK_ESCAPE
+        hook = getattr(root, "on_keytips", None) if root is not None else None
+        if callable(hook):
+            hook(False)
+
+    def dismiss_surface(self, hwnd, element=None):
+        """Send Escape (VK_ESCAPE) to `hwnd` to dismiss an open context menu, flyout or Backstage view."""
+        self.user32.PostMessageW(hwnd, 0x0100, 0x1B, 0)  # WM_KEYDOWN VK_ESCAPE
+        self.user32.PostMessageW(hwnd, 0x0101, 0x1B, 0)  # WM_KEYUP VK_ESCAPE
+        hook = getattr(element, "on_dismiss", None) if element is not None else None
+        if callable(hook):
+            hook()
 
 
 def profile_monitor(monitors):
@@ -2210,7 +2246,19 @@ def validate_shell_chrome(records):
                 p = eff_by_id.get(r.get("parent"))
                 if not p or "bounds" not in r or "bounds" not in p:
                     continue
-                if r.get("kind") == "menuItem" or r["id"].endswith((".flyout", ".customizeMenu")):
+                if r["id"].endswith(".customizeMenu"):
+                    continue
+                if r.get("kind") == "menuItem" or r["id"].endswith(".flyout"):
+                    rb, pb = r["bounds"], p["bounds"]
+                    if not (
+                        rb["x"] <= pb["x"] + pb["width"]
+                        and rb["x"] + rb["width"] >= pb["x"]
+                        and rb["y"] >= pb["y"]
+                    ):
+                        raise Refused(
+                            f"effective_shell({app!r}) menu surface item {r['id']!r} bounds {rb} is not aligned "
+                            f"with parent {p['id']!r} bounds {pb}"
+                        )
                     continue
                 container = p
                 if (
@@ -2580,59 +2628,123 @@ def _find_in(elements, pred):
     return None
 
 
-def _open_and_collect_shell_surface(target, root, uia, win, launched, collected):
-    if target is None:
-        return
-    can_expand = getattr(target, "expand_state", lambda: None)() is not None
-    can_select = False
-    if not can_expand:
-        try:
-            can_select = target.pattern("select") is not None
-        except Exception:
-            can_select = False
-    if not can_expand and not can_select:
-        return
+def _shell_surface_key(sid):
+    if sid.startswith("shell.qat.customize."):
+        return "qat.customize"
+    if sid.startswith("shell.tabrow.editingMode."):
+        return "tabrow.editingMode"
+    if sid.startswith("shell.tabrow.share."):
+        return "tabrow.share"
+    if sid.startswith("shell.ribbonDisplay.") and sid != "shell.ribbonDisplay.button":
+        return "ribbonDisplay"
+    if sid.startswith("shell.search.") and sid not in ("shell.search.input", "shell.search.voice"):
+        return "search"
+    if sid == "shell.statusbar.customizeMenu":
+        return "statusbar.customizeMenu"
+    if sid.startswith("shell.backstage."):
+        return "backstage"
+    if sid.startswith("shell.keytips."):
+        return "keytips"
+    return "base"
+
+
+def _open_and_collect_shell_surface(surface_key, target, root, uia, win, launched):
     if launched is not None and hasattr(launched, "check_alone"):
         launched.check_alone()
+    hwnd = getattr(launched, "hwnd", None)
     pid = getattr(getattr(launched, "proc", None), "pid", None)
     has_popups = win is not None and hasattr(win, "popups") and pid is not None
-    before = list(win.popups(pid)) if has_popups else []
-    if can_expand:
-        target.expand()
+    before_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
+    before_ids = {id(el) for el in [before_root] + list(descendants(before_root, 25))}
+    before_popups = list(win.popups(pid)) if has_popups else []
+    can_expand = False
+    can_select = False
+    if surface_key == "keytips":
+        if win is None or not hasattr(win, "activate_keytips"):
+            raise Refused("cannot activate KeyTips without window keyboard support")
+        win.activate_keytips(hwnd, root)
+    elif surface_key == "statusbar.customizeMenu":
+        if target is None:
+            raise Refused("cannot open status bar context menu without status bar element")
+        if win is None or not hasattr(win, "open_context_menu"):
+            raise Refused("cannot open status bar context menu without window context-click support")
+        win.open_context_menu(hwnd, target)
     else:
-        target.select()
+        if target is None:
+            raise Refused(f"shell trigger for surface {surface_key!r} was not found in the window")
+        can_expand = getattr(target, "expand_state", lambda: None)() is not None
+        if not can_expand:
+            try:
+                can_select = target.pattern("select") is not None
+            except Exception:
+                can_select = False
+        if not can_expand and not can_select:
+            raise Refused(
+                f"shell trigger {getattr(target, 'name', surface_key)!r} for surface {surface_key!r} "
+                "does not support ExpandCollapse or SelectionItem"
+            )
+        if can_expand:
+            target.expand()
+        else:
+            target.select()
+    surface_collected = []
     try:
         time.sleep(0.1)
-        live_root = uia.element(launched.hwnd) if (uia is not None and launched is not None) else root
+        live_root = uia.element(hwnd) if (uia is not None and hwnd is not None) else root
         for el in [live_root] + list(descendants(live_root, 25)):
-            collected.append(el)
+            if id(el) not in before_ids:
+                surface_collected.append(el)
         if has_popups and uia is not None:
             for h in win.popups(pid):
-                if h not in before:
+                if h not in before_popups:
                     p_root = uia.element(h)
                     for el in [p_root] + list(descendants(p_root, 25)):
-                        collected.append(el)
+                        surface_collected.append(el)
     finally:
-        if can_expand:
+        if surface_key == "keytips":
+            if win is not None and hasattr(win, "deactivate_keytips"):
+                try:
+                    win.deactivate_keytips(hwnd, root)
+                except Exception:
+                    pass
+        elif surface_key in ("statusbar.customizeMenu", "backstage"):
+            if win is not None and hasattr(win, "dismiss_surface"):
+                try:
+                    win.dismiss_surface(hwnd, target)
+                except Exception:
+                    pass
+            if can_expand:
+                try:
+                    target.collapse()
+                except Exception:
+                    pass
+        elif can_expand:
             try:
                 target.collapse()
             except Exception:
                 pass
+        elif win is not None and hasattr(win, "dismiss_surface"):
+            try:
+                win.dismiss_surface(hwnd, target)
+            except Exception:
+                pass
+    return surface_collected
 
 
 def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
     rid = rec["id"]
     sid = "shell." + rid[len(prefix):] if rid.startswith(prefix) else rid
-    exact = _find_in(collected, lambda e: getattr(e, "automation_id", "") == rid)
-    if exact is not None:
-        return exact
     is_record_id = lambda aid: aid.startswith("shell.") or ".shell." in aid
     if sid == "shell.region.ribbon":
         return lower
     if sid == "shell.tabrow.tabs":
         return tabs_bar
     if sid == "shell.titlebar.systemMenu":
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "MenuBar")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "MenuBar",
+        )
     if sid == "shell.titlebar.qat":
         return _find_in(
             collected,
@@ -2641,10 +2753,17 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
             and "Quick Access" in (e.name or ""),
         )
     if sid in ("shell.titlebar.autosave", "shell.qat.autosave"):
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "AutoSaveSwitch")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "AutoSaveSwitch",
+        )
     if sid == "shell.qat.save":
         return _find_in(
-            collected, lambda e: getattr(e, "automation_id", "") == "FileSave" and e.control_type == "Button"
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "FileSave"
+            and e.control_type == "Button",
         )
     if sid == "shell.qat.undo":
         return _find_in(
@@ -2654,27 +2773,64 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
             and e.control_type in ("SplitButton", "Button"),
         )
     if sid == "shell.qat.undo.dropdown":
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "Undo_Dropdown")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "Undo_Dropdown",
+        )
     if sid == "shell.qat.redo":
         return _find_in(
             collected,
-            lambda e: getattr(e, "automation_id", "") in ("RedoOrRepeat", "Redo")
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") in ("RedoOrRepeat", "Redo")
             and e.control_type in ("Button", "SplitButton"),
         )
     if sid == "shell.qat.fromBeginning":
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "SlideShowFromBeginning")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "SlideShowFromBeginning",
+        )
     if sid == "shell.qat.customize":
         return _find_in(
             collected,
             lambda e: not is_record_id(getattr(e, "automation_id", ""))
             and e.name == "Customize Quick Access Toolbar",
         )
-    if sid in ("shell.titlebar.search", "shell.tabrow.search"):
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "TellMeControlAnchor")
+    if sid == "shell.titlebar.search":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "TellMeControlAnchor"
+            and (not e.rect or e.rect[1] - origin[1] < 48),
+        )
+    if sid == "shell.tabrow.search":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "TellMeControlAnchor"
+            and (not e.rect or e.rect[1] - origin[1] >= 48),
+        )
+    if sid == "shell.search.voice":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and e.name == "Voice Search"
+            and (not e.rect or (e.rect[1] - origin[1] >= 48 if prefix == "project.shell." else e.rect[1] - origin[1] < 48)),
+        )
     if sid == "shell.search.input":
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "TellMeTextBoxAutomationId")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "TellMeTextBoxAutomationId"
+            and (not e.rect or (e.rect[1] - origin[1] >= 48 if prefix == "project.shell." else e.rect[1] - origin[1] < 48)),
+        )
     if sid == "shell.titlebar.account":
-        return _find_in(collected, lambda e: getattr(e, "automation_id", "") == "MeControlWidget")
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "MeControlWidget",
+        )
     if sid == "shell.titlebar.minimize":
         return _find_in(
             collected,
@@ -2700,7 +2856,8 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
     if sid == "shell.tabrow.file":
         return _find_in(
             collected,
-            lambda e: getattr(e, "automation_id", "") == "FileTabButton"
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and getattr(e, "automation_id", "") == "FileTabButton"
             and (not e.rect or e.rect[3] - e.rect[1] <= 36),
         )
     if sid == "shell.tabrow.comments":
@@ -2744,6 +2901,13 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
             collected,
             lambda e: not is_record_id(getattr(e, "automation_id", "")) and e.name == "Ribbon Display Options",
         )
+    if sid == "shell.statusbar.bar":
+        frame = _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", "")) and e.name == "Status Bar Frame",
+        )
+        if frame is not None:
+            return frame
     if sid in ("shell.region.statusbar", "shell.statusbar.bar"):
         return _find_in(
             collected,
@@ -2784,6 +2948,15 @@ def _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix):
             and e.control_type in ITEM_TYPES
             and e.name == rec["label"],
         )
+    if sid.startswith("shell.keytips.") and sid != "shell.keytips.layer":
+        return _find_in(
+            collected,
+            lambda e: not is_record_id(getattr(e, "automation_id", ""))
+            and (
+                (rec.get("keytip") and keytip(getattr(e, "access_key", "")) == rec["keytip"])
+                or e.name == rec["label"]
+            ),
+        )
     if rec.get("uiaId"):
         by_uia = _find_in(
             collected,
@@ -2803,44 +2976,47 @@ def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, orig
     """Observe shell chrome elements in `root` (and opened menus, Backstage and KeyTips) and assign live geometry."""
     ox, oy = origin
     prefix = "shell." if app_name == "word" else f"{app_name}.shell."
-    collected = [root] + list(descendants(root, 25))
-    trigger_prefixes = (
-        ("shell.qat.customize", ("shell.qat.customize.",)),
-        ("shell.tabrow.editingMode", ("shell.tabrow.editingMode.",)),
-        ("shell.tabrow.share", ("shell.tabrow.share.",)),
-        ("shell.ribbonDisplay.button", ("shell.ribbonDisplay.",)),
-        ("shell.titlebar.search", ("shell.search.",)),
-        ("shell.tabrow.search", ("shell.search.",)),
-        ("shell.statusbar.bar", ("shell.statusbar.customizeMenu",)),
-        ("shell.tabrow.file", ("shell.backstage.",)),
-        ("shell.titlebar.systemMenu", ("shell.keytips.",)),
+    base_elements = [root] + list(descendants(root, 25))
+    surface_triggers = (
+        ("qat.customize", "shell.qat.customize"),
+        ("tabrow.editingMode", "shell.tabrow.editingMode"),
+        ("tabrow.share", "shell.tabrow.share"),
+        ("ribbonDisplay", "shell.ribbonDisplay.button"),
+        ("search", "shell.tabrow.search" if app_name == "project" else "shell.titlebar.search"),
+        ("statusbar.customizeMenu", "shell.statusbar.bar"),
+        ("backstage", "shell.tabrow.file"),
+        ("keytips", None),
     )
     by_id = {r["id"]: r for r in records}
-    for trigger_sid, child_sids in trigger_prefixes:
+    surface_elements = {}
+    for surface_key, trigger_sid in surface_triggers:
         dependent_recs = [
             r for r in records
-            if any(
-                ("shell." + r["id"][len(prefix):] if r["id"].startswith(prefix) else r["id"]).startswith(cp)
-                for cp in child_sids
-            )
+            if _shell_surface_key("shell." + r["id"][len(prefix):] if r["id"].startswith(prefix) else r["id"])
+            == surface_key
         ]
         if not dependent_recs:
             continue
-        if all(_match_shell_element(r, collected, tabs_bar, lower, origin, prefix) is not None for r in dependent_recs):
-            continue
-        trigger_id = prefix + trigger_sid[len("shell."):]
-        trigger_rec = by_id.get(trigger_id) or {"id": trigger_id, "label": ""}
-        trigger_el = _match_shell_element(trigger_rec, collected, tabs_bar, lower, origin, prefix)
-        if trigger_el is None and trigger_id != trigger_sid:
-            trigger_el = _match_shell_element(
-                {"id": trigger_sid, "label": ""}, collected, tabs_bar, lower, origin, "shell."
-            )
-        _open_and_collect_shell_surface(trigger_el, root, uia, win, launched, collected)
+        trigger_el = None
+        if trigger_sid is not None:
+            trigger_id = prefix + trigger_sid[len("shell."):]
+            trigger_rec = by_id.get(trigger_id) or {"id": trigger_id, "label": ""}
+            trigger_el = _match_shell_element(trigger_rec, base_elements, tabs_bar, lower, origin, prefix)
+            if trigger_el is None and trigger_id != trigger_sid:
+                trigger_el = _match_shell_element(
+                    {"id": trigger_sid, "label": ""}, base_elements, tabs_bar, lower, origin, "shell."
+                )
+        surface_elements[surface_key] = _open_and_collect_shell_surface(
+            surface_key, trigger_el, root, uia, win, launched
+        )
 
     for rec in records:
         if rec.get("app") == "outlook":
             continue
-        el = _match_shell_element(rec, collected, tabs_bar, lower, origin, prefix)
+        sid = "shell." + rec["id"][len(prefix):] if rec["id"].startswith(prefix) else rec["id"]
+        skey = _shell_surface_key(sid)
+        pool = base_elements if skey == "base" else surface_elements.get(skey, ())
+        el = _match_shell_element(rec, pool, tabs_bar, lower, origin, prefix)
         if el is None:
             continue
         b = _live_rect_bounds(el, ox, oy)

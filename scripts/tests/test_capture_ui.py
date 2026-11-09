@@ -2004,7 +2004,7 @@ class ShellChrome(unittest.TestCase):
             tabs_bar = E("Tab", "Ribbon Tabs", rect=(58, 48, 1908, 78), kids=[tab])
             return E("Window", "Document1 - Word", kids=[tabs_bar, lower])
 
-        def make_shell_root(overrides=None):
+        def make_shell_root(overrides=None, app_name="word"):
             overrides = overrides or {}
             tab, lower = home()
             tab.select = lambda: None
@@ -2020,22 +2020,52 @@ class ShellChrome(unittest.TestCase):
                 "search.": "titlebar.search",
                 "statusbar.customizeMenu": "statusbar.bar",
                 "backstage.": "tabrow.file",
-                "keytips.": "titlebar.systemMenu",
             }
             trigger_els = {}
-            for rec in committed:
+            keytip_els = []
+            for rec in cu.effective_shell(committed, app_name):
                 if rec.get("app") == "outlook" or "bounds" not in rec:
                     continue
                 rid = rec["id"]
+                sid = "shell." + rid.split(".shell.", 1)[1] if ".shell." in rid else rid
+                if sid in ("shell.region.ribbon", "shell.tabrow.tabs"):
+                    continue
                 b = overrides.get(rid, rec["bounds"])
                 rect = (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"])
-                ctype = "MenuItem" if rec.get("kind") == "menuItem" else "Button"
-                el = E(ctype, rec["label"], rid, rect=rect)
-                sid = "shell." + rid.split(".shell.", 1)[1] if ".shell." in rid else rid
+                aid = rec.get("uiaId") or rec.get("idMso") or ""
+                if sid == "shell.titlebar.qat":
+                    ctype = "ToolBar"
+                elif sid == "shell.statusbar.zoomSlider":
+                    ctype = "Slider"
+                elif sid in ("shell.region.statusbar", "shell.statusbar.bar"):
+                    ctype = "StatusBar"
+                elif sid == "shell.qat.undo" or rec.get("controlType") == "splitButton":
+                    ctype = "SplitButton"
+                elif rec.get("kind") == "menuItem":
+                    ctype = "MenuItem"
+                elif rec.get("kind") == "group":
+                    ctype = "Group"
+                elif rec.get("kind") == "region":
+                    ctype = "Pane"
+                elif rec.get("kind") == "contextMenu":
+                    ctype = "Menu"
+                elif sid.startswith("shell.keytips."):
+                    ctype = "Text"
+                else:
+                    ctype = "Button"
+                access_key = f"Alt, {rec['keytip']}" if rec.get("keytip") else ""
+                el = E(ctype, rec["label"], aid, key=access_key, rect=rect)
+                if sid.startswith("shell.keytips."):
+                    keytip_els.append(el)
+                    continue
                 prefix = rid.split("shell.")[0] + "shell."
                 deferred_to = None
                 for child_seg, trig_seg in trigger_map.items():
-                    if sid.startswith("shell." + child_seg) and sid != "shell." + trig_seg:
+                    if sid.startswith("shell." + child_seg) and sid not in (
+                        "shell." + trig_seg,
+                        "shell.search.input",
+                        "shell.search.voice",
+                    ):
                         if trig_seg == "titlebar.search" and prefix == "project.shell.":
                             deferred_to = "project.shell.tabrow.search"
                         else:
@@ -2058,24 +2088,72 @@ class ShellChrome(unittest.TestCase):
                     top_kids.extend(popup_els)
             for resolved_id, popup_els in merged_deferred.items():
                 trig = trigger_els[resolved_id]
-                trig.expand_state = lambda: 0
+                sid = "shell." + resolved_id.split(".shell.", 1)[1] if ".shell." in resolved_id else resolved_id
+                if sid == "shell.statusbar.bar":
+                    def _make_context_dismiss(t_id, p_els):
+                        def _ctx():
+                            expand_events.append(("context_menu", t_id))
+                            for pe in p_els:
+                                if pe not in win_el.kids:
+                                    win_el.kids.append(pe)
 
-                def _make_expand_collapse(t_id, p_els):
-                    def _exp():
-                        expand_events.append(("expand", t_id))
-                        for pe in p_els:
-                            if pe not in win_el.kids:
-                                win_el.kids.append(pe)
+                        def _dis():
+                            expand_events.append(("dismiss", t_id))
+                            for pe in p_els:
+                                if pe in win_el.kids:
+                                    win_el.kids.remove(pe)
 
-                    def _col():
-                        expand_events.append(("collapse", t_id))
-                        for pe in p_els:
-                            if pe in win_el.kids:
-                                win_el.kids.remove(pe)
+                        return _ctx, _dis
 
-                    return _exp, _col
+                    trig.on_context_menu, trig.on_dismiss = _make_context_dismiss(resolved_id, popup_els)
+                elif sid == "shell.tabrow.file":
+                    trig.pattern = lambda name: (object() if name == "select" else None)
 
-                trig.expand, trig.collapse = _make_expand_collapse(resolved_id, popup_els)
+                    def _make_select_dismiss(t_id, p_els):
+                        def _sel():
+                            expand_events.append(("select", t_id))
+                            for pe in p_els:
+                                if pe not in win_el.kids:
+                                    win_el.kids.append(pe)
+
+                        def _dis():
+                            expand_events.append(("dismiss", t_id))
+                            for pe in p_els:
+                                if pe in win_el.kids:
+                                    win_el.kids.remove(pe)
+
+                        return _sel, _dis
+
+                    trig.select, trig.on_dismiss = _make_select_dismiss(resolved_id, popup_els)
+                else:
+                    trig.expand_state = lambda: 0
+
+                    def _make_expand_collapse(t_id, p_els):
+                        def _exp():
+                            expand_events.append(("expand", t_id))
+                            for pe in p_els:
+                                if pe not in win_el.kids:
+                                    win_el.kids.append(pe)
+
+                        def _col():
+                            expand_events.append(("collapse", t_id))
+                            for pe in p_els:
+                                if pe in win_el.kids:
+                                    win_el.kids.remove(pe)
+
+                        return _exp, _col
+
+                    trig.expand, trig.collapse = _make_expand_collapse(resolved_id, popup_els)
+
+            def _on_keytips(active):
+                expand_events.append(("keytips_on" if active else "keytips_off", "window"))
+                for ke in keytip_els:
+                    if active and ke not in win_el.kids:
+                        win_el.kids.append(ke)
+                    elif not active and ke in win_el.kids:
+                        win_el.kids.remove(ke)
+
+            win_el.on_keytips = _on_keytips
             return win_el
 
         launched = type("L", (), {
@@ -2086,12 +2164,27 @@ class ShellChrome(unittest.TestCase):
         good_win = type("W", (), {
             "monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
             "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
+            "open_context_menu": lambda self, h, el: getattr(el, "on_context_menu", lambda: None)(),
+            "activate_keytips": lambda self, h, root=None: getattr(root, "on_keytips", lambda _a: None)(True),
+            "deactivate_keytips": lambda self, h, root=None: getattr(root, "on_keytips", lambda _a: None)(False),
+            "dismiss_surface": lambda self, h, el=None: getattr(el, "on_dismiss", lambda: None)(),
         })()
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 out_path = Path(tmp) / "shell" / "chrome.json"
-                # 1. Failing launcher, empty window, minimal window (only Ribbon Tabs and Lower Ribbon),
-                #    or missing fhd-100 monitor must fail without publishing.
+                # 1. Verify fixture realism: no element has a record ID in automation_id, and status bar / system menu
+                #    do not have synthetic ExpandCollapse patterns.
+                sample_root = make_shell_root()
+                for el in [sample_root] + list(cu.descendants(sample_root, 25)):
+                    self.assertFalse(el.automation_id.startswith("shell."))
+                    self.assertNotIn(".shell.", el.automation_id)
+                sb_el = next(e for e in sample_root.kids if e.control_type == "StatusBar" and e.name == "Status Bar Frame")
+                sys_el = next(e for e in sample_root.kids if e.automation_id == "MenuBar")
+                self.assertIsNone(getattr(sb_el, "expand_state", lambda: None)())
+                self.assertIsNone(getattr(sys_el, "expand_state", lambda: None)())
+
+                # 2. Failing launcher, empty window, minimal window (only Ribbon Tabs and Lower Ribbon),
+                #    missing context-menu/KeyTips win support, or missing fhd-100 monitor must fail without publishing.
                 with contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(
                         cu.main(["--shell", "--out", str(out_path)],
@@ -2115,9 +2208,25 @@ class ShellChrome(unittest.TestCase):
                         1,
                     )
                     self.assertFalse(out_path.exists())
+                    no_interact_win = type("W", (), {
+                        "monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
+                        "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
+                    })()
+                    self.assertEqual(
+                        cu.main(["--shell", "--app", "word", "--out", str(out_path)],
+                                launcher=lambda a: launched,
+                                uia_factory=lambda: type("U", (), {"element": lambda self, h: make_shell_root()})(),
+                                win_factory=lambda: no_interact_win),
+                        1,
+                    )
+                    self.assertFalse(out_path.exists())
                     no_mon_win = type("W", (), {
                         "monitors": lambda self: [], "place": lambda self, h, m: None,
                         "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1),
+                        "open_context_menu": good_win.open_context_menu,
+                        "activate_keytips": good_win.activate_keytips,
+                        "deactivate_keytips": good_win.deactivate_keytips,
+                        "dismiss_surface": good_win.dismiss_surface,
                     })()
                     self.assertEqual(
                         cu.main(["--shell", "--out", str(out_path)],
@@ -2128,30 +2237,49 @@ class ShellChrome(unittest.TestCase):
                     )
                     self.assertFalse(out_path.exists())
 
-                # 2. Initial live --shell capture opens menus/Backstage/KeyTips and writes valid inventory.
+                # 3. Initial live --shell capture opens menus/Backstage/context-menu/KeyTips via their own interactions
+                #    and distinguishes duplicate "Hide Quick Access Toolbar" labels across QAT and Ribbon Display Options.
                 expand_events.clear()
                 root_instance = [None]
+                active_app = ["word"]
 
                 def get_root():
                     if root_instance[0] is None:
-                        root_instance[0] = make_shell_root()
+                        root_instance[0] = make_shell_root(app_name=active_app[0])
                     return root_instance[0]
 
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
                     rc = cu.main(
                         ["--shell", "--out", str(out_path)],
-                        launcher=lambda a: (root_instance.__setitem__(0, None) or launched),
+                        launcher=lambda a: (active_app.__setitem__(0, a) or root_instance.__setitem__(0, None) or launched),
                         uia_factory=lambda: type("U", (), {"element": lambda self, h: get_root()})(),
                         win_factory=lambda: good_win,
                     )
                 self.assertEqual(rc, 0)
                 self.assertIn(("expand", "shell.qat.customize"), expand_events)
                 self.assertIn(("collapse", "shell.qat.customize"), expand_events)
-                self.assertIn(("expand", "shell.tabrow.file"), expand_events)
-                self.assertIn(("expand", "shell.titlebar.systemMenu"), expand_events)
+                self.assertIn(("expand", "shell.ribbonDisplay.button"), expand_events)
+                self.assertIn(("collapse", "shell.ribbonDisplay.button"), expand_events)
+                self.assertIn(("context_menu", "shell.statusbar.bar"), expand_events)
+                self.assertIn(("dismiss", "shell.statusbar.bar"), expand_events)
+                self.assertIn(("select", "shell.tabrow.file"), expand_events)
+                self.assertIn(("dismiss", "shell.tabrow.file"), expand_events)
+                self.assertIn(("keytips_on", "window"), expand_events)
+                self.assertIn(("keytips_off", "window"), expand_events)
                 data = json.loads(out_path.read_text(encoding="utf-8"))
                 self.assertGreaterEqual(len(data), 110)
+                by_id = {r["id"]: r for r in data}
+                self.assertEqual(by_id["shell.qat.customize.hide-quick-access-toolbar"]["bounds"]["x"], 261)
+                self.assertEqual(by_id["shell.ribbonDisplay.hide-quick-access-toolbar"]["bounds"]["x"], 1712)
+                bad_ribbon_display = [
+                    dict(r, bounds={"x": 261, "y": 465, "width": 234, "height": 28})
+                    if r["id"] == "shell.ribbonDisplay.hide-quick-access-toolbar"
+                    else r
+                    for r in data
+                ]
+                with self.assertRaises(cu.Refused):
+                    cu.validate_shell_chrome(bad_ribbon_display)
                 self.assertEqual(ci.check([str(out_path)], require_behaviour=True, inventory=Path(tmp)), [])
 
                 # 3. Single-app --shell --app word --merge refuses an incomplete window without publishing,
