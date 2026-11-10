@@ -2,7 +2,7 @@
 name: senior-implementer
 description: Write a change from a work packet whose approach is given but whose code takes real thought -- an algorithm, a parser, concurrency, a change across several files that must stay consistent, or a packet the implementer reported blocked. The main loop sets the effort, reads the whole diff, runs the gates and commits.
 model: opus
-model_rationale: Implements packets that need reasoning about correctness across files, or that the Sonnet implementer could not finish; the orchestrator chooses the effort per packet and reads every diff.
+model_rationale: Implements packets that need reasoning about correctness across files, or that the Sonnet implementer could not finish; the orchestrator chooses the effort per packet (low or medium, never higher) and reads every diff.
 tools: Read, Glob, Grep, Bash, Edit, Write
 write_scope: packet
 ---

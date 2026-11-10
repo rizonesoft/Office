@@ -507,6 +507,8 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
       continue;
     }
 
+    errors.push(...effortProblems(fields, model).map((problem) => `${relative} ${problem}`));
+
     if (RESTRICTED_AGENT_MODEL_TOKENS.some((token) => model.includes(token))) {
       const problems = haikuProblems(repoRoot, fields, model);
       if (problems.length > 0) {
@@ -580,6 +582,32 @@ export function toolProblems(fields) {
     problems.push(`declares "${WRITE_SCOPE_FIELD}: ${WRITE_SCOPE_PACKET}" but grants no edit tool; a worker that cannot write is a reader, so drop the field`);
   }
   return problems;
+}
+
+/**
+ * The effort ceiling per tier (owner, 2026-11-10): Sonnet and Haiku agents never run above `high`, Opus and Fable
+ * agents never above `medium`. Extra effort is cheap on the cheap tiers, where it is what holds the quality bar; on
+ * the expensive tiers a packet that medium effort cannot finish goes one tier up instead. This checks the default
+ * an agent definition carries in `effort:`; the same ceiling binds the effort the main loop passes per call
+ * (AGENTS.md, Subagents), which no file records.
+ */
+export const EFFORT_FIELD = "effort";
+export const EFFORT_LEVELS = ["low", "medium", "high", "xhigh", "max"];
+export const EFFORT_CEILING = { base: "high", restricted: "high", elevated: "medium" };
+
+export function effortProblems(fields, model) {
+  if (!fields.has(EFFORT_FIELD)) return [];
+  const effort = fields.get(EFFORT_FIELD).value.toLowerCase();
+  if (!EFFORT_LEVELS.includes(effort)) {
+    return [`declares "${EFFORT_FIELD}: ${effort}"; the levels are ${EFFORT_LEVELS.join(", ")}`];
+  }
+  const tier = ELEVATED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "elevated"
+    : RESTRICTED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "restricted" : "base";
+  const ceiling = EFFORT_CEILING[tier];
+  if (EFFORT_LEVELS.indexOf(effort) > EFFORT_LEVELS.indexOf(ceiling)) {
+    return [`declares "${EFFORT_FIELD}: ${effort}" on "${model}"; this tier's ceiling is ${ceiling}, and work that needs more goes one tier up`];
+  }
+  return [];
 }
 
 /** Every unmet Haiku condition, so one run names them all. */

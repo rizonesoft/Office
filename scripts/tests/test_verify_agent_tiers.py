@@ -160,6 +160,24 @@ class Workers(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn('declares "memory:"', result.stderr)
 
+    def test_effort_ceiling_is_high_on_sonnet_and_medium_on_opus_and_fable(self):
+        rationale = "model_rationale: Needs the stronger model.\n"
+        cases = [("sonnet", "", "high", 0), ("sonnet", "", "xhigh", 1), ("sonnet", "", "max", 1),
+                 ("opus", rationale, "medium", 0), ("opus", rationale, "low", 0), ("opus", rationale, "high", 1),
+                 ("fable", rationale, "medium", 0), ("fable", rationale, "high", 1), ("fable", rationale, "max", 1),
+                 ("sonnet", "", "extreme", 1)]
+        for model, extra, effort, expected in cases:
+            with self.subTest(model=model, effort=effort):
+                result = self.verify(model=model, extra=extra + f"effort: {effort}\n")
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                if expected:
+                    self.assertIn('declares "effort:', result.stderr)
+
+    def test_haiku_effort_above_high_is_named(self):
+        result = self.verify(model="claude-haiku-5-5", extra="effort: max\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ceiling is high", result.stderr)
+
     def test_an_opus_worker_still_needs_its_rationale(self):
         refused = self.verify(model="opus", tools="Read, Edit", extra="write_scope: packet\n")
         self.assertEqual(refused.returncode, 1, refused.stdout)
