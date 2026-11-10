@@ -104,10 +104,14 @@ class StopControlTest(unittest.TestCase):
         self.assertIsNone(process.poll(), "a process with another start time must not be ended")
         self.assertIn("No running launcher was found", result.stdout)
 
-    def test_both_shortcuts_are_installed(self):
+    def test_only_the_start_shortcut_is_installed_in_a_normal_window(self):
+        # Owner, 2026-11-11: the Stop shortcut is gone (stopping is asked of the session), and the start
+        # shortcut opens a normal window, not a maximised one (WindowStyle 1, never 3).
         text = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn("'Rizonesoft Office campaign.lnk'", text)
-        self.assertIn("'Rizonesoft Office campaign - Stop.lnk'", text)
+        self.assertNotIn("Stop.lnk", text)
+        self.assertIn("$shortcut.WindowStyle = 1", text)
+        self.assertNotIn("WindowStyle = 3", text)
 
 
 FAKE_CLAUDE = r"""

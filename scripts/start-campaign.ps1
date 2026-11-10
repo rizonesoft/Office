@@ -20,16 +20,17 @@
   session with the same goal, which takes the run over. A run that ended by its own rules holds no guard, so the
   launcher stops; five sessions ending inside an hour stop it too, and closing the window stops everything.
 
-  The owner controls it with two desktop shortcuts (owner, 2026-11-10): "Rizonesoft Office campaign" starts it
-  and "Rizonesoft Office campaign - Stop" stops it. Stop writes a stop request (build/campaign-stop-request) that
-  the campaign honours at its next section boundary, ending the run cleanly, and that keeps this launcher from
-  starting another session; answering NOW to its question also ends the running session at once, with its whole
-  process tree. Starting again removes the request.
+  The desktop shortcut "Rizonesoft Office campaign" starts it, in a normal window. There is no Stop shortcut
+  (owner, 2026-11-11): the operator stops the campaign by asking the session to stop cleanly, or with -Stop below.
+  -Stop writes a stop request (build/campaign-stop-request) that the campaign honours at its next section
+  boundary, ending the run cleanly, and that keeps this launcher from starting another session; answering NOW to
+  its question also ends the running session at once, with its whole process tree. Starting again removes the
+  request.
 .EXAMPLE
   pwsh scripts/start-campaign.ps1
   pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
-  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the two desktop shortcuts for this clone
-  pwsh scripts/start-campaign.ps1 -Stop              # ask the campaign to stop (the Stop shortcut runs this)
+  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the desktop shortcut for this clone
+  pwsh scripts/start-campaign.ps1 -Stop              # ask the campaign to stop at its next section boundary
   pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
@@ -50,19 +51,10 @@ if ($InstallShortcut) {
     $shortcut.WorkingDirectory = $root
     $shortcut.IconLocation = "$(Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'),0"
     $shortcut.Description = 'Start the unattended Rizonesoft Office campaign in Claude Code'
-    $shortcut.WindowStyle = 3
+    # 1 is a normal window (3 would open it maximised); owner, 2026-11-11.
+    $shortcut.WindowStyle = 1
     $shortcut.Save()
     Write-Host "Shortcut written: $link"
-
-    $stopLink = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Rizonesoft Office campaign - Stop.lnk'
-    $stopShortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($stopLink)
-    $stopShortcut.TargetPath = (Get-Process -Id $PID).Path
-    $stopShortcut.Arguments = "-NoLogo -NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Stop"
-    $stopShortcut.WorkingDirectory = $root
-    $stopShortcut.IconLocation = "$(Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'),0"
-    $stopShortcut.Description = 'Stop the unattended Rizonesoft Office campaign'
-    $stopShortcut.Save()
-    Write-Host "Shortcut written: $stopLink"
     exit 0
 }
 
@@ -147,7 +139,7 @@ if (-not $DryRun) {
     } catch [System.IO.IOException] {
         $other = Get-LiveLauncher
         $which = if ($other) { " (process $($other.Id))" } else { '' }
-        Write-Host "Not started: a campaign launcher is already running$which. Use the Stop shortcut first, or close its window." -ForegroundColor Red
+        Write-Host "Not started: a campaign launcher is already running$which. Ask its session to stop, run this file with -Stop, or close its window." -ForegroundColor Red
         exit 3
     }
     Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
@@ -252,7 +244,7 @@ while ($true) {
         break
     }
     Write-Host ''
-    Write-Host "The session ended with the run still open. A new session starts in $RestartSeconds seconds; use the Stop shortcut, close this window or press Ctrl+C to stop." -ForegroundColor Yellow
+    Write-Host "The session ended with the run still open. A new session starts in $RestartSeconds seconds; close this window or press Ctrl+C to stop." -ForegroundColor Yellow
     Start-Sleep -Seconds $RestartSeconds
     python scripts/check-campaign-host.py
     if ($LASTEXITCODE -ne 0) {
