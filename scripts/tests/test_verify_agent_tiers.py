@@ -197,14 +197,14 @@ class Workers(unittest.TestCase):
         self.assertEqual(refused.returncode, 1, refused.stdout)
         self.assertIn("model_rationale", refused.stderr)
 
-    def test_the_fleet_is_sonnet_readers_and_two_workers(self):
+    def test_the_fleet_is_sonnet_readers_and_the_one_fable_worker(self):
+        # Owner, 2026-11-11: the main session is the writer, so the only agent that writes is the Fable takeover.
         fleet = {}
         for path in sorted((REPO / ".claude" / "agents").glob("*.md")):
             text = path.read_text(encoding="utf-8")
             model = next(line.split(":", 1)[1].strip() for line in text.splitlines() if line.startswith("model:"))
             fleet[path.stem] = (model, "write_scope: packet" in text)
-        self.assertEqual({name for name, (_, writes) in fleet.items() if writes}, {"section-writer", "principal-implementer"})
-        self.assertEqual(fleet["section-writer"][0], "opus")
+        self.assertEqual({name for name, (_, writes) in fleet.items() if writes}, {"principal-implementer"})
         self.assertEqual(fleet["principal-implementer"][0], "fable")
         for name, (model, writes) in fleet.items():
             if not writes:
