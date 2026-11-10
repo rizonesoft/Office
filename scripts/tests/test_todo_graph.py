@@ -333,9 +333,10 @@ class Graph(Tree):
     def test_deliverable_or_title_over_max_len_refuses(self):
         self.write(todo_file([(1, "X" * 89, 0, "none", "--")]))
         self.refuses("deliverable/title over 88 chars (wraps raw md table): D00 T01 §1")
-        # The limit is the title's, which the table shows; the "## N. " prefix appears in no table.
+        # The limit is the title's, which the table shows; the "## N. " prefix appears in no table. An 88-character
+        # title passes that rule, and is then refused only because its plan row is too wide (D00 T03 §32).
         self.write(todo_file([(1, "X" * 88, 0, "none", "--")]))
-        tg.graph(self.root)
+        self.refuses("plan table for phase 0 wraps raw md (130 > 120 chars)")
 
     def test_superseded_without_successor_refuses(self):
         self.write(todo_file([(1, "A", 0, "none", "--")], status="superseded"))
@@ -1484,6 +1485,49 @@ class StillToAuthor(Tree):
         self.assertEqual(stats["to_author"], len(tg.to_author()))
         plan = (REPO / tg.PLAN).read_text(encoding="utf-8")
         self.assertEqual(plan.count("\n| `todo/"), stats["to_author"])
+
+
+class PlanWidthInValidate(Tree):
+    """validate refuses what plan --sync cannot render, with the same message (D00 T03 §32)."""
+
+    def cli(self, *args):
+        """The real command, run on the fixture tree: its ROOT is the folder two above its library."""
+        for name in ("todo-graph.py", "lib/todo_graph.py"):
+            target = self.root / "scripts" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((REPO / "scripts" / name).read_bytes())
+        r = subprocess.run([sys.executable, "-B", str(self.root / "scripts/todo-graph.py"), *args],
+                           capture_output=True, text=True, encoding="utf-8", timeout=120)
+        return r.returncode, r.stderr.strip()
+
+    def test_a_legal_title_too_wide_for_its_phase_table_is_refused_by_both_commands_alike(self):
+        # The longest legal title (88) is already 130 wide with Needs "none": the plan fits 78 at most.
+        title = "T" * 88
+        self.write(todo_file([(1, title, 0, "none", "--")]))
+        message = ("plan table for phase 0 wraps raw md (130 > 120 chars); shorten the heading and Deliverable "
+                   "of D00 T01 §1 (title 88 chars)")
+        self.refuses(message)
+        validate, sync = self.cli("validate"), self.cli("plan", "--sync")
+        self.assertEqual(validate, (2, "TODO refused: " + message))
+        self.assertEqual(sync, validate)
+        self.assertFalse((self.root / tg.PLAN).exists())
+
+    def test_a_title_that_fits_the_plan_validates_and_one_more_character_does_not(self):
+        self.write(todo_file([(1, "T" * 78, 0, "none", "--")]))
+        self.assertEqual(self.cli("validate"), (0, ""))
+        self.write(todo_file([(1, "T" * 79, 0, "none", "--")]))
+        self.assertEqual(self.cli("validate")[0], 2)
+        self.write(todo_file([(1, "T" * 70, 0, "none", "--")]))
+        self.assertEqual(self.cli("validate"), (0, ""))
+
+    def test_an_author_path_too_wide_for_its_table_is_refused_by_both_commands_alike(self):
+        path = "todo/04-platform/TODO-01-" + "x" * 80 + ".md"
+        StillToAuthor.authoring(self, {1: [f"- [ ] Author `{path}`: too long a name."]})
+        validate, sync = self.cli("validate"), self.cli("plan", "--sync")
+        self.assertEqual(validate[0], 2)
+        self.assertIn("still-to-author table wraps raw md", validate[1])
+        self.assertIn(path, validate[1])
+        self.assertEqual(sync, validate)
 
 
 class Repository(unittest.TestCase):

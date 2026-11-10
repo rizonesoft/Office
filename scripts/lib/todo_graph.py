@@ -63,6 +63,8 @@ MAX_TABLE_ROW = 120
 # A checklist item that writes a whole TODO file into the tree (D00 T03 §31): `Author` and the file's backticked path.
 AUTHOR_ITEM = re.compile(r"^- \[([ x])\] Author `([^`\n]+)`", re.M)
 AUTHOR_PATH = re.compile(r"todo/\d{2}-[a-z0-9-]+/TODO-\d{2}-[a-z0-9-]+\.md")
+# A checklist item as the graph and the plan count it: its box and its text.
+CHECKLIST = re.compile(r"^- \[([ x])\] (.+)$", re.M)
 
 
 class Refused(ValueError):
@@ -669,6 +671,7 @@ def graph(root=ROOT):
                 visited.add(ref)
     # After the cycle check: author_items walks the plan order, which needs an acyclic, resolved graph.
     _author_items_ok(root, sections)
+    _plan_tables_ok(root, sections)
     return sections
 
 
@@ -792,6 +795,44 @@ def plan_config(root=ROOT):
     return {"title": title.strip(), "acceptance": acceptance.strip() if acceptance else None, "phases": names}
 
 
+def phase_table(phase, phase_rows):
+    """One phase's plan table, refused when a row would pass MAX_TABLE_ROW. `graph()` (so `validate`) and
+    `projection()` both build it here, so validate refuses exactly what plan --sync cannot render (D00 T03 §32)."""
+    table = markdown_table(
+        ["Status", "Reference", "Deliverable", "Needs", "Items"],
+        [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
+          ", ".join(row.needs) or "none", str(len(CHECKLIST.findall(row.body)))] for row in phase_rows],
+    )
+    # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
+    widest = max(phase_rows, key=lambda row: len(row.title) + len(", ".join(row.needs)))
+    require(all(len(line) <= MAX_TABLE_ROW for line in table),
+            f"plan table for phase {phase} wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} "
+            f"chars); shorten the heading and Deliverable of {widest.ref} (title {len(widest.title)} chars)")
+    return table
+
+
+def author_table(missing):
+    """The `### Still to author` table (D00 T03 §31), refused like a phase table (D00 T03 §32)."""
+    table = markdown_table(["File", "Authored by", "Status"],
+                           [[f"`{item['path']}`", item["ref"], f"[{'x' if item['done'] else ' '}]"]
+                            for item in missing])
+    widest = max(missing, key=lambda item: len(item["path"]))
+    require(all(len(line) <= MAX_TABLE_ROW for line in table),
+            f"still-to-author table wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} chars); "
+            f"shorten the file name {widest['path']} (named by {widest['ref']})")
+    return table
+
+
+def _plan_tables_ok(root, rows):
+    """Build every table the plan renders, so a tree validate accepts always syncs (D00 T03 §32)."""
+    plan_rows = ordered(rows)
+    for phase in sorted({row.phase for row in plan_rows}):
+        phase_table(phase, [row for row in plan_rows if row.phase == phase])
+    missing = to_author(root, rows)
+    if missing:
+        author_table(missing)
+
+
 def projection(root=ROOT):
     all_rows = graph(root)
     rows = ordered(all_rows)
@@ -807,38 +848,21 @@ def projection(root=ROOT):
               "`process-phase` and `process-todo-section` skills; "
               "`python scripts/todo-graph.py query ready` lists what can run now. Pasting a whole "
               "row from a table below into `process todo section:` is a complete instruction.", ""]
-    checks = {row.ref: re.findall(r"^- \[([ x])\] (.+)$", row.body, re.M) for row in rows}
+    checks = {row.ref: CHECKLIST.findall(row.body) for row in rows}
     for phase in sorted({row.phase for row in rows}):
         phase_rows = [row for row in rows if row.phase == phase]
         item_count = sum(len(checks[row.ref]) for row in phase_rows)
         name = config["phases"].get(phase)
         title = f"Phase {phase}: {name}" if name else f"Phase {phase}"
         lines += [f"### {title}", "", f"Sections: {len(phase_rows)} | Checklist items: {item_count}", ""]
-        table = markdown_table(
-            ["Status", "Reference", "Deliverable", "Needs", "Items"],
-            [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
-              ", ".join(row.needs) or "none", str(len(checks[row.ref]))] for row in phase_rows],
-        )
-        # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
-        widest = max(phase_rows, key=lambda row: len(row.title) + len(", ".join(row.needs)))
-        require(all(len(line) <= MAX_TABLE_ROW for line in table),
-                f"plan table for phase {phase} wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} "
-                f"chars); shorten the heading and Deliverable of {widest.ref} (title {len(widest.title)} chars)")
-        lines += table
+        lines += phase_table(phase, phase_rows)
         lines.append("")
     missing = to_author(root, all_rows)
     if missing:
         lines += ["### Still to author", "",
                   "These TODO files do not exist yet, so their sections and checklist items are not in the totals "
                   "above or below; each is written into the tree by the section beside it.", ""]
-        table = markdown_table(["File", "Authored by", "Status"],
-                               [[f"`{item['path']}`", item["ref"], f"[{'x' if item['done'] else ' '}]"]
-                                for item in missing])
-        widest = max(missing, key=lambda item: len(item["path"]))
-        require(all(len(line) <= MAX_TABLE_ROW for line in table),
-                f"still-to-author table wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} chars); "
-                f"shorten the file name {widest['path']} (named by {widest['ref']})")
-        lines += table
+        lines += author_table(missing)
         lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)

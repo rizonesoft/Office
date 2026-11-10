@@ -955,11 +955,11 @@ Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` a
 
 1. Move the row-width measurement into one function both commands call. Done when: `validate` and `plan --sync` refuse the same fixture with the same message.
 
-- [ ] Extract the phase table's width check from `projection()` in `scripts/lib/todo_graph.py` into a function that takes a phase's rows and raises the existing refusal. Done when: `projection()` calls it and the existing plan tests still pass.
-- [ ] Call that function for every phase from `validate`. Done when: a test in `scripts/tests/test_todo_graph.py` with a title of legal length (at most 88 characters) that makes its phase's plan row longer than `MAX_TABLE_ROW` shows `validate` exiting 2 with the message that names the section. Cheaper substitute: lowering the title limit for every section, which refuses titles that fit.
-- [ ] Assert in the same test that `plan --sync` refuses the fixture with the same message. Done when: both messages are compared for equality.
-- [ ] Run the `### Still to author` table's width check (D00 T03 §31) from `validate` through the same kind of shared function. Done when: a test in `scripts/tests/test_todo_graph.py` with an `Author` path that makes that table's row longer than `MAX_TABLE_ROW` shows `validate` and `plan --sync` refusing it with the same message, which names the path.
-- [ ] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
+- [x] Extract the phase table's width check from `projection()` in `scripts/lib/todo_graph.py` into a function that takes a phase's rows and raises the existing refusal. Done when: `projection()` calls it and the existing plan tests still pass.
+- [x] Call that function for every phase from `validate`. Done when: a test in `scripts/tests/test_todo_graph.py` with a title of legal length (at most 88 characters) that makes its phase's plan row longer than `MAX_TABLE_ROW` shows `validate` exiting 2 with the message that names the section. Cheaper substitute: lowering the title limit for every section, which refuses titles that fit.
+- [x] Assert in the same test that `plan --sync` refuses the fixture with the same message. Done when: both messages are compared for equality.
+- [x] Run the `### Still to author` table's width check (D00 T03 §31) from `validate` through the same kind of shared function. Done when: a test in `scripts/tests/test_todo_graph.py` with an `Author` path that makes that table's row longer than `MAX_TABLE_ROW` shows `validate` and `plan --sync` refusing it with the same message, which names the path.
+- [x] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
 - [ ] Commit: `todo: validate refuses a title the plan cannot render`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new test among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
