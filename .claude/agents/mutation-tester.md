@@ -14,7 +14,7 @@ Never mutate the live working tree: it holds the main loop's uncommitted candida
 **Set up once.**
 
 1. Record the `sha256sum` of every target file in the live tree.
-2. `git worktree add --detach <scratch>/mt-wt HEAD` (scratch is the folder the task names, or the one `OFFICE_SCRATCH` names; never inside the repository), then bring the candidate across: `git diff HEAD --binary` applied with `git -C <scratch>/mt-wt apply`, and the untracked, non-ignored files (`git ls-files --others --exclude-standard`) copied in with their paths.
+2. Make a scratch clone, never a worktree (AGENTS.md: a second copy of the tree is a separate clone under the scratch folder, and `git worktree list` shows `main` only): `git clone --quiet --no-hardlinks <live checkout> <scratch>/mt-clone` (scratch is the folder the task names, or the one `OFFICE_SCRATCH` names; never inside the repository; a clone left there by an earlier run is deleted first), then `git -C <scratch>/mt-clone checkout --quiet --detach <live HEAD sha>`, then bring the candidate across: `git diff HEAD --binary` applied with `git -C <scratch>/mt-clone apply`, and the untracked, non-ignored files (`git ls-files --others --exclude-standard`) copied in with their paths.
 3. The copy needs nothing ignored: the tooling imports only tracked files and the interpreter's installed packages. Never copy `build/` (it holds the live campaign guard and CI state) and never install anything; if the command needs something else, report that as a typed blocker and stop. Run every Python command in the copy with `python -B` (or `PYTHONDONTWRITEBYTECODE=1`): a mutation that keeps the file's size and timestamp can otherwise be masked by stale bytecode in `__pycache__`, which reports a killed mutation as survived.
 4. Resolve every target with `realpath`: it must lie inside the copy and not pass through a symlink. Refuse a target that resolves outside the copy, and report it as NOT APPLIED with that reason, because editing it would edit the live checkout.
 5. Confirm each target file in the copy has the live tree's recorded hash, then run the command unmutated in the copy. A red baseline makes every result meaningless: report it and stop.
@@ -26,11 +26,11 @@ Never mutate the live working tree: it holds the main loop's uncommitted candida
 3. Confirm the file now differs (`cmp`), run the command with a timeout, and capture the failing test names (unittest `FAIL:` and `ERROR:` lines, a checker's own refusal lines, or the exit code when the runner names nothing). A command that outlives its timeout has its whole process tree stopped (`taskkill /T /F /PID <pid>`) and is reported as TIMEOUT, never as killed.
 4. Restore the saved bytes and confirm the hash. If it does not verify, stop and say so first.
 
-**Tear down.** `git worktree remove --force <scratch>/mt-wt`, then confirm the live tree's target hashes are unchanged from step 1 and `git worktree list` is as you found it. A run that dies midway leaves only an abandoned worktree, never a mutated candidate; the main loop removes it by name.
+**Tear down.** Delete `<scratch>/mt-clone` (`rm -rf` on that one path), then confirm the live tree's target hashes are unchanged from step 1 and `git worktree list` still shows only the live checkout. A run that dies midway leaves only an abandoned scratch clone, never a mutated candidate; the next run deletes it by name.
 
 Rules:
 
-- Remove only the worktree you created, with `git worktree remove --force`. Never run `git worktree prune`: it drops other sessions' worktree entries, and the teardown must leave `git worktree list` as you found it.
+- Delete only the scratch clone you created. Never run `git worktree add` or `git worktree prune` against the live checkout: the owner allows no worktrees (AGENTS.md, Working rules), and prune drops other sessions' entries.
 - One mutation at a time. Never combine mutations, and never mutate a test file unless the main loop explicitly names it as the target.
 - Run the command exactly as given, from the copy's root. Afterwards confirm `git -C <live checkout> status --short` is unchanged from before set-up; if it is not, stop and report the difference first.
 - Do not judge adequacy. "Survived" is a fact to report, not a verdict on the test suite.
