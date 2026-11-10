@@ -11,7 +11,7 @@ We are building a better product than Microsoft's, not a clone (owner, 2026-10-2
 - Verify files, routes, schemas, tools, and commands before relying on them. A path someone mentions is a hypothesis until it is on disk.
 - Inspect existing patterns, imports, the package manager, the framework, and the test commands before editing. Do not infer architecture or tool schemas from memory when the repository can answer.
 - Resolve a tool by capability before path. Prefer explicit config, then discovery, then a setup-required state. Store discovered paths only in ignored local config and never hardcode user-specific absolute paths.
-- Prefer global or user-level tool installs. Add repo-scoped wrappers only when they encode project-specific behavior or reproducible commands.
+- Build tools are repo scoped and portable (owner, 2026-11-10): CMake, Ninja, sccache, vcpkg and the LLVM tools are fetched at pinned versions and hashes into an ignored folder inside the clone by the bootstrap the build foundation creates (D03 T01 §17), and used from there, never from a machine install or `PATH`. Visual Studio's MSVC toolset and the Windows SDK cannot be carried and stay host prerequisites. Other tools (Python, Git, `gh`, the agent CLIs) are user-level installs; add repo-scoped wrappers where they encode project-specific behavior or reproducible commands.
 - Real data only. Demo or seed data stays behind an explicit demo mode and is labeled as such.
 - Develop straight on `main` (owner, 2026-11-10): no feature branches and no pull requests for our own work; commit to `main` and push. The only branches are the ones tooling makes (`pins/*` proposals, Dependabot, short-lived CI proof branches).
 - Run the relevant typecheck, lint, and tests after a change.
@@ -45,7 +45,7 @@ We are building a better product than Microsoft's, not a clone (owner, 2026-10-2
 ## Code intelligence
 
 - Claude Code loads two language servers through the plugins enabled in `.claude/settings.json`: `pyright-lsp` for the Python tooling (configured by `pyrightconfig.json`, on which `pyright` reports 0 errors today) and `clangd-lsp` for C++. Use the `LSP` tool for definitions, references and call hierarchies before text search, and read the diagnostics it reports after an edit.
-- Each needs its server on `PATH`, installed per user and never into the repository: `uv tool install "pyright[nodejs]"` gives `pyright-langserver`, and `clangd` is the one in Visual Studio's LLVM component (`VC\Tools\Llvm\x64\bin` under the installation `vswhere` reports). A clone installs the plugins once with `claude plugin install pyright-lsp@claude-plugins-official --scope project` and the same for `clangd-lsp`.
+- Each needs its server on `PATH`, installed per user and never into the repository: `uv tool install "pyright[nodejs]"` gives `pyright-langserver`, and `clangd` is, until the tool bootstrap exists (D03 T01 §17), the one in Visual Studio's LLVM component (`VC\Tools\Llvm\x64\bin` under the installation `vswhere` reports); from then on it is the bootstrapped one. A clone installs the plugins once with `claude plugin install pyright-lsp@claude-plugins-official --scope project` and the same for `clangd-lsp`.
 
 ## TODO workflow
 
