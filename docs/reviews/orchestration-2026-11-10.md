@@ -45,3 +45,41 @@ The repository verifier and four launcher tests passed. I exercised permission c
 
 HIGHEST: P1
 OVERALL: needs-attention
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T18:44:26Z
+- Effort: medium
+- Type: adversarial
+- Lines: 28
+- Digest: 142fccd041e4c13f
+
+## adversarial: approve
+
+No bypass found in the exercised cases: undeclared editing, wildcard grants, missing tools, persistent memory, Haiku workers, duplicate fields and quoted keys.
+
+## consistency: needs-attention
+
+1. **[P3] Worker briefs still prohibit requesting a fix.** `.claude/skills/process-todo-section/SKILL.md:70` requires a brief to ask for observations, “never for a verdict or a fix.” During an ordinary implementation handoff, this contradicts line 58’s instruction to give workers implementation packets. Restrict the observations-only rule to readers.
+
+## integration: needs-attention
+
+2. **[P2] The worker acceptance procedure uses the working-tree diff as the worker’s diff.** `.claude/skills/process-todo-section/SKILL.md:58` instructs the orchestrator to read the whole `git diff` and discard a diff containing paths outside the packet. That command excludes untracked files and includes pre-existing tracked edits.
+
+   Two normal scenarios break this procedure:
+   - A worker creates a new source file or test. Its contents never appear in the prescribed review command, defeating the requirement to review every worker change.
+   - The orchestrator ticks a completed checklist item as line 129 requires, then delegates the next source-only packet. The pending `todo/` edit appears outside that packet, so the procedure rejects valid work and directs discarding changes the worker did not make.
+
+   Record the pre-packet state, review new files explicitly, and distinguish worker changes from existing edits before rejecting or reverting anything.
+
+## source-defect: approve
+
+No additional finding against scope decisions 27 and 28.
+
+## record: advisory
+
+The repository verifier and all four launcher tests passed. Permission probes ran in memory. The filesystem-writing verifier suite and a live campaign launch were not run under this read-only review. No files were modified.
+
+HIGHEST: P2
+OVERALL: needs-attention
