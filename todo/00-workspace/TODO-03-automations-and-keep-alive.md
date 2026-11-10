@@ -57,7 +57,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 22 | §22 | CI reconciliation past limits | §20 | [x] |
 | 23 | §23 | CI reconciliation after deleted runs | §22 | [x] |
 | 24 | §24 | Resumable newest-page refresh | §23 | [x] |
-| 25 | §25 | Host lock baseline across policy writes | §12 | [ ] |
+| 25 | §25 | Host lock baseline across policy writes | §12 | [x] |
 | 26 | §26 | Host check names every file it writes | §25 | [ ] |
 | 27 | §27 | Review prompt builder | -- | [ ] |
 
@@ -743,9 +743,12 @@ Filed 2026-11-10 from a readiness failure on this PC: `python scripts/check-camp
 - [x] Accept in `check_screen_lock` a key written since boot when `InactivityTimeoutSecs` is absent now and the baseline's `boot` is this boot's id, reporting `ok` with "no inactivity limit at this boot (recorded <UTC>) and none stored now". Done when: tests show a same-boot baseline passes, and no baseline, another boot's baseline and an unreadable baseline each fail with the restart fix as before. Cheaper substitute: dropping the written-since-boot check, which passes a limit removed after boot that may still be in force.
 - [x] Keep the limit-stored branch of `check_screen_lock` unchanged whatever the baseline says. Done when: a test with a same-boot baseline and `InactivityTimeoutSecs` set still fails with the remove-and-restart fix.
 - [x] State the baseline rule in the docstring of `check_screen_lock` and in the Host readiness paragraph of `.claude/skills/process-plan/SKILL.md` (one sentence: a policy-key write no longer parks a boot that has already passed). Done when: both name `build/host-lock-baseline.json`, and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
-- [ ] Commit: `automations: keep a per-boot lock baseline for the host check`
+- [x] Commit: `automations: keep a per-boot lock baseline for the host check`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, `python scripts/check-campaign-host.py` prints `ok    screen lock` on this host, and `build/host-lock-baseline.json` names this boot.
+
+> **Verified:** 2026-11-10 | §25 | 88f88a9751d44cecc895d6d39f46136ad6df5855
+> **Review:** `docs/reviews/d00-t03-s25.json`
 
 ## 26. Host Check Names Every File It Writes
 

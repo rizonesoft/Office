@@ -1,0 +1,26 @@
+{
+  "ref": "D00 T03 \u00a725",
+  "title": "Host Lock Baseline Across Policy Writes",
+  "implementation_sha": "88f88a9751d44cecc895d6d39f46136ad6df5855",
+  "date": "2026-11-10",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s25.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s25.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_campaign_host.py\" -> Ran 121 tests, OK",
+    "python scripts/check-campaign-host.py -> ok    screen lock: no screen saver lock; no inactivity limit at this boot (recorded 2026-11-10T16:17:18Z) and none stored now; ready: every check passed"
+  ],
+  "rounds_spent": 2,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s25-completion.md",
+  "completion_rules": 2
+}
