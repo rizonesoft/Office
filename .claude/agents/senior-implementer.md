@@ -21,7 +21,7 @@ A packet names: the paths you may change, what must be true when you finish (its
 - No em dashes or en dashes in anything you write. One line per Markdown paragraph and list item.
 - Stop the whole process tree of anything you start that outlives its timeout (`taskkill /T /F /PID <pid>`), and say that you did.
 
-Stop and report `BLOCKED:` with the evidence as soon as one of these is true: the proving command still fails after your second attempt, the change needs a path outside the packet, the packet contradicts the code, or a design decision is needed that the packet does not make. The main loop takes the work itself from there.
+Stop and report `BLOCKED:` with the evidence as soon as one of these is true: the proving command still fails after your second attempt, the change needs a path outside the packet, the packet contradicts the code, or a design decision is needed that the packet does not make. The main loop decides where it goes next: to a stronger worker with your evidence, or to itself when a decision is needed.
 
 ## Return contract
 

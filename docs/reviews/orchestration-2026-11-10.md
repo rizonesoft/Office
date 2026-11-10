@@ -139,3 +139,35 @@ The repository verifier, four launcher tests and 116 in-memory tool and effort p
 
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T18:53:08Z
+- Effort: medium
+- Type: adversarial
+- Lines: 22
+- Digest: 14f69ac7c1b8e391
+
+## adversarial: approve
+
+No concrete bypass found in the exercised tool, memory, Haiku and effort checks.
+
+## consistency: needs-attention
+
+1. **[P3] Escalation instructions still skip the principal worker.** `.claude/agents/senior-implementer.md:24` tells the main loop to take over after any blocker, including a second failed proving command. `CLAUDE.md:7` and `scripts/start-campaign.ps1:77` likewise route directly from Opus to the main loop. Reproduce through an ordinary senior-worker failure with no unresolved design decision: these instructions contradict `.claude/skills/process-todo-section/SKILL.md:71`, which requires escalation to `principal-implementer`. Update all routing instructions to the same ladder.
+
+## integration: approve
+
+No additional concrete finding.
+
+## source-defect: needs-attention
+
+2. **[P3] The added worker is not reconciled with the governing measurement requirement.** `docs/specs/2026-10-23-campaign-scope-design.md:86` requires the three-section comparison before adding more workers. `.claude/agents/principal-implementer.md:1` adds another worker, but the repository contains no corresponding comparison record or explicit exception to decision 28. The ordinary trigger is adopting this candidate and routing a blocked Opus packet to the new worker. Record the superseding decision or supply the required evidence; the governing documents currently disagree about whether this extension is ready.
+
+## record: advisory
+
+The repository verifier, four launcher tests, 79 in-memory assertions and diff whitespace check passed. The filesystem-writing verifier suite and live campaign were not run under this read-only review. No files were modified.
+
+HIGHEST: P3
+OVERALL: needs-attention
