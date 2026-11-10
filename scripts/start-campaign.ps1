@@ -116,14 +116,20 @@ $Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
 # is recorded at the same moment, so Stop can end it during the checks below as well as during a session. A record
 # left behind by an exit is harmless: Stop matches the start time as well as the process number.
 if (-not $DryRun) {
-    # One launcher at a time: a second start never takes the record from a launcher that is still running, or the
-    # Stop shortcut would lose the one it must end. Nothing of the running launcher is touched.
-    $other = Get-LiveLauncher
-    if ($other -and $other.Id -ne $PID) {
-        Write-Host "Not started: a campaign launcher is already running (process $($other.Id)). Use the Stop shortcut first, or close its window." -ForegroundColor Red
+    # One launcher at a time, decided by the operating system and not by a check followed by a write: this launcher
+    # opens the lock file for itself alone and keeps it open until it exits, so of two starts at the same moment
+    # exactly one gets it, and Windows releases it when the process ends however it ends. The loser touches nothing
+    # of the winner: not its record and not the stop request.
+    New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+    try {
+        $script:launcherLock = [System.IO.File]::Open((Join-Path $root 'build/campaign-launcher.lock'),
+            [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+    } catch [System.IO.IOException] {
+        $other = Get-LiveLauncher
+        $which = if ($other) { " (process $($other.Id))" } else { '' }
+        Write-Host "Not started: a campaign launcher is already running$which. Use the Stop shortcut first, or close its window." -ForegroundColor Red
         exit 3
     }
-    New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
     Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
     $self = Get-Process -Id $PID
     Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)

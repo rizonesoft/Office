@@ -258,6 +258,28 @@ class LauncherRunTest(unittest.TestCase):
         self.assertIn("Stopped now", stop.stdout, stop.stderr)
         first.communicate(timeout=60)
 
+    def test_two_starts_at_the_same_moment_admit_exactly_one(self):
+        # Both are still in the host check when the other starts, so neither has launched a session yet.
+        self.host_check.write_text("import sys, time\ntime.sleep(5)\nsys.exit(0)\n", encoding="utf-8")
+        launchers = [self.launch("-RestartSeconds", "60") for _ in range(4)]
+        self.wait_for(self.root / "claude-calls.txt", seconds=120)
+        refused = []
+        for launcher in launchers:
+            try:
+                output, _ = launcher.communicate(timeout=60)
+                refused.append((launcher.returncode, output))
+            except subprocess.TimeoutExpired:
+                pass  # the one that was admitted is still running
+        self.assertEqual([code for code, _ in refused], [3, 3, 3], refused)
+        for _, output in refused:
+            self.assertIn("already running", output)
+        self.assertEqual(len(self.calls()), 1)
+        admitted = [launcher for launcher in launchers if launcher.poll() is None]
+        self.assertEqual(len(admitted), 1)
+        record = json.loads((self.root / "build" / "campaign-launcher.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["pid"], admitted[0].pid)  # Stop reaches the one that is running
+        self.request_stop()
+
     def test_a_stop_that_cannot_end_the_launcher_says_so_and_exits_1(self):
         first = self.launch("-RestartSeconds", "60")
         self.wait_for(self.root / "claude-calls.txt")

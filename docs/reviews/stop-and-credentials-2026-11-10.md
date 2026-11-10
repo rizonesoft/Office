@@ -69,3 +69,33 @@ Verification comprised source inspection, two in-memory probes and four passing 
 
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T19:46:27Z
+- Effort: medium
+- Type: adversarial
+- Lines: 20
+- Digest: a7a41b5b958ad2db
+
+### adversarial: needs-attention
+
+1. **[P2] Launcher registration is still not exclusive.** `scripts/start-campaign.ps1:121` checks for another launcher separately from writing its record at line 129. Two overlapping starts can both observe no record, both pass the check, and then overwrite each other’s registration. This requires only two near-simultaneous starts, such as opening the shortcut twice.
+
+   Reproduce with this interleaving: A passes line 121; B passes line 121; A writes its record; B overwrites it. Both continue startup, but `-Stop -Now` can identify and terminate only B. A remains alive, potentially running a session, despite the immediate-stop success message. The later campaign guard cannot repair the lost launcher identity. Protect the ownership check and registration with an atomic, clone-specific lock.
+
+### consistency: approve
+
+### integration: needs-attention
+
+Finding **1 [P2]** breaks the start/stop contract: two admitted launchers share a record capable of identifying only one. The test at `scripts/tests/test_start_campaign.py:244` starts B only after A has launched Claude, so it does not exercise overlapping registration.
+
+### source-defect: approve
+
+### record: advisory
+
+Verification comprised source and diff inspection, caller tracing, and four passing read-only launcher tests. The filesystem-writing suites and live process-tree termination tests were not run under this read-only review. No files changed.
+
+HIGHEST: P2
+OVERALL: needs-attention
