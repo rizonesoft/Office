@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 32 | Checklist items: 210
+Sections: 32 | Checklist items: 212
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -42,7 +42,7 @@ Sections: 32 | Checklist items: 210
 | [x]    | D00 T03 §23 | CI Reconciliation After Deleted Runs     | none                   | 6     |
 | [x]    | D00 T03 §24 | Resumable Newest-Page Refresh            | none                   | 4     |
 | [x]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes  | windows-host           | 10    |
-| [ ]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 3     |
+| [ ]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
 | [ ]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 7     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -186,4 +186,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 58/129 verified sections, 16 ready to run now.
 
-Checklist: 362/819 items completed (includes Commit items).
+Checklist: 362/821 items completed (includes Commit items).
