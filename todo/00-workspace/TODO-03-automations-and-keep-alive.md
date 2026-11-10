@@ -59,6 +59,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 24 | §24 | Resumable newest-page refresh | §23 | [x] |
 | 25 | §25 | Host lock baseline across policy writes | §12 | [ ] |
 | 26 | §26 | Host check names every file it writes | §25 | [ ] |
+| 27 | §27 | Review prompt builder | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -764,6 +765,30 @@ Filed 2026-11-10 from §25's completion review (round 2, finding 1, `docs/review
 - [ ] Commit: `automations: name every file the host check writes`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, and `python -c "import pathlib; t = pathlib.Path('scripts/check-campaign-host.py').read_text(encoding='utf-8'); print(all(n in t.split('import argparse')[0] for n in ('build/host-lock-baseline.json', 'build/host-lock-baseline.lock', '.tmp')))"` prints `True`.
+
+## 27. Review Prompt Builder
+
+Filed 2026-11-10 from the campaign run of that day (`docs/phase-runs/2026-11-10-phase-0.md`, Gap audit): every section needs two prompts, the completion review's (`docs/completion-review-prompt.md`, §13) and each code review round's (`docs/review-round-prompt.md`), and both are filled in by hand in a scratch file: the section text copied in, the `contract-digest` line pasted, the commit range written out, the diff inlined because the reviewer's sandbox cannot run git. The steps are mechanical and each has already gone wrong once (an argument order that gave an empty diff, `docs/phase-runs/2026-10-23-phase-0.md`, the 2026-10-23T20:10Z entry). The owner's instruction of 2026-11-10 is that the mechanics must be followed perfectly by a weaker executor, so the filling becomes one command per prompt that refuses what a hand would get wrong.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Build the completion prompt from a section reference. Done when: `python scripts/review-prompt.py completion '<ref>'` writes a prompt whose Contract line equals `contract-digest`'s output for that section.
+2. Build a round prompt from a section reference and a commit range. Done when: `python scripts/review-prompt.py round '<ref>' <base> <tip>` writes a prompt holding both full SHAs, the section contract and the diff.
+3. Point the skills at the two commands. Done when: `process-todo-section` step 3a and `review-todo-section` step 3 name them in place of the hand-filled scratch file.
+
+- [ ] Add `scripts/review-prompt.py` with the subcommand `completion <ref> --purpose <text> [--context <file>] --out <path>`: it reads the template below the `---` line of `docs/completion-review-prompt.md`, fills the reference and title, the section text from its heading to its Test checkpoint, the `Contract:` line from `todo_graph`'s contract digest, the purpose, the file's Implementation Order table and the optional context file, and writes `--out` through a temporary file then `os.replace`. Done when: a test on a fixture tree shows the written prompt contains the section text and the same digest `contract-digest` prints, and no `<` placeholder of the template remains. Cheaper substitute: leaving a placeholder unfilled, which the reviewer reads as an instruction.
+- [ ] Add the subcommand `round <ref> <base> <tip> --purpose <text> --governing <text> [--note <file>] --out <path>` to `scripts/review-prompt.py`: it resolves both commits to full SHAs, inlines `git diff <base>..<tip>` and the section as `resolve` prints it, and fills `docs/review-round-prompt.md` below its `---` line. Done when: a test on a fixture repository shows both 40-character SHAs, the diff and the section in the prompt. Cheaper substitute: naming the range without the diff, which a reviewer whose sandbox cannot run git cannot read.
+- [ ] Refuse, with exit 2 and a one-line reason on standard error, in `scripts/review-prompt.py`: a reference `todo_graph` does not resolve; a commit git does not know; a range whose diff is empty (the reversed-argument mistake); a `--out` path inside the repository (prompts are scratch files); and a template that lacks a placeholder the command fills (the template changed). Done when: one test per refusal shows exit 2, the reason, and that `--out` was not written.
+- [ ] Keep the diff bounded in `scripts/review-prompt.py`: when the inlined diff is over `MAX_DIFF_BYTES` (400,000), write the prompt with the diff of the `--path` arguments given, or refuse with exit 2 naming the size and the `--path` option when none is given. Done when: a test with a small limit shows the refusal and the `--path` form passing. Cheaper substitute: truncating the diff silently, which hides the code under review.
+- [ ] Replace the hand-filling instructions in `.claude/skills/process-todo-section/SKILL.md` (step 3a.2) and `.claude/skills/review-todo-section/SKILL.md` (step 3) with the exact command for each prompt, its arguments in order, and what each exit code means (0 written, 2 refused with the reason). Done when: both skills name `scripts/review-prompt.py` and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
+- [ ] Add `scripts/tests/test_review_prompt.py` covering the items above, with fixture trees under a temporary folder and no reviewer run. Done when: `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes and `python scripts/check-spdx.py` accepts the two new files.
+- [ ] Commit: `review: build the completion and round prompts with one command each`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §27' HEAD HEAD --purpose x --governing y --out <scratch>\p.md` exits 2 with "empty diff".
 
 ## Verification
 
