@@ -119,13 +119,21 @@ class Completion(Base):
         self.assertIn("SPEC chapter 3, inlined: the ribbon has four tabs.", self.out.read_text(encoding="utf-8"))
 
     def test_surface_and_implements_lines_need_context_too(self):
-        for line, why in (("**Surface:** yes", "Surface"), ("> **Implements:** INV-1", "Implements")):
+        # Review round 3: every spelling the TODO parser accepts counts, read with that parser (`todo_graph.field`).
+        for line, why in (("**Surface:** yes", "Surface"), ("**Surface:**  yes", "Surface"),
+                          ("> **Surface:** yes", "Surface"), ("**Surface:**\tyes ", "Surface"),
+                          ("> **Implements:** INV-1", "Implements"), ("**Implements:** INV-1", "Implements")):
             with self.subTest(line=line):
-                rows = {"D00 T01 §1": mock.Mock(body=f"Context.\n\n{line}\n", number=1, title="T", path="x")}
-                with mock.patch.object(review_prompt, "section_row", return_value=("D00 T01 §1", rows["D00 T01 §1"])):
+                body = f"Context.\n\n**Phase:** 0\n{line}\n"
+                self.assertEqual(tg.field(body, "Surface", False) == "yes", why == "Surface")
+                row = mock.Mock(body=body, number=1, title="T", path="x")
+                with mock.patch.object(review_prompt, "section_row", return_value=("D00 T01 §1", row)):
                     err = self.refused("completion", "D00 T01 §1", "--purpose", "p", "--no-context", "none",
                                        "--out", self.out, reason="needs --context")
                 self.assertIn(why, err)
+        for line in ("**Surface:** no", "> **Surface:** no", "The word Surface: yes in prose."):
+            with self.subTest(line=line):
+                self.assertIsNone(review_prompt.needs_context(f"Context.\n\n{line}\n"))
 
     def test_an_output_that_cannot_be_replaced_is_a_refusal_not_a_crash(self):
         # Review round 1: a prompt left open in an editor makes the replace fail on Windows.

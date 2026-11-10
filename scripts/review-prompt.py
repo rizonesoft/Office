@@ -82,11 +82,19 @@ PLACEHOLDERS = {
         "<the spec, plan or design file that applies>",
     ),
 }
-NEEDS_CONTEXT = (
-    (re.compile(r"^\*\*Surface:\*\* yes\s*$", re.M), "it says `**Surface:** yes`"),
-    (re.compile(r"^> \*\*Implements:\*\*", re.M), "it has an `> **Implements:**` line"),
-    (re.compile(r"design/SPEC\.md"), "it names `design/SPEC.md`"),
-)
+
+
+def needs_context(body):
+    """Why a section's completion review needs a context file, or None when it does not. The Surface field is read
+    by `todo_graph.field`, the parser the TODO tree itself is validated with, so every spelling the tree accepts
+    (`**Surface:**  yes`, `> **Surface:** yes`) counts here too; an Implements line is matched with the same prefix."""
+    if todo_graph.field(body, "Surface", required=False) == "yes":
+        return "it says `**Surface:** yes`"
+    if re.search(r"^(?:> )?\*\*Implements:\*\*", body, re.M):
+        return "it has an `**Implements:**` line"
+    if "design/SPEC.md" in body:
+        return "it names `design/SPEC.md`"
+    return None
 
 
 class Refused(Exception):
@@ -198,10 +206,10 @@ def completion(root, args):
     if (args.context is None) == (args.no_context is None):
         raise Refused("give exactly one of --context <file> and --no-context <reason>")
     if args.no_context is not None:
-        for pattern, why in NEEDS_CONTEXT:
-            if pattern.search(row.body):
-                raise Refused(f"{ref} needs --context, not --no-context: {why}, so the SPEC and inventory excerpts it "
-                              "cites must be inlined in a context file")
+        why = needs_context(row.body)
+        if why:
+            raise Refused(f"{ref} needs --context, not --no-context: {why}, so the SPEC and inventory excerpts it "
+                          "cites must be inlined in a context file")
         context = "No further context: " + one_line(args.no_context, "--no-context")
         excerpts = "none: " + one_line(args.no_context, "--no-context")
     else:
