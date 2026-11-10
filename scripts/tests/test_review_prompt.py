@@ -171,6 +171,26 @@ class Completion(Base):
         self.assertIn("A body may hold `<x>`, `<one or two sentences>` and ```` fences.", prompt)
         self.assertIn("\n`````markdown\n## 3. Angles", prompt)  # a fence longer than the one in the body
 
+    def test_an_empty_context_file_is_refused(self):
+        for text in ("", " \n\t\n"):
+            with self.subTest(text=repr(text)):
+                context = self.scratch / "context.md"
+                context.write_text(text, encoding="utf-8")
+                self.refused("completion", "D00 T01 §2", "--purpose", "p", "--context", context, "--out", self.out,
+                             reason=f"--context {context} is empty")
+
+    def test_a_blank_completion_purpose_is_refused(self):
+        for text in ("", "   "):
+            with self.subTest(text=repr(text)):
+                self.refused("completion", "D00 T01 §1", "--purpose", text, "--no-context", "tooling",
+                             "--out", self.out, reason="--purpose is empty")
+
+    def test_a_blank_no_context_is_refused(self):
+        for text in ("", "  \t "):
+            with self.subTest(text=repr(text)):
+                self.refused("completion", "D00 T01 §1", "--purpose", "p", "--no-context", text,
+                             "--out", self.out, reason="--no-context is empty")
+
 
 class Templates(Base):
     def test_the_real_templates_are_accepted(self):
@@ -277,6 +297,36 @@ class Round(Base):
         note.write_text("This is round 2.\n", encoding="utf-16")
         err = self.refused(*self.args(self.first, self.third, "--note", note), reason="is not UTF-8 text")
         self.assertIn("--note", err)
+
+    def test_a_commit_and_its_revert_is_refused(self):
+        self.commit({"tool.py": "print(4)\n"}, "change")
+        reverted = self.commit({"tool.py": "print(3)\n"}, "revert")
+        self.refused(*self.args(self.third, reverted), reason="changes no file")
+
+    def test_a_path_that_selects_no_changed_file_is_refused(self):
+        err = self.refused(*self.args(self.first, self.third, "--path", "tol.py"),
+                           reason="--path selects no changed file")
+        self.assertIn("tool.py", err)
+        self.assertIn("test_tool.py", err)
+
+    def test_an_empty_note_file_is_refused(self):
+        for text in ("", "\n  \n"):
+            with self.subTest(text=repr(text)):
+                note = self.scratch / "note.md"
+                note.write_text(text, encoding="utf-8")
+                self.refused(*self.args(self.first, self.third, "--note", note), reason=f"--note {note} is empty")
+
+    def test_a_blank_round_purpose_is_refused(self):
+        for text in ("", "   "):
+            with self.subTest(text=repr(text)):
+                self.refused("round", "D00 T01 §1", self.first, self.third, "--purpose", text, "--governing", "g",
+                             "--out", self.out, reason="--purpose is empty")
+
+    def test_a_blank_governing_is_refused(self):
+        for text in ("", "   "):
+            with self.subTest(text=repr(text)):
+                self.refused("round", "D00 T01 §1", self.first, self.third, "--purpose", "p", "--governing", text,
+                             "--out", self.out, reason="--governing is empty")
 
     def test_a_reversed_range_is_refused(self):
         self.refused(*self.args(self.third, self.first), reason="the range is reversed")
