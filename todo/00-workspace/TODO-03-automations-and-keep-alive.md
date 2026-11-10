@@ -814,6 +814,8 @@ Filed 2026-11-10 from the campaign run of that day (`docs/phase-runs/2026-11-10-
 
 ## 28. Host Check Scratch Leftover Rule
 
+> **Started:** 2026-11-10T17:08:00Z
+
 Filed 2026-11-10 from §26's completion review (round 2, finding 1, `docs/reviews/00-workspace/D00-T03-s26-completion.md`): the "Files written" block §26 puts in the module docstring of `scripts/check-campaign-host.py` says the notice file is "removed when the send ends" and explains a leftover only for the baseline's temporary file and, in part, for the probe folder. All three temporary entries share the same two exceptions: a check that is killed before its cleanup runs, and a removal the system refuses (`ignore_cleanup_errors=True` in `Host.run` and `Host.notify`, the suppressed `OSError` in `Host.record_lock_baseline`). Stating the exceptions entry by entry is how one was missed, so this section states the rule once, for every temporary entry, and keeps the per-entry lines to the normal lifetime. -> XREF: §26
 
 **Phase:** 0
