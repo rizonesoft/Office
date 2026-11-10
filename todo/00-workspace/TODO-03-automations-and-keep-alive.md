@@ -857,6 +857,8 @@ Filed 2026-11-10 from §26's completion review (round 2, finding 1, `docs/review
 
 ## 29. Review Prompt Empty-Input Refusals
 
+> **Started:** 2026-11-10T22:21:45Z
+
 Filed 2026-11-10 from §27's completion review (round 2, findings 1 and 4, `docs/reviews/00-workspace/D00-T03-s27-completion.md`): §27 refuses a range whose base and tip are one commit or run backwards, but a forward range can still hold nothing to review (a commit followed by its revert leaves identical trees, and a mistyped `--path` selects no file), and a `--context` file can exist and be empty, which hands a surface section to the reviewer with none of its excerpts. An input that is present and empty is refused like one that is missing. -> XREF: §27
 
 **Phase:** 0
