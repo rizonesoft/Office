@@ -29,7 +29,7 @@ Every review answers these with code and behavior evidence, never assertion:
 
 ## Delegation
 
-The Sonnet subagents in `.claude/agents/` gather what the review weighs; they never review. The rules of `process-todo-section`'s Delegation section hold here too (the main loop opens what it relies on, quotes only output it ran or read in full, and does the step itself when an agent fails).
+The reader subagents in `.claude/agents/` gather what the review weighs; no subagent reviews, and a fix found in review is made by the main loop. The rules of `process-todo-section`'s Delegation section hold here too (the main loop opens what it relies on, quotes only output it ran or read in full, and does the step itself when an agent fails).
 
 - **Step 1:** on a candidate of many commits, `git-runner` lists each commit's files and the later changes to the files the section owns.
 - **Step 2:** `code-explorer` maps the callers and consumers of every changed symbol (through the `LSP` tool where a language server is loaded), which is the blast radius question 3 is answered against. `mutation-tester` measures "a test that passes without exercising the behavior": the main loop names the mutations (one per new check, refusal and boundary the section added), and a mutation that survives is a finding to fix before the independent round, not a note.

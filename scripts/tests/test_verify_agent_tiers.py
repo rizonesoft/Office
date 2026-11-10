@@ -151,6 +151,15 @@ class Workers(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("Haiku never writes", result.stderr)
 
+    def test_persistent_memory_is_refused_because_it_enables_edit_tools(self):
+        # Claude Code enables Read, Write and Edit for an agent with memory, whatever its tools list says.
+        for extra in ("memory: project\n", "memory: user\n", "memory: local\n", "memory: project\nwrite_scope: packet\n"):
+            with self.subTest(extra=extra):
+                tools = "Read, Edit" if "write_scope" in extra else "Read, Grep"
+                result = self.verify(tools=tools, extra=extra)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn('declares "memory:"', result.stderr)
+
     def test_an_opus_worker_still_needs_its_rationale(self):
         refused = self.verify(model="opus", tools="Read, Edit", extra="write_scope: packet\n")
         self.assertEqual(refused.returncode, 1, refused.stdout)

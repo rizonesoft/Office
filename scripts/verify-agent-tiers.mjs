@@ -77,6 +77,9 @@ export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
 export const WRITE_SCOPE_FIELD = "write_scope";
 export const WRITE_SCOPE_PACKET = "packet";
 
+/** Claude Code's persistent-memory field. It grants Read, Write and Edit implicitly, so no agent may carry it. */
+export const MEMORY_FIELD = "memory";
+
 /**
  * Read the opening frontmatter as a strict, closed subset of YAML.
  *
@@ -553,6 +556,11 @@ export function toolProblems(fields) {
   const isWorker = scope !== undefined && scope.value === WRITE_SCOPE_PACKET;
   if (scope !== undefined && !isWorker) {
     problems.push(`declares "${WRITE_SCOPE_FIELD}: ${scope.value}"; the only value is "${WRITE_SCOPE_PACKET}"`);
+  }
+  // Claude Code enables Read, Write and Edit for an agent with persistent memory, whatever its `tools:` list says
+  // (review round 1 of docs/reviews/orchestration-2026-11-10.md), and those writes land outside any work packet.
+  if (fields.has(MEMORY_FIELD)) {
+    problems.push(`declares "${MEMORY_FIELD}:", which makes Claude Code enable Write and Edit outside the "tools:" list; no agent here keeps memory`);
   }
   const tools = recordedProse(fields, "tools");
   if (!tools) {
