@@ -42,7 +42,7 @@ The serious findings were read and are real defects: an empty file with a byte o
 
 ## Findings
 
-- Routing packets cost the most and was not the cleanest. Fable spent between 2 and 3 dollars a section coordinating, more than it spent building the same section alone on the two smaller ones.
+- Routing packets cost the most and was not the cleanest. Fable spent 2.26, 2.05 and 2.97 dollars coordinating the three sections; on the smallest that was more than building the section alone (2.05), and on the other two less (2.70 and 3.94), but the workers' cost on top made the routed run dearer than Fable alone on the first and third.
 - Opus alone cost about half of Fable alone or less on every section (51, 44 and 40 percent), and 44 percent in total.
 - Opus's first-pass quality fell as the work got harder: no finding on the small section, one `P1` on the medium one, two `P1` and a `P2` on the new tool. Fable alone had one `P3` in three sections.
 - What the first pass does not show is the cost to reach an approved review. The fix rounds were started on 2026-11-10 for the four results with a `P1` or `P2`; their result is added below when they finish.

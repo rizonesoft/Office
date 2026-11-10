@@ -31,3 +31,37 @@ Verification: four read-only launcher tests passed, the fleet verifier passed, a
 
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T20:21:12Z
+- Effort: medium
+- Type: adversarial
+- Lines: 24
+- Digest: f0dded6e31718007
+
+### adversarial: needs-attention
+
+1. **[P2] Startup cancellation still bypasses lock disposal.** `scripts/start-campaign.ps1:124` acquires the lock, but cleanup protection begins only at line 232. Reproduce through the installed `-NoExit` shortcut with an existing campaign guard: press Ctrl+C at the handover prompt at line 180, leave that window open, then start again. The cancelled script never calls `Remove-OwnRecord`; the retained handle can refuse the next launcher. Protect everything after acquisition with `try/finally`. This finding is source-derived, not live-tested.
+
+### consistency: needs-attention
+
+2. **[P3] The old escalation instruction remains.** `AGENTS.md:54` still sends a packet “one tier up” when its changes leave the allowed paths. An ordinary `section-writer` returning an out-of-scope change therefore encounters contradictory instructions: line 54 retains escalation, while line 52 requires packet correction and retry, then lead takeover. Remove the obsolete route.
+
+### integration: needs-attention
+
+Finding **1 [P2]** affects the installed shortcut. `scripts/tests/test_start_campaign.py:261` exercises `-NoExit` after normal completion, but does not exercise cancellation before the cleanup block begins.
+
+### source-defect: needs-attention
+
+Finding **2 [P3]** retains a routing instruction outside the two Fable cases established by `docs/specs/2026-10-23-campaign-scope-design.md:93`.
+
+### record: needs-attention
+
+3. **[P3] The coordination-cost conclusion contradicts the table.** `docs/reviews/operating-mode-2026-11-10.md:45` says Fable coordination cost more than Fable building alone on both smaller sections. For D00 T03 §29, line 32 reports **$2.05** coordinating, while line 22 reports **$2.70** building alone. Even the entire routed run costs only **$2.31**. The comparison holds for only one smaller section.
+
+Verification: four read-only launcher tests, the fleet verifier and 76 in-memory verifier cases passed. Filesystem-writing and live launcher tests were not run under the read-only restriction. No files changed.
+
+HIGHEST: P2
+OVERALL: needs-attention

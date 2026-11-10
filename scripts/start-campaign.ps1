@@ -134,6 +134,9 @@ if (-not $DryRun) {
     $self = Get-Process -Id $PID
     Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
 }
+# Everything from here to the end runs inside one try, so the record and the lock are given back however the
+# launcher ends: a normal end, an exit, an error in a check below, or Ctrl+C at a prompt. The shortcut's window
+# stays open afterwards (-NoExit), and a lock it still held would refuse the next start.
 function Remove-OwnRecord {
     # Only this launcher's own record is removed, never one another launcher wrote. The lock is released here too,
     # by closing it, and not left to the end of the process: the shortcut keeps its window open (-NoExit) after
@@ -149,6 +152,7 @@ function Exit-Launcher([int]$Code) {
     if (-not $DryRun) { Remove-OwnRecord }
     exit $Code
 }
+try {
 function Test-StopRequested {
     if (-not (Test-Path -LiteralPath $stopFile)) { return $false }
     Write-Host ''
@@ -229,7 +233,6 @@ if ($DryRun) {
 }
 
 $started = [System.Collections.Generic.List[datetime]]::new()
-try {
 while ($true) {
     # Checked immediately before every launch: a stop asked for during the checks above, or during the wait and
     # the host check below, must never be followed by a new session.
