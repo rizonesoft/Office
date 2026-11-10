@@ -80,3 +80,5 @@ Given in session while the repository was being readied for the Claude Code camp
 22. **Main only:** all work is committed straight to `main`; no feature branches or pull requests for our own work.
 23. **Portable build tools:** build tools are repo scoped and portable, fetched at pinned versions and hashes into an ignored folder in the clone (D03 T01 §12 and §17); only Visual Studio's MSVC toolset and the Windows SDK stay host prerequisites.
 24. **No machine paths:** no tool writes a machine's folder layout into its code (`scripts/tests/test_no_hardcoded_paths.py`).
+25. **Agents that err are removed:** a subagent whose reply the main loop proves wrong is deleted from the fleet, and the main loop does that work from then on; quality matters more than delegation (`AGENTS.md`, Subagents).
+26. **The plan shows the whole road:** `todo/implementation-plan.md` lists every TODO file that is still to be authored with the section that authors it (D00 T03 §31), and every section that implements inventoried controls carries their layout (order, type, size, position, key tip) as a generated block and proves it against the built app (D02 T01 §29 and §30, D03 T01 §17).

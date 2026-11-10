@@ -18,6 +18,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 - Isotone's `process-plan` and `process-phase` skills: the guard, Stop hook and heartbeat steps the runners follow.
 - Alert transport: SMTP2GO from `website@rizonetech.com` to `rizonetech@gmail.com`, key read at send time from the Conclave vault item "Rizonetech SMTP2GO (website mail)" through `conclave-op` in WSL (Rizonesoft is a brand of Rizonetech). AGENTS.md: ask the operator once before sending mail.
 - The open phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`), which §6 moves under the guard.
+- -> XREF: T04 §1 -- `tools.lock.json`, the lock file of the portable build tools, joins the pins §11 keeps at the latest stable release
+- -> XREF: D03 T01 §17 -- the authoring sections whose `Author` items §31 lists in the plan as files still to author
 
 ## Outcome
 
@@ -63,6 +65,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 28 | §28 | Host check scratch leftover rule | §26 | [x] |
 | 29 | §29 | Review prompt empty-input refusals | §27 | [ ] |
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
+| 31 | §31 | Plan lists files still to author | -- | [ ] |
+| 32 | §32 | Validate checks plan row width | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -881,6 +885,53 @@ Filed 2026-11-10 from §27's completion review (round 2, findings 2 and 3, `docs
 - [ ] Commit: `review: deliver every candidate's diff whole, by file when it is large`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §30' HEAD~1 HEAD --path x --purpose x --governing y --out <scratch>\p.md` exits 2 with an argparse error naming `--path`.
+
+## 31. Plan Lists Files Still to Author
+
+Filed 2026-11-10 (owner: "the todo plan file is not complete"). `todo/implementation-plan.md` lists only sections that exist. The whole product (the shared platform, the engines, the six apps, interoperability, VBA and release) is written into the tree later by the authoring sections D03 T01 §17 to §27, whose checklist items each begin with `Author` and a backticked `todo/<domain>/TODO-NN-<name>.md` path: 83 files on 2026-11-10, none of which the plan shows. A reader sees 132 sections and cannot tell that most of the road is not in the file yet, or which row will put it there. This section makes the plan say so: every TODO file an `Author` item names that is not on disk is listed with the section that authors it, and the progress line counts them. The block is derived from the sections, like the rest of the plan, and empties itself as the files are authored.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Collect the files still to author in `scripts/lib/todo_graph.py`. Done when: a fixture section with two `Author` items, one file on disk, yields the other.
+2. Render them in the plan. Done when: `plan --sync` writes the block and `plan --check` fails when it is stale.
+3. Refuse a ticked `Author` item whose file is missing. Done when: `validate` exits 2 naming the item's section and path.
+
+- [ ] Add `to_author(root)` to `scripts/lib/todo_graph.py`: for every section, read the checklist items that match `Author` followed by a backticked path of the form `todo/<domain>/TODO-NN-<name>.md`, and return each path that is not a file, with the reference of the section that names it, in plan order. Done when: tests in `scripts/tests/test_todo_graph.py` show a missing path returned with its `DNN TNN §N`, a path that exists left out, and an `Author` item naming a path of another form ignored.
+- [ ] Refuse in `validate` a path named by the `Author` items of two different sections, naming both. Done when: a fixture with the same path in two sections exits 2 with both references. Cheaper substitute: listing it twice, which leaves two sections to write one file.
+- [ ] Refuse in `validate` a ticked `Author` item whose path is not a file, naming the section and the path. Done when: a fixture with `- [x] Author` and no file exits 2, and the same fixture with the file present validates.
+- [ ] Render a `### Still to author` block in `projection()` after the last phase table and before the progress line: one sentence saying these TODO files do not exist yet and that their sections and checklist items are not in the totals, then a table with the columns `File`, `Authored by` and `Status` (the authoring section's box), one row per file. Done when: a test on a fixture tree shows the block with one row per missing file, and no block at all when nothing is missing. Cheaper substitute: a hand-written list in `todo/README.md`, which drifts from the sections.
+- [ ] Hold the block's table to `MAX_TABLE_ROW` like the phase tables, naming the path that is too long in the refusal. Done when: a fixture path that makes a row longer than the limit is refused by `plan --sync` with that path in the message.
+- [ ] Add the count to the progress line: after the verified and ready counts, `N TODO files still to author (not counted here)` when N is above zero, and nothing when it is zero. Done when: a test shows the phrase with the fixture's count and its absence on a tree with no missing file.
+- [ ] Add `to_author` (the count) to the JSON `query stats` prints. Done when: `python scripts/todo-graph.py query stats` on this repository shows `"to_author": 83`, or the number the tree holds on the day this runs, equal to the block's row count.
+- [ ] Document the block in `todo/README.md` under "The Implementation Order table is the dependency graph": what an `Author` item is, that the plan lists its file until the file exists, and the two refusals. Done when: the README names the block, the item form and both refusals.
+- [ ] Run `python scripts/todo-graph.py plan --sync` and commit the regenerated `todo/implementation-plan.md`. Done when: the plan holds the block and `python scripts/todo-graph.py plan --check` exits 0.
+- [ ] Commit: `todo: list the files still to author in the plan`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0 with a `### Still to author` block in `todo/implementation-plan.md`.
+
+## 32. Validate Checks Plan Row Width
+
+Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` accepts a section title that `plan --sync` then refuses with "plan table for phase N wraps raw md", because a plan row's width depends on the widest title and the widest Needs cell of the whole phase, which only the plan renderer measures (`projection()` in `scripts/lib/todo_graph.py`). A commit can therefore pass `validate` and leave the plan unsyncable, which stops an unattended run at its next sync. `validate` runs the same measurement.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Move the row-width measurement into one function both commands call. Done when: `validate` and `plan --sync` refuse the same fixture with the same message.
+
+- [ ] Extract the phase table's width check from `projection()` in `scripts/lib/todo_graph.py` into a function that takes a phase's rows and raises the existing refusal. Done when: `projection()` calls it and the existing plan tests still pass.
+- [ ] Call that function for every phase from `validate`. Done when: a test in `scripts/tests/test_todo_graph.py` with a title of legal length (at most 88 characters) that makes its phase's plan row longer than `MAX_TABLE_ROW` shows `validate` exiting 2 with the message that names the section. Cheaper substitute: lowering the title limit for every section, which refuses titles that fit.
+- [ ] Assert in the same test that `plan --sync` refuses the fixture with the same message. Done when: both messages are compared for equality.
+- [ ] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
+- [ ] Commit: `todo: validate refuses a title the plan cannot render`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new test among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
 
 ## Verification
 

@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 35 | Checklist items: 232
+Sections: 41 | Checklist items: 277
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -47,6 +47,12 @@ Sections: 35 | Checklist items: 232
 | [x]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
 | [ ]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
 | [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
+| [ ]    | D00 T03 §31 | Plan Lists Files Still to Author         | none                   | 10    |
+| [ ]    | D00 T03 §32 | Validate Checks Plan Row Width           | none                   | 5     |
+| [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script      | none                   | 12    |
+| [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
+| [ ]    | D00 T04 §3  | Tool Bootstrap in CI                     | none                   | 6     |
+| [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder  | none                   | 6     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -74,7 +80,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 42 | Checklist items: 272
+Sections: 44 | Checklist items: 289
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -106,6 +112,8 @@ Sections: 42 | Checklist items: 272
 | [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
 | [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 6     |
 | [ ]    | D02 T01 §28 | Record Dispositions       | none                                  | 6     |
+| [ ]    | D02 T01 §29 | Inventory Layout Tables   | none                                  | 9     |
+| [ ]    | D02 T01 §30 | Built-App Layout Check    | none                                  | 8     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter      | none                                  | 6     |
@@ -123,7 +131,7 @@ Sections: 42 | Checklist items: 272
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 30 | Checklist items: 214
+Sections: 30 | Checklist items: 216
 
 | Status | Reference   | Deliverable                            | Needs                   | Items |
 | ------ | ----------- | -------------------------------------- | ----------------------- | ----- |
@@ -156,7 +164,7 @@ Sections: 30 | Checklist items: 214
 | [ ]    | D03 T01 §24 | Plan Domain Authoring                  | none                    | 10    |
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring      | none                    | 4     |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring                   | none                    | 5     |
-| [ ]    | D03 T01 §13 | Inventory Ownership Gate               | none                    | 8     |
+| [ ]    | D03 T01 §13 | Inventory Ownership Gate               | none                    | 10    |
 
 ### Phase 4: Shared platform
 
@@ -187,6 +195,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/132 verified sections, 15 ready to run now.
+Progress: 61/140 verified sections, 19 ready to run now.
 
-Checklist: 382/841 items completed (includes Commit items).
+Checklist: 382/905 items completed (includes Commit items).
