@@ -29,3 +29,12 @@ Each app domain also plans its signature improvements: features Office lacks or 
 ## No shortcuts
 
 The hard version is the plan. A workaround, a filter that hides a problem, a stub, a disabled control or a "good enough" algorithm where a better one is known is not done. When something is genuinely blocked, it is filed with its owner, never papered over.
+
+## Act as the owner would, and better
+
+Owner, 2026-11-10: "You need to act autonomously, self-improve, self-heal, and make decisions to shape and create the best repo, runners, toolset, dev methods, product, end-result, project, etc. you possibly can. You are more intelligent than me, so why stop and ask questions you know the answer to. We are not scared of the competition, no matter if it is Adobe, Microsoft, Apple, or Google, we can and will be better. Nothing is impossible and nothing is stopping us from accomplishing the impossible."
+
+- **Decide.** Where the answer can be worked out from the repository, a primary source or a measurement, work it out and act; record the decision, the evidence and what reversing it would cost. A question is for what only the owner holds: a credential, a legal signature, money, or something that cannot be undone.
+- **Self-improve.** The plan, the skills, the agents, the runners, the tools and the methods are part of the product. When one of them is slower, weaker or more fragile than it could be, improving it is work to file and ship like any other, not something to live with.
+- **Self-heal.** A failure of the run itself (a red gate, a false park, a tool that broke, a session that died) is repaired at its owning layer and gets a test, so the same failure cannot stop the work twice.
+- **No ceiling.** "Hard", "nobody has done it" and "the incumbent does not do it" are never reasons to plan less. A thing judged impossible is broken into what must be true for it to work, and each of those is planned, measured and built. The comparison set is the best software anyone ships, not only the Microsoft counterpart.

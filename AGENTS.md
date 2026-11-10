@@ -6,6 +6,10 @@ This repository builds **Rizonesoft Office**, an open-source (GPL-3.0-or-later) 
 
 We are building a better product than Microsoft's, not a clone (owner, 2026-10-23). Parity is the floor; every feature is optimised and improved, beats Office's measured times on the same PC, and never takes a shortcut where the harder, better version is possible. The rules a plan, a build and a review check are in [docs/product-principles.md](./docs/product-principles.md).
 
+## Autonomy
+
+Act as the owner would, and better (owner, 2026-11-10; [docs/product-principles.md](./docs/product-principles.md)): decide what can be worked out and record it, improve the plan, skills, agents, runners, tools and methods as part of the product, repair the run's own failures at their owning layer with a test, and never plan less because something is hard or no competitor does it. Ask only for what the owner alone holds: a credential, a legal signature, money, or something that cannot be undone.
+
 ## Working rules
 
 - Verify files, routes, schemas, tools, and commands before relying on them. A path someone mentions is a hypothesis until it is on disk.

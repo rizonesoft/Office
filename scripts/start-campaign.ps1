@@ -14,8 +14,10 @@
   exists, it says whose it is and waits for Enter before the new session takes the run over, because two
   sessions must never write to one tree.
 
-  It adds no keep-alive: a session that ends is started again by hand, from the same shortcut (owner decision 2,
-  docs/specs/2026-10-23-campaign-scope-design.md).
+  It heals a session that died (owner decision 21, docs/specs/2026-10-23-campaign-scope-design.md): when Claude
+  Code exits while the run guard is still held, it waits 30 seconds, repeats the host check and starts a new
+  session with the same goal, which takes the run over. A run that ended by its own rules holds no guard, so the
+  launcher stops; five sessions ending inside an hour stop it too, and closing the window stops everything.
 .EXAMPLE
   pwsh scripts/start-campaign.ps1
   pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
@@ -71,7 +73,7 @@ if (Test-Path -LiteralPath $guard) {
 }
 
 # One line, no double quotes: it is passed to claude.exe as a single argument. /goal allows 4,000 characters.
-$goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-plan.md is stamped (python scripts/todo-graph.py query stats shows verified equal to total), every phase has its closeout, CI is green on the pushed HEAD, and each of the six apps has its draft release. Until then, work as an unattended campaign: run the process-plan skill (.claude/skills/process-plan/SKILL.md) now and follow it exactly, with its Unattended rules (never ask a question; decide, record and carry on), its run guard and heartbeat, its host readiness check and its CI watch, delegating mechanical work to the Sonnet subagents as its Delegation rules say. Aim for excellence in every section: this must be the best product in its class, measurably better than Microsoft Office and never a clone (docs/product-principles.md), with no shortcut taken where the harder, better version is possible. The operator started this session from the desktop shortcut: that is the operator''s word to start or resume the campaign, and to take over a guard left by an earlier session with acquire --handover. The goal also counts as met when the campaign has ended by its own rules: a column-0 PARKED line stands in the run file and campaign_guard.py end has run, because every remaining row waits on the owner, the operator, a third party or a host that is not ready, or CI could not be made green inside its recovery budget. In that case finish with a report of each leftover row and what the owner must do to release it.'
+$goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-plan.md is stamped (python scripts/todo-graph.py query stats shows verified equal to total), every phase has its closeout, CI is green on the pushed HEAD, and each of the six apps has its draft release. Until then, work as an unattended campaign: run the process-plan skill (.claude/skills/process-plan/SKILL.md) now and follow it exactly, with its Unattended rules (never ask a question; decide, record and carry on), its run guard and heartbeat, its host readiness check and its CI watch, delegating mechanical work to the Sonnet subagents as its Delegation rules say. Aim for excellence in every section: this must be the best product in its class, measurably better than Microsoft Office and never a clone (docs/product-principles.md), with no shortcut taken where the harder, better version is possible. Act with full autonomy, as the owner would and better: decide what can be worked out instead of asking, improve the plan, skills, agents, tools and methods whenever they could be better, repair the run''s own failures at their cause, and never plan less because something is hard or no competitor does it. The operator started this session from the desktop shortcut: that is the operator''s word to start or resume the campaign, and to take over a guard left by an earlier session with acquire --handover. The goal also counts as met when the campaign has ended by its own rules: a column-0 PARKED line stands in the run file and campaign_guard.py end has run, because every remaining row waits on the owner, the operator, a third party or a host that is not ready, or CI could not be made green inside its recovery budget. In that case finish with a report of each leftover row and what the owner must do to release it.'
 
 if ($goal.Length -gt 4000) { throw "the goal is $($goal.Length) characters; /goal allows 4000" }
 if ($DryRun) {
@@ -81,4 +83,27 @@ if ($DryRun) {
     exit 0
 }
 
-claude --dangerously-skip-permissions $goal
+$started = [System.Collections.Generic.List[datetime]]::new()
+while ($true) {
+    $started.Add((Get-Date))
+    claude --dangerously-skip-permissions $goal
+    if (-not (Test-Path -LiteralPath $guard)) {
+        Write-Host ''
+        Write-Host 'The campaign ended by its own rules: no run guard is held. Run this shortcut to start it again.'
+        break
+    }
+    if (@($started | Where-Object { $_ -gt (Get-Date).AddHours(-1) }).Count -ge 5) {
+        Write-Host ''
+        Write-Host 'Stopped: five sessions ended inside an hour with the run still open. Read the last one before starting again.' -ForegroundColor Red
+        break
+    }
+    Write-Host ''
+    Write-Host 'The session ended with the run still open. A new session starts in 30 seconds; close this window or press Ctrl+C to stop.' -ForegroundColor Yellow
+    Start-Sleep -Seconds 30
+    python scripts/check-campaign-host.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ''
+        Write-Host 'Not restarted: apply the fixes above, then run this shortcut again.' -ForegroundColor Red
+        break
+    }
+}

@@ -70,3 +70,13 @@ Owner, 2026-10-23, in session (asked so the unattended run never stops on versio
 - D00 T03 §12 adds a host readiness check the campaign runs before it starts and at each phase, so an unattended run parks with a reason instead of failing on a locked screen or a missing tool.
 - D03 T01 §28 records decisions 16 to 18, including how persisted formats and settings carry and migrate their own schema versions; §17 and §27 build from it, so every per-app draft release is versioned, noted and attested the same way.
 - Sections that need the Entra or Google registration carry the `operator` Need, and signing sections carry `owner-decision`; a campaign takes every other ready row and leaves those for the owner's return.
+
+## Owner decisions, 2026-11-10
+
+Given in session while the repository was being readied for the Claude Code campaign. They add to the decisions above and change decision 2 as stated.
+
+20. **Autonomy:** the campaign acts as the owner would and better: it decides, improves its own plan, skills, agents, runners, tools and methods, heals its own failures, and plans without a ceiling against the best software anyone ships (the owner's words are in `docs/product-principles.md`, "Act as the owner would, and better"). It asks only for what the owner alone holds.
+21. **Self-healing start (changes decision 2):** there is still no scheduled keep-alive task, but the launcher (`scripts/start-campaign.ps1`) starts a new session when the one it started ends while the run guard is still held, which is how a died session looks. The owner keeps the freedom to stop: a run ended by its own rules releases the guard and the launcher stops, and closing the window stops everything.
+22. **Main only:** all work is committed straight to `main`; no feature branches or pull requests for our own work.
+23. **Portable build tools:** build tools are repo scoped and portable, fetched at pinned versions and hashes into an ignored folder in the clone (D03 T01 §12 and §17); only Visual Studio's MSVC toolset and the Windows SDK stay host prerequisites.
+24. **No machine paths:** no tool writes a machine's folder layout into its code (`scripts/tests/test_no_hardcoded_paths.py`).
