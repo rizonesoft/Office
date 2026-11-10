@@ -1,6 +1,6 @@
 # Completion review prompt
 
-One pass per TODO section, before it is built (owner decision 2026-10-23, D00 T03 §13). Copy this into a scratch file, fill in the placeholders, and pass it to `scripts/review-dispatch.py --prompt` with `--record docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>-completion.md`. The reviewer's sandbox cannot run git, so inline the section text and the cited SPEC and inventory excerpts rather than naming commits.
+One pass per TODO section, before it is built (owner decision 2026-10-23, D00 T03 §13). Never fill this in by hand: `python scripts/review-prompt.py completion '<ref>' --purpose "..." (--context <file> | --no-context "<reason>") --out <scratch file>` fills the part below the line (D00 T03 §27); pass its output to `scripts/review-dispatch.py --prompt` with `--record docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>-completion.md`. The reviewer's sandbox cannot run git, so the command inlines the section text, and the context file holds the cited SPEC and inventory excerpts, copied in. The command checks every backticked `<...>` placeholder below against its own list, so a placeholder added, removed or reworded here must be changed in `FILLS` and `PLACEHOLDERS` of `scripts/review-prompt.py` in the same commit.
 
 ---
 

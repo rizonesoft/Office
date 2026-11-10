@@ -56,11 +56,19 @@ Work the three questions across the diff and its blast radius. Fix what you find
 
 ### 3. Independent review rounds (the pinned reviewer)
 
-Run the lenses as separate passes over the candidate, at least one round by the pinned independent reviewer. Write the prompt to a scratch file from `docs/review-round-prompt.md` (candidate SHA, section contract, governing documents, lenses), then run it; the writer is always `claude`, Claude Code being the only writer (owner decision 2026-10-23):
+Run the lenses as separate passes over the candidate, at least one round by the pinned independent reviewer. Build the prompt with one command, never by hand (D00 T03 §27): it fills `docs/review-round-prompt.md` with both full SHAs, the section contract, a Scope block and the diff (the reviewer's sandbox cannot run git). Then dispatch it; the writer is always `claude`, Claude Code being the only writer (owner decision 2026-10-23):
 
 ```bash
+python3 scripts/review-prompt.py round '<DNN TNN §N>' <base> <tip> --purpose "<what the candidate is meant to do>" --governing "<the spec, plan or design files that apply>" [--note <scratch note file>] --out <scratch-review-prompt.md>
 python3 scripts/review-dispatch.py --writer claude --prompt <scratch-review-prompt.md> --record docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md
 ```
+
+The arguments of `review-prompt.py round`, in order:
+
+- `<base>` is the commit just before the candidate's first commit and `<tip>` is the candidate's last commit (after a fix, the same `<base>` and the new tip). The command refuses a reversed, divergent or equal range.
+- `--note` names a scratch file for what the reviewer must also know: which round this is, what the earlier rounds found and how each was fixed, and any gap already owned by another section.
+- Exit 0: the prompt is written and one JSON line lists `included` and `omitted` paths. Exit 2: refused, with the reason on standard error and nothing written; fix what the reason names and run it again. Never edit the written prompt.
+- A diff over the size limit is refused. Then, and only then, review the candidate in parts: run the command with `--path <path> ...` for some of the changed paths and dispatch that part, and repeat with `--path` for the paths the JSON `omitted` list still names, until every changed path has been in one part. Only then is the round complete; every part's findings are fixed like any round's.
 
 The dispatcher appends a `## Round N` section naming the reviewer and its model, or why it could not run (a round with no review). Complete that round with the candidate SHA, per-lens verdicts (`approve`, `needs-attention` with numbered findings naming `file:line`, or `advisory`), and the quoted gate outputs (the Live proof). On Windows run `python` instead of `python3`.
 

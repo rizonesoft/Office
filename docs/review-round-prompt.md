@@ -1,6 +1,6 @@
 # Review round prompt
 
-Copy this into a scratch file, fill in the placeholders, delete the lines that do not apply, and pass it to `scripts/review-dispatch.py --prompt`.
+Never fill this in by hand: `python scripts/review-prompt.py round '<ref>' <base> <tip> --purpose "..." --governing "..." --out <scratch file>` fills the part below the line (D00 T03 §27), and its output is what `scripts/review-dispatch.py --prompt` takes. The command checks every backticked `<...>` placeholder below against its own list, so a placeholder added, removed or reworded here must be changed in `FILLS` and `PLACEHOLDERS` of `scripts/review-prompt.py` in the same commit.
 
 ---
 
