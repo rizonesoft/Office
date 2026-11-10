@@ -45,7 +45,7 @@ Sections: 60 | Checklist items: 415
 | [x]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
 | [x]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 11    |
 | [x]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
-| [ ]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
+| [x]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
 | [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
 | [ ]    | D00 T03 §31 | Plan Lists Files Still to Author         | none                   | 10    |
 | [ ]    | D00 T03 §32 | Validate Checks Plan Row Width           | none                   | 5     |
@@ -216,6 +216,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/161 verified sections, 24 ready to run now.
+Progress: 62/161 verified sections, 24 ready to run now.
 
-Checklist: 387/1057 items completed (includes Commit items).
+Checklist: 388/1057 items completed (includes Commit items).

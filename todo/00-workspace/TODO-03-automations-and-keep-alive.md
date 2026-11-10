@@ -64,7 +64,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 26 | §26 | Host check names every file it writes | §25 | [x] |
 | 27 | §27 | Review prompt builder | -- | [x] |
 | 28 | §28 | Host check scratch leftover rule | §26 | [x] |
-| 29 | §29 | Review prompt empty-input refusals | §27 | [ ] |
+| 29 | §29 | Review prompt empty-input refusals | §27 | [x] |
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
 | 31 | §31 | Plan lists files still to author | -- | [ ] |
 | 32 | §32 | Validate checks plan row width | -- | [ ] |
@@ -875,9 +875,12 @@ Filed 2026-11-10 from §27's completion review (round 2, findings 1 and 4, `docs
 - [x] Refuse in both subcommands an empty or whitespace-only value: the files `--context` and `--note`, and the texts `--purpose`, `--governing` and `--no-context`, each with exit 2 and a reason naming the option. Done when: one test per option shows exit 2 and the option's name in the reason. Cheaper substitute: checking only that the option was given, which an empty scratch file satisfies.
 - [x] Keep an existing `--out` file byte for byte on every refusal above. Done when: each test above first writes `--out` with known bytes and reads the same bytes back after the refusal.
 - [x] State in `.claude/skills/process-todo-section/SKILL.md` step 3a.2 that the context file must hold the excerpts the section cites, copied in by the main loop, and that the command only checks it is not empty. Done when: the sentence is there and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
-- [ ] Commit: `review: refuse empty ranges and empty inputs in the prompt builder`
+- [x] Commit: `review: refuse empty ranges and empty inputs in the prompt builder`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, with the tests named above among them.
+
+> **Verified:** 2026-11-11 | §29 | b6fe3a1d06839c751a4f902673ef2088b52b6bd0
+> **Review:** `docs/reviews/d00-t03-s29.json`
 
 ## 30. Whole-Candidate Review Diffs
 
