@@ -7,7 +7,7 @@
 .DESCRIPTION
   The desktop shortcut "Rizonesoft Office campaign" runs this file. It changes to the repository, runs the same
   host readiness check the campaign runs first (scripts/check-campaign-host.py, without the email), and then
-  starts an interactive Claude Code session on the latest Fable (the 'fable' model alias, never a pinned version)
+  starts an interactive Claude Code session on the latest Opus (the 'opus' model alias, never a pinned version)
   that skips permission prompts and opens with a /goal: the plan
   finished to 100 percent through the process-plan skill, or the campaign ended by its own park.
 
@@ -176,7 +176,7 @@ if (Test-Path -LiteralPath $guard) {
 }
 
 # One line, no double quotes: it is passed to claude.exe as a single argument. /goal allows 4,000 characters.
-$goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-plan.md is stamped (python scripts/todo-graph.py query stats shows verified equal to total), every phase has its closeout, CI is green on the pushed HEAD, and each of the six apps has its draft release. Until then, work as an unattended campaign: run the process-plan skill (.claude/skills/process-plan/SKILL.md) now and follow it exactly, with its Unattended rules (never ask a question; decide, record and carry on), its run guard and heartbeat, its host readiness check and its CI watch, orchestrating as AGENTS.md (Subagents) says: route each piece of work to the cheapest tier that holds your own quality bar (a script, Haiku, Sonnet, Opus at the effort you set, the Fable worker, then yourself), read every worker diff and run every gate yourself. Aim for excellence in every section: this must be the best product in its class, measurably better than Microsoft Office and never a clone (docs/product-principles.md), with no shortcut taken where the harder, better version is possible. Act with full autonomy, as the owner would and better: decide what can be worked out instead of asking, improve the plan, skills, agents, tools and methods whenever they could be better, repair the run''s own failures at their cause, and never plan less because something is hard or no competitor does it. The operator started this session from the desktop shortcut: that is the operator''s word to start or resume the campaign, and to take over a guard left by an earlier session with acquire --handover. The goal also counts as met when the campaign has ended by its own rules: a column-0 PARKED line stands in the run file and campaign_guard.py end has run, because every remaining row waits on the owner, the operator, a third party or a host that is not ready, or CI could not be made green inside its recovery budget. In that case finish with a report of each leftover row and what the owner must do to release it.'
+$goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-plan.md is stamped (python scripts/todo-graph.py query stats shows verified equal to total), every phase has its closeout, CI is green on the pushed HEAD, and each of the six apps has its draft release. Until then, work as an unattended campaign: run the process-plan skill (.claude/skills/process-plan/SKILL.md) now and follow it exactly, with its Unattended rules (never ask a question; decide, record and carry on), its run guard and heartbeat, its host readiness check and its CI watch, working as the lead AGENTS.md (Subagents) describes: hand each section''s build and each round of review fixes to the section-writer agent in a fresh context, use the Sonnet readers for facts and suites, call the Fable principal-implementer only from review round 8 with a serious finding open, when a fixed finding returns, or for an architecture decision record, and read every change and run every gate yourself. Aim for excellence in every section: this must be the best product in its class, measurably better than Microsoft Office and never a clone (docs/product-principles.md), with no shortcut taken where the harder, better version is possible. Act with full autonomy, as the owner would and better: decide what can be worked out instead of asking, improve the plan, skills, agents, tools and methods whenever they could be better, repair the run''s own failures at their cause, and never plan less because something is hard or no competitor does it. The operator started this session from the desktop shortcut: that is the operator''s word to start or resume the campaign, and to take over a guard left by an earlier session with acquire --handover. The goal also counts as met when the campaign has ended by its own rules: a column-0 PARKED line stands in the run file and campaign_guard.py end has run, because every remaining row waits on the owner, the operator, a third party or a host that is not ready, or CI could not be made green inside its recovery budget. In that case finish with a report of each leftover row and what the owner must do to release it.'
 
 if ($goal.Length -gt 4000) { throw "the goal is $($goal.Length) characters; /goal allows 4000" }
 
@@ -207,11 +207,12 @@ if ($token) {
 }
 $token = $null
 
-# The orchestrator is the latest Fable (owner, 2026-11-10, replacing the latest Opus decided earlier that day): it
-# routes the work to scripts and to the Haiku, Sonnet and Opus agents (AGENTS.md, Subagents). 'fable' is Claude
-# Code's alias for the newest Fable model, so a new release is picked up at the next start with no edit here; never
-# pin a version such as claude-fable-5-2.
-$model = 'fable'
+# The lead is the latest Opus (owner, 2026-11-10, after the three-way measurement of that day: Opus building alone
+# cost less than half of Fable alone, and Fable coordinating workers cost the most). It hands each section's build
+# to the Opus section writer in a fresh context and calls Fable only where AGENTS.md (Subagents) says. 'opus' is
+# Claude Code's alias for the newest Opus model, so a new release is picked up at the next start with no edit here;
+# never pin a version such as claude-opus-5-5.
+$model = 'opus'
 
 if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }

@@ -95,12 +95,15 @@ ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non
 
 
 class Workers(unittest.TestCase):
-    """An agent reads and runs unless it declares `write_scope: packet` (owner, 2026-11-10: workers get to write)."""
+    """An agent reads and runs unless it is a declared worker on Opus or Fable (owner, 2026-11-10)."""
+
+    RATIONALE = "model_rationale: Writes the sections.\n"
+    WORKER = RATIONALE + "write_scope: packet\n"
 
     def setUp(self):
         self.assertIsNotNone(NODE, "node is not on PATH; the agent tier verifier cannot run")
 
-    def verify(self, model="sonnet", tools="Read, Grep", extra=""):
+    def verify(self, model="opus", tools="Read, Grep", extra=RATIONALE):
         with tempfile.TemporaryDirectory() as tmp:
             agents = Path(tmp) / ".claude" / "agents"
             agents.mkdir(parents=True)
@@ -110,18 +113,39 @@ class Workers(unittest.TestCase):
             return subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
 
     def test_an_edit_tool_without_the_declaration_is_refused(self):
-        for tools in ("Read, Edit", "Read, Write", "Read, MultiEdit", "Read, NotebookEdit", "Read, Edit(src/**)"):
-            with self.subTest(tools=tools):
-                result = self.verify(tools=tools)
-                self.assertEqual(result.returncode, 1, result.stdout)
-                self.assertIn("without \"write_scope: packet\"", result.stderr)
+        for model, extra in (("opus", self.RATIONALE), ("sonnet", "")):
+            for tools in ("Read, Edit", "Read, Write", "Read, MultiEdit", "Read, NotebookEdit", "Read, Edit(src/**)"):
+                with self.subTest(model=model, tools=tools):
+                    result = self.verify(model=model, tools=tools, extra=extra)
+                    self.assertEqual(result.returncode, 1, result.stdout)
+                    self.assertIn("without \"write_scope: packet\"", result.stderr)
 
-    def test_a_declared_worker_with_edit_tools_passes(self):
-        result = self.verify(tools="Read, Grep, Bash, Edit, Write", extra="write_scope: packet\n")
+    def test_a_declared_worker_on_opus_or_fable_passes(self):
+        for model in ("opus", "fable"):
+            with self.subTest(model=model):
+                result = self.verify(model=model, tools="Read, Grep, Bash, Edit, Write", extra=self.WORKER)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_a_sonnet_agent_never_writes(self):
+        result = self.verify(model="sonnet", tools="Read, Grep, Edit", extra="write_scope: packet\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("a Sonnet agent never writes", result.stderr)
+
+    def test_a_sonnet_reader_passes(self):
+        result = self.verify(model="sonnet", tools="Read, Grep, Bash", extra="")
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_haiku_is_retired_whatever_it_declares(self):
+        allowance = "mechanical_share: 100\nhaiku_replay: AGENTS.md\n"  # what the retired allowance asked for
+        for model, extra in (("claude-haiku-5-5", ""), ("claude-haiku-5-5", allowance), ("haiku", ""),
+                             ("claude-haiku-5-5", "write_scope: packet\n")):
+            with self.subTest(model=model, extra=extra[:12]):
+                result = self.verify(model=model, extra=extra)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("Haiku is retired", result.stderr)
+
     def test_a_star_grant_is_refused_even_for_a_worker(self):
-        result = self.verify(tools="'*'", extra="write_scope: packet\n")
+        result = self.verify(tools="'*'", extra=self.WORKER)
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("grants every tool", result.stderr)
 
@@ -130,41 +154,36 @@ class Workers(unittest.TestCase):
             agents = Path(tmp) / ".claude" / "agents"
             agents.mkdir(parents=True)
             (agents / "probe.md").write_text(
-                "---\nname: probe\ndescription: A probe agent\nmodel: sonnet\nwrite_scope: packet\n---\n\nBody.\n",
+                "---\nname: probe\ndescription: A probe agent\nmodel: opus\n" + self.WORKER + "---\n\nBody.\n",
                 encoding="utf-8")
             result = subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn('needs an explicit "tools:" list', result.stderr)
 
     def test_any_other_write_scope_is_refused(self):
-        result = self.verify(tools="Read, Edit", extra="write_scope: anywhere\n")
+        result = self.verify(tools="Read, Edit", extra=self.RATIONALE + "write_scope: anywhere\n")
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn('the only value is "packet"', result.stderr)
 
     def test_a_worker_with_no_edit_tool_is_refused(self):
-        result = self.verify(tools="Read, Grep", extra="write_scope: packet\n")
+        result = self.verify(tools="Read, Grep", extra=self.WORKER)
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("grants no edit tool", result.stderr)
-
-    def test_haiku_never_writes(self):
-        result = self.verify(model="claude-haiku-5-5", tools="Read, Edit", extra="write_scope: packet\n")
-        self.assertEqual(result.returncode, 1, result.stdout)
-        self.assertIn("Haiku never writes", result.stderr)
 
     def test_persistent_memory_is_refused_because_it_enables_edit_tools(self):
         # Claude Code enables Read, Write and Edit for an agent with memory, whatever its tools list says.
         for extra in ("memory: project\n", "memory: user\n", "memory: local\n", "memory: project\nwrite_scope: packet\n"):
             with self.subTest(extra=extra):
                 tools = "Read, Edit" if "write_scope" in extra else "Read, Grep"
-                result = self.verify(tools=tools, extra=extra)
+                result = self.verify(tools=tools, extra=self.RATIONALE + extra)
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn('declares "memory:"', result.stderr)
 
     def test_effort_ceiling_is_high_on_sonnet_and_medium_on_opus_and_fable(self):
-        rationale = "model_rationale: Needs the stronger model.\n"
         cases = [("sonnet", "", "high", 0), ("sonnet", "", "xhigh", 1), ("sonnet", "", "max", 1),
-                 ("opus", rationale, "medium", 0), ("opus", rationale, "low", 0), ("opus", rationale, "high", 1),
-                 ("fable", rationale, "medium", 0), ("fable", rationale, "high", 1), ("fable", rationale, "max", 1),
+                 ("opus", self.RATIONALE, "medium", 0), ("opus", self.RATIONALE, "low", 0),
+                 ("opus", self.RATIONALE, "high", 1), ("fable", self.RATIONALE, "medium", 0),
+                 ("fable", self.RATIONALE, "high", 1), ("fable", self.RATIONALE, "max", 1),
                  ("sonnet", "", "extreme", 1)]
         for model, extra, effort, expected in cases:
             with self.subTest(model=model, effort=effort):
@@ -173,18 +192,23 @@ class Workers(unittest.TestCase):
                 if expected:
                     self.assertIn('declares "effort:', result.stderr)
 
-    def test_haiku_effort_above_high_is_named(self):
-        result = self.verify(model="claude-haiku-5-5", extra="effort: max\n")
-        self.assertEqual(result.returncode, 1, result.stdout)
-        self.assertIn("ceiling is high", result.stderr)
-
     def test_an_opus_worker_still_needs_its_rationale(self):
         refused = self.verify(model="opus", tools="Read, Edit", extra="write_scope: packet\n")
         self.assertEqual(refused.returncode, 1, refused.stdout)
         self.assertIn("model_rationale", refused.stderr)
-        accepted = self.verify(model="opus", tools="Read, Edit",
-                               extra="write_scope: packet\nmodel_rationale: Writes code whose approach is given.\n")
-        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+
+    def test_the_fleet_is_sonnet_readers_and_two_workers(self):
+        fleet = {}
+        for path in sorted((REPO / ".claude" / "agents").glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            model = next(line.split(":", 1)[1].strip() for line in text.splitlines() if line.startswith("model:"))
+            fleet[path.stem] = (model, "write_scope: packet" in text)
+        self.assertEqual({name for name, (_, writes) in fleet.items() if writes}, {"section-writer", "principal-implementer"})
+        self.assertEqual(fleet["section-writer"][0], "opus")
+        self.assertEqual(fleet["principal-implementer"][0], "fable")
+        for name, (model, writes) in fleet.items():
+            if not writes:
+                self.assertEqual(model, "sonnet", name)
 
 
 class Frontmatter(unittest.TestCase):

@@ -5,14 +5,14 @@
 //
 // The rule is in AGENTS.md: mechanical subtasks delegate to subagents on the
 // Sonnet tier; an elevated tier is reserved for work whose verdict quality
-// demands it; Haiku is allowed only for near-mechanical work (at least 90%
-// mechanical) whose output a script or the main loop verifies; and an agent
-// reads and runs unless it is a declared worker (`write_scope: packet`), which
-// writes only what its work packet names and never on Haiku.
+// demands it; Haiku is retired (owner, 2026-11-10: what it was allowed for is a
+// script's job); and an agent reads and runs unless it is a declared worker
+// (`write_scope: packet`) on an elevated tier, which writes only what its work
+// packet names. A Sonnet agent never writes.
 //
 // A rule stated in prose is protected by discipline. This makes it protected by
-// a check: an agent with no `model:` line, an undeclared agent that could edit files, or a
-// Haiku agent that does not meet every Haiku condition below, fails here instead
+// a check: an agent with no `model:` line, an undeclared agent that could edit files, a
+// Sonnet agent declared a worker, or any agent on Haiku, fails here instead
 // of passing every gate and being noticed later, or never.
 //
 // An absent `model:` is an error rather than a default, because an unpinned
@@ -26,8 +26,8 @@
 //
 //   node scripts/verify-agent-tiers.mjs
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { isAbsolute, join, normalize, sep } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * Tier vocabulary.
@@ -35,31 +35,11 @@ import { isAbsolute, join, normalize, sep } from "node:path";
  * Kept as substrings rather than exact model IDs so a version bump (sonnet-5
  * to a later sonnet) does not silently fail a project that is still obeying
  * the rule. The tier is the invariant; the exact pin is a routing decision that
- * belongs elsewhere. Haiku is the exception: it must be an exact, versioned pin.
+ * belongs elsewhere. Haiku is retired: any pin naming it is refused.
  */
 export const BASE_AGENT_MODEL_TOKENS = ["sonnet"];
 export const ELEVATED_AGENT_MODEL_TOKENS = ["opus", "fable"];
 export const RESTRICTED_AGENT_MODEL_TOKENS = ["haiku"];
-
-/**
- * The Haiku allowance, every condition required.
- *
- * - An exact pin of Haiku 5.5 or later (`claude-haiku-5-5`, optionally with a
- *   date suffix). The bare `haiku` alias is refused because it is not a version.
- * - `mechanical_share:` of 90 or more: the share of the agent's work that is
- *   mechanical (lookups, inventories, structural checks), declared so a reviewer
- *   can challenge it.
- * - `haiku_replay:` naming a file in this repository that records a replay on
- *   known-answer inputs showing no loss against the base tier.
- * - No judgment work in its name or description: never review, audit,
- *   research, security, debugging, diagnosis, planning or design.
- */
-export const HAIKU_MINIMUM_VERSION = [5, 5];
-export const HAIKU_PIN = /^claude-haiku-(\d+)-(\d+)(?:-\d{8})?$/;
-export const HAIKU_MECHANICAL_FIELD = "mechanical_share";
-export const HAIKU_MINIMUM_MECHANICAL_SHARE = 90;
-export const HAIKU_REPLAY_FIELD = "haiku_replay";
-export const HAIKU_JUDGMENT_TERMS = /\b(review|audit|research|secur|debug|diagnos|plan|design|architect|judg|verdict)/i;
 
 /** Where an elevated pin must record why it is elevated. */
 export const ELEVATION_RATIONALE_FIELD = "model_rationale";
@@ -73,7 +53,7 @@ export const HOOKS_FIELD = "hooks";
  */
 export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
 
-/** The field that declares a worker, and its one value. Haiku never carries it. */
+/** The field that declares a worker, and its one value. Only an elevated tier (Opus, Fable) may carry it. */
 export const WRITE_SCOPE_FIELD = "write_scope";
 export const WRITE_SCOPE_PACKET = "packet";
 
@@ -485,7 +465,6 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
     .sort();
 
   let elevated = 0;
-  let haiku = 0;
   for (const name of files) {
     const relative = join(relativeRoot, name);
     const text = readFileSync(join(absoluteRoot, name), "utf8");
@@ -510,12 +489,7 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
     errors.push(...effortProblems(fields, model).map((problem) => `${relative} ${problem}`));
 
     if (RESTRICTED_AGENT_MODEL_TOKENS.some((token) => model.includes(token))) {
-      const problems = haikuProblems(repoRoot, fields, model);
-      if (problems.length > 0) {
-        errors.push(...problems.map((problem) => `${relative} pins "${model}": ${problem}`));
-      } else {
-        haiku += 1;
-      }
+      errors.push(`${relative} pins "${model}": Haiku is retired (owner, 2026-11-10); use a script for mechanical work, or Sonnet for a reader`);
       continue;
     }
 
@@ -524,6 +498,10 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
     if (!isBase && !isElevated) {
       errors.push(`${relative} pins unrecognized tier "${model}"; use the base tier, or an elevated tier with a recorded rationale`);
       continue;
+    }
+
+    if (isBase && fields.has(WRITE_SCOPE_FIELD)) {
+      errors.push(`${relative} declares "${WRITE_SCOPE_FIELD}:" on "${model}"; a Sonnet agent never writes (owner, 2026-11-10), so a worker is on Opus or Fable`);
     }
 
     if (isElevated) {
@@ -539,7 +517,7 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
     }
   }
 
-  return { checked: files.length, elevated, haiku, errors };
+  return { checked: files.length, elevated, errors };
 }
 
 /**
@@ -585,7 +563,7 @@ export function toolProblems(fields) {
 }
 
 /**
- * The effort ceiling per tier (owner, 2026-11-10): Sonnet and Haiku agents never run above `high`, Opus and Fable
+ * The effort ceiling per tier (owner, 2026-11-10): Sonnet agents never run above `high`, Opus and Fable
  * agents never above `medium`. Extra effort is cheap on the cheap tiers, where it is what holds the quality bar; on
  * the expensive tiers a packet that medium effort cannot finish goes one tier up instead. This checks the default
  * an agent definition carries in `effort:`; the same ceiling binds the effort the main loop passes per call
@@ -593,7 +571,7 @@ export function toolProblems(fields) {
  */
 export const EFFORT_FIELD = "effort";
 export const EFFORT_LEVELS = ["low", "medium", "high", "xhigh", "max"];
-export const EFFORT_CEILING = { base: "high", restricted: "high", elevated: "medium" };
+export const EFFORT_CEILING = { base: "high", elevated: "medium" };
 
 export function effortProblems(fields, model) {
   if (!fields.has(EFFORT_FIELD)) return [];
@@ -601,55 +579,12 @@ export function effortProblems(fields, model) {
   if (!EFFORT_LEVELS.includes(effort)) {
     return [`declares "${EFFORT_FIELD}: ${effort}"; the levels are ${EFFORT_LEVELS.join(", ")}`];
   }
-  const tier = ELEVATED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "elevated"
-    : RESTRICTED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "restricted" : "base";
+  const tier = ELEVATED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "elevated" : "base";
   const ceiling = EFFORT_CEILING[tier];
   if (EFFORT_LEVELS.indexOf(effort) > EFFORT_LEVELS.indexOf(ceiling)) {
     return [`declares "${EFFORT_FIELD}: ${effort}" on "${model}"; this tier's ceiling is ${ceiling}, and work that needs more goes one tier up`];
   }
   return [];
-}
-
-/** Every unmet Haiku condition, so one run names them all. */
-export function haikuProblems(repoRoot, fields, model) {
-  const problems = [];
-  const pin = HAIKU_PIN.exec(model);
-  const [minMajor, minMinor] = HAIKU_MINIMUM_VERSION;
-  if (!pin || Number(pin[1]) < minMajor || (Number(pin[1]) === minMajor && Number(pin[2]) < minMinor)) {
-    problems.push("Haiku must be an exact pin of claude-haiku-5-5 or later, never the bare alias or an older version");
-  }
-
-  const share = recordedProse(fields, HAIKU_MECHANICAL_FIELD);
-  if (!share || !/^\d{1,3}$/.test(share) || Number(share) < HAIKU_MINIMUM_MECHANICAL_SHARE || Number(share) > 100) {
-    problems.push(
-      `Haiku needs "${HAIKU_MECHANICAL_FIELD}:" as a whole percentage from ${HAIKU_MINIMUM_MECHANICAL_SHARE} to 100; `
-      + "Haiku is only for near-mechanical work",
-    );
-  }
-
-  const replay = recordedProse(fields, HAIKU_REPLAY_FIELD);
-  const replayPath = replay ? normalize(replay) : null;
-  const inside = replayPath && !isAbsolute(replayPath) && replayPath !== ".." && !replayPath.startsWith(`..${sep}`);
-  if (!inside || !existsSync(join(repoRoot, replayPath)) || !statSync(join(repoRoot, replayPath)).isFile()) {
-    problems.push(
-      `Haiku needs "${HAIKU_REPLAY_FIELD}:" naming a file in this repository that records a known-answer replay `
-      + "showing no loss against the base tier",
-    );
-  }
-
-  if (fields.has(WRITE_SCOPE_FIELD)) {
-    problems.push(`Haiku never writes, and this agent declares "${WRITE_SCOPE_FIELD}:"; a worker is on Sonnet or above`);
-  }
-
-  const purpose = `${recordedProse(fields, "name") ?? ""} ${recordedProse(fields, "description") ?? ""}`;
-  const judgment = HAIKU_JUDGMENT_TERMS.exec(purpose);
-  if (judgment) {
-    problems.push(
-      `Haiku never does judgment work, and this agent's name or description says "${judgment[0]}"; `
-      + "review, audit, research, security, debugging, diagnosis, planning and design stay on Sonnet or above",
-    );
-  }
-  return problems;
 }
 
 if (process.argv[1]?.endsWith("verify-agent-tiers.mjs")) {
@@ -659,7 +594,6 @@ if (process.argv[1]?.endsWith("verify-agent-tiers.mjs")) {
     process.exit(1);
   }
   process.stdout.write(
-    `Agent tiers valid: ${result.checked} definition(s) checked, ${result.elevated} elevated with a recorded rationale, `
-    + `${result.haiku} on Haiku under the mechanical-work allowance.\n`,
+    `Agent tiers valid: ${result.checked} definition(s) checked, ${result.elevated} elevated with a recorded rationale.\n`,
   );
 }

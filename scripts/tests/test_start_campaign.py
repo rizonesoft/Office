@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""The campaign launcher starts Claude Code on the latest Fable, by alias (owner, 2026-11-10)."""
+"""The campaign launcher starts Claude Code on the latest Opus, by alias (owner, 2026-11-10)."""
 
 import json
 import os
@@ -20,8 +20,8 @@ class StartCampaignModelTest(unittest.TestCase):
     def setUp(self):
         self.text = LAUNCHER.read_text(encoding="utf-8")
 
-    def test_model_is_the_fable_alias(self):
-        self.assertRegex(self.text, r"(?m)^\$model = 'fable'$")
+    def test_model_is_the_opus_alias(self):
+        self.assertRegex(self.text, r"(?m)^\$model = 'opus'$")
 
     def test_goal_fits_the_goal_limit(self):
         goal = re.search(r"(?m)^\$goal = '(.*)'$", self.text).group(1).replace("''", "'")

@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 54 | Checklist items: 377
+Sections: 54 | Checklist items: 378
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -52,7 +52,7 @@ Sections: 54 | Checklist items: 377
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain            | none                   | 9     |
 | [ ]    | D00 T03 §34 | Work Packet Acceptance Command           | none                   | 9     |
 | [ ]    | D00 T03 §35 | Weekly Owner Digest                      | none                   | 9     |
-| [ ]    | D00 T03 §36 | Operating Mode Measurement Command       | none                   | 10    |
+| [ ]    | D00 T03 §36 | Operating Mode Measurement Command       | none                   | 11    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher         | none                   | 9     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script      | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
@@ -212,4 +212,4 @@ Sections: 6 | Checklist items: 25
 
 Progress: 61/155 verified sections, 23 ready to run now.
 
-Checklist: 382/1019 items completed (includes Commit items).
+Checklist: 382/1020 items completed (includes Commit items).
