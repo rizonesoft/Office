@@ -47,7 +47,7 @@ Sections: 60 | Checklist items: 415
 | [x]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
 | [x]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
 | [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
-| [ ]    | D00 T03 §31 | Plan Lists Files Still to Author         | none                   | 10    |
+| [x]    | D00 T03 §31 | Plan Lists Files Still to Author         | none                   | 10    |
 | [ ]    | D00 T03 §32 | Validate Checks Plan Row Width           | none                   | 5     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain            | none                   | 9     |
 | [ ]    | D00 T03 §34 | Work Packet Acceptance Command           | none                   | 9     |
@@ -307,6 +307,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 62/161 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 63/161 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 397/1057 items completed (includes Commit items).
+Checklist: 398/1057 items completed (includes Commit items).

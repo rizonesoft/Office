@@ -66,7 +66,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 28 | §28 | Host check scratch leftover rule | §26 | [x] |
 | 29 | §29 | Review prompt empty-input refusals | §27 | [x] |
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
-| 31 | §31 | Plan lists files still to author | -- | [ ] |
+| 31 | §31 | Plan lists files still to author | -- | [x] |
 | 32 | §32 | Validate checks plan row width | -- | [ ] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 | 34 | §34 | Work packet acceptance command | -- | [ ] |
@@ -932,9 +932,12 @@ Filed 2026-11-10 (owner: "the todo plan file is not complete"). `todo/implementa
 - [x] Add `to_author` (the count) to the JSON `query stats` prints. Done when: `python scripts/todo-graph.py query stats` on this repository shows `"to_author": 83`, or the number the tree holds on the day this runs, equal to the block's row count.
 - [x] Document the block in `todo/README.md` under "The Implementation Order table is the dependency graph": what an `Author` item is, that the plan lists its file until the file exists, and the two refusals. Done when: the README names the block, the item form and both refusals.
 - [x] Run `python scripts/todo-graph.py plan --sync` and commit the regenerated `todo/implementation-plan.md`. Done when: the plan holds the block and `python scripts/todo-graph.py plan --check` exits 0.
-- [ ] Commit: `todo: list the files still to author in the plan`
+- [x] Commit: `todo: list the files still to author in the plan`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0 with a `### Still to author` block in `todo/implementation-plan.md`.
+
+> **Verified:** 2026-11-11 | §31 | 8a201b673a65c70aae2d731ec673d6b199dc207f
+> **Review:** `docs/reviews/d00-t03-s31.json`
 
 ## 32. Validate Checks Plan Row Width
 
