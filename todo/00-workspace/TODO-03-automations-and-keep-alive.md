@@ -59,7 +59,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 24 | §24 | Resumable newest-page refresh | §23 | [x] |
 | 25 | §25 | Host lock baseline across policy writes | §12 | [x] |
 | 26 | §26 | Host check names every file it writes | §25 | [x] |
-| 27 | §27 | Review prompt builder | -- | [ ] |
+| 27 | §27 | Review prompt builder | -- | [x] |
 | 28 | §28 | Host check scratch leftover rule | §26 | [ ] |
 | 29 | §29 | Review prompt empty-input refusals | §27 | [ ] |
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
@@ -805,9 +805,12 @@ Filed 2026-11-10 from the campaign run of that day (`docs/phase-runs/2026-11-10-
 - [x] Refuse, with exit 2 and a one-line reason on standard error, in both subcommands: a reference `todo_graph.extract_ref` does not resolve; a commit git does not know; and a `--out` path inside the repository (prompts are scratch files). Done when: one test per refusal shows exit 2, the reason, and that `--out` was not written.
 - [x] Replace the hand-filling instructions in `.claude/skills/process-todo-section/SKILL.md` (step 3a.2) and `.claude/skills/review-todo-section/SKILL.md` (step 3) with the exact command for each prompt, its arguments in order, what each exit code means (0 written, 2 refused with the reason on standard error), the rule that `--no-context` is only for sections with no SPEC or inventory citation, and the rule for a split round: when the JSON `omitted` list is not empty, build and dispatch one more part with `--path` for the omitted paths, until every changed path has been in one part, and only then is the round complete. Done when: both skills name `scripts/review-prompt.py`, the split rule is in `review-todo-section`, and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes. **Groomed 2026-11-10:** completion findings 2 and 4 (round 1).
 - [x] Add `scripts/tests/test_review_prompt.py` covering the items above, with fixture trees and repositories under a temporary folder and no reviewer run. Done when: `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes and `python scripts/check-spdx.py` accepts the two new files.
-- [ ] Commit: `review: build the completion and round prompts with one command each`
+- [x] Commit: `review: build the completion and round prompts with one command each`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §27' HEAD HEAD --purpose x --governing y --out <scratch>\p.md` exits 2 with a reason saying the base and the tip are the same commit.
+
+> **Verified:** 2026-11-10 | §27 | da8f9f18455e3ab2f0745239691599898ac7bccd
+> **Review:** `docs/reviews/d00-t03-s27.json`
 
 ## 28. Host Check Scratch Leftover Rule
 

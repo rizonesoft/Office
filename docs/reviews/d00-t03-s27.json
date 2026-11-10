@@ -1,0 +1,36 @@
+{
+  "ref": "D00 T03 \u00a727",
+  "title": "Review Prompt Builder",
+  "implementation_sha": "da8f9f18455e3ab2f0745239691599898ac7bccd",
+  "date": "2026-11-10",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s27.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s27.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s27.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s27.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_review_prompt.py\" -> Ran 29 tests, OK",
+    "python scripts/review-prompt.py round \"D00 T03 \u00a727\" HEAD HEAD --purpose x --governing y --out <scratch>\\p.md -> refused: the base and the tip are the same commit (exit 2)"
+  ],
+  "rounds_spent": 4,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s27-completion.md",
+  "completion_rules": 2
+}

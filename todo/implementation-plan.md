@@ -43,7 +43,7 @@ Sections: 35 | Checklist items: 232
 | [x]    | D00 T03 §24 | Resumable Newest-Page Refresh            | none                   | 4     |
 | [x]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes  | windows-host           | 10    |
 | [x]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
-| [ ]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 11    |
+| [x]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 11    |
 | [ ]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
 | [ ]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
 | [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
@@ -187,6 +187,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 59/132 verified sections, 16 ready to run now.
+Progress: 60/132 verified sections, 16 ready to run now.
 
-Checklist: 377/841 items completed (includes Commit items).
+Checklist: 378/841 items completed (includes Commit items).
