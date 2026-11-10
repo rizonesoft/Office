@@ -27,6 +27,16 @@ class StartCampaignModelTest(unittest.TestCase):
         goal = re.search(r"(?m)^\$goal = '(.*)'$", self.text).group(1).replace("''", "'")
         self.assertLessEqual(len(goal), 4000)
 
+    def test_an_operator_stop_meets_the_goal(self):
+        # 2026-11-11: the goal named only a park as an end by its own rules, so after the operator asked for a stop
+        # and the guard had ended, the goal's own stop check still read "not met" and kept the session working.
+        goal = re.search(r"(?m)^\$goal = '(.*)'$", self.text).group(1).replace("''", "'")
+        met = goal[goal.index("The goal also counts as met"):]
+        self.assertIn("campaign_guard.py end --reason operator-stop", met)
+        self.assertIn("build/campaign-stop-request", met)
+        self.assertIn("in words in this session", met)
+        self.assertRegex(met, r"An operator stop is always honoured: the goal is then met")
+
     def test_every_claude_start_passes_the_model(self):
         starts = [line.strip() for line in self.text.splitlines()
                   if "claude --" in line and "--dangerously-skip-permissions" in line]
