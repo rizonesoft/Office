@@ -68,6 +68,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 31 | §31 | Plan lists files still to author | -- | [ ] |
 | 32 | §32 | Validate checks plan row width | -- | [ ] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
+| 34 | §34 | Work packet acceptance command | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -958,6 +959,31 @@ Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The pla
 - [ ] Commit: `todo: group each phase of the plan by domain`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0.
+
+## 34. Work Packet Acceptance Command
+
+Filed 2026-11-10. Since the owner's decision that workers write (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 27), the main loop accepts or rejects each worker's change by following a paragraph of git commands in `.claude/skills/process-todo-section/SKILL.md` (Delegation, the build step). Four review rounds in a row found a fault in that paragraph (`docs/reviews/orchestration-2026-11-10.md`: new files missing from `git diff`, the main loop's own edits counted as the worker's, a rejection that could delete an edit the owner saved meanwhile, new folders collapsed by `git status`, staged changes hidden). A procedure that is mechanical and has one right answer belongs in a script (`AGENTS.md`, Subagents, tier 1). This section replaces the paragraph with one command that has three verbs, so the main loop reads a complete change and can never destroy anything to reject it.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `scripts/packet.py` with `begin`, `show` and `reject`. Done when: each verb passes its fixture tests on a temporary repository.
+2. Point the skill and `AGENTS.md` at it. Done when: neither names a raw git command for packet acceptance.
+
+- [ ] Write `begin` in `scripts/packet.py`: take `--name` and one or more `--path` values (files or folders the packet may change), refuse with exit 2 when `git status --porcelain --untracked-files=all` prints anything (naming the paths, so the main loop commits its own edits first), and write `build/packet.json` (the name, the paths and `HEAD`) through a temporary file and `os.replace`. Done when: tests in `scripts/tests/test_packet.py` show the refusal on a dirty fixture tree and the file on a clean one. Cheaper substitute: starting a packet over pending edits, which mixes two authors in one diff.
+- [ ] Write `show`: list every changed path since `begin` (staged, unstaged and untracked, each new file listed by itself), mark each as inside or outside the packet's paths, and print the complete change: `git diff HEAD` and the full text of every untracked file. Done when: tests show a staged edit, an unstaged edit, a new file and a new file in a new folder all present in the output, each with its inside or outside mark.
+- [ ] Make `show` exit 0 only when every changed path is inside the packet's paths and `HEAD` is the commit `begin` recorded; exit 1 naming each outside path, and exit 1 when `HEAD` moved (a worker committed). Done when: tests show all three outcomes.
+- [ ] Add `show --stage`, which stages exactly the inside paths (`git add -- <paths>`) when `show` would exit 0, and nothing otherwise. Done when: a test shows the index holding only the packet's paths, and unchanged after a refusal. Cheaper substitute: `git add -A`, which sweeps in whatever else is in the tree.
+- [ ] Write `reject`: set the whole working tree aside with `git stash push --include-untracked` under a message holding the packet's name, confirm the stash exists and the tree is clean, print the stash's name, and remove `build/packet.json`. Done when: a test shows a tracked edit, a staged edit and an untracked file all recoverable from the stash and the tree clean. Cheaper substitute: `git restore` and deleting files, which destroys an edit the owner saved while the worker ran.
+- [ ] Refuse `reject` and `show` with exit 2 when no packet is open, and never drop or pop a stash in any verb. Done when: tests show both refusals, and a search of `scripts/packet.py` finds no `stash drop`, `stash pop`, `stash clear`, `restore`, `clean` or `reset`.
+- [ ] Replace the git commands in the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md` with the three verbs, one sentence each. Done when: the paragraph names `scripts/packet.py begin`, `show`, `show --stage` and `reject` and no `git status`, `git diff` or `git stash` command, and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
+- [ ] Replace the same commands in the quality bullet of the Subagents section of `AGENTS.md` with the command's name. Done when: the bullet names `scripts/packet.py` and no raw git command.
+- [ ] Commit: `agents: accept and reject work packets through one command`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes, with a staged edit, a new file in a new folder and an owner edit saved during the packet each covered.
 
 ## Verification
 

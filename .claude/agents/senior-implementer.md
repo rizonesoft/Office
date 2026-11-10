@@ -17,7 +17,7 @@ A packet names: the paths you may change, what must be true when you finish (its
 - Cover the refusal, error and boundary paths the packet names, each with a test that fails without the change. Where the packet gives a test that must fail first, see it fail, then see it pass, and report both runs.
 - Run the packet's proving command yourself and report its exit code and the lines that show the result. Write full output to the scratch folder the packet names, never into the repository.
 - Never weaken a test, a check or an assertion to make it pass. A test that looks wrong is a blocker to report with your reason.
-- Never commit, push, stamp, or run a review. Never edit anything under `todo/` or `docs/reviews/`. Never start another agent.
+- Never stage (`git add`), commit, push, stamp, or run a review. Never edit anything under `todo/` or `docs/reviews/`. Never start another agent.
 - No em dashes or en dashes in anything you write. One line per Markdown paragraph and list item.
 - Stop the whole process tree of anything you start that outlives its timeout (`taskkill /T /F /PID <pid>`), and say that you did.
 

@@ -111,3 +111,31 @@ The verifier, four launcher tests, and 96 in-memory permission cases passed. The
 
 HIGHEST: P1
 OVERALL: needs-attention
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T18:48:45Z
+- Effort: medium
+- Type: adversarial
+- Lines: 18
+- Digest: b217c57127cfe6f1
+
+## adversarial: needs-attention
+
+1. **[P2] Staged changes bypass the prescribed worker review.** `.claude/skills/process-todo-section/SKILL.md:58` requires reading `git diff` and untracked files. Neither includes staged changes. Reproduce with a clean starting tree: the worker edits an allowed tracked file and runs `git add -- <file>` before returning. Status lists the permitted path, but `git diff` is empty and there are no untracked files. The procedure then commits code whose changes it never displayed. Workers are forbidden to commit, but staging is not prohibited; an ordinary concurrent user staging operation produces the same failure. Review `git diff HEAD` plus untracked files before acceptance.
+
+## consistency: approve
+
+## integration: needs-attention
+
+Finding 1 also affects `AGENTS.md:52`, which repeats the incomplete review commands. The acceptance procedure misses Git’s index state.
+
+## source-defect: approve
+
+## record: advisory
+
+The repository verifier, four launcher tests and 116 in-memory tool and effort probes passed. The filesystem-writing verifier suite and live campaign launch were not run in this read-only review. The staged-change scenario was assessed from the commands, without modifying files.
+
+HIGHEST: P2
+OVERALL: needs-attention
