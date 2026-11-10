@@ -1381,6 +1381,111 @@ class Stamp(Tree):
         self.refuses("missing receipt")
 
 
+class StillToAuthor(Tree):
+    """The plan lists the TODO files Author items name that are not on disk yet (D00 T03 §31)."""
+
+    def authoring(self, items_by_section, *, extra_rows=()):
+        """One file whose section N carries the given checklist lines in place of its work item."""
+        rows = [(n, f"S{n}", 0, "none", "--") for n in sorted(items_by_section)] + list(extra_rows)
+        text = todo_file(rows)
+        for n, items in items_by_section.items():
+            head = f"## {n}. S{n}\n"
+            start = text.index(head)
+            at = text.index("- [ ] Work.\n", start)
+            text = text[:at] + "".join(f"{item}\n" for item in items) + text[at + len("- [ ] Work.\n"):]
+        self.write(text)
+
+    def authored(self, name="TODO-02-b.md", ident="beta"):
+        self.write(todo_file([(1, "B", 0, "none", "--")], ident=ident), name=name)
+
+    def test_a_missing_file_is_listed_with_its_section_and_an_existing_or_other_path_is_not(self):
+        self.authored()
+        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build.",
+                            "- [ ] Author `todo/00-workspace/TODO-02-b.md`: already written.",
+                            "- [ ] Author `docs/specs/notes.md`: not a TODO file.",
+                            "- [ ] Author `todo/README.md`: not a TODO file either."],
+                        2: ["- [ ] Author `todo/05-engine/TODO-03-text.md`: the text engine."]})
+        self.assertEqual(tg.to_author(self.root), [
+            {"path": "todo/04-platform/TODO-01-build.md", "ref": "D00 T01 §1", "done": False},
+            {"path": "todo/05-engine/TODO-03-text.md", "ref": "D00 T01 §2", "done": False}])
+
+    def test_the_list_follows_plan_order(self):
+        table = "| 1 | §2 | S2 | -- | [ ] |\n| 2 | §1 | S1 | -- | [ ] |"
+        text = todo_file([(1, "S1", 0, "none", "--"), (2, "S2", 0, "none", "--")], table_override=table)
+        # Section 1 is written first in the file, section 2 second; the table runs §2 first.
+        for path in ("todo/04-platform/TODO-01-a.md", "todo/04-platform/TODO-02-b.md"):
+            text = text.replace("- [ ] Work.\n", f"- [ ] Author `{path}`: it.\n", 1)
+        self.write(text)
+        self.assertEqual([item["ref"] for item in tg.to_author(self.root)], ["D00 T01 §2", "D00 T01 §1"])
+
+    def test_one_path_named_by_two_sections_refuses_naming_both(self):
+        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build."],
+                        2: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build again."]})
+        self.refuses("TODO file named by two Author items (D00 T01 §1 and D00 T01 §2): "
+                     "todo/04-platform/TODO-01-build.md")
+
+    def test_a_ticked_author_item_without_its_file_refuses_and_with_it_validates(self):
+        self.authoring({1: ["- [x] Author `todo/00-workspace/TODO-02-b.md`: written."]})
+        self.refuses("ticked Author item without its file (D00 T01 §1): todo/00-workspace/TODO-02-b.md")
+        self.authored()
+        tg.graph(self.root)
+        self.assertEqual(tg.to_author(self.root), [])
+
+    def test_the_plan_shows_the_block_and_the_count(self):
+        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build.",
+                            "- [ ] Author `todo/05-engine/TODO-03-text.md`: the text engine."]})
+        plan = tg.projection(self.root)
+        block = plan.split("### Still to author\n", 1)[1].split("\nProgress:", 1)[0]
+        rows = [line for line in block.splitlines() if line.startswith("| `todo/")]
+        self.assertEqual([row.split("|")[1].strip() for row in rows],
+                         ["`todo/04-platform/TODO-01-build.md`", "`todo/05-engine/TODO-03-text.md`"])
+        self.assertTrue(all(row.split("|")[2].strip() == "D00 T01 §1" and row.split("|")[3].strip() == "[ ]"
+                            for row in rows))
+        self.assertIn("| File ", block)
+        self.assertIn("These TODO files do not exist yet", block)
+        # The block sits after the last phase table and before the progress line.
+        self.assertLess(plan.index("### Phase 0"), plan.index("### Still to author"))
+        self.assertIn("ready to run now, 2 TODO files still to author (not counted here).", plan)
+
+    def test_one_file_reads_in_the_singular(self):
+        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build."]})
+        self.assertIn("ready to run now, 1 TODO file still to author (not counted here).", tg.projection(self.root))
+
+    def test_no_block_and_no_count_when_nothing_is_missing(self):
+        self.authored()
+        self.authoring({1: ["- [ ] Author `todo/00-workspace/TODO-02-b.md`: written."]})
+        plan = tg.projection(self.root)
+        self.assertNotIn("Still to author", plan)
+        self.assertNotIn("still to author", plan)
+        self.assertIn("ready to run now.", plan)
+
+    def test_a_row_wider_than_the_limit_refuses_naming_the_path(self):
+        path = "todo/04-platform/TODO-01-" + "x" * 80 + ".md"
+        self.authoring({1: [f"- [ ] Author `{path}`: too long a name."]})
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.projections(self.root, sync=True)
+        self.assertIn("still-to-author table wraps raw md", str(ctx.exception))
+        self.assertIn(path, str(ctx.exception))
+        self.assertFalse((self.root / tg.PLAN).exists())
+
+    def test_a_stale_block_fails_the_check(self):
+        self.authoring({1: ["- [ ] Author `todo/00-workspace/TODO-02-b.md`: soon."]})
+        tg.projections(self.root, sync=True)
+        tg.projections(self.root)
+        self.authored()
+        with self.assertRaises(tg.Refused):
+            tg.projections(self.root)
+
+    def test_query_stats_counts_the_files_still_to_author(self):
+        r = subprocess.run([sys.executable, str(REPO / "scripts/todo-graph.py"), "query", "stats"],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        stats = json.loads(r.stdout)
+        self.assertEqual(stats["to_author"], len(tg.to_author()))
+        plan = (REPO / tg.PLAN).read_text(encoding="utf-8")
+        self.assertEqual(plan.count("\n| `todo/"), stats["to_author"])
+
+
 class Repository(unittest.TestCase):
     def test_the_authoring_template_copies_are_identical(self):
         # todo/README.md and create-todo name todo/templates/TODO-template.md and the skill copies as the same file.

@@ -60,6 +60,9 @@ MAX_ITEMS_PER_SECTION = 30
 MAX_DELIVERABLE_LEN = 88
 # Every Markdown table row at or under this many characters, so rows never wrap in raw view (AGENTS.md).
 MAX_TABLE_ROW = 120
+# A checklist item that writes a whole TODO file into the tree (D00 T03 §31): `Author` and the file's backticked path.
+AUTHOR_ITEM = re.compile(r"^- \[([ x])\] Author `([^`\n]+)`", re.M)
+AUTHOR_PATH = re.compile(r"todo/\d{2}-[a-z0-9-]+/TODO-\d{2}-[a-z0-9-]+\.md")
 
 
 class Refused(ValueError):
@@ -664,6 +667,8 @@ def graph(root=ROOT):
                 stack.pop()
                 visiting.remove(ref)
                 visited.add(ref)
+    # After the cycle check: author_items walks the plan order, which needs an acyclic, resolved graph.
+    _author_items_ok(root, sections)
     return sections
 
 
@@ -681,6 +686,37 @@ def _index_coverage(root, files):
         for filename in names:
             require(filename in text, f"missing from domain index: {domain}/{filename}")
             require(f"{domain}/{filename}" in root_text, f"missing from root index: {domain}/{filename}")
+
+
+def author_items(rows):
+    """Every `Author` item naming a TODO file path, as (ref, path, ticked), sections in plan order and items in the
+    order they are written. An item whose backticked text is not a `todo/<NN-domain>/TODO-NN-<name>.md` path is no
+    authoring item and is left out (D00 T03 §31)."""
+    found = []
+    for row in ordered(rows):
+        for m in AUTHOR_ITEM.finditer(row.body):
+            if AUTHOR_PATH.fullmatch(m[2]):
+                found.append((row.ref, m[2], m[1] == "x"))
+    return found
+
+
+def _author_items_ok(root, rows):
+    """One section authors each file, and a ticked `Author` item has its file on disk (D00 T03 §31)."""
+    owners = {}
+    for ref, path, ticked in author_items(rows):
+        require(path not in owners,
+                f"TODO file named by two Author items ({owners.get(path)} and {ref}): {path}")
+        owners[path] = ref
+        require(not ticked or (Path(root) / path).is_file(),
+                f"ticked Author item without its file ({ref}): {path}")
+
+
+def to_author(root=ROOT, rows=None):
+    """The TODO files `Author` items name that are not on disk yet, each with the section that authors it, in plan
+    order (D00 T03 §31)."""
+    rows = graph(root) if rows is None else rows
+    return [{"path": path, "ref": ref, "done": rows[ref].done}
+            for ref, path, _ in author_items(rows) if not (Path(root) / path).is_file()]
 
 
 def settled(ref, rows):
@@ -790,11 +826,27 @@ def projection(root=ROOT):
                 f"chars); shorten the heading and Deliverable of {widest.ref} (title {len(widest.title)} chars)")
         lines += table
         lines.append("")
+    missing = to_author(root, all_rows)
+    if missing:
+        lines += ["### Still to author", "",
+                  "These TODO files do not exist yet, so their sections and checklist items are not in the totals "
+                  "above or below; each is written into the tree by the section beside it.", ""]
+        table = markdown_table(["File", "Authored by", "Status"],
+                               [[f"`{item['path']}`", item["ref"], f"[{'x' if item['done'] else ' '}]"]
+                                for item in missing])
+        widest = max(missing, key=lambda item: len(item["path"]))
+        require(all(len(line) <= MAX_TABLE_ROW for line in table),
+                f"still-to-author table wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} chars); "
+                f"shorten the file name {widest['path']} (named by {widest['ref']})")
+        lines += table
+        lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)
     ready = sum(disposition(r, all_rows) == 0 for r in rows)
+    still = (f", {len(missing)} TODO {'file' if len(missing) == 1 else 'files'} still to author (not counted here)"
+             if missing else "")
     lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows)} verified sections, "
-              f"{ready} ready to run now.", "",
+              f"{ready} ready to run now{still}.", "",
               f"Checklist: {completed_items}/{total_items} items completed (includes Commit items).", ""]
     return "\n".join(lines)
 

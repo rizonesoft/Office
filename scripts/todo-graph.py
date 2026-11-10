@@ -30,7 +30,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from todo_graph import (ROOT, Refused, adjacency_report, atomic, contract_digest, deferrals,  # noqa: E402
                         disposition, extract_ref, graph, ordered, plan_config, projections, require, review_rounds,
-                        settled, stamp, suspects, unstamp)
+                        settled, stamp, suspects, to_author, unstamp)
 
 
 def review_round(value):
@@ -127,7 +127,8 @@ def main():
         if args.kind == "stats":
             result = {"total": len(rows), "verified": sum(r.done for r in rows.values()),
                       "ready": sum(disposition(r, rows) == 0 for r in rows.values()),
-                      "blocked": sum(disposition(r, rows) == 4 for r in rows.values())}
+                      "blocked": sum(disposition(r, rows) == 4 for r in rows.values()),
+                      "to_author": len(to_author(ROOT, rows))}
         elif args.kind == "deferred":
             result = deferrals()
         elif args.kind == "adjacency":
