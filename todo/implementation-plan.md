@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 51 | Checklist items: 349
+Sections: 54 | Checklist items: 377
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -51,6 +51,9 @@ Sections: 51 | Checklist items: 349
 | [ ]    | D00 T03 §32 | Validate Checks Plan Row Width           | none                   | 5     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain            | none                   | 9     |
 | [ ]    | D00 T03 §34 | Work Packet Acceptance Command           | none                   | 9     |
+| [ ]    | D00 T03 §35 | Weekly Owner Digest                      | none                   | 9     |
+| [ ]    | D00 T03 §36 | Operating Mode Measurement Command       | none                   | 10    |
+| [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher         | none                   | 9     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script      | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                     | none                   | 6     |
@@ -60,8 +63,8 @@ Sections: 51 | Checklist items: 349
 | [ ]    | D00 T05 §3  | First Lessons From the Review Records    | none                   | 6     |
 | [ ]    | D00 T05 §4  | Section Runs Read Their Lessons          | none                   | 5     |
 | [ ]    | D00 T05 §5  | Work Packets Carry Their Lessons         | none                   | 5     |
-| [ ]    | D00 T05 §6  | Packet Outcome Ledger                    | owner-decision         | 6     |
-| [ ]    | D00 T05 §7  | Agent Score From the Ledger              | owner-decision         | 8     |
+| [ ]    | D00 T05 §6  | Packet Outcome Ledger                    | none                   | 6     |
+| [ ]    | D00 T05 §7  | Agent Score From the Ledger              | none                   | 8     |
 | [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                   | none                   | 7     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -141,10 +144,12 @@ Sections: 44 | Checklist items: 289
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 30 | Checklist items: 216
+Sections: 32 | Checklist items: 230
 
 | Status | Reference   | Deliverable                            | Needs                   | Items |
 | ------ | ----------- | -------------------------------------- | ----------------------- | ----- |
+| [ ]    | D00 T03 §38 | Parallel Streams Design Record         | none                    | 9     |
+| [ ]    | D00 T03 §39 | Parallel Streams Sections Authored     | none                    | 5     |
 | [ ]    | D03 T01 §1  | Platform Targets Decision              | none                    | 5     |
 | [ ]    | D03 T01 §2  | GUI Toolkit and Ribbon Prototype       | none                    | 13    |
 | [ ]    | D03 T01 §3  | Text Layout Engine Decision            | office, windows-host    | 5     |
@@ -205,6 +210,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/150 verified sections, 21 ready to run now.
+Progress: 61/155 verified sections, 23 ready to run now.
 
-Checklist: 382/977 items completed (includes Commit items).
+Checklist: 382/1019 items completed (includes Commit items).

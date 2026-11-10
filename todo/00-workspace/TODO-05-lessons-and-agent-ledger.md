@@ -159,10 +159,10 @@ A worker starts every packet knowing nothing. The packet command attaches the le
 
 ## 6. Packet Outcome Ledger
 
-Whether a tier is good at a kind of work should be read from what happened, not remembered. The packet command already knows how each packet ends; this section makes it write that down. Built only if the three-way measurement keeps the orchestrated way of working (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 28): with no workers there are no packets to record.
+Whether a tier is good at a kind of work should be read from what happened, not remembered. The packet command already knows how each packet ends; this section makes it write that down. The way of working is chosen by measurement and measured again as the project grows (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 30), so the ledger is built whichever way is in use today: it records packets whenever workers are used, and stays empty while the lead works alone.
 
 **Phase:** 0
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**
@@ -180,10 +180,10 @@ Whether a tier is good at a kind of work should be read from what happened, not 
 
 ## 7. Agent Score From the Ledger
 
-The score turns the ledger into a routing aid: which tier finishes which kind of work the first time. It changes where work is sent first. It never changes what is checked: the main loop reads every change, runs every gate and keeps the independent review whatever a score says. Built only if §6 is.
+The score turns the ledger into a routing aid: which tier finishes which kind of work the first time. It changes where work is sent first. It never changes what is checked: the main loop reads every change, runs every gate and keeps the independent review whatever a score says. With an empty ledger it prints `no advice`.
 
 **Phase:** 0
-**Needs:** owner-decision
+**Needs:** none
 **Surface:** no
 
 **Build order:**

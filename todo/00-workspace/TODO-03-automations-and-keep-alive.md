@@ -70,6 +70,11 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 32 | §32 | Validate checks plan row width | -- | [ ] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 | 34 | §34 | Work packet acceptance command | -- | [ ] |
+| 35 | §35 | Weekly owner digest | §1 | [ ] |
+| 36 | §36 | Operating mode measurement command | -- | [ ] |
+| 37 | §37 | Operating mode rule and launcher | §36 | [ ] |
+| 38 | §38 | Parallel streams design record | §37 | [ ] |
+| 39 | §39 | Parallel streams sections authored | §38 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -985,6 +990,128 @@ Filed 2026-11-10. Since the owner's decision that workers write (`docs/specs/202
 - [ ] Commit: `agents: accept and reject work packets through one command`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes, with a staged edit, a new file in a new folder and an owner edit saved during the packet each covered.
+
+## 35. Weekly Owner Digest
+
+Owner decision 2026-11-10 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 32): the run never waits on the owner and never interrupts the owner. It works around every item only the owner can do, and once a week one email says what was built and what is waiting, with the exact steps for each waiting item. The owner's choice of this digest is the standing permission to send it (`AGENTS.md`, Safety, asks once before mail); it covers this one weekly email and nothing else. The digest is built by a script from the tree, so it costs no model tokens and says the same thing whoever runs it.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `scripts/owner-digest.py`. Done when: `--dry-run` prints the digest from this repository.
+2. Send it weekly through the automations. Done when: the task is in `tasks.json` and the README, and a dry run of the task prints the email.
+
+- [ ] Write the progress part of `scripts/owner-digest.py`: from `python scripts/todo-graph.py query stats` and the stamp dates in the receipts under `docs/reviews/`, the sections verified in the last seven days (reference and title), the totals verified, ready and blocked, and the number of TODO files still to author (§31). Done when: a test in `scripts/tests/test_owner_digest.py` over a fixture tree with two receipts inside the week and one outside lists the two.
+- [ ] Write the waiting part: every open section whose Needs include `operator`, `owner-decision`, `third-party` or `store-account`, with its reference, its title, the first paragraph of its body as what is needed, and how many open sections depend on it directly or through others. Done when: a fixture with one such section and two dependants lists it with the count 2. Cheaper substitute: the list of references alone, which sends the owner into the TODO files to learn what to do.
+- [ ] Order the waiting part by the number of dependants, largest first, and say `Nothing is waiting on you.` when it is empty. Done when: tests show the order and the empty form.
+- [ ] Add the state of the run: the last line of the newest file under `docs/phase-runs/` that starts with `PARKED` or `STOPPED`, or `Running: last commit <date>` from `git log -1`, and the state of CI from `python scripts/ci-status.py`. Done when: tests cover a parked run file and a running one.
+- [ ] Keep the email to plain text of at most 120 lines, with no line over 100 characters, and no secret or path outside the repository. Done when: a test with 300 fixture sections shows the cut with a last line that says how many more there are.
+- [ ] Send the digest through the transport of `.conclave/automations/alert.py` (the same sender and recipient), with `--dry-run` printing it and sending nothing. Done when: a test with a replaced opener shows one request with the digest as its body, and `--dry-run` makes none.
+- [ ] Add the task `office-owner-digest` to `.conclave/automations/tasks.json` (weekly, Monday 07:00, timeout 5 minutes) and to `.conclave/automations/README.md`. Done when: `python scripts/tests/test_automations.py` passes, which fails when the README and `tasks.json` disagree.
+- [ ] Register the task on this PC with `pwsh .conclave/automations/install.ps1`. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists `office-owner-digest`.
+- [ ] Commit: `automations: send the owner one weekly digest`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes, and `python scripts/owner-digest.py --dry-run` prints a digest for this repository and exits 0.
+
+## 36. Operating Mode Measurement Command
+
+Owner decision 2026-11-10 (decision 30): which model leads, and whether it works alone or orchestrates workers, is decided by measurement and never by opinion or by asking. The first measurement ran from a scratch script on 2026-11-10 (three sections, each built by Fable alone, by Opus alone and by Fable orchestrating, in separate local clones from one commit, each result gated and reviewed blind); its record is `docs/reviews/operating-mode-2026-11-10.md`. This section makes that a command in the repository, so it can be run again without anyone rewriting it.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `scripts/measure-modes.py`. Done when: a run against a fake `claude` builds every arm in its own clone and writes the results file.
+2. Bound it. Done when: a run that hangs or floods its output is stopped with its whole process tree.
+
+- [ ] Write the arm table in `scripts/measure-modes.py`: each arm has a name, the model alias, whether subagents are allowed and the instruction added to the task; the first three are `fable-alone`, `opus-alone` and `orchestrated`. Done when: a test in `scripts/tests/test_measure_modes.py` reads the three arms and refuses a duplicate name.
+- [ ] Clone the repository once per arm and section into the folder `--work` names (under the scratch folder by default), at the commit `--base` names, with no remote, under folder names that do not reveal the arm. Done when: a test on a fixture repository shows the clones, no `origin` in any, and a name mapping only in the results file. Cheaper substitute: git worktrees of the working repository, which a session could push from or damage.
+- [ ] Start each arm as a headless session with the task text on standard input, JSON output, a per-run spending limit (`--budget`, default 40) and a per-run time limit (`--minutes`, default 75), three at a time. Done when: a test with a fake `claude` on `PATH` records each invocation's arguments and standard input.
+- [ ] Stop the whole process tree of a run that passes its time limit or whose output files pass 50 MB, and stop anything still running from a clone when its run ends. Done when: a test with a fake `claude` that starts a child and sleeps shows neither process alive after the limit. Cheaper substitute: `subprocess.run(timeout=...)`, which kills one process and leaves its children (the 2026-11-08 incident in the global rules).
+- [ ] Run the gates in each clone from the harness, never from the measured session: `python scripts/todo-graph.py validate`, `python scripts/todo-graph.py plan --check` and `python scripts/run-tests.py`, each log kept. Done when: a test shows the three results per run in the results file.
+- [ ] Review each result blind through `scripts/review-dispatch.py` with one fixed prompt that names only the range and the section, and record the highest severity and the counts per severity. Done when: a test with a fake reviewer shows the parsed verdict, and the prompt contains no arm name.
+- [ ] Add `clean`, which removes every clone under the work folder once the record is written, after confirming the record exists, and refuses with exit 2 while a run is still going. Done when: a test shows the clones gone and the results file and logs kept, and the refusal. Cheaper substitute: leaving the clones in scratch, which is how gigabytes of stale copies pile up.
+- [ ] Write `results.json` after every step through a temporary file and `os.replace`, and resume from it: a run that already has an exit code is not built again. Done when: a test interrupts after the first arm and a second call builds only the rest.
+- [ ] Record per run the cost, the wall time, the tokens per model (subagents included), the commit count and the diff size. Done when: a test over a fixture reply shows each field.
+- [ ] Commit: `campaign: measure the ways of working with one command`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_measure_modes.py"` passes with a fake `claude` and a fake reviewer, and no test starts a real session.
+
+## 37. Operating Mode Rule and Launcher
+
+The measurement only decides something if a rule reads it. This section writes the rule, stores its verdict in one file, makes the launcher start whatever that file says, and has the campaign measure again when the facts may have changed. After it, nobody chooses the lead model: the rule does (decision 30).
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write the rule as `python scripts/measure-modes.py decide`. Done when: fixture results give the expected arm.
+2. Store the verdict and make the launcher read it. Done when: `scripts/start-campaign.ps1 -DryRun` shows the model and mode from the file.
+3. Measure again at the right moments. Done when: `process-plan` names them.
+
+- [ ] Write `decide`: an arm is eligible when every one of its runs passed all three gates and none of its reviews has a `P1`; among eligible arms, the one with the lowest total cost wins, unless another eligible arm has fewer `P2` findings in total, in which case the arm with the fewest `P2` findings wins when its cost is at most twice the cheapest; a tie goes to the arm with fewer findings, then the shorter wall time. Done when: tests in `scripts/tests/test_measure_modes.py` cover each branch with fixture results. Cheaper substitute: lowest cost alone, which would pick a cheap arm that ships more defects.
+- [ ] Refuse to decide on fewer than three sections per arm or when no arm is eligible, with exit 2 and the reason, leaving the stored verdict as it was. Done when: tests show both refusals and the unchanged file.
+- [ ] Write the verdict to `.conclave/operating-mode.json` through a temporary file and `os.replace`: the arm, its model alias, whether it orchestrates, the date, the base commit, the per-arm totals and the path of the record. Done when: a test reads it back.
+- [ ] Write the record `docs/reviews/operating-mode-<date>.md` with one table row per run and the verdict with the branch of the rule that produced it. Done when: `python scripts/check-design-doc.py` on it exits 0.
+- [ ] Read `.conclave/operating-mode.json` in `scripts/start-campaign.ps1` for the model and for the sentence of the goal that says to work alone or to orchestrate, falling back to the values in the script when the file is missing or unreadable, and print the mode at start. Done when: tests in `scripts/tests/test_start_campaign.py` show both verdicts reaching the command line and the fallback.
+- [ ] State in `AGENTS.md` (Subagents) that the routing ladder applies when the stored mode orchestrates, and that in a solo mode the lead does the writing with the readers only. Done when: the section names the file.
+- [ ] Add to `.claude/skills/process-plan/SKILL.md`, at a section boundary: measure again with `python scripts/measure-modes.py` on three ready sections when 300 sections were stamped since the stored verdict's base, or when the model a lead alias resolves to differs from the one the verdict recorded; apply the verdict and carry on; the launcher picks it up at its next start. Done when: the skill names both triggers and a test in `scripts/tests/test_skill_ci_gate.py` fails when the mention is removed.
+- [ ] Record the first verdict from the results of 2026-11-10 with `decide`. Done when: `.conclave/operating-mode.json` exists and the launcher's dry run shows its mode.
+- [ ] Commit: `campaign: let the measurement choose the lead model`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_measure_modes.py"` and `-p "test_start_campaign.py"` pass, and `pwsh scripts/start-campaign.ps1 -DryRun` prints the stored mode.
+
+## 38. Parallel Streams Design Record
+
+Owner decision 2026-11-10 (decision 33): once work is independent enough, the system may run several streams at once, each in its own clone, with one integrator landing them on `main` in order with the full gates. This reverses "one tree, one writer" for that case only. One section at a time is the limit on calendar time: at thousands of sections a single stream sets the finish date. It is also the change most able to damage the repository, so it is designed and measured before any of it is built.
+
+**Phase:** 3
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Measure what a single stream achieves and what parallel streams could. Done when: the record's Measurements section holds both.
+2. Write `docs/specs/<date>-parallel-streams-design.md`. Done when: the checker passes with the headings below.
+
+- [ ] Measure the single stream from the receipts under `docs/reviews/`: sections stamped per day and the median hours per section, over the last 30 days of running. Done when: both numbers are under `## Measurements` with the command that produced them.
+- [ ] Define when two sections are independent, as a rule a script can check: neither depends on the other in the graph, their named paths do not overlap, and neither changes a file under `todo/` that the other reads (the plan, the indexes). Done when: `## Decision` states the rule and names the script that will check it. Cheaper substitute: independence judged per case, which is how two streams end up editing one file.
+- [ ] Decide what is never parallel: the shared platform before its interfaces are stamped, anything that drives Office or the desktop (one desktop, one driver), the plan sync and the stamp, and the integrator itself. Done when: `## Decision` lists them with the reason for each.
+- [ ] Design the stream: its own worktree or clone (the record chooses one from the measurements and says why), its own run file and run guard, its own scratch folder, commits on a stream branch that only the integrator reads, and no push. Done when: `## Decision` describes each and what stops a stream from pushing.
+- [ ] Design the cleanup (owner, 2026-11-10: worktrees and branches are fine as long as they are cleaned up afterwards, or reused when the work recurs): a stream's worktree and branch are reused for that stream's next section and removed when the stream ends; a command lists every worktree, branch and clone the system made with the job it belongs to, and fails when one has no live job; the integrator runs it after every landing and the run's closeout runs it last. Done when: `## Decision` names the command, when it runs, and what it does with a leftover whose job died (remove it after confirming its commits are on `main` or kept in a named ref, never before).
+- [ ] Design the integrator: one at a time, in dependency order, it takes a stream's finished section, replays it onto `main`, runs the full gates and the section's Test checkpoint on the result, and only then stamps and pushes; a section that fails after replay goes back to its stream with the evidence. Done when: `## Decision` describes the order, the gates and the return path. Cheaper substitute: merging stream branches as they finish, which lands work that was never tested together.
+- [ ] Set the number of streams from measurement, not preference: the usage limits of the sign-in, the memory and processor a stream's gates take on this PC (`bosun` already queues heavy jobs), and the reviewer's capacity. Done when: `## Measurements` holds each and `## Decision` states a starting number and the rule that raises or lowers it.
+- [ ] State the failure paths: a stream that dies, two streams that turn out to conflict, an integrator that fails mid-replay, and a disk that fills. Done when: `## Consequences` names what the system does in each without losing committed work.
+- [ ] Commit: `arch: record the parallel streams design`
+
+**Test checkpoint:** `python scripts/check-design-doc.py docs/specs/<dated>-parallel-streams-design.md --require Measurements --require Decision --require Consequences` exits 0.
+
+## 39. Parallel Streams Sections Authored
+
+The design record of §38 becomes work. This section authors the TODO file that builds parallel streams, so the build is planned from a reviewed design and each piece is small.
+
+**Phase:** 3
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Author `todo/00-workspace/TODO-06-parallel-streams.md` with `create-todo` from the design record. Done when: `python scripts/todo-graph.py validate` passes.
+
+- [ ] Author `todo/00-workspace/TODO-06-parallel-streams.md`: one section each for the independence check, the stream clone and its guard, the integrator, the stream count rule, each failure path of the record's Consequences, and a first parallel run of two streams on two independent sections whose result is compared with the same two sections run one after the other. Done when: the file validates and every Decision and Consequences item of the record is owned by a section. Cheaper substitute: one section for the whole subsystem.
+- [ ] Give the last section of that file the rule that parallel work starts: only after its two-stream run landed both sections on `main` with every gate green and no rework. Done when: the section's Done when states it.
+- [ ] Update `AGENTS.md` (Working rules, "Develop straight on `main`") to say that stream branches in stream clones are the one further kind of branch, made by tooling and landed only by the integrator. Done when: the bullet names them and the design record.
+- [ ] Run `python scripts/todo-graph.py plan --sync`. Done when: `python scripts/todo-graph.py plan --check` exits 0.
+- [ ] Commit: `todo: author the parallel streams file`
+
+**Test checkpoint:** `python scripts/todo-graph.py validate` exits 0 and `Test-Path todo/00-workspace/TODO-06-parallel-streams.md` returns `True`.
 
 ## Verification
 
