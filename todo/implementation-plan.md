@@ -42,7 +42,7 @@ Sections: 33 | Checklist items: 216
 | [x]    | D00 T03 §23 | CI Reconciliation After Deleted Runs     | none                   | 6     |
 | [x]    | D00 T03 §24 | Resumable Newest-Page Refresh            | none                   | 4     |
 | [x]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes  | windows-host           | 10    |
-| [ ]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
+| [x]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
 | [ ]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 7     |
 | [ ]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
 
@@ -185,6 +185,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 58/130 verified sections, 16 ready to run now.
+Progress: 59/130 verified sections, 16 ready to run now.
 
-Checklist: 366/825 items completed (includes Commit items).
+Checklist: 367/825 items completed (includes Commit items).

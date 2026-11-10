@@ -58,7 +58,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 23 | §23 | CI reconciliation after deleted runs | §22 | [x] |
 | 24 | §24 | Resumable newest-page refresh | §23 | [x] |
 | 25 | §25 | Host lock baseline across policy writes | §12 | [x] |
-| 26 | §26 | Host check names every file it writes | §25 | [ ] |
+| 26 | §26 | Host check names every file it writes | §25 | [x] |
 | 27 | §27 | Review prompt builder | -- | [ ] |
 | 28 | §28 | Host check scratch leftover rule | §26 | [ ] |
 
@@ -770,9 +770,12 @@ Filed 2026-11-10 from §25's completion review (round 2, finding 1, `docs/review
 - [x] Add `test_the_docstring_lists_every_file_the_check_writes` to the `LockBaseline` class in `scripts/tests/test_check_campaign_host.py`: it holds the five expected lines word for word, takes the lines of the module docstring from the "Files written (nothing else is):" heading to the next blank line, and asserts they are equal to the heading followed by those five lines. Done when: the test passes, and deleting any one line, or changing one word of any lifetime, fails it. **Groomed 2026-11-10:** completion finding 3 (round 1): substring checks let an entry or a lifetime be removed unnoticed.
 - [x] Add `test_a_recording_run_leaves_only_the_baseline_and_the_lock` to the same class: after one recording run on a fresh root the names in `build/` are exactly `host-lock-baseline.json` and `host-lock-baseline.lock`. Done when: the test passes and fails when `record_lock_baseline` no longer removes its temporary file after a successful write.
 - [x] Add `test_a_probe_removes_its_scratch_folder` to the `Probe` class in the same file: it points `tempfile.tempdir` at a fresh folder, runs one real `Host().run` of `python -c "print(1)"`, and asserts the folder holds no `campaign-host-*` entry afterwards. Done when: the test passes and fails when `Host.run` keeps its scratch folder.
-- [ ] Commit: `automations: name every file the host check writes`
+- [x] Commit: `automations: name every file the host check writes`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, and `python -c "import pathlib; t = pathlib.Path('scripts/check-campaign-host.py').read_text(encoding='utf-8').split('import argparse')[0]; print(all(n in t for n in ('Files written (nothing else is):', 'build/host-lock-baseline.lock', '.tmp', 'campaign-host-', 'campaign-notice-')), 'One file is written' in t)"` prints `True False`.
+
+> **Verified:** 2026-11-10 | §26 | 85b53866520c9375ac99213be9fcf5b14affa670
+> **Review:** `docs/reviews/d00-t03-s26.json`
 
 ## 27. Review Prompt Builder
 
