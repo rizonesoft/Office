@@ -22,3 +22,26 @@ OVERALL: needs-attention
 ## Outcome (round 1)
 
 1. extended
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T16:20:36Z
+- Effort: medium
+- Type: adversarial
+- Lines: 9
+- Digest: 6050bc632f80f46a
+
+SECTION: D00 T03 §25
+PURPOSE: completion
+CONTRACT: sha256:219f4eb209fc8f48420ed9af3791469c302df1a39a0b8bc48d4d80835d9b056c
+
+1. **P3, extend:** The required write documentation contradicts the persistence design. [Line 740](D:/Office/todo/00-workspace/TODO-03-automations-and-keep-alive.md:740) requires saying nothing except `build/host-lock-baseline.json` is written, but lines 737 and 739 require a temporary file and `build/host-lock-baseline.lock`. An ordinary first successful check therefore violates the documented claim; the existing test explicitly expects both persistent files (`scripts/tests/test_check_campaign_host.py:499`). Amend the documentation requirement to name the baseline, lock file and transient atomic-write files.
+
+COMPLETE: no
+HIGHEST: P3
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §26
