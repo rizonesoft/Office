@@ -37,6 +37,12 @@ class StartCampaignModelTest(unittest.TestCase):
         self.assertIn("in words in this session", met)
         self.assertRegex(met, r"An operator stop is always honoured: the goal is then met")
 
+    def test_the_real_start_passes_the_goal(self):
+        # The goal's wording only matters if the session receives it: the one line that starts Claude ends with it.
+        starts = [line.strip() for line in self.text.splitlines() if line.strip().startswith("claude --")]
+        self.assertEqual(starts, ["claude --model $model --dangerously-skip-permissions $goal"])
+        self.assertEqual(len(re.findall(r"(?m)^\$goal = ", self.text)), 1)  # one goal, never reassigned
+
     def test_every_claude_start_passes_the_model(self):
         starts = [line.strip() for line in self.text.splitlines()
                   if "claude --" in line and "--dangerously-skip-permissions" in line]
