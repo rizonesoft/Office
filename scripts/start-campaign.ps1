@@ -7,7 +7,8 @@
 .DESCRIPTION
   The desktop shortcut "Rizonesoft Office campaign" runs this file. It changes to the repository, runs the same
   host readiness check the campaign runs first (scripts/check-campaign-host.py, without the email), and then
-  starts an interactive Claude Code session that skips permission prompts and opens with a /goal: the plan
+  starts an interactive Claude Code session on the latest Opus (the 'opus' model alias, never a pinned version)
+  that skips permission prompts and opens with a /goal: the plan
   finished to 100 percent through the process-plan skill, or the campaign ended by its own park.
 
   Starting it is the operator's word to start or resume the campaign. When a guard file from an earlier session
@@ -97,17 +98,21 @@ if ($token -cmatch '^sk-ant-oat[0-9]{2}-[A-Za-z0-9_-]{40,}$') {
 }
 $token = $read = $null
 
+# The writer is the latest Opus (owner, 2026-11-10). 'opus' is Claude Code's alias for the newest Opus model, so a
+# new Opus release is picked up at the next start with no edit here; never pin a version such as claude-opus-5-5.
+$model = 'opus'
+
 if ($DryRun) {
     Write-Host ''
     Write-Host "Would run in ${root}:"
-    Write-Host "claude --dangerously-skip-permissions `"$goal`""
+    Write-Host "claude --model $model --dangerously-skip-permissions `"$goal`""
     exit 0
 }
 
 $started = [System.Collections.Generic.List[datetime]]::new()
 while ($true) {
     $started.Add((Get-Date))
-    claude --dangerously-skip-permissions $goal
+    claude --model $model --dangerously-skip-permissions $goal
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''
         Write-Host 'The campaign ended by its own rules: no run guard is held. Run this shortcut to start it again.'
