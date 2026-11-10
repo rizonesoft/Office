@@ -10,9 +10,11 @@ wrapper that saw it fail, whatever the command printed. The email carries the ta
 finish, and the tail of that run's log.
 
 It goes through SMTP2GO's `/v3/email/send` from the Rizonetech website sender, the same verified sender and
-key the Rizonetech automations use (Rizonesoft is a brand of Rizonetech). The key is read at send time from
-the Conclave vault item "Rizonetech SMTP2GO (website mail)" through `conclave-op` in WSL, for this run only:
-never written to disk, an argument, or the output. SMTP2GO answers a refused send with HTTP 200 and
+key the Rizonetech automations use (Rizonesoft is a brand of Rizonetech). The key comes from the repository's
+own untracked env file, `.secrets/office.env`, which `python scripts/import-secrets.py` fills from the Conclave
+vault item "Rizonetech SMTP2GO (website mail)" (owner, 2026-11-10: the repository is self-contained); a clone that
+has not imported yet reads the vault through `conclave-op` in WSL. The key is never an argument or in the output.
+SMTP2GO answers a refused send with HTTP 200 and
 `succeeded: 0`, so anything but one success and no failures is a refusal.
 """
 
@@ -28,15 +30,20 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
-ITEM = "op://Conclave/jq2q47sqbpdwacivbjead5rrku"
+sys.path.insert(0, os.path.join(REPO, "scripts", "lib"))
+import secret_store  # noqa: E402
+
+NAME = "SMTP2GO_API_KEY"
+ITEM = secret_store.SECRETS[NAME]["item"].rsplit("/", 1)[0]
+SECRETS_ROOT = REPO  # where .secrets/office.env is looked for; the tests point it at an empty folder
 ENDPOINT = "https://api.smtp2go.com/v3/email/send"
 SENDER = "Office automations <website@rizonetech.com>"
 TO = "rizonetech@gmail.com"
 TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
-LINUX_SECONDS = 75  # with LINUX_STOP_SECONDS, under the 90 second Windows-side timeout
-LINUX_STOP_SECONDS = 5
-LINUX_MEMORY = "1G"
+LINUX_SECONDS = secret_store.LINUX_SECONDS
+LINUX_STOP_SECONDS = secret_store.LINUX_STOP_SECONDS
+LINUX_MEMORY = secret_store.LINUX_MEMORY
 
 
 class Refused(Exception):
@@ -44,28 +51,21 @@ class Refused(Exception):
 
 
 def wsl() -> str:
-    """wsl.exe by its full System32 path: a bare name is searched for in the working directory first, where a
-    repository could hold its own wsl.exe."""
-    return os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wsl.exe")
+    return secret_store.wsl()
 
 
 def key(run=subprocess.run) -> str:
-    """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed."""
-    # Bounded inside Linux too: ending wsl.exe on Windows does not end the Linux processes it started. The read runs
-    # as a transient systemd user service, started by wsl.exe directly (no shell or profile before it): the login
-    # profile runs inside the unit, every process it starts is in the unit's cgroup and is killed when the read exits
-    # (a service's default KillMode), and RuntimeMaxSec and MemoryMax bound the whole unit. TimeoutStopSec bounds the
-    # SIGTERM-to-SIGKILL wait, so even a reader that ignores SIGTERM is gone within the Windows-side 90 seconds.
-    result = run([wsl(), "-e", "systemd-run", "--user", "--pipe", "--wait", "--quiet", "--collect",
-                  "-p", f"RuntimeMaxSec={LINUX_SECONDS}", "-p", f"TimeoutStopSec={LINUX_STOP_SECONDS}",
-                  "-p", f"MemoryMax={LINUX_MEMORY}",
-                  "--", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
-                 capture_output=True, text=True, timeout=90,
-                 creationflags=0x08000000 if os.name == "nt" else 0)  # CREATE_NO_WINDOW: run.py has no console
-    value = (result.stdout or "").strip()
-    if result.returncode != 0 or not value:
+    """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed.
+
+    Read from the repository's own env file (`python scripts/import-secrets.py` fills it from the vault), so a send
+    needs neither WSL nor the vault. A clone that has not imported yet reads the vault directly, as before."""
+    stored = secret_store.get(NAME, SECRETS_ROOT)
+    if stored:
+        return stored
+    value = secret_store.vault_read(ITEM + "/credential", run)
+    if value is None:
         raise Refused("vault field credential is unavailable")
-    if len(value) != 36 or not value.startswith("api-") or not value[4:].isalnum() or not value.isascii():
+    if not secret_store.well_formed(NAME, value):
         raise Refused("vault field credential does not have the SMTP2GO key shape")
     return value
 

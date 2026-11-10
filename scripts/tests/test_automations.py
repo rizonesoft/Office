@@ -35,6 +35,9 @@ def load(name, path):
 
 run = load("office_run", AUTO / "run.py")
 alert = load("office_alert", AUTO / "alert.py")
+# The tests never read this clone's real credentials: the env file is looked for in an empty folder.
+_NO_SECRETS = tempfile.TemporaryDirectory()
+alert.SECRETS_ROOT = _NO_SECRETS.name
 # One well-formed task, for tests that must not depend on what tasks.json lists today.
 FIXTURE_TASK = {"name": "office-fixture", "description": "Fixture check", "command": ["python", "scripts/fixture.py"],
                 "trigger": {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 5}

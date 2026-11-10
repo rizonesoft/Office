@@ -19,13 +19,21 @@
   Code exits while the run guard is still held, it waits 30 seconds, repeats the host check and starts a new
   session with the same goal, which takes the run over. A run that ended by its own rules holds no guard, so the
   launcher stops; five sessions ending inside an hour stop it too, and closing the window stops everything.
+
+  The owner controls it with two desktop shortcuts (owner, 2026-11-10): "Rizonesoft Office campaign" starts it
+  and "Rizonesoft Office campaign - Stop" stops it. Stop writes a stop request (build/campaign-stop-request) that
+  the campaign honours at its next section boundary, ending the run cleanly, and that keeps this launcher from
+  starting another session; answering NOW to its question also ends the running session at once, with its whole
+  process tree. Starting again removes the request.
 .EXAMPLE
   pwsh scripts/start-campaign.ps1
   pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
-  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the desktop shortcut for this clone
+  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the two desktop shortcuts for this clone
+  pwsh scripts/start-campaign.ps1 -Stop              # ask the campaign to stop (the Stop shortcut runs this)
+  pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
-param([switch]$DryRun, [switch]$InstallShortcut)
+param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -43,6 +51,49 @@ if ($InstallShortcut) {
     $shortcut.WindowStyle = 3
     $shortcut.Save()
     Write-Host "Shortcut written: $link"
+
+    $stopLink = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Rizonesoft Office campaign - Stop.lnk'
+    $stopShortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($stopLink)
+    $stopShortcut.TargetPath = (Get-Process -Id $PID).Path
+    $stopShortcut.Arguments = "-NoLogo -NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Stop"
+    $stopShortcut.WorkingDirectory = $root
+    $stopShortcut.IconLocation = "$(Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'),0"
+    $stopShortcut.Description = 'Stop the unattended Rizonesoft Office campaign'
+    $stopShortcut.Save()
+    Write-Host "Shortcut written: $stopLink"
+    exit 0
+}
+
+# The stop request and the record of the launcher that is running, both under the ignored build folder.
+$stopFile = Join-Path $root 'build/campaign-stop-request'
+$launcherFile = Join-Path $root 'build/campaign-launcher.json'
+
+if ($Stop) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+    Set-Content -LiteralPath $stopFile -Value ([DateTime]::UtcNow.ToString('o'))
+    Write-Host 'Stop requested. The campaign ends its run at the next section boundary and no new session starts.'
+    $answer = if ($Now) { 'NOW' } else { Read-Host 'Press Enter to let the current section finish, or type NOW to stop immediately' }
+    if ($answer -ceq 'NOW') {
+        $running = $null
+        if (Test-Path -LiteralPath $launcherFile) {
+            try { $running = Get-Content -LiteralPath $launcherFile -Raw | ConvertFrom-Json } catch { $running = $null }
+        }
+        $process = if ($running) { Get-Process -Id $running.pid -ErrorAction SilentlyContinue } else { $null }
+        # The start time is compared as well, so a process that merely reuses the number is never stopped.
+        # ConvertFrom-Json turns the recorded text into a date by itself, so both sides are compared as instants.
+        $recorded = $null
+        if ($running) {
+            $recorded = if ($running.started -is [datetime]) { $running.started } else {
+                try { [datetime]::Parse("$($running.started)", [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) } catch { $null }
+            }
+        }
+        if ($process -and $recorded -and $process.StartTime.ToUniversalTime().Ticks -eq $recorded.ToUniversalTime().Ticks) {
+            & (Join-Path $env:SystemRoot 'System32\taskkill.exe') /T /F /PID $running.pid | Out-Null
+            Write-Host 'Stopped now: the running session and everything it started were ended. Work that was not committed stays in the tree; the next start takes the run over.'
+        } else {
+            Write-Host 'No running launcher was found, so there was nothing to end.'
+        }
+    }
     exit 0
 }
 
@@ -78,25 +129,32 @@ $goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-p
 
 if ($goal.Length -gt 4000) { throw "the goal is $($goal.Length) characters; /goal allows 4000" }
 
-# Sign in with the one-year token (claude setup-token) kept in the Conclave vault, so the run does not end when the
-# interactive sign-in does. It is read into this process's environment only: never printed, never written to disk.
-# The read is bounded inside Linux as well, as in .conclave/automations/alert.py. Without it the session uses the
-# interactive sign-in, so a vault that cannot be read never stops a start.
-$tokenItem = 'op://Conclave/pm5vqgypmvjok23xwlaacbwlji/credential'
-$wsl = Join-Path $env:SystemRoot 'System32\wsl.exe'
-$token = $null
-if (Test-Path -LiteralPath $wsl) {
-    $read = & $wsl -e systemd-run --user --pipe --wait --quiet --collect -p RuntimeMaxSec=60 -p TimeoutStopSec=5 `
-        -- bash -lc "conclave-op read '$tokenItem'" 2>$null
-    if ($LASTEXITCODE -eq 0 -and $read) { $token = "$(@($read)[0])".Trim() }
+# Sign in with the one-year token (claude setup-token), so the run does not end when the interactive sign-in does.
+# It comes from the repository's own untracked env file, .secrets/office.env, which python scripts/import-secrets.py
+# fills from the Conclave vault (owner, 2026-11-10: the repository is self-contained); the import is tried once here
+# when the file does not hold the token yet. The token is read into this process's environment only and never
+# printed. Without it the session uses the interactive sign-in, so a missing token never stops a start.
+$tokenName = 'CLAUDE_CODE_OAUTH_TOKEN'
+$secretsFile = Join-Path $root '.secrets/office.env'
+function Read-StoredToken {
+    if (-not (Test-Path -LiteralPath $secretsFile)) { return $null }
+    foreach ($line in Get-Content -LiteralPath $secretsFile) {
+        if ($line -cmatch "^$tokenName=(sk-ant-oat[0-9]{2}-[A-Za-z0-9_-]{40,})\s*$") { return $Matches[1] }
+    }
+    return $null
 }
-if ($token -cmatch '^sk-ant-oat[0-9]{2}-[A-Za-z0-9_-]{40,}$') {
+$token = Read-StoredToken
+if (-not $token) {
+    python scripts/import-secrets.py | Out-Null
+    $token = Read-StoredToken
+}
+if ($token) {
     $env:CLAUDE_CODE_OAUTH_TOKEN = $token
-    Write-Host 'Sign-in: the one-year token from the Conclave vault.'
+    Write-Host 'Sign-in: the one-year token from .secrets/office.env.'
 } else {
-    Write-Host 'Sign-in: the interactive one (the vault token could not be read or has the wrong shape).' -ForegroundColor Yellow
+    Write-Host 'Sign-in: the interactive one (no token in .secrets/office.env; run python scripts/import-secrets.py).' -ForegroundColor Yellow
 }
-$token = $read = $null
+$token = $null
 
 # The orchestrator is the latest Fable (owner, 2026-11-10, replacing the latest Opus decided earlier that day): it
 # routes the work to scripts and to the Haiku, Sonnet and Opus agents (AGENTS.md, Subagents). 'fable' is Claude
@@ -105,16 +163,29 @@ $token = $read = $null
 $model = 'fable'
 
 if ($DryRun) {
+    if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
     Write-Host ''
     Write-Host "Would run in ${root}:"
     Write-Host "claude --model $model --dangerously-skip-permissions `"$goal`""
     exit 0
 }
 
+# Starting is the owner's word: an earlier stop request is removed, and this launcher is recorded so Stop can end it.
+Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+$self = Get-Process -Id $PID
+Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
+
 $started = [System.Collections.Generic.List[datetime]]::new()
+try {
 while ($true) {
     $started.Add((Get-Date))
     claude --model $model --dangerously-skip-permissions $goal
+    if (Test-Path -LiteralPath $stopFile) {
+        Write-Host ''
+        Write-Host 'Stopped on your request. Run the start shortcut to carry on.'
+        break
+    }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''
         Write-Host 'The campaign ended by its own rules: no run guard is held. Run this shortcut to start it again.'
@@ -134,4 +205,7 @@ while ($true) {
         Write-Host 'Not restarted: apply the fixes above, then run this shortcut again.' -ForegroundColor Red
         break
     }
+}
+} finally {
+    Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue
 }

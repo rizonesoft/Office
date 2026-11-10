@@ -41,7 +41,7 @@ Retired 2026-10-22 (owner): the suite moved from WinUI 3 in C# on .NET 11 to nat
 Task Scheduler starts `pythonw.exe .conclave/automations/run.py <name>`. The runner writes the run's output to `build/automations/<name>/<UTC>.log` (the newest 20 kept) and its outcome to `build/automations/<name>/last.json`. On a non-zero exit or a timeout it calls `alert.py`, which emails `rizonetech@gmail.com` the task, its exit, and the tail of that run's log.
 
 - It sends through SMTP2GO from `website@rizonetech.com`, the verified sender the Rizonetech automations use (Rizonesoft is a brand of Rizonetech).
-- The key is read at send time from the Conclave vault item "Rizonetech SMTP2GO (website mail)" through `conclave-op` in WSL. Nothing is stored here, and there is no `.env`.
+- The key is read at send time from the repository's own untracked env file, `.secrets/office.env`, which `python scripts/import-secrets.py` fills from the Conclave vault item "Rizonetech SMTP2GO (website mail)" (owner, 2026-11-10: the repository is self-contained). A clone that has not imported yet falls back to reading the vault through `conclave-op` in WSL. `python scripts/import-secrets.py --check` says whether the key is present.
 - SMTP2GO answers a refused send with HTTP 200 and `succeeded: 0`; the alert treats that as a failure.
 - The runner exits with the command's code (124 on a timeout), or 3 when the alert could not be sent, with the reason appended to the run's log, so Task Scheduler's Last Run Result shows every failure.
 
