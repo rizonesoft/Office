@@ -97,3 +97,35 @@ Verification performed: four read-only launcher tests passed, the fleet verifier
 
 HIGHEST: P2  
 OVERALL: needs-attention
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T20:45:41Z
+- Effort: medium
+- Type: adversarial
+- Lines: 22
+- Digest: ede76bf5718dd5e5
+
+### adversarial: approve
+
+No concrete defect found.
+
+### consistency: approve
+
+No remaining conflicting active routing instruction found.
+
+### integration: approve
+
+No concrete defect found.
+
+### source-defect: approve
+
+No deviation found within the candidate’s scope.
+
+### record: approve
+
+Verification: four read-only launcher tests, the fleet verifier, 76 in-memory policy cases and 71 frontmatter fixtures passed. Live launcher and filesystem-writing tests were not run under the read-only restriction; lock lifecycle assessment is source-based. No files changed.
+
+HIGHEST: none
+OVERALL: approve

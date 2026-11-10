@@ -1,0 +1,1069 @@
+{
+ "runs": {
+  "run-1": {
+   "section": "D00 T03 §32",
+   "arm": "fable-alone",
+   "started": "2026-11-10T20:42:57",
+   "exit": 0,
+   "wall_seconds": 321,
+   "strays_stopped": [],
+   "total_cost_usd": 2.0534368,
+   "num_turns": 28,
+   "duration_ms": 312212,
+   "duration_api_ms": 93367,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 30,
+     "outputTokens": 10149,
+     "cacheReadInputTokens": 1223944,
+     "cacheCreationInputTokens": 87653,
+     "webSearchRequests": 0,
+     "costUSD": 2.0534368,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 2028,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 87653,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "3e95eb82c93c445fd4b3a7a1fedefab47545eaee",
+   "commits": 1,
+   "shortstat": "7 files changed, 64 insertions(+), 21 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1027 tests in 24 files in 91.3 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "none",
+    "p1": 0,
+    "p2": 0,
+    "p3": 0,
+    "overall": "approve"
+   },
+   "approved_after_fix_rounds": 0
+  },
+  "run-2": {
+   "section": "D00 T03 §32",
+   "arm": "opus-alone",
+   "started": "2026-11-10T20:43:00",
+   "exit": 0,
+   "wall_seconds": 303,
+   "strays_stopped": [],
+   "total_cost_usd": 1.0447280000000003,
+   "num_turns": 21,
+   "duration_ms": 292577,
+   "duration_api_ms": 111888,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-opus-5-5": {
+     "inputTokens": 38,
+     "outputTokens": 8690,
+     "cacheReadInputTokens": 1395480,
+     "cacheCreationInputTokens": 73960,
+     "webSearchRequests": 0,
+     "costUSD": 1.0447280000000003,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 2082,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 73960,
+     "canonicalModel": "claude-opus-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "83873b75cea04f43afde498b62569fbabaf0e485",
+   "commits": 1,
+   "shortstat": "6 files changed, 73 insertions(+), 19 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1028 tests in 24 files in 91.2 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "none",
+    "p1": 0,
+    "p2": 0,
+    "p3": 0,
+    "overall": "approve"
+   },
+   "approved_after_fix_rounds": 0
+  },
+  "run-3": {
+   "section": "D00 T03 §32",
+   "arm": "orchestrated",
+   "started": "2026-11-10T20:43:02",
+   "exit": 0,
+   "wall_seconds": 826,
+   "strays_stopped": [],
+   "total_cost_usd": 2.518783,
+   "num_turns": 3,
+   "duration_ms": 188300,
+   "duration_api_ms": 184366,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 32,
+     "outputTokens": 12341,
+     "cacheReadInputTokens": 1377190,
+     "cacheCreationInputTokens": 93197,
+     "webSearchRequests": 0,
+     "costUSD": 2.2604859999999998,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 2998,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 93197,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 32,
+     "outputTokens": 8375,
+     "cacheReadInputTokens": 353930,
+     "cacheCreationInputTokens": 55636,
+     "webSearchRequests": 0,
+     "costUSD": 0.258297,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 600,
+     "cacheCreationEphemeral5mInputTokens": 55636,
+     "cacheCreationEphemeral1hInputTokens": 0,
+     "canonicalModel": "claude-sonnet-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "0476cce543bd63c54ee6754255acf0a015b063c4",
+   "commits": 1,
+   "shortstat": "6 files changed, 68 insertions(+), 19 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1028 tests in 24 files in 90.2 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "none",
+    "p1": 0,
+    "p2": 0,
+    "p3": 0,
+    "overall": "approve"
+   },
+   "approved_after_fix_rounds": 0
+  },
+  "run-4": {
+   "section": "D00 T03 §29",
+   "arm": "opus-alone",
+   "started": "2026-11-10T21:05:04",
+   "exit": 0,
+   "wall_seconds": 394,
+   "strays_stopped": [],
+   "total_cost_usd": 1.1828842000000004,
+   "num_turns": 24,
+   "duration_ms": 388232,
+   "duration_api_ms": 111280,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-opus-5-5": {
+     "inputTokens": 38,
+     "outputTokens": 10071,
+     "cacheReadInputTokens": 1547721,
+     "cacheCreationInputTokens": 83971,
+     "webSearchRequests": 0,
+     "costUSD": 1.1828842000000004,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 1844,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 83971,
+     "canonicalModel": "claude-opus-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "7586a052c4b9d501ad3288980074681a41553051",
+   "commits": 1,
+   "shortstat": "5 files changed, 78 insertions(+), 16 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1032 tests in 24 files in 93.5 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "P1",
+    "p1": 1,
+    "p2": 0,
+    "p3": 0,
+    "overall": "needs-attention"
+   },
+   "fix_rounds": [
+    {
+     "round": 1,
+     "exit": 0,
+     "wall_seconds": 261,
+     "total_cost_usd": 0.8016504,
+     "num_turns": 17,
+     "is_error": false,
+     "modelUsage": {
+      "claude-opus-5-5": {
+       "inputTokens": 30,
+       "outputTokens": 6557,
+       "cacheReadInputTokens": 971592,
+       "cacheCreationInputTokens": 59509,
+       "webSearchRequests": 0,
+       "costUSD": 0.8016504,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 1405,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 59509,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "1a5054e901af8ffe6d10212391cc8585be8e9fec",
+     "shortstat": "5 files changed, 90 insertions(+), 17 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "none",
+      "p1": 0,
+      "p2": 0,
+      "p3": 0,
+      "overall": "approve"
+     }
+    }
+   ],
+   "approved_after_fix_rounds": 1
+  },
+  "run-5": {
+   "section": "D00 T03 §29",
+   "arm": "orchestrated",
+   "started": "2026-11-10T21:05:06",
+   "exit": 0,
+   "wall_seconds": 558,
+   "strays_stopped": [],
+   "total_cost_usd": 2.3106133,
+   "num_turns": 18,
+   "duration_ms": 541993,
+   "duration_api_ms": 149851,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 26,
+     "outputTokens": 9854,
+     "cacheReadInputTokens": 1080323,
+     "cacheCreationInputTokens": 89913,
+     "webSearchRequests": 0,
+     "costUSD": 2.0490406,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 2923,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 89913,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 26,
+     "outputTokens": 6945,
+     "cacheReadInputTokens": 283557,
+     "cacheCreationInputTokens": 65486,
+     "webSearchRequests": 0,
+     "costUSD": 0.2615727,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 346,
+     "cacheCreationEphemeral5mInputTokens": 65486,
+     "cacheCreationEphemeral1hInputTokens": 0,
+     "canonicalModel": "claude-sonnet-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "81dad86751e8cf09c2e2834dda8c5356ec58eabf",
+   "commits": 1,
+   "shortstat": "5 files changed, 70 insertions(+), 8 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1034 tests in 24 files in 95.6 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "P2",
+    "p1": 0,
+    "p2": 1,
+    "p3": 1,
+    "overall": "needs-attention"
+   },
+   "fix_rounds": [
+    {
+     "round": 1,
+     "exit": 0,
+     "wall_seconds": 461,
+     "total_cost_usd": 1.9361148000000001,
+     "num_turns": 22,
+     "is_error": false,
+     "modelUsage": {
+      "claude-fable-5-2": {
+       "inputTokens": 24,
+       "outputTokens": 8373,
+       "cacheReadInputTokens": 958001,
+       "cacheCreationInputTokens": 77364,
+       "webSearchRequests": 0,
+       "costUSD": 1.7645362,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 1513,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 77364,
+       "canonicalModel": "claude-fable-5-2",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+       "inputTokens": 20,
+       "outputTokens": 4942,
+       "cacheReadInputTokens": 144511,
+       "cacheCreationInputTokens": 43067,
+       "webSearchRequests": 0,
+       "costUSD": 0.1715786,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 189,
+       "cacheCreationEphemeral5mInputTokens": 43067,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-sonnet-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "4773e854518d4239d43b4c9cbfb0c0fe02d01dba",
+     "shortstat": "5 files changed, 104 insertions(+), 9 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "none",
+      "p1": 0,
+      "p2": 0,
+      "p3": 0,
+      "overall": "approve"
+     }
+    }
+   ],
+   "approved_after_fix_rounds": 1
+  },
+  "run-6": {
+   "section": "D00 T03 §29",
+   "arm": "fable-alone",
+   "started": "2026-11-10T21:05:08",
+   "exit": 0,
+   "wall_seconds": 856,
+   "strays_stopped": [],
+   "total_cost_usd": 2.704022,
+   "num_turns": 39,
+   "duration_ms": 848405,
+   "duration_api_ms": 164856,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 40,
+     "outputTokens": 18582,
+     "cacheReadInputTokens": 1858750,
+     "cacheCreationInputTokens": 99292,
+     "webSearchRequests": 0,
+     "costUSD": 2.704022,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 3489,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 99292,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "104859a6ee4daf3e6e7179a5c270751cab563e7f",
+   "commits": 1,
+   "shortstat": "5 files changed, 100 insertions(+), 14 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1035 tests in 24 files in 96.6 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "none",
+    "p1": 0,
+    "p2": 0,
+    "p3": 0,
+    "overall": "approve"
+   },
+   "approved_after_fix_rounds": 0
+  },
+  "run-7": {
+   "section": "D02 T01 §30",
+   "arm": "orchestrated",
+   "started": "2026-11-10T21:28:44",
+   "exit": 0,
+   "wall_seconds": 682,
+   "strays_stopped": [],
+   "total_cost_usd": 4.6798582,
+   "num_turns": 22,
+   "duration_ms": 677142,
+   "duration_api_ms": 559100,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 28,
+     "outputTokens": 21190,
+     "cacheReadInputTokens": 1330864,
+     "cacheCreationInputTokens": 115930,
+     "webSearchRequests": 0,
+     "costUSD": 2.9688768000000003,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 5263,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 115930,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    },
+    "claude-sonnet-5-5": {
+     "inputTokens": 54,
+     "outputTokens": 18197,
+     "cacheReadInputTokens": 687923,
+     "cacheCreationInputTokens": 139201,
+     "webSearchRequests": 0,
+     "costUSD": 0.5988728,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 1150,
+     "cacheCreationEphemeral5mInputTokens": 139201,
+     "cacheCreationEphemeral1hInputTokens": 0,
+     "canonicalModel": "claude-sonnet-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    },
+    "claude-opus-5-5": {
+     "inputTokens": 26,
+     "outputTokens": 23782,
+     "cacheReadInputTokens": 883598,
+     "cacheCreationInputTokens": 91929,
+     "webSearchRequests": 0,
+     "costUSD": 1.1121086000000002,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 3127,
+     "cacheCreationEphemeral5mInputTokens": 91929,
+     "cacheCreationEphemeral1hInputTokens": 0,
+     "canonicalModel": "claude-opus-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "8c2ef5a8c391ca53ec9128e58c5860ad8831f53f",
+   "commits": 1,
+   "shortstat": "5 files changed, 673 insertions(+), 8 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1065 tests in 25 files in 91.6 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "P1",
+    "p1": 1,
+    "p2": 0,
+    "p3": 2,
+    "overall": "needs-attention"
+   },
+   "fix_rounds": [
+    {
+     "round": 1,
+     "exit": 0,
+     "wall_seconds": 681,
+     "total_cost_usd": 3.903842700000001,
+     "num_turns": 28,
+     "is_error": false,
+     "modelUsage": {
+      "claude-fable-5-2": {
+       "inputTokens": 32,
+       "outputTokens": 18931,
+       "cacheReadInputTokens": 1557246,
+       "cacheCreationInputTokens": 112700,
+       "webSearchRequests": 0,
+       "costUSD": 2.8721452000000003,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 6958,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 112700,
+       "canonicalModel": "claude-fable-5-2",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-opus-5-5": {
+       "inputTokens": 36,
+       "outputTokens": 18656,
+       "cacheReadInputTokens": 760968,
+       "cacheCreationInputTokens": 57299,
+       "webSearchRequests": 0,
+       "costUSD": 0.8119526,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 5012,
+       "cacheCreationEphemeral5mInputTokens": 57299,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+       "inputTokens": 28,
+       "outputTokens": 6647,
+       "cacheReadInputTokens": 524414,
+       "cacheCreationInputTokens": 40311,
+       "webSearchRequests": 0,
+       "costUSD": 0.21974489999999997,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 389,
+       "cacheCreationEphemeral5mInputTokens": 40311,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-sonnet-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "8cc02aebb58ef51813008f9bffa427258d00e57d",
+     "shortstat": "5 files changed, 849 insertions(+), 8 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "P2",
+      "p1": 0,
+      "p2": 1,
+      "p3": 1,
+      "overall": "needs-attention"
+     }
+    },
+    {
+     "round": 2,
+     "exit": 0,
+     "wall_seconds": 631,
+     "total_cost_usd": 3.8347443000000005,
+     "num_turns": 20,
+     "is_error": false,
+     "modelUsage": {
+      "claude-fable-5-2": {
+       "inputTokens": 24,
+       "outputTokens": 16977,
+       "cacheReadInputTokens": 1128819,
+       "cacheCreationInputTokens": 105250,
+       "webSearchRequests": 0,
+       "costUSD": 2.5890358000000004,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 7242,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 105250,
+       "canonicalModel": "claude-fable-5-2",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-opus-5-5": {
+       "inputTokens": 40,
+       "outputTokens": 23669,
+       "cacheReadInputTokens": 1034600,
+       "cacheCreationInputTokens": 68879,
+       "webSearchRequests": 0,
+       "costUSD": 1.024855,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 10500,
+       "cacheCreationEphemeral5mInputTokens": 68879,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+       "inputTokens": 30,
+       "outputTokens": 7592,
+       "cacheReadInputTokens": 269210,
+       "cacheCreationInputTokens": 47181,
+       "webSearchRequests": 0,
+       "costUSD": 0.22085350000000006,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 695,
+       "cacheCreationEphemeral5mInputTokens": 47181,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-sonnet-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "2a4f73a39f58f8718c4441b40c5a37aa722537b3",
+     "shortstat": "5 files changed, 1011 insertions(+), 8 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "P2",
+      "p1": 0,
+      "p2": 1,
+      "p3": 1,
+      "overall": "needs-attention"
+     }
+    },
+    {
+     "round": 3,
+     "exit": 0,
+     "wall_seconds": 631,
+     "total_cost_usd": 3.7831827000000007,
+     "num_turns": 18,
+     "is_error": false,
+     "modelUsage": {
+      "claude-fable-5-2": {
+       "inputTokens": 24,
+       "outputTokens": 19969,
+       "cacheReadInputTokens": 1166441,
+       "cacheCreationInputTokens": 109591,
+       "webSearchRequests": 0,
+       "costUSD": 2.7856962000000003,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 12650,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 109591,
+       "canonicalModel": "claude-fable-5-2",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-opus-5-5": {
+       "inputTokens": 26,
+       "outputTokens": 23355,
+       "cacheReadInputTokens": 593693,
+       "cacheCreationInputTokens": 64547,
+       "webSearchRequests": 0,
+       "costUSD": 0.9086776,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 14223,
+       "cacheCreationEphemeral5mInputTokens": 64547,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+       "inputTokens": 10,
+       "outputTokens": 2885,
+       "cacheReadInputTokens": 71514,
+       "cacheCreationInputTokens": 21115,
+       "webSearchRequests": 0,
+       "costUSD": 0.0888089,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 313,
+       "cacheCreationEphemeral5mInputTokens": 21115,
+       "cacheCreationEphemeral1hInputTokens": 0,
+       "canonicalModel": "claude-sonnet-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "f96675a2c46a9cec2ce33deb6c829fcfa98c611a",
+     "shortstat": "5 files changed, 1152 insertions(+), 8 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "P2",
+      "p1": 0,
+      "p2": 1,
+      "p3": 0,
+      "overall": "needs-attention"
+     }
+    }
+   ]
+  },
+  "run-8": {
+   "section": "D02 T01 §30",
+   "arm": "fable-alone",
+   "started": "2026-11-10T21:28:47",
+   "exit": 0,
+   "wall_seconds": 499,
+   "strays_stopped": [],
+   "total_cost_usd": 3.9355614,
+   "num_turns": 35,
+   "duration_ms": 488510,
+   "duration_api_ms": 322339,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-fable-5-2": {
+     "inputTokens": 40,
+     "outputTokens": 34420,
+     "cacheReadInputTokens": 2186207,
+     "cacheCreationInputTokens": 132575,
+     "webSearchRequests": 0,
+     "costUSD": 3.9355614,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 10555,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 132575,
+     "canonicalModel": "claude-fable-5-2",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "78d18583d1a140405afad1f879118b4159c0ff8d",
+   "commits": 1,
+   "shortstat": "5 files changed, 680 insertions(+), 8 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1059 tests in 25 files in 95.5 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "P3",
+    "p1": 0,
+    "p2": 0,
+    "p3": 1,
+    "overall": "needs-attention"
+   },
+   "approved_after_fix_rounds": 0
+  },
+  "run-9": {
+   "section": "D02 T01 §30",
+   "arm": "opus-alone",
+   "started": "2026-11-10T21:28:50",
+   "exit": 0,
+   "wall_seconds": 375,
+   "strays_stopped": [],
+   "total_cost_usd": 1.5879113999999999,
+   "num_turns": 24,
+   "duration_ms": 365079,
+   "duration_api_ms": 224703,
+   "is_error": false,
+   "subtype": "success",
+   "modelUsage": {
+    "claude-opus-5-5": {
+     "inputTokens": 46,
+     "outputTokens": 21860,
+     "cacheReadInputTokens": 1990797,
+     "cacheCreationInputTokens": 94046,
+     "webSearchRequests": 0,
+     "costUSD": 1.5879113999999999,
+     "contextWindow": 1000000,
+     "maxOutputTokens": 128000,
+     "thinkingTokens": 4477,
+     "cacheCreationEphemeral5mInputTokens": 0,
+     "cacheCreationEphemeral1hInputTokens": 94046,
+     "canonicalModel": "claude-opus-5-5",
+     "provider": "firstParty",
+     "costBasis": "list"
+    }
+   },
+   "tip": "a90bb36fb9d8cb52b41bd64d425e606d28a89db7",
+   "commits": 1,
+   "shortstat": "5 files changed, 501 insertions(+), 8 deletions(-)",
+   "uncommitted": 0,
+   "gates": {
+    "validate": {
+     "exit": 0,
+     "tail": [
+      "valid: 141 sections"
+     ]
+    },
+    "plan-check": {
+     "exit": 0,
+     "tail": [
+      "plan current"
+     ]
+    },
+    "tests": {
+     "exit": 0,
+     "tail": [
+      "Ran 1054 tests in 25 files in 91.8 s (4 at a time), 2 skipped",
+      "OK"
+     ]
+    }
+   },
+   "review": {
+    "exit": 0,
+    "highest": "P1",
+    "p1": 2,
+    "p2": 1,
+    "p3": 1,
+    "overall": "needs-attention"
+   },
+   "fix_rounds": [
+    {
+     "round": 1,
+     "exit": 0,
+     "wall_seconds": 321,
+     "total_cost_usd": 1.3438780000000001,
+     "num_turns": 22,
+     "is_error": false,
+     "modelUsage": {
+      "claude-opus-5-5": {
+       "inputTokens": 42,
+       "outputTokens": 16538,
+       "cacheReadInputTokens": 1757990,
+       "cacheCreationInputTokens": 82669,
+       "webSearchRequests": 0,
+       "costUSD": 1.3438780000000001,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 5066,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 82669,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "29a8c6452a53fcbd6d3a933ec1219ffdab1300bc",
+     "shortstat": "5 files changed, 640 insertions(+), 8 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "P2",
+      "p1": 0,
+      "p2": 1,
+      "p3": 2,
+      "overall": "needs-attention"
+     }
+    },
+    {
+     "round": 2,
+     "exit": 0,
+     "wall_seconds": 301,
+     "total_cost_usd": 0.8037586,
+     "num_turns": 11,
+     "is_error": false,
+     "modelUsage": {
+      "claude-opus-5-5": {
+       "inputTokens": 22,
+       "outputTokens": 6269,
+       "cacheReadInputTokens": 737213,
+       "cacheCreationInputTokens": 66356,
+       "webSearchRequests": 0,
+       "costUSD": 0.8037586,
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "thinkingTokens": 1248,
+       "cacheCreationEphemeral5mInputTokens": 0,
+       "cacheCreationEphemeral1hInputTokens": 66356,
+       "canonicalModel": "claude-opus-5-5",
+       "provider": "firstParty",
+       "costBasis": "list"
+      }
+     },
+     "tip": "605f7d0e2732da07337f04ed94fa2ed5d68a77f9",
+     "shortstat": "5 files changed, 676 insertions(+), 8 deletions(-)",
+     "gates": {
+      "validate": 0,
+      "plan-check": 0,
+      "tests": 0
+     },
+     "review": {
+      "exit": 0,
+      "highest": "P3",
+      "p1": 0,
+      "p2": 0,
+      "p3": 1,
+      "overall": "needs-attention"
+     }
+    }
+   ],
+   "approved_after_fix_rounds": 2
+  }
+ },
+ "base": "402351a37ee1c604874b39a67fd12c99c216bef4"
+}

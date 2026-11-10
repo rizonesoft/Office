@@ -45,7 +45,7 @@ The serious findings were read and are real defects: an empty file with a byte o
 - Routing packets cost the most and was not the cleanest. Fable spent 2.26, 2.05 and 2.97 dollars coordinating the three sections; on the smallest that was more than building the section alone (2.05), and on the other two less (2.70 and 3.94), but the workers' cost on top made the routed run dearer than Fable alone on the first and third.
 - Opus alone cost about half of Fable alone or less on every section (51, 44 and 40 percent), and 44 percent in total.
 - Opus's first-pass quality fell as the work got harder: no finding on the small section, one `P1` on the medium one, two `P1` and a `P2` on the new tool. Fable alone had one `P3` in three sections.
-- What the first pass does not show is the cost to reach an approved review. The fix rounds were started on 2026-11-10 for the four results with a `P1` or `P2`; their result is added below when they finish.
+- What the first pass does not show is the cost to reach an approved review, which the last section of this record measures.
 
 ## Decision
 
@@ -55,4 +55,31 @@ Limits of this measurement: three sections, all Python tooling of this repositor
 
 ## Cost to an approved review
 
-Pending: the fix rounds are running.
+Each result whose first review had a `P1` or `P2` was fixed by its own arm in its own clone, gated by the harness and reviewed blind again, until a review had no `P1` or `P2` (a `P3` alone counts as approved, as the stamp's severity stop does).
+
+| Run | Section | Arm | Build | Fix rounds | Total | Reviews | End |
+| --- | ------- | --- | ----- | ---------- | ----- | ------- | --- |
+| run-1 | D00 T03 §32 | Fable alone | $2.05 | none | $2.05 | 1 | approved |
+| run-2 | D00 T03 §32 | Opus alone | $1.04 | none | $1.04 | 1 | approved |
+| run-3 | D00 T03 §32 | Routed | $2.52 | none | $2.52 | 1 | approved |
+| run-4 | D00 T03 §29 | Opus alone | $1.18 | $0.80 | $1.98 | 2 | approved |
+| run-5 | D00 T03 §29 | Routed | $2.31 | $1.94 | $4.25 | 2 | approved |
+| run-6 | D00 T03 §29 | Fable alone | $2.70 | none | $2.70 | 1 | approved |
+| run-7 | D02 T01 §30 | Routed | $4.68 | $3.90, $3.83, $3.78 | $16.20 | 4 | stopped, P2 open |
+| run-8 | D02 T01 §30 | Fable alone | $3.94 | none | $3.94 | 1 | approved |
+| run-9 | D02 T01 §30 | Opus alone | $1.59 | $1.34, $0.80 | $3.74 | 3 | approved |
+
+| Arm | Cost to approval, three sections | Reviews |
+| --- | -------------------------------- | ------- |
+| Opus alone | $6.76 | 6 |
+| Fable alone | $8.69 | 3 |
+| Routed (Fable routing packets) | $22.97, one section not approved | 7 |
+
+- Opus alone reached approval on all three sections for 78 percent of what Fable alone cost, with twice as many reviews (6 against 3).
+- The gap closes with difficulty. On the new tool Opus needed two fix rounds and ended at 3.74 dollars against Fable's 3.94 with none: 5 percent apart, and Opus took three reviews to Fable's one. On work harder than this, Fable alone would likely be the cheaper way to an approved review; this measurement has no section that hard, so that is an inference and not a result.
+- Routing packets was stopped by hand on the new tool after three fix rounds at about 3.80 dollars each with a `P2` still open (run-7), once it was clear the arm had lost; its total is therefore a lower bound.
+- The reviewer's time is not in these costs. Each review is a Codex run of several minutes, so Opus's extra reviews cost wall-clock time that the dollar figures do not show.
+
+The verdict under the rule of decision 36 (lowest cost to an approved review among the arms that got there): Opus alone. It supports the owner's choice of an Opus lead and writer, and the takeover rule: the harder the section, the more the stronger model is worth, which is where Fable is called.
+
+The raw results are `docs/experiments/operating-mode-2026-11-10.json`. The nine clones were deleted after this record was written.
