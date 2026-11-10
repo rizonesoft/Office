@@ -941,6 +941,10 @@ Filed 2026-11-10 (owner: "the todo plan file is not complete"). `todo/implementa
 
 ## 32. Validate Checks Plan Row Width
 
+> **Started:** 2026-11-10T23:50:00Z
+
+**Corrected 2026-11-11:** since D00 T03 §31 (stamped at 2a7d326) the plan has a second table, `### Still to author`, whose row width `plan --sync` also measures alone (the refusal "still-to-author table wraps raw md"); the measurement this section moves into `validate` covers both tables, and the new fourth item says so. The finding's `file:line` reads `scripts/lib/todo_graph.py:523` from before §31 moved the code.
+
 Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` accepts a section title that `plan --sync` then refuses with "plan table for phase N wraps raw md", because a plan row's width depends on the widest title and the widest Needs cell of the whole phase, which only the plan renderer measures (`projection()` in `scripts/lib/todo_graph.py`). A commit can therefore pass `validate` and leave the plan unsyncable, which stops an unattended run at its next sync. `validate` runs the same measurement.
 
 **Phase:** 0
@@ -954,6 +958,7 @@ Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` a
 - [ ] Extract the phase table's width check from `projection()` in `scripts/lib/todo_graph.py` into a function that takes a phase's rows and raises the existing refusal. Done when: `projection()` calls it and the existing plan tests still pass.
 - [ ] Call that function for every phase from `validate`. Done when: a test in `scripts/tests/test_todo_graph.py` with a title of legal length (at most 88 characters) that makes its phase's plan row longer than `MAX_TABLE_ROW` shows `validate` exiting 2 with the message that names the section. Cheaper substitute: lowering the title limit for every section, which refuses titles that fit.
 - [ ] Assert in the same test that `plan --sync` refuses the fixture with the same message. Done when: both messages are compared for equality.
+- [ ] Run the `### Still to author` table's width check (D00 T03 §31) from `validate` through the same kind of shared function. Done when: a test in `scripts/tests/test_todo_graph.py` with an `Author` path that makes that table's row longer than `MAX_TABLE_ROW` shows `validate` and `plan --sync` refusing it with the same message, which names the path.
 - [ ] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
 - [ ] Commit: `todo: validate refuses a title the plan cannot render`
 
