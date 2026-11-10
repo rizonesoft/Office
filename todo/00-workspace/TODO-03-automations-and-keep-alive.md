@@ -60,6 +60,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 25 | §25 | Host lock baseline across policy writes | §12 | [x] |
 | 26 | §26 | Host check names every file it writes | §25 | [ ] |
 | 27 | §27 | Review prompt builder | -- | [ ] |
+| 28 | §28 | Host check scratch leftover rule | §26 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -796,6 +797,26 @@ Filed 2026-11-10 from the campaign run of that day (`docs/phase-runs/2026-11-10-
 - [ ] Commit: `review: build the completion and round prompts with one command each`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §27' HEAD HEAD --purpose x --governing y --out <scratch>\p.md` exits 2 with "empty diff".
+
+## 28. Host Check Scratch Leftover Rule
+
+Filed 2026-11-10 from §26's completion review (round 2, finding 1, `docs/reviews/00-workspace/D00-T03-s26-completion.md`): the "Files written" block §26 puts in the module docstring of `scripts/check-campaign-host.py` says the notice file is "removed when the send ends" and explains a leftover only for the baseline's temporary file and, in part, for the probe folder. All three temporary entries share the same two exceptions: a check that is killed before its cleanup runs, and a removal the system refuses (`ignore_cleanup_errors=True` in `Host.run` and `Host.notify`, the suppressed `OSError` in `Host.record_lock_baseline`). Stating the exceptions entry by entry is how one was missed, so this section states the rule once, for every temporary entry, and keeps the per-entry lines to the normal lifetime. -> XREF: §26
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. State the leftover rule once in the block. Done when: the block's last line covers every temporary entry and no entry repeats it.
+2. Pin the new block. Done when: the word-for-word test of §26 expects the new text and passes.
+
+- [ ] Shorten entries 3, 4 and 5 of the "Files written (nothing else is):" block in the module docstring of `scripts/check-campaign-host.py` to their normal lifetime: (3) `build/host-lock-baseline.json.<random>.tmp`: temporary; lives for one write of the baseline. (4) `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): temporary; one probe's captured output and working folder, removed when the probe ends. (5) `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; the email's text handed to the sender, removed when the send ends. Done when: none of the three lines mentions a leftover. Cheaper substitute: adding a leftover clause to the one entry the review named, which leaves the next entry added without one.
+- [ ] Add a sixth and last line to the block: "- Leftovers: every entry marked temporary is removed in normal use; a check that is killed, or a removal the system refuses, can leave one behind, and a leftover is safe to delete once the check and its child processes have stopped." Done when: the line is the block's last, directly above the blank line that ends the block.
+- [ ] Update `WRITTEN` in the `LockBaseline` class of `scripts/tests/test_check_campaign_host.py` to the new six lines after the heading, word for word, and add to `test_the_docstring_lists_every_file_the_check_writes` the assertion that every entry line containing `<random>` contains "temporary;" and that the last line starts "- Leftovers:". Done when: the test passes, and fails when "temporary;" is removed from one entry or the Leftovers line is deleted.
+- [ ] Commit: `automations: state the leftover rule for the host check's scratch files once`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, and `python -c "import pathlib; t = pathlib.Path('scripts/check-campaign-host.py').read_text(encoding='utf-8').split('import argparse')[0]; print(t.count('temporary;'), t.count('- Leftovers:'))"` prints `3 1`.
 
 ## Verification
 

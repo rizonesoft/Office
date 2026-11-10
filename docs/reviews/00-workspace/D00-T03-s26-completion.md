@@ -28,3 +28,26 @@ OVERALL: needs-attention
 1. extended
 2. extended
 3. extended
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T16:36:23Z
+- Effort: medium
+- Type: adversarial
+- Lines: 9
+- Digest: 315b96310841f867
+
+SECTION: D00 T03 §26
+PURPOSE: completion
+CONTRACT: sha256:6892b73567ffe822951aa332ba6ba45a8302d00189448e3731bdd134872b8c1a
+
+1. **P2 | extend | Temporary-file lifetimes remain overstated.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:768` requires saying `notice.json` is “removed when the send ends”, but `scripts/check-campaign-host.py:400` explicitly ignores cleanup errors. A refused removal can therefore leave the notice after sending finishes. Terminating the check during a probe or notification also bypasses cleanup, leaving either scratch directory; only the baseline entry documents interrupted execution. These ordinary failure states leave readers suspecting precisely the leaks this section promises to explain, while the exact-text test preserves the incorrect claim. Extend both scratch entries to describe interrupted execution and refused cleanup, and specify that leftovers are safe to delete once their check and child processes have stopped. Update the expected text accordingly. §12 owns execution and containment; it does not supply these missing lifetime explanations.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §28
