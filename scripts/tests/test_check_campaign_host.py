@@ -452,6 +452,33 @@ class LockBaseline(Base):
     def prove(self):  # one passing run on an unwritten key
         self.assertEqual(self.result("screen lock")["state"], "ok")
 
+    WRITTEN = (
+        "Files written (nothing else is):",
+        "- `build/host-lock-baseline.json`: kept; the proof that this boot began with no inactivity limit.",
+        "- `build/host-lock-baseline.lock`: kept, empty, never deleted; it serialises checks that run side by side.",
+        "- `build/host-lock-baseline.json.<random>.tmp`: lives for one write of the baseline; removed when the write "
+        "succeeds or fails; a check killed in the middle of the write, or a removal the system refuses, can leave one "
+        "behind, and it is safe to delete while no check runs.",
+        "- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): one probe's captured output and working "
+        "folder; removed when the probe ends; a removal the system refuses (a descendant still holding a file) can "
+        "leave the folder, safe to delete.",
+        "- `<system temp>/campaign-notice-<random>/notice.json`: only with `--notify` after a failed check; the "
+        "email's text handed to the sender; removed when the send ends.",
+    )
+
+    def test_the_docstring_lists_every_file_the_check_writes(self):
+        # D00 T03 §26: the block is pinned word for word, so no entry and no lifetime can go missing unnoticed.
+        lines = host_check.__doc__.splitlines()
+        self.assertIn(self.WRITTEN[0], lines)
+        block = lines[lines.index(self.WRITTEN[0]):]
+        block = block[:block.index("")] if "" in block else block
+        self.assertEqual(tuple(block), self.WRITTEN)
+        self.assertNotIn("One file is written", host_check.__doc__)
+
+    def test_a_recording_run_leaves_only_the_baseline_and_the_lock(self):
+        self.prove()
+        self.assertEqual(self.left(), ["host-lock-baseline.json", "host-lock-baseline.lock"])
+
     def test_two_recorders_that_both_saw_no_baseline_keep_the_first(self):
         # The launcher and a heartbeat both read "no baseline", then record one after the other.
         first, second = Fake(self.tmp), Fake(self.tmp)
@@ -1044,6 +1071,13 @@ class Probe(unittest.TestCase):
                 host_check.Host().notify("s", "b")
         self.assertLess(time.monotonic() - started, 20)
         self.assertTrue(self.grandchild_gone(pid_file))
+
+    def test_a_probe_removes_its_scratch_folder(self):
+        # D00 T03 §26: the module docstring says the folder is removed when the probe ends.
+        with mock.patch.object(tempfile, "tempdir", str(self.tmp)):
+            r = host_check.Host().run([sys.executable, "-c", "print(1)"])
+        self.assertEqual(r.stdout.strip(), "1")
+        self.assertEqual([p.name for p in self.tmp.iterdir() if p.name.startswith("campaign-host-")], [])
 
     def test_a_probe_starts_in_a_scratch_folder_not_the_repository(self):
         r = host_check.Host().run([sys.executable, "-c", "import os; print(os.getcwd())"])

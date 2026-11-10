@@ -10,9 +10,15 @@ The campaign runs on this PC for days to months and is resumed by hand when it s
 `docs/specs/2026-10-23-campaign-scope-design.md`). A locked screen, a PC that sleeps, a missing Office app or a missing
 compiler should park the run with a reason the owner reads on return, not fail mid-section (D00 T03 §12). The checks
 read: the console session, the AC sleep and screen lock settings, the Office reference apps while an open section
-still needs them, the C++ toolchain, `gh`, the pinned reviewer's CLI and the free disk space. One file is written and
-nothing else: `build/host-lock-baseline.json`, the proof that this boot began with no machine inactivity limit, which
-lets the screen lock check keep passing after an unrelated write to the policy key (D00 T03 §25).
+still needs them, the C++ toolchain, `gh`, the pinned reviewer's CLI and the free disk space. The lock baseline lets
+the screen lock check keep passing after an unrelated write to the policy key (D00 T03 §25).
+
+Files written (nothing else is):
+- `build/host-lock-baseline.json`: kept; the proof that this boot began with no inactivity limit.
+- `build/host-lock-baseline.lock`: kept, empty, never deleted; it serialises checks that run side by side.
+- `build/host-lock-baseline.json.<random>.tmp`: lives for one write of the baseline; removed when the write succeeds or fails; a check killed in the middle of the write, or a removal the system refuses, can leave one behind, and it is safe to delete while no check runs.
+- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): one probe's captured output and working folder; removed when the probe ends; a removal the system refuses (a descendant still holding a file) can leave the folder, safe to delete.
+- `<system temp>/campaign-notice-<random>/notice.json`: only with `--notify` after a failed check; the email's text handed to the sender; removed when the send ends.
 
 Exit 2 (a check could not run) outranks exit 1 (a check failed): either parks the campaign, and both print every line.
 """
