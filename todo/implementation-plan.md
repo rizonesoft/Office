@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 41 | Checklist items: 277
+Sections: 42 | Checklist items: 286
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -49,6 +49,7 @@ Sections: 41 | Checklist items: 277
 | [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
 | [ ]    | D00 T03 §31 | Plan Lists Files Still to Author         | none                   | 10    |
 | [ ]    | D00 T03 §32 | Validate Checks Plan Row Width           | none                   | 5     |
+| [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain            | none                   | 9     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script      | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                     | none                   | 6     |
@@ -195,6 +196,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/140 verified sections, 19 ready to run now.
+Progress: 61/141 verified sections, 19 ready to run now.
 
-Checklist: 382/905 items completed (includes Commit items).
+Checklist: 382/914 items completed (includes Commit items).

@@ -67,6 +67,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
 | 31 | §31 | Plan lists files still to author | -- | [ ] |
 | 32 | §32 | Validate checks plan row width | -- | [ ] |
+| 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -932,6 +933,31 @@ Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` a
 - [ ] Commit: `todo: validate refuses a title the plan cannot render`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new test among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
+
+## 33. Plan Groups a Phase by Domain
+
+Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The plan renders one table per phase, in dependency order. Phase 5 (Applications) will hold all six apps, several thousand sections once D03 T01 §19 to §24 author them, so Write's rows would be interleaved with Grid's and Mail's and nobody could read "all of Word" in one place or see how far it is. This section renders a phase that spans more than one domain as one block per domain (`06-write`, `07-grid` and so on), each with its own heading, counts and progress, so the whole of Write is one contiguous part of the plan. Phases stay as they are: the phase list is closed (`todo/README.md`) and run order still comes from the dependency graph, so this changes how the plan reads, not what runs when.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Group a phase's rows by domain in `projection()` in `scripts/lib/todo_graph.py`. Done when: a fixture phase with two domains renders two headed tables and a single-domain phase renders as today.
+2. Name the domains. Done when: each heading shows the domain's name from `todo/plan.json`.
+
+- [ ] Add an optional `domains` object to `todo/plan.json`, read by `plan_config()` in `scripts/lib/todo_graph.py`, mapping a domain folder (`06-write`) to its display name (`Write (Word)`); refuse a key that is not a folder under `todo/` and an empty name. Done when: tests in `scripts/tests/test_todo_graph.py` show both refusals and a tree without the key rendering folder names. Cheaper substitute: names typed into the renderer, which a new domain would not get.
+- [ ] Render, for a phase whose rows come from more than one domain, one `#### <domain name>` heading per domain in domain-number order, each followed by a line with its section count, checklist item count and verified count, and its own table with the rows in plan order. Done when: a fixture phase with two domains shows two headings, each table holding only its domain's rows, and the counts of the two adding up to the phase line. Cheaper substitute: sorting the one table by reference, which still gives no per-app progress.
+- [ ] Keep a phase whose rows all come from one domain exactly as it renders today. Done when: a test compares the fixture's single-domain phase byte for byte with the output before this change.
+- [ ] Apply the row-width check of §32 to each domain table on its own. Done when: a fixture with one over-wide title is refused naming that section, and the shared function is the one §32 extracted.
+- [ ] Group the `### Still to author` block of §31 the same way, one `#### <domain name>` heading per domain with its files under it. Done when: a fixture with missing files in two domains shows both headings in the block.
+- [ ] Add the names of the domains that exist today to `todo/plan.json` (`00-workspace` to `03-architecture`), and state in the authoring contract paragraph of D03 T01 §17 that each authoring section adds its domain's name to `todo/plan.json`. Done when: `python scripts/todo-graph.py plan --sync` renders the names and the §17 paragraph names the file and the key.
+- [ ] Document the grouping and the `domains` key in `todo/README.md` beside the `todo/plan.json` description. Done when: the README names the key, the heading form and the single-domain rule.
+- [ ] Run `python scripts/todo-graph.py plan --sync` and commit the regenerated `todo/implementation-plan.md`. Done when: `python scripts/todo-graph.py plan --check` exits 0.
+- [ ] Commit: `todo: group each phase of the plan by domain`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0.
 
 ## Verification
 
