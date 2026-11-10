@@ -27,6 +27,15 @@ Every review answers these with code and behavior evidence, never assertion:
 2. **Is it logical?** Do the contracts agree: threading rules, error paths, settings consumers, UI states, failure behavior?
 3. **Did it break anything else?** Inspect callers, consumers, tests and adjacent workflows that read what changed.
 
+## Delegation
+
+The Sonnet subagents in `.claude/agents/` gather what the review weighs; they never review. The rules of `process-todo-section`'s Delegation section hold here too (the main loop opens what it relies on, quotes only output it ran or read in full, and does the step itself when an agent fails).
+
+- **Step 1:** on a candidate of many commits, `git-runner` lists each commit's files and the later changes to the files the section owns.
+- **Step 2:** `code-explorer` maps the callers and consumers of every changed symbol (through the `LSP` tool where a language server is loaded), which is the blast radius question 3 is answered against. `mutation-tester` measures "a test that passes without exercising the behavior": the main loop names the mutations (one per new check, refusal and boundary the section added), and a mutation that survives is a finding to fix before the independent round, not a note.
+- **Step 4:** `test-runner` re-runs the owed suites and gates in the background, each log in scratch, while the main loop runs the section's Test checkpoint itself.
+- **Never delegated:** the three questions, the triage of a reviewer's findings, a fix, the stamp, and the independent round itself. The independent reviewer is the one `.conclave/reviewers.toml` pins and nobody else: a subagent's opinion of the candidate is not a review round, is not recorded as one and never stands in for one when the dispatcher cannot run.
+
 ## Workflow
 
 ### 1. Fix the candidate

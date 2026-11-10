@@ -30,7 +30,7 @@ Each new version or state is emailed once, so no new email means nothing new, no
 
 ## Campaign runs
 
-There is no keep-alive task. Retired 2026-10-21 (operator: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules.
+There is no keep-alive task. Retired 2026-10-21 (operator: "we do not need the keep-alive in automations, just heartbeat with stop hook"): a `process-plan` run is held by the run guard alone, the Stop hook (`scripts/campaign_guard.py stop-hook`, wired in `.claude/settings.json`) and the in-session `CronCreate` heartbeat. Both die with their session; a session that died is resumed by the operator, and the new session takes the guard with `acquire --handover`. The `process-plan` skill holds the rules. The operator starts or resumes a campaign with `pwsh scripts/start-campaign.ps1`, or the desktop shortcut that `pwsh scripts/start-campaign.ps1 -InstallShortcut` writes for this clone: it runs the host readiness check, then opens Claude Code without permission prompts and with its `/goal` set to the finished plan.
 
 ## Retired pins
 

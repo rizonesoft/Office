@@ -3,7 +3,7 @@
 # Copyright 2026 Rizonesoft
 """Capture a reference Office app's ribbon through UI Automation into draft inventory records.
 
-    python scripts/capture-ui.py --app word --tab Home --out R:/scratch/word-home.json
+    python scripts/capture-ui.py --app word --tab Home --out <scratch>/word-home.json
     python scripts/capture-ui.py --app word --all-tabs                       # design/inventory/word/ribbon.json
     python scripts/capture-ui.py --app word --all-tabs --expand --merge      # keep hand-written fields
     python scripts/capture-ui.py --app word --all-tabs --layout simplified   # ribbon-simplified.json
@@ -32,9 +32,11 @@ Exit 0 written; 1 when a capture step fails (a menu that will not close, an unkn
 import argparse
 import base64
 import json
+import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 import time
 import zlib
 
@@ -4943,8 +4945,14 @@ def apply_live_shell_measurements(records, app_name, root, tabs_bar, lower, orig
         )
 
 
-WORD_DEFAULT_FIXTURE = Path(r"R:\scratch\fixtures\word-contextual.docx")
-WORD_DEFAULT_RECIPIENTS = Path(r"R:\scratch\fixtures\word-recipients.csv")
+def scratch_root():
+    """The folder for files that must never land in the repository: the one OFFICE_SCRATCH names, else a folder of
+    our own in the system temporary directory. No machine's drive layout is written into the code."""
+    return Path(os.environ.get("OFFICE_SCRATCH") or Path(tempfile.gettempdir()) / "rizonesoft-office")
+
+
+WORD_DEFAULT_FIXTURE = scratch_root() / "fixtures" / "word-contextual.docx"
+WORD_DEFAULT_RECIPIENTS = scratch_root() / "fixtures" / "word-recipients.csv"
 
 WORD_CONTEXTUAL_TRIGGERS = (
     ("table", ("TabTableToolsDesign", "TabTableToolsLayout")),
@@ -6509,7 +6517,7 @@ def _select_word_tab(tab_el, uia, hwnd):
 
 
 def capture_word_contextual_tabs(args, launched, uia, win, ctx, state, check_licensing, order_start=11, fixture_path=None):
-    """Open `fixture_path` (defaulting to `R:\\scratch\\fixtures\\word-contextual.docx`), trigger each contextual and
+    """Open `fixture_path` (defaulting to `fixtures/word-contextual.docx` under `scratch_root()`), trigger each contextual and
     mode tab via Word's object model and commands, capture every resulting `contextualTab` record, and close the
     fixture without modifying it."""
     fpath = Path(fixture_path or WORD_DEFAULT_FIXTURE)
@@ -7397,7 +7405,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
-    parser.add_argument("--fixture", help="contextual fixture document path (default R:\\scratch\\fixtures\\word-contextual.docx)")
+    parser.add_argument("--fixture", help="contextual fixture document path (default fixtures/word-contextual.docx under OFFICE_SCRATCH)")
     parser.add_argument("--out", help="output file (default design/inventory/<app>/ribbon[-simplified].json or shell/chrome.json)")
     args = parser.parse_args(argv)
     if args.shell:

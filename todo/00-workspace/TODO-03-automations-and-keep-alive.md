@@ -57,6 +57,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 22 | §22 | CI reconciliation past limits | §20 | [x] |
 | 23 | §23 | CI reconciliation after deleted runs | §22 | [x] |
 | 24 | §24 | Resumable newest-page refresh | §23 | [x] |
+| 25 | §25 | Host lock baseline across policy writes | §12 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -712,6 +713,31 @@ Filed 2026-10-23 from round 2 of D00 T03 §23's completion review (`docs/reviews
 
 > **Verified:** 2026-11-08 | §24 | 337058c6a8b385d1cc3927863d72e4028bcace22
 > **Review:** `docs/reviews/d00-t03-s24.json`
+
+## 25. Host Lock Baseline Across Policy Writes
+
+Filed 2026-11-10 from a readiness failure on this PC: `python scripts/check-campaign-host.py` failed `screen lock` with "the machine lock policy changed since Windows started, so the inactivity limit in force is unknown", although `InactivityTimeoutSecs` was absent and the same boot had passed the check on 2026-11-08 (`docs/phase-runs/2026-10-22-phase-2.md`, the 19:26Z and 19:37Z resumes). `check_screen_lock` (§12) fails whenever anything has written the key `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System` since Windows started. That key also holds the User Account Control values and others that Windows and installers write (25 values on this PC, last written 2026-11-10, two days after Windows started), so a campaign meant to run for weeks parks with `host-not-ready` at its next phase start or heartbeat resume, and stays parked until the owner restarts Windows, for a write that never touched the limit. The remedy keeps §12's caution (a limit read when Windows starts may stay in force after its value is removed) and adds the evidence that settles it: a record, made while the key was still unwritten since this boot, that no limit was stored at this boot.
+
+**Phase:** 0
+**Needs:** windows-host
+**Surface:** no
+
+**Build order:**
+
+1. Record when a changed limit takes effect, from Microsoft's own documentation. Done when: this section carries a `**Source:**` line with the URL and the quotation.
+2. Keep a per-boot baseline in `build/host-lock-baseline.json` and write it on every pass that proves the limit absent. Done when: a passing check on an unwritten key leaves a baseline naming this boot.
+3. Accept a written key when the baseline is this boot's and no limit is stored now. Done when: the four baseline cases and the limit-present case are tested, and the check passes on this host.
+
+- [ ] Add a `**Source:**` line under this section's context stating what Microsoft's documentation of the "Interactive logon: Machine inactivity limit" policy says about when a changed `InactivityTimeoutSecs` takes effect, with its URL, the page's date and the quotation, gathered through `source-researcher` and opened by the main loop. Done when: the line names which reading holds (effective at once, or at the next start) and the steps below are safe under both. Cheaper substitute: asserting the restart rule from memory, as §12 did.
+- [ ] Add `Host.boot_id()` to `scripts/check-campaign-host.py`, returning the record number and time of this boot's start event (the Kernel-General 12 event `boot_clock` already reads) and raising `Unreadable` when the log no longer holds it. Done when: `scripts/tests/test_check_campaign_host.py` shows two reads of one fixture log agree and a log with a later start event gives a different id.
+- [ ] Add `Host.lock_baseline()` and `Host.record_lock_baseline()` to `scripts/check-campaign-host.py`, reading and writing `build/host-lock-baseline.json` (`schema_version`, `boot`, `recorded`), the write through a temporary file in `build/` then `os.replace`, read back afterwards. Done when: a test writes a baseline and reads it back equal, and a torn file, a foreign `schema_version` or a missing field reads as no baseline. Cheaper substitute: writing in place, or treating an unreadable file as a baseline.
+- [ ] Write the baseline in `check_screen_lock` on every run where `InactivityTimeoutSecs` is absent and `changed_since_boot(SYSTEM_POLICY)` is false. Done when: a fake host in that state leaves a baseline for its boot, and a host with the limit stored or the key written leaves none.
+- [ ] Accept in `check_screen_lock` a key written since boot when `InactivityTimeoutSecs` is absent now and the baseline's `boot` is this boot's id, reporting `ok` with "no inactivity limit at this boot (recorded <UTC>) and none stored now". Done when: tests show a same-boot baseline passes, and no baseline, another boot's baseline and an unreadable baseline each fail with the restart fix as before. Cheaper substitute: dropping the written-since-boot check, which passes a limit removed after boot that may still be in force.
+- [ ] Keep the limit-stored branch of `check_screen_lock` unchanged whatever the baseline says. Done when: a test with a same-boot baseline and `InactivityTimeoutSecs` set still fails with the remove-and-restart fix.
+- [ ] State the baseline rule in the docstring of `check_screen_lock` and in the Host readiness paragraph of `.claude/skills/process-plan/SKILL.md` (one sentence: a policy-key write no longer parks a boot that has already passed). Done when: both name `build/host-lock-baseline.json`, and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
+- [ ] Commit: `automations: keep a per-boot lock baseline for the host check`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, `python scripts/check-campaign-host.py` prints `ok    screen lock` on this host, and `build/host-lock-baseline.json` names this boot.
 
 ## Verification
 

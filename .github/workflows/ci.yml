@@ -26,6 +26,9 @@ jobs:
           python-version: '3.15'
           # The newest 3.15 patch, not whatever patch the runner image cached.
           check-latest: true
+          # The pinned requirements are restored from the runner cache instead of downloaded on every run.
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
       - name: Install the tooling requirements
         run: python -m pip install -r scripts/requirements.txt
       - name: Check the committed icons match their sources
@@ -39,4 +42,5 @@ jobs:
       - name: Check the repository is REUSE compliant
         run: python -m reuse lint
       - name: Run the tooling tests
-        run: python -m unittest discover -s scripts/tests -v
+        # One process per test file, several at a time (scripts/run-tests.py); -v keeps every test's name in the log.
+        run: python scripts/run-tests.py -v

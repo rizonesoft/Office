@@ -29,7 +29,7 @@ python scripts/todo-graph.py plan --check
 python scripts/build-icons.py --check
 python scripts/check-spdx.py
 python -m reuse lint
-python -m unittest discover -s scripts/tests
+python scripts/run-tests.py                      # every test file, several at a time; add -p "test_<name>.py" for one
 ```
 
 These are the steps CI runs in [.github/workflows/ci.yml](./.github/workflows/ci.yml). Read the test summary as well as its result: a test whose tool is missing (`pwsh`, for example) is skipped, not failed, so check the skip count before trusting a local pass.

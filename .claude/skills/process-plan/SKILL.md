@@ -19,6 +19,16 @@ One continuous loop. You do not stop between sections or phases:
 
 A report to the operator is not a stop. An audit-only reply while a ready phase exists is a process defect: starting the phase is the next action, in the same turn. The self-correcting parts stay in the loop: drifted plan claims are corrected before building (inside `process-todo-section`), every gap and review leftover files through `add-todo`, and red gates are fixed, never bypassed (no `--no-verify`, no amend of a reviewed candidate, no force-push).
 
+## Unattended rules
+
+A campaign is unattended from its first command to its end marker (owner, 2026-10-21; `docs/specs/2026-10-23-campaign-scope-design.md`). These rules outrank any "ask", "stop and ask" or "wait for the operator" in the skills this one chains (`process-phase`, `process-todo-section`, `review-todo-section`, `add-todo`, `create-todo`, `process-todo-file`, `local-tool-safety`):
+
+- **Never ask.** No `AskUserQuestion`, no question as a turn's last words, no waiting for a go-ahead: a pending question holds the session where neither the Stop hook nor the heartbeat can reach it. Where the source is silent, take the industry-standard option, record the decision and what reversing it would cost in the run file's Critical events, and carry on. What only the owner can answer becomes a section with an `owner-decision`, `operator` or `third-party` Need, filed through `add-todo`, and the campaign takes its next ready row.
+- **Escalate only through the run's own park**, and only for data loss, a credential, shared infrastructure, a calculation that looks wrong, or uncommitted work in the tree that this run did not write: a column-0 `PARKED <UTC> run=<run id> escalation: <cause>` line, the park record, `end --reason escalation`, the heartbeat deleted, then the report (Run guard, below).
+- **Outward actions are the four the owner allowed** (decision 4 of the scope record) and nothing else: push to `main`, merge green dependency pull requests through `scripts/merge_prs.py`, create draft releases (never publish one), and send the alert email through `.conclave/automations/alert.py`. A row that needs any other outward action carries the `operator` Need and waits.
+- **Every wait is bounded and none blocks the turn.** A command that can outlast ten minutes (`ci-status.py --wait`, a review dispatch, the full suite in the `bosun` queue) is started in the background and its completion awaited there, never cut off by the foreground limit. A `bosun run` still waiting for a slot when its timeout expires is started again in the background while the campaign does work that does not need it; the queue is never bypassed to run the heavy job directly.
+- **Delegate the mechanical, keep the judgment.** The Sonnet subagents in `.claude/agents/` read and run for the main loop as `process-todo-section`'s Delegation section says; the audit's two test runs below go to `test-runner` while the main loop reads the graph.
+
 ## 0. Route
 
 ```powershell
@@ -46,7 +56,7 @@ python -m unittest discover -s scripts/tests
 python -m unittest discover -s tests/scripts
 ```
 
-The two test runs are the agent tooling tests under `scripts/tests` (review dispatch, automations) and the project's script tests under `tests/scripts`; run both, skip only a folder the repository does not have, and add any further suite the project's `AGENTS.md` names. Neither is dropped in favour of the other.
+Run the first through `python scripts/run-tests.py` (the same tests, one process per file, several at a time) wherever a step asks for the whole of `scripts/tests`; a section's own Test checkpoint is run exactly as written. The two test runs are the agent tooling tests under `scripts/tests` (review dispatch, automations) and the project's script tests under `tests/scripts`; run both, skip only a folder the repository does not have, and add any further suite the project's `AGENTS.md` names. Neither is dropped in favour of the other.
 
 Read `todo/README.md` (the format every TODO edit keeps) before the first edit, then fix every validator refusal before talking about shipping. If `plan --check` is stale, run `plan --sync` and re-check. The deep phase repair belongs to `process-phase` step 1; this audit is the commands above plus five recorded lines in the first phase's run file (`docs/phase-runs/<date>-phase-<N>.md`), not as the turn's last words:
 

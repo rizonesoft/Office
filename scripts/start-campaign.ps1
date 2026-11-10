@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
+#Requires -Version 7.0
+<#
+.SYNOPSIS
+  Starts the unattended process-plan campaign in Claude Code, with its goal set.
+.DESCRIPTION
+  The desktop shortcut "Rizonesoft Office campaign" runs this file. It changes to the repository, runs the same
+  host readiness check the campaign runs first (scripts/check-campaign-host.py, without the email), and then
+  starts an interactive Claude Code session that skips permission prompts and opens with a /goal: the plan
+  finished to 100 percent through the process-plan skill, or the campaign ended by its own park.
+
+  Starting it is the operator's word to start or resume the campaign. When a guard file from an earlier session
+  exists, it says whose it is and waits for Enter before the new session takes the run over, because two
+  sessions must never write to one tree.
+
+  It adds no keep-alive: a session that ends is started again by hand, from the same shortcut (owner decision 2,
+  docs/specs/2026-10-23-campaign-scope-design.md).
+.EXAMPLE
+  pwsh scripts/start-campaign.ps1
+  pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
+  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the desktop shortcut for this clone
+#>
+[CmdletBinding()]
+param([switch]$DryRun, [switch]$InstallShortcut)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $root
+
+if ($InstallShortcut) {
+    # Every path comes from where this clone, PowerShell and the desktop are on this PC; none is written here.
+    $link = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Rizonesoft Office campaign.lnk'
+    $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
+    $shortcut.TargetPath = (Get-Process -Id $PID).Path
+    $shortcut.Arguments = "-NoLogo -NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    $shortcut.WorkingDirectory = $root
+    $shortcut.IconLocation = "$(Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'),0"
+    $shortcut.Description = 'Start the unattended Rizonesoft Office campaign in Claude Code'
+    $shortcut.WindowStyle = 3
+    $shortcut.Save()
+    Write-Host "Shortcut written: $link"
+    exit 0
+}
+
+$Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
+
+$missing = @('claude', 'python', 'git', 'gh', 'node') | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) }
+if ($missing) {
+    Write-Host "Not started: not on PATH: $($missing -join ', ')" -ForegroundColor Red
+    exit 2
+}
+
+# The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.
+python scripts/check-campaign-host.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ''
+    Write-Host 'Not started: apply the fixes above, then run this shortcut again.' -ForegroundColor Red
+    exit 1
+}
+
+$guard = Join-Path $root 'build/claude-campaign-guard.json'
+if (Test-Path -LiteralPath $guard) {
+    $held = Get-Content -LiteralPath $guard -Raw | ConvertFrom-Json
+    Write-Host ''
+    Write-Host "A campaign guard exists: session $($held.session_id), run file $($held.run_file)." -ForegroundColor Yellow
+    Write-Host 'If that session is still open in another window, close THIS window: one tree takes one writer.'
+    if (-not $DryRun) {
+        Read-Host 'Press Enter to take the run over in a new session' | Out-Null
+    }
+}
+
+# One line, no double quotes: it is passed to claude.exe as a single argument. /goal allows 4,000 characters.
+$goal = '/goal Rizonesoft Office is finished: every row of todo/implementation-plan.md is stamped (python scripts/todo-graph.py query stats shows verified equal to total), every phase has its closeout, CI is green on the pushed HEAD, and each of the six apps has its draft release. Until then, work as an unattended campaign: run the process-plan skill (.claude/skills/process-plan/SKILL.md) now and follow it exactly, with its Unattended rules (never ask a question; decide, record and carry on), its run guard and heartbeat, its host readiness check and its CI watch, delegating mechanical work to the Sonnet subagents as its Delegation rules say. Aim for excellence in every section: this must be the best product in its class, measurably better than Microsoft Office and never a clone (docs/product-principles.md), with no shortcut taken where the harder, better version is possible. The operator started this session from the desktop shortcut: that is the operator''s word to start or resume the campaign, and to take over a guard left by an earlier session with acquire --handover. The goal also counts as met when the campaign has ended by its own rules: a column-0 PARKED line stands in the run file and campaign_guard.py end has run, because every remaining row waits on the owner, the operator, a third party or a host that is not ready, or CI could not be made green inside its recovery budget. In that case finish with a report of each leftover row and what the owner must do to release it.'
+
+if ($goal.Length -gt 4000) { throw "the goal is $($goal.Length) characters; /goal allows 4000" }
+if ($DryRun) {
+    Write-Host ''
+    Write-Host "Would run in ${root}:"
+    Write-Host "claude --dangerously-skip-permissions `"$goal`""
+    exit 0
+}
+
+claude --dangerously-skip-permissions $goal

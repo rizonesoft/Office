@@ -5,7 +5,7 @@
 
     python scripts/ci-status.py <ref>                                # exit 0 green, 1 red, 3 pending, 2 unknown
     python scripts/ci-status.py <ref> --wait --timeout 3600          # poll every 30 s until the run ends
-    python scripts/ci-status.py <ref> --log R:\\scratch\\ci-<sha>.log  # with red: the failed steps' log, last 400 lines
+    python scripts/ci-status.py <ref> --log <scratch>\\ci-<sha>.log  # with red: the failed steps' log, last 400 lines
     python scripts/ci-status.py --pending docs/phase-runs/<run file>  # every pushed head with no recorded outcome;
                                                                      # exit 4: progress saved, run it again
     python scripts/ci-status.py --pending <run file> --ack           # the records are written: drop the checkpoint

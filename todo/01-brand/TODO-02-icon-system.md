@@ -2,7 +2,7 @@
 schema_version: 1
 id: icon-system
 domain: 01-brand
-status: done
+status: active
 title: "TODO-02 -- Suite and App Icon System"
 ---
 
@@ -44,6 +44,7 @@ title: "TODO-02 -- Suite and App Icon System"
 | 5 | §5 | Document file-type icons | §3 | [x] |
 | 6 | §6 | Icon export pipeline | §2, §4, §5, D00 T01 §2 | [x] |
 | 7 | §7 | Distinctness review and owner sign-off | §6 | [x] |
+| 8 | §8 | Parallel icon rasterising | §7 | [ ] |
 
 ## 1. Icon Design Language Brief
 
@@ -246,8 +247,31 @@ The family is compared side by side with Microsoft's current app and file icons 
 > **Verified:** 2026-11-08 | §7 | 8f6a24444eb18fa91c192927c4897ab7bd36a489
 > **Review:** `docs/reviews/d01-t02-s7.json`
 
-## Verification
+## 8. Parallel Icon Rasterising
 
+Filed 2026-11-10 from a measurement of the gates the campaign runs after every section: `python scripts/build-icons.py --check` takes 59 seconds on this PC and 67 in CI (run 42683957141), all of it in `render`, which draws 533 distinct rasters one after another on one processor. A trial on 2026-11-10 drew the same rasters in a process pool and brought the check to 19 seconds with byte-identical output (991 files current); threads gained nothing (120 rasters in 16.4 s serial, 15.6 s on 8 threads), because the rasteriser holds the interpreter lock. The trial was not kept: `docs/brand/icon-distinctness.md` carries the reviewer's sign-off against a digest of `scripts/build-icons.py` (§7), so a change to that file needs the sign-off renewed, which this section does.
+
+**Phase:** 1
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Draw the rasters in a process pool, from a worker in an importable module. Done when: `--check` passes with the pool and with `--jobs 1`, and both give the same bytes.
+2. Renew the distinctness sign-off for the changed script. Done when: `test_build_icons.py` passes, its digest check included.
+
+- [ ] Add `scripts/lib/svg_raster.py` with `svg_to_png(request)`, the one resvg call, taking `(svg, width, height, background)`: `scripts/build-icons.py` has a hyphen in its name, so a pool's worker cannot import a function from it. Done when: `render` in `scripts/build-icons.py` calls it and still raises `SetupRequired` first when `resvg_py` is missing. Cheaper substitute: a thread pool, which the measurement above shows gains nothing.
+- [ ] Give `build` in `scripts/build-icons.py` an optional `draw` argument used in place of `render`, leaving a test's replacement of the module's `render` working. Done when: `build()` with no argument still uses a `render` a test has replaced (`scripts/tests/test_build_icons.py` passes unchanged).
+- [ ] Add `build_parallel(jobs)` to `scripts/build-icons.py`: one pass of `build` collects every distinct raster request, a `ProcessPoolExecutor` draws them, each result is checked as `render` checks its own (PNG signature and size), and a second pass assembles the outputs. Done when: a test shows `build_parallel(2)` returns exactly the mapping `build()` returns. Cheaper substitute: comparing file counts, which passes when one raster differs.
+- [ ] Add `--jobs N` to `scripts/build-icons.py` (default: all but one logical processor, at most 8; `1` draws in this process with no pool) and refuse a value below 1. Done when: `python scripts/build-icons.py --check --jobs 1` and `python scripts/build-icons.py --check` both print `icons current`, and `--jobs 0` exits 2.
+- [ ] Show the missing-rasteriser error once, from the parent, on the pool path. Done when: with `resvg_py` unavailable, `main(["--check"])` returns 2 with `setup required: resvg_py is not installed` and starts no worker.
+- [ ] Record the measured times in this section as a `**Measured:**` line: `--check` with the pool and with `--jobs 1`, on this PC and in the CI run of the commit. Done when: the line carries four times and the run id, and the pool is at least twice as fast on this PC. Cheaper substitute: quoting the trial above.
+- [ ] Renew the sign-off in `docs/brand/icon-distinctness.md` for the new digest of `scripts/build-icons.py`, through the pinned reviewer as §7 did, the record naming that no drawing changed (every output byte-identical). Done when: `python -m unittest discover -s scripts/tests -p "test_build_icons.py"` passes. Cheaper substitute: writing the new digest by hand, with no review round behind it.
+- [ ] Commit: `icons: draw the rasters in a process pool`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_build_icons.py"` passes and `python scripts/build-icons.py --check` prints `icons current: 991 files`.
+
+## Verification
 - `python scripts/build-icons.py` regenerates every asset from a clean `build/` and exits 0.
 - `docs/brand/icon-distinctness.md` carries the owner's dated sign-off.
 - `git ls-files design/ | Select-String -Pattern "microsoft" ` finds nothing.

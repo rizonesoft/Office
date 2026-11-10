@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 29 | Checklist items: 190
+Sections: 30 | Checklist items: 198
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -41,10 +41,11 @@ Sections: 29 | Checklist items: 190
 | [x]    | D00 T03 §22 | CI Reconciliation Past Limits            | none                   | 5     |
 | [x]    | D00 T03 §23 | CI Reconciliation After Deleted Runs     | none                   | 6     |
 | [x]    | D00 T03 §24 | Resumable Newest-Page Refresh            | none                   | 4     |
+| [ ]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes  | windows-host           | 8     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
-Sections: 16 | Checklist items: 82
+Sections: 17 | Checklist items: 90
 
 | Status | Reference  | Deliverable                             | Needs | Items |
 | ------ | ---------- | --------------------------------------- | ----- | ----- |
@@ -60,6 +61,7 @@ Sections: 16 | Checklist items: 82
 | [x]    | D01 T02 §5 | Document File-Type Icons                | none  | 7     |
 | [x]    | D01 T02 §6 | Icon Export Pipeline                    | none  | 8     |
 | [x]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | none  | 6     |
+| [ ]    | D01 T02 §8 | Parallel Icon Rasterising               | none  | 8     |
 | [x]    | D01 T03 §1 | README Hero Banner in Light and Dark    | none  | 4     |
 | [x]    | D01 T03 §2 | Social Preview Image                    | none  | 4     |
 | [x]    | D01 T03 §3 | App Lineup Strip in Light and Dark      | none  | 4     |
@@ -180,6 +182,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 57/125 verified sections, 13 ready to run now.
+Progress: 57/127 verified sections, 15 ready to run now.
 
-Checklist: 352/791 items completed (includes Commit items).
+Checklist: 352/807 items completed (includes Commit items).

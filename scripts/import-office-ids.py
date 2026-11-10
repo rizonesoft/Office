@@ -3,8 +3,8 @@
 # Copyright 2026 Rizonesoft
 """Convert the published Office control identifier workbooks into design/inventory/<app>/baseline.json.
 
-    python scripts/import-office-ids.py R:/scratch/office-ui-ids/<commit>        # all six apps
-    python scripts/import-office-ids.py R:/scratch/office-ui-ids/<commit> --check
+    python scripts/import-office-ids.py <scratch>/office-ui-ids/<commit>        # all six apps
+    python scripts/import-office-ids.py <scratch>/office-ui-ids/<commit> --check
 
 The workbooks (MIT licensed, pinned by commit in design/inventory/REFERENCE.md) list every ribbon tab, group and
 control of each app. The source folder is named after the full upstream commit, which each baseline file records.

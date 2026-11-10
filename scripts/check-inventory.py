@@ -6,7 +6,7 @@
     python scripts/check-inventory.py                                   # every file under design/inventory/
     python scripts/check-inventory.py design/inventory/word             # one app
     python scripts/check-inventory.py --require-behaviour design/inventory/word/ribbon.json
-    python scripts/check-inventory.py R:\\scratch\\word-home.json        # a capture outside the repository
+    python scripts/check-inventory.py <scratch>\\word-home.json        # a capture outside the repository
 
 Rules: each file is a JSON array of records valid against the schema; ids are unique across the whole inventory and the
 named files; every parent names an existing record (resolved across all of design/inventory/, so one file can be

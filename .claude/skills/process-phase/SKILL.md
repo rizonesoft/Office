@@ -17,7 +17,7 @@ Completion never buys completion with a bypass: no `--no-verify`, no amend of a 
 
 ## Step 0: open the run
 
-Read `todo/README.md` (the format every TODO edit keeps) before the run's first write, then check that no other writer holds the tree (`git status`; ask about unfamiliar uncommitted work). Writes are serial: this run is the only writer. Open the run file `docs/phase-runs/<YYYY-MM-DD>-phase-<N>.md` (create `docs/phase-runs/` if absent) and append every finding the moment it is made: the file survives session death where chat scrollback does not. A phase started on its own (not from `process-plan`) starts the run guard first, as `process-plan` describes, with `--scope phase`, so its heartbeat resumes this phase and never the rest of the plan; one started from `process-plan` already has it.
+Read `todo/README.md` (the format every TODO edit keeps) before the run's first write, then check that no other writer holds the tree (`git status`; ask about unfamiliar uncommitted work, or, inside a campaign, park with an escalation as `process-plan`'s Unattended rules say: a campaign never asks). Writes are serial: this run is the only writer. Open the run file `docs/phase-runs/<YYYY-MM-DD>-phase-<N>.md` (create `docs/phase-runs/` if absent) and append every finding the moment it is made: the file survives session death where chat scrollback does not. A phase started on its own (not from `process-plan`) starts the run guard first, as `process-plan` describes, with `--scope phase`, so its heartbeat resumes this phase and never the rest of the plan; one started from `process-plan` already has it.
 
 Then run the host readiness check, `python scripts/check-campaign-host.py --notify` (D00 T03 §12), at every phase start, chained or on its own. Exit 0 carries on. Exit 1 or 2 parks the whole campaign, not this phase: record each non-`ok` line and its fix in Critical events, write a column-0 `PARKED <UTC> run=<run id> host-not-ready: <failing checks>` line with the fixes as the park record, commit the run file, end the guard (`end --reason park`), delete and confirm the heartbeat as `process-plan`'s Host readiness step says, and do not return to `process-plan` to chain: a host-not-ready park ends the run. No row is claimed on a host that is not ready.
 
@@ -33,6 +33,8 @@ Then run the host readiness check, `python scripts/check-campaign-host.py --noti
 ```
 
 Read the most recent prior run file for this phase, if one exists: anything unresolved there is this run's first input.
+
+Delegation follows `process-todo-section`'s Delegation section throughout this skill: the Sonnet subagents in `.claude/agents/` read and run, the main loop writes, decides and quotes. In Step 1.4 one `code-explorer` per TODO file checks the open sections' named paths, counts and versions against the tree, all started in one message; in Step 1b `test-runner` re-runs the spine's Test checkpoints and returns each log; in Step 2 `code-explorer` lists which SPEC and inventory records no open section names; in the CI watch `debug-evidence` reads a red run's log and attempts the safe local reproduction. Every correction, filed gap and repair is the main loop's, made after it has opened what the agent cited.
 
 ## Step 1: repair the phase before running it
 

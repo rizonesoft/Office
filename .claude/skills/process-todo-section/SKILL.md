@@ -51,6 +51,23 @@ Write `Started:` now. If the section body carries no `> **Started:**` line, add 
 - **The layer rules hold.** Respect the module boundaries and thread-safety contract in `AGENTS.md` and the foundation plan. A fix that violates the module table is wrong even when it works.
 - **Fidelity is the bar on surfaces.** Build against `design/SPEC.md` and its screenshot, using tokens from `design/tokens/` only. No raw hex value on a control.
 
+## Delegation
+
+The main loop writes, decides and quotes; the Sonnet subagents in `.claude/agents/` read and run (`AGENTS.md`, Subagents). Hand a step over when it is mechanical and its result can be checked, start independent agents in one message so they run side by side, and keep working on what does not depend on them. One command's worth of work is never delegated.
+
+- **Step 2, facts about the tree:** `code-explorer` locates the paths, symbols, counts and XREFs the section names (through the `LSP` tool where a language server is loaded) and `git-runner` reads the history of the touched paths and of the section's deferrals. Brief them with the section ref and the exact names to find.
+- **Step 2, facts about the world:** on a decision, specification or interoperability section, `source-researcher` answers numbered questions of fact from primary sources, each with its URL and quotation.
+- **Step 4, gates while iterating:** `test-runner` runs the affected test files, and the full suite (`python scripts/run-tests.py`) when the change is wide, writing each full log to scratch and returning its path.
+- **Steps 4 and 6, a gate that fails for no evident reason:** `debug-evidence` collects the timeline, the state and a safe reproduction before any theory is formed.
+- **Never delegated:** the seven answers of step 2 and every plan correction, the completion review's remedies, any write to the repository, anything that drives Office or the desktop (one desktop, one driver), the Test checkpoint of step 6, and the report.
+
+What keeps the quality the main loop would have delivered alone:
+
+- Evidence quoted in a commit body, a findings file or a `--check` comes from a command the main loop ran itself, or from the full log an agent wrote, opened and read by the main loop. An agent's summary is never quoted as evidence.
+- A correction, a tick or a deletion never rests on an agent's word alone: the main loop opens every `file:line` and URL it relies on, and repeats the search itself before it treats "not found" as absence.
+- A brief is self-contained (section ref, exact paths or commands, the scratch folder, the size of reply wanted) and asks for observations, never for a verdict or a fix.
+- An agent that fails, times out or returns nothing useful is not retried in a loop and never parks a section: the main loop does that step itself.
+
 ## Workflow
 
 ### 1. Read the whole contract

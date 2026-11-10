@@ -1,0 +1,9 @@
+{
+  "include": ["scripts", ".conclave/automations"],
+  "exclude": ["build", "**/__pycache__"],
+  "extraPaths": ["scripts/lib", "scripts", ".conclave/automations"],
+  "typeCheckingMode": "off",
+  "reportMissingImports": "error",
+  "reportUndefinedVariable": "error",
+  "reportMissingModuleSource": "none"
+}
