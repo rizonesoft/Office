@@ -1,8 +1,8 @@
 ---
 name: principal-implementer
-description: Write a change from a work packet that the senior-implementer reported blocked, or whose code is hard enough that the main loop judges Opus will not finish it -- with every design decision already made in the packet. Rarely used. Runs at low effort in a fresh context, so the main loop's own context stays small.
+description: Write a change from a work packet that the senior-implementer reported blocked, or whose code is hard enough that the main loop judges Opus will not finish it -- with every design decision already made in the packet. Rarely used. Runs in a fresh context at low effort by default, or at medium when the main loop asks, so the main loop's own context stays small.
 model: fable
-model_rationale: The last worker tier before the main loop takes the work itself. It costs less than the main loop doing the same work, because it starts from a small fresh context at low effort and its exploration never enters the orchestrator's context.
+model_rationale: The last worker tier before the main loop takes the work itself. It costs less than the main loop doing the same work, because it starts from a small fresh context and its exploration never enters the orchestrator's context; low effort by default, medium at most.
 effort: low
 tools: Read, Glob, Grep, Bash, Edit, Write
 write_scope: packet
