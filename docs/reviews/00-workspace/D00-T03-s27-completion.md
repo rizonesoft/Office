@@ -34,3 +34,35 @@ OVERALL: needs-attention
 3. extended
 4. extended
 5. extended
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T16:48:44Z
+- Effort: medium
+- Type: adversarial
+- Lines: 15
+- Digest: 0c2b7bfacc1d4ed3
+
+SECTION: D00 T03 §27
+PURPOSE: completion
+CONTRACT: sha256:d53a4ee98b937c5c0ce9532f27c256f32aebe0edf62cc5fbf31dfda77c0c354d
+
+1. **P2: Empty diffs still pass.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:799` requires distinct commits and forward ancestry, but neither guarantees changes: a commit followed by its revert yields identical endpoint trees. A mistyped `--path` also produces an empty selected diff. Both can produce a successful prompt containing nothing to review. **Remedy: extend** with explicit refusal of empty whole-range and selected diffs, exit 2 without replacing the output, and tests for both scenarios.
+
+2. **P2: Split prompts have no defined integration with recorded rounds.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:804` treats multiple dispatches as parts of one round, but `scripts/review-dispatch.py:465` records each dispatch as a separate round. Existing stopping rules count those records, and `scripts/lib/todo_graph.py:364` requires the last recorded review to be clean or stopped. Consequently, nine parts of the first candidate can reach the low-severity stopping threshold intended for repeated reviews. The plan also leaves aggregation of conflicting part verdicts undefined. **Remedy: extend** with an explicit mapping between parts, records and stopping rules, requiring every part to cover the same resolved candidate and preserving every unresolved finding. Test a failing first part followed by a clean final part, an unavailable part, and enough parts to cross the stopping threshold.
+
+3. **P2: A single oversized file has no completion path.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:801` refuses any selected diff over 400,000 bytes and directs the caller to `--path`. If one changed file alone exceeds that limit, every selection containing it is refused, so the coverage requirement at line 804 can never finish. **Remedy: extend** with a bounded, lossless way to partition an individual file’s patch, retaining file identity and coverage, or another explicitly owned review route. Test one file exceeding the limit and prove all its changes reach review.
+
+4. **P2: Required context can still be empty.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:797` checks whether `--context` was supplied, but does not require its file to contain any text. An empty or whitespace-only scratch file therefore satisfies the prescribed checks for a surface section while supplying none of its required excerpts. **Remedy: extend** with refusal of empty context and tests proving that rejection preserves the existing output. Keep the caller’s responsibility to supply the cited excerpts explicit.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §29
+2. filed -> D00 T03 §30
+3. filed -> D00 T03 §30
+4. filed -> D00 T03 §29

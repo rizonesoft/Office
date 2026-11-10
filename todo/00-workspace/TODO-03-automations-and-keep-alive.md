@@ -61,6 +61,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 26 | §26 | Host check names every file it writes | §25 | [x] |
 | 27 | §27 | Review prompt builder | -- | [ ] |
 | 28 | §28 | Host check scratch leftover rule | §26 | [ ] |
+| 29 | §29 | Review prompt empty-input refusals | §27 | [ ] |
+| 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -826,6 +828,51 @@ Filed 2026-11-10 from §26's completion review (round 2, finding 1, `docs/review
 - [ ] Commit: `automations: state the leftover rule for the host check's scratch files once`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_campaign_host.py"` passes, and `python -c "import pathlib; t = pathlib.Path('scripts/check-campaign-host.py').read_text(encoding='utf-8').split('import argparse')[0]; print(t.count('temporary;'), t.count('- Leftovers:'))"` prints `3 1`.
+
+## 29. Review Prompt Empty-Input Refusals
+
+Filed 2026-11-10 from §27's completion review (round 2, findings 1 and 4, `docs/reviews/00-workspace/D00-T03-s27-completion.md`): §27 refuses a range whose base and tip are one commit or run backwards, but a forward range can still hold nothing to review (a commit followed by its revert leaves identical trees, and a mistyped `--path` selects no file), and a `--context` file can exist and be empty, which hands a surface section to the reviewer with none of its excerpts. An input that is present and empty is refused like one that is missing. -> XREF: §27
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Refuse a round with nothing to review. Done when: a commit-then-revert range and a `--path` that selects no changed file each exit 2.
+2. Refuse empty text inputs. Done when: an empty or whitespace-only `--context`, `--note`, `--purpose`, `--governing` or `--no-context` exits 2.
+
+- [ ] Refuse in the `round` subcommand of `scripts/review-prompt.py` a range that changes no path (`git diff --name-only <base>..<tip>` prints nothing), with exit 2 and a reason that says the range changes no file. Done when: a test on a fixture repository with a commit and its revert shows exit 2 and the reason. Cheaper substitute: relying on the ancestry check, which a commit and its revert pass.
+- [ ] Refuse in the `round` subcommand a `--path` selection that matches no changed path, with exit 2 and a reason that lists the changed paths. Done when: a test with a mistyped path shows exit 2 and the real paths in the reason.
+- [ ] Refuse in both subcommands an empty or whitespace-only value: the files `--context` and `--note`, and the texts `--purpose`, `--governing` and `--no-context`, each with exit 2 and a reason naming the option. Done when: one test per option shows exit 2 and the option's name in the reason. Cheaper substitute: checking only that the option was given, which an empty scratch file satisfies.
+- [ ] Keep an existing `--out` file byte for byte on every refusal above. Done when: each test above first writes `--out` with known bytes and reads the same bytes back after the refusal.
+- [ ] State in `.claude/skills/process-todo-section/SKILL.md` step 3a.2 that the context file must hold the excerpts the section cites, copied in by the main loop, and that the command only checks it is not empty. Done when: the sentence is there and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
+- [ ] Commit: `review: refuse empty ranges and empty inputs in the prompt builder`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, with the tests named above among them.
+
+## 30. Whole-Candidate Review Diffs
+
+Filed 2026-11-10 from §27's completion review (round 2, findings 2 and 3, `docs/reviews/00-workspace/D00-T03-s27-completion.md`): §27 handles a candidate whose diff is over `MAX_DIFF_BYTES` by splitting it with `--path` into parts, each dispatched on its own. `scripts/review-dispatch.py` records each dispatch as a round, so parts would count as rounds against the cap and the round-9 severity stop, the last part's verdict would stand for the whole candidate in `stamp`, and a single file whose patch is over the limit could never be reviewed at all. Parts are the wrong shape: one candidate is one round. This section replaces splitting with a whole diff that is always delivered, inline when small and by file when large, so one dispatch is always one round over the whole candidate. -> XREF: §27
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Prove the reviewer can read a diff file. Done when: this section carries a `**Measured:**` line from a live dispatch whose reply quotes a marker line that exists only in the diff file.
+2. Deliver a large diff by file. Done when: a diff over the limit is written whole to `build/review/` and the prompt names it with its size and digest.
+3. Remove the parts. Done when: `--path`, the Scope block's "Not in this prompt" list and the skill's split rule are gone.
+
+- [ ] Measure, before any code changes, whether the pinned reviewer's read-only sandbox can read a file under `build/review/` in the repository: write a diff file there holding a marker line (a random token), dispatch a prompt through `scripts/review-dispatch.py` to a scratch record (not a section's findings file) asking for the marker, and record the result as a `**Measured:**` line under this section's context with the date, the token found or not, and the record's path. Done when: the line is there. If the marker is not returned, stop and record it: the remaining items depend on it, and the section is then re-planned with the route that does work (the measurement decides, never an assumption).
+- [ ] Write in the `round` subcommand of `scripts/review-prompt.py` a diff larger than `MAX_DIFF_BYTES` to `build/review/<first 12 of base>-<first 12 of tip>.diff` (temporary file then `os.replace`, read back and compared), and put in the prompt, in place of the inlined diff, the file's repository-relative path, its size in bytes, its SHA-256, and the instruction to read the whole file before giving any verdict and to end with `OVERALL: blocked` if it cannot be read. Done when: a test with a small limit shows the file's bytes equal `git diff`'s, and the prompt holding the path, size and digest and no diff body. Cheaper substitute: truncating the diff, or naming the range and leaving the reviewer to run git, which its sandbox cannot.
+- [ ] Remove the `--path` option, the "Not in this prompt" list and the `omitted` JSON key from the `round` subcommand, keeping the Scope block's list of every changed path. Done when: `--path` is an argparse error (exit 2), and the tests of §27 that used it are replaced by the by-file tests. Cheaper substitute: keeping `--path` beside the file route, which leaves two ways to review a large candidate and the round-counting defect in one of them.
+- [ ] Delete review diff files older than 14 days from `build/review/` at the start of every `round` run, and nothing else. Done when: a test with an old and a new file shows only the old one removed, and a file that cannot be deleted does not fail the run.
+- [ ] Replace the split rule in `.claude/skills/review-todo-section/SKILL.md` step 3 with one sentence: a candidate of any size is one prompt and one dispatch; when the command's JSON says `"diff": "file"`, the prompt points at `build/review/`, which is never committed. Done when: the skill has no mention of parts and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
+- [ ] Commit: `review: deliver every candidate's diff whole, by file when it is large`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §30' HEAD~1 HEAD --path x --purpose x --governing y --out <scratch>\p.md` exits 2 with an argparse error naming `--path`.
 
 ## Verification
 

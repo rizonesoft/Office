@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 33 | Checklist items: 220
+Sections: 35 | Checklist items: 232
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -45,6 +45,8 @@ Sections: 33 | Checklist items: 220
 | [x]    | D00 T03 §26 | Host Check Names Every File It Writes    | none                   | 5     |
 | [ ]    | D00 T03 §27 | Review Prompt Builder                    | none                   | 11    |
 | [ ]    | D00 T03 §28 | Host Check Scratch Leftover Rule         | none                   | 4     |
+| [ ]    | D00 T03 §29 | Review Prompt Empty-Input Refusals       | none                   | 6     |
+| [ ]    | D00 T03 §30 | Whole-Candidate Review Diffs             | none                   | 6     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -185,6 +187,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 59/130 verified sections, 16 ready to run now.
+Progress: 59/132 verified sections, 16 ready to run now.
 
-Checklist: 367/829 items completed (includes Commit items).
+Checklist: 367/841 items completed (includes Commit items).
