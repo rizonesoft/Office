@@ -33,7 +33,9 @@
   pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
-param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30)
+param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30,
+      # The program that ends a process tree. Only the tests pass another one, to see a failed stop reported.
+      [string]$TaskKillPath = (Join-Path $env:SystemRoot 'System32\taskkill.exe'))
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -68,31 +70,41 @@ if ($InstallShortcut) {
 $stopFile = Join-Path $root 'build/campaign-stop-request'
 $launcherFile = Join-Path $root 'build/campaign-launcher.json'
 
+function Get-LiveLauncher {
+    # The launcher the record names, when it is still running: the process number and its start time must both
+    # match, so a process that merely reuses the number is never taken for a launcher. Otherwise nothing.
+    if (-not (Test-Path -LiteralPath $launcherFile)) { return $null }
+    try { $record = Get-Content -LiteralPath $launcherFile -Raw | ConvertFrom-Json } catch { return $null }
+    if (-not $record -or -not $record.pid) { return $null }
+    # ConvertFrom-Json turns the recorded text into a date by itself, so both sides are compared as instants.
+    $recorded = if ($record.started -is [datetime]) { $record.started } else {
+        try { [datetime]::Parse("$($record.started)", [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) } catch { $null }
+    }
+    $process = Get-Process -Id $record.pid -ErrorAction SilentlyContinue
+    if ($process -and $recorded -and $process.StartTime.ToUniversalTime().Ticks -eq $recorded.ToUniversalTime().Ticks) { return $process }
+    return $null
+}
+
 if ($Stop) {
     New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
     Set-Content -LiteralPath $stopFile -Value ([DateTime]::UtcNow.ToString('o'))
     Write-Host 'Stop requested. The campaign ends its run at the next section boundary and no new session starts.'
     $answer = if ($Now) { 'NOW' } else { Read-Host 'Press Enter to let the current section finish, or type NOW to stop immediately' }
     if ($answer -ceq 'NOW') {
-        $running = $null
-        if (Test-Path -LiteralPath $launcherFile) {
-            try { $running = Get-Content -LiteralPath $launcherFile -Raw | ConvertFrom-Json } catch { $running = $null }
-        }
-        $process = if ($running) { Get-Process -Id $running.pid -ErrorAction SilentlyContinue } else { $null }
-        # The start time is compared as well, so a process that merely reuses the number is never stopped.
-        # ConvertFrom-Json turns the recorded text into a date by itself, so both sides are compared as instants.
-        $recorded = $null
-        if ($running) {
-            $recorded = if ($running.started -is [datetime]) { $running.started } else {
-                try { [datetime]::Parse("$($running.started)", [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) } catch { $null }
-            }
-        }
-        if ($process -and $recorded -and $process.StartTime.ToUniversalTime().Ticks -eq $recorded.ToUniversalTime().Ticks) {
-            & (Join-Path $env:SystemRoot 'System32\taskkill.exe') /T /F /PID $running.pid | Out-Null
-            Write-Host 'Stopped now: the running session and everything it started were ended. Work that was not committed stays in the tree; the next start takes the run over.'
-        } else {
+        $process = Get-LiveLauncher
+        if (-not $process) {
             Write-Host 'No running launcher was found, so there was nothing to end.'
+            exit 0
         }
+        & $TaskKillPath /T /F /PID $process.Id | Out-Null
+        $killExit = $LASTEXITCODE
+        # Believe the process, not the exit code alone: the stop is reported only once the launcher is gone.
+        $gone = $process.WaitForExit(15000)
+        if ($killExit -ne 0 -or -not $gone) {
+            Write-Host "NOT stopped: the launcher (process $($process.Id)) could not be ended (exit $killExit). It may be running elevated: run this Stop from an elevated window, or close the campaign window. The stop request stands, so it will still end at the next section boundary." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host 'Stopped now: the running session and everything it started were ended. Work that was not committed stays in the tree; the next start takes the run over.'
     }
     exit 0
 }
@@ -104,13 +116,25 @@ $Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
 # is recorded at the same moment, so Stop can end it during the checks below as well as during a session. A record
 # left behind by an exit is harmless: Stop matches the start time as well as the process number.
 if (-not $DryRun) {
+    # One launcher at a time: a second start never takes the record from a launcher that is still running, or the
+    # Stop shortcut would lose the one it must end. Nothing of the running launcher is touched.
+    $other = Get-LiveLauncher
+    if ($other -and $other.Id -ne $PID) {
+        Write-Host "Not started: a campaign launcher is already running (process $($other.Id)). Use the Stop shortcut first, or close its window." -ForegroundColor Red
+        exit 3
+    }
     New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
     Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
     $self = Get-Process -Id $PID
     Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
 }
+function Remove-OwnRecord {
+    # Only this launcher's own record is removed, never one another launcher wrote.
+    $live = Get-LiveLauncher
+    if ($live -and $live.Id -eq $PID) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
+}
 function Exit-Launcher([int]$Code) {
-    if (-not $DryRun) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
+    if (-not $DryRun) { Remove-OwnRecord }
     exit $Code
 }
 function Test-StopRequested {
@@ -165,6 +189,9 @@ function Read-StoredToken {
     }
     return $null
 }
+# A token inherited from the shell that started this window is dropped first: the session signs in with the
+# repository's own token or interactively, never with whatever the machine's environment happened to hold.
+Remove-Item Env:CLAUDE_CODE_OAUTH_TOKEN -ErrorAction SilentlyContinue
 $token = Read-StoredToken
 if ($token) {
     $env:CLAUDE_CODE_OAUTH_TOKEN = $token
@@ -218,5 +245,5 @@ while ($true) {
     }
 }
 } finally {
-    Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue
+    Remove-OwnRecord
 }

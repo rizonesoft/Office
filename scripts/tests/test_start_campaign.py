@@ -233,6 +233,45 @@ class LauncherRunTest(unittest.TestCase):
         self.assertFalse((self.root / "importer-ran.txt").exists(), "the launcher must not run the importer")
         self.assertFalse((self.root / "token-seen.txt").exists())
 
+    def test_an_inherited_token_never_reaches_the_session(self):
+        self.env["CLAUDE_CODE_OAUTH_TOKEN"] = "sk-ant-oat01-" + "i" * 48  # left in the shell, not in the env file
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "claude-calls.txt")
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertFalse((self.root / "token-seen.txt").exists(), output)
+
+    def test_a_second_start_is_refused_and_stop_still_ends_the_first(self):
+        first = self.launch("-RestartSeconds", "60")
+        self.wait_for(self.root / "claude-calls.txt")
+        record = (self.root / "build" / "campaign-launcher.json").read_text(encoding="utf-8")
+        second = self.launch("-RestartSeconds", "60")
+        output, _ = second.communicate(timeout=120)
+        self.assertEqual(second.returncode, 3, output)
+        self.assertIn("already running", output)
+        self.assertEqual((self.root / "build" / "campaign-launcher.json").read_text(encoding="utf-8"), record)
+        self.assertFalse((self.root / "build" / "campaign-stop-request").exists())  # the refused start cleared nothing
+        self.assertEqual(len(self.calls()), 1)
+        stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+                               "-Stop", "-Now"], capture_output=True, text=True, timeout=120, env=self.env,
+                              stdin=subprocess.DEVNULL)
+        self.assertIn("Stopped now", stop.stdout, stop.stderr)
+        first.communicate(timeout=60)
+
+    def test_a_stop_that_cannot_end_the_launcher_says_so_and_exits_1(self):
+        first = self.launch("-RestartSeconds", "60")
+        self.wait_for(self.root / "claude-calls.txt")
+        refuses = self.bin / "refuses.cmd"
+        refuses.write_text("@exit /b 5\n", encoding="utf-8")
+        stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+                               "-Stop", "-Now", "-TaskKillPath", str(refuses)], capture_output=True, text=True,
+                              timeout=120, env=self.env, stdin=subprocess.DEVNULL)
+        self.assertEqual(stop.returncode, 1, stop.stdout + stop.stderr)
+        self.assertIn("NOT stopped", stop.stdout)
+        self.assertNotIn("Stopped now", stop.stdout)
+        self.assertIsNone(first.poll())
+        self.assertTrue((self.root / "build" / "campaign-stop-request").exists())  # the graceful request stands
+
     def test_a_stored_token_reaches_the_session_and_is_not_printed(self):
         token = "sk-ant-oat01-" + "z" * 48
         (self.root / ".secrets").mkdir()

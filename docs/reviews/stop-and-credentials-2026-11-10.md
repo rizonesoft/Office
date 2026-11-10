@@ -35,3 +35,37 @@ Verification was limited to source inspection and read-only, in-memory probes. I
 
 HIGHEST: P1
 OVERALL: needs-attention
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T19:40:55Z
+- Effort: medium
+- Type: adversarial
+- Lines: 24
+- Digest: d734f15a9c81012c
+
+### adversarial: needs-attention
+
+1. **[P2] A second start makes the active launcher unreachable by Stop.** `scripts/start-campaign.ps1:110` overwrites the launcher record before checking the existing guard. Reproduce: start campaign A, open start window B, then close B as instructed at line 142. The record now identifies exited launcher B. `-Stop -Now` reports no running launcher and leaves A running. Registration needs exclusive ownership, and cleanup must remove only the caller’s record.
+
+2. **[P2] Failed termination reports success.** `scripts/start-campaign.ps1:91` ignores `taskkill`’s exit code, prints “Stopped now” and exits zero. Reproduce with a launcher started elevated and Stop running normally: termination can fail with access denied. An in-memory probe substituting a failing native command confirmed the success message and zero exit despite termination exit code 5. Check termination results before claiming the tree ended.
+
+### consistency: needs-attention
+
+3. **[P2] Missing local credentials silently retain an inherited token.** `scripts/start-campaign.ps1:173` reports interactive sign-in without clearing `CLAUDE_CODE_OAUTH_TOKEN`. Start from a shell carrying an expired token with no local credential file: Claude inherits that token instead of using the advertised fallback. An in-memory probe confirmed `InheritedTokenRetained=True`. Clear the inherited value before selecting the repository credential or interactive fallback.
+
+### integration: needs-attention
+
+Finding **1** breaks the contract between the start and stop shortcuts during an ordinary second-window start, including when the operator follows the handover warning.
+
+### source-defect: needs-attention
+
+Finding **3** contradicts decision 34 in `docs/specs/2026-10-23-campaign-scope-design.md:92`: authentication can still depend on a machine environment credential instead of the repository’s credential store.
+
+### record: advisory
+
+Verification comprised source inspection, two in-memory probes and four passing read-only launcher tests. The filesystem-writing suites and live process-tree termination were not run under this read-only review. No files changed.
+
+HIGHEST: P2
+OVERALL: needs-attention
