@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 43 | Checklist items: 295
+Sections: 51 | Checklist items: 349
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -55,6 +55,14 @@ Sections: 43 | Checklist items: 295
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                     | none                   | 6     |
 | [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder  | none                   | 6     |
+| [ ]    | D00 T05 §1  | Lesson Files and Their Checker           | none                   | 9     |
+| [ ]    | D00 T05 §2  | Lesson Index and Query                   | none                   | 8     |
+| [ ]    | D00 T05 §3  | First Lessons From the Review Records    | none                   | 6     |
+| [ ]    | D00 T05 §4  | Section Runs Read Their Lessons          | none                   | 5     |
+| [ ]    | D00 T05 §5  | Work Packets Carry Their Lessons         | none                   | 5     |
+| [ ]    | D00 T05 §6  | Packet Outcome Ledger                    | owner-decision         | 6     |
+| [ ]    | D00 T05 §7  | Agent Score From the Ledger              | owner-decision         | 8     |
+| [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                   | none                   | 7     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -197,6 +205,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/142 verified sections, 20 ready to run now.
+Progress: 61/150 verified sections, 21 ready to run now.
 
-Checklist: 382/923 items completed (includes Commit items).
+Checklist: 382/977 items completed (includes Commit items).

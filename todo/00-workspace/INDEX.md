@@ -7,6 +7,7 @@ Repository tooling that every later domain relies on.
 | `TODO-02-licensing-and-contributions.md` | Licence, notices, contributor agreement | active |
 | `TODO-03-automations-and-keep-alive.md` | Scheduled jobs, run guard, keep-alive | active |
 | `TODO-04-portable-build-tools.md` | Pinned build tools fetched into the clone | active |
+| `TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews, agent ledger and score | active |
 
 ## Completed
 

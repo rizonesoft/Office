@@ -20,6 +20,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 - The open phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`), which §6 moves under the guard.
 - -> XREF: T04 §1 -- `tools.lock.json`, the lock file of the portable build tools, joins the pins §11 keeps at the latest stable release
 - -> XREF: D03 T01 §17 -- the authoring sections whose `Author` items §31 lists in the plan as files still to author
+- -> XREF: T05 §5 -- the lessons `scripts/packet.py` (§34) attaches to a packet, and the ledger it writes (T05 §6)
 
 ## Outcome
 
