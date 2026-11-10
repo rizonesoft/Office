@@ -752,6 +752,8 @@ Filed 2026-11-10 from a readiness failure on this PC: `python scripts/check-camp
 
 ## 26. Host Check Names Every File It Writes
 
+> **Started:** 2026-11-10T16:34:00Z
+
 Filed 2026-11-10 from §25's completion review (round 2, finding 1, `docs/reviews/00-workspace/D00-T03-s25-completion.md`): §25 makes the module docstring of `scripts/check-campaign-host.py` say that `build/host-lock-baseline.json` is the one file written and nothing else, but the same section also creates `build/host-lock-baseline.lock` (kept, never deleted) and, for the length of one write, a temporary file `host-lock-baseline.json.<random>.tmp` beside the baseline. A reader who trusts the docstring would treat the lock file as stray and delete it, or suspect a leak. This section makes the statement true and pins it. -> XREF: §25
 
 **Phase:** 0
