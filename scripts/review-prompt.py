@@ -106,7 +106,7 @@ def template(root, kind):
     path = Path(root) / TEMPLATES[kind]
     try:
         text = todo_graph.read_text(path)
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         raise Refused(f"cannot read {TEMPLATES[kind]}: {exc}") from None
     _, rule, body = text.partition("\n---\n")
     if not rule:
@@ -141,7 +141,7 @@ def fenced(text, language):
 def section_row(root, reference):
     try:
         rows = todo_graph.graph(Path(root))
-    except todo_graph.Refused as exc:
+    except (todo_graph.Refused, OSError, UnicodeError) as exc:
         raise Refused(f"the TODO tree does not validate: {exc}") from None
     ref, code = todo_graph.extract_ref(reference, rows)
     if code == 2:
@@ -183,6 +183,9 @@ def one_line(text, what):
 def read_option(path, option):
     try:
         text = todo_graph.read_text(path).strip()
+    except UnicodeError:
+        raise Refused(f"{option} {path} is not UTF-8 text; save it as UTF-8 (in PowerShell: Set-Content -Encoding "
+                      "utf8NoBOM) and run the command again") from None
     except OSError as exc:
         raise Refused(f"cannot read {option} {path}: {exc}") from None
     if not text:
@@ -319,6 +322,11 @@ def main(argv=None, root=ROOT):
         result = completion(root, args) if args.command == "completion" else review_round(root, args)
     except Refused as exc:
         print(f"refused: {exc}", file=sys.stderr)
+        return 2
+    except (OSError, UnicodeError) as exc:
+        # The boundary of the command: a file that cannot be read, decoded or written anywhere above is a refusal
+        # too, never a traceback, so the caller always gets exit 2 and one line to act on.
+        print(f"refused: {type(exc).__name__}: {' '.join(str(exc).split())}", file=sys.stderr)
         return 2
     print(json.dumps(result, ensure_ascii=False))
     return 0

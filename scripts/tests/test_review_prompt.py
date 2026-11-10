@@ -135,6 +135,27 @@ class Completion(Base):
         self.assertIn("Access is denied", err)
         self.assertEqual([p.name for p in self.scratch.iterdir()], [self.out.name])  # no temporary file left
 
+    def test_a_context_file_that_is_not_utf8_is_a_refusal_not_a_crash(self):
+        # Review round 2: Windows PowerShell's Out-File writes UTF-16.
+        context = self.scratch / "context.md"
+        context.write_text("The SPEC excerpt.\n", encoding="utf-16")
+        err = self.refused("completion", "D00 T01 §2", "--purpose", "p", "--context", context, "--out", self.out,
+                           reason="is not UTF-8 text")
+        self.assertIn("--context", err)
+
+    def test_a_template_that_is_not_utf8_is_a_refusal_not_a_crash(self):
+        path = self.root / review_prompt.TEMPLATES["completion"]
+        path.write_bytes(path.read_text(encoding="utf-8").encode("utf-16"))
+        self.refused("completion", "D00 T01 §1", "--purpose", "p", "--no-context", "tooling", "--out", self.out,
+                     reason="cannot read docs/completion-review-prompt.md")
+
+    def test_any_file_error_below_the_command_is_a_refusal(self):
+        for error in (PermissionError(13, "Access is denied"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad")):
+            with self.subTest(error=type(error).__name__), \
+                    mock.patch.object(review_prompt, "fill", side_effect=error):
+                self.refused("completion", "D00 T01 §1", "--purpose", "p", "--no-context", "tooling",
+                             "--out", self.out, reason=type(error).__name__)
+
     def test_angle_brackets_in_a_section_are_written_through(self):
         code, _, err = self.completion("D00 T01 §3", "--no-context", "tooling")
         self.assertEqual(code, 0, err)
@@ -242,6 +263,12 @@ class Round(Base):
         with mock.patch.object(tg.os, "replace", side_effect=PermissionError(13, "Access is denied")):
             self.refused(*self.args(self.first, self.third), reason="cannot write --out")
         self.assertEqual([p.name for p in self.scratch.iterdir()], [self.out.name])
+
+    def test_a_note_file_that_is_not_utf8_is_a_refusal_not_a_crash(self):
+        note = self.scratch / "note.md"
+        note.write_text("This is round 2.\n", encoding="utf-16")
+        err = self.refused(*self.args(self.first, self.third, "--note", note), reason="is not UTF-8 text")
+        self.assertIn("--note", err)
 
     def test_a_reversed_range_is_refused(self):
         self.refused(*self.args(self.third, self.first), reason="the range is reversed")
