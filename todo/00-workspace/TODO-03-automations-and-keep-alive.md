@@ -67,7 +67,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 29 | §29 | Review prompt empty-input refusals | §27 | [x] |
 | 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
 | 31 | §31 | Plan lists files still to author | -- | [x] |
-| 32 | §32 | Validate checks plan row width | -- | [ ] |
+| 32 | §32 | Validate checks plan row width | -- | [x] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 | 34 | §34 | Work packet acceptance command | -- | [ ] |
 | 35 | §35 | Weekly owner digest | §1 | [ ] |
@@ -960,9 +960,12 @@ Filed 2026-11-10 from `todo/findings.md` (the entry of 2026-11-10). `validate` a
 - [x] Assert in the same test that `plan --sync` refuses the fixture with the same message. Done when: both messages are compared for equality.
 - [x] Run the `### Still to author` table's width check (D00 T03 §31) from `validate` through the same kind of shared function. Done when: a test in `scripts/tests/test_todo_graph.py` with an `Author` path that makes that table's row longer than `MAX_TABLE_ROW` shows `validate` and `plan --sync` refusing it with the same message, which names the path.
 - [x] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
-- [ ] Commit: `todo: validate refuses a title the plan cannot render`
+- [x] Commit: `todo: validate refuses a title the plan cannot render`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new test among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
+
+> **Verified:** 2026-11-11 | §32 | 3060e0dd0eb5a79288bbf0e42c84c468016285df
+> **Review:** `docs/reviews/d00-t03-s32.json`
 
 ## 33. Plan Groups a Phase by Domain
 
