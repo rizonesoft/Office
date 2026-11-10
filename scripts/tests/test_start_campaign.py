@@ -286,20 +286,29 @@ class LauncherRunTest(unittest.TestCase):
         # session loop. The window stays open (-NoExit), as the shortcut's does.
         (self.root / "build").mkdir(exist_ok=True)
         (self.root / "build" / "claude-campaign-guard.json").write_text("this is not JSON", encoding="utf-8")
+        # The host check runs after the lock and the record, so its marker proves the first start got that far.
+        self.host_check.write_text(
+            "import sys\nfrom pathlib import Path\n"
+            "Path(__file__).resolve().parents[1].joinpath('host-check-ran.txt').write_text('x')\nsys.exit(0)\n",
+            encoding="utf-8")
         first = subprocess.Popen(
             [PWSH, "-NoLogo", "-NoProfile", "-NoExit", "-File", str(self.root / "scripts" / "start-campaign.ps1")],
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env)
         self.processes.append(first)
-        deadline = time.monotonic() + 90
-        code, output = 3, ""
-        while code == 3 and time.monotonic() < deadline:
-            time.sleep(2)
-            second = self.launch()
-            output, _ = second.communicate(timeout=120)
-            code = second.returncode
+        self.wait_for(self.root / "host-check-ran.txt", seconds=120)
+        self.assertTrue((self.root / "build" / "campaign-launcher.lock").exists())
+        record = self.root / "build" / "campaign-launcher.json"
+        deadline = time.monotonic() + 60
+        while record.exists() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(record.exists(), "the failed start did not clean up its record")
         self.assertIsNone(first.poll(), "the first window must still be open for this test to mean anything")
-        self.assertNotEqual(code, 3, output)
+        (self.root / "host-check-ran.txt").unlink()
+        second = self.launch()
+        output, _ = second.communicate(timeout=120)
+        self.assertNotEqual(second.returncode, 3, output)
         self.assertNotIn("already running", output)
+        self.assertTrue((self.root / "host-check-ran.txt").exists(), "the second start was not admitted")
         self.assertEqual(self.calls(), [])
 
     def test_two_starts_at_the_same_moment_admit_exactly_one(self):

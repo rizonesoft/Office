@@ -65,3 +65,35 @@ Verification: four read-only launcher tests, the fleet verifier and 76 in-memory
 
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T20:36:05Z
+- Effort: medium
+- Type: adversarial
+- Lines: 22
+- Digest: 9d3e439d5756871d
+
+### adversarial: needs-attention
+
+1. **[P2] Record creation still bypasses lock cleanup.** `scripts/start-campaign.ps1:135` writes the launcher record after acquiring the exclusive lock, but the cleanup-protected `try` starts at line 155. If that write fails, for example because the volume fills while an existing lock file can still be opened, execution never reaches the `finally`. The installed `-NoExit` shortcut leaves PowerShell alive, so the undisposed handle can refuse subsequent starts after the storage problem is resolved. Protect record creation immediately after acquisition. This finding is source-derived; live reproduction was not run.
+
+### consistency: needs-attention
+
+2. **[P3] The verifier still prescribes the removed escalation route.** `scripts/verify-agent-tiers.mjs:585` tells callers that work requiring more effort “goes one tier up”; line 568 documents the same rule. Reproduce by checking an Opus agent with `effort: high`: the emitted diagnostic directs escalation, although `AGENTS.md:52` requires correcting the packet, retrying once, then lead takeover. I reproduced that diagnostic in memory. Replace the obsolete routing instruction.
+
+### integration: needs-attention
+
+3. **[P3] The startup-failure regression test can pass without exercising cleanup.** `scripts/tests/test_start_campaign.py:295` waits two seconds before starting the competing launcher, without establishing that the first launcher acquired its lock. If the first process is delayed beyond that interval, the second can acquire the lock first, encounter the malformed guard and exit. Its process exit releases the handle even with disposal removed; the assertions then pass while the first process remains alive. Synchronize on evidence that the first launcher acquired the lock and reached the injected failure before testing admission of its successor.
+
+### source-defect: needs-attention
+
+Finding **2 [P3]** preserves an escalation instruction outside the two permitted Fable cases in `docs/specs/2026-10-23-campaign-scope-design.md:93`.
+
+### record: approve
+
+Verification performed: four read-only launcher tests passed, the fleet verifier passed, and 51 in-memory policy cases matched expected acceptance or refusal. Filesystem-writing suites and live launcher tests were not run under the read-only restriction. No files changed.
+
+HIGHEST: P2  
+OVERALL: needs-attention

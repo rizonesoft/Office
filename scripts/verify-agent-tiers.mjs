@@ -565,7 +565,7 @@ export function toolProblems(fields) {
 /**
  * The effort ceiling per tier (owner, 2026-11-10): Sonnet agents never run above `high`, Opus and Fable
  * agents never above `medium`. Extra effort is cheap on the cheap tiers, where it is what holds the quality bar; on
- * the expensive tiers a packet that medium effort cannot finish goes one tier up instead. This checks the default
+ * the expensive tiers a packet that medium effort cannot finish returns to the lead, which corrects or splits it. This checks the default
  * an agent definition carries in `effort:`; the same ceiling binds the effort the main loop passes per call
  * (AGENTS.md, Subagents), which no file records.
  */
@@ -582,7 +582,7 @@ export function effortProblems(fields, model) {
   const tier = ELEVATED_AGENT_MODEL_TOKENS.some((token) => model.includes(token)) ? "elevated" : "base";
   const ceiling = EFFORT_CEILING[tier];
   if (EFFORT_LEVELS.indexOf(effort) > EFFORT_LEVELS.indexOf(ceiling)) {
-    return [`declares "${EFFORT_FIELD}: ${effort}" on "${model}"; this tier's ceiling is ${ceiling}, and work that needs more goes one tier up`];
+    return [`declares "${EFFORT_FIELD}: ${effort}" on "${model}"; this tier's ceiling is ${ceiling}; a packet that seems to need more is the lead's to correct or split (AGENTS.md, Subagents)`];
   }
   return [];
 }

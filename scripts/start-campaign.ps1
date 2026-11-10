@@ -111,6 +111,26 @@ if ($Stop) {
 
 $Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
 
+# The lock is taken as the first statement inside one try that runs to the end of the file, so nothing can
+# happen between taking it and being sure it is given back: a normal end, an exit, an error anywhere below
+# (writing the record included), or Ctrl+C at a prompt all pass through the finally. The shortcut's window
+# stays open afterwards (-NoExit), and a lock it still held would refuse the next start.
+function Remove-OwnRecord {
+    # Only this launcher's own record is removed, never one another launcher wrote. The lock is released here too,
+    # by closing it, and not left to the end of the process: the shortcut keeps its window open (-NoExit) after
+    # the launcher has finished, and a lock still held by that idle window would refuse the next start.
+    $live = Get-LiveLauncher
+    if ($live -and $live.Id -eq $PID) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
+    if ($script:launcherLock) {
+        $script:launcherLock.Dispose()
+        $script:launcherLock = $null
+    }
+}
+function Exit-Launcher([int]$Code) {
+    if (-not $DryRun) { Remove-OwnRecord }
+    exit $Code
+}
+try {
 # Starting is the owner's word, so a stop request left from before is removed here, first, before any step that
 # takes time: from this line on, a request that appears is a stop of THIS start and is never erased. The launcher
 # is recorded at the same moment, so Stop can end it during the checks below as well as during a session. A record
@@ -134,25 +154,6 @@ if (-not $DryRun) {
     $self = Get-Process -Id $PID
     Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
 }
-# Everything from here to the end runs inside one try, so the record and the lock are given back however the
-# launcher ends: a normal end, an exit, an error in a check below, or Ctrl+C at a prompt. The shortcut's window
-# stays open afterwards (-NoExit), and a lock it still held would refuse the next start.
-function Remove-OwnRecord {
-    # Only this launcher's own record is removed, never one another launcher wrote. The lock is released here too,
-    # by closing it, and not left to the end of the process: the shortcut keeps its window open (-NoExit) after
-    # the launcher has finished, and a lock still held by that idle window would refuse the next start.
-    $live = Get-LiveLauncher
-    if ($live -and $live.Id -eq $PID) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
-    if ($script:launcherLock) {
-        $script:launcherLock.Dispose()
-        $script:launcherLock = $null
-    }
-}
-function Exit-Launcher([int]$Code) {
-    if (-not $DryRun) { Remove-OwnRecord }
-    exit $Code
-}
-try {
 function Test-StopRequested {
     if (-not (Test-Path -LiteralPath $stopFile)) { return $false }
     Write-Host ''
