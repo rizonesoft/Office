@@ -75,6 +75,12 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 37 | §37 | Operating mode rule and launcher | §36 | [ ] |
 | 38 | §38 | Parallel streams design record | §37 | [ ] |
 | 39 | §39 | Parallel streams sections authored | §38 | [ ] |
+| 40 | §40 | Review schedule in the pin | -- | [ ] |
+| 41 | §41 | Scheduled review passes | §40 | [ ] |
+| 42 | §42 | Plan review before the build | §41 | [ ] |
+| 43 | §43 | Stamp replays the schedule | §41, §42 | [ ] |
+| 44 | §44 | Rotation round count and takeover | §41, §43 | [ ] |
+| 45 | §45 | Skills and prompts follow the schedule | §42, §43, §44 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1113,6 +1119,139 @@ The design record of §38 becomes work. This section authors the TODO file that 
 - [ ] Commit: `todo: author the parallel streams file`
 
 **Test checkpoint:** `python scripts/todo-graph.py validate` exits 0 and `Test-Path todo/00-workspace/TODO-06-parallel-streams.md` returns `True`.
+
+## 40. Review Schedule in the Pin
+
+Owner, 2026-11-10: the reviewer system is upgraded to the scheduled one the Recto repository runs (`D:\Recto\.conclave\reviewers.toml` and `D:\Recto\scripts\review-dispatch.py`, the same Conclave lineage as this repository's dispatcher). Here every review is one reviewer at one fixed effort with every lens every round, which is why sections spent 364 rounds between them. There the pin holds a schedule and the dispatcher picks each pass's effort and lenses: a plan review before the build at medium effort, a completion review at low, a first round at medium across the lenses, then low-effort adversarial rotation rounds, one medium escalation round after a low round that finds a `P1`, and the loop ending at the first round with no `P1` or `P2`. This is a port, not a copy: this repository's dispatcher has since gained `scripts/review-prompt.py`, contract digests and completion rules that Recto lacks, and they stay. §40 to §45 carry it out; this section brings the schedule into the pin and loads it strictly. The reviewer does not change (GPT-6 Astra, always).
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Load and check `[schedule]` in `scripts/review-dispatch.py`. Done when: a well-formed schedule loads and each malformed one is refused with its reason.
+2. Add the schedule to `.conclave/reviewers.toml`. Done when: `python scripts/review-dispatch.py --check-pin --json` reports it.
+
+- [ ] Port the lens table to `scripts/review-dispatch.py`: `LENSES`, a mapping from lens name to its prompt text, with the names `plan`, `plan-delivery`, `adversarial`, `integration`, `source-defect`, `consistency`, `quality`, `design`, `optimization` and `record` (source: `D:\Recto\scripts\review-dispatch.py`, `LENSES`), keeping this repository's `excellence` lens from `docs/review-round-prompt.md` as an eleventh name. Done when: a test in `scripts/tests/test_review_dispatch.py` lists exactly those names.
+- [ ] Port `check_step` and `check_schedule`: the schedule must hold exactly `plan`, `completion`, `rounds`, `rotation`, `escalation` and `severity_stop_after`; each step holds `effort` and, except `completion`, a non-empty list of distinct known `lenses`; an effort must be one the reviewer's CLI takes (`low`, `medium`, `high`, `xhigh`, `max` for codex); `rounds` is a non-empty list; `severity_stop_after` is a whole number from 0 to 33 and not a boolean. Done when: one test per refusal shows `Refused` with the key at fault. Cheaper substitute: reading the table without checking it, which lets a typo change how every section is reviewed.
+- [ ] Call `check_schedule` from `load_pin` when the pin has a `[schedule]`, and keep a pin without one loading as today. Done when: tests show both, and `--check-pin --json` includes the schedule when present.
+- [ ] Do not port the per-reviewer `efforts` override or the panel (`panel_record`): this repository has one reviewer by owner decision. Done when: a pin with `[schedule.efforts.<name>]` is refused as an unknown key, under test.
+- [ ] Add the schedule to `.conclave/reviewers.toml` with Recto's values: `severity_stop_after = 0`; `[schedule.plan]` medium with the `plan` lens; `[schedule.completion]` low; one `[[schedule.rounds]]` at medium with `adversarial`, `integration`, `source-defect`, `plan-delivery` and `design`; `[schedule.rotation]` low with `adversarial`; `[schedule.escalation]` medium with `adversarial`; and rewrite the file's comment to describe it. Done when: `python scripts/review-dispatch.py --check-pin` prints `ok`.
+- [ ] Commit: `review: load a review schedule from the pin`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` passes with the schedule tests among them, and `python scripts/review-dispatch.py --check-pin` prints `ok`.
+
+## 41. Scheduled Review Passes
+
+The dispatcher, not the caller, decides what each pass is. The caller says only which kind of pass it wants; the dispatcher reads the findings file, works out where the loop stands, and sets the effort and the lenses. That is what makes every section's loop run the same way.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add `--kind` and the scheduling function. Done when: fixture findings files produce the expected step for each position.
+2. Record what each pass was. Done when: every recorded round names its pass, effort and lenses.
+
+- [ ] Add `--kind {round,completion,plan}` (default `round`), `--candidate` (a full commit, required for `completion` and `plan`) and `--surface` to `scripts/review-dispatch.py`. Done when: tests show the default, the refusal of `--kind plan` without `--candidate`, and argparse refusing another kind.
+- [ ] Port `returned_review` and `highest`: a recorded round counts as returned only when its reviewer is of another model family and its last line is `OVERALL: approve` or `OVERALL: needs-attention`; `highest` is the last `HIGHEST: P1|P2|P3|none` line of a review. Done when: tests show an outage, a `blocked` reply and a reply without a verdict not counted.
+- [ ] Port `scheduled`: with N returned rounds, the next pass is the escalation step when the last returned round ran at the rotation effort and its highest finding was `P1`; otherwise `rounds[N]` while one remains; otherwise the rotation step with the lens `rotation.lenses[(N - len(rounds)) % len(rotation.lenses)]`; the `design` lens is dropped unless `--surface` is given. Done when: tests cover the first round, the first rotation round, the lens cycle, an escalation after a `P1`, no escalation after a `P2`, and `design` with and without `--surface` (source: `D:\Recto\scripts\review-dispatch.py`, `scheduled`).
+- [ ] Pass the step's effort to the reviewer's command and append a lens block to the prompt naming the pass, its effort and each lens with its text (`lens_block`). Done when: a test with a fake `codex` shows the effort in its arguments and the lens text on its standard input, never in its arguments.
+- [ ] Record on every round, beside the existing fields, `Pass:` with one of `round`, `rotation` or `escalation`, and `Lenses:`. Recto infers the pass by replaying the schedule; here it is written down, because §44 counts rotation rounds. Done when: a test reads the three pass kinds back from a recorded file, and a record without `Pass:` (written before this section) still parses.
+- [ ] Record a plan pass under `## Plan review` and a completion pass as today, neither as a round. Done when: tests show a plan and a completion pass leaving the round count unchanged.
+- [ ] Print in the JSON summary the pass, its position, its effort, its lenses, `escalated`, and `severity_stop` (true when the reviewer returned, the position is past `severity_stop_after` and the highest finding is `P3`). Done when: a test asserts each key.
+- [ ] Commit: `review: the dispatcher schedules each pass`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` passes with the tests named above among them.
+
+## 42. Plan Review Before the Build
+
+Recto reviews the plan before it is built, at medium effort with one lens, and this repository does not. A gap found in the plan costs a paragraph; the same gap found in round five costs four rounds. This is separate from the completion review, which stays.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write `docs/plan-review-prompt.md` and teach `scripts/review-prompt.py` to fill it. Done when: `python scripts/review-prompt.py plan '<ref>' --out <file>` writes a prompt.
+2. Record the pass. Done when: `--kind plan` appends one `## Plan review` section and refuses a second.
+
+- [ ] Write `docs/plan-review-prompt.md` from `D:\Recto\docs\plan-review-prompt.md`, adapted to this repository's section format, asking whether building the section as written gives a whole, correct result, and ending with `PLAN: complete` or `PLAN: gaps` and an `OVERALL:` line. Done when: `python scripts/check-design-doc.py docs/plan-review-prompt.md` exits 0.
+- [ ] Add a `plan` subcommand to `scripts/review-prompt.py` that fills that prompt from the section, as `completion` does for its prompt, with the same refusals for an unknown section and an unwritable `--out`. Done when: tests in `scripts/tests/test_review_prompt.py` show the filled prompt and both refusals.
+- [ ] Accept a plan reply only when it holds a `PLAN:` line followed by `OVERALL:`; a reply without them leaves the plan review open and is recorded as no review. Done when: a test shows the open state (source: `returned_pass`).
+- [ ] Refuse a second returned plan review of one section in one findings file, naming the first. Done when: a test shows the refusal. Cheaper substitute: accepting any number, which lets a run ask until it gets `complete`.
+- [ ] State how the plan review and the completion review differ in `docs/review-types.md`: the plan review asks whether the section's plan is right before anything is built; the completion review asks whether building it as written gives a whole feature, and its gaps extend the section. Done when: the document names both and their order.
+- [ ] Commit: `review: review the plan before the build`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` and `-p "test_review_dispatch.py"` pass with the plan tests among them.
+
+## 43. Stamp Replays the Schedule
+
+A schedule nobody checks is a suggestion. `stamp` replays the section's recorded passes against the schedule and refuses a receipt whose passes do not follow it, so a section cannot be stamped on rounds run at the wrong effort or without their lenses.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Port `schedule_ok` to `scripts/lib/todo_graph.py`. Done when: a record that follows the schedule stamps and one that does not is refused with the pass at fault.
+2. Take the severity stop from the pin. Done when: one number, in the pin, decides it.
+
+- [ ] Port `schedule_ok`, `pin_at` and `pin_schedule`: read the schedule from `.conclave/reviewers.toml` as it was at the stamped commit, replay every returned pass of the findings file through `scheduled`, and refuse the stamp when a pass's recorded effort or lenses differ from what the schedule gave it. Done when: tests in `scripts/tests/test_todo_graph.py` cover a loop that follows the schedule, a round at the wrong effort, a rotation round with the wrong lens, a missing escalation after a `P1`, and an outage that does not move the position.
+- [ ] Require a returned plan review (§42) whose candidate is the commit the build began at or an ancestor of it, for every section whose build began after this section stamps. Done when: tests show the requirement and the adoption boundary: a section already in its review loop before that keeps the rules it started under, as D00 T03 §16 did for the completion rules.
+- [ ] Replace `SEVERITY_CUTOFF_ROUND = 8` with the pin's `severity_stop_after`, read through `pin_schedule`, keeping 8 for a receipt whose pin had no schedule. Done when: a `stopped-low-severity` verdict at round 1 is accepted under the new pin and refused under the old one, and a test fails if the two numbers are ever stated in two places.
+- [ ] Store the schedule and the plan review in the receipt, and bump `completion_rules` to `3` for receipts written under the schedule, leaving version 1 and 2 receipts valid under their own rules. Done when: `python scripts/todo-graph.py validate` passes on this repository's 61 existing receipts unchanged, and a new fixture receipt holds both fields.
+- [ ] Update the stamp paragraphs of `todo/README.md` to describe the replay, the plan review and the stop. Done when: the README states each and names `.conclave/reviewers.toml` as the only place the numbers live.
+- [ ] Commit: `todo: stamp only a review loop that followed the schedule`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py validate` exits 0.
+
+## 44. Rotation Round Count and Takeover
+
+Owner, 2026-11-10: the eight rounds before Fable takes a section over are rotation rounds only, and the cap of 33 is a cap on rotation rounds. The plan review, the completion review, the first medium round and the escalation rounds do not count toward either. The reason is what each number measures. The first round is expected to find things, and an escalation round is extra scrutiny of a `P1` already counted; only the rotation rounds show whether a section is converging. The consequence is stated so nobody is surprised by it: because an escalation can follow every rotation round, a section can have up to 8 rotation rounds, 8 escalations and its first round, 17 reviews, before the takeover, and up to 67 before the cap. The second takeover trigger, a finding that returns after it was reported fixed, does not wait for any count.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Count rotation rounds from the `Pass:` field (§41). Done when: the dispatcher's summary and `--list-rounds` give the count.
+2. Apply both numbers to rotation rounds. Done when: the cap and the takeover are tested on rotation counts.
+
+- [ ] Add `rotation_rounds` to the JSON summary of `scripts/review-dispatch.py` and to `--list-rounds --json`: the number of returned rounds whose `Pass:` is `rotation`. Done when: a test over a record with one first round, three rotation rounds and one escalation prints 3.
+- [ ] Add `takeover` to the JSON summary: true when the round just returned is rotation round 8 or later and its highest finding is `P1` or `P2`. The number 8 is `takeover_after` in `[schedule]`, validated like `severity_stop_after`. Done when: tests show false at rotation round 7 with a `P1`, true at 8 with a `P2`, false at 8 with only `P3`, and a refusal for a `takeover_after` outside 1 to 33.
+- [ ] Count the cap on rotation rounds in `scripts/lib/todo_graph.py`: `stopped-at-33` is accepted only on the pass that returns rotation round 33, and a 34th rotation round is refused, for receipts under the schedule; receipts written before keep the count of all rounds. Done when: tests show a section with 33 rotation rounds and 10 escalations stamping `stopped-at-33`, and one with 20 rotation rounds refused that verdict.
+- [ ] Record `rotation_rounds` in the receipt beside `rounds_spent`, and print it in `python scripts/todo-graph.py query rounds`. Done when: a fixture receipt holds it and the query shows it.
+- [ ] Commit: `review: count the takeover and the cap in rotation rounds`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` and `-p "test_todo_graph.py"` pass with the tests named above among them.
+
+## 45. Skills and Prompts Follow the Schedule
+
+The skills still describe the old loop: one prompt with every lens, a severity stop from round 9, a takeover counted in all rounds. This section makes the documents say what the dispatcher now does, so the lead does not have to reconcile two descriptions.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Update the round prompt and its builder. Done when: a round prompt carries no lens list of its own.
+2. Update the three skills. Done when: each names the kinds of pass and none names a number the pin holds.
+
+- [ ] Remove the `## Lenses` list from `docs/review-round-prompt.md`, leaving the severity rule and the reply format, and update `FILLS` and `PLACEHOLDERS` of `scripts/review-prompt.py` in the same commit: the dispatcher appends the lenses of each pass (§41). Done when: `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes and a built round prompt holds no lens name.
+- [ ] Add step 3a to `.claude/skills/process-todo-section/SKILL.md`, before the completion review: build the plan prompt with `python scripts/review-prompt.py plan`, dispatch it with `--kind plan --candidate <the commit the build starts from>`, and on `PLAN: gaps` correct the section before building. Done when: the skill names both commands and what each verdict leads to.
+- [ ] Rewrite the loop paragraph of `.claude/skills/review-todo-section/SKILL.md`: every round is dispatched with `--kind round` (and `--surface` on a `Surface: yes` section); the dispatcher's summary says which pass ran; `severity_stop: true` ends the loop; `takeover: true`, or a finding that returns after it was reported fixed, hands the section to `principal-implementer`; the cap is 33 rotation rounds. Done when: the paragraph holds no round number except by naming `.conclave/reviewers.toml`, and a test in `scripts/tests/test_skill_ci_gate.py` fails when the `--kind round` mention is removed.
+- [ ] Update `.claude/skills/independent-review/SKILL.md` and the Subagents and TODO workflow sections of `AGENTS.md` the same way. Done when: neither states "from round 9" or counts the takeover in all rounds.
+- [ ] Record the port in `docs/review-types.md`: where it came from, what was not ported (the panel and the per-reviewer efforts) and why. Done when: the document names both.
+- [ ] Commit: `review: the skills and prompts describe the scheduled loop`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `-p "test_review_prompt.py"` pass, and `python scripts/review-dispatch.py --check-pin` prints `ok`.
 
 ## Verification
 

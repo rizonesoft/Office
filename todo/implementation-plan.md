@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 54 | Checklist items: 378
+Sections: 60 | Checklist items: 415
 
 | Status | Reference   | Deliverable                              | Needs                  | Items |
 | ------ | ----------- | ---------------------------------------- | ---------------------- | ----- |
@@ -54,6 +54,12 @@ Sections: 54 | Checklist items: 378
 | [ ]    | D00 T03 §35 | Weekly Owner Digest                      | none                   | 9     |
 | [ ]    | D00 T03 §36 | Operating Mode Measurement Command       | none                   | 11    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher         | none                   | 9     |
+| [ ]    | D00 T03 §40 | Review Schedule in the Pin               | none                   | 6     |
+| [ ]    | D00 T03 §41 | Scheduled Review Passes                  | none                   | 8     |
+| [ ]    | D00 T03 §42 | Plan Review Before the Build             | none                   | 6     |
+| [ ]    | D00 T03 §43 | Stamp Replays the Schedule               | none                   | 6     |
+| [ ]    | D00 T03 §44 | Rotation Round Count and Takeover        | none                   | 5     |
+| [ ]    | D00 T03 §45 | Skills and Prompts Follow the Schedule   | none                   | 6     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script      | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                     | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                     | none                   | 6     |
@@ -210,6 +216,6 @@ Sections: 6 | Checklist items: 25
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
 | [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
 
-Progress: 61/155 verified sections, 23 ready to run now.
+Progress: 61/161 verified sections, 24 ready to run now.
 
-Checklist: 382/1020 items completed (includes Commit items).
+Checklist: 382/1057 items completed (includes Commit items).
