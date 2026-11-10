@@ -67,6 +67,7 @@ What keeps the quality the main loop would have delivered alone:
 - A correction, a tick or a deletion never rests on an agent's word alone: the main loop opens every `file:line` and URL it relies on, and repeats the search itself before it treats "not found" as absence.
 - A brief is self-contained (section ref, exact paths or commands, the scratch folder, the size of reply wanted) and asks for observations, never for a verdict or a fix.
 - An agent that fails, times out or returns nothing useful is not retried in a loop and never parks a section: the main loop does that step itself.
+- An agent whose reply the main loop's own check proves wrong (a wrong fact, a wrong result, a claim it did not verify) is removed from the fleet as `AGENTS.md` (Subagents) says, in its own commit, before the section carries on.
 
 ## Workflow
 
