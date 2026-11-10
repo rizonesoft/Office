@@ -16,9 +16,10 @@ the screen lock check keep passing after an unrelated write to the policy key (D
 Files written (nothing else is):
 - `build/host-lock-baseline.json`: kept; the proof that this boot began with no inactivity limit.
 - `build/host-lock-baseline.lock`: kept, empty, never deleted; it serialises checks that run side by side.
-- `build/host-lock-baseline.json.<random>.tmp`: lives for one write of the baseline; removed when the write succeeds or fails; a check killed in the middle of the write, or a removal the system refuses, can leave one behind, and it is safe to delete while no check runs.
-- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): one probe's captured output and working folder; removed when the probe ends; a removal the system refuses (a descendant still holding a file) can leave the folder, safe to delete.
-- `<system temp>/campaign-notice-<random>/notice.json`: only with `--notify` after a failed check; the email's text handed to the sender; removed when the send ends.
+- `build/host-lock-baseline.json.<random>.tmp`: temporary; lives for one write of the baseline.
+- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): temporary; one probe's captured output and working folder, removed when the probe ends.
+- `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; the email's text handed to the sender, removed when the send ends.
+- Leftovers: every entry marked temporary is removed in normal use; a check that is killed, or a removal the system refuses, can leave one behind, and a leftover is safe to delete once the check and its child processes have stopped.
 
 Exit 2 (a check could not run) outranks exit 1 (a check failed): either parks the campaign, and both print every line.
 """

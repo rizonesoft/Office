@@ -456,14 +456,14 @@ class LockBaseline(Base):
         "Files written (nothing else is):",
         "- `build/host-lock-baseline.json`: kept; the proof that this boot began with no inactivity limit.",
         "- `build/host-lock-baseline.lock`: kept, empty, never deleted; it serialises checks that run side by side.",
-        "- `build/host-lock-baseline.json.<random>.tmp`: lives for one write of the baseline; removed when the write "
-        "succeeds or fails; a check killed in the middle of the write, or a removal the system refuses, can leave one "
-        "behind, and it is safe to delete while no check runs.",
-        "- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): one probe's captured output and working "
-        "folder; removed when the probe ends; a removal the system refuses (a descendant still holding a file) can "
-        "leave the folder, safe to delete.",
-        "- `<system temp>/campaign-notice-<random>/notice.json`: only with `--notify` after a failed check; the "
-        "email's text handed to the sender; removed when the send ends.",
+        "- `build/host-lock-baseline.json.<random>.tmp`: temporary; lives for one write of the baseline.",
+        "- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): temporary; one probe's captured output and "
+        "working folder, removed when the probe ends.",
+        "- `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; "
+        "the email's text handed to the sender, removed when the send ends.",
+        "- Leftovers: every entry marked temporary is removed in normal use; a check that is killed, or a removal the "
+        "system refuses, can leave one behind, and a leftover is safe to delete once the check and its child processes "
+        "have stopped.",
     )
 
     def test_the_docstring_lists_every_file_the_check_writes(self):
@@ -474,6 +474,14 @@ class LockBaseline(Base):
         block = block[:block.index("")] if "" in block else block
         self.assertEqual(tuple(block), self.WRITTEN)
         self.assertNotIn("One file is written", host_check.__doc__)
+        # D00 T03 §28: the leftover rule is stated once, last, and covers every entry marked temporary.
+        scratch = [line for line in block if "<random>" in line]
+        self.assertEqual(len(scratch), 3)
+        for line in scratch:
+            self.assertIn("temporary;", line)
+            self.assertNotIn("leave", line)
+        self.assertTrue(block[-1].startswith("- Leftovers:"), block[-1])
+        self.assertEqual(sum(line.startswith("- Leftovers:") for line in block), 1)
 
     def test_a_recording_run_leaves_only_the_baseline_and_the_lock(self):
         self.prove()
