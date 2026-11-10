@@ -6,11 +6,12 @@
 // The rule is in AGENTS.md: mechanical subtasks delegate to subagents on the
 // Sonnet tier; an elevated tier is reserved for work whose verdict quality
 // demands it; Haiku is allowed only for near-mechanical work (at least 90%
-// mechanical) whose output a script or the main loop verifies; and no subagent
-// writes: subagents read and run, and the main loop makes every change.
+// mechanical) whose output a script or the main loop verifies; and an agent
+// reads and runs unless it is a declared worker (`write_scope: packet`), which
+// writes only what its work packet names and never on Haiku.
 //
 // A rule stated in prose is protected by discipline. This makes it protected by
-// a check: an agent with no `model:` line, an agent that could edit files, or a
+// a check: an agent with no `model:` line, an undeclared agent that could edit files, or a
 // Haiku agent that does not meet every Haiku condition below, fails here instead
 // of passing every gate and being noticed later, or never.
 //
@@ -67,10 +68,14 @@ export const ELEVATION_RATIONALE_FIELD = "model_rationale";
 export const HOOKS_FIELD = "hooks";
 
 /**
- * Tools no subagent on any tier is given. A `*` grant includes them, and so
+ * Tools only a declared worker is given. A `*` grant includes them, and so
  * does a missing `tools:` list, because the agent then inherits every tool.
  */
 export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
+
+/** The field that declares a worker, and its one value. Haiku never carries it. */
+export const WRITE_SCOPE_FIELD = "write_scope";
+export const WRITE_SCOPE_PACKET = "packet";
 
 /**
  * Read the opening frontmatter as a strict, closed subset of YAML.
@@ -533,19 +538,40 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
 }
 
 /**
- * A subagent reads and runs; the main loop writes. A grant such as
- * `Edit(src/**)` is still Edit, so the rule spec after the name is ignored.
+ * A subagent reads and runs unless it is a declared worker. A worker carries
+ * `write_scope: packet` (owner, 2026-11-10: workers get to write): it may hold
+ * edit tools and writes only the paths its work packet names, and the main loop
+ * reads its whole diff before anything is committed (AGENTS.md, Subagents). The
+ * declaration is the point: an agent that gained an edit tool by accident still
+ * fails here. `*` and a missing `tools:` list stay refused for every agent, and
+ * a grant such as `Edit(src/**)` is still Edit, so the rule spec after the name
+ * is ignored.
  */
 export function toolProblems(fields) {
+  const problems = [];
+  const scope = fields.get(WRITE_SCOPE_FIELD);
+  const isWorker = scope !== undefined && scope.value === WRITE_SCOPE_PACKET;
+  if (scope !== undefined && !isWorker) {
+    problems.push(`declares "${WRITE_SCOPE_FIELD}: ${scope.value}"; the only value is "${WRITE_SCOPE_PACKET}"`);
+  }
   const tools = recordedProse(fields, "tools");
   if (!tools) {
-    return ['needs an explicit "tools:" list; without one the agent inherits every tool, edit tools included'];
+    problems.push('needs an explicit "tools:" list; without one the agent inherits every tool, edit tools included');
+    return problems;
   }
   const names = tools.split(",").map((tool) => tool.replace(/\(.*$/, "").trim().toLowerCase());
-  if (names.some((tool) => tool === "*" || EDIT_TOOLS.includes(tool))) {
-    return ["grants edit tools (Edit, Write, MultiEdit, NotebookEdit or *); subagents read and run, and the main loop writes"];
+  const hasEditTool = names.some((tool) => EDIT_TOOLS.includes(tool));
+  if (names.includes("*")) {
+    problems.push('grants every tool with "*"; list the tools, so what an agent can do is read from its definition');
+  } else if (hasEditTool && !isWorker) {
+    problems.push(
+      `grants edit tools (Edit, Write, MultiEdit or NotebookEdit) without "${WRITE_SCOPE_FIELD}: ${WRITE_SCOPE_PACKET}"; `
+      + "an agent reads and runs unless it is a declared worker",
+    );
+  } else if (isWorker && !hasEditTool) {
+    problems.push(`declares "${WRITE_SCOPE_FIELD}: ${WRITE_SCOPE_PACKET}" but grants no edit tool; a worker that cannot write is a reader, so drop the field`);
   }
-  return [];
+  return problems;
 }
 
 /** Every unmet Haiku condition, so one run names them all. */
@@ -573,6 +599,10 @@ export function haikuProblems(repoRoot, fields, model) {
       `Haiku needs "${HAIKU_REPLAY_FIELD}:" naming a file in this repository that records a known-answer replay `
       + "showing no loss against the base tier",
     );
+  }
+
+  if (fields.has(WRITE_SCOPE_FIELD)) {
+    problems.push(`Haiku never writes, and this agent declares "${WRITE_SCOPE_FIELD}:"; a worker is on Sonnet or above`);
   }
 
   const purpose = `${recordedProse(fields, "name") ?? ""} ${recordedProse(fields, "description") ?? ""}`;

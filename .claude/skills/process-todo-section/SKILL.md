@@ -53,13 +53,15 @@ Write `Started:` now. If the section body carries no `> **Started:**` line, add 
 
 ## Delegation
 
-The main loop writes, decides and quotes; the Sonnet subagents in `.claude/agents/` read and run (`AGENTS.md`, Subagents). Hand a step over when it is mechanical and its result can be checked, start independent agents in one message so they run side by side, and keep working on what does not depend on them. One command's worth of work is never delegated.
+The main loop orchestrates: it decides, writes each work packet, reads every diff and quotes; the readers in `.claude/agents/` read and run, and the two workers write from a packet (`AGENTS.md`, Subagents, which holds the routing ladder and the escalation rule). Hand a step over when its result can be checked, start independent readers in one message so they run side by side, and keep working on what does not depend on them. One command's worth of work is never delegated.
+
+- **Step 4, the build:** split the section's checklist into work packets (the paths that may change, the done-when, the proving command with the test that must fail first, what is out of scope, the scratch folder) and route each: `implementer` where the design is settled, `senior-implementer` at the effort the code needs where it takes real thought, the main loop itself where a decision is still open. One worker writes at a time. For each returned packet the main loop reads the whole `git diff`, discards a diff that left the packet's paths, runs the proving command itself, and commits; a `BLOCKED:` reply or a second failed attempt goes one tier up with the evidence.
 
 - **Step 2, facts about the tree:** `code-explorer` locates the paths, symbols, counts and XREFs the section names (through the `LSP` tool where a language server is loaded) and `git-runner` reads the history of the touched paths and of the section's deferrals. Brief them with the section ref and the exact names to find.
 - **Step 2, facts about the world:** on a decision, specification or interoperability section, `source-researcher` answers numbered questions of fact from primary sources, each with its URL and quotation.
 - **Step 4, gates while iterating:** `test-runner` runs the affected test files, and the full suite (`python scripts/run-tests.py`) when the change is wide, writing each full log to scratch and returning its path.
 - **Steps 4 and 6, a gate that fails for no evident reason:** `debug-evidence` collects the timeline, the state and a safe reproduction before any theory is formed.
-- **Never delegated:** the seven answers of step 2 and every plan correction, the completion review's remedies, any write to the repository, anything that drives Office or the desktop (one desktop, one driver), the Test checkpoint of step 6, and the report.
+- **Never delegated:** the seven answers of step 2 and every plan correction, the completion review's remedies, any write under `todo/` or `docs/reviews/`, every commit, anything that drives Office or the desktop (one desktop, one driver), the Test checkpoint of step 6, and the report.
 
 What keeps the quality the main loop would have delivered alone:
 

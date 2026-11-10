@@ -94,6 +94,72 @@ ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
 
+class Workers(unittest.TestCase):
+    """An agent reads and runs unless it declares `write_scope: packet` (owner, 2026-11-10: workers get to write)."""
+
+    def setUp(self):
+        self.assertIsNotNone(NODE, "node is not on PATH; the agent tier verifier cannot run")
+
+    def verify(self, model="sonnet", tools="Read, Grep", extra=""):
+        with tempfile.TemporaryDirectory() as tmp:
+            agents = Path(tmp) / ".claude" / "agents"
+            agents.mkdir(parents=True)
+            (agents / "probe.md").write_text(
+                f"---\nname: probe\ndescription: A probe agent\nmodel: {model}\ntools: {tools}\n{extra}---\n\nBody.\n",
+                encoding="utf-8")
+            return subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
+
+    def test_an_edit_tool_without_the_declaration_is_refused(self):
+        for tools in ("Read, Edit", "Read, Write", "Read, MultiEdit", "Read, NotebookEdit", "Read, Edit(src/**)"):
+            with self.subTest(tools=tools):
+                result = self.verify(tools=tools)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("without \"write_scope: packet\"", result.stderr)
+
+    def test_a_declared_worker_with_edit_tools_passes(self):
+        result = self.verify(tools="Read, Grep, Bash, Edit, Write", extra="write_scope: packet\n")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_a_star_grant_is_refused_even_for_a_worker(self):
+        result = self.verify(tools="'*'", extra="write_scope: packet\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("grants every tool", result.stderr)
+
+    def test_a_missing_tools_list_is_refused_even_for_a_worker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            agents = Path(tmp) / ".claude" / "agents"
+            agents.mkdir(parents=True)
+            (agents / "probe.md").write_text(
+                "---\nname: probe\ndescription: A probe agent\nmodel: sonnet\nwrite_scope: packet\n---\n\nBody.\n",
+                encoding="utf-8")
+            result = subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn('needs an explicit "tools:" list', result.stderr)
+
+    def test_any_other_write_scope_is_refused(self):
+        result = self.verify(tools="Read, Edit", extra="write_scope: anywhere\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn('the only value is "packet"', result.stderr)
+
+    def test_a_worker_with_no_edit_tool_is_refused(self):
+        result = self.verify(tools="Read, Grep", extra="write_scope: packet\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("grants no edit tool", result.stderr)
+
+    def test_haiku_never_writes(self):
+        result = self.verify(model="claude-haiku-5-5", tools="Read, Edit", extra="write_scope: packet\n")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("Haiku never writes", result.stderr)
+
+    def test_an_opus_worker_still_needs_its_rationale(self):
+        refused = self.verify(model="opus", tools="Read, Edit", extra="write_scope: packet\n")
+        self.assertEqual(refused.returncode, 1, refused.stdout)
+        self.assertIn("model_rationale", refused.stderr)
+        accepted = self.verify(model="opus", tools="Read, Edit",
+                               extra="write_scope: packet\nmodel_rationale: Writes code whose approach is given.\n")
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+
+
 class Frontmatter(unittest.TestCase):
     def setUp(self):
         # AGENTS.md runs this verifier with node after every agent change, so a missing node is a failure, not a skip.
