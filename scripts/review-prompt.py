@@ -164,6 +164,15 @@ def scratch_path(root, out):
     return path
 
 
+def write(out, prompt):
+    """Write the prompt through a temporary file then a replace. A file that cannot be written (a folder that does
+    not exist and cannot be made, a prompt left open in an editor) is a refusal like any other: exit 2, one line."""
+    try:
+        todo_graph.atomic(out, prompt)
+    except OSError as exc:
+        raise Refused(f"cannot write --out {out}: {exc}") from None
+
+
 def one_line(text, what):
     text = " ".join(text.split())
     if not text:
@@ -209,7 +218,7 @@ def completion(root, args):
         "excerpts": excerpts,
         "neighbours": f"\n\n{table.group(0).rstrip()}\n\n{context}\n",
     })
-    todo_graph.atomic(out, prompt)
+    write(out, prompt)
     return {"kind": "completion", "ref": ref, "contract": contract, "out": str(out)}
 
 
@@ -282,7 +291,7 @@ def review_round(root, args):
     resolved = json.dumps({**row.public(), "body": row.body}, indent=2, ensure_ascii=False)
     prompt += f"\n## Section contract ({ref}, as `resolve` prints it){fenced(resolved, 'json')}"
     prompt += f"\n## Diff{fenced(diff.decode('utf-8', 'replace'), 'diff')}"
-    todo_graph.atomic(out, prompt)
+    write(out, prompt)
     return {"kind": "round", "ref": ref, "base": base, "tip": tip, "included": included, "omitted": omitted,
             "out": str(out)}
 

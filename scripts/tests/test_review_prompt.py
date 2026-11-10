@@ -127,6 +127,14 @@ class Completion(Base):
                                        "--out", self.out, reason="needs --context")
                 self.assertIn(why, err)
 
+    def test_an_output_that_cannot_be_replaced_is_a_refusal_not_a_crash(self):
+        # Review round 1: a prompt left open in an editor makes the replace fail on Windows.
+        with mock.patch.object(tg.os, "replace", side_effect=PermissionError(13, "Access is denied")):
+            err = self.refused("completion", "D00 T01 §1", "--purpose", "p", "--no-context", "tooling",
+                               "--out", self.out, reason="cannot write --out")
+        self.assertIn("Access is denied", err)
+        self.assertEqual([p.name for p in self.scratch.iterdir()], [self.out.name])  # no temporary file left
+
     def test_angle_brackets_in_a_section_are_written_through(self):
         code, _, err = self.completion("D00 T01 §3", "--no-context", "tooling")
         self.assertEqual(code, 0, err)
@@ -229,6 +237,11 @@ class Round(Base):
         code, _, err = self.round(self.first, self.third, "--note", note)
         self.assertEqual(code, 0, err)
         self.assertIn("## Note from the writer\n\nThis is round 2; round 1 found `<x>`.", self.out.read_text("utf-8"))
+
+    def test_a_round_output_that_cannot_be_replaced_is_a_refusal_not_a_crash(self):
+        with mock.patch.object(tg.os, "replace", side_effect=PermissionError(13, "Access is denied")):
+            self.refused(*self.args(self.first, self.third), reason="cannot write --out")
+        self.assertEqual([p.name for p in self.scratch.iterdir()], [self.out.name])
 
     def test_a_reversed_range_is_refused(self):
         self.refused(*self.args(self.third, self.first), reason="the range is reversed")
