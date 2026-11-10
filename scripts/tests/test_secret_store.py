@@ -104,13 +104,34 @@ class Store(unittest.TestCase):
                 self.assertTrue(Path(argv[0]).is_absolute())
                 self.assertIn("/inheritance:r", argv)
 
+    def test_a_permission_change_that_fails_writes_no_credential(self):
+        if sys.platform != "win32":
+            self.skipTest("the permission change goes through icacls on Windows only")
+
+        def failing_acl(argv, **kw):
+            if Path(argv[0]).name.lower() == "icacls.exe":
+                return subprocess.CompletedProcess(argv, 5, stdout="", stderr="Access is denied.")
+            return self.both(argv, **kw)
+        with self.assertRaises(OSError):
+            secret_store.import_all(self.root, failing_acl)
+        folder = self.root / ".secrets"
+        self.assertEqual([path.name for path in folder.iterdir()] if folder.exists() else [], [])
+        for path in self.root.rglob("*"):
+            if path.is_file():
+                self.assertNotIn(SMTP, path.read_text(encoding="utf-8", errors="replace"))
+
     def test_the_vault_is_read_through_wsl_inside_a_bounded_unit(self):
         calls = []
         secret_store.vault_read(ITEMS["SMTP2GO_API_KEY"], vault({ITEMS["SMTP2GO_API_KEY"]: SMTP}, calls))
         argv = calls[0]
         self.assertEqual(Path(argv[0]).parts[-2:], ("System32", "wsl.exe"))
-        for flag in ("--pipe", "--wait", "--collect", f"RuntimeMaxSec={secret_store.LINUX_SECONDS}"):
+        # wsl.exe starts systemd-run itself, so nothing (no profile) runs before the bounded unit exists.
+        self.assertEqual(argv[1:4], ["-e", "systemd-run", "--user"])
+        for flag in ("--pipe", "--wait", "--collect", f"RuntimeMaxSec={secret_store.LINUX_SECONDS}",
+                     f"TimeoutStopSec={secret_store.LINUX_STOP_SECONDS}", f"MemoryMax={secret_store.LINUX_MEMORY}"):
             self.assertIn(flag, argv)
+        self.assertEqual(argv[argv.index("--") + 1:argv.index("--") + 3], ["bash", "-lc"])
+        self.assertLess(secret_store.LINUX_SECONDS + secret_store.LINUX_STOP_SECONDS, 90)
 
 
 class Importer(unittest.TestCase):
@@ -130,6 +151,21 @@ class Importer(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("imported", text)
         self.assertIn("SMTP2GO_API_KEY", text)
+        self.assertNotIn(SMTP, text)
+        self.assertNotIn(TOKEN, text)
+
+    def test_a_failed_permission_change_exits_1_and_prints_no_value(self):
+        if sys.platform != "win32":
+            self.skipTest("the permission change goes through icacls on Windows only")
+        good = vault({ITEMS["SMTP2GO_API_KEY"]: SMTP, ITEMS["CLAUDE_CODE_OAUTH_TOKEN"]: TOKEN})
+
+        def failing_acl(argv, **kw):
+            if Path(argv[0]).name.lower() == "icacls.exe":
+                return subprocess.CompletedProcess(argv, 5, stdout="", stderr="")
+            return good(argv, **kw)
+        code, text = self.run_main([], failing_acl)
+        self.assertEqual(code, 1)
+        self.assertIn("not imported", text)
         self.assertNotIn(SMTP, text)
         self.assertNotIn(TOKEN, text)
 
@@ -153,17 +189,14 @@ class Ignored(unittest.TestCase):
         result = subprocess.run(["git", "check-ignore", ".secrets/office.env"], cwd=REPO, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, "the .secrets folder must be in .gitignore")
 
-    def test_the_mailer_prefers_the_file_and_falls_back_to_the_vault(self):
+    def test_the_mailer_reads_an_imported_key_and_refuses_without_one(self):
         alert = load("office_alert_for_secrets", REPO / ".conclave" / "automations" / "alert.py")
         with tempfile.TemporaryDirectory() as tmp:
             alert.SECRETS_ROOT = tmp
-
-            def never(argv, **kw):
-                raise AssertionError("the vault must not be read when the file holds the key")
-            fallback = vault({ITEMS["SMTP2GO_API_KEY"]: "api-" + "B" * 32})
-            self.assertEqual(alert.key(fallback), "api-" + "B" * 32)  # nothing imported yet: the vault answers
+            with self.assertRaises(alert.Refused):
+                alert.key()  # nothing imported yet: refused, and no vault is read to make up for it
             secret_store.import_all(tmp, vault({ITEMS["SMTP2GO_API_KEY"]: SMTP, ITEMS["CLAUDE_CODE_OAUTH_TOKEN"]: TOKEN}))
-            self.assertEqual(alert.key(never), SMTP)
+            self.assertEqual(alert.key(), SMTP)
 
 
 if __name__ == "__main__":

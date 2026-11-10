@@ -12,8 +12,9 @@ finish, and the tail of that run's log.
 It goes through SMTP2GO's `/v3/email/send` from the Rizonetech website sender, the same verified sender and
 key the Rizonetech automations use (Rizonesoft is a brand of Rizonetech). The key comes from the repository's
 own untracked env file, `.secrets/office.env`, which `python scripts/import-secrets.py` fills from the Conclave
-vault item "Rizonetech SMTP2GO (website mail)" (owner, 2026-11-10: the repository is self-contained); a clone that
-has not imported yet reads the vault through `conclave-op` in WSL. The key is never an argument or in the output.
+vault item "Rizonetech SMTP2GO (website mail)" (owner, 2026-11-10: the repository is self-contained). Nothing here
+reads the vault: without the import a send is refused with the command to run. The key is never an argument or in
+the output.
 SMTP2GO answers a refused send with HTTP 200 and
 `succeeded: 0`, so anything but one success and no failures is a refusal.
 """
@@ -24,7 +25,6 @@ import argparse
 import json
 import os
 import socket
-import subprocess
 import sys
 import urllib.request
 
@@ -34,40 +34,28 @@ sys.path.insert(0, os.path.join(REPO, "scripts", "lib"))
 import secret_store  # noqa: E402
 
 NAME = "SMTP2GO_API_KEY"
-ITEM = secret_store.SECRETS[NAME]["item"].rsplit("/", 1)[0]
 SECRETS_ROOT = REPO  # where .secrets/office.env is looked for; the tests point it at an empty folder
 ENDPOINT = "https://api.smtp2go.com/v3/email/send"
 SENDER = "Office automations <website@rizonetech.com>"
 TO = "rizonetech@gmail.com"
 TAIL_BYTES = 256 * 1024
 LOG_LINES = 60
-LINUX_SECONDS = secret_store.LINUX_SECONDS
-LINUX_STOP_SECONDS = secret_store.LINUX_STOP_SECONDS
-LINUX_MEMORY = secret_store.LINUX_MEMORY
 
 
 class Refused(Exception):
     pass
 
 
-def wsl() -> str:
-    return secret_store.wsl()
+def key() -> str:
+    """The API key from the repository's own env file, refused when it is not there; never echoed.
 
-
-def key(run=subprocess.run) -> str:
-    """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed.
-
-    Read from the repository's own env file (`python scripts/import-secrets.py` fills it from the vault), so a send
-    needs neither WSL nor the vault. A clone that has not imported yet reads the vault directly, as before."""
+    The file holds only values of the right shape (`secret_store.read_all` drops any other), and nothing here reads
+    the vault or starts another program: importing is the operator's explicit step, `python scripts/import-secrets.py`."""
     stored = secret_store.get(NAME, SECRETS_ROOT)
-    if stored:
-        return stored
-    value = secret_store.vault_read(ITEM + "/credential", run)
-    if value is None:
-        raise Refused("vault field credential is unavailable")
-    if not secret_store.well_formed(NAME, value):
-        raise Refused("vault field credential does not have the SMTP2GO key shape")
-    return value
+    if not stored:
+        raise Refused(f"{NAME} is not in {secret_store.FOLDER}/{secret_store.FILE}; "
+                      "run python scripts/import-secrets.py")
+    return stored
 
 
 def message(name: str, task: dict, outcome: dict, tail: str, host: str) -> tuple[str, str]:
@@ -104,10 +92,10 @@ def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen) -
     return data.get("email_id", "")
 
 
-def send_failure(name: str, task: dict, outcome: dict, tail: str, run=subprocess.run,
-                 opener=urllib.request.urlopen, host: str | None = None) -> str:
+def send_failure(name: str, task: dict, outcome: dict, tail: str, opener=urllib.request.urlopen,
+                 host: str | None = None) -> str:
     subject, body = message(name, task, outcome, tail, host or socket.gethostname())
-    return send(key(run), subject, body, opener)
+    return send(key(), subject, body, opener)
 
 
 def tail_of(path: str, lines: int = LOG_LINES) -> str:
@@ -121,7 +109,7 @@ def tail_of(path: str, lines: int = LOG_LINES) -> str:
     return "\n".join(text.splitlines()[-lines:]).rstrip()
 
 
-def main(argv=None, run=subprocess.run, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
+def main(argv=None, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("name", help="the task that failed, e.g. office-python-pin")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
@@ -143,8 +131,8 @@ def main(argv=None, run=subprocess.run, opener=urllib.request.urlopen, host=None
         print(f"To: {TO}\nSubject: {subject}\n\n{body}")
         return 0
     try:
-        email_id = send_failure(args.name, task, outcome, tail, run, opener, host)
-    except (Refused, OSError, ValueError, subprocess.TimeoutExpired) as error:
+        email_id = send_failure(args.name, task, outcome, tail, opener, host)
+    except (Refused, OSError, ValueError) as error:
         print(f"alert not sent: {error}", file=sys.stderr)
         return 1
     print(f"alert sent to {TO} for {args.name} (SMTP2GO email {email_id})")

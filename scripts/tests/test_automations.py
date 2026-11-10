@@ -166,13 +166,13 @@ class Runner(unittest.TestCase):
 
     def test_an_unsent_alert_exits_3_and_says_so_in_the_log(self):
         def refuse(*_a):
-            raise alert.Refused("vault field credential is unavailable")
+            raise alert.Refused("SMTP2GO_API_KEY is not in .secrets/office.env")
 
         self.tasks["tasks"][1]["command"][-1] = "import sys; sys.exit(5)"
         (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
         self.assertEqual(self.main("office-fail", alerter=refuse), 3)
         log = (self.root / self.last("office-fail")["log"]).read_text(encoding="utf-8")
-        self.assertIn("alert not sent: Refused: vault field credential is unavailable", log)
+        self.assertIn("alert not sent: Refused: SMTP2GO_API_KEY is not in .secrets/office.env", log)
 
     def test_only_the_newest_logs_are_kept(self):
         folder = self.root / "build" / "automations" / "office-pass"
@@ -236,33 +236,35 @@ class Alert(unittest.TestCase):
         ok = Response(json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "E1"}}).encode())
         self.assertEqual(alert.send("api-" + "a" * 32, "s", "b", opener=lambda *a, **kw: ok), "E1")
 
-    def test_a_key_without_the_smtp2go_shape_is_refused(self):
-        def vault(value, code=0):
-            return lambda *a, **kw: subprocess.CompletedProcess(a, code, stdout=value, stderr="")
+    def stored(self, text):
+        """Point the mailer at a folder whose env file holds `text` (or no file at all for None)."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.addCleanup(setattr, alert, "SECRETS_ROOT", alert.SECRETS_ROOT)
+        alert.SECRETS_ROOT = tmp.name
+        if text is not None:
+            folder = Path(tmp.name) / ".secrets"
+            folder.mkdir()
+            (folder / "office.env").write_text(text, encoding="utf-8")
 
-        self.assertEqual(alert.key(vault("api-" + "B" * 32 + "\n")), "api-" + "B" * 32)
-        for bad, code in (("", 0), ("api-short", 0), ("x" * 36, 0), ("api-" + "B" * 32, 1)):
-            with self.subTest(bad=bad[:8], code=code), self.assertRaises(alert.Refused):
-                alert.key(vault(bad, code))
+    def test_the_key_comes_from_the_env_file(self):
+        self.stored("SMTP2GO_API_KEY=api-" + "B" * 32 + "\n")
+        self.assertEqual(alert.key(), "api-" + "B" * 32)
 
-    def test_the_key_is_read_through_wsl_by_its_system32_path(self):
-        calls = []
+    def test_a_missing_or_malformed_key_is_refused_with_the_command_to_run(self):
+        for text in (None, "", "SMTP2GO_API_KEY=api-short\n", "SMTP2GO_API_KEY=" + "x" * 36 + "\n", "OTHER=api-" + "B" * 32):
+            with self.subTest(text=(text or "")[:24]):
+                self.stored(text)
+                with self.assertRaises(alert.Refused) as refused:
+                    alert.key()
+                self.assertIn("python scripts/import-secrets.py", str(refused.exception))
 
-        def vault(argv, **kw):
-            calls.append(argv)
-            return subprocess.CompletedProcess(argv, 0, stdout="api-" + "C" * 32, stderr="")
-
-        alert.key(vault)
-        self.assertTrue(os.path.isabs(calls[0][0]), calls[0][0])
-        self.assertEqual(Path(calls[0][0]).parts[-2:], ("System32", "wsl.exe"))
-        argv = calls[0]
-        # wsl.exe starts systemd-run itself, so nothing (no profile) runs before the bounded unit exists.
-        self.assertEqual(argv[1:4], ["-e", "systemd-run", "--user"])
-        for flag in ("--pipe", "--wait", "--collect", f"RuntimeMaxSec={alert.LINUX_SECONDS}",
-                     f"TimeoutStopSec={alert.LINUX_STOP_SECONDS}", f"MemoryMax={alert.LINUX_MEMORY}"):
-            self.assertIn(flag, argv)
-        self.assertEqual(argv[argv.index("--") + 1:argv.index("--") + 3], ["bash", "-lc"])
-        self.assertLess(alert.LINUX_SECONDS + alert.LINUX_STOP_SECONDS, 90)
+    def test_the_mailer_never_reads_the_vault_or_starts_a_process(self):
+        # Owner, 2026-11-10: the repository is self-contained; importing is the operator's explicit step.
+        source = (AUTO / "alert.py").read_text(encoding="utf-8")
+        self.assertNotIn("vault_read", source)
+        self.assertNotIn("subprocess", source)
+        self.assertNotIn("wsl", source.lower())
 
     def test_a_dry_run_reads_no_key(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -271,13 +273,10 @@ class Alert(unittest.TestCase):
             (root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(
                 {"schema_version": 1, "folder": "\\Office\\", "tasks": [FIXTURE_TASK]}), encoding="utf-8")
 
-            def no_vault(*_a, **_kw):
-                raise AssertionError("a dry run must not read the vault")
-
             out = io.StringIO()
             sys.stdout, saved = out, sys.stdout
             try:
-                code = alert.main(["office-fixture", "--dry-run"], run=no_vault, host="PC", root=str(root))
+                code = alert.main(["office-fixture", "--dry-run"], host="PC", root=str(root))  # no key is stored here
             finally:
                 sys.stdout = saved
             self.assertEqual(code, 0)
@@ -610,9 +609,14 @@ class AlertRecord(unittest.TestCase):
                 return False
 
         ok = json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "E-REAL"}}).encode()
-        vault = lambda *a, **kw: subprocess.CompletedProcess(a, 0, stdout="api-" + "B" * 32 + chr(10), stderr="")
-        code, last = self.run_failing(lambda name, task, outcome, tail: alert.send_failure(
-            name, task, outcome, tail, run=vault, opener=lambda *a, **kw: Response(ok), host="PC"))
+        with tempfile.TemporaryDirectory() as secrets:
+            (Path(secrets) / ".secrets").mkdir()
+            (Path(secrets) / ".secrets" / "office.env").write_text("SMTP2GO_API_KEY=api-" + "B" * 32 + chr(10),
+                                                                  encoding="utf-8")
+            self.addCleanup(setattr, alert, "SECRETS_ROOT", alert.SECRETS_ROOT)
+            alert.SECRETS_ROOT = secrets
+            code, last = self.run_failing(lambda name, task, outcome, tail: alert.send_failure(
+                name, task, outcome, tail, opener=lambda *a, **kw: Response(ok), host="PC"))
         self.assertEqual((code, last["alert"]["email_id"]), (1, "E-REAL"))
 
     def test_an_accepted_send_without_an_id_says_so(self):

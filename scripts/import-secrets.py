@@ -30,7 +30,12 @@ def main(argv=None, run=subprocess.run, root=secret_store.ROOT) -> int:
         present = secret_store.read_all(root)
         states = {name: "present" if name in present else "missing" for name in sorted(secret_store.SECRETS)}
     else:
-        states = secret_store.import_all(root, run)
+        try:
+            states = secret_store.import_all(root, run)
+        except OSError as exc:
+            # The message names a path and a reason, never a value.
+            print(f"not imported: {exc}")
+            return 1
     for name, state in states.items():
         print(f"{state:<12}{name}  ({secret_store.SECRETS[name]['use']})")
     missing = [name for name, state in states.items() if state in ("missing", "unavailable")]

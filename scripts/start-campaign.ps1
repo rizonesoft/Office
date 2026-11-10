@@ -33,7 +33,7 @@
   pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
-param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now)
+param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -99,10 +99,31 @@ if ($Stop) {
 
 $Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
 
+# Starting is the owner's word, so a stop request left from before is removed here, first, before any step that
+# takes time: from this line on, a request that appears is a stop of THIS start and is never erased. The launcher
+# is recorded at the same moment, so Stop can end it during the checks below as well as during a session. A record
+# left behind by an exit is harmless: Stop matches the start time as well as the process number.
+if (-not $DryRun) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+    Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
+    $self = Get-Process -Id $PID
+    Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
+}
+function Exit-Launcher([int]$Code) {
+    if (-not $DryRun) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
+    exit $Code
+}
+function Test-StopRequested {
+    if (-not (Test-Path -LiteralPath $stopFile)) { return $false }
+    Write-Host ''
+    Write-Host 'Stopped on your request. Run the start shortcut to carry on.'
+    return $true
+}
+
 $missing = @('claude', 'python', 'git', 'gh', 'node') | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) }
 if ($missing) {
     Write-Host "Not started: not on PATH: $($missing -join ', ')" -ForegroundColor Red
-    exit 2
+    Exit-Launcher 2
 }
 
 # The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.
@@ -110,7 +131,7 @@ python scripts/check-campaign-host.py
 if ($LASTEXITCODE -ne 0) {
     Write-Host ''
     Write-Host 'Not started: apply the fixes above, then run this shortcut again.' -ForegroundColor Red
-    exit 1
+    Exit-Launcher 1
 }
 
 $guard = Join-Path $root 'build/claude-campaign-guard.json'
@@ -131,9 +152,10 @@ if ($goal.Length -gt 4000) { throw "the goal is $($goal.Length) characters; /goa
 
 # Sign in with the one-year token (claude setup-token), so the run does not end when the interactive sign-in does.
 # It comes from the repository's own untracked env file, .secrets/office.env, which python scripts/import-secrets.py
-# fills from the Conclave vault (owner, 2026-11-10: the repository is self-contained); the import is tried once here
-# when the file does not hold the token yet. The token is read into this process's environment only and never
-# printed. Without it the session uses the interactive sign-in, so a missing token never stops a start.
+# fills from the Conclave vault (owner, 2026-11-10: the repository is self-contained). The launcher never reads the
+# vault or runs the import itself: importing is the operator's explicit step. The token is read into this process's
+# environment only and never printed. Without it the session uses the interactive sign-in, so a missing token
+# never stops a start.
 $tokenName = 'CLAUDE_CODE_OAUTH_TOKEN'
 $secretsFile = Join-Path $root '.secrets/office.env'
 function Read-StoredToken {
@@ -144,10 +166,6 @@ function Read-StoredToken {
     return $null
 }
 $token = Read-StoredToken
-if (-not $token) {
-    python scripts/import-secrets.py | Out-Null
-    $token = Read-StoredToken
-}
 if ($token) {
     $env:CLAUDE_CODE_OAUTH_TOKEN = $token
     Write-Host 'Sign-in: the one-year token from .secrets/office.env.'
@@ -170,22 +188,15 @@ if ($DryRun) {
     exit 0
 }
 
-# Starting is the owner's word: an earlier stop request is removed, and this launcher is recorded so Stop can end it.
-Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
-$self = Get-Process -Id $PID
-Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
-
 $started = [System.Collections.Generic.List[datetime]]::new()
 try {
 while ($true) {
+    # Checked immediately before every launch: a stop asked for during the checks above, or during the wait and
+    # the host check below, must never be followed by a new session.
+    if (Test-StopRequested) { break }
     $started.Add((Get-Date))
     claude --model $model --dangerously-skip-permissions $goal
-    if (Test-Path -LiteralPath $stopFile) {
-        Write-Host ''
-        Write-Host 'Stopped on your request. Run the start shortcut to carry on.'
-        break
-    }
+    if (Test-StopRequested) { break }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''
         Write-Host 'The campaign ended by its own rules: no run guard is held. Run this shortcut to start it again.'
@@ -197,8 +208,8 @@ while ($true) {
         break
     }
     Write-Host ''
-    Write-Host 'The session ended with the run still open. A new session starts in 30 seconds; close this window or press Ctrl+C to stop.' -ForegroundColor Yellow
-    Start-Sleep -Seconds 30
+    Write-Host "The session ended with the run still open. A new session starts in $RestartSeconds seconds; use the Stop shortcut, close this window or press Ctrl+C to stop." -ForegroundColor Yellow
+    Start-Sleep -Seconds $RestartSeconds
     python scripts/check-campaign-host.py
     if ($LASTEXITCODE -ne 0) {
         Write-Host ''

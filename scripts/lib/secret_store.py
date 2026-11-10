@@ -100,10 +100,17 @@ def restrict(path: Path, run=subprocess.run) -> None:
     """Leave the path closed to every other user account."""
     if os.name == "nt":
         user = os.environ.get("USERNAME")
-        if user:
-            icacls = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "icacls.exe")
-            run([icacls, str(path), "/inheritance:r", "/grant:r", f"{user}:F"], capture_output=True, timeout=30,
-                creationflags=0x08000000)
+        if not user:
+            raise OSError(f"cannot restrict {path.name}: the USERNAME environment variable is not set")
+        icacls = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "icacls.exe")
+        try:
+            result = run([icacls, str(path), "/inheritance:r", "/grant:r", f"{user}:F"], capture_output=True,
+                         timeout=30, creationflags=0x08000000)
+        except subprocess.SubprocessError as exc:
+            raise OSError(f"cannot restrict {path.name}: {type(exc).__name__}") from None
+        # Fail closed: a credential is never written to a path whose permissions could not be set.
+        if result.returncode != 0:
+            raise OSError(f"cannot restrict {path.name}: icacls exited {result.returncode}")
     else:
         os.chmod(path, 0o700 if path.is_dir() else 0o600)
 

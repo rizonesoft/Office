@@ -3,11 +3,13 @@
 """The campaign launcher starts Claude Code on the latest Fable, by alias (owner, 2026-11-10)."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -102,32 +104,156 @@ class StopControlTest(unittest.TestCase):
         self.assertIsNone(process.poll(), "a process with another start time must not be ended")
         self.assertIn("No running launcher was found", result.stdout)
 
-    def test_the_restart_loop_honours_the_request_and_a_start_clears_it(self):
-        text = LAUNCHER.read_text(encoding="utf-8")
-        loop = text[text.index("while ($true) {"):]
-        self.assertLess(loop.index("Test-Path -LiteralPath $stopFile"), loop.index("Start-Sleep -Seconds 30"),
-                        "the stop request must be checked before a new session is started")
-        before_loop = text[:text.index("while ($true) {")]
-        self.assertIn("Remove-Item -LiteralPath $stopFile", before_loop)
-        self.assertIn("Remove-Item -LiteralPath $launcherFile", text[text.index("} finally {"):])
-
     def test_both_shortcuts_are_installed(self):
         text = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn("'Rizonesoft Office campaign.lnk'", text)
         self.assertIn("'Rizonesoft Office campaign - Stop.lnk'", text)
 
 
-class SignInTest(unittest.TestCase):
-    """The launcher takes its token from the repository's own env file, never from WSL or the vault directly."""
+FAKE_CLAUDE = r"""
+# A stand-in for Claude Code: it records each start, leaves a run guard so the launcher sees a run still open,
+# and exits at once, which is how a session that died looks to the launcher.
+$root = $env:OFFICE_FAKE_ROOT
+New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+Add-Content -LiteralPath (Join-Path $root 'claude-calls.txt') -Value ($args -join ' ').Substring(0, 40)
+Set-Content -LiteralPath (Join-Path $root 'build/claude-campaign-guard.json') -Value '{"session_id":"s","run_file":"r"}'
+if ($env:CLAUDE_CODE_OAUTH_TOKEN) { Set-Content -LiteralPath (Join-Path $root 'token-seen.txt') -Value 'yes' }
+exit 0
+"""
 
-    def test_the_launcher_reads_the_env_file_and_starts_no_wsl(self):
-        code = [line for line in LAUNCHER.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith("#")]
-        self.assertTrue([line for line in code if ".secrets/office.env" in line])
-        self.assertFalse([line for line in code if "wsl" in line.lower() or "conclave-op" in line])
 
-    def test_the_token_is_never_written_to_the_host(self):
-        code = [line for line in LAUNCHER.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith("#")]
-        self.assertFalse([line for line in code if "Write-Host" in line and "$token" in line])
+@unittest.skipUnless(sys.platform == "win32", "the launcher is Windows only")
+class LauncherRunTest(unittest.TestCase):
+    """The launcher run for real in a scratch clone, with a stand-in for Claude Code and for the host check."""
+
+    def setUp(self):
+        self.assertIsNotNone(PWSH, "pwsh is not on PATH; the launcher cannot run")
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name) / "clone"
+        (self.root / "scripts").mkdir(parents=True)
+        shutil.copyfile(LAUNCHER, self.root / "scripts" / "start-campaign.ps1")
+        self.host_check = self.root / "scripts" / "check-campaign-host.py"
+        self.host_check.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        # An importer that must never run: the launcher reads the env file and nothing else.
+        (self.root / "scripts" / "import-secrets.py").write_text(
+            "from pathlib import Path\nPath(__file__).resolve().parents[1].joinpath('importer-ran.txt').write_text('x')\n",
+            encoding="utf-8")
+        self.bin = Path(self.tmp.name) / "bin"
+        self.bin.mkdir()
+        (self.bin / "claude.ps1").write_text(FAKE_CLAUDE, encoding="utf-8")
+        self.env = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.environ["PATH"], OFFICE_FAKE_ROOT=str(self.root))
+        self.env.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+        self.processes = []
+        self.addCleanup(self.end_processes)
+
+    def end_processes(self):
+        for process in self.processes:
+            if process.poll() is None:
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+            process.communicate(timeout=30)
+
+    def launch(self, *extra):
+        process = subprocess.Popen(
+            [PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"), *extra],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env)
+        self.processes.append(process)
+        return process
+
+    def wait_for(self, path, seconds=60):
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            if path.exists():
+                return
+            time.sleep(0.1)
+        self.fail(f"{path.name} did not appear within {seconds} seconds")
+
+    def calls(self):
+        path = self.root / "claude-calls.txt"
+        return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+
+    def request_stop(self):
+        (self.root / "build").mkdir(exist_ok=True)
+        (self.root / "build" / "campaign-stop-request").write_text("now", encoding="utf-8")
+
+    def test_a_stop_during_the_restart_wait_starts_no_new_session(self):
+        launcher = self.launch("-RestartSeconds", "4")
+        self.wait_for(self.root / "claude-calls.txt")
+        time.sleep(1)  # the launcher is now in its wait before the restart
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertEqual(len(self.calls()), 1, output)
+        self.assertIn("Stopped on your request", output)
+        self.assertFalse((self.root / "build" / "campaign-launcher.json").exists())
+
+    def test_without_a_stop_the_session_is_started_again(self):
+        launcher = self.launch("-RestartSeconds", "1")
+        deadline = time.monotonic() + 90
+        while time.monotonic() < deadline and len(self.calls()) < 2:
+            time.sleep(0.2)
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertGreaterEqual(len(self.calls()), 2, output)  # so the test above can fail
+
+    def test_a_stop_now_during_startup_ends_the_launcher_before_any_session(self):
+        self.host_check.write_text("import sys, time\ntime.sleep(20)\nsys.exit(0)\n", encoding="utf-8")
+        launcher = self.launch()
+        self.wait_for(self.root / "build" / "campaign-launcher.json")  # recorded before the slow host check
+        stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+                               "-Stop", "-Now"], capture_output=True, text=True, timeout=120, env=self.env,
+                              stdin=subprocess.DEVNULL)
+        self.assertIn("Stopped now", stop.stdout, stop.stderr)
+        launcher.communicate(timeout=60)
+        self.assertEqual(self.calls(), [])
+
+    def test_a_stop_request_written_during_startup_is_not_erased(self):
+        self.host_check.write_text("import sys, time\ntime.sleep(4)\nsys.exit(0)\n", encoding="utf-8")
+        launcher = self.launch()
+        self.wait_for(self.root / "build" / "campaign-launcher.json")
+        self.request_stop()  # the earlier request was removed first; this one belongs to this start
+        output, _ = launcher.communicate(timeout=120)
+        self.assertEqual(self.calls(), [], output)
+        self.assertIn("Stopped on your request", output)
+        self.assertTrue((self.root / "build" / "campaign-stop-request").exists())
+
+    def test_a_start_removes_a_request_left_from_before(self):
+        self.request_stop()
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "claude-calls.txt")
+        self.assertFalse((self.root / "build" / "campaign-stop-request").exists())
+        self.request_stop()
+        launcher.communicate(timeout=120)
+
+    def test_a_missing_token_starts_with_the_interactive_sign_in_and_runs_no_importer(self):
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "claude-calls.txt")
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertIn("python scripts/import-secrets.py", output)
+        self.assertFalse((self.root / "importer-ran.txt").exists(), "the launcher must not run the importer")
+        self.assertFalse((self.root / "token-seen.txt").exists())
+
+    def test_a_stored_token_reaches_the_session_and_is_not_printed(self):
+        token = "sk-ant-oat01-" + "z" * 48
+        (self.root / ".secrets").mkdir()
+        (self.root / ".secrets" / "office.env").write_text(f"CLAUDE_CODE_OAUTH_TOKEN={token}\n", encoding="utf-8")
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "token-seen.txt")
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertNotIn(token, output)
+        self.assertIn(".secrets/office.env", output)
+
+    def test_a_dry_run_runs_no_importer_and_leaves_a_stop_request(self):
+        self.request_stop()
+        done = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+                               "-DryRun"], capture_output=True, text=True, timeout=120, env=self.env,
+                              stdin=subprocess.DEVNULL)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertTrue((self.root / "build" / "campaign-stop-request").exists())
+        self.assertFalse((self.root / "importer-ran.txt").exists())
+        self.assertFalse((self.root / "build" / "campaign-launcher.json").exists())
+        self.assertEqual(self.calls(), [])
 
 
 if __name__ == "__main__":
