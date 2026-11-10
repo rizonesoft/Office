@@ -1,38 +1,36 @@
 # The independent reviewer for this repository, read by scripts/review-dispatch.py.
 #
-# Owner decision 2026-10-23: Claude Code (Opus 5.5) is the only writer, and its
-# work has exactly one reviewer, of another model family, with no fallback.
-# The Antigravity and Codex writer routes and the Sonnet reviewer were removed
-# that day. A reviewer that is not installed, fails, times out, returns nothing
-# or replies OVERALL: blocked is recorded as skipped: there is no review, never
-# an approval.
+# Owner decision 2026-11-10: whichever agent writes (Claude Code, Antigravity
+# as `agy`, or Muse), its work has exactly one reviewer, GPT-6 Astra, of another
+# model family, with no fallback. (From 2026-10-23 until then the dispatcher
+# took Claude Code as the only writer; the Codex writer route and the Sonnet
+# reviewer removed that day stay removed.) A reviewer that is not installed,
+# fails, times out, returns nothing or replies OVERALL: blocked is recorded as
+# skipped: there is no review, never an approval.
 #
 # Loaded strictly: an unknown key, a CLI other than codex, a malformed model, a
 # review type docs/review-types.md does not define, a route for any writer but
-# claude, a route of more than one reviewer, or one naming an undefined reviewer
-# refuses every dispatch.
+# claude, agy or muse, a route of more than one reviewer, or one naming an
+# undefined reviewer refuses every dispatch.
 #
-# Every reviewer the owner may choose is defined here; the route names the one in
-# use. Switch with `python scripts/review-dispatch.py --use <name>`, which checks
-# the result and replaces this file atomically; `--check-pin` shows the choice.
-# Nothing else in the repository names a reviewer (owner decision 2026-10-23).
+# The reviewer is GPT-6 Astra, always (owner decision 2026-11-10, which retired
+# GPT-6.1 Sol and the switch between the two). It is the only reviewer defined
+# here, so `python scripts/review-dispatch.py --use <name>` has nothing else to
+# point the route at; `--check-pin` shows the choice. Nothing else in the
+# repository names a reviewer (owner decision 2026-10-23).
 
 schema_version = 1
 
-# GPT-6 Astra and GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox, adversarial reviews (owner
-# decisions 2026-10-23: medium effort with the real-operation severity rule in docs/review-round-prompt.md; both
-# reviewers kept, switchable; every review adversarial; Astra in use).
+# GPT-6 Astra through the Codex CLI at medium effort, read-only sandbox, adversarial reviews (owner decisions
+# 2026-10-23: medium effort with the real-operation severity rule in docs/review-round-prompt.md; every review
+# adversarial).
 [reviewers.astra]
 cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
 type = "adversarial"
 
-[reviewers.sol]
-cli = "codex"
-model = "gpt-6.1-sol"
-effort = "medium"
-type = "adversarial"
-
 [routes]
 claude = ["astra"]
+agy = ["astra"]
+muse = ["astra"]

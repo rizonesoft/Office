@@ -212,8 +212,26 @@ class Dispatch(unittest.TestCase):
         result, _ = self.dispatch("--check-pin")
         self.assertIn("unreadable review types", result.stdout)
 
-    def test_only_claude_code_is_a_writer(self):
-        # Owner decision 2026-10-23: one writer. Any other is refused before a reviewer runs.
+    def test_astra_reviews_agy_and_muse_work_too(self):
+        # Owner decision 2026-11-10: the same reviewer whichever of the three writers wrote.
+        pin = self.repo / ".conclave/reviewers.toml"
+        pin.write_text(FIXTURE_PIN + 'agy = ["astra"]\nmuse = ["astra"]\n', encoding="utf-8")
+        for writer in ("agy", "muse"):
+            with self.subTest(writer=writer):
+                result, summary = self.dispatch("--writer", writer, "--prompt", str(self.prompt))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((summary["writer"], summary["reviewer"], summary["model"]),
+                                 (writer, "astra", "gpt-6-astra"))
+
+    def test_use_moves_every_writers_route_together(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        pin.write_text(FIXTURE_PIN + 'agy = ["astra"]\nmuse = ["astra"]\n' + SECOND, encoding="utf-8")
+        self.assertEqual(self.dispatch("--use", "sol")[0].returncode, 0)
+        self.assertEqual(tomllib.loads(pin.read_text(encoding="utf-8"))["routes"],
+                         {"claude": ["sol"], "agy": ["sol"], "muse": ["sol"]})
+
+    def test_only_claude_agy_and_muse_are_writers(self):
+        # Owner decision 2026-11-10: three writers. Any other is refused before a reviewer runs.
         for writer in ("codex", "gemini"):
             with self.subTest(writer=writer):
                 result, _ = self.dispatch("--writer", writer, "--prompt", str(self.prompt))
@@ -740,14 +758,13 @@ class RepositoryPin(unittest.TestCase):
         pin = module.load_pin(REPO_PIN)
         self.assertTrue(pin["routes"], "the repository pin routes no writer")
 
-    def test_the_repository_pin_routes_only_claude_to_one_defined_reviewer(self):
-        # Owner decision 2026-10-23: Claude Code is the only writer, with one reviewer in use and no fallback. Which
-        # reviewer is in use is the owner's switch (--use), so this names none of them.
+    def test_the_repository_pin_routes_every_writer_to_astra(self):
+        # Owner decision 2026-11-10: the reviewer is GPT-6 Astra, always, whether Claude Code, Antigravity (agy) or
+        # Muse wrote the work, with no fallback.
         with open(REPO_PIN, "rb") as handle:
             pin = tomllib.load(handle)
-        self.assertEqual(set(pin["routes"]), {"claude"})
-        (name,) = pin["routes"]["claude"]
-        self.assertIn(name, pin["reviewers"])
+        self.assertEqual(pin["routes"], {"claude": ["astra"], "agy": ["astra"], "muse": ["astra"]})
+        self.assertEqual(pin["reviewers"]["astra"]["model"], "gpt-6-astra")
 
     def test_the_repository_pin_is_the_owners_choice(self):
         # Owner decisions 2026-10-23: every reviewer the pin defines runs through the Codex CLI at medium effort and

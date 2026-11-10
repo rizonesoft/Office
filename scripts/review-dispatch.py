@@ -5,12 +5,12 @@
 
     python3 scripts/review-dispatch.py --writer claude --prompt review-prompt.md --record docs/reviews/x.md
     python3 scripts/review-dispatch.py --check-pin [--json] [--pin <path>]     the pin's verdict; runs no reviewer
-python3 scripts/review-dispatch.py --use <reviewer> [--pin <path>]         point the route at a defined reviewer
+    python3 scripts/review-dispatch.py --use <reviewer> [--pin <path>]         point every route at a defined reviewer
     python3 scripts/review-dispatch.py --list-rounds [--json] [--records <dir>]  recorded rounds; runs no reviewer
 
-`--writer` is the agent whose work is under review. Claude Code is the repository's only writer (owner decision
-2026-10-23), and its route in the pin names exactly one reviewer, of a different model family, run through the Codex
-CLI. A reviewer that is not installed, exits non-zero, times out, returns nothing, or ends its reply `OVERALL: blocked`
+`--writer` is the agent whose work is under review: `claude` (Claude Code), `agy` (Antigravity) or `muse` (owner
+decision 2026-11-10; until then Claude Code was the only writer the dispatcher took). Each writer's route in the pin
+names exactly one reviewer, of a different model family, run through the Codex CLI. A reviewer that is not installed, exits non-zero, times out, returns nothing, or ends its reply `OVERALL: blocked`
 (it could not reach the candidate, for example a sandbox that cannot read the repository) is recorded as skipped with
 the reason, and the round has no review: exit 1, which never counts as approval. A review that finds problems is
 still a review (exit 0).
@@ -43,12 +43,13 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 PIN = ROOT / ".conclave" / "reviewers.toml"
 TYPES = ROOT / "docs" / "review-types.md"  # each `## <name>` section is a review type's stance
-# One writer and one reviewer CLI (owner decision 2026-10-23): Claude Code writes, a Codex model reviews.
-WRITERS = ("claude",)
+# Three writers and one reviewer CLI (owner decision 2026-11-10): Claude Code, Antigravity or Muse writes, a Codex
+# model reviews.
+WRITERS = ("claude", "agy", "muse")
 CLIS = ("codex",)
 # A reviewer is never of the writer's own model family: its CLI names the family, and so does the writer.
 FAMILY = {"codex": "openai"}
-WRITER_FAMILY = {"claude": "anthropic"}
+WRITER_FAMILY = {"claude": "anthropic", "agy": "google", "muse": "meta"}
 EFFORTS = {"codex": ("low", "medium", "high", "xhigh")}
 MODEL = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 NAME = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -505,19 +506,19 @@ def list_rounds(records_dir):
     return {"records": records, **({"unreadable": unreadable} if unreadable else {})}
 
 
-ROUTE = re.compile(r'(?m)^(claude[ \t]*=[ \t]*)\[[^\]\n]*\]')
+ROUTE = re.compile(r'(?m)^((?:%s)[ \t]*=[ \t]*)\[[^\]\n]*\]' % "|".join(WRITERS))
 
 
 def use(path, name):
-    """Point the claude route at `name`, a reviewer the pin defines: the new pin must load under every rule before it
-    replaces the old one (temp file, then rename), so a refusal leaves the pin as it was. Returns the loaded pin."""
+    """Point every writer's route at `name`, a reviewer the pin defines, so all writers keep the same reviewer: the
+    new pin must load under every rule before it replaces the old one (temp file, then rename), so a refusal leaves the pin as it was. Returns the loaded pin."""
     path = Path(path)
     pin = load_pin(path)
     if name not in pin["reviewers"]:
         raise Refused(f"the pin defines no reviewer {name!r}; it defines {', '.join(sorted(pin['reviewers']))}")
     text = path.read_bytes().decode("utf-8")
-    if len(ROUTE.findall(text)) != 1:
-        raise Refused("the pin's claude route is not one `claude = [...]` line; change it by hand")
+    if len(ROUTE.findall(text)) != len(pin["routes"]):
+        raise Refused("the pin's routes are not one `<writer> = [...]` line each; change them by hand")
     fd, temporary = tempfile.mkstemp(dir=path.parent, suffix=".toml")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
@@ -538,7 +539,7 @@ def main(argv=None):
     parser.add_argument("--timeout", type=int, default=1800, help="Seconds before the reviewer is stopped")
     parser.add_argument("--pin", default=str(PIN), help=argparse.SUPPRESS)
     parser.add_argument("--use", metavar="REVIEWER",
-                        help="Point the claude route at a reviewer the pin defines, and run no review")
+                        help="Point every writer's route at a reviewer the pin defines, and run no review")
     parser.add_argument("--check-pin", action="store_true",
                         help="Report whether the pin loads, and each CLI's presence, instead of running a review; "
                              "no reviewer runs (exit 0 loads, 2 refused)")
