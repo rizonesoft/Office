@@ -8,13 +8,16 @@
 
 The campaign runs on this PC for days to months and is resumed by hand when it stops (owner decisions 1, 2 and 15 in
 `docs/specs/2026-10-23-campaign-scope-design.md`). A locked screen, a PC that sleeps, a missing Office app or a missing
-compiler should park the run with a reason the owner reads on return, not fail mid-section (D00 T03 §12). Every check
-only reads: the console session, the AC sleep and screen lock settings, the Office reference apps while an open section
-still needs them, the C++ toolchain, `gh`, the pinned reviewer's CLI and the free disk space.
+compiler should park the run with a reason the owner reads on return, not fail mid-section (D00 T03 §12). The checks
+read: the console session, the AC sleep and screen lock settings, the Office reference apps while an open section
+still needs them, the C++ toolchain, `gh`, the pinned reviewer's CLI and the free disk space. One file is written and
+nothing else: `build/host-lock-baseline.json`, the proof that this boot began with no machine inactivity limit, which
+lets the screen lock check keep passing after an unrelated write to the policy key (D00 T03 §25).
 
 Exit 2 (a check could not run) outranks exit 1 (a check failed): either parks the campaign, and both print every line.
 """
 import argparse
+import contextlib
 from datetime import datetime, timezone
 import json
 import os
@@ -58,6 +61,11 @@ HIBERNATEIDLE = "9d7815a6-7ee4-497e-8888-515a05f02364"
 DESKTOP = r"Control Panel\Desktop"
 DESKTOP_POLICY = r"Software\Policies\Microsoft\Windows\Control Panel\Desktop"
 SYSTEM_POLICY = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+LOCK_BASELINE = Path("build") / "host-lock-baseline.json"  # under the repository root; build/ is never committed
+LOCK_BASELINE_SCHEMA = 1
+LOCK_SECONDS = 5  # a side-by-side check holds the baseline lock for milliseconds; past this the write is given up
+WEVTUTIL = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wevtutil.exe")
+KERNEL_GENERAL = "Provider[@Name='Microsoft-Windows-Kernel-General']"
 MIN_FREE_BYTES = 50 * 10**9
 PROBE_SECONDS = 120  # every subprocess probe ends by then, so a hung tool cannot hold the campaign before its park
 MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 MB
@@ -219,18 +227,9 @@ class Host:
         and every clock step since (Kernel-General 1, as (new, old) times in 100 ns units), selected by record number,
         which no clock change moves. A log that no longer holds this boot's start event, or more steps than one query
         returns, cannot vouch for the history, so it is Unreadable."""
-        wevtutil = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wevtutil.exe")
-        kernel = "Provider[@Name='Microsoft-Windows-Kernel-General']"
-        started = self.run([wevtutil, "qe", "System", f"/q:*[System[{kernel} and (EventID=12)]]", "/rd:true",
-                            "/c:1", "/f:xml"])
-        if started.returncode != 0:
-            raise Unreadable(f"wevtutil could not read the System log (exit {started.returncode})")
-        boot = start_event(started.stdout)
-        if boot is None:
-            raise Unreadable("the System log no longer holds this boot's start event, so clock changes are unknown")
-        record, at = boot
-        changes = self.run([wevtutil, "qe", "System",
-                            f"/q:*[System[{kernel} and (EventID=1) and (EventRecordID > {record})]]",
+        record, at = self.boot_start()
+        changes = self.run([WEVTUTIL, "qe", "System",
+                            f"/q:*[System[{KERNEL_GENERAL} and (EventID=1) and (EventRecordID > {record})]]",
                             "/f:xml", f"/c:{MAX_TIME_EVENTS}"])
         if changes.returncode != 0:
             raise Unreadable(f"wevtutil could not read the time change events (exit {changes.returncode})")
@@ -238,6 +237,72 @@ class Host:
         if len(steps) >= MAX_TIME_EVENTS:
             raise Unreadable(f"{MAX_TIME_EVENTS} or more clock changes since boot, more than one query returns")
         return at, steps
+
+    def boot_start(self):
+        """(record number, logged time in 100 ns units) of this boot's start event, the newest Kernel-General 12 in
+        the System log. Unreadable when the log cannot be read or no longer holds one."""
+        started = self.run([WEVTUTIL, "qe", "System", f"/q:*[System[{KERNEL_GENERAL} and (EventID=12)]]", "/rd:true",
+                            "/c:1", "/f:xml"])
+        if started.returncode != 0:
+            raise Unreadable(f"wevtutil could not read the System log (exit {started.returncode})")
+        boot = start_event(started.stdout)
+        if boot is None:
+            raise Unreadable("the System log no longer holds this boot's start event, so clock changes are unknown")
+        return boot
+
+    def boot_id(self):
+        """What names this boot and no other: the record number and the logged time of its start event. A restart
+        logs a new start event with a later record number, so its id differs (D00 T03 §25)."""
+        record, at = self.boot_start()
+        return {"record": record, "started": at}
+
+    def lock_baseline(self):
+        """The stored lock baseline as {"boot": <a boot_id>, "recorded": <UTC text>}, or None when there is none that
+        can be trusted: no file, a torn or non-JSON file, another schema_version, or a missing or mistyped field. A
+        file that cannot be relied on is never a baseline, so it can only make the check stricter."""
+        try:
+            data = json.loads((Path(self.root) / LOCK_BASELINE).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        if not isinstance(data, dict) or data.get("schema_version") != LOCK_BASELINE_SCHEMA:
+            return None
+        boot, recorded = data.get("boot"), data.get("recorded")
+        if not isinstance(boot, dict) or set(boot) != {"record", "started"} or not isinstance(recorded, str):
+            return None
+        if not all(type(boot[k]) is int for k in boot) or not recorded:
+            return None
+        return {"boot": boot, "recorded": recorded}
+
+    def record_lock_baseline(self, boot, recorded):
+        """Store the proof that this boot began with no inactivity limit, unless it is already stored. Two checks can
+        run side by side (the launcher and a heartbeat), so the decision and the write happen under an exclusive lock
+        on build/host-lock-baseline.lock, in this order:
+
+        1. Take the lock, waiting at most LOCK_SECONDS. The operating system releases it when the process ends.
+        2. Read the baseline again. If it names this boot, another check recorded it first: keep it, write nothing.
+        3. Otherwise write a temporary file in build/, replace the baseline with it atomically, and read it back.
+
+        Raises OSError when the lock is not obtained in time, the file cannot be written, or it does not read back
+        equal; the caller reports that and still passes, because the host is ready."""
+        path = Path(self.root) / LOCK_BASELINE
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with exclusive(path.with_suffix(".lock"), LOCK_SECONDS):
+            stored = self.lock_baseline()
+            if stored is not None and stored["boot"] == boot:
+                return
+            text = json.dumps({"schema_version": LOCK_BASELINE_SCHEMA, "boot": boot, "recorded": recorded},
+                              indent=2) + "\n"
+            handle, temporary = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+            try:
+                with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as out:
+                    out.write(text)
+                os.replace(temporary, path)
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    os.unlink(temporary)
+                raise
+            if self.lock_baseline() != {"boot": boot, "recorded": recorded}:
+                raise OSError(f"{LOCK_BASELINE.as_posix()} did not read back as written")
 
     def is_file(self, path):
         return Path(path).is_file()
@@ -473,6 +538,37 @@ class Containment:
         return False
 
 
+@contextlib.contextmanager
+def exclusive(path, seconds):
+    """Hold an exclusive lock on the first byte of `path` (created when absent) for the length of the `with` block.
+    Tries every POLL_SECONDS for at most `seconds`, then raises OSError. The lock belongs to the open file, so it is
+    released when the block ends and also when the process dies; the lock file itself stays, and is never deleted."""
+    with open(path, "a+b") as handle:
+        deadline = time.monotonic() + seconds
+        while True:
+            try:
+                handle.seek(0)
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise OSError(f"{Path(path).name} is held by another check") from None
+                time.sleep(POLL_SECONDS)
+        try:
+            yield
+        finally:
+            handle.seek(0)
+            if os.name == "nt":
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def write_times(key, written):
     """The write times of a key and of its nearest surviving ancestor: deleting a key updates its parent's write time,
     so deleting the key, or any key above it, shows there. Each is judged on its own, since clock steps make the
@@ -605,7 +701,17 @@ def check_power(host):
 
 def check_screen_lock(host):
     """The screen saver as the live session runs it: SystemParametersInfo's values, which can differ from the stored
-    profile, each overridden by the screen saver policy where the policy sets it."""
+    profile, each overridden by the screen saver policy where the policy sets it. Then the machine inactivity limit
+    (`InactivityTimeoutSecs`), which Windows applies only at a restart (Microsoft, "Interactive logon: Machine
+    inactivity limit", Restart requirement), by these rules, in this order (D00 T03 §25):
+
+    1. A limit is stored now: fail (remove it and restart), whatever the baseline says.
+    2. No limit stored and the policy key unwritten since Windows started: pass, and record this boot in
+       `build/host-lock-baseline.json` unless it is already there (the lock baseline: proof this boot began with none).
+    3. No limit stored, the key written since Windows started, and the baseline names this boot: pass. The write
+       cannot have put a limit in force, so a policy-key write no longer parks a boot that has already passed.
+    4. No limit stored, the key written, and no baseline for this boot (none, another boot's, or unreadable): fail
+       with the restart fix, since a limit removed after Windows started may still be in force."""
     live = host.screen_saver()
 
     def effective(name, current, flag=True):
@@ -645,18 +751,39 @@ def check_screen_lock(host):
         fixes.append("ask the administrator to remove the password-protected screen saver policy" if by_policy else
                      "clear 'On resume, display logon screen' in Screen Saver Settings (control desk.cpl,,@screensaver)")
     inactivity = host.registry(HKLM, SYSTEM_POLICY, "InactivityTimeoutSecs")
+    limit = note = ""
     if inactivity:
         found.append(f"the machine inactivity limit locks the PC after {inactivity} seconds")
         fixes.append("in an elevated PowerShell: Remove-ItemProperty "
                      "'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' InactivityTimeoutSecs, "
                      "then restart Windows")
-    elif host.changed_since_boot(SYSTEM_POLICY):
-        # The limit is read when Windows starts, so a change since then (its removal included) is not yet in force.
-        found.append("the machine lock policy changed since Windows started, so the inactivity limit in force is unknown")
-        fixes.append("restart Windows so the stored inactivity limit takes effect")
+    else:
+        written = host.changed_since_boot(SYSTEM_POLICY)
+        boot = host.boot_id()
+        baseline = host.lock_baseline()
+        proven = baseline is not None and baseline["boot"] == boot
+        if not written:
+            # Nothing has written the key since Windows started and no limit is stored: this boot began with none.
+            # Record that once per boot; a run that finds it recorded keeps the first proof.
+            if not proven:
+                try:
+                    host.record_lock_baseline(boot, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+                except OSError as exc:  # the host is ready all the same; say so and let the next run try again
+                    note = f"; the lock baseline could not be recorded: {exc}"
+        elif proven:
+            # The key was written after this boot was proven to have begun with no limit. A limit takes effect only
+            # at a restart, and none is stored now, so none is in force.
+            limit = f"no inactivity limit at this boot (recorded {baseline['recorded']}) and none stored now"
+        else:
+            # The limit is read when Windows starts, so a change since then (its removal included) is not yet in
+            # force, and nothing proves this boot began without one.
+            found.append("the machine lock policy changed since Windows started, so the inactivity limit in force is "
+                         "unknown")
+            fixes.append("restart Windows so the stored inactivity limit takes effect")
     if fixes:
         return fail("screen lock", "; ".join(found), "; ".join(fixes))
-    return ok("screen lock", "no screen saver lock and no inactivity limit")
+    return ok("screen lock", (f"no screen saver lock; {limit}" if limit else
+                              "no screen saver lock and no inactivity limit") + note)
 
 
 def office_needed(host):

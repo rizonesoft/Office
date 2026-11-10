@@ -54,6 +54,7 @@ class Fake:
         self.files = {str(Path(OFFICE) / "root" / "Office16" / exe) for _, exe in host_check.OFFICE_APPS}
         self.files.add(r"C:\WINDOWS\system32\Mystify.scr")
         self.policy_changed = False
+        self.boot = {"record": 31239, "started": 134000000000000000}  # this boot's start event
         self.tree = {"D02 T01 §24": section("D02 T01 §24", needs=["office", "display-session"])}
         self.instances = json.loads(json.dumps(FULL_VS))
         self.on_path = {"gh": r"C:\gh\gh.exe", "codex": r"C:\npm\codex.cmd"}
@@ -92,6 +93,15 @@ class Fake:
     def changed_since_boot(self, key):
         assert key == host_check.SYSTEM_POLICY
         return self.policy_changed
+
+    def boot_id(self):
+        if isinstance(self.boot, Exception):
+            raise self.boot
+        return dict(self.boot)
+
+    # The baseline file is the real one, under this fake's own root.
+    lock_baseline = host_check.Host.lock_baseline
+    record_lock_baseline = host_check.Host.record_lock_baseline
 
     def sections(self):
         if isinstance(self.tree, Exception):
@@ -421,6 +431,186 @@ class ScreenLock(Base):
         r = self.result("screen lock")
         self.assertEqual(r["state"], "fail")
         self.assertIn("InactivityTimeoutSecs", r["fix"])
+
+
+class LockBaseline(Base):
+    """D00 T03 §25: a boot proven to have begun with no inactivity limit keeps passing after a policy-key write."""
+
+    LIMIT = (host_check.HKLM, host_check.SYSTEM_POLICY, "InactivityTimeoutSecs")
+
+    def path(self):
+        return Path(self.tmp) / host_check.LOCK_BASELINE
+
+    def lock(self):
+        return self.path().with_suffix(".lock")
+
+    def left(self):  # the names in build/, sorted
+        return sorted(p.name for p in self.path().parent.iterdir())
+
+    def prove(self):  # one passing run on an unwritten key
+        self.assertEqual(self.result("screen lock")["state"], "ok")
+
+    def test_two_recorders_that_both_saw_no_baseline_keep_the_first(self):
+        # The launcher and a heartbeat both read "no baseline", then record one after the other.
+        first, second = Fake(self.tmp), Fake(self.tmp)
+        self.assertIsNone(first.lock_baseline())
+        self.assertIsNone(second.lock_baseline())
+        first.record_lock_baseline(first.boot, "2026-11-10T16:00:00Z")
+        published = self.path().read_bytes()
+        second.record_lock_baseline(second.boot, "2026-11-10T16:00:01Z")  # raises nothing, writes nothing
+        self.assertEqual(self.path().read_bytes(), published)
+        self.assertEqual(second.lock_baseline()["recorded"], "2026-11-10T16:00:00Z")
+
+    def test_another_boots_baseline_is_replaced_under_the_lock(self):
+        self.host.record_lock_baseline({"record": 1, "started": 2}, "2026-11-01T00:00:00Z")
+        self.host.record_lock_baseline(self.host.boot, "2026-11-10T16:00:00Z")
+        self.assertEqual(self.host.lock_baseline(), {"boot": self.host.boot, "recorded": "2026-11-10T16:00:00Z"})
+
+    def test_a_held_lock_gives_up_after_the_wait_and_the_check_still_passes(self):
+        self.path().parent.mkdir(parents=True)
+        with host_check.exclusive(self.lock(), 1), mock.patch.object(host_check, "LOCK_SECONDS", 0.3):
+            began = time.monotonic()
+            with self.assertRaises(OSError) as caught:
+                self.host.record_lock_baseline(self.host.boot, "2026-11-10T16:00:00Z")
+            self.assertGreaterEqual(time.monotonic() - began, 0.3)
+            self.assertIn("held by another check", str(caught.exception))
+            r = self.result("screen lock")
+            self.assertEqual(r["state"], "ok")
+            self.assertIn("the lock baseline could not be recorded", r["detail"])
+            self.assertFalse(self.path().exists())
+        self.prove()  # the lock is free again
+        self.assertEqual(self.host.lock_baseline()["boot"], self.host.boot)
+
+    def test_a_lock_is_released_when_its_block_raises(self):
+        self.path().parent.mkdir(parents=True)
+        with self.assertRaises(RuntimeError):
+            with host_check.exclusive(self.lock(), 1):
+                raise RuntimeError("the write failed")
+        with host_check.exclusive(self.lock(), 0):
+            pass
+
+    def test_a_pass_on_an_unwritten_key_records_this_boot(self):
+        self.prove()
+        stored = json.loads(self.path().read_text(encoding="utf-8"))
+        self.assertEqual(stored["schema_version"], host_check.LOCK_BASELINE_SCHEMA)
+        self.assertEqual(stored["boot"], self.host.boot)
+        self.assertRegex(stored["recorded"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertEqual(self.host.lock_baseline(), {"boot": self.host.boot, "recorded": stored["recorded"]})
+        self.assertEqual(self.left(), [self.path().name, self.lock().name])  # no temporary left
+
+    def test_a_stored_limit_records_nothing(self):
+        self.host.values[self.LIMIT] = 900
+        self.assertEqual(self.result("screen lock")["state"], "fail")
+        self.assertFalse(self.path().exists())
+
+    def test_a_written_key_records_nothing(self):
+        self.host.policy_changed = True
+        self.assertEqual(self.result("screen lock")["state"], "fail")
+        self.assertFalse(self.path().exists())
+
+    def test_a_second_run_keeps_the_first_proof_byte_for_byte(self):
+        self.prove()
+        first = self.path().read_bytes()
+        with mock.patch.object(self.host, "record_lock_baseline", side_effect=AssertionError("written twice")):
+            self.prove()
+        self.assertEqual(self.path().read_bytes(), first)
+
+    def test_a_same_boot_baseline_passes_a_written_key(self):
+        self.prove()
+        recorded = self.host.lock_baseline()["recorded"]
+        self.host.policy_changed = True
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "ok")
+        self.assertIn(f"no inactivity limit at this boot (recorded {recorded}) and none stored now", r["detail"])
+
+    def test_no_baseline_fails_a_written_key_with_the_restart_fix(self):
+        self.host.policy_changed = True
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("restart Windows", r["fix"])
+
+    def test_another_boots_baseline_fails_a_written_key(self):
+        self.prove()
+        for later in ({"record": 31240, "started": self.host.boot["started"]},
+                      {"record": 31239, "started": self.host.boot["started"] + 1}):
+            with self.subTest(later=later):
+                self.host.boot, self.host.policy_changed = later, True
+                r = self.result("screen lock")
+                self.assertEqual(r["state"], "fail")
+                self.assertIn("restart Windows", r["fix"])
+
+    def test_an_unreadable_baseline_fails_a_written_key(self):
+        self.prove()
+        good = json.loads(self.path().read_text(encoding="utf-8"))
+        self.host.policy_changed = True
+        for name, text in (("torn", json.dumps(good)[:-9]), ("empty", ""), ("a list", "[]"),
+                           ("foreign schema", json.dumps({**good, "schema_version": 2})),
+                           ("no boot", json.dumps({k: v for k, v in good.items() if k != "boot"})),
+                           ("no recorded", json.dumps({k: v for k, v in good.items() if k != "recorded"})),
+                           ("boot not a record", json.dumps({**good, "boot": "31239"})),
+                           ("boot with a text record", json.dumps({**good, "boot": {**good["boot"], "record": "31239"}})),
+                           ("boot with a true record", json.dumps({**good, "boot": {**good["boot"], "record": True}})),
+                           ("empty recorded", json.dumps({**good, "recorded": ""}))):
+            with self.subTest(name=name):
+                self.path().write_text(text, encoding="utf-8")
+                self.assertIsNone(self.host.lock_baseline())
+                r = self.result("screen lock")
+                self.assertEqual(r["state"], "fail")
+                self.assertIn("restart Windows", r["fix"])
+
+    def test_a_stored_limit_fails_whatever_the_baseline_says(self):
+        self.prove()
+        self.host.policy_changed = True
+        self.host.values[self.LIMIT] = 900
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "fail")
+        self.assertIn("Remove-ItemProperty", r["fix"])
+        self.assertIn("then restart Windows", r["fix"])
+
+    def test_a_baseline_that_cannot_be_written_still_passes_and_says_so(self):
+        with mock.patch.object(host_check.os, "replace", side_effect=PermissionError("in use")):
+            r = self.result("screen lock")
+        self.assertEqual(r["state"], "ok")
+        self.assertIn("; the lock baseline could not be recorded: in use", r["detail"])
+        self.assertEqual(self.left(), [self.lock().name])  # the temporary file is removed
+        self.prove()  # the next run tries again
+        self.assertEqual(self.host.lock_baseline()["boot"], self.host.boot)
+
+    def test_a_baseline_that_does_not_read_back_is_reported(self):
+        with mock.patch.object(type(self.host), "lock_baseline", return_value=None):
+            with self.assertRaises(OSError):
+                self.host.record_lock_baseline(self.host.boot, "2026-11-10T16:00:00Z")
+
+    def test_an_unreadable_boot_cannot_check(self):
+        self.host.boot = host_check.Unreadable("the System log no longer holds this boot's start event")
+        code, out = self.main()
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR screen lock: could not check", out)
+
+    START = ScreenLock.START
+
+    def reader(self, started):
+        host = host_check.Host()
+        host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, started, "")
+        return host
+
+    def test_two_reads_of_one_log_agree_and_a_later_start_differs(self):
+        first, again = self.reader(self.START).boot_id(), self.reader(self.START).boot_id()
+        self.assertEqual(first, again)
+        self.assertEqual(first, {"record": 31239, "started": host_check.ticks("2026-10-22T19:11:30Z")})
+        later = self.START.replace("31239", "31977").replace("2026-10-22T19:11:30Z", "2026-11-09T07:02:11Z")
+        self.assertNotEqual(self.reader(later).boot_id(), first)
+
+    def test_a_log_without_a_start_event_gives_no_boot_id(self):
+        with self.assertRaises(host_check.Unreadable):
+            self.reader("").boot_id()
+
+    def test_the_real_boot_id_reads_and_repeats(self):
+        if host_check.os.name != "nt":
+            self.skipTest("Windows event log")
+        first = host_check.Host().boot_id()
+        self.assertEqual(first, host_check.Host().boot_id())
+        self.assertEqual(set(first), {"record", "started"})
 
 
 class Office(Base):

@@ -73,7 +73,7 @@ If no phase has a ready row, report the leftovers with their blockers and stop. 
 
 ### Host readiness
 
-An unattended campaign that meets a locked screen, a sleeping PC, a missing Office app or a missing compiler parks with the fixes recorded instead of failing mid-section (D00 T03 §12). Once the guard is up, and again at every phase start (`process-phase` Step 0), run:
+An unattended campaign that meets a locked screen, a sleeping PC, a missing Office app or a missing compiler parks with the fixes recorded instead of failing mid-section (D00 T03 §12). A write to the Windows policy key no longer parks a boot that has already passed: the first passing check of a boot records it in `build/host-lock-baseline.json`, and while that file names this boot and no inactivity limit is stored the screen lock check keeps passing (D00 T03 §25); never edit or delete that file by hand. Once the guard is up, and again at every phase start (`process-phase` Step 0), run:
 
 ```powershell
 python scripts/check-campaign-host.py --notify
