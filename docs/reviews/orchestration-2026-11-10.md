@@ -83,3 +83,31 @@ The repository verifier and all four launcher tests passed. Permission probes ra
 
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T18:46:44Z
+- Effort: medium
+- Type: adversarial
+- Lines: 18
+- Digest: dafb1a122a962bd5
+
+## adversarial: needs-attention
+
+1. **[P1] Packet rejection can delete concurrent user edits.** `.claude/skills/process-todo-section/SKILL.md:58` treats a clean starting tree as proof that every subsequent change belongs to the worker, then directs `git restore .` and deletion of untracked files. Reproduction: start a packet in a clean tree, save a user edit to another tracked file while the worker runs, then process its result. The user’s path triggers rejection and the prescribed restore destroys that edit. The precondition is an ordinary concurrent user save, explicitly contemplated by the global Git rules. A clean baseline establishes state, not ownership; preserve changes whose ownership is uncertain.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. **[P2] The new-file review procedure does not enumerate new files inside new directories.** `.claude/skills/process-todo-section/SKILL.md:58` uses `git status --porcelain` to identify files to read and compare against packet paths. For a packet creating `scripts/new-component/helper.py`, default status reports `?? scripts/new-component/`, while `git diff` contains no new-file contents. Following the procedure therefore misses the required file review or rejects the parent directory as outside the exact permitted file path. This requires only normal creation of a new directory. Use explicit enumeration such as `git status --porcelain --untracked-files=all` or `git ls-files --others --exclude-standard`. [Git documents the default directory collapsing](https://git-scm.com/docs/git-status).
+
+## source-defect: approve
+
+## record: advisory
+
+The verifier, four launcher tests, and 96 in-memory permission cases passed. The filesystem-writing verifier suite and live campaign launch were not run under this read-only review. The failure scenarios above were assessed without executing destructive operations. No files were modified.
+
+HIGHEST: P1
+OVERALL: needs-attention
