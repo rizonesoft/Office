@@ -92,6 +92,8 @@ class Fake:
 
     def changed_since_boot(self, key):
         assert key == host_check.SYSTEM_POLICY
+        if isinstance(self.policy_changed, Exception):
+            raise self.policy_changed
         return self.policy_changed
 
     def boot_id(self):
@@ -522,6 +524,21 @@ class LockBaseline(Base):
         r = self.result("screen lock")
         self.assertEqual(r["state"], "ok")
         self.assertIn(f"no inactivity limit at this boot (recorded {recorded}) and none stored now", r["detail"])
+
+    def test_a_proven_boot_does_not_need_the_clock_history(self):
+        # Review round 1: after weeks of uptime the clock history can be more than one query returns (Unreadable).
+        self.prove()
+        self.host.policy_changed = host_check.Unreadable("5000 or more clock changes since boot")
+        r = self.result("screen lock")
+        self.assertEqual(r["state"], "ok")
+        self.assertIn("no inactivity limit at this boot", r["detail"])
+
+    def test_an_unproven_boot_with_unreadable_clock_history_cannot_check(self):
+        self.host.policy_changed = host_check.Unreadable("5000 or more clock changes since boot")
+        code, out = self.main()
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR screen lock: could not check", out)
+        self.assertFalse(self.path().exists())
 
     def test_no_baseline_fails_a_written_key_with_the_restart_fix(self):
         self.host.policy_changed = True

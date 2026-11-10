@@ -706,12 +706,13 @@ def check_screen_lock(host):
     inactivity limit", Restart requirement), by these rules, in this order (D00 T03 §25):
 
     1. A limit is stored now: fail (remove it and restart), whatever the baseline says.
-    2. No limit stored and the policy key unwritten since Windows started: pass, and record this boot in
-       `build/host-lock-baseline.json` unless it is already there (the lock baseline: proof this boot began with none).
-    3. No limit stored, the key written since Windows started, and the baseline names this boot: pass. The write
-       cannot have put a limit in force, so a policy-key write no longer parks a boot that has already passed.
-    4. No limit stored, the key written, and no baseline for this boot (none, another boot's, or unreadable): fail
-       with the restart fix, since a limit removed after Windows started may still be in force."""
+    2. No limit stored and `build/host-lock-baseline.json` (the lock baseline: proof this boot began with none)
+       names this boot: pass, without reading the key's write time or the clock history. No later write can have put
+       a limit in force, so a policy-key write no longer parks a boot that has already passed.
+    3. No limit stored, no baseline for this boot (none, another boot's, or unreadable), and the policy key
+       unwritten since Windows started: pass, and record this boot in the baseline.
+    4. No limit stored, no baseline for this boot, and the key written since Windows started: fail with the restart
+       fix, since a limit removed after Windows started may still be in force."""
     live = host.screen_saver()
 
     def effective(name, current, flag=True):
@@ -758,22 +759,21 @@ def check_screen_lock(host):
                      "'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' InactivityTimeoutSecs, "
                      "then restart Windows")
     else:
-        written = host.changed_since_boot(SYSTEM_POLICY)
         boot = host.boot_id()
         baseline = host.lock_baseline()
-        proven = baseline is not None and baseline["boot"] == boot
-        if not written:
-            # Nothing has written the key since Windows started and no limit is stored: this boot began with none.
-            # Record that once per boot; a run that finds it recorded keeps the first proof.
-            if not proven:
-                try:
-                    host.record_lock_baseline(boot, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
-                except OSError as exc:  # the host is ready all the same; say so and let the next run try again
-                    note = f"; the lock baseline could not be recorded: {exc}"
-        elif proven:
-            # The key was written after this boot was proven to have begun with no limit. A limit takes effect only
-            # at a restart, and none is stored now, so none is in force.
+        if baseline is not None and baseline["boot"] == boot:
+            # This boot is already proven to have begun with no limit. A limit takes effect only at a restart, and
+            # none is stored now, so none is in force, whatever has written the key since. The key's write time and
+            # the clock history are not read here: the proof does not need them, and a boot that runs for weeks can
+            # outgrow the clock history (Unreadable), which must not park a proven host.
             limit = f"no inactivity limit at this boot (recorded {baseline['recorded']}) and none stored now"
+        elif not host.changed_since_boot(SYSTEM_POLICY):
+            # Nothing has written the key since Windows started and no limit is stored: this boot began with none.
+            # Record that, once per boot.
+            try:
+                host.record_lock_baseline(boot, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+            except OSError as exc:  # the host is ready all the same; say so and let the next run try again
+                note = f"; the lock baseline could not be recorded: {exc}"
         else:
             # The limit is read when Windows starts, so a change since then (its removal included) is not yet in
             # force, and nothing proves this boot began without one.
