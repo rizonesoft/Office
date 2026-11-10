@@ -779,6 +779,8 @@ Filed 2026-11-10 from §25's completion review (round 2, finding 1, `docs/review
 
 ## 27. Review Prompt Builder
 
+> **Started:** 2026-11-10T16:45:00Z
+
 Filed 2026-11-10 from the campaign run of that day (`docs/phase-runs/2026-11-10-phase-0.md`, Gap audit): every section needs two prompts, the completion review's (`docs/completion-review-prompt.md`, §13) and each code review round's (`docs/review-round-prompt.md`), and both are filled in by hand in a scratch file: the section text copied in, the `contract-digest` line pasted, the commit range written out, the diff inlined because the reviewer's sandbox cannot run git. The steps are mechanical and each has already gone wrong once (an argument order that gave an empty diff, `docs/phase-runs/2026-10-23-phase-0.md`, the 2026-10-23T20:10Z entry). The owner's instruction of 2026-11-10 is that the mechanics must be followed perfectly by a weaker executor, so the filling becomes one command per prompt that refuses what a hand would get wrong.
 
 **Phase:** 0
