@@ -128,24 +128,26 @@ class Dashes(unittest.TestCase):
 
 
 class WideRows(unittest.TestCase):
-    def test_101_characters_fail_and_100_pass(self):
-        row100 = "| " + "\u00a7" * 96 + " |"
-        self.assertEqual(len(row100), 100)
-        self.assertEqual(run(f"# T\n\n{row100}\n")[0], 0)
-        row101 = row100[:-2] + "x |"
-        self.assertEqual(len(row101), 101)
-        code, out = run(f"# T\n\n{row101}\n")
+    def test_121_characters_fail_and_120_pass(self):
+        # Owner, 2026-11-10: the table row limit is 120 characters (it was 100).
+        row120 = "| " + "\u00a7" * 116 + " |"
+        self.assertEqual(len(row120), 120)
+        self.assertEqual(run(f"# T\n\n{row120}\n")[0], 0)
+        row121 = row120[:-2] + "x |"
+        self.assertEqual(len(row121), 121)
+        code, out = run(f"# T\n\n{row121}\n")
         self.assertEqual(code, 1)
-        self.assertIn("101 characters", out)
+        self.assertIn("121 characters", out)
+        self.assertIn("max 120", out)
 
     def test_table_without_outer_pipes_is_checked(self):
-        code, out = run("# T\n\nColumn | Value\n--- | ---\n" + "x" * 101 + " | value\n\nAfter the table " + "y" * 101 + "\n")
+        code, out = run("# T\n\nColumn | Value\n--- | ---\n" + "x" * 121 + " | value\n\nAfter the table " + "y" * 121 + "\n")
         self.assertEqual(code, 1)
         self.assertIn("line 5:", out)
         self.assertNotIn("line 7:", out)  # prose after the blank line is not a row
 
     def test_heading_after_table_ends_the_table(self):
-        self.assertEqual(run("# T\n\nA | B\n--- | ---\n## " + "x" * 101 + "\n")[0], 0)
+        self.assertEqual(run("# T\n\nA | B\n--- | ---\n## " + "x" * 121 + "\n")[0], 0)
 
 
 class Unreadable(unittest.TestCase):

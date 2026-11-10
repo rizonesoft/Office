@@ -516,7 +516,7 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 - [ ] Count records per app and `kind` in `scripts/inventory-report.py`. Done when: `python scripts/inventory-report.py` prints a table with one row per app. Cheaper substitute: a file count.
 - [ ] Add an implemented count in `scripts/inventory-report.py` by scanning `todo/**/*.md` for `[x]` sections whose `> **Implements:**` lines name inventory ids (§22). Done when: a fixture stamped section implementing the Word Bold control counts it as implemented. Cheaper substitute: a hand-maintained percentage.
 - [ ] Add `--app`, `--kind` and `--cited-in <file>` filters to `scripts/inventory-report.py`, where `--cited-in` reports the percentage of matching record ids that appear in the file, and `--control-types` reports which `controlType` values the file names. Done when: a fixture spec citing half the Word tabs reports 50 percent for `--app word --kind tab`. Cheaper substitute: a citation count with no denominator.
-- [ ] Write `design/inventory/COVERAGE.md` atomically with rows at most 100 characters. Done when: `python scripts/check-design-doc.py design/inventory/COVERAGE.md` exits 0. Cheaper substitute: printing to the console only.
+- [ ] Write `design/inventory/COVERAGE.md` atomically with rows at most 120 characters. Done when: `python scripts/check-design-doc.py design/inventory/COVERAGE.md` exits 0. Cheaper substitute: printing to the console only.
 - [ ] Write `scripts/tests/test_inventory_report.py`. Done when: the suite passes and fails when the implemented scan is disabled.
 - [ ] Commit: `inventory: add coverage report`
 

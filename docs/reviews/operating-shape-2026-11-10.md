@@ -1,0 +1,33 @@
+## Round 1: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T20:12:49Z
+- Effort: medium
+- Type: adversarial
+- Lines: 24
+- Digest: da919358d3e2c6ce
+
+### adversarial: needs-attention
+
+1. **[P2] The lock can survive the launcher script.** `scripts/start-campaign.ps1:125` opens a `FileStream` that is never disposed; cleanup at line 254 removes only the launcher record. The installed shortcut uses `-NoExit` (line 49). Reproduce by letting a campaign finish normally while leaving its window open, then opening Start again. PowerShell remains alive, and release of the undisposed handle depends on garbage collection. The new start can be refused despite no campaign running; Stop cannot identify the previous launcher after its record was removed. Dispose the lock deterministically on completion, cancellation and startup failures.
+
+### consistency: needs-attention
+
+2. **[P3] The old escalation route contradicts the restricted Fable policy.** `AGENTS.md:52` and `.claude/skills/process-todo-section/SKILL.md:58` send a twice-blocked packet to `principal-implementer`. Reproduce with an ordinary implementation packet that fails again after correction, before any review. Neither permitted trigger at `AGENTS.md:48` applies: it is neither a review takeover nor an architecture decision record. Reconcile these instructions so routing does not depend on which paragraph the lead follows.
+
+### integration: needs-attention
+
+Finding **1 [P2]** affects the actual desktop shortcut. `scripts/tests/test_start_campaign.py:156` launches PowerShell without `-NoExit`, so process termination releases the handle and conceals the shortcut’s lifecycle defect.
+
+### source-defect: needs-attention
+
+Finding **2 [P3]** retains an additional Fable escalation trigger outside decision 35 in `docs/specs/2026-10-23-campaign-scope-design.md:93`.
+
+### record: needs-attention
+
+3. **[P3] The per-section cost conclusion contradicts the measurements.** `docs/reviews/operating-mode-2026-11-10.md:46` claims Opus cost less than half of Fable on every section. Lines 17 and 18 report $1.04 versus $2.05: approximately 50.73%, not less than half. The aggregate claim holds; the universal claim does not.
+
+Verification: four read-only launcher tests passed, the fleet verifier passed, and 60 in-memory verifier cases matched expected acceptance/refusal. No files changed. Filesystem-writing suites were not run; restricted PowerShell blocked the lock probe, so finding 1 is source-derived.
+
+HIGHEST: P2
+OVERALL: needs-attention

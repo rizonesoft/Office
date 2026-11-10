@@ -135,9 +135,15 @@ if (-not $DryRun) {
     Set-Content -LiteralPath $launcherFile -Value (@{ pid = $PID; started = $self.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
 }
 function Remove-OwnRecord {
-    # Only this launcher's own record is removed, never one another launcher wrote.
+    # Only this launcher's own record is removed, never one another launcher wrote. The lock is released here too,
+    # by closing it, and not left to the end of the process: the shortcut keeps its window open (-NoExit) after
+    # the launcher has finished, and a lock still held by that idle window would refuse the next start.
     $live = Get-LiveLauncher
     if ($live -and $live.Id -eq $PID) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
+    if ($script:launcherLock) {
+        $script:launcherLock.Dispose()
+        $script:launcherLock = $null
+    }
 }
 function Exit-Launcher([int]$Code) {
     if (-not $DryRun) { Remove-OwnRecord }

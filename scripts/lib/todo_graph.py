@@ -59,7 +59,7 @@ MAX_SECTIONS_PER_FILE = 55
 MAX_ITEMS_PER_SECTION = 30
 MAX_DELIVERABLE_LEN = 88
 # Every Markdown table row at or under this many characters, so rows never wrap in raw view (AGENTS.md).
-MAX_TABLE_ROW = 100
+MAX_TABLE_ROW = 120
 
 
 class Refused(ValueError):

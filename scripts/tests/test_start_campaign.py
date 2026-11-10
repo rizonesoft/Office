@@ -258,6 +258,29 @@ class LauncherRunTest(unittest.TestCase):
         self.assertIn("Stopped now", stop.stdout, stop.stderr)
         first.communicate(timeout=60)
 
+    def test_a_window_left_open_after_the_run_does_not_block_the_next_start(self):
+        # The desktop shortcut runs the launcher with -NoExit, so its window, and its process, outlive the run.
+        first = subprocess.Popen(
+            [PWSH, "-NoLogo", "-NoProfile", "-NoExit", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+             "-RestartSeconds", "60"],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env)
+        self.processes.append(first)
+        self.wait_for(self.root / "claude-calls.txt")
+        self.request_stop()
+        record = self.root / "build" / "campaign-launcher.json"
+        deadline = time.monotonic() + 120
+        while record.exists() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(record.exists(), "the first launcher did not finish")
+        self.assertIsNone(first.poll(), "the window must still be open for this test to mean anything")
+        second = self.launch("-RestartSeconds", "60")
+        deadline = time.monotonic() + 90
+        while len(self.calls()) < 2 and second.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.assertEqual(len(self.calls()), 2, "the second start was refused while only an idle window was left")
+        self.request_stop()
+        second.communicate(timeout=120)
+
     def test_two_starts_at_the_same_moment_admit_exactly_one(self):
         # Both are still in the host check when the other starts, so neither has launched a session yet.
         self.host_check.write_text("import sys, time\ntime.sleep(5)\nsys.exit(0)\n", encoding="utf-8")

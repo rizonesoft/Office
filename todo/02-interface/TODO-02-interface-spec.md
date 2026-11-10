@@ -108,7 +108,7 @@ The Shell chapter fixes the window frame every app shares: title bar, Quick Acce
 1. Write the Shell chapter of `design/SPEC.md` with a region diagram and a region table citing `shell.*` ids. Done when: every `shell.*` record is cited at least once.
 
 - [ ] Draw the region diagram as an SVG `design/spec/shell-regions.svg` with dimensions from inventory `bounds`. Done when: every region carries its height in pixels. Cheaper substitute: a screenshot of Microsoft's window.
-- [ ] Write the region table in the Shell chapter of `design/SPEC.md`: region, height, contents, inventory ids. Done when: rows are at most 100 characters and cite ids. Cheaper substitute: prose without ids.
+- [ ] Write the region table in the Shell chapter of `design/SPEC.md`: region, height, contents, inventory ids. Done when: rows are at most 120 characters and cite ids. Cheaper substitute: prose without ids.
 - [ ] Specify title bar behaviour (drag, double-click maximise, snap layouts, caption buttons, AutoSave toggle states) in the Shell chapter. Done when: each behaviour cites a `shell.titlebar.*` id. Cheaper substitute: "standard window behaviour".
 - [ ] Specify the message bar (information, warning, error, protected view) in the Shell chapter with its dismiss and action buttons. Done when: each variant has colour tokens and an action. Cheaper substitute: modal dialogs for every notice.
 - [ ] Specify task pane docking, resizing, minimum widths and stacking in the Shell chapter. Done when: the pane rules cite pane widths from the app inventories. Cheaper substitute: fixed-width panes.

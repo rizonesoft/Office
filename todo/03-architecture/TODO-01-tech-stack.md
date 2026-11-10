@@ -178,7 +178,7 @@ The suite reads and writes Microsoft's formats as first-class: `.docx`, `.xlsx`,
 
 1. Write `docs/specs/YYYY-MM-DD-file-formats-design.md` with a per-format decision table. Done when: every format in this section has a row.
 
-- [ ] Write the format table: format, read, write, specification, candidate library, licence. Done when: every format named in this section has a row at most 100 characters. Cheaper substitute: OOXML only.
+- [ ] Write the format table: format, read, write, specification, candidate library, licence. Done when: every format named in this section has a row at most 120 characters. Cheaper substitute: OOXML only.
 - [ ] Decide the in-memory document model per app and whether it mirrors OOXML parts. Done when: the record states how unknown OOXML elements are preserved on round-trip. Cheaper substitute: dropping unknown elements on save.
 - [ ] Assemble round-trip corpora (20 files each for `.docx`, `.xlsx`, `.pptx`, `.vsdx`) in `R:\scratch\corpus\`. Done when: corpus lists are in the record. Cheaper substitute: files created by our own writer.
 - [ ] Record the `.mpp` decision (MPXJ, LGPL, read-only, which runs only on Java or .NET and so would run out of process beside a C++ build, versus an own reader) and the `.pst` decision. Done when: each states read and write scope. Cheaper substitute: silently excluding Project and Outlook stores. **Corrected 2026-10-22:** did not say MPXJ has no C++ build.

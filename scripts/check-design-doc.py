@@ -18,7 +18,7 @@ import sys
 
 PLACEHOLDERS = re.compile(r"\bCHANGEME\b|\bTBD\b|\bTODO:|\blorem ipsum\b", re.IGNORECASE)
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
-MAX_ROW = 100
+MAX_ROW = 120
 # CommonMark fences: up to 3 spaces of indent, then 3 or more backticks or tildes. A backtick fence's info string
 # may not contain a backtick. A closing fence uses the same character, at least as many, and nothing after it.
 OPEN_FENCE = re.compile(r"^ {0,3}(?P<run>`{3,}|~{3,})(?P<info>.*)$")
