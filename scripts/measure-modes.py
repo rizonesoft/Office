@@ -575,13 +575,17 @@ MIN_SECTIONS = 3
 REMEASURE_STAMPS = 300
 
 
+REQUIRED_GATES = ("clean-tree", "validate", "plan-check", "tests")  # every gate §36 runs; a missing one never passes
+
+
 def _approved_old(stage):
-    """A 2026-11-10 stage (the build or a fix round): reviewed with no P1 or P2, every gate 0."""
+    """A 2026-11-10 stage (the build or a fix round): reviewed with no P1 or P2, and each of the three gates that
+    measurement ran present and 0 (it kept the clean tree as the run's `uncommitted` count instead)."""
     review = stage.get("review") or {}
     gates = stage.get("gates") or {}
-    exits = [g["exit"] if isinstance(g, dict) else g for g in gates.values()]
-    return review.get("exit") == 0 and review.get("highest") in APPROVING and bool(exits) \
-        and all(code == 0 for code in exits)
+    exits = {name: g["exit"] if isinstance(g, dict) else g for name, g in gates.items()}
+    return review.get("exit") == 0 and review.get("highest") in APPROVING \
+        and set(REQUIRED_GATES[1:]) <= set(exits) and all(code == 0 for code in exits.values())
 
 
 def _models(sessions):
@@ -608,7 +612,8 @@ def normalise(doc):
             last = stages[-1]
             # Approval is re-read from the last stage, not trusted from `end`: a reviewed candidate with no P1 or P2
             # and every gate passing, clean-tree included (the same test as Measurement.approved).
-            earned = run["end"] == "approved" and bool(last.get("gates")) and Measurement.gates_pass(last) \
+            earned = run["end"] == "approved" and set(REQUIRED_GATES) <= set(last.get("gates") or {}) \
+                and Measurement.gates_pass(last) \
                 and last["review"].get("reviewed") is True and last["review"].get("highest") in APPROVING
             rows.append({"run": name, "arm": run["arm"], "section": run["section"],
                          "end": "approved" if earned else (run["end"] if run["end"] != "approved" else "not-earned"),
@@ -710,11 +715,15 @@ def cmd_decide(args, arms):
     table = {arm.name: arm for arm in arms}
     if winner not in table:
         raise Refused(f"the winner, {winner}, is not in the arm table, so there is no model to start")
+    # The lead's own model: of the winner's models, the one of its alias's family (`claude-opus-5-5` for `opus`), so
+    # the readers' Sonnet usage, however large, is never taken for the lead.
+    alias = table[winner].model
     models = {}
     for row in rows:
         if row["arm"] == winner:
             for model, cost in row["models"].items():
-                models[model] = models.get(model, 0.0) + cost
+                if alias in model.split("-"):
+                    models[model] = models.get(model, 0.0) + cost
     when = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     records = Path(args.records)
     root = Path(args.root).resolve()
@@ -749,15 +758,20 @@ def cmd_due(args):
     """Exit 0 with the reason when a measurement is due, 1 when not, 2 (Refused) when it cannot be told."""
     try:
         verdict = json.loads(Path(args.verdict).read_text(encoding="utf-8"))
-        then, recorded = int(verdict["verified_at_decision"]), verdict.get("resolved_model")
+        then, recorded, alias = int(verdict["verified_at_decision"]), verdict.get("resolved_model"), verdict["model"]
     except (OSError, ValueError, KeyError, TypeError):
         raise Refused(f"{args.verdict} cannot be read, so whether a measurement is due cannot be told") from None
     now = verified_count(args.root)
     if now - then >= REMEASURE_STAMPS:
         print(f"due: {now - then} sections stamped since the verdict ({then} then, {now} now)")
         return 0
+    if alias not in args.model.split("-"):
+        # The verdict chose another family than this session's: the switch happens at the launcher's next start,
+        # and measuring again from the old session would only repeat the measurement that chose it.
+        print(f"not due: the verdict switches the lead to {alias} at the next start; this session runs {args.model}")
+        return 1
     if args.model != recorded:
-        print(f"due: the lead runs on {args.model}, the verdict was measured on {recorded}")
+        print(f"due: the {alias} alias now resolves to {args.model}, the verdict was measured on {recorded}")
         return 0
     print(f"not due: {now - then} of {REMEASURE_STAMPS} stamps since the verdict, and the lead model is unchanged")
     return 1

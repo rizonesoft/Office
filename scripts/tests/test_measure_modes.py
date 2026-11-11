@@ -630,6 +630,25 @@ class Decide(unittest.TestCase):
                 self.assertEqual((code, verdict["arm"]), (0, "fable-alone"))
                 self.assertFalse(verdict["totals"]["opus-alone"]["eligible"])
 
+    def test_a_run_missing_a_gate_is_not_approval(self):
+        # Round 1 finding 1: a gate the record lacks never counts as passed.
+        def thin(ref):
+            s = stage(0.5)
+            s["gates"] = {"validate": {"exit": 0, "tail": []}}
+            return [s], "approved"
+        code, verdict = self.decide(results({"opus-alone": thin, "fable-alone": approved(3.0)}))
+        self.assertEqual((code, verdict["arm"]), (0, "fable-alone"))
+        self.assertFalse(verdict["totals"]["opus-alone"]["eligible"])
+
+    def test_the_lead_model_is_the_alias_family_not_the_dearest_model(self):
+        # Round 1 finding 3: the readers' Sonnet may cost more than the lead itself.
+        def with_readers(ref):
+            s = stage(3.0)
+            s["session"]["models"] = {"claude-opus-5-5": {"costUSD": 1.0}, "claude-sonnet-5-5": {"costUSD": 2.0}}
+            return [s], "approved"
+        code, verdict = self.decide(results({"opus-alone": with_readers, "fable-alone": approved(9.0)}))
+        self.assertEqual((code, verdict["arm"], verdict["resolved_model"]), (0, "opus-alone", "claude-opus-5-5"))
+
     def test_a_cost_tie_goes_to_fewer_reviews_then_to_the_shorter_wall_time(self):
         code, verdict = self.decide(results({"opus-alone": approved(1.0, 1.0), "fable-alone": approved(2.0)}))
         self.assertEqual((verdict["arm"], verdict["branch"]), ("fable-alone", "a tie on cost, broken by fewer reviews"))
@@ -712,7 +731,8 @@ class Due(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(measure.remove_tree, self.tmp)
         self.verdict = self.tmp / "operating-mode.json"
-        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "resolved_model": "claude-opus-5-5"})
+        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "model": "opus",
+                                           "resolved_model": "claude-opus-5-5"})
 
     def due(self, now, model="claude-opus-5-5"):
         with mock.patch.object(measure, "verified_count", return_value=now):
@@ -726,10 +746,19 @@ class Due(unittest.TestCase):
         self.assertEqual(self.due(150), 1)
         self.assertEqual(self.due(150, model="claude-opus-6-0"), 0)
 
+    def test_a_pending_switch_to_another_family_is_not_due(self):
+        # Round 1 finding 2: the verdict chose Fable while this Opus session runs on until the next start.
+        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "model": "fable",
+                                           "resolved_model": "claude-fable-5-2"})
+        self.assertEqual(self.due(101, model="claude-opus-5-5"), 1)
+        self.assertEqual(self.due(101, model="claude-fable-5-2"), 1)
+        self.assertEqual(self.due(101, model="claude-fable-5-3"), 0)  # the alias moved within the family
+        self.assertEqual(self.due(400, model="claude-opus-5-5"), 0)  # 300 stamps are due whatever the model
+
     def test_an_unreadable_verdict_or_count_cannot_tell(self):
         self.verdict.write_text("{", encoding="utf-8")
         self.assertEqual(self.due(100), 2)
-        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "resolved_model": "m"})
+        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "model": "m", "resolved_model": "m"})
         with mock.patch.object(measure, "verified_count", side_effect=measure.Refused("no stats")):
             self.assertEqual(measure.main(["due", "--model", "m", "--verdict", str(self.verdict)]), 2)
 
