@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 55 | Checklist items: 382
+Sections: 55 | Checklist items: 384
 
 | Status | Reference   | Deliverable                                     | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
@@ -50,7 +50,7 @@ Sections: 55 | Checklist items: 382
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                  | none                   | 6     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
 | [x]    | D00 T03 §35 | Weekly Owner Digest                             | none                   | 12    |
-| [ ]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 12    |
+| [ ]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
 | [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 7     |
@@ -304,4 +304,4 @@ These TODO files do not exist yet, so their sections and checklist items are not
 
 Progress: 66/156 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 427/1024 items completed (includes Commit items).
+Checklist: 427/1026 items completed (includes Commit items).
