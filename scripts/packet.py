@@ -155,19 +155,34 @@ def close(repo):
     (repo / STATE).unlink()
 
 
-def read_bytes(repo, path):
-    """A path's working-tree bytes, or None when no file is there (absent, or a folder now holds the name)."""
+def read_entry(repo, path):
+    """What a path holds in the working tree, as git records it: ("link", its target) for a symbolic link (never
+    followed, so a link to a folder or to nothing is kept as a link), ("file", its bytes) for a file, or None when no
+    file is there (absent, a real folder holds the name, or a file holds one of its parents' names)."""
     target = repo / path
-    if target.is_dir():
-        return None
     try:
-        return target.read_bytes()
-    except (FileNotFoundError, NotADirectoryError):  # absent, or a file holds one of its parents' names
+        if target.is_symlink():
+            return ("link", os.fsencode(os.readlink(target)))
+        if target.is_dir():
+            return None
+        return ("file", target.read_bytes())
+    except (FileNotFoundError, NotADirectoryError):
         return None
 
 
-def sha(raw):
-    return None if raw is None else hashlib.sha256(raw).hexdigest()
+def sha(entry):
+    if entry is None:
+        return None
+    kind, raw = entry
+    return hashlib.sha256(kind.encode() + b"\0" + raw).hexdigest()
+
+
+def holds_no_file(folder):
+    """A real folder with no file and no link anywhere under it: nothing in it can be lost."""
+    for _, dirs, files in os.walk(folder):
+        if files or any(os.path.islink(os.path.join(folder, d)) for d in dirs):
+            return False
+    return True
 
 
 def changed_paths(repo, base):
@@ -179,12 +194,12 @@ def changed_paths(repo, base):
 
 
 def capture(repo, paths):
-    """Each path's working-tree bytes, read once."""
-    return {path: read_bytes(repo, path) for path in paths}
+    """Each path's working-tree entry, read once."""
+    return {path: read_entry(repo, path) for path in paths}
 
 
 def digest(captured):
-    lines = "".join(f"{path}\0{sha(raw) or 'absent'}\n" for path, raw in sorted(captured.items()))
+    lines = "".join(f"{path}\0{sha(entry) or 'absent'}\n" for path, entry in sorted(captured.items()))
     return "sha256:" + hashlib.sha256(lines.encode("utf-8")).hexdigest()
 
 
@@ -213,13 +228,21 @@ def mode_of(repo, base, path):
 
 
 def stage_bytes(repo, base, captured, env=None):
-    """Put exactly the captured bytes in the index (or remove a path captured as absent)."""
-    for path, raw in sorted(captured.items()):
-        if raw is None:
+    """Put exactly the captured entries in the index (or remove a path captured as absent). A link is stored as git
+    stores one, mode 120000 with its target unfiltered; a file keeps its mode and passes git's filters for its path."""
+    for path, entry in sorted(captured.items()):
+        if entry is None:
             run_git(repo, "update-index", "--force-remove", "--", path, env=env)
             continue
-        blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
-        run_git(repo, "update-index", "--add", "--cacheinfo", f"{mode_of(repo, base, path)},{blob},{path}", env=env)
+        kind, raw = entry
+        if kind == "link":
+            blob = run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
+            mode = "120000"
+        else:
+            blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
+            mode = mode_of(repo, base, path)
+            mode = "100644" if mode in ("120000", "160000") else mode  # a link or submodule now a plain file
+        run_git(repo, "update-index", "--add", "--cacheinfo", f"{mode},{blob},{path}", env=env)
 
 
 def show(repo, stage=False, snapshot=None):
@@ -247,8 +270,12 @@ def show(repo, stage=False, snapshot=None):
     out.write(b"--- unstaged (the index to the working tree)\n")
     out.write(run_git(repo, "diff", "--no-renames"))
     for path in untracked:
-        raw = captured.get(path)
-        if raw is None:
+        entry = captured.get(path)
+        if entry is None:
+            continue
+        kind, raw = entry
+        if kind == "link":
+            out.write(f"--- new link {path} -> ".encode() + raw + b"\n")
             continue
         out.write(f"--- new file {path} ({len(raw)} bytes)\n".encode())
         out.write(b"(binary)\n" if b"\0" in raw else raw + (b"" if raw.endswith(b"\n") or not raw else b"\n"))
@@ -265,7 +292,7 @@ def show(repo, stage=False, snapshot=None):
                   " Read the change again.", file=sys.stderr)
             return 1
         stage_bytes(repo, base, captured)
-        later = [p for p, raw in sorted(captured.items()) if read_bytes(repo, p) != raw]
+        later = [p for p, entry in sorted(captured.items()) if read_entry(repo, p) != entry]
         for path in later:
             print(f"changed after the review, left unstaged: {path}")
         close(repo)
@@ -300,44 +327,73 @@ def store(repo, commit, message):
     run_git(repo, "stash", "store", "-m", message, commit)
 
 
-def head_content(repo, path):
-    """The bytes git would check out for `path` at HEAD (smudged), or None when HEAD has no file there: no entry, or
-    a folder (a tree) or a submodule (a commit) at that name, whose own files are paths of their own."""
+def head_entry(repo, path):
+    """What git would check out at `path` from HEAD, as read_entry reads it: ("link", target) for a mode 120000
+    blob, ("file", its smudged bytes) for any other blob, or None when HEAD has no file there (no entry, or a folder or
+    a submodule at that name, whose own files are paths of their own)."""
     entry = text(repo, "ls-tree", "HEAD", "--", path).split()
     if len(entry) < 2 or entry[1] != "blob":
         return None
-    return run_git(repo, "cat-file", "--filters", f"HEAD:{path}")
+    if entry[0] == "120000":
+        return ("link", run_git(repo, "cat-file", "blob", entry[2]))
+    return ("file", run_git(repo, "cat-file", "--filters", f"HEAD:{path}"))
+
+
+def real_folder(target):
+    return target.is_dir() and not target.is_symlink()
 
 
 def blocked(repo, path):
-    """A path that cannot take a file now: a folder holds its name, or a file holds one of its parents' names."""
+    """A path that cannot take a file now: a folder with something in it holds its name, or a file or a link holds
+    one of its parents' names (a write through a linked parent could land outside the repository)."""
     target = repo / path
-    if target.is_dir():
+    if real_folder(target) and not holds_no_file(target):
         return True
     parent = target.parent
     while parent != repo:
-        if parent.exists() and not parent.is_dir():
+        if parent.is_symlink() or (parent.exists() and not parent.is_dir()):
             return True
         parent = parent.parent
     return False
 
 
-def return_path(repo, path, raw):
-    """Write `path` back to its HEAD bytes (or remove it when HEAD lacks it; a file already gone is settled)."""
+def remove_empty_folders(folder, repo):
+    """Remove `folder` when nothing but empty folders is in it, then each parent this emptied, up to the repository.
+    A folder already gone is passed over; one with anything in it stops the walk."""
+    if real_folder(folder) and holds_no_file(folder):
+        for here, _, _ in sorted(os.walk(folder), key=lambda item: -len(item[0])):
+            os.rmdir(here)
+    parent = folder.parent if not folder.exists() else None
+    while parent is not None and parent != repo:
+        if parent.is_dir():
+            if any(parent.iterdir()):
+                break
+            parent.rmdir()
+        parent = parent.parent
+
+
+def return_path(repo, path, entry):
+    """Put `path` back as HEAD has it (or remove it when HEAD has no file there; one already gone is settled)."""
     target = repo / path
-    if raw is None:
-        if target.is_file() or target.is_symlink():
+    if entry is None:
+        if target.is_symlink():
+            try:
+                os.unlink(target)
+            except PermissionError:  # a link to a folder on Windows is removed as a folder
+                os.rmdir(target)
+        elif target.is_file():
             os.unlink(target)
-        parent = target.parent
-        while parent != repo:  # remove the folders this emptied; one already gone is passed over
-            if parent.is_dir():
-                if any(parent.iterdir()):
-                    break
-                parent.rmdir()
-            parent = parent.parent
+        remove_empty_folders(target, repo)
+        return
+    remove_empty_folders(target, repo)  # an empty folder holding the name is in no way a save
+    kind, raw = entry
+    if kind == "link":
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_name(f".packet-link-{os.getpid()}-{target.name}")
+        os.symlink(os.fsdecode(raw), temporary)
+        os.replace(temporary, target)
     else:
         atomic_write(target, raw)
-
 
 def reject(repo):
     data = load(repo)
@@ -376,14 +432,14 @@ def reject(repo):
     elif index_now != text(repo, "rev-parse", f"{base}^{{tree}}").strip():
         index_kept = True
     failed = []
-    contents = {p: head_content(repo, p) for p in rejection["paths"] if p not in rejection["settled"]}
+    contents = {p: head_entry(repo, p) for p in rejection["paths"] if p not in rejection["settled"]}
     # Removals first, deepest first, then writes, shallowest first: a folder that took a tracked file's name is
     # emptied before the file is written back in its place.
     order = sorted(contents, key=lambda p: (contents[p] is not None,
                                             p.count("/") * (-1 if contents[p] is None else 1), p))
     for path in order:
         recorded = rejection["paths"][path]
-        if sha(read_bytes(repo, path)) != recorded:
+        if sha(read_entry(repo, path)) != recorded:
             rejection["settled"][path] = "kept"  # saved after the capture: in no stash, so it stays on disk
         elif contents[path] is not None and blocked(repo, path):
             rejection["settled"][path] = "kept"  # a kept save (a folder or a file) still holds a name on its way

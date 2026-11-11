@@ -5,6 +5,7 @@ losing a byte (D00 T03 §34)."""
 import importlib.util
 import io
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -486,6 +487,57 @@ class Packet(unittest.TestCase):
         self.assertEqual(code, 0, err)
         self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
         self.assertEqual(self.status(), "")
+
+    def can_link(self):
+        probe = self.repo / "build" / "link-probe"
+        probe.parent.mkdir(exist_ok=True)
+        try:
+            os.symlink("nowhere", probe)
+        except (OSError, NotImplementedError):
+            return False
+        probe.unlink()
+        return True
+
+    def test_an_untracked_link_is_set_aside_as_a_link_and_never_followed(self):
+        # Review round 3, finding 1: a dangling link was read as absent and unlinked without being stashed.
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        self.begin("src")
+        os.symlink("does/not/exist", self.repo / "src/dangling")
+        os.symlink("../docs", self.repo / "src/to-folder", target_is_directory=True)
+        os.symlink("a.py", self.repo / "src/to-file")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("--- new link src/dangling -> does/not/exist", out)
+        self.assertIn("--- new link src/to-file -> a.py", out)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        listing = self.git("ls-tree", "stash@{0}^3", "src/")
+        for name, goal in (("dangling", "does/not/exist"), ("to-folder", "../docs"), ("to-file", "a.py")):
+            self.assertRegex(listing, rf"120000 blob [0-9a-f]+\tsrc/{name}\n")
+            self.assertEqual(self.git("cat-file", "-p", f"stash@{{0}}^3:src/{name}"), goal)
+            self.assertFalse(os.path.lexists(self.repo / "src" / name), name)
+        self.assertEqual(self.read("docs/note.md"), "note\n")  # never followed into the folder it named
+        self.assertEqual(self.status(), "")
+
+    def test_an_empty_folder_in_a_tracked_files_place_settles(self):
+        # Review round 3, finding 2: the empty folder blocked the file's return on every retry.
+        self.begin("docs")
+        (self.repo / "docs/note.md").unlink()
+        (self.repo / "docs/note.md/empty/inner").mkdir(parents=True)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("docs/note.md"), "note\n")
+        self.assertEqual(self.status(), "")
+
+    def test_a_folder_holding_a_file_in_a_tracked_files_place_is_never_emptied_by_force(self):
+        self.begin("docs")
+        (self.repo / "docs/note.md").unlink()
+        self.put("docs/note.md/kept.txt", "inside the folder\n")
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)  # the file is captured, stashed and removed, then the note returns
+        self.assert_in_stash("stash@{0}", "docs/note.md/kept.txt", "inside the folder\n", "^3")
+        self.assertEqual(self.read("docs/note.md"), "note\n")
 
     def test_a_path_that_cannot_be_written_keeps_the_packet_open_until_a_retry_finishes(self):
         self.begin("src")
