@@ -43,6 +43,9 @@ WIDTH = 100
 WINDOW_DAYS = 7
 ATTACHMENT = "waiting-on-you.txt"
 GUARD = "build/claude-campaign-guard.json"
+# CREATE_NO_WINDOW on every launch, as .conclave/automations/run.py says every nested launch of a task carries it, so
+# the Monday run opens no console on the owner's desktop.
+NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 
 def load_alert(root):
@@ -62,7 +65,8 @@ def wrap(text, indent=""):
 def git(root, *args):
     """git's output, or None when git fails, cannot start or outlives its minute: nothing here stops the email."""
     try:
-        proc = subprocess.run([todo_graph.git(), "-C", str(root), *args], capture_output=True, text=True, timeout=60)
+        proc = subprocess.run([todo_graph.git(), "-C", str(root), *args], capture_output=True, text=True, timeout=60,
+                              creationflags=NO_WINDOW)
     except (OSError, subprocess.SubprocessError):
         return None
     return proc.stdout.strip() if proc.returncode == 0 else None
@@ -194,7 +198,7 @@ def ci_state(root, runner=subprocess.run):
         return ["CI: unknown (origin/main cannot be read)."]
     try:
         proc = runner([sys.executable, str(root / "scripts" / "ci-status.py"), sha], capture_output=True, text=True,
-                      timeout=300)
+                      timeout=300, creationflags=NO_WINDOW)
     except (OSError, subprocess.SubprocessError) as exc:
         return [f"CI: unknown for {sha[:7]} ({type(exc).__name__})."]
     lines = [line.strip() for line in (proc.stdout or "").splitlines() if line.strip()]

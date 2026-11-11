@@ -222,6 +222,18 @@ class Ci(unittest.TestCase):
         self.assertTrue(all(len(line) <= digest.WIDTH for line in body.splitlines()))
         self.assertIn("the network said no", body)
 
+    def test_every_launch_opens_no_window(self):
+        # Review round 4: run.py's convention is CREATE_NO_WINDOW on every nested launch of a task.
+        flags = []
+
+        def record(argv, **kwargs):
+            flags.append(kwargs.get("creationflags"))
+            return subprocess.CompletedProcess(argv, 0, "a" * 40, "")
+        with mock.patch.object(digest.subprocess, "run", record):
+            digest.ci_state(REPO, record)
+        self.assertEqual(len(flags), 3)  # git fetch, git rev-parse, ci-status.py
+        self.assertEqual(set(flags), {digest.NO_WINDOW})
+
     def test_an_unreachable_runner_or_ref_never_stops_the_email(self):
         self.assertTrue(self.state(self.runner(0, raises=subprocess.TimeoutExpired("ci", 300)))[0].startswith(
             "CI: unknown"))
