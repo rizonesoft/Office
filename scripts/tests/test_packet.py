@@ -661,6 +661,301 @@ class Packet(unittest.TestCase):
         self.assertEqual(self.read("src/a.py"), "a = 1\n")
         self.assertEqual(self.status(), "")
 
+    # every kind of occupant, replaced by and replacing every other (review rounds 1 to 8, the takeover)
+
+    def kinds(self):
+        """The kinds of thing this account can put at a name: links need the right to create them, a folder link is
+        its own kind only on Windows, and so is a junction."""
+        found = ["nothing", "file", "folder"]
+        if self.can_link():
+            found.append("link")
+            if os.name == "nt":
+                found.append("folder link")
+        if os.name == "nt":
+            found.append("junction")
+        return found
+
+    def occupy(self, path, kind, outside):
+        """Put the worker's occupant of `kind` at `path`; a folder link and a junction point at `outside`."""
+        target = self.repo / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if kind == "file":
+            target.write_bytes(b"the worker's file\n")
+        elif kind == "folder":
+            (target / "empty" / "inner").mkdir(parents=True)
+        elif kind == "link":
+            os.symlink("the-workers-target.txt", target)
+        elif kind == "folder link":
+            os.symlink(outside, target, target_is_directory=True)
+        elif kind == "junction":
+            import _winapi
+            _winapi.CreateJunction(str(outside), str(target))
+
+    def vacate(self, path):
+        """Take away what holds `path`, without following it."""
+        target = self.repo / path
+        if target.is_dir() and not target.is_symlink() and not target.is_junction():
+            for inner in sorted(target.rglob("*"), reverse=True):
+                inner.rmdir() if inner.is_dir() else inner.unlink()
+            target.rmdir()
+        elif os.path.lexists(target):
+            try:
+                os.unlink(target)
+            except OSError:
+                os.rmdir(target)
+
+    def is_folder_link(self, path):
+        return bool(getattr(os.lstat(self.repo / path), "st_file_attributes", 0) & 0x10)
+
+    def leftovers(self):
+        return [str(p.relative_to(self.repo)) for p in self.repo.rglob(".packet-*") if ".git" not in p.parts]
+
+    def outside_folder(self, stack):
+        outside = pathlib.Path(stack.enter_context(tempfile.TemporaryDirectory()))
+        (outside / "note.md").write_bytes(b"outside the repository\n")
+        return outside
+
+    def assert_outside_untouched(self, outside):
+        self.assertEqual(sorted(p.name for p in outside.iterdir()), ["note.md"])
+        self.assertEqual((outside / "note.md").read_bytes(), b"outside the repository\n")
+
+    def test_occupant_names_each_kind_and_never_looks_through_a_link_or_a_file(self):
+        import contextlib
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            for kind in self.kinds():
+                self.occupy(f"k/{kind}", kind, outside)
+                self.assertEqual(packet.occupant(self.repo, f"k/{kind}"), kind)
+                below = packet.occupant(self.repo, f"k/{kind}/note.md")
+                if kind == "nothing":
+                    self.assertEqual(below, "nothing")
+                elif kind == "folder":
+                    self.assertEqual(packet.occupant(self.repo, f"k/{kind}/empty"), "folder")
+                else:  # a file, a link of either kind, a junction: nothing below it belongs to this tree
+                    self.assertEqual(below, "beyond", kind)
+                    self.assertIsNone(packet.read_entry(self.repo, f"k/{kind}/note.md"), kind)
+                    self.assertIs(packet.return_path(self.repo, f"k/{kind}/note.md", ("file", b"written\n")), False)
+                    self.assertIs(packet.return_path(self.repo, f"k/{kind}/note.md", None), True)
+            self.assert_outside_untouched(outside)
+
+    def test_a_pipe_is_never_read_written_over_or_removed(self):
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("this system has no named pipes in the file system")
+        os.mkfifo(self.repo / "src/pipe")
+        self.assertEqual(packet.occupant(self.repo, "src/pipe"), "other")
+        self.assertIsNone(packet.read_entry(self.repo, "src/pipe"))
+        self.assertIs(packet.return_path(self.repo, "src/pipe", ("file", b"written\n")), False)
+        self.assertIs(packet.return_path(self.repo, "src/pipe", None), True)
+        self.assertEqual(packet.occupant(self.repo, "src/pipe"), "other")
+
+    def test_a_retargeted_folder_link_returns_to_the_target_head_has(self):
+        # Review round 8, finding 1: os.replace cannot take a name a folder link holds on Windows, so the return
+        # failed on every retry and each attempt left its temporary link behind.
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        self.git("config", "core.symlinks", "true")
+        os.symlink(os.path.join("..", "docs"), self.repo / "src/gen", target_is_directory=True)
+        self.git("add", "src/gen")
+        self.git("commit", "-q", "-m", "a folder link")
+        self.put("elsewhere/other.md", "elsewhere\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "another folder")
+        self.begin("src")
+        self.vacate("src/gen")
+        os.symlink(os.path.join("..", "elsewhere"), self.repo / "src/gen", target_is_directory=True)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(os.readlink(self.repo / "src/gen"), os.path.join("..", "docs"))
+        self.assertEqual((self.repo / "src/gen/note.md").read_bytes(), b"note\n")  # it reaches into the folder again
+        self.assertEqual(self.git("cat-file", "-p", "stash@{0}:src/gen"), "../elsewhere")
+        self.assertEqual(self.read("elsewhere/other.md"), "elsewhere\n")
+        self.assertEqual(self.leftovers(), [])
+        self.assertEqual(self.status(), "")
+
+    def test_each_tracked_kind_returns_over_each_kind_of_occupant(self):
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        import contextlib
+        self.git("config", "core.symlinks", "true")
+        tracked = ["file", "link"] + (["folder link"] if os.name == "nt" else [])
+        pairs = [(head, held) for head in tracked for held in self.kinds()]
+        for head, held in pairs:
+            path = f"m/{head} under {held}".replace(" ", "-")
+            if head == "file":
+                self.put(path, "tracked file\n")
+            elif head == "link":
+                (self.repo / "m").mkdir(exist_ok=True)
+                os.symlink("a-tracked-target.txt", self.repo / path)
+            else:
+                (self.repo / "m").mkdir(exist_ok=True)
+                os.symlink(os.path.join("..", "docs"), self.repo / path, target_is_directory=True)
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "one tracked entry of each kind for each occupant")
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            self.begin("m")
+            for head, held in pairs:
+                path = f"m/{head} under {held}".replace(" ", "-")
+                self.vacate(path)
+                self.occupy(path, held, outside)
+            code, _, err = self.cli("reject")
+            self.assertEqual(code, 0, err)
+            for head, held in pairs:
+                path = f"m/{head} under {held}".replace(" ", "-")
+                with self.subTest(head=head, held=held):
+                    if head == "file":
+                        self.assertEqual(packet.kind_of(self.repo / path), "file")
+                        self.assertEqual(self.read(path), "tracked file\n")
+                    elif head == "link":
+                        self.assertEqual(os.readlink(self.repo / path), "a-tracked-target.txt")
+                        self.assertFalse(os.name == "nt" and self.is_folder_link(path))
+                    else:
+                        self.assertEqual(os.readlink(self.repo / path), os.path.join("..", "docs"))
+                        self.assertTrue(self.is_folder_link(path))
+                        self.assertEqual((self.repo / path / "note.md").read_bytes(), b"note\n")
+                    # What the worker left is in the stash, as git records that kind.
+                    listed = self.git("ls-tree", "stash@{0}", path)
+                    if held == "file":
+                        self.assertRegex(listed, r"^100644 blob ")
+                        self.assert_in_stash("stash@{0}", path, "the worker's file\n")
+                    elif held == "link":
+                        self.assertRegex(listed, r"^120000 blob ")
+                        self.assertEqual(self.git("cat-file", "-p", f"stash@{{0}}:{path}"), "the-workers-target.txt")
+                    elif held in ("folder link", "junction"):
+                        self.assertRegex(listed, r"^120000 blob ")
+                    else:  # nothing, or a folder holding nothing: a deletion
+                        self.assertEqual(listed, "")
+            self.assert_outside_untouched(outside)
+            self.assertEqual(self.leftovers(), [])
+            self.assertEqual(self.status(), "")
+
+    def test_each_kind_of_untracked_occupant_is_set_aside_and_removed(self):
+        import contextlib
+        kinds = [k for k in self.kinds() if k not in ("nothing", "folder")]  # git lists neither as a change
+        for kind in kinds:
+            self.put(f"docs/group-{kind}/note.md".replace(" ", "-"), "grouped note\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "tracked folders")
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            self.begin("src", "docs")
+            for kind in kinds:
+                slug = kind.replace(" ", "-")
+                self.occupy(f"src/new-{slug}", kind, outside)            # at a free name
+                self.occupy(f"src/deep-{slug}/in/it", kind, outside)     # in new folders
+                self.vacate(f"docs/group-{slug}")
+                self.occupy(f"docs/group-{slug}", kind, outside)         # in a tracked folder's place
+            code, _, err = self.cli("reject")
+            self.assertEqual(code, 0, err)
+            for kind in kinds:
+                slug = kind.replace(" ", "-")
+                with self.subTest(kind=kind):
+                    self.assertFalse(os.path.lexists(self.repo / f"src/new-{slug}"))
+                    self.assertFalse(os.path.lexists(self.repo / f"src/deep-{slug}"))
+                    self.assertEqual(packet.kind_of(self.repo / f"docs/group-{slug}"), "folder")
+                    self.assertEqual(self.read(f"docs/group-{slug}/note.md"), "grouped note\n")
+                    for path in (f"src/new-{slug}", f"src/deep-{slug}/in/it", f"docs/group-{slug}"):
+                        listed = self.git("ls-tree", "stash@{0}^3", path)
+                        if kind == "file":
+                            self.assertRegex(listed, r"^100644 blob ")
+                            self.assert_in_stash("stash@{0}", path, "the worker's file\n", "^3")
+                        else:
+                            self.assertRegex(listed, r"^120000 blob ")
+                    # The tracked file the occupant displaced is recorded as gone in the stash's working tree.
+                    self.assertEqual(self.git("ls-tree", "stash@{0}", f"docs/group-{slug}/note.md"), "")
+            self.assert_outside_untouched(outside)
+            self.assertEqual(self.leftovers(), [])
+            self.assertEqual(self.status(), "")
+
+    def test_a_junction_holding_the_same_files_as_the_tracked_folder_is_a_change(self):
+        # git for Windows reads through a junction and reports no change; this command never reads through one.
+        if os.name != "nt":
+            self.skipTest("junctions are a Windows feature")
+        import _winapi
+        self.tracked_group()
+        with tempfile.TemporaryDirectory() as outside:
+            (pathlib.Path(outside) / "note.md").write_bytes(b"grouped note\n")
+            self.vacate("docs/group")
+            _winapi.CreateJunction(outside, str(self.repo / "docs/group"))
+            code, _, err = self.cli("begin", "--name", NAME, "--path", "docs")
+            self.assertEqual(code, 2)
+            self.assertIn("docs/group", err)
+            self.vacate("docs/group")
+            self.put("docs/group/note.md", "grouped note\n")
+            self.begin("docs")
+            self.vacate("docs/group")
+            _winapi.CreateJunction(outside, str(self.repo / "docs/group"))
+            code, out, err = self.cli("show")
+            self.assertEqual(code, 0, err)
+            self.assertIn("inside  docs/group\n", out)
+            self.assertIn("inside  docs/group/note.md\n", out)
+            code, _, err = self.cli("reject")
+            self.assertEqual(code, 0, err)
+            self.assertEqual(packet.kind_of(self.repo / "docs/group"), "folder")
+            self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
+            self.assertEqual((pathlib.Path(outside) / "note.md").read_bytes(), b"grouped note\n")
+            self.assertRegex(self.git("ls-tree", "stash@{0}^3", "docs/group"), r"^120000 blob ")
+            self.assertEqual(self.status(), "")
+
+    def test_no_temporary_is_left_when_a_return_fails_and_the_retry_finishes(self):
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        self.git("config", "core.symlinks", "true")
+        (self.repo / "m").mkdir()
+        os.symlink("a-tracked-target.txt", self.repo / "m/link")
+        os.symlink("a-tracked-target.txt", self.repo / "m/gone")
+        os.symlink(os.path.join("..", "docs"), self.repo / "m/folder-link", target_is_directory=True)
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "tracked links")
+        self.begin("src", "m")
+        self.put("src/a.py", "a = 22, the worker's\n")
+        for path, kind in (("m/link", "link"), ("m/folder-link", "folder link" if os.name == "nt" else "link")):
+            self.vacate(path)
+            self.occupy(path, kind, self.repo / "src")
+        self.vacate("m/gone")
+        held = {p: packet.read_entry(self.repo, p) for p in ("src/a.py", "m/link", "m/folder-link", "m/gone")}
+        targets = {str(self.repo / p) for p in held}
+        real_replace, real_rename = os.replace, os.rename
+
+        refused = set()
+
+        def refuse(real):
+            def move(source, destination, *args, **kwargs):
+                if str(destination) in targets and str(destination) not in refused:
+                    refused.add(str(destination))  # the new entry is refused; an occupant going back is let in
+                    raise PermissionError(13, "the name is held by another program", str(destination))
+                return real(source, destination, *args, **kwargs)
+            return move
+
+        with mock.patch.object(packet.os, "replace", refuse(real_replace)), \
+                mock.patch.object(packet.os, "rename", refuse(real_rename)):
+            code, _, err = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        for path, entry in held.items():
+            self.assertIn(path, err)
+            self.assertEqual(packet.read_entry(self.repo, path), entry, path)  # what was there is there still
+        self.assertEqual(self.leftovers(), [])
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(os.readlink(self.repo / "m/link"), "a-tracked-target.txt")
+        self.assertEqual(os.readlink(self.repo / "m/gone"), "a-tracked-target.txt")
+        self.assertEqual(os.readlink(self.repo / "m/folder-link"), os.path.join("..", "docs"))
+        self.assertEqual(self.leftovers(), [])
+        self.assertEqual(self.status(), "")
+
+    def test_a_path_returned_by_a_run_that_stopped_before_recording_it_is_not_taken_for_a_save(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 23\n")
+        self.put("src/b.py", "b\n")
+        self.stopped_reject("return_path")  # the first path is returned, and the run dies before it is recorded
+        self.assertEqual(self.state()["rejection"]["settled"], {})
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("kept on disk", out)
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.status(), "")
+
     def test_show_and_reject_refuse_without_an_open_packet(self):
         for verb in (("show",), ("show", "--stage", "--snapshot", "sha256:0"), ("reject",)):
             code, _, err = self.cli(*verb)

@@ -30,8 +30,13 @@ reads, without touching the tree, stores it with `git stash store` as `rejected 
 each changed path to `HEAD`, checking right before each write that the path still holds the bytes the stash
 captured: a path saved meanwhile is kept on disk and named, and the index goes back to `HEAD` only while it is still
 the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
-writes after them, so a folder that took a tracked file's name is emptied before the file returns. A symbolic link
-is read, stashed and returned as a link (mode 120000), never followed, and a path under a linked folder is kept. Its progress is recorded in `build/packet.json`, so a
+writes after them, so a folder that took a tracked file's name is emptied before the file returns.
+
+Every read, removal and write goes through one model of what occupies a name on disk (`occupant`: nothing, a file,
+a link, a Windows folder link, a junction, a real folder, something git does not record, or a path beyond a link
+or a file), so each kind is handled the same way in every step. A link or a junction is read, stashed and returned
+as a link (mode 120000) and is never followed: nothing is read, written or removed through one, a path below one
+counts as absent, and the link itself is the changed path. Its progress is recorded in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
 is settled and the tree holds no change; kept saves are named, and a further `reject` sets them aside too.
 
@@ -167,37 +172,78 @@ def disk_link_target(target):
     return target.replace("/", "\\") if os.name == "nt" else target
 
 
-def link_like(path):
-    """A symbolic link or a Windows junction: a name that points elsewhere and is never entered, read through or
-    removed as a folder of this tree."""
-    return path.is_symlink() or path.is_junction()
+# What occupies a name in the working tree. Every read, removal and write below asks `occupant` (one `lstat` per
+# name, never a call that follows a link) and acts on the answer, so no step holds a view of its own.
+NOTHING = "nothing"          # no entry by that name, or one of its parent folders is missing
+FILE = "file"                # a regular file
+LINK = "link"                # a symbolic link (on Windows: a file link)
+FOLDER_LINK = "folder link"  # Windows only: a symbolic link made as a folder link; it never becomes a file link
+JUNCTION = "junction"        # Windows only: a junction or a mounted volume
+FOLDER = "folder"            # a real folder of this tree
+OTHER = "other"              # a pipe, a socket, a device: nothing git records, never read, written or removed
+BEYOND = "beyond"            # a parent's name is held by something that is not a real folder: outside this tree
+LINKS = (LINK, FOLDER_LINK, JUNCTION)
+JUNCTION_TAG = 0xA0000003    # IO_REPARSE_TAG_MOUNT_POINT
 
 
-def under_link(repo, path):
-    """Whether a parent of `path` inside the repository is a symbolic link (a path below it is outside the tree)."""
-    parent = (repo / path).parent
-    while parent != repo:
-        if link_like(parent):
-            return True
-        parent = parent.parent
-    return False
+def kind_of(target):
+    """What holds the name `target`, from one `lstat`: the name itself is looked at, never what it points to."""
+    try:
+        found = os.lstat(target)
+    except (FileNotFoundError, NotADirectoryError):
+        return NOTHING
+    if stat.S_ISLNK(found.st_mode):
+        as_folder = getattr(found, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_DIRECTORY", 0x10)
+        return FOLDER_LINK if as_folder else LINK
+    if getattr(found, "st_reparse_tag", 0) == JUNCTION_TAG:
+        return JUNCTION
+    if stat.S_ISDIR(found.st_mode):
+        return FOLDER
+    return FILE if stat.S_ISREG(found.st_mode) else OTHER
+
+
+def occupant(repo, path):
+    """What occupies `path` in the working tree, walking down from the repository so that nothing is ever looked at
+    through a link, a junction or a file: BEYOND when one of them holds a parent's name."""
+    here = repo
+    for part in PurePosixPath(path).parts[:-1]:
+        here = here / part
+        kind = kind_of(here)
+        if kind == NOTHING:
+            return NOTHING
+        if kind != FOLDER:
+            return BEYOND
+    return kind_of(repo / path)
+
+
+def link_above(repo, path, seen):
+    """The outermost parent of `path` inside the repository that is a link or a junction, or None. `seen` keeps
+    each folder's kind for the length of one listing."""
+    here = repo
+    for part in PurePosixPath(path).parts[:-1]:
+        here = here / part
+        if here not in seen:
+            seen[here] = kind_of(here)
+        if seen[here] in LINKS:
+            return here.relative_to(repo).as_posix()
+        if seen[here] != FOLDER:
+            return None
+    return None
 
 
 def read_entry(repo, path):
-    """What a path holds in the working tree, as git records it: ("link", its target) for a symbolic link (never
-    followed, so a link to a folder or to nothing is kept as a link), ("file", its bytes) for a file, or None when no
-    file is there (absent, a real folder holds the name, or a file holds one of its parents' names)."""
-    target = repo / path
-    if under_link(repo, path):
-        return None  # git does not look through a linked folder; the link is a path of its own
+    """What a path holds in the working tree, as git records it: ("link", its target) for a link of any kind (never
+    followed, so a link to a folder or to nothing is kept as a link), ("file", its bytes) for a file, or None when
+    neither is there (nothing, a real folder, something git does not record, or a path beyond a link or a file)."""
+    kind, target = occupant(repo, path), repo / path
     try:
-        if link_like(target):
+        if kind in LINKS:
             return ("link", os.fsencode(git_link_target(os.readlink(target))))
-        if target.is_dir():
-            return None
-        return ("file", target.read_bytes())
-    except (FileNotFoundError, NotADirectoryError):
-        return None
+        if kind == FILE:
+            return ("file", target.read_bytes())
+    except FileNotFoundError:
+        pass  # gone between the look and the read
+    return None
 
 
 def sha(entry):
@@ -207,35 +253,30 @@ def sha(entry):
     return hashlib.sha256(kind.encode() + b"\0" + raw).hexdigest()
 
 
-def holds_no_file(folder):
-    """A real folder with no file and no link anywhere under it: nothing in it can be lost."""
-    for here, dirs, files in os.walk(folder):
-        if files or any(link_like(Path(here, d)) for d in dirs):
-            return False
-    return True
+def hollow(folder):
+    """A real folder holding nothing but real folders that hold nothing: no byte and no link can be lost with it."""
+    with os.scandir(folder) as found:
+        children = [child.path for child in found]
+    return all(kind_of(child) == FOLDER and hollow(child) for child in children)
 
 
 def changed_paths(repo, base):
-    """Every path changed since `base`: base to index, index to working tree (both sides of a rename), untracked."""
+    """Every path changed since `base` (base to index, index to working tree with both sides of a rename, and
+    untracked), as this command sees the tree: git for Windows looks through a junction, and this command never
+    does. So a link or a junction above a listed or tracked path is itself a changed path, every tracked path
+    below it is changed too (nothing of the tree is there any more), and an untracked file git lists behind it is
+    left out: it is outside the tree and is never read or touched."""
     staged = names(repo, "diff", "--cached", "--name-only", "--no-renames", base)
     unstaged = names(repo, "diff", "--name-only", "--no-renames")
-    # git for Windows looks through a junction and lists the files behind it, which are outside the tree: the
-    # junction itself is the changed path, captured and set aside as a link, and nothing behind it is touched.
-    untracked = names(repo, "ls-files", "--others", "--exclude-standard")
-    links = {a for a in (link_ancestor(repo, p) for p in staged + unstaged + untracked) if a}
-    untracked = sorted({p for p in untracked if not link_ancestor(repo, p)} | links)
-    unstaged = [p for p in unstaged if not link_ancestor(repo, p)]
-    return sorted(set(staged + unstaged + untracked)), untracked
-
-
-def link_ancestor(repo, path):
-    """The outermost parent of `path` inside the repository that is a link or a junction, or None."""
-    found, parent = None, (repo / path).parent
-    while parent != repo:
-        if link_like(parent):
-            found = parent
-        parent = parent.parent
-    return found.relative_to(repo).as_posix() if found else None
+    loose = names(repo, "ls-files", "--others", "--exclude-standard")
+    indexed = set(names(repo, "ls-files"))
+    tracked, seen, above = indexed | set(staged), {}, {}
+    for path in tracked | set(loose):
+        above[path] = link_above(repo, path, seen)
+    links = {link for link in above.values() if link}
+    untracked = {p for p in loose if not above[p]} | (links - tracked)
+    changed = set(staged) | set(unstaged) | untracked | {p for p in tracked if above[p]}
+    return sorted(changed), sorted(untracked)
 
 
 def capture(repo, paths):
@@ -254,11 +295,8 @@ def folder_links(repo):
     found = []
     for line in text(repo, "ls-files", "-s", "-z").split("\0"):
         meta, _, path = line.partition("\t")
-        if meta.startswith("120000 "):
-            target = repo / path
-            attributes = getattr(os.lstat(target), "st_file_attributes", 0) if target.is_symlink() else 0
-            if attributes & getattr(stat, "FILE_ATTRIBUTE_DIRECTORY", 0x10):
-                found.append(path)
+        if meta.startswith("120000 ") and occupant(repo, path) == FOLDER_LINK:
+            found.append(path)
     return found
 
 
@@ -268,7 +306,9 @@ def begin(repo, name, values):
     if not name.strip():
         raise Refused("a packet needs a name")
     paths = list(dict.fromkeys(packet_path(v) for v in values))
-    pending = dirty(repo)
+    # git's own listing, and what this command would list as changed: a junction standing where tracked files
+    # were is a change here even when git for Windows, reading through it, reports none.
+    pending = list(dict.fromkeys(dirty(repo) + changed_paths(repo, "HEAD")[0]))
     if pending:
         raise Refused("the working tree holds changes; commit your own edits before the packet starts:\n"
                       + "\n".join(f"  {p}" for p in pending))
@@ -309,6 +349,7 @@ def stage_bytes(repo, base, captured, env=None):
             blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
             mode = mode_of(repo, base, path)
         run_git(repo, "update-index", "--add", "--replace", "--cacheinfo", f"{mode},{blob},{path}", env=env)
+
 
 def show(repo, stage=False, snapshot=None):
     data = load(repo)
@@ -404,69 +445,110 @@ def head_entry(repo, path):
     return ("file", run_git(repo, "cat-file", "--filters", f"HEAD:{path}"))
 
 
-def real_folder(target):
-    return target.is_dir() and not link_like(target)
+def remove_occupant(target, kind):
+    """Take the name `target` away, by what holds it: a file or a link is unlinked, a folder link or a junction is
+    removed as the one name it is (never what it points to), a real folder only while it is hollow."""
+    if kind in (FILE, LINK):
+        os.unlink(target)
+    elif kind in (FOLDER_LINK, JUNCTION):
+        os.rmdir(target)
+    elif kind == FOLDER:
+        with os.scandir(target) as found:
+            children = [child.path for child in found]
+        for child in children:
+            if kind_of(child) == FOLDER:
+                remove_occupant(child, FOLDER)
+        os.rmdir(target)  # refuses a folder that still holds anything, so nothing is lost with it
 
 
-def blocked(repo, path):
-    """A path that cannot take a file now: a folder with something in it holds its name, or a file or a link holds
-    one of its parents' names (a write through a linked parent could land outside the repository)."""
-    target = repo / path
-    if real_folder(target) and not holds_no_file(target):
-        return True
+def remove_empty_parents(repo, target):
+    """Remove each parent folder of `target` that is now empty, up to the repository, as git does after it removes
+    a file. A parent already gone is passed over; one that holds anything, or is not a real folder, ends the walk."""
     parent = target.parent
     while parent != repo:
-        if link_like(parent) or (parent.exists() and not parent.is_dir()):
-            return True
+        kind = kind_of(parent)
+        if kind == FOLDER:
+            with os.scandir(parent) as found:
+                if next(found, None) is not None:
+                    return
+            os.rmdir(parent)
+        elif kind != NOTHING:
+            return
         parent = parent.parent
-    return False
 
 
-def remove_empty_folders(folder, repo):
-    """Remove `folder` when nothing but empty folders is in it, then each parent this emptied, up to the repository.
-    A folder already gone is passed over; one with anything in it stops the walk."""
-    if real_folder(folder) and holds_no_file(folder):
-        for here, _, _ in sorted(os.walk(folder), key=lambda item: -len(item[0])):
-            os.rmdir(here)
-    parent = folder.parent if not folder.exists() else None
-    while parent is not None and parent != repo:
-        if link_like(parent):
-            break  # a linked folder is a path of its own, settled by its own entry, never removed or entered here
-        if parent.is_dir():
-            if any(parent.iterdir()):
-                break
-            parent.rmdir()
-        parent = parent.parent
+def temporary_beside(target):
+    """A name in `target`'s folder that nothing holds, for a write that is moved into place when it is whole."""
+    return target.with_name(f".packet-{os.getpid()}-{os.urandom(6).hex()}.tmp")
+
+
+def write_entry(target, entry, here, folder_link=False):
+    """Put `entry` at `target`, whose name `here` holds now (NOTHING, FILE or a link of any kind). The new file or
+    link is made under a temporary name beside it and moved into place. A file or a file link gives way to that
+    move in one step. A folder link or a junction does not (Windows moves nothing onto a name a folder of any kind
+    holds), so it steps aside under a second temporary name, the new entry takes the name, and only then is the
+    old one removed; when the new entry cannot take the name, the old one goes back to it. Whatever fails, no
+    temporary name is left behind, but for an old entry that could not go back either: that one is named."""
+    kind, raw = entry
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = temporary_beside(target)
+    try:
+        if kind == "link":
+            # Windows keeps a folder link and a file link apart and never changes one into the other: a folder
+            # link recorded at begin, or one whose target is a folder now, comes back as a folder link.
+            on_disk = disk_link_target(os.fsdecode(raw))
+            os.symlink(on_disk, temporary, target_is_directory=folder_link or (target.parent / on_disk).is_dir())
+        else:
+            with open(temporary, "xb") as handle:
+                handle.write(raw)
+        if here in (FOLDER_LINK, JUNCTION):
+            aside = temporary_beside(target)
+            os.rename(target, aside)
+            try:
+                os.rename(temporary, target)
+            except BaseException:
+                try:
+                    os.rename(aside, target)
+                except OSError as exc:  # it is whole, and in the stash, under the name this error gives
+                    raise OSError(f"{target.name} could not go back to its name and is now {aside.name}") from exc
+                raise
+            remove_occupant(aside, here)
+        else:
+            os.replace(temporary, target)
+    finally:
+        left = kind_of(temporary)
+        if left != NOTHING:
+            remove_occupant(temporary, left)
 
 
 def return_path(repo, path, entry, folder_link=False):
-    """Put `path` back as HEAD has it (or remove it when HEAD has no file there; one already gone is settled)."""
-    target = repo / path
-    if under_link(repo, path):
-        return  # below a linked folder: outside the tree, so nothing here is removed or written
+    """Put `path` back as HEAD has it, by what occupies the name now; the caller has just checked that it still
+    holds what the stash captured. True when the path is settled, False when it is kept because the name cannot
+    take HEAD's entry without touching something that is in no stash.
+
+    HEAD has nothing there: a file or a link of any kind is removed (the link itself, never its target), a hollow
+    folder is removed, a folder holding anything stays (its files are paths of their own), and a path beyond a
+    link or a file is left alone. Then the parents this emptied go.
+
+    HEAD has a file or a link there: it replaces a file or a link of any kind, takes a free name (its parent
+    folders are made) or the name of a hollow folder (an empty folder is in no way a save); it is kept back when a
+    folder holding anything, or something git does not record, has the name, or when the path lies beyond a link,
+    a junction or a file (a write there would land outside the tree)."""
+    target, here = repo / path, occupant(repo, path)
     if entry is None:
-        if link_like(target):
-            try:
-                os.unlink(target)
-            except (PermissionError, IsADirectoryError):  # a folder link or a junction on Windows goes as a folder
-                os.rmdir(target)
-        elif target.is_file():
-            os.unlink(target)
-        remove_empty_folders(target, repo)
-        return
-    remove_empty_folders(target, repo)  # an empty folder holding the name is in no way a save
-    kind, raw = entry
-    if kind == "link":
-        target.parent.mkdir(parents=True, exist_ok=True)
-        temporary = target.with_name(f".packet-link-{os.getpid()}-{target.name}")
-        # Windows keeps a folder link and a file link apart and never changes one into the other: a folder link
-        # recorded at begin, or one whose target is a folder now, comes back as a folder link.
-        on_disk = disk_link_target(os.fsdecode(raw))
-        folder = folder_link or (target.parent / on_disk).is_dir()
-        os.symlink(on_disk, temporary, target_is_directory=folder)
-        os.replace(temporary, target)
-    else:
-        atomic_write(target, raw)
+        if here in (FILE, *LINKS) or (here == FOLDER and hollow(target)):
+            remove_occupant(target, here)
+        if here != BEYOND:
+            remove_empty_parents(repo, target)
+        return True
+    if here in (BEYOND, OTHER) or (here == FOLDER and not hollow(target)):
+        return False
+    if here == FOLDER:
+        remove_occupant(target, FOLDER)
+        here = NOTHING
+    write_entry(target, entry, here, folder_link)
+    return True
+
 
 def reject(repo):
     data = load(repo)
@@ -511,18 +593,19 @@ def reject(repo):
     order = sorted(contents, key=lambda p: (contents[p] is not None,
                                             p.count("/") * (-1 if contents[p] is None else 1), p))
     for path in order:
-        recorded = rejection["paths"][path]
-        if sha(read_entry(repo, path)) != recorded:
-            rejection["settled"][path] = "kept"  # saved after the capture: in no stash, so it stays on disk
-        elif contents[path] is not None and blocked(repo, path):
-            rejection["settled"][path] = "kept"  # a kept save (a folder or a file) still holds a name on its way
+        held = read_entry(repo, path)
+        if sha(held) != rejection["paths"][path]:
+            # Not what the stash captured. HEAD's own entry is a return an earlier run made and could not record;
+            # anything else was saved after the capture and is in no stash, so it stays on disk.
+            rejection["settled"][path] = "returned" if held == contents[path] else "kept"
         else:
             try:
-                return_path(repo, path, contents[path], path in data.get("folder_links", []))
+                took = return_path(repo, path, contents[path], path in data.get("folder_links", []))
             except OSError as exc:
                 failed.append(f"{path} ({exc})")
                 continue
-            rejection["settled"][path] = "returned"
+            # Kept: a kept save (a folder, a file or a link) still holds the name or a name on its way.
+            rejection["settled"][path] = "returned" if took else "kept"
         save(repo, data)
     name = next((n for n, c, _ in stash_listing(repo) if c == rejection["stash"]), "stash")
     print(f"set aside as {name} ({rejection['stash']}): {message}")
