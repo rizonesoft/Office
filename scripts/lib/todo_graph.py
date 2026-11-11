@@ -77,6 +77,7 @@ ADJACENCY_KEYS = ["list", "document", "settings", "reporting", "notifications", 
 # todo/plan.json; without it the plan shows bare phase numbers.
 PHASES = (0, 1, 2, 3, 4, 5, 6, 7, 99)
 PLAN_CONFIG = "todo/plan.json"
+DOMAIN_FOLDER = re.compile(r"\d{2}-[a-z0-9][a-z0-9-]*")  # a domain folder under todo/, `06-write`
 PLAN_DEFAULTS = {"title": "Implementation plan", "acceptance": None, "phases": {99: "Manual, operator only"}}
 MAX_SECTIONS_PER_FILE = 55
 MAX_ITEMS_PER_SECTION = 30
@@ -1299,13 +1300,13 @@ def plan_config(root=ROOT):
     """The project's plan title, acceptance bar and phase names from todo/plan.json, loaded strictly."""
     path = Path(root) / PLAN_CONFIG
     if not path.is_file():
-        return {**PLAN_DEFAULTS, "phases": dict(PLAN_DEFAULTS["phases"])}
+        return {**PLAN_DEFAULTS, "phases": dict(PLAN_DEFAULTS["phases"]), "domains": {}}
     try:
         data = json.loads(read_text(path))
     except ValueError as exc:
         raise Refused(f"unreadable {PLAN_CONFIG}: {exc}") from None
-    require(isinstance(data, dict) and set(data) <= {"title", "acceptance", "phases"},
-            f"{PLAN_CONFIG} may only hold title, acceptance and phases")
+    require(isinstance(data, dict) and set(data) <= {"title", "acceptance", "phases", "domains"},
+            f"{PLAN_CONFIG} may only hold title, acceptance, phases and domains")
     title = data.get("title", PLAN_DEFAULTS["title"])
     acceptance = data.get("acceptance")
     phases = data.get("phases", {})
@@ -1318,12 +1319,39 @@ def plan_config(root=ROOT):
         require(key.isdigit() and int(key) in PHASES, f"{PLAN_CONFIG}: unknown phase {key!r}")
         require(isinstance(name, str) and name.strip() != "", f"{PLAN_CONFIG}: phase {key} needs a name")
         names[int(key)] = name.strip()
-    return {"title": title.strip(), "acceptance": acceptance.strip() if acceptance else None, "phases": names}
+    # The display name of each domain folder (D00 T03 §33): a key must be a folder under todo/, so a typo or a
+    # renamed folder is refused instead of silently falling back to the folder name.
+    domains = data.get("domains", {})
+    require(isinstance(domains, dict), f"{PLAN_CONFIG}: domains must map a domain folder to its name")
+    for folder, name in domains.items():
+        require(isinstance(folder, str) and DOMAIN_FOLDER.fullmatch(folder) is not None
+                and (Path(root) / "todo" / folder).is_dir(),
+                f"{PLAN_CONFIG}: domains names {folder!r}, which is not a domain folder under todo/")
+        require(isinstance(name, str) and name.strip() != "", f"{PLAN_CONFIG}: domain {folder} needs a name")
+    return {"title": title.strip(), "acceptance": acceptance.strip() if acceptance else None, "phases": names,
+            "domains": {folder: name.strip() for folder, name in domains.items()}}
 
 
-def phase_table(phase, phase_rows):
-    """One phase's plan table, refused when a row would pass MAX_TABLE_ROW. `graph()` (so `validate`) and
-    `projection()` both build it here, so validate refuses exactly what plan --sync cannot render (D00 T03 §32)."""
+def domain_of(path):
+    """The domain folder of a TODO path (`todo/06-write/TODO-01-x.md` -> `06-write`)."""
+    parts = Path(path).as_posix().split("/")
+    return parts[1] if len(parts) > 2 and parts[0] == "todo" else ""
+
+
+def by_domain(items, path_of):
+    """`items` split by the domain folder of each one's path, in domain-number order, each keeping its order: one
+    group (domain None) when every item is in one domain, so a single-domain block renders as it always did."""
+    folders = sorted({domain_of(path_of(item)) for item in items})
+    if len(folders) <= 1:
+        return [(None, list(items))]
+    return [(folder, [item for item in items if domain_of(path_of(item)) == folder]) for folder in folders]
+
+
+def phase_table(phase, phase_rows, domain=None):
+    """One phase's plan table (or, in a phase that spans domains, one domain's table: D00 T03 §33), refused when a
+    row would pass MAX_TABLE_ROW. `graph()` (so `validate`) and `projection()` both build it here, so validate
+    refuses exactly what plan --sync cannot render (D00 T03 §32)."""
+    where = f"phase {phase}" + (f", domain {domain}" if domain else "")
     table = markdown_table(
         ["Status", "Reference", "Deliverable", "Needs", "Items"],
         [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
@@ -1332,7 +1360,7 @@ def phase_table(phase, phase_rows):
     # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
     widest = max(phase_rows, key=lambda row: len(row.title) + len(", ".join(row.needs)))
     require(all(len(line) <= MAX_TABLE_ROW for line in table),
-            f"plan table for phase {phase} wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} "
+            f"plan table for {where} wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} "
             f"chars); shorten the heading and Deliverable of {widest.ref} (title {len(widest.title)} chars)")
     return table
 
@@ -1350,13 +1378,16 @@ def author_table(missing):
 
 
 def _plan_tables_ok(root, rows):
-    """Build every table the plan renders, so a tree validate accepts always syncs (D00 T03 §32)."""
+    """Build every table the plan renders, grouped as projection() groups them, so a tree validate accepts always
+    syncs (D00 T03 §32, §33)."""
     plan_rows = ordered(rows)
     for phase in sorted({row.phase for row in plan_rows}):
-        phase_table(phase, [row for row in plan_rows if row.phase == phase])
+        for folder, group in by_domain([row for row in plan_rows if row.phase == phase], lambda row: row.path):
+            phase_table(phase, group, folder)
     missing = to_author(root, rows)
     if missing:
-        author_table(missing)
+        for _, group in by_domain(missing, lambda item: item["path"]):
+            author_table(group)
 
 
 def projection(root=ROOT):
@@ -1381,15 +1412,26 @@ def projection(root=ROOT):
         name = config["phases"].get(phase)
         title = f"Phase {phase}: {name}" if name else f"Phase {phase}"
         lines += [f"### {title}", "", f"Sections: {len(phase_rows)} | Checklist items: {item_count}", ""]
-        lines += phase_table(phase, phase_rows)
-        lines.append("")
+        # A phase that spans domains reads one domain at a time, so all of one app is one contiguous part of the
+        # plan with its own progress (D00 T03 §33); a single-domain phase renders exactly as before.
+        for folder, group in by_domain(phase_rows, lambda row: row.path):
+            if folder is not None:
+                group_items = sum(len(checks[row.ref]) for row in group)
+                lines += [f"#### {config['domains'].get(folder, folder)}", "",
+                          f"Sections: {len(group)} | Checklist items: {group_items} | "
+                          f"Verified: {sum(row.done for row in group)}", ""]
+            lines += phase_table(phase, group, folder)
+            lines.append("")
     missing = to_author(root, all_rows)
     if missing:
         lines += ["### Still to author", "",
                   "These TODO files do not exist yet, so their sections and checklist items are not in the totals "
                   "above or below; each is written into the tree by the section beside it.", ""]
-        lines += author_table(missing)
-        lines.append("")
+        for folder, group in by_domain(missing, lambda item: item["path"]):
+            if folder is not None:
+                lines += [f"#### {config['domains'].get(folder, folder)}", ""]
+            lines += author_table(group)
+            lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)
     ready = sum(disposition(r, all_rows) == 0 for r in rows)

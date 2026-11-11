@@ -11,5 +11,11 @@
     "6": "Interoperability and fidelity",
     "7": "Release",
     "99": "Manual, operator only"
+  },
+  "domains": {
+    "00-workspace": "Workspace and tooling",
+    "01-brand": "Brand and icons",
+    "02-interface": "Interface inventory and specification",
+    "03-architecture": "Architecture and tech stack"
   }
 }

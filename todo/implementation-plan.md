@@ -148,10 +148,22 @@ Sections: 44 | Checklist items: 289
 
 Sections: 32 | Checklist items: 230
 
+#### Workspace and tooling
+
+Sections: 3 | Checklist items: 17 | Verified: 0
+
+| Status | Reference   | Deliverable                        | Needs | Items |
+| ------ | ----------- | ---------------------------------- | ----- | ----- |
+| [ ]    | D00 T03 §38 | Parallel Streams Design Record     | none  | 9     |
+| [ ]    | D00 T03 §39 | Parallel Streams Sections Authored | none  | 5     |
+| [ ]    | D00 T02 §6  | Runtime and Icon Notices           | none  | 3     |
+
+#### Architecture and tech stack
+
+Sections: 29 | Checklist items: 213 | Verified: 0
+
 | Status | Reference   | Deliverable                            | Needs                   | Items |
 | ------ | ----------- | -------------------------------------- | ----------------------- | ----- |
-| [ ]    | D00 T03 §38 | Parallel Streams Design Record         | none                    | 9     |
-| [ ]    | D00 T03 §39 | Parallel Streams Sections Authored     | none                    | 5     |
 | [ ]    | D03 T01 §1  | Platform Targets Decision              | none                    | 5     |
 | [ ]    | D03 T01 §2  | GUI Toolkit and Ribbon Prototype       | none                    | 13    |
 | [ ]    | D03 T01 §3  | Text Layout Engine Decision            | office, windows-host    | 5     |
@@ -167,7 +179,6 @@ Sections: 32 | Checklist items: 230
 | [ ]    | D03 T01 §15 | Localisation Decision                  | none                    | 6     |
 | [ ]    | D03 T01 §16 | Updates and Diagnostics Decision       | none                    | 5     |
 | [ ]    | D03 T01 §12 | Foundation Plan                        | none                    | 7     |
-| [ ]    | D00 T02 §6  | Runtime and Icon Notices               | none                    | 3     |
 | [ ]    | D03 T01 §18 | Document Engines Domain Authoring      | none                    | 8     |
 | [ ]    | D03 T01 §28 | Versioning and Release Identity        | none                    | 8     |
 | [ ]    | D03 T01 §17 | Platform Domain Authoring              | none                    | 14    |
@@ -203,10 +214,21 @@ Sections: 1 | Checklist items: 3
 
 Sections: 6 | Checklist items: 25
 
+#### Workspace and tooling
+
+Sections: 2 | Checklist items: 10 | Verified: 0
+
+| Status | Reference  | Deliverable                    | Needs                       | Items |
+| ------ | ---------- | ------------------------------ | --------------------------- | ----- |
+| [ ]    | D00 T02 §3 | Contributor Agreement Text     | third-party, owner-decision | 6     |
+| [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
+
+#### Brand and icons
+
+Sections: 4 | Checklist items: 15 | Verified: 0
+
 | Status | Reference  | Deliverable                      | Needs                           | Items |
 | ------ | ---------- | -------------------------------- | ------------------------------- | ----- |
-| [ ]    | D00 T02 §3 | Contributor Agreement Text       | third-party, owner-decision     | 6     |
-| [ ]    | D00 T02 §4 | Contributor Agreement PR Check   | operator                        | 4     |
 | [ ]    | D01 T01 §4 | Knockout Trademark Screen        | display-session, owner-decision | 5     |
 | [ ]    | D01 T01 §7 | Attorney Clearance and Filing    | third-party, owner-decision     | 3     |
 | [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
@@ -216,16 +238,16 @@ Sections: 6 | Checklist items: 25
 
 These TODO files do not exist yet, so their sections and checklist items are not in the totals above or below; each is written into the tree by the section beside it.
 
+#### Workspace and tooling
+
+| File                                            | Authored by | Status |
+| ----------------------------------------------- | ----------- | ------ |
+| `todo/00-workspace/TODO-06-parallel-streams.md` | D00 T03 §39 | [ ]    |
+
+#### 04-platform
+
 | File                                                       | Authored by | Status |
 | ---------------------------------------------------------- | ----------- | ------ |
-| `todo/00-workspace/TODO-06-parallel-streams.md`            | D00 T03 §39 | [ ]    |
-| `todo/05-engines/TODO-01-opc-and-ooxml-core.md`            | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-02-drawingml.md`                     | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-03-charts.md`                        | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-04-smartart-and-equations.md`        | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-05-text-layout.md`                   | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-06-fonts-and-pdf.md`                 | D03 T01 §18 | [ ]    |
-| `todo/05-engines/TODO-07-formula-engine.md`                | D03 T01 §18 | [ ]    |
 | `todo/04-platform/TODO-01-build-foundation.md`             | D03 T01 §17 | [ ]    |
 | `todo/04-platform/TODO-02-windowing-and-rendering.md`      | D03 T01 §17 | [ ]    |
 | `todo/04-platform/TODO-03-toolkit-core.md`                 | D03 T01 §17 | [ ]    |
@@ -239,70 +261,127 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/04-platform/TODO-11-help-and-assistant.md`           | D03 T01 §17 | [ ]    |
 | `todo/04-platform/TODO-13-microsoft-graph-files.md`        | D03 T01 §17 | [ ]    |
 | `todo/04-platform/TODO-12-install-update-diagnostics.md`   | D03 T01 §17 | [ ]    |
-| `todo/14-release/TODO-01-versioning-and-notes.md`          | D03 T01 §27 | [ ]    |
-| `todo/14-release/TODO-02-suite-installer.md`               | D03 T01 §27 | [ ]    |
-| `todo/14-release/TODO-03-signing-and-msix.md`              | D03 T01 §27 | [ ]    |
-| `todo/14-release/TODO-04-one-point-zero.md`                | D03 T01 §27 | [ ]    |
-| `todo/06-write/TODO-01-document-model-and-formats.md`      | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-02-editing-and-formatting.md`          | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-03-fields-and-references.md`           | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-04-review-and-mailings.md`             | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-05-insert-and-design.md`               | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-06-views-and-navigation.md`            | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-07-ribbon-backstage-dialogs.md`        | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-08-templates-help-release.md`          | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-09-performance.md`                     | D03 T01 §19 | [ ]    |
-| `todo/06-write/TODO-10-signature-improvements.md`          | D03 T01 §19 | [ ]    |
-| `todo/07-grid/TODO-01-workbook-model-and-formats.md`       | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-02-functions.md`                        | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-03-grid-and-editing.md`                 | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-04-data-and-analysis.md`                | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-05-review-view-print.md`                | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-06-ribbon-backstage-dialogs.md`         | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-07-templates-help-release.md`           | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-08-performance.md`                      | D03 T01 §20 | [ ]    |
-| `todo/07-grid/TODO-09-signature-improvements.md`           | D03 T01 §20 | [ ]    |
-| `todo/08-stage/TODO-01-presentation-model-and-formats.md`  | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-02-slide-editing.md`                   | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-03-animation-and-transitions.md`       | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-04-slide-show.md`                      | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-05-views-and-print.md`                 | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-06-ribbon-backstage-dialogs.md`        | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-07-templates-help-release.md`          | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-08-performance.md`                     | D03 T01 §21 | [ ]    |
-| `todo/08-stage/TODO-09-signature-improvements.md`          | D03 T01 §21 | [ ]    |
-| `todo/09-mail/TODO-01-accounts-and-sync.md`                | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-02-mail.md`                             | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-03-calendar.md`                         | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-04-people-tasks-notes.md`               | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-05-ribbons-backstage-dialogs.md`        | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-06-help-release.md`                     | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-07-performance.md`                      | D03 T01 §22 | [ ]    |
-| `todo/09-mail/TODO-08-signature-improvements.md`           | D03 T01 §22 | [ ]    |
-| `todo/10-flow/TODO-01-drawing-model-and-formats.md`        | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-02-shapes-and-stencils.md`              | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-03-connectors-and-layout.md`            | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-04-data-and-validation.md`              | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-05-ribbon-backstage-dialogs.md`         | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-06-templates-help-release.md`           | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-07-performance.md`                      | D03 T01 §23 | [ ]    |
-| `todo/10-flow/TODO-08-signature-improvements.md`           | D03 T01 §23 | [ ]    |
-| `todo/11-plan/TODO-01-project-model-and-formats.md`        | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-02-scheduling-engine.md`                | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-03-resources-cost-tracking.md`          | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-04-views-and-reports.md`                | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-05-ribbon-backstage-dialogs.md`         | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-06-templates-help-release.md`           | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-07-performance.md`                      | D03 T01 §24 | [ ]    |
-| `todo/11-plan/TODO-08-signature-improvements.md`           | D03 T01 §24 | [ ]    |
-| `todo/12-interop/TODO-01-corpora-and-diffing.md`           | D03 T01 §25 | [ ]    |
-| `todo/12-interop/TODO-02-agreement-gates.md`               | D03 T01 §25 | [ ]    |
-| `todo/12-interop/TODO-03-hardening.md`                     | D03 T01 §25 | [ ]    |
-| `todo/13-vba/TODO-01-language-runtime.md`                  | D03 T01 §26 | [ ]    |
-| `todo/13-vba/TODO-02-editor-and-forms.md`                  | D03 T01 §26 | [ ]    |
-| `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
-| `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
+
+#### 05-engines
+
+| File                                                | Authored by | Status |
+| --------------------------------------------------- | ----------- | ------ |
+| `todo/05-engines/TODO-01-opc-and-ooxml-core.md`     | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-02-drawingml.md`              | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-03-charts.md`                 | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-04-smartart-and-equations.md` | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-05-text-layout.md`            | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-06-fonts-and-pdf.md`          | D03 T01 §18 | [ ]    |
+| `todo/05-engines/TODO-07-formula-engine.md`         | D03 T01 §18 | [ ]    |
+
+#### 06-write
+
+| File                                                  | Authored by | Status |
+| ----------------------------------------------------- | ----------- | ------ |
+| `todo/06-write/TODO-01-document-model-and-formats.md` | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-02-editing-and-formatting.md`     | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-03-fields-and-references.md`      | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-04-review-and-mailings.md`        | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-05-insert-and-design.md`          | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-06-views-and-navigation.md`       | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-07-ribbon-backstage-dialogs.md`   | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-08-templates-help-release.md`     | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-09-performance.md`                | D03 T01 §19 | [ ]    |
+| `todo/06-write/TODO-10-signature-improvements.md`     | D03 T01 §19 | [ ]    |
+
+#### 07-grid
+
+| File                                                 | Authored by | Status |
+| ---------------------------------------------------- | ----------- | ------ |
+| `todo/07-grid/TODO-01-workbook-model-and-formats.md` | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-02-functions.md`                  | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-03-grid-and-editing.md`           | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-04-data-and-analysis.md`          | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-05-review-view-print.md`          | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-06-ribbon-backstage-dialogs.md`   | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-07-templates-help-release.md`     | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-08-performance.md`                | D03 T01 §20 | [ ]    |
+| `todo/07-grid/TODO-09-signature-improvements.md`     | D03 T01 §20 | [ ]    |
+
+#### 08-stage
+
+| File                                                      | Authored by | Status |
+| --------------------------------------------------------- | ----------- | ------ |
+| `todo/08-stage/TODO-01-presentation-model-and-formats.md` | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-02-slide-editing.md`                  | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-03-animation-and-transitions.md`      | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-04-slide-show.md`                     | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-05-views-and-print.md`                | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-06-ribbon-backstage-dialogs.md`       | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-07-templates-help-release.md`         | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-08-performance.md`                    | D03 T01 §21 | [ ]    |
+| `todo/08-stage/TODO-09-signature-improvements.md`         | D03 T01 §21 | [ ]    |
+
+#### 09-mail
+
+| File                                                | Authored by | Status |
+| --------------------------------------------------- | ----------- | ------ |
+| `todo/09-mail/TODO-01-accounts-and-sync.md`         | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-02-mail.md`                      | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-03-calendar.md`                  | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-04-people-tasks-notes.md`        | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-05-ribbons-backstage-dialogs.md` | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-06-help-release.md`              | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-07-performance.md`               | D03 T01 §22 | [ ]    |
+| `todo/09-mail/TODO-08-signature-improvements.md`    | D03 T01 §22 | [ ]    |
+
+#### 10-flow
+
+| File                                                | Authored by | Status |
+| --------------------------------------------------- | ----------- | ------ |
+| `todo/10-flow/TODO-01-drawing-model-and-formats.md` | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-02-shapes-and-stencils.md`       | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-03-connectors-and-layout.md`     | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-04-data-and-validation.md`       | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-05-ribbon-backstage-dialogs.md`  | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-06-templates-help-release.md`    | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-07-performance.md`               | D03 T01 §23 | [ ]    |
+| `todo/10-flow/TODO-08-signature-improvements.md`    | D03 T01 §23 | [ ]    |
+
+#### 11-plan
+
+| File                                                | Authored by | Status |
+| --------------------------------------------------- | ----------- | ------ |
+| `todo/11-plan/TODO-01-project-model-and-formats.md` | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-02-scheduling-engine.md`         | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-03-resources-cost-tracking.md`   | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-04-views-and-reports.md`         | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-05-ribbon-backstage-dialogs.md`  | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-06-templates-help-release.md`    | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-07-performance.md`               | D03 T01 §24 | [ ]    |
+| `todo/11-plan/TODO-08-signature-improvements.md`    | D03 T01 §24 | [ ]    |
+
+#### 12-interop
+
+| File                                             | Authored by | Status |
+| ------------------------------------------------ | ----------- | ------ |
+| `todo/12-interop/TODO-01-corpora-and-diffing.md` | D03 T01 §25 | [ ]    |
+| `todo/12-interop/TODO-02-agreement-gates.md`     | D03 T01 §25 | [ ]    |
+| `todo/12-interop/TODO-03-hardening.md`           | D03 T01 §25 | [ ]    |
+
+#### 13-vba
+
+| File                                      | Authored by | Status |
+| ----------------------------------------- | ----------- | ------ |
+| `todo/13-vba/TODO-01-language-runtime.md` | D03 T01 §26 | [ ]    |
+| `todo/13-vba/TODO-02-editor-and-forms.md` | D03 T01 §26 | [ ]    |
+| `todo/13-vba/TODO-03-object-models.md`    | D03 T01 §26 | [ ]    |
+| `todo/13-vba/TODO-04-trust-center.md`     | D03 T01 §26 | [ ]    |
+
+#### 14-release
+
+| File                                              | Authored by | Status |
+| ------------------------------------------------- | ----------- | ------ |
+| `todo/14-release/TODO-01-versioning-and-notes.md` | D03 T01 §27 | [ ]    |
+| `todo/14-release/TODO-02-suite-installer.md`      | D03 T01 §27 | [ ]    |
+| `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
+| `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
 Progress: 67/157 verified sections, 25 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 441/1033 items completed (includes Commit items).
+Checklist: 449/1033 items completed (includes Commit items).
