@@ -61,6 +61,22 @@ file, or a name held under another spelling), so each kind is handled the same w
 junction is read, stashed and returned as a link (mode 120000) and is never followed: nothing is read, written or
 removed through one, a path below one counts as absent, and the link itself is the changed path.
 
+Whether git makes links at all in this repository is git's to say: its effective `core.symlinks`, asked of git
+itself (`makes_links`; where no configuration sets it, git's own default, which is false on Windows and true
+elsewhere). While it is false git checks a mode 120000 entry out as a plain file holding the target, unconverted,
+and reads such a file, where its index has a link, as that link. Every place that asks what git will write goes
+through the one function that knows (`checked_out`), and the place that asks what `git add` would record goes
+through `mode_of`. So with `core.symlinks` false:
+
+- `HEAD`'s link is returned as git's checkout would write it, a file holding the target, and git reads the tree
+  as unchanged; `folder_links` is not consulted for it, because no link is made.
+- A file standing for a link that the worker edited is staged and stashed as the link it is to git (mode 120000),
+  and `git stash apply` writes it back as that file.
+- A real link or junction on disk, tracked or not, is still read as a link, as git reads it. Its stash would give
+  it back as a file, which is not the entry captured, so it has no form (below): `reject` names it, removes
+  nothing and leaves the packet open until `core.symlinks` is true or the owner has moved the link out of the tree.
+- `show` displays and digests what is on disk, and `show --stage` records what `git add` would.
+
 A path is its exact spelling. Each name is looked up in its own folder's list of names, so on a file system that
 ignores case `src/a.py` and `src/A.py` are two paths: the one the folder lists holds the file, the other is absent
 and is never read, written or removed through the first. A rename that changes only the case of a file or a folder,
@@ -96,6 +112,7 @@ stored in the first of these forms that passes, recorded per path under `rejecti
 - `none`: neither holds (a filter that does not undo itself, say). `reject` then stores the stash it has, with the
   file's bytes as its blob, changes nothing in the tree or the index, names each such path and exits 1 with the
   packet open; the next `reject` reads the tree afresh, and stores no second stash while nothing has changed.
+  A link or a junction has no form while `core.symlinks` is false: git would give it back as a file.
 
 `link` and `absent` are recorded for a link (its target, unfiltered) and for a path with nothing on disk. Paths
 stored `unfiltered` or `converted` are named in `reject`'s output.
@@ -168,6 +185,25 @@ def names(repo, *args, env=None):
 
 def head(repo):
     return text(repo, "rev-parse", "HEAD").strip()
+
+
+LINK_MODE = "120000"
+
+
+def makes_links(repo):
+    """Whether git makes a link of a mode 120000 entry in this repository, or a plain file holding the target:
+    git's effective `core.symlinks`, read by git from every place it reads configuration (system, user, the
+    repository, the command's environment). Where nothing sets it the answer is git's own default for the
+    platform: git for Windows makes no links unless told to, every other git does. Asked each time it is needed
+    and never remembered, so no answer outlives a change of the setting."""
+    proc = subprocess.run([git_path(), "-C", str(repo), "config", "--type=bool", "--get", "core.symlinks"],
+                          capture_output=True, env=git_environment())
+    value = proc.stdout.decode("utf-8", "replace").strip()
+    if proc.returncode == 0 and value in ("true", "false"):
+        return value == "true"
+    if proc.returncode == 1 and not value:  # git's way of saying that nothing sets it
+        return os.name != "nt"
+    raise GitFailed(f"git config core.symlinks failed: {proc.stderr.decode('utf-8', 'replace').strip() or value}")
 
 
 def dirty(repo, env=None):
@@ -438,7 +474,9 @@ def digest(captured):
 
 def folder_links(repo):
     """The tracked links that are folder links on disk now (Windows records the kind on the link itself, and a
-    dangling link's target cannot tell it later), so reject can return each as the kind it was."""
+    dangling link's target cannot tell it later), so reject can return each as the kind it was. Under a git that
+    makes no links (`makes_links`) a tracked link is a file on disk and none is listed; a real folder link someone
+    made there is listed, and the note goes unused while reject returns the file git would write."""
     found = []
     for line in text(repo, "ls-files", "-s", "-z").split("\0"):
         meta, _, path = line.partition("\t")
@@ -467,26 +505,33 @@ FILE_MODES = ("100644", "100755")
 
 
 def mode_of(repo, base, path, env=None):
-    """The mode a staged file keeps: its entry's in the index being written (the one `env` names, else the live
-    one), else its mode in `base`, when that is a file's mode; otherwise (no entry, a folder's tree, a submodule,
-    a link now a file) a plain file's."""
-    for listing in (text(repo, "ls-files", "-s", "--", path, env=env), text(repo, "ls-tree", base, "--", path)):
+    """The mode `git add` records for a file on disk at `path`: its entry's in the index being written (the one
+    `env` names, else the live one), else its mode in `base`, when that is a file's mode. A file where that index
+    has a link is the link itself to a git that makes no links (`makes_links`): it is how git checked the link
+    out, so it keeps the link's mode, as `git add` keeps it. Otherwise (no entry, a folder's tree, a submodule, a
+    link now a file under a git that makes links, a link only `base` has) a plain file's."""
+    listings = ((True, text(repo, "ls-files", "-s", "--", path, env=env)),
+                (False, text(repo, "ls-tree", base, "--", path)))
+    for in_index, listing in listings:
         for line in listing.splitlines():
             meta, _, name = line.partition("\t")
             if name == path and meta:
                 mode = meta.split()[0]
-                return mode if mode in FILE_MODES else "100644"
+                if mode in FILE_MODES:
+                    return mode
+                return LINK_MODE if mode == LINK_MODE and in_index and not makes_links(repo) else "100644"
     return "100644"
 
 
 def blob_of(repo, base, path, entry, env=None, filtered=True):
     """(mode, blob) for a captured entry, the blob written to git's object store. A link is stored as git stores
-    one, mode 120000 with its target unfiltered. A file keeps its file mode (`mode_of`, asked of the index `env`
-    names) and is stored `filtered`, the blob `git add` makes of the bytes under the attributes the working tree
-    holds at this moment, or not: the bytes themselves."""
+    one, mode 120000 with its target unfiltered. A file gets the mode `git add` gives it (`mode_of`, asked of the
+    index `env` names: a file's, or the link's for a file that stands for a link under a git that makes none) and
+    is stored `filtered`, the blob `git add` makes of the bytes under the attributes the working tree holds at
+    this moment, or not: the bytes themselves."""
     kind, raw = entry
     if kind == "link":
-        return "120000", run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
+        return LINK_MODE, run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
     how = f"--path={path}" if filtered else "--no-filters"
     blob = run_git(repo, "hash-object", "-w", "--stdin", how, data=raw, env=env).decode().strip()
     return mode_of(repo, base, path, env), blob
@@ -800,7 +845,8 @@ def build_stash(repo, base, message, changed, untracked, captured, index):
     were. A file that does not come back gets its bytes as its blob and the commit is built again; the last commit
     built is the one checked and returned. A file that still does not come back is CONVERTED when git reads what
     it writes as the same content (`same_to_git`), and has NO_FORM otherwise, as has a link or an absent path the
-    commit does not give back: `reject` removes nothing while any path has no form."""
+    commit does not give back (every link and junction, under a git that makes no links: `checked_out`): `reject`
+    removes nothing while any path has no form."""
     index_tree = text(repo, "write-tree", env=index).strip()
     index_commit = text(repo, "commit-tree", index_tree, "-p", base, "-m", f"index on {message}").strip()
     loose = set(untracked)
@@ -869,22 +915,29 @@ def require_commit_attributes(repo, commit):
 
 
 def checked_out(repo, commit, source, path):
-    """What git checks out at `path` from `commit`, as read_entry reads it: ("link", target) for a mode 120000
-    blob, ("file", its bytes after git's checkout conversion) for any other blob, or None when `commit` has no file
-    there (no entry, or a folder or a submodule at that name, whose own files are paths of their own). The
-    conversion (line endings, filters, encoding) is decided by the attributes of the commit or tree `source` and
-    never by the working tree's `.gitattributes`: the answer is the same whatever the tree holds and whenever it
-    is asked."""
+    """What git checks out at `path` from `commit`, as read_entry reads it afterwards: the one place that says
+    what git will write at a name, for the stash check (`stash_entry`, `same_to_git`) and for what `reject`
+    returns (`head_entry`) alike. None when `commit` has no file there (no entry, or a folder or a submodule at
+    that name, whose own files are paths of their own).
+
+    A mode 120000 blob is what this repository's git makes of one (`makes_links`): ("link", target) where git
+    makes links, and where it does not ("file", the target's bytes), the plain file git writes there, with no
+    conversion. So a link captured from disk is never equal to what a git that makes no links would give back.
+
+    Any other blob is ("file", its bytes after git's checkout conversion). That conversion (line endings,
+    filters, encoding) is decided by the attributes of the commit or tree `source` and never by the working
+    tree's `.gitattributes`: the answer is the same whatever the tree holds and whenever it is asked."""
     entry = text(repo, "ls-tree", commit, "--", path).split()
     if len(entry) < 3 or entry[1] != "blob":
         return None
-    if entry[0] == "120000":
-        return ("link", run_git(repo, "cat-file", "blob", entry[2]))
+    if entry[0] == LINK_MODE:
+        return ("link" if makes_links(repo) else "file", run_git(repo, "cat-file", "blob", entry[2]))
     return ("file", run_git(repo, attributes_of(source), "cat-file", "--filters", f"{commit}:{path}"))
 
 
 def head_entry(repo, base, path):
-    """What git checks out at `path` from the commit `base` (the packet's HEAD), by `base`'s own attributes."""
+    """What git checks out at `path` from the commit `base` (the packet's HEAD), by `base`'s own attributes and
+    this repository's `core.symlinks`: HEAD's link is a link, or the file git would write for it."""
     return checked_out(repo, base, base, path)
 
 
@@ -1009,6 +1062,7 @@ def reject(repo):
     # A stash an earlier run stored that does not give every path back: that run changed nothing, so this one
     # reads the tree afresh (the owner may have changed the file or its rule since).
     earlier = rejection if rejection is not None and NO_FORM in rejection.get("forms", {}).values() else None
+    links = set()  # the links and junctions this run captured; a stash with a formless path is always this run's
     if rejection is None or earlier is not None:
         # One read of the index, and every answer about it from that read: the listing, each path's place among
         # the tracked or the untracked, and the stash's commits. return_index then compares the live index with
@@ -1020,6 +1074,7 @@ def reject(repo):
                 print("nothing to set aside; packet closed")
                 return 0
             captured = capture(repo, changed)
+            links = {path for path, entry in captured.items() if entry is not None and entry[0] == "link"}
             commit, forms = build_stash(repo, base, message, changed, untracked, captured, index)
         stored = False
         if earlier is not None and stash_shape(repo, commit) == stash_shape(repo, earlier["stash"]):
@@ -1045,6 +1100,12 @@ def reject(repo):
               f"as its exact bytes (`git cat-file blob {rejection['stash']}:<path>`, or `{rejection['stash']}^3:"
               "<path>` for a new file). Change the rule or the filter that rewrites them, or move them out of the "
               "tree, and run reject again.", file=sys.stderr)
+        as_files = sorted(links.intersection(stored_as[NO_FORM]))
+        if as_files and not makes_links(repo):
+            print("These are links, and git makes no links in this repository (core.symlinks is false): it would "
+                  "bring each back as a plain file holding the link's target, so each stays where it is: "
+                  + ", ".join(as_files) + ". Set core.symlinks to true (`git config core.symlinks true`), or move "
+                  "them out of the tree, and run reject again.", file=sys.stderr)
         return 1
     # The index goes back to HEAD only while it is still the one the stash's index commit captured: an index staged
     # after the capture (by the owner, between an interrupted reject and its retry) is in no stash, so it is kept.

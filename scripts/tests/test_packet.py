@@ -36,7 +36,10 @@ class Packet(unittest.TestCase):
         self.repo = pathlib.Path(self.tmp.name)
         for args in (["init", "-q", "-b", "main"], ["config", "user.email", "t@example.com"],
                      ["config", "user.name", "T"], ["config", "core.autocrlf", "false"],
-                     ["config", "commit.gpgsign", "false"]):
+                     ["config", "commit.gpgsign", "false"],
+                     # Stated, not inherited: whether git makes links is the machine's own setting otherwise, and
+                     # the link tests below are about a git that makes them (the core.symlinks tests say false).
+                     ["config", "core.symlinks", "true"]):
             self.git(*args)
         self.put(".gitignore", "build/\n")
         self.put("src/a.py", "a = 1\n")
@@ -1956,6 +1959,224 @@ class Packet(unittest.TestCase):
         code, _, err = self.cli("reject")  # the resumed run keeps the record it found
         self.assertEqual(code, 0, err)
         self.assertEqual(self.git("rev-parse", "stash@{0}").strip(), rejection["stash"])
+
+    # what git makes of a link: its own core.symlinks (round 14, finding 1)
+
+    def tracked_link(self, path, goal):
+        """Commit a link to `goal` at `path` and let git check it out as this repository's core.symlinks says: a
+        link, or a plain file holding the target."""
+        blob = subprocess.run([git_path(), "-C", str(self.repo), "hash-object", "-w", "--stdin"],
+                              input=goal.encode("utf-8"), capture_output=True, check=True, timeout=60)
+        self.git("update-index", "--add", "--cacheinfo", f"120000,{blob.stdout.decode().strip()},{path}")
+        self.git("commit", "-q", "-m", f"a link at {path}")
+        (self.repo / path).parent.mkdir(parents=True, exist_ok=True)
+        self.git("checkout", "--", path)
+
+    def mode_in(self, commit, path):
+        return self.git("ls-tree", commit, "--", path).split()[0]
+
+    def test_makes_links_is_gits_own_answer_for_this_repository(self):
+        for value in ("true", "false"):
+            self.git("config", "core.symlinks", value)
+            self.assertIs(packet.makes_links(self.repo), value == "true")
+        # The command's environment counts, as it does for git: the last word is the one git itself would take.
+        override = {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.symlinks", "GIT_CONFIG_VALUE_0": "true"}
+        with mock.patch.dict(os.environ, override):
+            self.assertIs(packet.makes_links(self.repo), True)
+        self.git("config", "core.symlinks", "sometimes")
+        with self.assertRaises(packet.GitFailed):
+            packet.makes_links(self.repo)
+
+    def test_where_nothing_sets_core_symlinks_makes_links_is_what_git_does_on_this_platform(self):
+        self.git("config", "--unset", "core.symlinks")
+        empty = self.repo / "build" / "no-settings"
+        empty.parent.mkdir(exist_ok=True)
+        empty.write_bytes(b"")
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(empty)}):
+            unset = subprocess.run([git_path(), "-C", str(self.repo), "config", "--get", "core.symlinks"],
+                                   capture_output=True, timeout=60)
+            self.assertEqual((unset.returncode, unset.stdout), (1, b""))
+            answer = packet.makes_links(self.repo)
+            if answer and not self.can_link():
+                self.skipTest("git makes links here by default and this account cannot create them")
+            self.tracked_link("src/lnk", "a.py")  # git itself decides what to make of it
+            self.assertEqual(packet.kind_of(self.repo / "src/lnk"), "link" if answer else "file")
+            self.assertEqual(packet.head_entry(self.repo, "HEAD", "src/lnk"), packet.read_entry(self.repo, "src/lnk"))
+
+    def test_a_link_git_would_bring_back_as_a_file_is_refused_with_nothing_touched(self):
+        # Round 14: with core.symlinks false git checks a link out as a plain file holding the target, so the
+        # stash check approved a recovery git does not make, and reject removed the link.
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        import contextlib
+        self.git("config", "core.symlinks", "false")
+        self.tracked_link("docs/lnk", "note.md")
+        self.assertEqual(self.raw("docs/lnk"), b"note.md")  # git made a file of it
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            self.begin("src", "docs")
+            self.put("src/a.py", "a = 90\n")
+            self.put("docs/note.md", "staged\n")
+            self.git("add", "docs/note.md")
+            made = {"src/to-file": "a.py", "src/to-folder": os.path.join("..", "docs"),
+                    "src/dangling": "nowhere", "docs/lnk": "other.md"}
+            os.symlink("a.py", self.repo / "src/to-file")
+            os.symlink(os.path.join("..", "docs"), self.repo / "src/to-folder", target_is_directory=True)
+            os.symlink("nowhere", self.repo / "src/dangling")
+            os.unlink(self.repo / "docs/lnk")
+            os.symlink("other.md", self.repo / "docs/lnk")  # a real link where git keeps a file for HEAD's link
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(outside), str(self.repo / "src/junction"))
+            links = sorted([*made, *(["src/junction"] if os.name == "nt" else [])])
+            index = self.index_path().read_bytes()
+            for attempt in (1, 2):  # the second call finds nothing new and stores no second stash
+                with self.subTest(attempt=attempt):
+                    code, out, err = self.cli("reject")
+                    self.assertEqual(code, 1, out + err)
+                    self.assertIn("NOT REJECTED", err)
+                    self.assertIn("in any form they can be stored in: " + ", ".join(links) + ". Nothing in the", err)
+                    self.assertIn("core.symlinks is false", err)
+                    for path, goal in made.items():
+                        self.assertIn(packet.kind_of(self.repo / path), ("link", "folder link"), path)
+                        self.assertEqual(os.readlink(self.repo / path), goal)
+                    self.assertTrue(self.is_folder_link("src/to-folder") or os.name != "nt")
+                    self.assertEqual((self.repo / "src/to-folder/note.md").read_bytes(), b"staged\n")
+                    if os.name == "nt":
+                        self.assertEqual(packet.kind_of(self.repo / "src/junction"), "junction")
+                    self.assertEqual(self.read("src/a.py"), "a = 90\n")
+                    self.assertEqual(self.read("docs/note.md"), "staged\n")
+                    self.assertEqual(self.index_path().read_bytes(), index)
+                    self.assertFalse(self.lock_path().exists())
+                    self.assertEqual(self.leftovers(), [])
+                    rejection = self.state()["rejection"]
+                    self.assertEqual(rejection["forms"], {**{path: "none" for path in links},
+                                                          "src/a.py": "filtered", "docs/note.md": "filtered"})
+                    self.assertEqual(rejection["settled"], {})
+                    self.assertEqual(self.git("stash", "list", "--format=%H").split(), [rejection["stash"]])
+            self.assert_outside_untouched(outside)
+            # The owner lets git make links: the same tree is now set aside, and git brings every link back.
+            if os.name == "nt":
+                os.rmdir(self.repo / "src/junction")  # git gives a junction back as a link: not this test's matter
+            self.git("config", "core.symlinks", "true")
+            code, out, err = self.cli("reject")
+            self.assertEqual(code, 0, out + err)
+            self.assertEqual(self.status(), "")
+            for path in ("src/to-file", "src/to-folder", "src/dangling"):
+                self.assertFalse(os.path.lexists(self.repo / path), path)
+            self.assertEqual(os.readlink(self.repo / "docs/lnk"), "note.md")  # HEAD's, as git now checks it out
+            self.git("stash", "apply", "--index", "stash@{0}")
+            for path, goal in made.items():
+                self.assertIn(packet.kind_of(self.repo / path), ("link", "folder link"), path)
+                self.assertEqual(os.readlink(self.repo / path), goal)
+            self.assertEqual((self.repo / "src/to-folder/note.md").read_bytes(), b"staged\n")
+            self.assert_outside_untouched(outside)
+
+    def test_heads_link_returns_as_the_file_git_checks_out_where_git_makes_no_links(self):
+        # Round 14: reject wrote HEAD's link as a link whatever core.symlinks said; git's own checkout of the
+        # same entry writes a plain file holding the target.
+        self.git("config", "core.symlinks", "false")
+        self.tracked_link("src/lnk", "a.py")
+        self.tracked_link("src/gone", "../docs")
+        self.tracked_link("src/crlf", "a.py")
+        self.git("config", "core.autocrlf", "true")
+        self.assertEqual(self.status(), "")
+        self.begin("src")
+        self.put("src/lnk", "b.py")             # how a link is pointed elsewhere where git makes none
+        (self.repo / "src/gone").unlink()
+        self.put("src/crlf", "b.py\r\n")        # git add would take the line ending off; the stash must not
+        before = self.whole_state()
+        self.assertEqual(before["status"], " M src/crlf\n D src/gone\n M src/lnk\n")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        for path, goal in (("src/lnk", b"a.py"), ("src/gone", b"../docs"), ("src/crlf", b"a.py")):
+            with self.subTest(path=path):
+                self.assertEqual(packet.kind_of(self.repo / path), "file")
+                self.assertEqual(self.raw(path), goal)  # the target as git stores it, with no conversion
+                self.git("checkout", "--", path)        # git's own checkout writes the very same
+                self.assertEqual(packet.kind_of(self.repo / path), "file")
+                self.assertEqual(self.raw(path), goal)
+        self.assertEqual(self.status(), "")
+        self.assertEqual(self.leftovers(), [])
+        # The worker's link is in the stash as the link it is to git, and git brings back the file that stood for it.
+        self.assertEqual(self.mode_in("stash@{0}", "src/lnk"), "120000")
+        self.assertEqual(self.blob("stash@{0}:src/lnk"), b"b.py")
+        self.assertEqual(self.mode_in("stash@{0}", "src/crlf"), "120000")
+        self.assertEqual(self.blob("stash@{0}:src/crlf"), b"b.py\r\n")
+        self.assertIn("stored as the bytes they are, which the stash gives back exactly", out)
+        self.assertIn("src/crlf", out)
+        self.assertEqual(self.git("ls-tree", "stash@{0}", "--", "src/gone"), "")
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assertEqual(self.raw("src/lnk"), b"b.py")
+        self.assertEqual(self.raw("src/crlf"), b"b.py\r\n")
+        self.assertFalse(os.path.lexists(self.repo / "src/gone"))
+        self.assertEqual(self.whole_state(), before)
+
+    def test_heads_link_returns_as_a_link_where_git_makes_links(self):
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        self.git("config", "core.symlinks", "true")
+        self.tracked_link("src/lnk", "a.py")
+        self.tracked_link("src/gone", "../docs")
+        as_git_wrote = os.readlink(self.repo / "src/gone")
+        folder_link = self.is_folder_link("src/gone")
+        self.begin("src")
+        os.unlink(self.repo / "src/lnk")
+        os.symlink("b.py", self.repo / "src/lnk")
+        self.vacate("src/gone")
+        os.symlink("c.py", self.repo / "src/new")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(packet.kind_of(self.repo / "src/lnk"), "link")
+        self.assertEqual(os.readlink(self.repo / "src/lnk"), "a.py")
+        self.assertEqual(os.readlink(self.repo / "src/gone"), as_git_wrote)
+        self.assertEqual(self.is_folder_link("src/gone"), folder_link)
+        self.assertFalse(os.path.lexists(self.repo / "src/new"))
+        self.assertEqual(self.status(), "")
+        self.assertEqual(self.mode_in("stash@{0}", "src/lnk"), "120000")
+        self.assertEqual(self.blob("stash@{0}:src/lnk"), b"b.py")
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assertEqual(os.readlink(self.repo / "src/lnk"), "b.py")
+        self.assertEqual(os.readlink(self.repo / "src/new"), "c.py")
+        self.assertFalse(os.path.lexists(self.repo / "src/gone"))
+
+    def test_a_file_standing_for_a_link_is_staged_as_the_link_git_add_would_record(self):
+        # Where git makes no links, an edit of the file that stands for a link is an edit of the link: git add
+        # keeps mode 120000, and so must the reviewed bytes show --stage puts in the index.
+        self.git("config", "core.symlinks", "false")
+        self.tracked_link("src/lnk", "a.py")
+        self.begin("src")
+        self.put("src/lnk", "b.py")
+        self.put("src/plain", "c.py")  # no link in the index: a plain file, whatever it holds
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        code, out, err = self.cli("show", "--stage", "--snapshot", self.snapshot(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("ls-files", "-s", "src/lnk").split()[0], "120000")
+        self.assertEqual(self.blob(":src/lnk"), b"b.py")
+        self.assertEqual(self.git("ls-files", "-s", "src/plain").split()[0], "100644")
+        self.assertEqual(self.status(), "M  src/lnk\nA  src/plain\n")
+        staged = self.git("ls-files", "-s")
+        self.git("add", "-A")  # git add of the same bytes records nothing else
+        self.assertEqual(self.git("ls-files", "-s"), staged)
+
+    def test_a_file_in_a_links_place_is_a_plain_file_where_git_makes_links(self):
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        self.git("config", "core.symlinks", "true")
+        self.tracked_link("src/lnk", "a.py")
+        self.begin("src")
+        os.unlink(self.repo / "src/lnk")
+        self.put("src/lnk", "b.py")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        code, out, err = self.cli("show", "--stage", "--snapshot", self.snapshot(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("ls-files", "-s", "src/lnk").split()[0], "100644")
+        staged = self.git("ls-files", "-s")
+        self.git("add", "-A")
+        self.assertEqual(self.git("ls-files", "-s"), staged)
 
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
