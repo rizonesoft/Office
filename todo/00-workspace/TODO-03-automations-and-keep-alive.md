@@ -994,6 +994,10 @@ Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The pla
 
 ## 34. Work Packet Acceptance Command
 
+> **Started:** 2026-11-11T00:03:00Z
+
+**Corrected 2026-11-11:** the owner decided on 2026-11-11 that the main session writes every section and every fix round itself (`AGENTS.md`, Subagents); the one worker left is `principal-implementer` (Fable), on call for a review takeover and for architecture decision records, and its work still arrives as a packet accepted or rejected by the paragraph this section replaces (the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md`, and the quality bullet of `AGENTS.md`, Subagents). The command is therefore still needed, for that one worker. Decided here, as the industry-standard behaviour where the section is silent: `begin` also refuses while a packet is open, `show --stage` closes the packet once it has staged it, `reject` with nothing changed closes the packet without a stash, and `show` exits 1 on an empty change (a worker that returned nothing has nothing to accept). Reversing any of these is a small change to `scripts/packet.py` and its tests.
+
 Filed 2026-11-10. Since the owner's decision that workers write (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 27), the main loop accepts or rejects each worker's change by following a paragraph of git commands in `.claude/skills/process-todo-section/SKILL.md` (Delegation, the build step). Four review rounds in a row found a fault in that paragraph (`docs/reviews/orchestration-2026-11-10.md`: new files missing from `git diff`, the main loop's own edits counted as the worker's, a rejection that could delete an edit the owner saved meanwhile, new folders collapsed by `git status`, staged changes hidden). A procedure that is mechanical and has one right answer belongs in a script (`AGENTS.md`, Subagents, tier 1). This section replaces the paragraph with one command that has three verbs, so the main loop reads a complete change and can never destroy anything to reject it.
 
 **Phase:** 0
