@@ -557,6 +557,26 @@ class Packet(unittest.TestCase):
         self.assertEqual(self.read("docs/note.md"), "note\n")  # never followed into the folder it named
         self.assertEqual(self.status(), "")
 
+    def test_a_staged_file_under_a_folder_replaced_by_a_link_never_reaches_through_the_link(self):
+        # Review round 5, finding 1: the child was read and deleted through the link, outside the repository.
+        if not self.can_link():
+            self.skipTest("this account cannot create symbolic links")
+        with tempfile.TemporaryDirectory() as outside:
+            (pathlib.Path(outside) / "file.txt").write_bytes(b"outside the repository\n")
+            self.begin("src")
+            self.put("src/new/file.txt", "outside the repository\n")  # the same bytes, so a follow would match
+            self.git("add", "src/new/file.txt")
+            (self.repo / "src/new/file.txt").unlink()
+            (self.repo / "src/new").rmdir()
+            os.symlink(outside, self.repo / "src/new", target_is_directory=True)
+            code, _, err = self.cli("reject")
+            self.assertEqual(code, 0, err)
+            self.assertEqual((pathlib.Path(outside) / "file.txt").read_bytes(), b"outside the repository\n")
+            self.assertFalse(os.path.lexists(self.repo / "src/new"))
+            self.assert_in_stash("stash@{0}", "src/new/file.txt", "outside the repository\n", "^2")
+            self.assertRegex(self.git("ls-tree", "stash@{0}^3", "src/new"), r"^120000 blob ")
+            self.assertEqual(self.status(), "")
+
     def test_an_empty_folder_in_a_tracked_files_place_settles(self):
         # Review round 3, finding 2: the empty folder blocked the file's return on every retry.
         self.begin("docs")

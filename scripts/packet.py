@@ -156,11 +156,23 @@ def close(repo):
     (repo / STATE).unlink()
 
 
+def under_link(repo, path):
+    """Whether a parent of `path` inside the repository is a symbolic link (a path below it is outside the tree)."""
+    parent = (repo / path).parent
+    while parent != repo:
+        if parent.is_symlink():
+            return True
+        parent = parent.parent
+    return False
+
+
 def read_entry(repo, path):
     """What a path holds in the working tree, as git records it: ("link", its target) for a symbolic link (never
     followed, so a link to a folder or to nothing is kept as a link), ("file", its bytes) for a file, or None when no
     file is there (absent, a real folder holds the name, or a file holds one of its parents' names)."""
     target = repo / path
+    if under_link(repo, path):
+        return None  # git does not look through a linked folder; the link is a path of its own
     try:
         if target.is_symlink():
             return ("link", os.fsencode(os.readlink(target)))
@@ -372,6 +384,8 @@ def remove_empty_folders(folder, repo):
             os.rmdir(here)
     parent = folder.parent if not folder.exists() else None
     while parent is not None and parent != repo:
+        if parent.is_symlink():
+            break  # a linked folder is a path of its own, settled by its own entry, never removed or entered here
         if parent.is_dir():
             if any(parent.iterdir()):
                 break
@@ -382,6 +396,8 @@ def remove_empty_folders(folder, repo):
 def return_path(repo, path, entry):
     """Put `path` back as HEAD has it (or remove it when HEAD has no file there; one already gone is settled)."""
     target = repo / path
+    if under_link(repo, path):
+        return  # below a linked folder: outside the tree, so nothing here is removed or written
     if entry is None:
         if target.is_symlink():
             try:
