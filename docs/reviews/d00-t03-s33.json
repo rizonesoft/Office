@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T03 \u00a733",
+  "title": "Plan Groups a Phase by Domain",
+  "implementation_sha": "0eba903ac6915a0591905e72ee06d9b54040b5d0",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s33.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_todo_graph.py\" -> Ran 81 tests, OK",
+    "bosun run -- python scripts/run-tests.py -> Ran 1301 tests in 33 files in 551.7 s (4 at a time), 2 skipped, OK",
+    "python scripts/todo-graph.py plan --check -> plan current"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s33.md",
+    "verdict": "complete",
+    "candidate": "0eba903ac6915a0591905e72ee06d9b54040b5d0",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s33.md",
+    "candidate": "c55512c8a5b13e77104b23b8d99627a3fd208d12",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "c55512c8a5b13e77104b23b8d99627a3fd208d12",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

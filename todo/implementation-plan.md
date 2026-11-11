@@ -48,7 +48,7 @@ Sections: 56 | Checklist items: 391
 | [x]    | D00 T03 §29 | Review Prompt Empty-Input Refusals              | none                   | 6     |
 | [x]    | D00 T03 §31 | Plan Lists Files Still to Author                | none                   | 10    |
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                  | none                   | 6     |
-| [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
+| [x]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
 | [x]    | D00 T03 §35 | Weekly Owner Digest                             | none                   | 12    |
 | [x]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
@@ -382,6 +382,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 67/157 verified sections, 25 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 68/157 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 449/1033 items completed (includes Commit items).
+Checklist: 450/1033 items completed (includes Commit items).

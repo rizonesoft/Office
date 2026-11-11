@@ -67,7 +67,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 29 | §29 | Review prompt empty-input refusals | §27 | [x] |
 | 30 | §31 | Plan lists files still to author | -- | [x] |
 | 31 | §32 | Validate checks plan row width | -- | [x] |
-| 32 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
+| 32 | §33 | Plan groups a phase by domain | §31, §32 | [x] |
 | 33 | §35 | Weekly owner digest | §1 | [x] |
 | 34 | §36 | Operating mode measurement command | -- | [x] |
 | 35 | §37 | Operating mode rule and launcher | §36 | [ ] |
@@ -964,9 +964,12 @@ Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The pla
 - [x] Add the names of the domains that exist today to `todo/plan.json` (`00-workspace` to `03-architecture`), and state in the authoring contract paragraph of D03 T01 §17 that each authoring section adds its domain's name to `todo/plan.json`. Done when: `python scripts/todo-graph.py plan --sync` renders the names and the §17 paragraph names the file and the key.
 - [x] Document the grouping and the `domains` key in `todo/README.md` beside the `todo/plan.json` description. Done when: the README names the key, the heading form and the single-domain rule.
 - [x] Run `python scripts/todo-graph.py plan --sync` and commit the regenerated `todo/implementation-plan.md`. Done when: `python scripts/todo-graph.py plan --check` exits 0.
-- [ ] Commit: `todo: group each phase of the plan by domain`
+- [x] Commit: `todo: group each phase of the plan by domain`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0.
+
+> **Verified:** 2026-11-12 | §33 | 0eba903ac6915a0591905e72ee06d9b54040b5d0
+> **Review:** `docs/reviews/d00-t03-s33.json`
 
 ## 35. Weekly Owner Digest
 
