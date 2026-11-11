@@ -1,0 +1,56 @@
+{
+  "ref": "D00 T03 \u00a735",
+  "title": "Weekly Owner Digest",
+  "implementation_sha": "b1f45263b1f9f448811af0487ec4c7a23b30e922",
+  "date": "2026-11-11",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 2,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 3,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 4,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 5,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 6,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 7,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "fixed"
+    },
+    {
+      "round": 8,
+      "report": "docs/reviews/00-workspace/D00-T03-s35.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_owner_digest.py\" -> Ran 31 tests, OK",
+    "python scripts/owner-digest.py --dry-run -> prints the digest for this repository, exit 0"
+  ],
+  "rounds_spent": 8,
+  "round_cap": 33,
+  "completion": "docs/reviews/00-workspace/D00-T03-s35-completion.md",
+  "completion_rules": 2
+}

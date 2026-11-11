@@ -51,7 +51,7 @@ Sections: 72 | Checklist items: 479
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                      | none                   | 6     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                       | none                   | 9     |
 | [-]    | D00 T03 §34 | Work Packet Acceptance Command                      | none                   | 11    |
-| [ ]    | D00 T03 §35 | Weekly Owner Digest                                 | none                   | 12    |
+| [x]    | D00 T03 §35 | Weekly Owner Digest                                 | none                   | 12    |
 | [ ]    | D00 T03 §36 | Operating Mode Measurement Command                  | none                   | 11    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                    | none                   | 9     |
 | [ ]    | D00 T03 §40 | Review Schedule in the Pin                          | none                   | 6     |
@@ -319,6 +319,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 65/165 verified sections, 8 withdrawn, 25 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 66/165 verified sections, 8 withdrawn, 28 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 436/1121 items completed (includes Commit items).
+Checklist: 437/1121 items completed (includes Commit items).

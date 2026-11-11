@@ -71,7 +71,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 32 | §32 | Validate checks plan row width | -- | [x] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 | 34 | §34 | Work packet acceptance command | -- | [-] |
-| 35 | §35 | Weekly owner digest | §1 | [ ] |
+| 35 | §35 | Weekly owner digest | §1 | [x] |
 | 36 | §36 | Operating mode measurement command | -- | [ ] |
 | 37 | §37 | Operating mode rule and launcher | §36 | [ ] |
 | 38 | §38 | Parallel streams design record | §37 | [ ] |
@@ -1062,9 +1062,12 @@ Owner decision 2026-11-10 (`docs/specs/2026-10-23-campaign-scope-design.md`, dec
 - [x] Send the digest through the transport of `.conclave/automations/alert.py` (the same sender and recipient), with the attachment when there is one, and `--dry-run` printing it and sending nothing. Done when: a test with a replaced opener shows one request with the digest as its body (and the attachment when the list overflows), and `--dry-run` makes none.
 - [x] Add the task `office-owner-digest` to `.conclave/automations/tasks.json` (weekly, Monday 07:00, timeout 5 minutes) and to `.conclave/automations/README.md`. Done when: `python scripts/tests/test_automations.py` passes, which fails when the README and `tasks.json` disagree.
 - [x] Register the task on this PC with `pwsh .conclave/automations/install.ps1`. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists `office-owner-digest`.
-- [ ] Commit: `automations: send the owner one weekly digest`
+- [x] Commit: `automations: send the owner one weekly digest`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes, and `python scripts/owner-digest.py --dry-run` prints a digest for this repository and exits 0.
+
+> **Verified:** 2026-11-11 | §35 | b1f45263b1f9f448811af0487ec4c7a23b30e922
+> **Review:** `docs/reviews/d00-t03-s35.json`
 
 ## 36. Operating Mode Measurement Command
 
