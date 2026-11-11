@@ -1789,7 +1789,10 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
 def unstamp(root, ref, reason, when):
     """Flip a stamped section back to open when an audit finds it regressed: remove its Verified and Review lines,
     untick its Commit item and row, reopen its file, and keep the receipt as evidence under a revoked name, with a dated
-    Unstamped note in the section saying why. Re-stamping later writes a fresh receipt."""
+    Unstamped note in the section saying why. The section's own findings file is kept under a revoked name too, and a
+    `Started:` line it still carries becomes a `Duration:` note: the reopened section takes a fresh review cycle (a new
+    `Started:` line, plan review, round and completion review), which the dispatcher refuses while the old cycle's
+    records sit in the findings file. Re-stamping later writes a fresh receipt."""
     root = Path(root)
     rows = graph(root)
     require(ref in rows, "unresolved section: " + ref)
@@ -1807,9 +1810,20 @@ def unstamp(root, ref, reason, when):
         revoked_path = receipt_path.with_name(f"{receipt_path.stem}.revoked-{date}-{n}.json")
         n += 1
     revoked = revoked_path.relative_to(root).as_posix()
+    findings_path = root / section_findings(root, ref)
+    kept_path = None
+    if findings_path.is_file():
+        kept_path = findings_path.with_name(f"{findings_path.stem}.revoked-{date}.md")
+        n = 2
+        while kept_path.exists():
+            kept_path = findings_path.with_name(f"{findings_path.stem}.revoked-{date}-{n}.md")
+            n += 1
     body = stamp_lines.sub("", row.body)
     body = re.sub(r"^- \[x\] (Commit:.+)$", r"- [ ] \1", body, flags=re.M)
-    body += f"\n\n> **Unstamped:** {when}: {reason.strip()} (revoked receipt `{revoked}`)"
+    body = re.sub(r"^> \*\*Started:\*\* (.+)$", lambda m: f"> **Duration:** started {m[1]}, reopened {when}", body,
+                  flags=re.M)
+    kept = f"; review record kept as `{kept_path.relative_to(root).as_posix()}`" if kept_path else ""
+    body += f"\n\n> **Unstamped:** {when}: {reason.strip()} (revoked receipt `{revoked}`{kept})"
     path = root / row.path
     original_bytes = path.read_bytes()
     text = read_text(path)
@@ -1826,11 +1840,15 @@ def unstamp(root, ref, reason, when):
         atomic(revoked_path, receipt_bytes)
         atomic(path, text)
         receipt_path.unlink()
+        if kept_path is not None:
+            os.replace(findings_path, kept_path)
         graph(root)
         if original_plan_bytes is not None:
             projections(root, sync=True)
     except BaseException:  # an interrupt between writes must roll back as an error does
         try:
+            if kept_path is not None and kept_path.is_file() and not findings_path.exists():
+                os.replace(kept_path, findings_path)
             if not receipt_path.is_file():
                 atomic(receipt_path, receipt_bytes)
             revoked_path.unlink(missing_ok=True)

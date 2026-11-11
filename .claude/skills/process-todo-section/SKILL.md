@@ -123,7 +123,7 @@ Failure and recovery, so an unattended campaign neither stops nor loops:
 - No review (exit 1: the reviewer is missing, failed, timed out or blocked, or the reply lacks a required line): run the pass once more. A second failure parks the section with the reason in the run file, the campaign takes its next ready row, and this section is retried once at the next phase start; a failure there parks it for the owner.
 - Exit 2 (an argument or the pin was refused, the pass is out of order, or `--record` refused the file): nothing was appended. Fix what the message names. A findings file the dispatcher cannot read names its first unreadable line: a writer's own note must not sit under a heading that starts `## Round`, `## Plan review`, `## Completion review` or `## Reconciliation review`.
 - A session that dies resumes from the findings file: a returned plan review is never dispatched again.
-- A section reopened by `unstamp` keeps the plan review it has; its repair is a new section filed through `add-todo`, with its own plan review.
+- A section reopened by `unstamp` starts a fresh cycle: `unstamp` kept its old findings file under a revoked name, so write a new `Started:` line, commit, and run a new plan review into the section's findings file as above.
 
 ### 4. Build the corrected contract
 

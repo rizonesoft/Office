@@ -1030,6 +1030,21 @@ class Stamp(Tree):
         self.assertIn("> **Unstamped:** 2026-10-21T00:00:00Z: checkpoint fails", text)
         self.assertIn("- [ ] Commit:", text)
         tg.projections(self.root)  # the plan was synced
+        # The old cycle's records are kept under a revoked name and the findings file is free for a fresh cycle:
+        # with them still in it the dispatcher refuses a new plan review, so the section could never re-stamp.
+        kept = self.root / "docs/reviews/00-workspace/D00-T01-s1.revoked-2026-10-21.md"
+        self.assertEqual(kept.read_bytes(), before[str(pathlib.Path(self.PLAN))])
+        self.assertFalse((self.root / self.PLAN).exists())
+        self.assertIn("review record kept as `docs/reviews/00-workspace/D00-T01-s1.revoked-2026-10-21.md`", text)
+        self.assertNotIn("> **Started:**", text)
+        self.assertIn("> **Duration:** started 2026-10-23T00:00Z, reopened 2026-10-21T00:00:00Z", text)
+        todo = self.root / self.TODO_A
+        todo.write_text(text.replace("> **Duration:** started", "> **Started:** 2026-10-22T00:00Z\n\n> **Duration:** started",
+                                     1), encoding="utf-8")
+        (self.root / self.PLAN).write_text("# Review findings\n\n" + envelope(1), encoding="utf-8")
+        self.start = self.sha = self.commit("reopened")
+        self.write_completion()
+        self.write_plan()
         self.stamp("D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-22", sync_plan=True)
         self.assertTrue(tg.graph(self.root)["D00 T01 §1"].done)
 
