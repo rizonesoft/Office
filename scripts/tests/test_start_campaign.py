@@ -378,6 +378,47 @@ class LauncherRunTest(unittest.TestCase):
         self.assertNotIn(token, output)
         self.assertIn(".secrets/office.env", output)
 
+    def dry_run(self):
+        done = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+                               "-DryRun"], capture_output=True, text=True, timeout=120, env=self.env,
+                              stdin=subprocess.DEVNULL)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        return done.stdout
+
+    def verdict(self, text):
+        (self.root / ".conclave").mkdir(exist_ok=True)
+        (self.root / ".conclave" / "operating-mode.json").write_text(text, encoding="utf-8")
+
+    def test_each_arm_of_the_stored_verdict_reaches_the_command_line(self):
+        # D00 T03 §37: the measurement's verdict names the lead model; the launcher starts whatever it says.
+        for model in ("opus", "fable"):
+            with self.subTest(model):
+                self.verdict(json.dumps({"arm": f"{model}-alone", "model": model}))
+                out = self.dry_run()
+                self.assertIn(f"Lead model: {model}, from .conclave/operating-mode.json", out)
+                self.assertIn(f"claude --model {model} --dangerously-skip-permissions", out)
+
+    def test_a_missing_or_unreadable_verdict_falls_back_to_opus(self):
+        cases = {"missing": None, "not json": "{", "no model": "{}", "not an alias": '{"model": "opus; rm -rf x"}',
+                 "not text": '{"model": 5}'}
+        for name, text in cases.items():
+            with self.subTest(name):
+                path = self.root / ".conclave" / "operating-mode.json"
+                if text is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    self.verdict(text)
+                out = self.dry_run()
+                self.assertIn("Lead model: opus, from the fallback", out)
+                self.assertIn("claude --model opus --dangerously-skip-permissions", out)
+
+    def test_a_real_start_passes_the_stored_model(self):
+        self.verdict(json.dumps({"arm": "fable-alone", "model": "fable"}))
+        self.launch()
+        self.wait_for(self.root / "claude-calls.txt")
+        self.request_stop()
+        self.assertTrue(self.calls()[0].startswith("--model fable "), self.calls())
+
     def test_a_dry_run_runs_no_importer_and_leaves_a_stop_request(self):
         self.request_stop()
         done = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),

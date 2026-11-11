@@ -42,6 +42,9 @@ TODO_GRAPH = textwrap.dedent('''
         if found.get("exit", 0):
             sys.exit(found["exit"])
         print(json.dumps({"skill_arg": sys.argv[2], "title": found["title"], "path": "todo/x.md", "body": found["body"]}))
+    elif sys.argv[1:3] == ["query", "stats"]:
+        verified = control / "verified.txt"
+        print(json.dumps({"total": 999, "verified": int(verified.read_text()) if verified.exists() else 10}))
     else:
         print("valid: 1 sections" if sys.argv[1] == "validate" else "plan current")
 ''')
@@ -558,6 +561,213 @@ class Clean(Fixture):
         measure.atomic_json(self.work / "results.json", doc)
         self.assertEqual(measure.main(["clean", "--work", str(self.work)]), 2)
         self.assertTrue(self.repo.exists())
+
+
+def stage(cost, highest="none", reviewed=True, dirty=False, wall=100.0, model="claude-opus-5-5"):
+    """One §36 results stage with its session, gates and review."""
+    gates = {name: {"exit": 0, "tail": []} for name in ("validate", "plan-check", "tests")}
+    gates["clean-tree"] = {"exit": 1 if dirty else 0, "tail": []}
+    review = {"reviewed": True, "highest": highest, "p1": 0, "p2": 0, "p3": 0} if reviewed else \
+        {"reviewed": False, "reason": "no reviewer"}
+    return {"kind": "build", "session": {"exit": 0, "cost_usd": cost, "wall_seconds": wall,
+                                         "models": {model: {"costUSD": cost}}},
+            "candidate": "c" * 40, "gates": gates, "review": review}
+
+
+def results(arms, sections=("D00 T01 §1", "D00 T01 §2", "D00 T01 §3"), base="b" * 40):
+    """A §36 results document. `arms` maps an arm to a function of the section giving (stages, end)."""
+    runs, n = {}, 0
+    for arm, make in arms.items():
+        for ref in sections:
+            n += 1
+            stages, end = make(ref)
+            runs[f"run-{n}"] = {"section": ref, "arm": arm, "clone": f"run-{n}", "stages": stages, "end": end}
+    return {"schema": 1, "identity": {"base": base}, "runs": runs}
+
+
+def approved(*costs, **kw):
+    """Stages costing `costs`, all but the last reviewed P1, the last approving."""
+    stages = [stage(c, highest="P1", **kw) for c in costs[:-1]] + [stage(costs[-1], **kw)]
+    return lambda ref: (stages, "approved")
+
+
+class Decide(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(measure.remove_tree, self.tmp)
+        self.verdict = self.tmp / "operating-mode.json"
+        self.records = self.tmp / "reviews"
+        patcher = mock.patch.object(measure, "verified_count", return_value=68)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def decide(self, doc):
+        path = self.tmp / f"results-{time.time_ns()}.json"
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        code = measure.main(["decide", "--results", str(path), "--verdict", str(self.verdict), "--records",
+                             str(self.records), "--root", str(self.tmp)])
+        return code, (json.loads(self.verdict.read_text()) if self.verdict.exists() else None)
+
+    def test_cheap_to_build_and_dear_to_fix_loses_to_the_reverse(self):
+        code, verdict = self.decide(results({"opus-alone": approved(1.0, 1.5, 1.5), "fable-alone": approved(3.0)}))
+        self.assertEqual(code, 0)
+        self.assertEqual((verdict["arm"], verdict["model"]), ("fable-alone", "fable"))
+        self.assertEqual(verdict["branch"], "the lowest cost to an approved review")
+        self.assertEqual(verdict["totals"]["opus-alone"]["cost_usd"], 12.0)
+        self.assertEqual(verdict["totals"]["fable-alone"]["cost_usd"], 9.0)
+
+    def test_an_arm_that_never_reaches_approval_is_ineligible(self):
+        never = lambda ref: ([stage(0.5, highest="P1")], "fix-rounds-exhausted" if ref.endswith("3") else "approved")
+        code, verdict = self.decide(results({"opus-alone": never, "fable-alone": approved(3.0)}))
+        self.assertEqual((code, verdict["arm"], verdict["branch"]), (0, "fable-alone", "the only eligible arm"))
+        self.assertFalse(verdict["totals"]["opus-alone"]["eligible"])
+
+    def test_a_dirty_tree_or_no_review_makes_an_arm_ineligible_whatever_its_end_says(self):
+        for name, broken in (("dirty", stage(0.5, dirty=True)), ("unreviewed", stage(0.5, reviewed=False))):
+            with self.subTest(name):
+                cheap = lambda ref, b=broken: ([b], "approved")  # a record claiming approval it did not earn
+                code, verdict = self.decide(results({"opus-alone": cheap, "fable-alone": approved(3.0)}))
+                self.assertEqual((code, verdict["arm"]), (0, "fable-alone"))
+                self.assertFalse(verdict["totals"]["opus-alone"]["eligible"])
+
+    def test_a_cost_tie_goes_to_fewer_reviews_then_to_the_shorter_wall_time(self):
+        code, verdict = self.decide(results({"opus-alone": approved(1.0, 1.0), "fable-alone": approved(2.0)}))
+        self.assertEqual((verdict["arm"], verdict["branch"]), ("fable-alone", "a tie on cost, broken by fewer reviews"))
+        code, verdict = self.decide(results({"opus-alone": approved(2.0, wall=50.0),
+                                             "fable-alone": approved(2.0, wall=80.0)}))
+        self.assertEqual((verdict["arm"], verdict["branch"]),
+                         ("opus-alone", "a tie on cost and reviews, broken by the shorter wall time"))
+
+    def test_refusals_leave_the_stored_verdict_as_it_was(self):
+        self.assertEqual(self.decide(results({"opus-alone": approved(1.0), "fable-alone": approved(2.0)}))[0], 0)
+        before = self.verdict.read_bytes()
+        two = ("D00 T01 §1", "D00 T01 §2")
+        missing_cost = lambda ref: ([stage(None)], "approved")
+        no_review_key = lambda ref: ([{k: v for k, v in stage(1.0).items() if k != "review"}], "approved")
+        open_run = lambda ref: ([stage(1.0)], None)
+        cases = {
+            "fewer than three sections": results({"opus-alone": approved(1.0), "fable-alone": approved(2.0)}, two),
+            "no eligible arm": results({"opus-alone": lambda r: ([stage(1, "P1")], "fix-rounds-exhausted"),
+                                        "fable-alone": lambda r: ([stage(1, "P2")], "fix-rounds-exhausted")}),
+            "missing cost": results({"opus-alone": missing_cost, "fable-alone": approved(2.0)}),
+            "missing review": results({"opus-alone": no_review_key, "fable-alone": approved(2.0)}),
+            "unfinished run": results({"opus-alone": open_run, "fable-alone": approved(2.0)}),
+        }
+        different = results({"opus-alone": approved(1.0)})
+        other = results({"fable-alone": approved(2.0)}, ("D00 T01 §1", "D00 T01 §2", "D00 T01 §9"))
+        different["runs"].update({f"run-{n + 10}": run for n, run in enumerate(other["runs"].values())})
+        cases["different sections"] = different
+        twice = results({"opus-alone": approved(1.0), "fable-alone": approved(2.0)},
+                        ("D00 T01 §1", "D00 T01 §1", "D00 T01 §2", "D00 T01 §3"))
+        cases["a section twice"] = twice
+        for name, doc in cases.items():
+            with self.subTest(name):
+                self.assertEqual(self.decide(doc)[0], 2)
+                self.assertEqual(self.verdict.read_bytes(), before)
+
+    def test_the_verdict_and_the_record_match_the_input(self):
+        never = lambda ref: ([stage(0.25, highest="P2")], "fix-rounds-exhausted")
+        doc = results({"opus-alone": approved(1.0, 0.5), "fable-alone": approved(2.0), "orchestrated": never})
+        code, verdict = self.decide(doc)
+        self.assertEqual(code, 0)
+        self.assertEqual({k: verdict[k] for k in ("arm", "model", "resolved_model", "base", "verified_at_decision")},
+                         {"arm": "opus-alone", "model": "opus", "resolved_model": "claude-opus-5-5",
+                          "base": "b" * 40, "verified_at_decision": 68})
+        record = (self.tmp / verdict["record"]).read_text(encoding="utf-8")
+        rows = [line for line in record.splitlines() if line.startswith("| run-")]
+        self.assertEqual(len(rows), len(doc["runs"]))
+        for name, run in doc["runs"].items():
+            cost = sum(s["session"]["cost_usd"] for s in run["stages"])
+            line = next(r for r in rows if r.startswith(f"| {name} |"))
+            self.assertIn(f"| {run['section']} | {run['arm']} | ${cost:.2f} |", line)
+            self.assertTrue(line.endswith(f"| {run['end']} |"))
+        self.assertIn("| opus-alone | $4.50 | 6 |", record)
+        self.assertIn("| orchestrated | $0.75 | 3 | 300 | no |", record)
+        self.assertIn("opus-alone, by the lowest cost to an approved review.", record)
+        checker = subprocess.run([sys.executable, str(SCRIPTS / "check-design-doc.py"), str(self.tmp / verdict["record"]),
+                                  "--require", "Runs", "--require", "Totals", "--require", "Verdict"],
+                                 capture_output=True, text=True)
+        self.assertEqual(checker.returncode, 0, checker.stdout + checker.stderr)
+
+    def test_the_2026_11_10_layout_gives_its_recorded_verdict(self):
+        source = SCRIPTS.parent / "docs" / "experiments" / "operating-mode-2026-11-10.json"
+        code, verdict = self.decide(json.loads(source.read_text(encoding="utf-8")))
+        self.assertEqual((code, verdict["arm"], verdict["resolved_model"]), (0, "opus-alone", "claude-opus-5-5"))
+        self.assertEqual(round(verdict["totals"]["opus-alone"]["cost_usd"], 2), 6.76)
+        self.assertEqual(round(verdict["totals"]["fable-alone"]["cost_usd"], 2), 8.69)
+        self.assertFalse(verdict["totals"]["orchestrated"]["eligible"])
+
+    def test_a_dirty_tree_in_the_2026_11_10_layout_is_not_approval(self):
+        source = SCRIPTS.parent / "docs" / "experiments" / "operating-mode-2026-11-10.json"
+        doc = json.loads(source.read_text(encoding="utf-8"))
+        for run in doc["runs"].values():
+            if run["arm"] == "opus-alone":
+                run["uncommitted"] = 1
+        code, verdict = self.decide(doc)
+        self.assertEqual((code, verdict["arm"]), (0, "fable-alone"))
+
+
+class Due(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(measure.remove_tree, self.tmp)
+        self.verdict = self.tmp / "operating-mode.json"
+        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "resolved_model": "claude-opus-5-5"})
+
+    def due(self, now, model="claude-opus-5-5"):
+        with mock.patch.object(measure, "verified_count", return_value=now):
+            return measure.main(["due", "--model", model, "--verdict", str(self.verdict)])
+
+    def test_299_stamps_are_not_due_and_300_are(self):
+        self.assertEqual(self.due(399), 1)
+        self.assertEqual(self.due(400), 0)
+
+    def test_a_different_model_is_due(self):
+        self.assertEqual(self.due(150), 1)
+        self.assertEqual(self.due(150, model="claude-opus-6-0"), 0)
+
+    def test_an_unreadable_verdict_or_count_cannot_tell(self):
+        self.verdict.write_text("{", encoding="utf-8")
+        self.assertEqual(self.due(100), 2)
+        measure.atomic_json(self.verdict, {"verified_at_decision": 100, "resolved_model": "m"})
+        with mock.patch.object(measure, "verified_count", side_effect=measure.Refused("no stats")):
+            self.assertEqual(measure.main(["due", "--model", "m", "--verdict", str(self.verdict)]), 2)
+
+
+class Cycles(Fixture):
+    """The measurement cycle process-plan runs when one is due: run, decide, clean, twice, then a refused decide."""
+
+    def cycle(self, name):
+        work = self.tmp / name
+        for counter in self.control.glob("*-count-*"):
+            counter.unlink()
+        argv = ["run", "--work", str(work), "--repo", str(self.repo), "--base", self.base, "--fix-rounds", "1"]
+        for ref in ("D00 T01 §1", "D00 T01 §2", "D00 T01 §4"):
+            argv += ["--section", ref]
+        self.assertEqual(measure.main(argv), 0)
+        code = measure.main(["decide", "--results", str(work / "results.json"), "--verdict", str(self.verdict),
+                             "--records", str(self.tmp / "records"), "--root", str(self.repo)])
+        self.assertEqual(measure.main(["clean", "--work", str(work)]), 0)
+        self.assertFalse(any(work.glob("run-*")))
+        return code
+
+    def test_two_cycles_replace_the_verdict_and_a_refused_third_keeps_it(self):
+        self.verdict = self.tmp / "operating-mode.json"
+        sections = json.loads((self.repo / "sections.json").read_text(encoding="utf-8"))
+        sections["D00 T01 §4"] = {"title": "Four", "body": "BODY FOUR"}
+        self.sections(sections)
+        self.git("commit", "-q", "-am", "four")
+        self.base = self.git("rev-parse", "HEAD")
+        self.claude_plan({"opus": [{"cost": 2.0}], "fable": [{"cost": 1.0}]})
+        self.assertEqual(self.cycle("measure-modes-1"), 0)
+        self.assertEqual(json.loads(self.verdict.read_text())["arm"], "fable-alone")
+        self.claude_plan({"opus": [{"cost": 0.5}], "fable": [{"cost": 1.0}]})
+        self.assertEqual(self.cycle("measure-modes-2"), 0)
+        second = self.verdict.read_bytes()
+        self.assertEqual(json.loads(second)["arm"], "opus-alone")
+        self.reviews({"default": ["P1"]})
+        self.assertEqual(self.cycle("measure-modes-3"), 2)  # no arm reaches approval
+        self.assertEqual(self.verdict.read_bytes(), second)
 
 
 class Help(unittest.TestCase):

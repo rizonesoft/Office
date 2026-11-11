@@ -567,6 +567,202 @@ class Measurement:
         return 1 if failed else 0
 
 
+# The rule (D00 T03 §37; owner decisions 30 and 36): the cost to reach an approved review decides.
+
+VERDICT = ROOT / ".conclave" / "operating-mode.json"
+RECORDS = ROOT / "docs" / "reviews"
+MIN_SECTIONS = 3
+REMEASURE_STAMPS = 300
+
+
+def _approved_old(stage):
+    """A 2026-11-10 stage (the build or a fix round): reviewed with no P1 or P2, every gate 0."""
+    review = stage.get("review") or {}
+    gates = stage.get("gates") or {}
+    exits = [g["exit"] if isinstance(g, dict) else g for g in gates.values()]
+    return review.get("exit") == 0 and review.get("highest") in APPROVING and bool(exits) \
+        and all(code == 0 for code in exits)
+
+
+def _models(sessions):
+    """Cost per full model name over the sessions' `modelUsage`, subagents included."""
+    costs = {}
+    for usage in sessions:
+        for model, figures in (usage or {}).items():
+            costs[model] = costs.get(model, 0.0) + float((figures or {}).get("costUSD") or 0)
+    return costs
+
+
+def normalise(doc):
+    """One row per run, from either results layout: §36's (`stages`) or the 2026-11-10 measurement's (a run's build
+    and its `fix_rounds`). Refused when a run is unfinished or its cost or review evidence is missing."""
+    rows = []
+    for name, run in (doc.get("runs") or {}).items():
+        if "stages" in run:
+            stages = run["stages"]
+            if run.get("end") is None or not stages:
+                raise Refused(f"{name} has not ended; finish the measurement before deciding")
+            sessions = [s.get("session") or {} for s in stages]
+            if any(s.get("cost_usd") is None for s in sessions) or any("review" not in s for s in stages):
+                raise Refused(f"{name} lacks the cost or the review of a stage")
+            last = stages[-1]
+            # Approval is re-read from the last stage, not trusted from `end`: a reviewed candidate with no P1 or P2
+            # and every gate passing, clean-tree included (the same test as Measurement.approved).
+            earned = run["end"] == "approved" and bool(last.get("gates")) and Measurement.gates_pass(last) \
+                and last["review"].get("reviewed") is True and last["review"].get("highest") in APPROVING
+            rows.append({"run": name, "arm": run["arm"], "section": run["section"],
+                         "end": "approved" if earned else (run["end"] if run["end"] != "approved" else "not-earned"),
+                         "cost": sum(s["cost_usd"] for s in sessions),
+                         "reviews": sum(1 for s in stages if s["review"].get("reviewed")),
+                         "wall": sum(s.get("wall_seconds") or 0 for s in sessions),
+                         "models": _models({m: {"costUSD": f.get("costUSD")} for m, f in (s.get("models") or {}).items()}
+                                           for s in sessions)})
+        else:  # the 2026-11-10 layout
+            stages = [run, *run.get("fix_rounds", [])]
+            if any(s.get("total_cost_usd") is None for s in stages) or any(not s.get("review") for s in stages):
+                raise Refused(f"{name} lacks the cost or the review of a stage")
+            clean = (run.get("uncommitted") or 0) == 0
+            rows.append({"run": name, "arm": run["arm"], "section": run["section"],
+                         "end": "approved" if clean and _approved_old(stages[-1]) else "not-approved",
+                         "cost": sum(s["total_cost_usd"] for s in stages),
+                         "reviews": sum(1 for s in stages if s["review"].get("exit") == 0),
+                         "wall": sum(s.get("wall_seconds") or 0 for s in stages),
+                         "models": _models(s.get("modelUsage") for s in stages)})
+    if not rows:
+        raise Refused("the results file holds no runs")
+    return rows
+
+
+def judge(rows):
+    """The verdict of the rule over normalised rows: (winner arm, branch, totals per arm). Refused when the arms do
+    not hold the same distinct sections, an arm has fewer than three, or no arm is eligible."""
+    arms = {}
+    for row in rows:
+        arms.setdefault(row["arm"], []).append(row)
+    sections = {arm: [r["section"] for r in runs] for arm, runs in arms.items()}
+    for arm, names in sections.items():
+        if len(set(names)) != len(names):
+            raise Refused(f"arm {arm} measured a section twice")
+        if len(names) < MIN_SECTIONS:
+            raise Refused(f"arm {arm} measured {len(names)} section(s); the rule needs at least {MIN_SECTIONS}")
+    if len({frozenset(names) for names in sections.values()}) != 1:
+        raise Refused("the arms did not measure the same sections, so their totals do not compare")
+    totals = {arm: {"cost_usd": round(sum(r["cost"] for r in runs), 6), "reviews": sum(r["reviews"] for r in runs),
+                    "wall_seconds": round(sum(r["wall"] for r in runs), 1),
+                    "eligible": all(r["end"] == "approved" for r in runs)} for arm, runs in arms.items()}
+    eligible = sorted((arm for arm, t in totals.items() if t["eligible"]),
+                      key=lambda a: (totals[a]["cost_usd"], totals[a]["reviews"], totals[a]["wall_seconds"], a))
+    if not eligible:
+        raise Refused("no arm reached an approved review on every section")
+    winner = eligible[0]
+    if len(eligible) == 1:
+        branch = "the only eligible arm"
+    else:
+        first, second = totals[eligible[0]], totals[eligible[1]]
+        if first["cost_usd"] < second["cost_usd"]:
+            branch = "the lowest cost to an approved review"
+        elif first["reviews"] < second["reviews"]:
+            branch = "a tie on cost, broken by fewer reviews"
+        elif first["wall_seconds"] < second["wall_seconds"]:
+            branch = "a tie on cost and reviews, broken by the shorter wall time"
+        else:
+            branch = "a tie on cost, reviews and wall time, broken by the arm's name"
+    return winner, branch, totals
+
+
+def verified_count(root=ROOT):
+    """`query stats`' verified count; Refused when it cannot be read."""
+    result = subprocess.run([sys.executable, str(Path(root) / "scripts" / "todo-graph.py"), "query", "stats"],
+                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GIT_SECONDS,
+                            env={**os.environ, "PYTHONUTF8": "1"})
+    try:
+        return int(json.loads(result.stdout)["verified"])
+    except (ValueError, KeyError, TypeError):
+        raise Refused(f"query stats could not be read (exit {result.returncode})") from None
+
+
+def record_text(when, source, rows, winner, branch, totals, model):
+    lines = [f"# Operating mode measurement, {when}", "",
+             f"Decided by `python scripts/measure-modes.py decide` from `{source}` under the rule of D00 T03 §37: the "
+             "lowest cost to an approved review among the arms that reached one on every section.", "",
+             "## Runs", "", "| Run | Section | Arm | Cost | Reviews | Seconds | End |",
+             "| --- | ------- | --- | ---- | ------- | ------- | --- |"]
+    for row in sorted(rows, key=lambda r: (r["section"], r["arm"])):
+        lines.append(f"| {row['run']} | {row['section']} | {row['arm']} | ${row['cost']:.2f} | {row['reviews']} | "
+                     f"{round(row['wall'])} | {row['end']} |")
+    lines += ["", "## Totals", "", "| Arm | Cost | Reviews | Seconds | Eligible |", "| --- | ---- | ------- | ------- | -------- |"]
+    for arm in sorted(totals):
+        t = totals[arm]
+        lines.append(f"| {arm} | ${t['cost_usd']:.2f} | {t['reviews']} | {round(t['wall_seconds'])} | "
+                     f"{'yes' if t['eligible'] else 'no'} |")
+    lines += ["", "## Verdict", "", f"{winner}, by {branch}. The launcher starts the lead on `{model}`.", ""]
+    return "\n".join(lines)
+
+
+def cmd_decide(args, arms):
+    source = Path(args.results)
+    try:
+        doc = json.loads(source.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise Refused(f"{source} cannot be read ({exc})") from None
+    rows = normalise(doc)
+    winner, branch, totals = judge(rows)
+    table = {arm.name: arm for arm in arms}
+    if winner not in table:
+        raise Refused(f"the winner, {winner}, is not in the arm table, so there is no model to start")
+    models = {}
+    for row in rows:
+        if row["arm"] == winner:
+            for model, cost in row["models"].items():
+                models[model] = models.get(model, 0.0) + cost
+    when = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    records = Path(args.records)
+    root = Path(args.root).resolve()
+
+    def shown(path):
+        """A path as the verdict stores it: relative to the repository when inside it, so no machine path is kept."""
+        path = Path(path).resolve()
+        return path.relative_to(root).as_posix() if path.is_relative_to(root) else path.as_posix()
+
+    record = records / f"operating-mode-{when}.md"
+    n = 2
+    while record.exists():
+        record = records / f"operating-mode-{when}-{n}.md"
+        n += 1
+    verdict = {"schema": SCHEMA, "arm": winner, "model": table[winner].model,
+               "resolved_model": max(models, key=models.get) if models else None, "date": when,
+               "base": (doc.get("identity") or {}).get("base") or doc.get("base"), "branch": branch,
+               "totals": totals, "verified_at_decision": verified_count(args.root),
+               "results": shown(source), "record": shown(record)}
+    records.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=record.name + ".", suffix=".tmp", dir=records)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(record_text(when, shown(source), rows, winner, branch, totals, table[winner].model))
+    os.replace(tmp, record)
+    Path(args.verdict).parent.mkdir(parents=True, exist_ok=True)
+    atomic_json(args.verdict, verdict)
+    print(f"verdict: {winner} ({table[winner].model}), by {branch}; record {record}")
+    return 0
+
+
+def cmd_due(args):
+    """Exit 0 with the reason when a measurement is due, 1 when not, 2 (Refused) when it cannot be told."""
+    try:
+        verdict = json.loads(Path(args.verdict).read_text(encoding="utf-8"))
+        then, recorded = int(verdict["verified_at_decision"]), verdict.get("resolved_model")
+    except (OSError, ValueError, KeyError, TypeError):
+        raise Refused(f"{args.verdict} cannot be read, so whether a measurement is due cannot be told") from None
+    now = verified_count(args.root)
+    if now - then >= REMEASURE_STAMPS:
+        print(f"due: {now - then} sections stamped since the verdict ({then} then, {now} now)")
+        return 0
+    if args.model != recorded:
+        print(f"due: the lead runs on {args.model}, the verdict was measured on {recorded}")
+        return 0
+    print(f"not due: {now - then} of {REMEASURE_STAMPS} stamps since the verdict, and the lead model is unchanged")
+    return 1
+
+
 def summary(doc):
     lines = []
     for name, run in sorted(doc["runs"].items(), key=lambda kv: int(kv[0].split("-")[1])):
@@ -626,18 +822,32 @@ def parser():
     run.add_argument("--repo", default=str(ROOT), help=argparse.SUPPRESS)
     clean = sub.add_parser("clean", help="remove the clones a finished measurement lists")
     clean.add_argument("--work", default=default_work, help=f"the work folder (default {default_work})")
+    decide = sub.add_parser("decide", help="apply the rule to one results file and store the verdict")
+    decide.add_argument("--results", required=True, help="a measurement's results.json (or the 2026-11-10 file)")
+    decide.add_argument("--verdict", default=str(VERDICT), help=argparse.SUPPRESS)
+    decide.add_argument("--records", default=str(RECORDS), help=argparse.SUPPRESS)
+    decide.add_argument("--root", default=str(ROOT), help=argparse.SUPPRESS)
+    due = sub.add_parser("due", help="exit 0 when a measurement is due, 1 when not")
+    due.add_argument("--model", required=True, help="the full model id the lead session runs on")
+    due.add_argument("--verdict", default=str(VERDICT), help=argparse.SUPPRESS)
+    due.add_argument("--root", default=str(ROOT), help=argparse.SUPPRESS)
     return p
 
 
 def main(argv=None, arms=ARMS):
     args = parser().parse_args(argv)
-    # Absolute from here on: the prompt builder and the dispatcher run inside a clone, so a relative path to a log
-    # would name a file under the clone instead.
-    args.work = str(Path(args.work).resolve())
+    if hasattr(args, "work"):
+        # Absolute from here on: the prompt builder and the dispatcher run inside a clone, so a relative path to a
+        # log would name a file under the clone instead.
+        args.work = str(Path(args.work).resolve())
     try:
         arms = load_arms(arms)
         if args.command == "clean":
             return cmd_clean(args)
+        if args.command == "decide":
+            return cmd_decide(args, arms)
+        if args.command == "due":
+            return cmd_due(args)
         if len(set(args.section)) != len(args.section):
             raise Refused("a section is named twice")
         return cmd_run(args, arms, args.repo)

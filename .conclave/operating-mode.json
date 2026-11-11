@@ -1,0 +1,32 @@
+{
+ "schema": 1,
+ "arm": "opus-alone",
+ "model": "opus",
+ "resolved_model": "claude-opus-5-5",
+ "date": "2026-11-11",
+ "base": "402351a37ee1c604874b39a67fd12c99c216bef4",
+ "branch": "the lowest cost to an approved review",
+ "totals": {
+  "fable-alone": {
+   "cost_usd": 8.69302,
+   "reviews": 3,
+   "wall_seconds": 1676,
+   "eligible": true
+  },
+  "opus-alone": {
+   "cost_usd": 6.764811,
+   "reviews": 6,
+   "wall_seconds": 1955,
+   "eligible": true
+  },
+  "orchestrated": {
+   "cost_usd": 22.967139,
+   "reviews": 7,
+   "wall_seconds": 4470,
+   "eligible": false
+  }
+ },
+ "verified_at_decision": 68,
+ "results": "docs/experiments/operating-mode-2026-11-10.json",
+ "record": "docs/reviews/operating-mode-2026-11-11.md"
+}

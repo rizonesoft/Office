@@ -24,6 +24,12 @@ EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any cha
 
 # (obligation, skill, phrases that must all appear)
 OBLIGATIONS = [
+    ("measure again when due", "plan", [  # D00 T03 §37: both triggers, the command that tells them, and the cycle
+        "run `python scripts/measure-modes.py due --model <the full model id this session runs on>`",
+        "when 300 sections were stamped since the stored verdict was decided",
+        "or when this session's model differs from the one the verdict was measured on",
+        "`python scripts/measure-modes.py decide --results <that folder>/results.json`",
+        "a refused `decide` keeps the stored verdict"]),
     ("boundary check", "plan", ["At the next section boundary, before the next row is claimed, run "
                                 "`python scripts/ci-status.py <sha>`"]),
     ('exit 0 green', "plan", [EXIT_BULLETS['green']]),

@@ -210,12 +210,27 @@ if ($token) {
 }
 $token = $null
 
-# The lead is the latest Opus (owner, 2026-11-10, after the three-way measurement of that day: Opus building alone
-# cost less than half of Fable alone, and Fable coordinating workers cost the most). It builds each section itself
-# (owner, 2026-11-11: the main session is the only writer; no agent writes, AGENTS.md, Subagents). 'opus' is
-# Claude Code's alias for the newest Opus model, so a new release is picked up at the next start with no edit here;
-# never pin a version such as claude-opus-5-5.
+# The lead model is the measurement's verdict, never a choice made here (owner decision 30; D00 T03 §37):
+# scripts/measure-modes.py decide stores it in .conclave/operating-mode.json as a Claude Code alias, so a new release
+# of that family is picked up at the next start with no edit; never pin a version such as claude-opus-5-5. The lead
+# builds each section itself whichever model it is (owner, 2026-11-11; AGENTS.md, Subagents). 'opus' is the fallback
+# for a missing or unreadable verdict: the 2026-11-10 measurement's winner.
 $model = 'opus'
+$modeFile = Join-Path $root '.conclave/operating-mode.json'
+$modeSource = 'the fallback (no readable verdict)'
+if (Test-Path -LiteralPath $modeFile) {
+    try {
+        $stored = (Get-Content -LiteralPath $modeFile -Raw | ConvertFrom-Json).model
+        # Only an alias reaches the command line: anything else in the file is ignored, never passed to claude.
+        if ($stored -is [string] -and $stored -match '^[a-z][a-z0-9-]{0,39}$') {
+            $model = $stored
+            $modeSource = '.conclave/operating-mode.json'
+        }
+    } catch {
+        $modeSource = 'the fallback (the verdict file does not parse)'
+    }
+}
+Write-Host "Lead model: $model, from $modeSource"
 
 if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
