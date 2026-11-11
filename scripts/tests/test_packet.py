@@ -1264,6 +1264,281 @@ class Packet(unittest.TestCase):
         at = self.git("rev-parse", "HEAD").strip()
         self.assertEqual(converted, [(f"--attr-source={at}", "cat-file", "--filters", f"{at}:src/a.py")])
 
+    # reject and the index: one step under git's own lock (round 11, finding 1)
+
+    def index_path(self):
+        return self.repo / ".git" / "index"
+
+    def lock_path(self):
+        return self.repo / ".git" / "index.lock"
+
+    def owner_blob(self, text):
+        """A version that exists nowhere but in git's object store until it is staged: no file on disk holds it."""
+        made = subprocess.run([git_path(), "-C", str(self.repo), "hash-object", "-w", "--stdin"],
+                              input=text.encode("utf-8"), capture_output=True, check=True, timeout=60)
+        return made.stdout.decode().strip()
+
+    def reject_with(self, between):
+        """Run reject in-process and call `between` once, after reject has compared the index with the one its
+        stash captured and before it replaces it: the moment it asks git for HEAD's index (`read-tree <HEAD>`)."""
+        base, real, called = self.git("rev-parse", "HEAD").strip(), packet.run_git, []
+
+        def run(repo, *args, **kwargs):
+            if args == ("read-tree", base) and not called:
+                called.append(args)
+                between()
+            return real(repo, *args, **kwargs)
+
+        with mock.patch.object(packet, "run_git", run):
+            result = self.run_in_process("reject")
+        self.assertEqual(len(called), 1, "reject never asked for HEAD's index")
+        return result
+
+    def test_a_staging_git_attempts_between_the_compare_and_the_replace_is_refused_by_gits_own_lock(self):
+        # Round 11: nothing was held across the compare and the replace, so this staging landed and was overwritten.
+        self.begin("src")
+        self.put("src/a.py", "a = 40\n")
+        blob, attempts = self.owner_blob("staged by the owner, in no file\n"), []
+
+        def stage():
+            attempts.append(subprocess.run(
+                [git_path(), "-C", str(self.repo), "update-index", "--cacheinfo", f"100644,{blob},docs/note.md"],
+                capture_output=True, text=True, encoding="utf-8", timeout=60))
+
+        code, out, err = self.reject_with(stage)
+        self.assertNotEqual(attempts[0].returncode, 0, "the owner's staging landed in an index about to be replaced")
+        self.assertIn("index.lock", attempts[0].stderr)  # git itself told the owner, naming the lock
+        self.assertEqual(code, 0, err)  # nothing landed, so nothing was overwritten and nothing is left to keep
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assertFalse(self.lock_path().exists())
+        self.assertEqual(self.status(), "")
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 40\n")
+
+    def test_an_index_written_past_the_lock_between_the_compare_and_the_replace_is_kept_and_named(self):
+        # The same moment, by a program that does not ask for git's lock: the staged version is in no stash and
+        # in no file, so the index that holds it is never replaced.
+        self.begin("src")
+        self.put("src/a.py", "a = 41\n")
+        blob = self.owner_blob("staged past the lock, in no file\n")
+
+        def stage():
+            private = self.repo / ".git" / "owner-index"
+            private.write_bytes(self.index_path().read_bytes())
+            subprocess.run([git_path(), "-C", str(self.repo), "update-index", "--cacheinfo",
+                            f"100644,{blob},docs/note.md"], env={**os.environ, "GIT_INDEX_FILE": str(private)},
+                           capture_output=True, check=True, timeout=60)
+            os.replace(private, self.index_path())
+
+        code, out, err = self.reject_with(stage)
+        self.assertEqual(code, 1, out + err)
+        self.assertIn("kept the index", out)
+        self.assertIn("docs/note.md", err)
+        self.assertEqual(self.git("show", ":docs/note.md"), "staged past the lock, in no file\n")
+        self.assertTrue((self.repo / "build/packet.json").exists())
+        self.assertNotIn("packet closed", out)
+        self.assertFalse(self.lock_path().exists())
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")  # the captured paths still went back
+        # A further reject sets the kept index aside in a stash of its own.
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged past the lock, in no file\n", "^2")
+        self.assertEqual(self.status(), "")
+
+    def test_an_index_lock_already_there_makes_reject_refuse_naming_it_and_change_nothing(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 42\n")
+        self.put("docs/note.md", "staged\n")
+        self.git("add", "docs/note.md")
+        self.lock_path().write_bytes(b"another command's")
+        before, index = self.state(), self.index_path().read_bytes()
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 2, out + err)
+        self.assertIn("index.lock", err)
+        self.assertIn("nothing was changed", err)
+        self.assertEqual(self.lock_path().read_bytes(), b"another command's")  # never removed, never written
+        self.assertEqual(self.index_path().read_bytes(), index)
+        self.assertEqual(self.state(), before)
+        self.assertEqual(self.git("stash", "list"), "")
+        self.assertEqual(self.read("src/a.py"), "a = 42\n")
+        self.assertEqual(self.git("show", ":docs/note.md"), "staged\n")
+        self.lock_path().unlink()  # the other command finished
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.status(), "")
+
+    def test_an_index_lock_that_appears_once_the_stash_is_stored_stops_reject_and_is_left_alone(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 43\n")
+        self.put("docs/note.md", "staged\n")
+        self.git("add", "docs/note.md")
+        real, seen = packet.store, {}
+
+        def store_then_lock(*args):
+            real(*args)
+            seen["index"] = self.index_path().read_bytes()
+            self.lock_path().write_bytes(b"another command's")
+
+        with mock.patch.object(packet, "store", store_then_lock):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 3, out + err)
+        self.assertIn("index.lock", err)
+        self.assertEqual(self.lock_path().read_bytes(), b"another command's")
+        self.assertEqual(self.index_path().read_bytes(), seen["index"])
+        self.assertEqual(self.read("src/a.py"), "a = 43\n")  # nothing is returned before the index is settled
+        self.assertEqual(len(self.git("stash", "list").splitlines()), 1)
+        self.assertTrue(self.state()["rejection"]["stored"])
+        self.lock_path().unlink()
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(len(self.git("stash", "list").splitlines()), 1)
+        self.assertEqual(self.status(), "")
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged\n", "^2")
+
+    def test_a_failure_under_the_lock_removes_the_lock_and_leaves_the_index_byte_for_byte(self):
+        for target, error in (("index_from", packet.GitFailed("git read-tree failed: no")),
+                              ("publish_index", OSError("the rename was refused"))):
+            with self.subTest(fails=target):
+                self.begin("src")
+                self.put("src/a.py", "a = 44\n")
+                self.put("docs/note.md", "staged\n")
+                self.git("add", "docs/note.md")
+                seen = {}
+
+                def fail(*args, **kwargs):
+                    seen["index"] = self.index_path().read_bytes()
+                    seen["locked"] = self.lock_path().exists()
+                    raise error
+
+                with mock.patch.object(packet, target, fail):
+                    code, out, err = self.run_in_process("reject")
+                self.assertEqual(code, 3, out + err)
+                self.assertTrue(seen["locked"])  # the failure struck while this command held the lock
+                self.assertFalse(self.lock_path().exists())
+                self.assertEqual(self.index_path().read_bytes(), seen["index"])
+                self.assertEqual(self.git("show", ":docs/note.md"), "staged\n")
+                self.assertEqual(sorted(p.name for p in (self.repo / ".git").glob("tmp*")), [])
+                self.assertTrue((self.repo / "build/packet.json").exists())
+                code, _, err = self.cli("reject")
+                self.assertEqual(code, 0, err)
+                self.assertEqual(self.status(), "")
+                self.assert_in_stash("stash@{0}", "docs/note.md", "staged\n", "^2")
+
+    def died_at_the_rename(self):
+        """A reject that dies right after the new index took its name, before it could record that it did."""
+        self.begin("src")
+        self.put("src/a.py", "a = 45\n")
+        self.put("docs/note.md", "staged\n")
+        self.git("add", "docs/note.md")
+        self.stopped_reject("publish_index")
+        noted = self.state()["rejection"]["index"]
+        self.assertEqual(noted["state"], "replacing")
+        self.assertNotEqual(noted["was"], noted["next"])
+        self.assertFalse(self.lock_path().exists())
+        self.assertEqual(self.read("src/a.py"), "a = 45\n")
+        return noted
+
+    def resume_without_writing_the_index(self):
+        real, made = packet.run_git, []
+
+        def watch(repo, *args, **kwargs):
+            if args[0] == "read-tree":
+                made.append(args)
+            return real(repo, *args, **kwargs)
+
+        with mock.patch.object(packet, "run_git", watch), \
+                mock.patch.object(packet, "publish_index", side_effect=AssertionError("the index was written twice")):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(made, [])
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "build/packet.json").exists())
+        self.assertEqual(len(self.git("stash", "list").splitlines()), 1)
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged\n", "^2")
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 45\n")
+
+    def test_a_reject_that_died_right_after_the_rename_finds_the_new_index_landed(self):
+        noted = self.died_at_the_rename()
+        self.assertEqual(packet.fingerprint(self.index_path().read_bytes()), noted["next"])
+        self.resume_without_writing_the_index()
+
+    def test_a_reject_that_died_right_after_the_rename_resumes_after_git_wrote_the_index_again(self):
+        # The owner's own git command writes the index before the resume (git status stores what it learned of
+        # each file), so its bytes are no longer the recorded ones: the tree they hold still says HEAD's landed.
+        noted = self.died_at_the_rename()
+        self.status()
+        self.assertNotEqual(packet.fingerprint(self.index_path().read_bytes()), noted["next"])
+        self.resume_without_writing_the_index()
+
+    def test_an_index_staged_after_a_reject_died_at_the_rename_is_kept(self):
+        self.died_at_the_rename()
+        blob = self.owner_blob("staged after the crash, in no file\n")
+        self.git("update-index", "--cacheinfo", f"100644,{blob},docs/note.md")
+        code, out, _ = self.cli("reject")
+        self.assertEqual(code, 1)
+        self.assertIn("kept the index", out)
+        self.assertEqual(self.git("show", ":docs/note.md"), "staged after the crash, in no file\n")
+        self.assertTrue((self.repo / "build/packet.json").exists())
+
+    def test_reject_builds_its_stash_without_a_git_command_on_the_live_index_and_writes_it_once(self):
+        # Every git call that names an index names a private one; the live index changes only at the rename.
+        self.begin("src")
+        self.put("src/a.py", "a = 46\n")
+        self.put("docs/note.md", "staged\n")
+        self.git("add", "docs/note.md")
+        real, live, renames = packet.run_git, [], []
+        writers = ("write-tree", "read-tree", "update-index", "add", "rm", "mv", "checkout", "commit", "apply")
+
+        def watch(repo, *args, **kwargs):
+            if args[0] in writers and "GIT_INDEX_FILE" not in (kwargs.get("env") or {}):
+                live.append(args)
+            return real(repo, *args, **kwargs)
+
+        real_publish = packet.publish_index
+
+        def publish(lock, index):
+            renames.append((pathlib.Path(lock), pathlib.Path(index)))
+            real_publish(lock, index)
+
+        with mock.patch.object(packet, "run_git", watch), mock.patch.object(packet, "publish_index", publish):
+            code, _, err = self.run_in_process("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(live, [])
+        self.assertEqual(renames, [(self.lock_path(), self.index_path())])
+
+    def test_git_never_inherits_an_attribute_source(self):
+        # An inherited GIT_ATTR_SOURCE redirected hash-object --path and cat-file --filters to a tree the shell
+        # named; one that names nothing made every conversion fail.
+        self.begin("src")
+        self.put("src/a.py", "a = 47\n")
+        with mock.patch.dict(os.environ, {"GIT_ATTR_SOURCE": "refs/heads/names-nothing"}):
+            self.assertNotIn("GIT_ATTR_SOURCE", packet.git_environment())
+            self.assertEqual(packet.git_environment({"GIT_INDEX_FILE": "x"})["GIT_INDEX_FILE"], "x")
+            blob = packet.run_git(self.repo, "hash-object", "--stdin", "--path=src/a.py", data=b"a = 47\n")
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(blob.decode().strip(), self.owner_blob("a = 47\n"))
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 47\n")
+
+    def test_git_never_follows_an_inherited_attribute_source_to_another_trees_rules(self):
+        # A source that does name a tree: its eol=crlf rule must have no say in what is stashed.
+        self.put(".gitattributes", "*.py text eol=crlf\n")
+        self.git("add", ".gitattributes")
+        self.git("commit", "-q", "-m", "a rule on a side branch")
+        self.git("branch", "ruled")
+        (self.repo / ".gitattributes").unlink()
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "no rule here")
+        self.begin("src")
+        self.put("src/a.py", "a = 48\r\n")
+        with mock.patch.dict(os.environ, {"GIT_ATTR_SOURCE": "ruled"}):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 0, out + err)
+        stored = subprocess.run([git_path(), "-C", str(self.repo), "cat-file", "blob", "stash@{0}:src/a.py"],
+                                capture_output=True, check=True, timeout=60).stdout
+        self.assertEqual(stored, b"a = 48\r\n")  # under `ruled`'s rule the blob would hold LF alone
+
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
         self.begin("src")

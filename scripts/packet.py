@@ -32,6 +32,19 @@ captured: a path saved meanwhile is kept on disk and named, and the index goes b
 the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
 writes after them, so a folder that took a tracked file's name is emptied before the file returns.
 
+`reject` writes the index in one place and as one step, under git's own lock (`return_index`). It makes
+`.git/index.lock` itself, as a new file and never over an existing one, so while it decides no git command can stage
+anything: git refuses, naming the lock. It reads the index file's bytes once, takes the tree those bytes hold from a
+private copy (no git command opens the live index meanwhile, here or when the stash is built), writes `HEAD`'s index
+into the lock file and renames it over the index. A lock that is already there is never waited on and never removed:
+`reject` refuses before it changes anything (exit 2), or, when the lock appears later, stops with the stash stored
+(exit 3), naming the file both times, and the next `reject` carries on. Whatever fails, the lock `reject` made is
+removed and the index file is byte for byte what it was. Should a program that ignores the lock write the index
+during the step all the same, the bytes on disk no longer match the ones read and the index is kept and named.
+`build/packet.json` notes the step under `rejection.index` before the rename (`replacing`, with the sha256 of the
+bytes read and of the bytes about to land) and after it (`returned` or `kept`), so a `reject` that died at the
+rename knows on its next call, from the bytes the index holds, that the new index landed and does not write it twice.
+
 Every read, removal and write goes through one model of what occupies a name on disk (`occupant`: nothing, a file,
 a link, a Windows folder link, a junction, a real folder, something git does not record, a path beyond a link or a
 file, or a name held under another spelling), so each kind is handled the same way in every step. A link or a
@@ -60,7 +73,7 @@ Nothing is ever discarded or taken back out of a stash by this command: a change
 
 Exit 0 done, 1 the change is not acceptable as it stands or the rejection is not finished, 2 refused (a tree with
 changes at `begin`, no open packet, a packet already open, a bad path, a missing or stale `--snapshot`, a git too
-old for `reject`), 3 git or the file system failed.
+old for `reject`, an index another git command holds locked when `reject` starts), 3 git or the file system failed.
 """
 import argparse
 import hashlib
@@ -88,10 +101,22 @@ class GitFailed(Exception):
     """Exit 3: git or the file system failed."""
 
 
+# Variables this command never inherits: it names its attribute source itself, per call (`attributes_of`), and
+# everywhere else the attributes are the working tree's. An inherited GIT_ATTR_SOURCE would redirect every
+# conversion (`hash-object --path`, `cat-file --filters`) to a tree the caller's shell happened to name.
+NOT_INHERITED = ("GIT_ATTR_SOURCE",)
+
+
+def git_environment(extra=None):
+    """The environment every git call runs in: the caller's, less NOT_INHERITED, plus this call's own `extra`."""
+    kept = {name: value for name, value in os.environ.items() if name.upper() not in NOT_INHERITED}
+    return {**kept, **(extra or {})}
+
+
 def run_git(repo, *args, data=None, env=None):
     """git's output as bytes; `data` is fed to its standard input."""
     proc = subprocess.run([git_path(), "-C", str(repo), *args], input=data, capture_output=True,
-                          env={**os.environ, **env} if env else None)
+                          env=git_environment(env))
     if proc.returncode != 0:
         raise GitFailed(f"git {' '.join(args)} failed: {proc.stderr.decode('utf-8', 'replace').strip()}")
     return proc.stdout
@@ -498,10 +523,133 @@ def show(repo, stage=False, snapshot=None):
     return 0
 
 
+def index_file(repo):
+    """The file git reads and writes as this repository's index."""
+    return Path(repo, text(repo, "rev-parse", "--git-path", "index").strip())
+
+
+def lock_of(index):
+    """git's lock on an index file: whoever makes this file, as a new one, is the only writer until it is gone."""
+    return index.with_name(index.name + ".lock")
+
+
+def index_bytes(index):
+    """The index file's bytes, read once, or None when there is no index yet. Only a regular file is read: an
+    index that is a link or anything else is refused, never read or replaced through."""
+    kind = kind_of(index)
+    if kind == NOTHING:
+        return None
+    if kind != FILE:
+        raise Refused(f"{index} is a {kind}, not a file: the index is never read or replaced through one")
+    return index.read_bytes()
+
+
+def fingerprint(raw):
+    return "absent" if raw is None else hashlib.sha256(raw).hexdigest()
+
+
+def tree_of(repo, raw):
+    """The tree an index file holding the bytes `raw` records, from a private copy: the live index is not opened,
+    so this takes no lock on it and writes nothing to it."""
+    with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
+        copy = Path(tmp) / "index"
+        if raw is not None:
+            copy.write_bytes(raw)
+        return text(repo, "write-tree", env={"GIT_INDEX_FILE": str(copy)}).strip()
+
+
+def index_from(repo, commit):
+    """The bytes of an index file that holds exactly `commit`'s tree, made as a private file."""
+    with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
+        made = Path(tmp) / "index"
+        run_git(repo, "read-tree", commit, env={"GIT_INDEX_FILE": str(made)})
+        return made.read_bytes()
+
+
+def publish_index(lock, index):
+    """The one step that changes the live index: the finished lock file takes its name."""
+    os.replace(lock, index)
+
+
+HELD = ("another git command holds the index ({lock} exists); {state}. Run reject again when that command has "
+        "finished, or remove the file yourself if no git is running: this command never removes a lock it did not "
+        "make")
+
+
+def refuse_held_index(repo):
+    """Refuse, before anything is changed, while another git command holds the index: its lock is never waited
+    on and never removed here, and a stale one is the owner's to remove."""
+    lock = lock_of(index_file(repo))
+    if kind_of(lock) != NOTHING:
+        raise Refused(HELD.format(lock=lock, state="nothing was changed"))
+
+
+def return_index(repo, base, data):
+    """Return the index to `base` (the packet's HEAD) while it is still the one the stash captured: "returned" when
+    it holds HEAD's tree afterwards, "kept" when it holds anything that is in no stash (staged after the capture).
+
+    The compare and the replace are one step under git's own lock. This makes the lock file itself, as a new file,
+    so from then on no git command can write the index (git refuses, naming the lock) and what is decided here is
+    decided about the very bytes that are replaced: they are read once, their tree is taken from a private copy,
+    HEAD's index is written into the lock file and the lock file is renamed over the index. The record notes the
+    step before the rename, so a run that died at the rename finds on its next call that the bytes it was about
+    to land are the ones the index holds, and writes nothing twice. A program that writes the index without
+    asking for the lock is caught as far as it can be: the index is read again right before the lock file is
+    filled, and kept when it is no longer the bytes decided about.
+
+    Whatever fails, the lock made here is removed and the index file is byte for byte what it was: nothing but
+    the rename ever touches it. A lock that is already there is someone else's: it is named and left alone."""
+    rejection = data["rejection"]
+    index = index_file(repo)
+    lock = lock_of(index)
+    try:
+        handle = open(lock, "xb")
+    except FileExistsError:
+        raise GitFailed(HELD.format(lock=lock, state="the index was not changed and the stash is stored")) from None
+    ours = True  # the lock file is this run's own until the rename gives its name away
+    try:
+        with handle:
+            live = index_bytes(index)
+            noted = rejection.get("index") or {}
+            tree = tree_of(repo, live)
+            head_tree = text(repo, "rev-parse", f"{base}^{{tree}}").strip()
+            captured_tree = text(repo, "rev-parse", f"{rejection['stash']}^2^{{tree}}").strip()
+            if fingerprint(live) == noted.get("next") or (noted.get("state") == "returned" and tree == head_tree):
+                outcome = "returned"  # an earlier run's rename landed: these are the bytes it wrote, or HEAD's tree
+            elif tree == captured_tree:
+                replacement = index_from(repo, base)
+                if index_bytes(index) != live:
+                    outcome = "kept"  # written past the lock since it was read: not the bytes decided about
+                else:
+                    rejection["index"] = {"state": "replacing", "was": fingerprint(live),
+                                          "next": fingerprint(replacement)}
+                    save(repo, data)
+                    handle.write(replacement)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                    handle.close()  # Windows renames no open file
+                    ours = False
+                    try:
+                        publish_index(lock, index)
+                    except OSError:
+                        ours = True  # the rename did not happen: the lock file is still there and still this run's
+                        raise
+                    outcome = "returned"
+            else:
+                outcome = "returned" if tree == head_tree else "kept"
+    finally:
+        if ours:
+            os.unlink(lock)
+    rejection["index"] = {**(rejection.get("index") or {}), "state": outcome}
+    save(repo, data)
+    return outcome
+
+
 def build_stash(repo, base, message, changed, untracked, captured):
     """The commit `git stash push --include-untracked` would make, built from the captured bytes; the tree and the
-    live index are not touched."""
-    index_tree = text(repo, "write-tree").strip()
+    live index are not touched: its bytes are read once and its tree is taken from a private copy, where git's own
+    `write-tree` on the live index would lock it and write it."""
+    index_tree = tree_of(repo, index_bytes(index_file(repo)))
     index_commit = text(repo, "commit-tree", index_tree, "-p", base, "-m", f"index on {message}").strip()
     with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
         work_index = {"GIT_INDEX_FILE": str(Path(tmp) / "work")}
@@ -670,6 +818,7 @@ def reject(repo):
               f"Reconcile these commits first:\n{commits}", file=sys.stderr)
         return 1
     require_commit_attributes(repo, base)
+    refuse_held_index(repo)
     rejection = data.get("rejection")
     if rejection is None:
         changed, untracked, _ = changed_paths(repo, base)
@@ -690,13 +839,7 @@ def reject(repo):
         save(repo, data)
     # The index goes back to HEAD only while it is still the one the stash's index commit captured: an index staged
     # after the capture (by the owner, between an interrupted reject and its retry) is in no stash, so it is kept.
-    index_now = text(repo, "write-tree").strip()
-    captured_index = text(repo, "rev-parse", f"{rejection['stash']}^2^{{tree}}").strip()
-    index_kept = False
-    if index_now == captured_index:
-        run_git(repo, "read-tree", base)
-    elif index_now != text(repo, "rev-parse", f"{base}^{{tree}}").strip():
-        index_kept = True
+    index_kept = return_index(repo, base, data) == "kept"
     failed = []
     contents = {p: head_entry(repo, base, p) for p in rejection["paths"] if p not in rejection["settled"]}
     # Removals first, deepest first, then writes, shallowest first: a folder that took a tracked file's name is
