@@ -420,13 +420,36 @@ class Runs(Fixture):
         self.assertFalse(alive(child))
 
     def test_a_flooding_session_is_stopped_at_the_output_limit(self):
-        self.claude_plan({"opus": [{"flood": True, "sleep": 60}, {}], "default": [{}]})
+        self.claude_plan({"opus": [{"child": True, "flood": True, "sleep": 60}, {}], "default": [{}]})
         with mock.patch.object(measure, "MAX_OUTPUT_BYTES", 1024 * 1024):
             self.assertEqual(self.run_main(), 0)
-        session = self.run_of("opus-alone")["stages"][0]["session"]
+        run = self.run_of("opus-alone")
+        session = run["stages"][0]["session"]
         self.assertEqual(session["stopped"], "output limit")
-        log = self.work / "logs" / self.run_of("opus-alone")["clone"] / "stage-0.reply.json"
+        log = self.work / "logs" / run["clone"] / "stage-0.reply.json"
         self.assertLess(log.stat().st_size, 8 * 1024 * 1024)
+        child = int((self.control / f"child-{run['clone']}.pid").read_text())
+        self.assertFalse(alive(child))
+
+    def test_a_relative_work_folder_still_reaches_the_review(self):
+        cwd = os.getcwd()
+        os.chdir(self.tmp)
+        try:  # restored before tearDown removes the folder, which Windows refuses while it is the working folder
+            argv = ["run", "--work", "work", "--repo", str(self.repo), "--base", self.base, "--section", "D00 T01 §1"]
+            self.assertEqual(measure.main(argv), 0)
+        finally:
+            os.chdir(cwd)
+        for run in self.results()["runs"].values():
+            self.assertEqual(run["end"], "approved")
+            self.assertTrue(run["stages"][0]["review"]["reviewed"])
+
+    def test_a_folder_the_measurement_did_not_make_is_never_deleted(self):
+        occupied = self.work / "run-1"
+        occupied.mkdir(parents=True)
+        (occupied / "keep.txt").write_text("someone else's")
+        self.assertEqual(self.run_main(), 2)
+        self.assertEqual((occupied / "keep.txt").read_text(), "someone else's")
+        self.assertEqual(self.calls(), [])
 
     def test_a_hung_gate_is_stopped_and_fixed(self):
         self.claude_plan({"opus": [{"tests_hang": True}, {"clear": True}], "default": [{}]})
@@ -449,6 +472,7 @@ class Resume(Fixture):
                     (clone / "partial.txt").write_text("x")
                     subprocess.run(["git", "add", "-A"], cwd=clone, check=True)
                     subprocess.run(["git", "commit", "-q", "-m", "partial"], cwd=clone, check=True)
+                    (clone / "partial.txt").write_text("edited again")  # a checkout to the candidate would refuse
                 this.cancel.set()
                 raise measure.Cancelled()
             return original(this, name, run, stage, *rest)

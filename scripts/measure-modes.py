@@ -223,9 +223,15 @@ def remove_tree(path):
         shutil.rmtree(path, onexc=writable)
 
 
-def clone(repo, base, dest):
-    """A clone of `repo` at `base` on a `main` branch, with no remote and this repository's hooks enabled."""
-    remove_tree(dest)
+def clone(repo, base, dest, owned=False):
+    """A clone of `repo` at `base` on a `main` branch, with no remote and this repository's hooks enabled. An existing
+    `dest` is removed only when `owned` (the results file lists it as this measurement's); otherwise it is refused, so
+    a folder the measurement did not make is never deleted."""
+    if dest.exists():
+        if not owned:
+            raise Refused(f"{dest} already exists and is not a clone this measurement recorded; move it or choose "
+                          f"another --work folder")
+        remove_tree(dest)
     subprocess.run(["git", "clone", "-q", "--no-checkout", "--no-hardlinks", str(repo), str(dest)], check=True,
                    capture_output=True, timeout=GIT_SECONDS)
     git(dest, "checkout", "-q", "-B", "main", base)
@@ -341,14 +347,18 @@ class Measurement:
                               f"another --work folder or clean this one")
             self.doc = doc
             return
-        probe = self.work / "base"
+        pairs = [(ref, arm) for ref in self.args.section for arm in self.arms]
+        taken = [f"run-{n}" for n in range(1, len(pairs) + 1) if (self.work / f"run-{n}").exists()]
+        if taken:
+            raise Refused(f"{self.work} already holds {', '.join(taken)}, which no results file records; move them or "
+                          f"choose another --work folder")
         self.work.mkdir(parents=True, exist_ok=True)
-        clone(self.repo, base, probe)
+        probe = Path(tempfile.mkdtemp(prefix="base-", dir=self.work))  # a fresh name, so it can be no one else's
         try:
+            clone(self.repo, base, probe, owned=True)
             tasks = {ref: resolve(probe, ref) for ref in self.args.section}
         finally:
             remove_tree(probe)
-        pairs = [(ref, arm) for ref in self.args.section for arm in self.arms]
         secrets.SystemRandom().shuffle(pairs)  # run numbers in a random order, so a number says nothing of its arm
         runs = {f"run-{n}": {"section": ref, "arm": arm, "clone": f"run-{n}", "stages": [], "end": None}
                 for n, (ref, arm) in enumerate(pairs, 1)}
@@ -469,10 +479,13 @@ class Measurement:
         done = [s for s in run["stages"] if s.get("candidate")]
         target = done[-1]["candidate"] if done else self.doc["identity"]["base"]
         if not (clone_dir / ".git").exists():
-            clone(self.repo, self.doc["identity"]["base"], clone_dir)
-        git(clone_dir, "checkout", "-q", "-B", "main", target)
-        git(clone_dir, "reset", "-q", "--hard", target)
+            clone(self.repo, self.doc["identity"]["base"], clone_dir, owned=True)  # listed in the results file
+        # Discard what the interrupted session left first: a checkout refuses to overwrite local edits to a file that
+        # differs between HEAD and the target, which would make every resume fail at the same point.
+        git(clone_dir, "reset", "-q", "--hard")
         git(clone_dir, "clean", "-q", "-fdx")
+        git(clone_dir, "checkout", "-q", "-f", "-B", "main", target)
+        git(clone_dir, "reset", "-q", "--hard", target)
 
     def advance(self, name):
         """Take one run from wherever its record stops to its end."""
@@ -615,6 +628,9 @@ def parser():
 
 def main(argv=None, arms=ARMS):
     args = parser().parse_args(argv)
+    # Absolute from here on: the prompt builder and the dispatcher run inside a clone, so a relative path to a log
+    # would name a file under the clone instead.
+    args.work = str(Path(args.work).resolve())
     try:
         arms = load_arms(arms)
         if args.command == "clean":
