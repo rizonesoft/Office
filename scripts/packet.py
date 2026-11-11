@@ -30,7 +30,8 @@ reads, without touching the tree, stores it with `git stash store` as `rejected 
 each changed path to `HEAD`, checking right before each write that the path still holds the bytes the stash
 captured: a path saved meanwhile is kept on disk and named, and the index goes back to `HEAD` only while it is still
 the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
-writes after them, so a folder that took a tracked file's name is emptied before the file returns. Its progress is recorded in `build/packet.json`, so a
+writes after them, so a folder that took a tracked file's name is emptied before the file returns. A symbolic link
+is read, stashed and returned as a link (mode 120000), never followed, and a path under a linked folder is kept. Its progress is recorded in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
 is settled and the tree holds no change; kept saves are named, and a further `reject` sets them aside too.
 
