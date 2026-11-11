@@ -126,8 +126,8 @@ class RunState(Tree):
                  ("- nothing ended here\n", "Not running")]
         for text, expected in cases:
             with self.subTest(expected=expected):
-                self.run_file("2026-11-11-phase-0.md", "# Phase run\n\n" + text)
-                self.run_file("2026-11-10-phase-0.md", "## Closeout run=old\n")  # older: never read
+                self.run_file("2026-11-11-phase-0.md", "# Phase run\n\n- 2026-11-11T01:00:00Z opened\n" + text)
+                self.run_file("2026-11-10-phase-0.md", "- 2026-11-10T01:00:00Z opened\n## Closeout run=old\n")  # older
                 self.assertTrue(digest.run_state(self.root).startswith(expected), digest.run_state(self.root))
 
     def test_the_operator_stop_as_the_real_run_file_records_it(self):
@@ -136,9 +136,32 @@ class RunState(Tree):
         self.assertTrue(digest.run_state(self.root).startswith("Stopped by the operator"))
 
     def test_a_later_suffix_is_newer(self):
-        self.run_file("2026-11-11-phase-0.md", "## Closeout run=a\n")
+        self.run_file("2026-11-11-phase-0.md", "- 2026-11-11T00:30:00Z opened\n## Closeout run=a\n")
         self.run_file("2026-11-11-phase-0-2.md", "PARKED 2026-11-11T01:00:00Z run=b ci-red: gates\n")
         self.assertTrue(digest.run_state(self.root).startswith("Parked"))
+
+    def test_the_last_ending_wins(self):
+        # Review round 1, finding 4: a phase closeout followed by the campaign's park read as Completed.
+        self.run_file("2026-11-11-phase-0.md", "## Closeout run=a\n\nPARKED 2026-11-11T05:00:00Z run=a no ready row\n")
+        self.assertTrue(digest.run_state(self.root).startswith("Parked"), digest.run_state(self.root))
+        self.run_file("2026-11-11-phase-0.md", "PARKED 2026-11-11T05:00:00Z run=a x\n\n## Closeout run=b\n")
+        self.assertTrue(digest.run_state(self.root).startswith("Completed"))
+
+    def test_the_newest_run_file_is_the_one_last_written_by_the_run(self):
+        # Review round 1, finding 5: 2026-11-11-phase-0-2.md sorted after 2026-11-11-phase-1.md, written later.
+        self.run_file("2026-11-11-phase-0-2.md", "- 2026-11-11T03:00:00Z opened\n## Closeout run=a\n")
+        self.run_file("2026-11-11-phase-1.md", "- 2026-11-11T04:00:00Z opened\nPARKED 2026-11-11T05:00:00Z run=b x\n")
+        self.assertTrue(digest.run_state(self.root).startswith("Parked"), digest.run_state(self.root))
+
+    def test_an_unreadable_run_file_names_no_full_path(self):
+        # Review round 1, finding 2: the error text carried the absolute path of the file.
+        (self.root / "build").mkdir()
+        guard = self.root / "build/claude-campaign-guard.json"
+        guard.write_text("{}", encoding="utf-8")
+        with mock.patch.object(pathlib.Path, "read_text", side_effect=PermissionError(13, "denied", str(guard))):
+            state = digest.run_state(self.root)
+        self.assertEqual(state, "Unknown: the run files cannot be read (PermissionError on build/claude-campaign-guard.json).")
+        self.assertNotIn(str(self.root), state)
 
     def test_an_unreadable_guard_is_unknown(self):
         (self.root / "build").mkdir()
@@ -166,6 +189,31 @@ class Ci(unittest.TestCase):
         self.assertEqual(self.state(self.runner(3, "pending aaaa")), ["CI: pending for aaaaaaa."])
         unknown = self.state(self.runner(2, "", "gh: not signed in\n"))
         self.assertTrue(unknown[0].startswith("CI: unknown for aaaaaaa"), unknown)
+
+    def test_red_keeps_every_unsuccessful_job_the_producer_names(self):
+        # Review round 1, finding 3: a cancelled or timed-out job was dropped.
+        red = self.state(self.runner(1, "red aaaa run 1\n  gates (cancelled): Build (cancelled)\n"
+                                        "  icons (timed_out): Render (timed_out)\n"))
+        self.assertEqual(red, ["CI: red for aaaaaaa.", "  gates (cancelled): Build (cancelled)",
+                               "  icons (timed_out): Render (timed_out)"])
+
+    def test_a_git_that_hangs_is_unknown_ci_not_a_crash(self):
+        # Review round 1, finding 1: git() raised out of ci_state.
+        with mock.patch.object(digest.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 60)):
+            self.assertEqual(digest.ci_state(REPO, self.runner(0)), ["CI: unknown (origin/main cannot be read)."])
+
+    def test_long_ci_lines_are_wrapped_in_the_body(self):
+        # Review round 1, finding 6.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            long = "CI: unknown for aaaaaaa (" + "the network said no " * 8 + ")."
+            with mock.patch.object(digest, "totals", return_value=dict.fromkeys(
+                    ("total", "verified", "ready", "blocked", "withdrawn", "to_author"), 0)), \
+                    mock.patch.object(digest, "waiting", return_value=[]), \
+                    mock.patch.object(digest, "verified_since", return_value=[]):
+                _, body, _ = digest.compose(root, {}, TODAY, [long], "Running")
+        self.assertTrue(all(len(line) <= digest.WIDTH for line in body.splitlines()))
+        self.assertIn("the network said no", body)
 
     def test_an_unreachable_runner_or_ref_never_stops_the_email(self):
         self.assertTrue(self.state(self.runner(0, raises=subprocess.TimeoutExpired("ci", 300)))[0].startswith(

@@ -60,8 +60,25 @@ def wrap(text, indent=""):
 
 
 def git(root, *args):
-    proc = subprocess.run([todo_graph.git(), "-C", str(root), *args], capture_output=True, text=True, timeout=60)
+    """git's output, or None when git fails, cannot start or outlives its minute: nothing here stops the email."""
+    try:
+        proc = subprocess.run([todo_graph.git(), "-C", str(root), *args], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
     return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+INSTANT = re.compile(r"\b(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})Z\b")
+
+
+def reason(root, exc):
+    """A failure as the email may say it: the error's kind and a repository-relative file, never a full path."""
+    name = getattr(exc, "filename", None)
+    try:
+        where = Path(name).resolve().relative_to(root.resolve()).as_posix() if name else ""
+    except ValueError:
+        where = Path(name).name
+    return f"{type(exc).__name__}{f' on {where}' if where else ''}"
 
 
 # The plan
@@ -126,29 +143,41 @@ def run_state(root):
         if guard_path.is_file():
             guard = json.loads(guard_path.read_text(encoding="utf-8"))
             return f"Running: run {guard.get('run_id', '?')}, phase {guard.get('phase', '?')}, {guard.get('run_file', '?')}"
-        runs = sorted((root / "docs" / "phase-runs").glob("*.md"), key=run_file_order)
+        runs = [(latest_instant(path), path) for path in (root / "docs" / "phase-runs").glob("*.md")]
         if not runs:
             return "Not running: no campaign has run yet."
-        newest = runs[-1]
+        newest = max(runs)[1]
         text = newest.read_text(encoding="utf-8")
         name = newest.relative_to(root).as_posix()
-        parked = [line for line in text.splitlines() if line.startswith("PARKED ")]
-        if re.search(r"^## Closeout run=", text, re.M):
-            return f"Completed: {name} has its closeout."
-        if parked:
-            return f"Parked: {parked[-1][len('PARKED '):]} ({name})"
-        if re.search(r"operator stop", text, re.I):
-            return f"Stopped by the operator ({name})."
-        last = git(root, "log", "-1", "--format=%cs")
-        return f"Not running: last commit {last or 'unknown'}, newest run file {name}."
+        ended = ending(text, name)
+        if ended:
+            return ended
+        last = git(root, "log", "-1", "--format=%cs") or "unknown"
+        return f"Not running: last commit {last}, newest run file {name}."
     except (OSError, ValueError) as exc:
-        return f"Unknown: the run files cannot be read ({type(exc).__name__}: {exc})."
+        return f"Unknown: the run files cannot be read ({reason(root, exc)})."
 
 
-def run_file_order(path):
-    """A run file's place in time: its date, then its -2, -3 suffix."""
-    m = re.fullmatch(r"(\d{4}-\d{2}-\d{2})-phase-\d+(?:-(\d+))?\.md", path.name)
-    return (m[1], int(m[2] or 1)) if m else ("", 0)
+def ending(text, name):
+    """How a run file says its run ended, by the last of its ending events (a phase may close out and the campaign
+    park after it, in the same file), or None when it records none."""
+    events = []
+    for m in re.finditer(r"^## Closeout run=", text, re.M):
+        events.append((m.start(), f"Completed: {name} has its closeout."))
+    for m in re.finditer(r"^PARKED (.*)$", text, re.M):
+        events.append((m.start(), f"Parked: {m[1].strip()} ({name})"))
+    for m in re.finditer(r"operator stop", text, re.I):
+        events.append((m.start(), f"Stopped by the operator ({name})."))
+    return max(events)[1] if events else None
+
+
+def latest_instant(path):
+    """When a run file was last written to, as the run itself records it: the latest UTC instant in it (every
+    event carries one), else the file's own modification time. A phase chained later the same day sorts after."""
+    found = INSTANT.findall(path.read_text(encoding="utf-8"))
+    if found:
+        return max(found)
+    return datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def ci_state(root, runner=subprocess.run):
@@ -165,8 +194,11 @@ def ci_state(root, runner=subprocess.run):
     if proc.returncode == 0:
         return [f"CI: green for {sha[:7]}."]
     if proc.returncode == 1:
-        failing = [line for line in lines[1:] if "(failure)" in line or "failure" in line]
-        return [f"CI: red for {sha[:7]}.", *[f"  {line}" for line in failing[:5]]]
+        # Every detail line ci-status.py prints after its head line: failed, cancelled and timed-out jobs alike,
+        # or its own word that the jobs could not be read.
+        details = lines[1:]
+        more = [f"  ... and {len(details) - 5} more"] if len(details) > 5 else []
+        return [f"CI: red for {sha[:7]}.", *[f"  {line}" for line in details[:5]], *more]
     if proc.returncode == 3:
         return [f"CI: pending for {sha[:7]}."]
     reason = (lines[-1] if lines else (proc.stderr or "").strip().splitlines()[-1:] or ["no reason given"])
@@ -189,7 +221,8 @@ def compose(root, rows, today, ci_lines, state):
     count = totals(rows, root)
     items = waiting(rows)
     built = verified_since(root, rows, today)
-    head = [f"Rizonesoft Office, week to {today.isoformat()}", "", *wrap(state), *ci_lines,
+    head = [f"Rizonesoft Office, week to {today.isoformat()}", "", *wrap(state),
+            *[part for line in ci_lines for part in wrap(line.strip(), "  " if line.startswith("  ") else "")],
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
                   f"{count['blocked']} blocked, {count['withdrawn']} withdrawn; {count['to_author']} TODO files still "
                   f"to author."), ""]
