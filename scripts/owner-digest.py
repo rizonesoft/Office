@@ -72,6 +72,27 @@ def git(root, *args):
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
+# An absolute path of this machine: a drive or a share on Windows, a home, a mount or a system folder elsewhere. The
+# email names none (D00 T03 §35: "no secret or path outside the repository"), whoever wrote the text: a run file, git,
+# gh's error through ci-status.py.
+# A path may hold spaces (`C:\Program Files\...`), so a match runs to the end of its clause: a quote, a closing
+# bracket, a comma followed by a space, or the end of the line. Losing the rest of an error's clause is the price of
+# never sending half a path.
+OUTSIDE = re.compile(r"""(?ix)
+    (?:\\\\\?\\)?[a-z]:[\\/](?:[^'"`)\r\n,]|,(?!\s))*                  # C:\Users\..., \\?\C:\...
+  | \\\\[^\s\\/'"`]+[\\/](?:[^'"`)\r\n,]|,(?!\s))*                      # \\server\share\...
+  | (?<![\w.])/(?:home|Users|mnt|root|tmp|var|etc|opt|private)/(?:[^'"`)\r\n,]|,(?!\s))*
+""")
+
+
+def without_paths(text, root):
+    """`text` with this repository's own absolute path made relative and every other absolute path named only as
+    `<path outside the repository>`: the email's one guard for the class, applied to every line it sends."""
+    for spelling in {str(root), str(root).replace("\\", "/")}:
+        text = re.sub(re.escape(spelling) + r"[\\/]?", "", text, flags=re.I)
+    return OUTSIDE.sub("<path outside the repository>", text)
+
+
 INSTANT = re.compile(r"\b(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})Z\b")
 
 
@@ -268,6 +289,8 @@ def compose(root, rows, today, ci_lines, state):
             progress = cut
         body = head + kept + [""] + progress + notice  # the notice is the last line, as the attachment's pointer
     subject = f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
+    body = [without_paths(line, root) for line in body]
+    attachments = [(name, without_paths(text, root)) for name, text in attachments]
     return subject, "\n".join(body) + "\n", attachments
 
 

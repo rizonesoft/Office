@@ -276,6 +276,31 @@ class Size(Tree):
                              ["CI: unknown (origin/main cannot be fetched)."])
         self.assertEqual(calls[0][:2], ("fetch", "--quiet"))
 
+    def test_every_kind_of_absolute_path_is_kept_out_of_the_email(self):
+        # Review rounds 1 and 5: paths reached the email from a run-file error and from gh's error via ci-status.py.
+        root = pathlib.Path(r"D:\Office")
+        cases = [
+            (r"CI: unknown (gh: cannot read C:\Users\Owner\AppData\Roaming\GitHub CLI\config.yml).",
+             "CI: unknown (gh: cannot read <path outside the repository>)."),
+            (r"read \\?\C:\Users\me\x.txt, then stopped", "read <path outside the repository>, then stopped"),
+            (r"share \\server\share\folder\f.txt", "share <path outside the repository>"),
+            ("mounts /home/me/x and /mnt/r/scratch", "mounts <path outside the repository>"),
+            (r"inside D:\Office\build\x.json here", r"inside build\x.json here"),
+            ("inside D:/Office/build/x.json here", "inside build/x.json here"),
+            ("relative scripts/owner-digest.py and docs/x.md stay", "relative scripts/owner-digest.py and docs/x.md stay"),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(digest.without_paths(text, root), expected)
+
+    def test_a_path_in_any_part_of_the_email_is_removed(self):
+        self.many(50)
+        leaked = r"CI: unknown for aaaaaaa (gh: open C:\Users\Owner\AppData\Roaming\GitHub CLI\config.yml)."
+        _, body, _ = digest.compose(self.root, self.rows(), TODAY, [leaked], r"Unknown: D:\Secret\run.md")
+        self.assertNotIn("Owner", body)
+        self.assertNotIn("Secret", body)
+        self.assertIn("<path outside the repository>", body)
+
     def test_no_line_names_a_path_outside_the_repository(self):
         self.many(50)
         _, body, attachments = digest.compose(self.root, self.rows(), TODAY, ["CI: green for abc1234."], "Running")
