@@ -10,6 +10,7 @@ deferrals. Rules: todo/README.md.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import datetime
 import hashlib
 import json
 import os
@@ -583,7 +584,8 @@ def graph(root=ROOT):
             require(withdrawn == bool(withdrawal), f"withdrawn box and Withdrawn line must go together: {ref}")
             # A withdrawn section with a stamp is refused below, by the box, stamp and receipt rule ([-] is not [x]).
             if withdrawn:
-                require(WITHDRAWN.fullmatch(withdrawal) is not None,
+                parts = WITHDRAWN.fullmatch(withdrawal)
+                require(parts is not None and _instant(parts[1]) is not None,
                         f"Withdrawn line needs '<UTC instant>: <who decided>: <reason>': {ref}")
             require(done == bool(stamp_line) == bool(receipt),
                     f"checkbox/stamp/receipt mismatch: {ref}")
@@ -1019,9 +1021,16 @@ def contract_digest(row):
 
 
 def _instant(text):
-    """An ISO 8601 UTC instant (`YYYY-MM-DDTHH:MM:SSZ`) as a comparable tuple, or None."""
+    """An ISO 8601 UTC instant (`YYYY-MM-DDTHH:MM:SSZ`) as a comparable tuple, or None, also for a shape that names
+    no real instant (`2026-02-30`, `25:70:90`; D00 T03 §50 review round 1)."""
     m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z", (text or "").strip())
-    return tuple(int(x) for x in m.groups()) if m else None
+    if not m:
+        return None
+    try:
+        datetime.datetime(*(int(x) for x in m.groups()))
+    except ValueError:
+        return None
+    return tuple(int(x) for x in m.groups())
 
 
 def contract_ok(last, row, completion):

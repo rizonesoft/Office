@@ -1588,6 +1588,8 @@ class Withdrawn(Tree):
 
     def test_the_line_needs_an_instant_a_decider_and_a_reason(self):
         for bad in ("> **Withdrawn:** no consumer", "> **Withdrawn:** 2026-11-11: owner: gone",
+                    "> **Withdrawn:** 2026-02-30T07:00:00Z: owner: gone",   # review round 1: no such day
+                    "> **Withdrawn:** 2026-11-11T25:70:90Z: owner: gone",   # review round 1: no such time
                     "> **Withdrawn:** 2026-11-11T06:55:00Z: owner:", "> **Withdrawn:** 2026-11-11T06:55:00Z: : gone"):
             with self.subTest(line=bad):
                 self.write(withdraw(self.two(), 2, line=bad))
