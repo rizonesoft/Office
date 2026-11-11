@@ -64,7 +64,7 @@ Sections: 67 | Checklist items: 454
 | [-]    | D00 T03 §47 | Packet Display and Digest From One Capture          | none                   | 3     |
 | [-]    | D00 T03 §48 | Packet Staging Publishes the Index Atomically       | none                   | 4     |
 | [-]    | D00 T03 §49 | Packet Lifecycle After a Partial Rejection          | none                   | 5     |
-| [ ]    | D00 T03 §50 | Withdrawn Sections                                  | none                   | 11    |
+| [x]    | D00 T03 §50 | Withdrawn Sections                                  | none                   | 11    |
 | [ ]    | D00 T03 §51 | No Deferral or Adjacency Owner Is Withdrawn         | none                   | 4     |
 | [ ]    | D00 T03 §52 | A Withdrawn Section Authors Nothing                 | none                   | 3     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                 | none                   | 12    |
@@ -314,6 +314,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 64/160 verified sections, 8 withdrawn, 23 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 65/160 verified sections, 8 withdrawn, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 424/1096 items completed (includes Commit items).
+Checklist: 425/1096 items completed (includes Commit items).

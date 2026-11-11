@@ -85,7 +85,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 47 | §47 | Packet display and digest from one capture | §34 | [-] |
 | 48 | §48 | Packet staging publishes the index atomically | §34 | [-] |
 | 49 | §49 | Packet lifecycle after a partial rejection | §34 | [-] |
-| 50 | §50 | Withdrawn sections | -- | [ ] |
+| 50 | §50 | Withdrawn sections | -- | [x] |
 | 51 | §51 | No deferral or adjacency owner is withdrawn | §50 | [ ] |
 | 52 | §52 | A withdrawn section authors nothing | §50 | [ ] |
 
@@ -1399,9 +1399,12 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 - [x] Document the withdrawal in `todo/README.md` (what it is for, the line, the `[-]` box, who may decide one: the owner, or the lead for a section whose consumer an owner decision removed) and in `.claude/skills/add-todo/SKILL.md` (a withdrawal goes through this, never by deleting a section). Done when: both name the line, the box and the dependant refusal.
 - [x] Withdraw D00 T03 §34, §46, §47, §48 and §49, and D00 T05 §5, §6 and §7 (lessons attached to work packets, the packet ledger and the agent score from it, which have no packets to work on once no agent writes), with the owner's 2026-11-11 decision as the reason. Done when: `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`, `resolve` on each exits 3, and `validate` passes with no open section left depending on any of them. **Groomed 2026-11-11:** completion finding 1 (it named five; D00 T05 §5 and §6 depend on §34 and §7 on §6).
 - [x] Remove `scripts/packet.py` and `scripts/tests/test_packet.py`, and the `build/packet.json` mention in any document that still describes the command as live. Done when: a search of the repository outside `docs/reviews/`, `docs/phase-runs/` and the withdrawn sections finds no `packet.py`, and `python scripts/run-tests.py` passes.
-- [ ] Commit: `todo: withdraw a section whose purpose is gone`
+- [x] Commit: `todo: withdraw a section whose purpose is gone`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the withdrawal tests among them, `python scripts/todo-graph.py validate` exits 0, and `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`.
+
+> **Verified:** 2026-11-11 | §50 | 920df9794ce485cc82564fad705151f94b935249
+> **Review:** `docs/reviews/d00-t03-s50.json`
 
 ## 51. No Deferral or Adjacency Owner Is Withdrawn
 
