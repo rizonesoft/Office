@@ -102,7 +102,8 @@ class Packet(unittest.TestCase):
     def test_begin_records_name_paths_and_head_on_a_tree_without_changes(self):
         self.begin("src", "docs\\note.md", "./src")
         self.assertEqual(self.state(), {"name": NAME, "paths": ["src", "docs/note.md"],
-                                        "head": self.git("rev-parse", "HEAD").strip(), "folder_links": []})
+                                        "head": self.git("rev-parse", "HEAD").strip(), "folder_links": [],
+                                        "file_links": []})
         self.assertEqual(list((self.repo / "build").glob(".packet-*")), [])
 
     def test_begin_refuses_paths_that_leave_the_repository_and_a_second_packet(self):
@@ -595,11 +596,17 @@ class Packet(unittest.TestCase):
             (self.repo / "src/new").rmdir()
             _winapi.CreateJunction(outside, str(self.repo / "src/new"))
             self.assertTrue((self.repo / "src/new").is_junction())
+            # Round 15: no stash brings a junction back (probes 14, 14b and 14c), so it is named and stays.
             code, _, err = self.cli("reject")
             self.assertEqual((pathlib.Path(outside) / "file.txt").read_bytes(), b"outside the repository\n")
+            self.assertEqual(code, 1, err)
+            self.assertIn("These are junctions", err)
+            self.assertTrue((self.repo / "src/new").is_junction())
+            os.rmdir(self.repo / "src/new")  # the owner takes the junction away: the junction alone
+            code, _, err = self.cli("reject")
             self.assertEqual(code, 0, err)
             self.assertFalse(os.path.lexists(self.repo / "src/new"))
-            self.assertTrue((pathlib.Path(outside) / "file.txt").is_file())
+            self.assertEqual((pathlib.Path(outside) / "file.txt").read_bytes(), b"outside the repository\n")
             self.assert_in_stash("stash@{0}", "src/new/file.txt", "outside the repository\n", "^2")
             self.assertEqual(self.status(), "")
 
@@ -666,15 +673,17 @@ class Packet(unittest.TestCase):
 
     # every kind of occupant, replaced by and replacing every other (review rounds 1 to 8, the takeover)
 
-    def kinds(self):
+    def kinds(self, junction=True):
         """The kinds of thing this account can put at a name: links need the right to create them, a folder link is
-        its own kind only on Windows, and so is a junction."""
+        its own kind only on Windows, and so is a junction. `junction=False` leaves the junction out, for the tests
+        that set every occupant aside: no stash brings a junction back, so reject never removes one (round 15;
+        `test_a_junction_is_named_and_never_removed_because_no_stash_brings_one_back` holds it in each place)."""
         found = ["nothing", "file", "folder"]
         if self.can_link():
             found.append("link")
             if os.name == "nt":
                 found.append("folder link")
-        if os.name == "nt":
+        if os.name == "nt" and junction:
             found.append("junction")
         return found
 
@@ -781,7 +790,7 @@ class Packet(unittest.TestCase):
         import contextlib
         self.git("config", "core.symlinks", "true")
         tracked = ["file", "link"] + (["folder link"] if os.name == "nt" else [])
-        pairs = [(head, held) for head in tracked for held in self.kinds()]
+        pairs = [(head, held) for head in tracked for held in self.kinds(junction=False)]
         for head, held in pairs:
             path = f"m/{head} under {held}".replace(" ", "-")
             if head == "file":
@@ -824,7 +833,7 @@ class Packet(unittest.TestCase):
                     elif held == "link":
                         self.assertRegex(listed, r"^120000 blob ")
                         self.assertEqual(self.git("cat-file", "-p", f"stash@{{0}}:{path}"), "the-workers-target.txt")
-                    elif held in ("folder link", "junction"):
+                    elif held == "folder link":
                         self.assertRegex(listed, r"^120000 blob ")
                     else:  # nothing, or a folder holding nothing: a deletion
                         self.assertEqual(listed, "")
@@ -834,7 +843,7 @@ class Packet(unittest.TestCase):
 
     def test_each_kind_of_untracked_occupant_is_set_aside_and_removed(self):
         import contextlib
-        kinds = [k for k in self.kinds() if k not in ("nothing", "folder")]  # git lists neither as a change
+        kinds = [k for k in self.kinds(junction=False) if k not in ("nothing", "folder")]  # git lists neither
         for kind in kinds:
             self.put(f"docs/group-{kind}/note.md".replace(" ", "-"), "grouped note\n")
         self.git("add", "-A")
@@ -892,12 +901,20 @@ class Packet(unittest.TestCase):
             self.assertEqual(code, 0, err)
             self.assertIn("inside  docs/group\n", out)
             self.assertIn("inside  docs/group/note.md\n", out)
+            # Round 15: the junction is a change, and one no stash brings back (probes 14, 14b and 14c), so
+            # reject names it and removes nothing; with the junction taken away the tracked folder returns.
+            code, _, err = self.cli("reject")
+            self.assertEqual(code, 1, err)
+            self.assertIn("These are junctions", err)
+            self.assertEqual(packet.kind_of(self.repo / "docs/group"), "junction")
+            self.assertRegex(self.git("ls-tree", "stash@{0}^3", "docs/group"), r"^120000 blob ")
+            self.assertEqual((pathlib.Path(outside) / "note.md").read_bytes(), b"grouped note\n")
+            os.rmdir(self.repo / "docs/group")
             code, _, err = self.cli("reject")
             self.assertEqual(code, 0, err)
             self.assertEqual(packet.kind_of(self.repo / "docs/group"), "folder")
             self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
             self.assertEqual((pathlib.Path(outside) / "note.md").read_bytes(), b"grouped note\n")
-            self.assertRegex(self.git("ls-tree", "stash@{0}^3", "docs/group"), r"^120000 blob ")
             self.assertEqual(self.status(), "")
 
     def test_no_temporary_is_left_when_a_return_fails_and_the_retry_finishes(self):
@@ -2177,6 +2194,389 @@ class Packet(unittest.TestCase):
         staged = self.git("ls-files", "-s")
         self.git("add", "-A")
         self.assertEqual(self.git("ls-files", "-s"), staged)
+
+    # the kind of a Windows link, and what git makes of one at stash apply (round 15, finding 1)
+    #
+    # Each test names the probes it rests on: measurements on git 2.56.0.windows.1 in scratch repositories, one
+    # stash built per case in git's standard shape and put back with `git stash apply --index` (U: the link is
+    # among the stash's untracked files, T: among its tracked ones). What they showed:
+    #   01, 09      U and T, target absent: a file link.
+    #   02, 09f     target an empty folder on disk: a folder link.
+    #   03, 03b     `symlink=dir` or `symlink=directory` in HEAD's .gitattributes, target absent: a folder link.
+    #   03c, 15b    `symlink` set bare, unset or any other value: taken as no attribute.
+    #   04, 04b, 05 U, the attribute in an untracked .gitattributes of the stash or a tracked change: a folder link.
+    #   05b, 10c    the attribute in HEAD, taken out by the stash: a file link.
+    #   06, 06b     U, target an untracked folder of the same stash, sorting before or after: a folder link.
+    #   07, 08, 09b target a folder of HEAD or a new tracked folder of the stash: a folder link.
+    #   09c, 09d    T, target a new tracked folder of the stash, sorting before or after: a folder link.
+    #   09e, 10d    T, target folder or attribute only among the stash's untracked files: a file link.
+    #   10, 10b     T, the attribute in HEAD or in the same stash: a folder link.
+    #   11, 11b     `symlink=file`, target a folder: a file link.
+    #   12, 12h     target a folder link, a junction, or a folder reached through a folder link: a folder link;
+    #               target a dangling folder link or a file: a file link.
+    #   31 to 31c   target a file link that names a folder: a file link; a folder reached through it: a folder link.
+    #   30          what a file link to a folder does on this Windows (see the first test below).
+    #   12f to 12j  target another link of the stash that leads to a folder: a folder link.
+    #   13, 13b, 13d  target absolute with a drive, or leaving the repository: by what the disk holds.
+    #   13c, 13e to 13g  target beginning with a separator (`\x`, `\\?\R:\x`): a file link, with a warning.
+    #   14, 14b, 14c  a junction: `git status` and `git add` list the files behind it as the tree's own,
+    #               `git stash push -u` stashes those files and removes the junction, and a recorded link with
+    #               its target comes back a symbolic link. git records no junction and makes none.
+    #   15          the attribute in .git/info/attributes counts, and `git --attr-source=<tree> check-attr` sees it.
+    #   16, 21      a tracked link or file with the same blob in the stash and its base is not written at all.
+    #   17          checkout makes a file link of a link to an absent folder and never converts it later;
+    #               a folder link swapped in for it is no change to `git status`.
+    #   20          Windows reports an absolute target as `\\?\R:\x`; git records `R:/x`, checked out a folder link.
+
+    def windows_links(self):
+        if os.name != "nt" or not self.can_link():
+            self.skipTest("a folder link, a file link and a junction differ only on Windows, and this account "
+                          "must be able to make links")
+
+    def link(self, path, target, folder):
+        """A link of the kind asked for. Python makes a folder link whenever the target is a folder at that moment,
+        so a file link to a folder is made here before its folder is."""
+        (self.repo / path).parent.mkdir(parents=True, exist_ok=True)
+        os.symlink(target, self.repo / path, target_is_directory=folder)
+        self.assertEqual(self.kind(path), "folder link" if folder else "link")
+
+    def kind(self, path):
+        return packet.kind_of(self.repo / path)
+
+    def assert_links(self, links):
+        for path, (kind, target) in links.items():
+            self.assertEqual((path, self.kind(path)), (path, kind))
+            self.assertEqual(os.readlink(self.repo / path), target, path)
+
+    def assert_refused_with_nothing_touched(self, formless, files, says):
+        """reject, twice, refuses: it names every path of `formless` ({path: (kind, target on disk)}) and `says`
+        why, and each link, each of `files` ({path: text}), the index and the stash list are as they were. The
+        stash commit it stored (one, whatever the number of calls)."""
+        index = self.index_path().read_bytes()
+        for attempt in (1, 2):
+            with self.subTest(attempt=attempt):
+                code, out, err = self.cli("reject")
+                self.assertEqual(code, 1, out + err)
+                self.assertIn("NOT REJECTED", err)
+                self.assertIn("in any form they can be stored in: " + ", ".join(sorted(formless)) + ". Nothing", err)
+                self.assertIn(says, err)
+                self.assert_links(formless)
+                for path, text in files.items():
+                    self.assertEqual(self.read(path), text)
+                self.assertEqual(self.index_path().read_bytes(), index)
+                self.assertFalse(self.lock_path().exists())
+                self.assertEqual(self.leftovers(), [])
+                rejection = self.state()["rejection"]
+                self.assertEqual({p: how for p, how in rejection["forms"].items() if how == "none"},
+                                 {path: "none" for path in formless})
+                self.assertEqual(rejection["settled"], {})
+                self.assertEqual(self.git("stash", "list", "--format=%H").split(), [rejection["stash"]])
+        return self.state()["rejection"]["stash"]
+
+    def assert_set_aside_and_brought_back(self, links, shown=True):
+        """`show` names each of `links` ({path: (kind, target on disk)}) as the kind it is, reject sets the tree
+        aside whole, and `git stash apply --index` brings each link back as that kind."""
+        if shown:
+            code, out, err = self.cli("show")
+            self.assertEqual(code, 0, out + err)
+            for path, (kind, target) in links.items():
+                self.assertIn(f"--- new {kind} {path} -> {packet.git_link_target(target)}\n", out)
+        self.assert_links(links)
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assertEqual(self.status(), "")
+        for path in links:
+            self.assertFalse(os.path.lexists(self.repo / path), path)
+        self.assertEqual(self.leftovers(), [])
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assert_links(links)
+
+    def test_a_folder_link_to_a_folder_not_made_yet_is_refused_with_nothing_touched(self):
+        # Round 15, finding 1 (probe 01): the stash check compared the target alone, so reject removed the link
+        # and git stash apply brought back a file link. Probe 30, on this Windows: a file link to a folder still
+        # opens a file named through it, but the folder cannot be listed or entered through it (WinError 267,
+        # "The directory name is invalid", from os.listdir, os.scandir, os.chdir, cmd's cd and type, git -C).
+        self.windows_links()
+        self.begin("src")
+        self.put("src/a.py", "a = 95\n")
+        self.link("src/gen", "..\\generated", True)
+        self.assertEqual(packet.read_entry(self.repo, "src/gen"), ("folder link", b"../generated"))
+        stash = self.assert_refused_with_nothing_touched({"src/gen": ("folder link", "..\\generated")},
+                                                         {"src/a.py": "a = 95\n"}, "symlink=dir")
+        # Why nothing was removed: this is what git makes of that very stash on HEAD's tree.
+        os.rmdir(self.repo / "src/gen")
+        self.put("src/a.py", "a = 1\n")
+        self.git("stash", "apply", "--index", stash)
+        self.assert_links({"src/gen": ("link", "..\\generated")})
+        self.put("generated/item.txt", "made later\n")
+        with self.assertRaises(NotADirectoryError):
+            os.listdir(self.repo / "src/gen")
+
+    def folder_link_named_by_the_attribute(self, where):
+        self.windows_links()
+        if where != "untracked":
+            self.put(".gitattributes", "src/gen symlink=dir\n" if where == "head" else "# no rule yet\n")
+            self.git("add", "-A")
+            self.git("commit", "-q", "-m", "attributes")
+        self.begin("src", ".gitattributes")
+        if where == "changed":
+            self.put(".gitattributes", "# a rule now\nsrc/gen symlink=dir\n")
+        if where == "untracked":
+            self.put("src/.gitattributes", "gen symlink=dir\n")
+        self.link("src/gen", "..\\generated", True)
+        self.assert_set_aside_and_brought_back({"src/gen": ("folder link", "..\\generated")})
+        self.put("generated/item.txt", "made later\n")
+        self.assertEqual(os.listdir(self.repo / "src/gen"), ["item.txt"])
+        self.assertEqual((self.repo / "src/gen/item.txt").read_bytes(), b"made later\n")
+
+    def test_a_dangling_folder_link_heads_symlink_attribute_names_comes_back_a_folder_link(self):
+        self.folder_link_named_by_the_attribute("head")  # probe 03
+
+    def test_a_dangling_folder_link_named_by_an_attribute_file_new_in_the_packet_comes_back_a_folder_link(self):
+        self.folder_link_named_by_the_attribute("untracked")  # probes 04 and 04b
+
+    def test_a_dangling_folder_link_named_by_an_attribute_the_packet_added_comes_back_a_folder_link(self):
+        self.folder_link_named_by_the_attribute("changed")  # probe 05
+
+    def test_a_folder_link_whose_target_is_a_folder_comes_back_a_folder_link(self):
+        # Probes 02 (an empty folder on disk), 07 (a folder of HEAD), 06 and 06b (an untracked folder of the same
+        # stash, sorting after the link and before it).
+        self.windows_links()
+        self.begin("src")
+        (self.repo / "generated").mkdir()  # empty: not a change, and nothing takes it away
+        self.put("src/made/item.txt", "made by the worker\n")
+        links = {"src/gen": ("folder link", "..\\generated"), "src/to-docs": ("folder link", "..\\docs"),
+                 "src/a-link": ("folder link", "made"), "src/z-link": ("folder link", "made")}
+        for path, (_, target) in links.items():
+            self.link(path, target, True)
+        self.assert_set_aside_and_brought_back(links)
+        self.assertEqual(self.kind("generated"), "folder")
+        self.assertEqual((self.repo / "src/to-docs/note.md").read_bytes(), b"note\n")
+        self.assertEqual((self.repo / "src/a-link/item.txt").read_bytes(), b"made by the worker\n")
+        self.assertEqual((self.repo / "src/z-link/item.txt").read_bytes(), b"made by the worker\n")
+
+    def test_a_file_link_comes_back_a_file_link(self):
+        # Probes 01 (target absent) and 12 (target a file): git makes a file link of both.
+        self.windows_links()
+        self.begin("src")
+        links = {"src/to-file": ("link", "a.py"), "src/dangling": ("link", "no\\where")}
+        for path, (_, target) in links.items():
+            self.link(path, target, False)
+        self.assertEqual(packet.read_entry(self.repo, "src/dangling"), ("link", b"no/where"))
+        self.assert_set_aside_and_brought_back(links)
+
+    def test_a_file_link_to_a_folder_is_refused_until_the_attribute_names_it_a_file_link(self):
+        # Probes 02 and 11: git turns a link whose target is a folder into a folder link, unless `symlink=file`.
+        self.windows_links()
+        self.begin("src")
+        self.link("src/odd", "..\\later", False)
+        (self.repo / "later").mkdir()  # empty: not a change, and nothing takes it away
+        self.assert_refused_with_nothing_touched({"src/odd": ("link", "..\\later")}, {}, "symlink=file")
+        self.put("src/.gitattributes", "odd symlink=file\n")
+        self.assert_set_aside_and_brought_back({"src/odd": ("link", "..\\later")})
+        with self.assertRaises(NotADirectoryError):
+            os.listdir(self.repo / "src/odd")
+
+    def test_a_junction_is_named_and_never_removed_because_no_stash_brings_one_back(self):
+        # Probes 14, 14b and 14c: to git a junction is a folder; it records none and makes none, with or without
+        # a `symlink` attribute, so under every setting the stash would bring back something else.
+        if os.name != "nt":
+            self.skipTest("junctions are a Windows feature")
+        import _winapi
+        import contextlib
+        self.tracked_group()
+        self.put(".gitattributes", "src/j symlink=dir\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "an attribute changes nothing for a junction")
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            self.begin("src", "docs")
+            self.put("src/a.py", "a = 96\n")
+            self.vacate("docs/group")
+            places = ("src/j", "src/deep/in/j", "docs/group")  # a free name, new folders, a tracked folder's place
+            for path in places:
+                (self.repo / path).parent.mkdir(parents=True, exist_ok=True)
+                _winapi.CreateJunction(str(outside), str(self.repo / path))
+            held = {path: ("junction", os.readlink(self.repo / path)) for path in places}
+            self.assertEqual(packet.read_entry(self.repo, "src/j"),
+                             ("junction", str(outside).replace("\\", "/").encode("utf-8")))
+            code, out, err = self.cli("show")
+            self.assertEqual(code, 0, out + err)
+            self.assertIn("--- new junction src/j -> ", out)
+            self.assert_refused_with_nothing_touched(held, {"src/a.py": "a = 96\n"}, "These are junctions")
+            self.assert_outside_untouched(outside)
+            for path in held:
+                os.rmdir(self.repo / path)  # the owner's own step: it takes the junction alone
+            self.assert_outside_untouched(outside)
+            code, out, err = self.cli("reject")
+            self.assertEqual(code, 0, out + err)
+            self.assertEqual(self.read("src/a.py"), "a = 1\n")
+            self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
+            self.assertEqual(self.status(), "")
+            self.assert_outside_untouched(outside)
+
+    def test_a_tracked_link_changed_in_kind_alone_is_a_change_no_stash_can_hold(self):
+        # Probes 17 (git status lists nothing when a folder link is swapped in for a file link) and 16 (git stash
+        # apply leaves a tracked link alone when its target is the one HEAD has).
+        self.windows_links()
+        self.link("src/gen", "..\\generated", True)
+        self.git("add", "src/gen")
+        self.git("commit", "-q", "-m", "a folder link to a folder a build makes")
+        self.begin("src")
+        self.assertEqual((self.state()["folder_links"], self.state()["file_links"]), (["src/gen"], []))
+        os.rmdir(self.repo / "src/gen")
+        self.link("src/gen", "..\\generated", False)
+        self.assertEqual(self.status(), "")  # git records the target alone
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("inside  src/gen\n", out)
+        self.assertIn("--- now a link: src/gen (git shows no change", out)
+        self.assert_refused_with_nothing_touched({"src/gen": ("link", "..\\generated")}, {},
+                                                 "Make each the kind it was")
+        os.unlink(self.repo / "src/gen")
+        self.link("src/gen", "..\\generated", True)
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("nothing to set aside; packet closed", out)
+
+    def test_a_tracked_folder_link_to_a_folder_only_the_untracked_files_make_is_refused(self):
+        # Probe 09e: git writes a stash's tracked paths in one process and its untracked files in a later one,
+        # so the folder is not there when the link is made and the link stays a file link.
+        self.windows_links()
+        self.begin("src")
+        self.put("src/made/item.txt", "made by the worker\n")
+        self.link("src/gen", "made", True)
+        self.git("add", "src/gen")
+        stash = self.assert_refused_with_nothing_touched({"src/gen": ("folder link", "made")},
+                                                         {"src/made/item.txt": "made by the worker\n"}, "symlink=dir")
+        self.assertEqual(self.mode_in(stash, "src/gen"), "120000")
+        self.git("add", "src/made")  # probes 09c and 09d: a tracked folder of the same stash is there in time
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(self.status(), "")
+        self.assertFalse(os.path.lexists(self.repo / "src/gen"))
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assert_links({"src/gen": ("folder link", "made")})
+        self.assertEqual((self.repo / "src/gen/item.txt").read_bytes(), b"made by the worker\n")
+
+    def test_an_absolute_link_target_is_recorded_as_git_records_it_and_comes_back_a_folder_link(self):
+        # Probes 20 and 13e: Windows reports the target as `\\?\R:\x`. Recorded like that, git writes it back as
+        # a file link; git itself records `R:/x`, which it checks out as a folder link.
+        self.windows_links()
+        import contextlib
+        with contextlib.ExitStack() as stack:
+            outside = self.outside_folder(stack)
+            self.begin("src")
+            self.link("src/abs", str(outside), True)
+            on_disk = os.readlink(self.repo / "src/abs")
+            self.git("add", "src/abs")
+            as_git = self.blob(":src/abs")
+            self.git("rm", "-q", "--cached", "src/abs")
+            self.assertEqual(as_git, str(outside).replace("\\", "/").encode("utf-8"))
+            self.assertEqual(packet.read_entry(self.repo, "src/abs"), ("folder link", as_git))
+            self.assert_set_aside_and_brought_back({"src/abs": ("folder link", on_disk)})
+            self.assertEqual(self.blob("stash@{0}^3:src/abs"), as_git)
+            self.assertEqual((self.repo / "src/abs/note.md").read_bytes(), b"outside the repository\n")
+            self.assert_outside_untouched(outside)
+
+    def test_a_link_target_loses_the_prefix_windows_reports_as_git_takes_it_off(self):
+        if os.name != "nt":
+            self.skipTest("only Windows reports a link target with a prefix")
+        for reported, recorded in (("\\\\?\\R:\\x\\outside", "R:/x/outside"), ("\\??\\R:\\x", "R:/x"),
+                                   ("\\\\?\\UNC\\host\\share\\x", "//host/share/x"), ("\\DosDevices\\R:\\x", "R:/x"),
+                                   ("..\\generated", "../generated"), ("\\x\\y", "/x/y"), ("a.py", "a.py")):
+            self.assertEqual(packet.git_link_target(reported), recorded)
+
+    def test_heads_file_link_returns_as_the_file_link_it_was_at_begin_though_its_target_is_a_folder_now(self):
+        # `begin`'s record says what kind HEAD's link is in this tree; whether the target is a folder at the
+        # moment of the return said so before, and made a folder link of a link that had been a file link.
+        self.windows_links()
+        self.tracked_link("src/gen", "../build/out")  # probe 17: git checks it out a file link, nothing is there
+        self.begin("src")
+        self.assertEqual((self.state()["folder_links"], self.state()["file_links"]), ([], ["src/gen"]))
+        (self.repo / "build/out").mkdir()  # ignored, so no change of the packet's and nothing reject takes away
+        os.unlink(self.repo / "src/gen")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assert_links({"src/gen": ("link", "..\\build\\out")})
+        self.assertEqual(self.status(), "")
+
+    def test_a_link_begin_has_no_record_of_returns_as_the_kind_gits_checkout_makes(self):
+        # A packet opened while git made no links has no kind on record for HEAD's links. Probes 09 and 09b:
+        # git's checkout makes a folder link where the target is a folder and a file link where nothing is.
+        self.windows_links()
+        self.git("config", "core.symlinks", "false")
+        self.tracked_link("src/to-docs", "../docs")
+        self.tracked_link("src/gen", "../generated")
+        self.begin("src")
+        self.assertEqual((self.state()["folder_links"], self.state()["file_links"]), ([], []))
+        self.git("config", "core.symlinks", "true")
+        for path in ("src/to-docs", "src/gen"):
+            os.unlink(self.repo / path)
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assert_links({"src/to-docs": ("folder link", "..\\docs"), "src/gen": ("link", "..\\generated")})
+        for path in ("src/to-docs", "src/gen"):  # git's own checkout of the same entries makes the same
+            self.vacate(path)
+        self.git("checkout", "--", "src")
+        self.assert_links({"src/to-docs": ("folder link", "..\\docs"), "src/gen": ("link", "..\\generated")})
+
+    def test_the_stash_check_reads_gits_rule_for_a_link_from_the_stash_and_not_from_the_disk(self):
+        # link_made on its own: the attribute comes from the tree asked (probes 05b, 10c, 10d and 15b), the
+        # target from that tree first (probes 07, 12f), and what another step puts there settles nothing (09e).
+        self.windows_links()
+        self.put(".gitattributes", "src/by-rule symlink=dir\nsrc/as-file symlink=file\nsrc/bare symlink\n")
+        self.put("src/sub/item.txt", "item\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "rules and a folder")
+        self.tracked_link("src/as-file", "sub")  # probe 11b: git checks it out a file link
+        self.tracked_link("src/chain", "sub")
+        self.assert_links({"src/as-file": ("link", "sub"), "src/chain": ("folder link", "sub")})
+        head = self.git("rev-parse", "HEAD").strip()
+        earlier = self.git("rev-parse", "HEAD~1").strip()
+        (self.repo / ".gitattributes").unlink()  # the disk's rules have no say
+        for path, target, others, made in (
+                ("src/by-rule", "nowhere", (), "folder link"), ("src/as-file", "sub", (), "link"),
+                ("src/bare", "nowhere", (), "link"), ("src/bare", "sub", (), "folder link"),
+                ("src/x", "../docs", (), "folder link"), ("src/x", "a.py", (), "link"),
+                ("src/x", "chain", (), "folder link"), ("src/x", "..", (), "folder link"),
+                ("src/x", "/docs", (), "link"), ("src/x", "//?/" + str(self.repo).replace("\\", "/"), (), "link"),
+                ("src/x", str(self.repo).replace("\\", "/"), (), "folder link"),
+                ("src/x", "as-file", (), "link"),  # probes 31 and 31c: a file link to a folder opens as no folder
+                ("src/x", "nowhere", (), "link")):
+            with self.subTest(path=path, target=target):
+                self.assertEqual(packet.link_made(self.repo, head, others, path, target), made)
+        # Before the commit that added the link `src/chain`, that tree has nothing there: what the disk holds
+        # counts (the link git checked out, which leads to a folder), unless another tree of the stash has the
+        # path, and then nothing settles it.
+        self.assertEqual(packet.link_made(self.repo, earlier, (), "src/x", "chain"), "folder link")
+        self.assertEqual(packet.link_made(self.repo, earlier, (head,), "src/x", "chain"), packet.UNSETTLED)
+
+    def test_a_file_whose_blob_is_heads_under_a_rule_the_packet_changed_comes_back_as_its_bytes(self):
+        # Probe 21: git stash apply does not write a tracked file whose blob in the stash is the one HEAD has,
+        # whatever rule the stash changes for it. The check read that blob out under the stash's rule and
+        # approved bytes git never writes: after the apply the file was still as reject had returned it.
+        self.put(".gitattributes", "# no rule yet\n")
+        self.put_bytes("src/t.txt", b"one\ntwo\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "a text file and no rule")
+        self.begin("src", ".gitattributes")
+        self.put(".gitattributes", "*.txt text eol=crlf\n")
+        self.put_bytes("src/t.txt", b"staged\r\n")
+        self.git("add", "src/t.txt")
+        self.put_bytes("src/t.txt", b"one\r\ntwo\r\n")  # to git, under the new rule, HEAD's own content
+        before = self.whole_state()
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(self.raw("src/t.txt"), b"one\ntwo\n")
+        self.assertEqual(self.status(), "")
+        self.assertRegex(out, r"stored as the bytes they are, which the stash gives back exactly[^\n]*src/t\.txt")
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assertEqual(self.raw("src/t.txt"), b"one\r\ntwo\r\n")
+        self.assertEqual(self.read(".gitattributes"), "*.txt text eol=crlf\n")
+        self.assertEqual(self.whole_state()["staged"], before["staged"])
 
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
