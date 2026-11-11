@@ -1261,8 +1261,10 @@ class Packet(unittest.TestCase):
         with mock.patch.object(packet, "run_git", watch):
             code, _, err = self.run_in_process("reject")
         self.assertEqual(code, 0, err)
-        at = self.git("rev-parse", "HEAD").strip()
-        self.assertEqual(converted, [(f"--attr-source={at}", "cat-file", "--filters", f"{at}:src/a.py")])
+        at, stash = self.git("rev-parse", "HEAD").strip(), self.git("rev-parse", "stash@{0}").strip()
+        # Round 13: the stash is read back too, by its own attributes; no conversion reads the rules on disk.
+        self.assertEqual(converted, [(f"--attr-source={stash}", "cat-file", "--filters", f"{stash}:src/a.py"),
+                                     (f"--attr-source={at}", "cat-file", "--filters", f"{at}:src/a.py")])
 
     # reject and the index: one step under git's own lock (round 11, finding 1)
 
@@ -1718,7 +1720,7 @@ class Packet(unittest.TestCase):
         self.assertEqual(self.index_path().read_bytes(), raw)
 
     def test_no_private_index_is_left_when_the_stash_cannot_be_built(self):
-        for target in ("capture", "build_stash"):
+        for target in ("capture", "build_stash", "stash_entry"):
             with self.subTest(fails=target):
                 self.begin("src")
                 self.put("src/a.py", "a = 63\n")
@@ -1733,6 +1735,227 @@ class Packet(unittest.TestCase):
                 code, _, err = self.cli("reject")
                 self.assertEqual(code, 0, err)
                 self.assert_in_stash("stash@{0}", "src/a.py", "a = 63\n")
+
+    # reject: the stored stash gives back every captured path, or nothing is removed (round 13, finding 1)
+
+    MIXED = b"one\r\ntwo\nthree\r\n"
+
+    def put_bytes(self, path, raw):
+        target = self.repo / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw)
+
+    def raw(self, path):
+        return (self.repo / path).read_bytes()
+
+    def blob(self, name):
+        """The bytes of the object `name`, exactly as git stores them."""
+        return subprocess.run([git_path(), "-C", str(self.repo), "cat-file", "blob", name], capture_output=True,
+                              check=True, timeout=60).stdout
+
+    def commit_rule(self, rule):
+        self.put(".gitattributes", rule)
+        self.git("add", ".gitattributes")
+        self.git("commit", "-q", "-m", "a rule")
+
+    def reject_with_a_save_after_the_capture(self, save):
+        """Run reject in-process; `save` runs at the seam, when every changed path has been read and before the
+        stash is built from what was read. The stash commit and reject's result."""
+        real = packet.capture
+
+        def capture_then_save(*args, **kwargs):
+            captured = real(*args, **kwargs)
+            save()
+            return captured
+
+        with mock.patch.object(packet, "capture", capture_then_save):
+            code, out, err = self.run_in_process("reject")
+        return self.git("rev-parse", "stash@{0}").strip(), code, out + err
+
+    def finish_and_apply(self, stash):
+        """Set aside whatever the first reject left (a save made after its capture), then let git itself bring
+        `stash` back onto HEAD's tree."""
+        for _ in range(3):
+            if not (self.repo / "build/packet.json").exists():
+                break
+            self.cli("reject")
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "build/packet.json").exists())
+        applied = subprocess.run([git_path(), "-C", str(self.repo), "stash", "apply", "--index", stash],
+                                 capture_output=True, text=True, encoding="utf-8", timeout=60)
+        self.assertEqual(applied.returncode, 0, applied.stdout + applied.stderr)
+
+    def test_an_untracked_file_whose_rule_is_edited_between_the_capture_and_the_stash_comes_back_whole(self):
+        # Round 13: the blob was made under the rule on disk when the stash was built (eol=lf, saved after the
+        # file was read under -text), so the stash held LF alone, and reject then removed the file: its mixed
+        # endings were in neither the stash nor the tree.
+        self.commit_rule("src/fixture.txt -text\n")
+        self.begin("src")
+        self.put_bytes("src/fixture.txt", self.MIXED)
+        stash, code, out = self.reject_with_a_save_after_the_capture(
+            lambda: self.put(".gitattributes", "src/fixture.txt text eol=lf\n"))
+        self.assertEqual(code, 1, out)  # the rule saved after the capture is in no stash yet: kept and named
+        self.assertIn(".gitattributes", out)
+        self.assertFalse((self.repo / "src/fixture.txt").exists())
+        self.assertEqual(self.read(".gitattributes"), "src/fixture.txt text eol=lf\n")
+        self.assertEqual(self.blob(f"{stash}^3:src/fixture.txt"), self.MIXED)
+        self.assertIn("stored as the bytes they are, which the stash gives back exactly", out)
+        self.finish_and_apply(stash)
+        self.assertEqual(self.raw("src/fixture.txt"), self.MIXED)
+        self.assertEqual(self.read(".gitattributes"), "src/fixture.txt -text\n")
+
+    def test_a_tracked_file_whose_rule_is_edited_between_the_capture_and_the_stash_comes_back_whole(self):
+        self.commit_rule("src/a.py -text\n")
+        self.begin("src")
+        self.put_bytes("src/a.py", self.MIXED)
+        stash, code, out = self.reject_with_a_save_after_the_capture(
+            lambda: self.put(".gitattributes", "src/a.py text eol=lf\n"))
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")  # it still held the captured bytes, so HEAD's returned
+        self.assertEqual(self.blob(f"{stash}:src/a.py"), self.MIXED)
+        self.finish_and_apply(stash)
+        self.assertEqual(self.raw("src/a.py"), self.MIXED)
+        self.assertEqual(self.status(), " M src/a.py\n")
+
+    def test_every_kind_of_change_comes_back_whole_when_a_rule_is_edited_between_the_capture_and_the_stash(self):
+        self.commit_rule("* -text\n")
+        self.every_kind_of_change()
+        mixed = ("src/a.py", "docs/note.md", "src/new.py", "new/dir/c.py")  # staged and edited, edited, untracked
+        for path in mixed:
+            self.put_bytes(path, self.MIXED + path.encode())
+        before = self.whole_state()
+        stash, code, out = self.reject_with_a_save_after_the_capture(
+            lambda: self.put(".gitattributes", "* text eol=lf\n"))
+        self.assertEqual(code, 1, out)
+        for path in mixed[2:]:
+            self.assertFalse((self.repo / path).exists(), path)
+        self.assert_the_stash_brings_back(stash, before)
+        for path in mixed:
+            self.assertEqual(self.raw(path), self.MIXED + path.encode(), path)
+
+    def test_mixed_line_endings_git_would_normalise_are_stored_as_they_are_and_come_back_whole(self):
+        # No save in between is needed: under core.autocrlf (the owner's setting) the blob git add makes of a
+        # file with mixed endings holds LF alone and checks out with CRLF alone.
+        self.git("config", "core.autocrlf", "true")
+        self.begin("src")
+        self.put_bytes("src/a.py", self.MIXED)
+        self.put_bytes("src/new.txt", self.MIXED)
+        self.put_bytes("src/crlf.txt", b"one\r\ntwo\r\n")
+        before = self.whole_state()
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn("stored as the bytes they are, which the stash gives back exactly (the blob git add makes of "
+                      "them would not): src/a.py, src/new.txt\n", out)
+        self.assertEqual(self.blob("stash@{0}^3:src/crlf.txt"), b"one\ntwo\n")  # as git add stores it: it comes back
+        self.finish_and_apply("stash@{0}")
+        self.assertEqual(self.raw("src/a.py"), self.MIXED)
+        self.assertEqual(self.raw("src/new.txt"), self.MIXED)
+        self.assertEqual(self.raw("src/crlf.txt"), b"one\r\ntwo\r\n")
+        self.assertEqual(self.whole_state(), before)
+
+    def test_a_file_git_converts_on_every_checkout_is_stored_as_its_bytes_and_named(self):
+        # A file saved with LF where the stash's own rules check out CRLF: no blob comes back as LF, so the blob
+        # is the bytes themselves and git reads what it writes back as the same content.
+        self.git("config", "core.autocrlf", "true")
+        self.begin("src")
+        self.put("src/a.py", "a = 2\n")
+        self.put("src/new.py", "new\n")
+        before = self.whole_state()
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        stash = self.git("rev-parse", "stash@{0}").strip()
+        self.assertIn(f"`git cat-file blob {stash}:<path>` (`{stash}^3:<path>` for a new file) prints them exactly: "
+                      "src/a.py, src/new.py\n", out)
+        self.assertEqual(self.blob(f"{stash}:src/a.py"), b"a = 2\n")
+        self.assertEqual(self.blob(f"{stash}^3:src/new.py"), b"new\n")
+        self.finish_and_apply(stash)
+        self.assertEqual(self.raw("src/a.py"), b"a = 2\r\n")  # git's own conversion, of exactly those bytes
+        self.assertEqual(self.raw("src/new.py"), b"new\r\n")
+        after = self.whole_state()
+        self.assertEqual((after["status"], after["staged"], after["unstaged"]),
+                         (before["status"], before["staged"], before["unstaged"]))
+
+    def one_way_filter(self):
+        """A filter that does not undo itself, on *.dat, tracked in HEAD's .gitattributes; a packet open over an
+        edit, a staged edit and an untracked file under that filter."""
+        self.git("config", "filter.oneway.clean", "cat")
+        self.git("config", "filter.oneway.smudge", "tr a b")
+        self.commit_rule("*.dat filter=oneway\n")
+        self.begin("src")
+        self.put("src/a.py", "a = 70\n")
+        self.put("docs/note.md", "staged\n")
+        self.git("add", "docs/note.md")
+        self.put("src/data.dat", "banana\n")
+
+    def test_a_path_no_stored_form_gives_back_stops_reject_before_anything_is_changed(self):
+        self.one_way_filter()
+        index = self.index_path().read_bytes()
+        for attempt in (1, 2):  # the second call finds nothing new and stores no second stash
+            with self.subTest(attempt=attempt):
+                code, out, err = self.cli("reject")
+                self.assertEqual(code, 1, out + err)
+                self.assertIn("NOT REJECTED", err)
+                self.assertIn("in any form they can be stored in: src/data.dat. Nothing in the tree", err)
+                self.assertEqual(self.read("src/data.dat"), "banana\n")
+                self.assertEqual(self.read("src/a.py"), "a = 70\n")
+                self.assertEqual(self.index_path().read_bytes(), index)
+                self.assertFalse(self.lock_path().exists())
+                self.assertEqual(sorted(p.name for p in (self.repo / ".git").glob("tmp*")), [])
+                rejection = self.state()["rejection"]
+                self.assertEqual(rejection["forms"], {"docs/note.md": "filtered", "src/a.py": "filtered",
+                                                      "src/data.dat": "none"})
+                self.assertEqual(rejection["settled"], {})
+                self.assertEqual(self.git("stash", "list", "--format=%H").split(), [rejection["stash"]])
+                self.assertEqual(self.blob(f"{rejection['stash']}^3:src/data.dat"), b"banana\n")
+                self.assert_in_stash(rejection["stash"], "src/a.py", "a = 70\n")
+                self.assert_in_stash(rejection["stash"], "docs/note.md", "staged\n", "^2")
+
+    def test_reject_goes_on_once_the_rule_that_had_no_form_is_changed(self):
+        self.one_way_filter()
+        self.assertEqual(self.cli("reject")[0], 1)
+        first = self.state()["rejection"]["stash"]
+        self.put(".gitattributes", "*.dat -text\n")  # the owner takes the filter off: a change like any other
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "src/data.dat").exists())
+        self.assertEqual(self.read(".gitattributes"), "*.dat filter=oneway\n")
+        stashes = self.git("stash", "list", "--format=%H").split()
+        self.assertEqual(stashes[1:], [first])  # never taken back out
+        self.git("stash", "apply", "--index", stashes[0])
+        self.assertEqual(self.read("src/data.dat"), "banana\n")
+        self.assertEqual(self.read(".gitattributes"), "*.dat -text\n")
+        self.assertEqual(self.read("src/a.py"), "a = 70\n")
+
+    def test_an_untracked_file_is_checked_by_the_rules_git_applies_to_it_from_the_tracked_tree(self):
+        # git writes a stash's untracked files with the tracked .gitattributes in place: read by the untracked
+        # parent's rules alone (it has none), this file would pass as LF and come back from git as CRLF.
+        self.commit_rule("*.txt text eol=crlf\n")
+        self.begin("src")
+        self.put_bytes("src/crlf.txt", b"one\r\ntwo\r\n")
+        self.put_bytes("src/lf.txt", b"one\ntwo\n")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn("prints them exactly: src/lf.txt\n", out)
+        self.assertNotIn("src/crlf.txt", out)
+        self.finish_and_apply("stash@{0}")
+        self.assertEqual(self.raw("src/crlf.txt"), b"one\r\ntwo\r\n")
+        self.assertEqual(self.raw("src/lf.txt"), b"one\r\ntwo\r\n")
+
+    def test_the_form_of_every_changed_path_is_recorded_before_the_stash_is_stored(self):
+        self.every_kind_of_change()
+        self.stopped_reject("store", after=False)
+        rejection = self.state()["rejection"]
+        self.assertFalse(rejection["stored"])
+        self.assertEqual(rejection["forms"], {
+            "docs/gone.md": "absent", "docs/lost.md": "absent", "docs/old.md": "absent", "docs/note.md": "filtered",
+            "docs/renamed.md": "filtered", "new/dir/c.py": "filtered", "src/a.py": "filtered",
+            "src/new.py": "filtered", "src/staged.py": "filtered"})
+        self.assertEqual(sorted(rejection["forms"]), sorted(rejection["paths"]))
+        code, _, err = self.cli("reject")  # the resumed run keeps the record it found
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("rev-parse", "stash@{0}").strip(), rejection["stash"])
 
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.

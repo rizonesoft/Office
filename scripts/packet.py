@@ -26,11 +26,12 @@ unstaged. Then it closes the packet. Otherwise the index is left as it was.
 
 `reject` refuses (exit 1, nothing changed) when `HEAD` moved, naming the commits. Otherwise it builds a stash of the
 whole tree (index, tracked and untracked files, in `git stash push --include-untracked`'s shape) from the bytes it
-reads, without touching the tree, stores it with `git stash store` as `rejected packet: <name>`, and then returns
-each changed path to `HEAD`, checking right before each write that the path still holds the bytes the stash
-captured: a path saved meanwhile is kept on disk and named, and the index goes back to `HEAD` only while it is still
-the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
-writes after them, so a folder that took a tracked file's name is emptied before the file returns.
+reads, without touching the tree, checks that it gives every one of them back (below), stores it with
+`git stash store` as `rejected packet: <name>`, and then returns each changed path to `HEAD`, checking right before
+each write that the path still holds the bytes the stash captured: a path saved meanwhile is kept on disk and named,
+and the index goes back to `HEAD` only while it is still the one the stash captured (an index staged after the
+capture is kept and named). Removals run deepest first and writes after them, so a folder that took a tracked file's
+name is emptied before the file returns.
 
 `reject` reads the index once. Before it lists anything it reads the index file's bytes one time into a private
 copy (`index_snapshot`), and every question it then asks about the index is put to that copy and never to the live
@@ -70,9 +71,34 @@ first and then writes `HEAD`'s, and holds `HEAD`'s back while a kept save still 
 Content is converted by the attributes of the tree it belongs to. A file `reject` returns is `HEAD`'s blob as
 `HEAD`'s own `.gitattributes` check it out (`git --attr-source=<HEAD>`), never as the working tree's do: those may be
 the very change being rejected, so a line-ending rule the worker changed or added has no say in what comes back.
-`reject` refuses (exit 2, nothing changed) under a git that cannot read attributes from a commit. Working-tree bytes,
-staged by `show --stage` or written into the stash, pass the working tree's attributes, as `git add` and
-`git stash push` pass them: the `.gitattributes` beside them is part of the same change and is stored with them.
+`reject` refuses (exit 2, nothing changed) under a git that cannot read attributes from a commit. Working-tree bytes
+staged by `show --stage` pass the working tree's attributes, as `git add` passes them; that verb removes and writes
+no file of the tree, so the reviewed bytes stay in their files whatever the index holds.
+
+`reject` removes and overwrites files, so it holds to one rule, checked on the stored objects after the stash is
+built and before anything in the tree or the index is touched: every captured path comes back out of the stash as
+it was captured. The check asks the stash alone: each path is checked out of the stash commit under the attributes
+git itself will use for it at `git stash apply` (`git --attr-source=<the stash commit>` for a tracked path, and for
+an untracked one the stash's tree together with its untracked parent's, since git writes untracked files after the
+tracked ones are in place), a link is compared as its target, and no `.gitattributes` on disk is read for it. So
+whatever changes on disk between the moment a file is read and the moment its blob is made, a rule edited in
+between included, either the stash is shown to give the captured entry back or nothing is removed. Each file is
+stored in the first of these forms that passes, recorded per path under `rejection.forms` in `build/packet.json`:
+
+- `filtered`: the blob `git add` makes of the bytes; checked out of the stash it is the captured bytes again.
+- `unfiltered`: the captured bytes themselves as the blob, for a file the first form does not give back (mixed line
+  endings git would normalise, a rule that changed after the read); checked out, it is the captured bytes again.
+- `converted`: no blob checks out as the captured bytes, because the stash's own rules rewrite them on every
+  checkout (a file saved with LF where `core.autocrlf` or `eol=crlf` checks it out with CRLF). The blob is the
+  captured bytes themselves, so `git cat-file blob <stash>:<path>` (`<stash>^3:<path>` for an untracked file)
+  prints them exactly, and what `git stash apply` writes is to git the same content: under the stash's rules both
+  make one and the same blob, so `git status` and `git diff` read the applied tree as they read the captured one.
+- `none`: neither holds (a filter that does not undo itself, say). `reject` then stores the stash it has, with the
+  file's bytes as its blob, changes nothing in the tree or the index, names each such path and exits 1 with the
+  packet open; the next `reject` reads the tree afresh, and stores no second stash while nothing has changed.
+
+`link` and `absent` are recorded for a link (its target, unfiltered) and for a path with nothing on disk. Paths
+stored `unfiltered` or `converted` are named in `reject`'s output.
 
 `reject` records its progress in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
@@ -453,26 +479,33 @@ def mode_of(repo, base, path, env=None):
     return "100644"
 
 
-def stage_bytes(repo, base, captured, env=None):
+def blob_of(repo, base, path, entry, env=None, filtered=True):
+    """(mode, blob) for a captured entry, the blob written to git's object store. A link is stored as git stores
+    one, mode 120000 with its target unfiltered. A file keeps its file mode (`mode_of`, asked of the index `env`
+    names) and is stored `filtered`, the blob `git add` makes of the bytes under the attributes the working tree
+    holds at this moment, or not: the bytes themselves."""
+    kind, raw = entry
+    if kind == "link":
+        return "120000", run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
+    how = f"--path={path}" if filtered else "--no-filters"
+    blob = run_git(repo, "hash-object", "-w", "--stdin", how, data=raw, env=env).decode().strip()
+    return mode_of(repo, base, path, env), blob
+
+
+def stage_bytes(repo, base, captured, env=None, blobs=None):
     """Put exactly the captured entries in the index (or remove a path captured as absent). Removals go first, so a
     file that took a folder's name is added only once the folder's entries are gone, and `--replace` lets an entry
-    take a name a staged file or folder still holds. A link is stored as git stores one, mode 120000 with its target
-    unfiltered; a file keeps its file mode and passes git's filters for its path. Each entry is the capture of its
-    exact spelling, so of two spellings of one name only the one its folder lists is added and the other is removed.
+    take a name a staged file or folder still holds. Each entry is the capture of its exact spelling, so of two
+    spellings of one name only the one its folder lists is added and the other is removed.
 
-    The filters are the working tree's, on purpose: these are working-tree bytes, and the `.gitattributes` on disk
-    beside them is the one staged or stashed with them, so the blob is the one `git add` (for `show --stage`) and
-    `git stash push` (for the stash) would store, and it checks out again to the same bytes under those rules."""
+    `blobs` gives each path's (mode, blob) when the caller has made them already (`build_stash`, which checks every
+    one of them against the capture before `reject` goes on). Without it each is made here as `git add` makes it
+    (`blob_of`), which is what `show --stage` is for: the index it writes is the one `git add` of the reviewed
+    bytes would write, and it takes nothing off the disk."""
     for path in sorted((p for p, e in captured.items() if e is None), key=lambda p: (-p.count("/"), p)):
         run_git(repo, "update-index", "--force-remove", "--", path, env=env)
     for path, entry in sorted((p, e) for p, e in captured.items() if e is not None):
-        kind, raw = entry
-        if kind == "link":
-            blob = run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
-            mode = "120000"
-        else:
-            blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
-            mode = mode_of(repo, base, path, env)
+        mode, blob = blobs[path] if blobs is not None else blob_of(repo, base, path, entry, env)
         run_git(repo, "update-index", "--add", "--replace", "--cacheinfo", f"{mode},{blob},{path}", env=env)
 
 
@@ -687,30 +720,133 @@ def return_index(repo, base, data):
     return outcome
 
 
-def build_stash(repo, base, message, changed, untracked, captured, index):
-    """The commit `git stash push --include-untracked` would make, built from the captured bytes and from `index`
-    (`index_snapshot`), the same copy of the index that `changed` and `untracked` were listed against: the index
-    commit is that copy's tree, the working-tree commit is that tree with the captured tracked paths put in, and
-    the untracked parent holds the paths that copy does not track, so no path is in both. The working tree and
-    the live index are not touched, and the live index is not read."""
-    index_tree = text(repo, "write-tree", env=index).strip()
-    index_commit = text(repo, "commit-tree", index_tree, "-p", base, "-m", f"index on {message}").strip()
+# The form a captured path is stored in (`rejection.forms`; the module docstring says what each one promises).
+FILTERED, UNFILTERED, CONVERTED, NO_FORM = "filtered", "unfiltered", "converted", "none"
+LINKED, ABSENT = "link", "absent"
+
+
+def stash_commit(repo, base, message, index_tree, index_commit, changed, untracked, captured, blobs):
+    """(the commit `git stash push --include-untracked` would make, the tree whose attributes git applies to that
+    commit's untracked files), built from `index_tree` and the blobs given for the captured paths: the working-tree
+    commit is that tree with the captured tracked paths put in, and the untracked parent holds the paths the index
+    does not track, so no path is in both. Nothing is read from the working tree or the live index.
+
+    git writes a stash's untracked files once its tracked ones are in place and reads their attributes from both,
+    so the second tree is the working-tree commit's with the untracked parent's entries added."""
     with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
         work_index = {"GIT_INDEX_FILE": str(Path(tmp) / "work")}
         run_git(repo, "read-tree", index_tree, env=work_index)
-        stage_bytes(repo, base, {p: captured[p] for p in changed if p not in untracked}, env=work_index)
+        stage_bytes(repo, base, {p: captured[p] for p in changed if p not in untracked}, env=work_index, blobs=blobs)
         work_tree = text(repo, "write-tree", env=work_index).strip()
         loose_index = {"GIT_INDEX_FILE": str(Path(tmp) / "loose")}
-        stage_bytes(repo, base, {p: captured[p] for p in untracked if captured[p] is not None}, env=loose_index)
+        loose = {p: captured[p] for p in untracked if captured[p] is not None}
+        stage_bytes(repo, base, loose, env=loose_index, blobs=blobs)
         loose_tree = text(repo, "write-tree", env=loose_index).strip()
+        both = work_tree
+        if loose:
+            run_git(repo, "update-index", "--add", "--replace", "-z", "--index-info",
+                    data=run_git(repo, "ls-tree", "-r", "-z", loose_tree), env=work_index)
+            both = text(repo, "write-tree", env=work_index).strip()
     loose_commit = text(repo, "commit-tree", loose_tree, "-m", f"untracked files on {message}").strip()
-    return text(repo, "commit-tree", work_tree, "-p", base, "-p", index_commit, "-p", loose_commit,
-                "-m", f"On main: {message}").strip()
+    commit = text(repo, "commit-tree", work_tree, "-p", base, "-p", index_commit, "-p", loose_commit,
+                  "-m", f"On main: {message}").strip()
+    return commit, both
+
+
+def stash_place(commit, both, loose):
+    """(the commit of the stash `commit` that holds a path, the tree whose attributes git applies to it when the
+    stash is applied): for an untracked path (`loose`) the untracked parent and `both` (`stash_commit`), for any
+    other the stash commit for both."""
+    return (f"{commit}^3", both) if loose else (commit, commit)
+
+
+def stash_entry(repo, commit, both, path, loose):
+    """What `git stash apply` writes at `path` from the stash `commit`, as read_entry would read it afterwards."""
+    return checked_out(repo, *stash_place(commit, both, loose), path)
+
+
+def same_to_git(repo, commit, both, path, loose, entry, index):
+    """True when the stash holds the captured file's very bytes as its blob at `path`, and what git checks out of
+    that blob is, to git, the same content as the captured bytes: under the stash's own attributes `git add` makes
+    one and the same blob of both, so git reads the applied file as it read the captured one."""
+    if entry is None or entry[0] != "file":
+        return False
+    holder, source = stash_place(commit, both, loose)
+    listed = text(repo, "ls-tree", holder, "--", path).split()
+    if len(listed) < 3 or listed[0] not in FILE_MODES or listed[1] != "blob":
+        return False
+    written = checked_out(repo, holder, source, path)
+    if run_git(repo, "cat-file", "blob", listed[2]) != entry[1] or written is None or written[0] != "file":
+        return False
+    try:
+        added = [run_git(repo, attributes_of(source), "hash-object", "--stdin", f"--path={path}", data=raw, env=index)
+                 for raw in (written[1], entry[1])]
+    except GitFailed:  # git refuses to convert one of them: not something it reads as the same content
+        return False
+    return added[0] == added[1]
+
+
+def build_stash(repo, base, message, changed, untracked, captured, index):
+    """(the stash commit, the form each changed path is stored in). The commit is the one
+    `git stash push --include-untracked` would make, built from the captured bytes and from `index`
+    (`index_snapshot`), the same copy of the index that `changed` and `untracked` were listed against: the index
+    commit is that copy's tree. The working tree and the live index are not touched, and the live index is not
+    read.
+
+    What it returns has been checked, on the stored objects alone: every path is read back out of the commit as
+    git will check it out at `git stash apply` (`stash_entry`) and compared with the capture. Each blob is made
+    once. A file first gets the blob `git add` makes of it, under whatever attributes the tree holds at that
+    moment; those may no longer be the ones the capture was read under, and the check does not care which they
+    were. A file that does not come back gets its bytes as its blob and the commit is built again; the last commit
+    built is the one checked and returned. A file that still does not come back is CONVERTED when git reads what
+    it writes as the same content (`same_to_git`), and has NO_FORM otherwise, as has a link or an absent path the
+    commit does not give back: `reject` removes nothing while any path has no form."""
+    index_tree = text(repo, "write-tree", env=index).strip()
+    index_commit = text(repo, "commit-tree", index_tree, "-p", base, "-m", f"index on {message}").strip()
+    loose = set(untracked)
+    blobs, forms = {}, {path: ABSENT for path in changed}
+    for path in changed:
+        entry = captured[path]
+        if entry is None:
+            continue
+        forms[path] = LINKED if entry[0] == "link" else FILTERED
+        try:
+            blobs[path] = blob_of(repo, base, path, entry, index)
+        except GitFailed:  # git refuses to convert these bytes (core.safecrlf, a filter that fails): as they are
+            blobs[path] = blob_of(repo, base, path, entry, index, filtered=False)
+            forms[path] = UNFILTERED
+    while True:  # ends: each further round takes at least one path from FILTERED to UNFILTERED
+        commit, both = stash_commit(repo, base, message, index_tree, index_commit, changed, loose, captured, blobs)
+        differs = [p for p in changed if stash_entry(repo, commit, both, p, p in loose) != captured[p]]
+        again = [p for p in differs if forms[p] == FILTERED]
+        if not again:
+            break
+        for path in again:
+            blobs[path] = blob_of(repo, base, path, captured[path], index, filtered=False)
+            forms[path] = UNFILTERED
+    for path in differs:
+        same = same_to_git(repo, commit, both, path, path in loose, captured[path], index)
+        forms[path] = CONVERTED if same else NO_FORM
+    return commit, forms
+
+
+def stash_shape(repo, commit):
+    """Everything a stash commit holds but the moment it was made: its tree, the commit it stands on, its index
+    commit's tree and its untracked parent's tree. None for a commit that is gone or is no such stash."""
+    try:
+        return text(repo, "rev-parse", f"{commit}^{{tree}}", f"{commit}^1", f"{commit}^2^{{tree}}",
+                    f"{commit}^3^{{tree}}").split()
+    except GitFailed:
+        return None
 
 
 def stash_listing(repo):
     """(name, commit, subject) for every stash entry."""
     return [tuple(line.split("\0")) for line in text(repo, "stash", "list", "--format=%gd%x00%H%x00%gs").splitlines()]
+
+
+def stash_name(repo, commit):
+    return next((name for name, found, _ in stash_listing(repo) if found == commit), "stash")
 
 
 def store(repo, commit, message):
@@ -732,18 +868,24 @@ def require_commit_attributes(repo, commit):
                       f"cannot be returned as HEAD checks them out; nothing was changed: {exc}") from None
 
 
-def head_entry(repo, base, path):
-    """What git checks out at `path` from the commit `base` (the packet's HEAD), as read_entry reads it: ("link",
-    target) for a mode 120000 blob, ("file", its bytes after git's checkout conversion) for any other blob, or None
-    when `base` has no file there (no entry, or a folder or a submodule at that name, whose own files are paths of
-    their own). The conversion (line endings, filters, encoding) is decided by `base`'s own attributes and never by
-    the working tree's `.gitattributes`: the answer is the same whatever the tree holds and whenever it is asked."""
-    entry = text(repo, "ls-tree", base, "--", path).split()
-    if len(entry) < 2 or entry[1] != "blob":
+def checked_out(repo, commit, source, path):
+    """What git checks out at `path` from `commit`, as read_entry reads it: ("link", target) for a mode 120000
+    blob, ("file", its bytes after git's checkout conversion) for any other blob, or None when `commit` has no file
+    there (no entry, or a folder or a submodule at that name, whose own files are paths of their own). The
+    conversion (line endings, filters, encoding) is decided by the attributes of the commit or tree `source` and
+    never by the working tree's `.gitattributes`: the answer is the same whatever the tree holds and whenever it
+    is asked."""
+    entry = text(repo, "ls-tree", commit, "--", path).split()
+    if len(entry) < 3 or entry[1] != "blob":
         return None
     if entry[0] == "120000":
         return ("link", run_git(repo, "cat-file", "blob", entry[2]))
-    return ("file", run_git(repo, attributes_of(base), "cat-file", "--filters", f"{base}:{path}"))
+    return ("file", run_git(repo, attributes_of(source), "cat-file", "--filters", f"{commit}:{path}"))
+
+
+def head_entry(repo, base, path):
+    """What git checks out at `path` from the commit `base` (the packet's HEAD), by `base`'s own attributes."""
+    return checked_out(repo, base, base, path)
 
 
 def remove_occupant(target, kind):
@@ -864,7 +1006,10 @@ def reject(repo):
     require_commit_attributes(repo, base)
     refuse_held_index(repo)
     rejection = data.get("rejection")
-    if rejection is None:
+    # A stash an earlier run stored that does not give every path back: that run changed nothing, so this one
+    # reads the tree afresh (the owner may have changed the file or its rule since).
+    earlier = rejection if rejection is not None and NO_FORM in rejection.get("forms", {}).values() else None
+    if rejection is None or earlier is not None:
         # One read of the index, and every answer about it from that read: the listing, each path's place among
         # the tracked or the untracked, and the stash's commits. return_index then compares the live index with
         # the tree recorded here, under the lock, before it replaces anything.
@@ -875,9 +1020,12 @@ def reject(repo):
                 print("nothing to set aside; packet closed")
                 return 0
             captured = capture(repo, changed)
-            commit = build_stash(repo, base, message, changed, untracked, captured, index)
-        rejection = {"stash": commit, "stored": False, "paths": {p: sha(captured[p]) for p in changed},
-                     "settled": {}}
+            commit, forms = build_stash(repo, base, message, changed, untracked, captured, index)
+        stored = False
+        if earlier is not None and stash_shape(repo, commit) == stash_shape(repo, earlier["stash"]):
+            commit, stored = earlier["stash"], earlier["stored"]  # the same content: no second stash of it
+        rejection = {"stash": commit, "stored": stored, "paths": {p: sha(captured[p]) for p in changed},
+                     "settled": {}, "forms": forms}
         data["rejection"] = rejection
         save(repo, data)
     if not rejection["stored"]:
@@ -885,6 +1033,19 @@ def reject(repo):
             store(repo, rejection["stash"], message)
         rejection["stored"] = True
         save(repo, data)
+    # The rule everything below stands on: the stored stash gives back every captured path (build_stash checked
+    # each one on the stored objects). While one does not, nothing in the tree or the index is touched.
+    stored_as = {form: sorted(p for p, how in rejection.get("forms", {}).items() if how == form)
+                 for form in (UNFILTERED, CONVERTED, NO_FORM)}
+    if stored_as[NO_FORM]:
+        print(f"set aside as {stash_name(repo, rejection['stash'])} ({rejection['stash']}): {message}")
+        print("NOT REJECTED: git cannot check these paths out of the stash as they are on disk, in any form they "
+              "can be stored in: " + ", ".join(stored_as[NO_FORM]) + ". Nothing in the tree or the index was "
+              "changed and the packet stays open. The stash holds every other path whole and each file named here "
+              f"as its exact bytes (`git cat-file blob {rejection['stash']}:<path>`, or `{rejection['stash']}^3:"
+              "<path>` for a new file). Change the rule or the filter that rewrites them, or move them out of the "
+              "tree, and run reject again.", file=sys.stderr)
+        return 1
     # The index goes back to HEAD only while it is still the one the stash's index commit captured: an index staged
     # after the capture (by the owner, between an interrupted reject and its retry) is in no stash, so it is kept.
     index_kept = return_index(repo, base, data) == "kept"
@@ -910,8 +1071,14 @@ def reject(repo):
             # Kept: a kept save (a folder, a file, a link, another spelling) still holds the name or one on its way.
             rejection["settled"][path] = "returned" if took else "kept"
         save(repo, data)
-    name = next((n for n, c, _ in stash_listing(repo) if c == rejection["stash"]), "stash")
-    print(f"set aside as {name} ({rejection['stash']}): {message}")
+    print(f"set aside as {stash_name(repo, rejection['stash'])} ({rejection['stash']}): {message}")
+    if stored_as[UNFILTERED]:
+        print("stored as the bytes they are, which the stash gives back exactly (the blob git add makes of them "
+              "would not): " + ", ".join(stored_as[UNFILTERED]))
+    if stored_as[CONVERTED]:
+        print("stored as the bytes they are; git stash apply writes them as the stash's own line-ending and filter "
+              f"rules check them out, and `git cat-file blob {rejection['stash']}:<path>` (`{rejection['stash']}^3:"
+              "<path>` for a new file) prints them exactly: " + ", ".join(stored_as[CONVERTED]))
     if failed:
         print("NOT FINISHED: these paths could not be returned; run reject again: " + ", ".join(failed),
               file=sys.stderr)
