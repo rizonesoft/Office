@@ -103,6 +103,7 @@ The agreement lets Rizonesoft relicense contributions (for example a commercial 
 
 **Phase:** 99
 **Needs:** third-party, owner-decision
+**Owner action:** Say which governing law the contributor agreements use; once the session has drafted `docs/legal/rizonesoft-cla.md` and `docs/legal/rizonesoft-cla-entity.md`, have a lawyer review both and tell the session the firm and the review date, then approve them. The session records the review under `## Review`, your approval in this section, and removes `owner-decision` and `third-party`.
 **Surface:** no
 
 **Build order:**
@@ -125,6 +126,7 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 **Phase:** 99
 **Needs:** operator
+**Owner action:** Once the agreements of §3 are approved, choose CLA Assistant (a hosted GitHub app) or the self-hosted `contributor-assistant/github-action`, install it on `rizonesoft/Office`, and mark its check required on `main` in branch protection, or tell the session it may do the last two. The session records the choice in `docs/legal/README.md` and removes `operator`.
 **Surface:** no
 
 **Build order:**

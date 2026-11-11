@@ -3,6 +3,19 @@
   "folder": "\\Office\\",
   "tasks": [
     {
+      "name": "office-owner-digest",
+      "description": "Email the owner the weekly digest: what was built, the run and CI, and what waits on the owner (scripts/owner-digest.py)",
+      "command": [
+        "python",
+        "scripts/owner-digest.py"
+      ],
+      "trigger": {
+        "weekly": "Monday",
+        "at": "07:00"
+      },
+      "timeout_minutes": 5
+    },
+    {
       "name": "office-visual-studio",
       "description": "Email once when this machine's Visual Studio 2026 is behind its latest servicing release",
       "command": [

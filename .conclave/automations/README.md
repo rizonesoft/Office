@@ -6,12 +6,14 @@ Every scheduled job for Office lives here: the task list in `tasks.json`, the ru
 
 | Task | When (local time) | Runs |
 | --- | --- | --- |
+| `office-owner-digest` | Monday 07:00 | `scripts/owner-digest.py` |
 | `office-visual-studio` | Monday 07:25 | `scripts/check-visual-studio.py notify` |
 | `office-python-pin` | Monday 07:30 | `scripts/check-python-pin.py notify` |
 | `office-pr-merge` | Daily 07:43 | `scripts/merge_prs.py --skip-unsafe` |
 
 What each one emails you about, and when it fails (which sends the failure alert instead):
 
+- `office-owner-digest`: emails the owner's weekly digest (decision 32 of `docs/specs/2026-10-23-campaign-scope-design.md`): the state of the run and of CI, the plan's totals, every section waiting on the owner with its `**Owner action:**`, ordered by how much waits behind it, and the sections verified in the last seven days. A waiting list too long for the 120-line body goes whole in an attached `waiting-on-you.txt`. `python scripts/owner-digest.py --dry-run` prints it. Fails when the TODO tree cannot be read (exit 2) or the send is refused (exit 1).
 - `office-visual-studio`: emails once per release when this machine's Visual Studio 2026 (the MSVC toolset the C++ build uses) is behind its latest servicing release. Fails when none is installed, or vswhere or the release channel cannot be read.
 - `office-python-pin`: emails once when this machine's Python is behind the newest stable CPython (minor or patch). Fails when python.org cannot be read.
 - `office-pr-merge`: never emails on success; merges green Dependabot and pins pull requests (labelled `dependencies` or `pins`, every check green, cleanly mergeable) one at a time by rebase, then pulls and validates. It skips quietly (exit 0, the reason in its log) while a campaign run is open (the campaign merges at its own section boundaries) or while the checkout is dirty, off `main`, behind or ahead of `origin/main`, or mid-section. Each pull request is read again and judged again just before its merge, under the run guard's lock. Fails when a merge, pull or validate fails (exit 1), leaving the rest open (a pull request already merged when its pull or validate failed is reported as merged), or when git or gh cannot be run or read (exit 3).
@@ -20,8 +22,9 @@ Every task starts when available: a run missed while this PC was off fires at th
 
 ## How you hear about it
 
-Every email goes to `rizonetech@gmail.com` from "Office automations" (`website@rizonetech.com`, through SMTP2GO), and there are exactly three kinds:
+Every email goes to `rizonetech@gmail.com` from "Office automations" (`website@rizonetech.com`, through SMTP2GO), and there are exactly four kinds:
 
+- **"Office weekly: N waiting on you, M verified this week"**: the Monday digest above, the one email that tells you what only you can do, with the exact steps for each item.
 - **"Office: ... is ready to merge"**: a pin moved on a branch. A pin task changes a pin only on a new branch from main, after its checks pass, and the email names the branch and the `git merge` command. Nothing changes on main or in your checkout until you merge, and nothing is pushed. No task proposes pins today; the C++ toolchain pins (D00 T03 §11) will.
 - **"Office: ... is available", "install ..." or "has drifted"**: something on this PC is behind (Visual Studio, Python). The task succeeds and sends this once per new version or state.
 - **"Office automation failed: <task> on <host>"**: a check could not run or found a broken pin. It repeats on every failing run until fixed, with the log tail.

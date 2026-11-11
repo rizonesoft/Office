@@ -22,6 +22,7 @@ SMTP2GO answers a refused send with HTTP 200 and
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import socket
@@ -79,9 +80,17 @@ def message(name: str, task: dict, outcome: dict, tail: str, host: str) -> tuple
     return f"Office automation failed: {name} on {host}", body
 
 
-def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen) -> str:
-    """Post the email; refuse anything but one success and no failures."""
-    payload = json.dumps({"sender": SENDER, "to": [TO], "subject": subject, "text_body": body}).encode()
+def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen,
+         attachments: list[tuple[str, str]] | None = None) -> str:
+    """Post the email; refuse anything but one success and no failures. `attachments` are (filename, text) pairs, sent
+    as plain-text files in SMTP2GO's `attachments` field (`filename`, base64 `fileblob`, `mimetype`; the API
+    reference of /email/send, read 2026-11-11), for the weekly owner digest (D00 T03 §35)."""
+    message = {"sender": SENDER, "to": [TO], "subject": subject, "text_body": body}
+    if attachments:
+        message["attachments"] = [{"filename": name, "mimetype": "text/plain",
+                                   "fileblob": base64.b64encode(text.encode("utf-8")).decode("ascii")}
+                                  for name, text in attachments]
+    payload = json.dumps(message).encode()
     request = urllib.request.Request(ENDPOINT, data=payload, method="POST", headers={
         "Content-Type": "application/json", "Accept": "application/json", "X-Smtp2go-Api-Key": api_key})
     with opener(request, timeout=60) as response:

@@ -19,8 +19,14 @@ ADJACENCY = ("**Adjacency:** list=not-applicable (fixture); document=not-applica
              "reverse=not-applicable (fixture)")
 
 
+FIXTURE_ACTION = "**Owner action:** answer in the session; the session records it and removes the Need.\n"
+
+
 def section(n, title, phase, needs, extra=""):
-    return (f"## {n}. {title}\n\n**Phase:** {phase}\n**Needs:** {needs}\n**Surface:** no\n\n**Build order:**\n\n"
+    # A section waiting on the owner carries an owner action (D00 T03 §35), so every fixture is valid as written.
+    waits = bool({v.strip() for v in needs.split(",")} & tg.OWNER_NEEDS)
+    action = FIXTURE_ACTION if waits else ""
+    return (f"## {n}. {title}\n\n**Phase:** {phase}\n**Needs:** {needs}\n{action}**Surface:** no\n\n**Build order:**\n\n"
             f"1. Do it. Done when: it shows.\n\n- [ ] Work.\n- [ ] Commit: `x: {title.lower()}`\n\n"
             f"**Test checkpoint:** `true` exits 0.{extra}\n")
 
@@ -1662,6 +1668,34 @@ class Withdrawn(Tree):
         code, out = self.cli("query", "plan")
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(out)["sections"][0]["status"], "withdrawn")
+
+
+class OwnerAction(Tree):
+    """A section waiting on the owner says exactly what the owner does, for the weekly digest (D00 T03 §35)."""
+
+    ACTION = "**Owner action:** approve the name and tell the session.\n"
+
+    def one(self, needs, action=""):
+        bare = todo_file([(1, "A", 0, needs, "--")]).replace(FIXTURE_ACTION, "")
+        return bare.replace(f"**Needs:** {needs}\n", f"**Needs:** {needs}\n{action}")
+
+    def test_a_waiting_section_needs_one(self):
+        for needs in ("owner-decision", "third-party", "operator", "store-account", "windows-host, operator"):
+            with self.subTest(needs=needs):
+                self.write(self.one(needs))
+                self.refuses("needs an Owner action line (the exact steps and where the answer is recorded): D00 T01 §1")
+                self.write(self.one(needs, self.ACTION))
+                tg.graph(self.root)
+
+    def test_a_section_that_waits_on_no_one_may_not_carry_one(self):
+        for needs in ("none", "windows-host, office"):
+            with self.subTest(needs=needs):
+                self.write(self.one(needs, self.ACTION))
+                self.refuses("Owner action on a section that waits on no one: D00 T01 §1")
+
+    def test_a_withdrawn_waiting_section_needs_none(self):
+        self.write(withdraw(self.one("operator").replace("status: active", "status: done"), 1))
+        tg.graph(self.root)
 
 
 class Repository(unittest.TestCase):

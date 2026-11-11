@@ -34,6 +34,8 @@ WITHDRAWN = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z): ([^:]*\S[^:]*?)
 NEEDS = {"windows-host", "arm64-host", "display-session", "office", "libreoffice", "store-account",
          "attended", "owner-decision", "third-party", "operator"}
 WAITING = {"owner-decision", "third-party", "operator"}
+# The Needs that put a section in the owner's weekly digest (D00 T03 §35): the waiting ones and the store account.
+OWNER_NEEDS = WAITING | {"store-account"}
 STATUSES = {"draft", "active", "blocked", "done", "superseded"}
 # stopped-at-33 is the current review-round cap (owner decision 2026-10-23); stopped-at-22, -13, -8 and -3 stay valid
 # on earlier receipts.
@@ -573,6 +575,13 @@ def graph(root=ROOT):
             if surface == "yes":
                 for label in ("Fidelity", "Job", "Treatment", "Chrome"):
                     field(section_body, label)
+            # D00 T03 §35: a section waiting on the owner says exactly what the owner does, for the weekly digest.
+            owner_action = field(section_body, "Owner action", False)
+            if not set(needs) & OWNER_NEEDS:
+                require(not owner_action, f"Owner action on a section that waits on no one: {ref}")
+            elif rows[n][5] == " ":
+                require(bool(owner_action), f"a section waiting on {', '.join(sorted(set(needs) & OWNER_NEEDS))} "
+                        f"needs an Owner action line (the exact steps and where the answer is recorded): {ref}")
             freeze_check = field(section_body, "Freeze check", False)
             require(bool(freeze_check) == (frozen == "true"),
                     f"Freeze check must match frozen frontmatter: {ref}")

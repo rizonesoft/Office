@@ -141,6 +141,7 @@ A knockout screen catches identical or near-identical live marks in classes 9 an
 
 **Phase:** 99
 **Needs:** display-session, owner-decision
+**Owner action:** Confirm the names to screen (`docs/brand/NAMES.md`), then either run the USPTO, EUIPO and WIPO searches for each in classes 9 and 42 or let a session on the desktop run them, and say which verdict (`clear`, `risk`, `blocked`) you accept per name. The results and verdicts go in `docs/brand/naming-clearance.md`, and the session removes `owner-decision`.
 **Surface:** no
 
 **Build order:**
@@ -215,6 +216,7 @@ A full clearance opinion and any trademark filing need a trademark attorney and 
 
 **Phase:** 99
 **Needs:** third-party, owner-decision
+**Owner action:** Engage a trademark attorney for a clearance opinion on each chosen name, and decide the filing (jurisdictions, classes, budget). Tell the session both, or write them under `## Attorney opinion` and `## Filing` in `docs/brand/naming-clearance.md`; the session then removes `owner-decision` and `third-party`.
 **Surface:** no
 
 **Build order:**
@@ -235,6 +237,7 @@ Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL,
 
 **Phase:** 99
 **Needs:** operator, owner-decision
+**Owner action:** Approve the repository's new name, then run `gh repo rename <name>` yourself or tell the session it may. The session updates `origin` and the repository's own URLs afterwards and removes `operator` and `owner-decision`.
 **Surface:** no
 
 **Build order:**

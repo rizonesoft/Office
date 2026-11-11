@@ -153,6 +153,7 @@ GitHub accepts the social preview only through repository Settings, and the orga
 
 **Phase:** 99
 **Needs:** operator
+**Owner action:** Upload `docs/assets/github/social-preview.png` at the repository's Settings, General, Social preview, and decide whether the `rizonesoft` organisation avatar becomes the suite mark or stays the company mark. Tell the session the decision; it records it in `docs/brand/NAMES.md` under `## GitHub` and removes `operator`.
 **Surface:** no
 
 **Build order:**

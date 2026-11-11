@@ -31,6 +31,7 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 | 1 | §1 | Digest tells a live run from an abandoned guard | T03 §35 | [ ] |
 | 2 | §2 | Digest keeps a long progress list | T03 §35 | [ ] |
 | 3 | §3 | Digest delivery survives a failed send | T03 §35 | [ ] |
+| 4 | §4 | Scheduled tasks start on a Monday morning | -- | [ ] |
 
 ## 1. Digest Tells a Live Run From an Abandoned Guard
 
@@ -87,8 +88,28 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 3, P2)
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` and `-p "test_automations.py"` pass with the delivery tests among them.
 
-## Verification
+## 4. Scheduled Tasks Start on a Monday Morning
 
+Filed 2026-11-11 from `todo/findings.md` (the entry of 2026-11-11). The 2026-11-09 runs of `office-visual-studio` and `office-python-pin` ended with Task Scheduler result 0x8007010B (the directory name is invalid) before `run.py` started, while `office-pr-merge`, registered the same way, ran on 2026-11-11. `office-owner-digest` runs in the same Monday hour, so a digest could fail the same way and say nothing. This section finds the cause from the machine's own records and fixes it where it lives.
+
+**Phase:** 0
+**Needs:** windows-host
+**Surface:** no
+
+**Build order:**
+
+1. Establish the cause. Done when: the Task Scheduler and system event records of 2026-11-09 07:25 to 07:35 name why the working directory was refused.
+2. Fix it at its owner. Done when: a run of each task started by Task Scheduler itself succeeds and writes its log.
+
+- [ ] Read the Task Scheduler operational log (enable it with `wevtutil sl Microsoft-Windows-TaskScheduler/Operational /e:true` when it is off) and the System log for the failed launches, and record the cause in `todo/findings.md` beside the entry. Done when: the entry names the cause and its evidence.
+- [ ] Fix the cause in the layer that owns it (`.conclave/automations/install.ps1` when it is the task definition, the task's start conditions when it is the machine's state at that hour), with a test in `scripts/tests/test_automations.py` where the installer changes. Done when: the test fails before the change, and `Start-ScheduledTask -TaskPath '\Office\' -TaskName office-python-pin` leaves `LastTaskResult` 0 and a new log under `build/automations/office-python-pin/`.
+- [ ] Make `run.py` or the installer report a launch that never reached `run.py`, so a task that cannot start is not silent: the digest (D00 T03 §35) names any task whose last result is not 0. Done when: a test shows the digest line for a failing task result.
+- [ ] Strike the finding in `todo/findings.md` as shipped by this section. Done when: the entry ends with this section's reference and the word shipped.
+- [ ] Commit: `automations: scheduled tasks start on a Monday morning`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes, and `Get-ScheduledTask -TaskPath '\Office\' | Get-ScheduledTaskInfo` shows `LastTaskResult` 0 for every task after a run started by Task Scheduler.
+
+## Verification
 - `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes.
 - `python scripts/owner-digest.py --dry-run` prints a digest for this repository and exits 0.
 - `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py plan --check` pass.

@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 71 | Checklist items: 474
+Sections: 72 | Checklist items: 479
 
 | Status | Reference   | Deliverable                                         | Needs                  | Items |
 | ------ | ----------- | --------------------------------------------------- | ---------------------- | ----- |
@@ -83,6 +83,7 @@ Sections: 71 | Checklist items: 474
 | [ ]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard     | none                   | 3     |
 | [ ]    | D00 T07 §2  | Digest Keeps a Long Progress List                   | none                   | 3     |
 | [ ]    | D00 T07 §3  | Digest Delivery Survives a Failed Send              | none                   | 4     |
+| [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning           | windows-host           | 5     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -318,6 +319,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 65/164 verified sections, 8 withdrawn, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 65/165 verified sections, 8 withdrawn, 25 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 425/1116 items completed (includes Commit items).
+Checklist: 436/1121 items completed (includes Commit items).
