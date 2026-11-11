@@ -220,21 +220,29 @@ def begin(repo, name, values):
     return 0
 
 
+FILE_MODES = ("100644", "100755")
+
+
 def mode_of(repo, base, path):
-    """The mode a staged path keeps: its index entry's, else its mode in `base`, else a plain file's."""
+    """The mode a staged file keeps: its index entry's, else its mode in `base`, when that is a file's mode;
+    otherwise (no entry, a folder's tree, a submodule, a link now a file) a plain file's."""
     for listing in (text(repo, "ls-files", "-s", "--", path), text(repo, "ls-tree", base, "--", path)):
-        if listing.strip():
-            return listing.split()[0]
+        for line in listing.splitlines():
+            meta, _, name = line.partition("\t")
+            if name == path and meta:
+                mode = meta.split()[0]
+                return mode if mode in FILE_MODES else "100644"
     return "100644"
 
 
 def stage_bytes(repo, base, captured, env=None):
-    """Put exactly the captured entries in the index (or remove a path captured as absent). A link is stored as git
-    stores one, mode 120000 with its target unfiltered; a file keeps its mode and passes git's filters for its path."""
-    for path, entry in sorted(captured.items()):
-        if entry is None:
-            run_git(repo, "update-index", "--force-remove", "--", path, env=env)
-            continue
+    """Put exactly the captured entries in the index (or remove a path captured as absent). Removals go first, so a
+    file that took a folder's name is added only once the folder's entries are gone, and `--replace` lets an entry
+    take a name a staged file or folder still holds. A link is stored as git stores one, mode 120000 with its target
+    unfiltered; a file keeps its file mode and passes git's filters for its path."""
+    for path in sorted((p for p, e in captured.items() if e is None), key=lambda p: (-p.count("/"), p)):
+        run_git(repo, "update-index", "--force-remove", "--", path, env=env)
+    for path, entry in sorted((p, e) for p, e in captured.items() if e is not None):
         kind, raw = entry
         if kind == "link":
             blob = run_git(repo, "hash-object", "-w", "--stdin", "--no-filters", data=raw).decode().strip()
@@ -242,9 +250,7 @@ def stage_bytes(repo, base, captured, env=None):
         else:
             blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
             mode = mode_of(repo, base, path)
-            mode = "100644" if mode in ("120000", "160000") else mode  # a link or submodule now a plain file
-        run_git(repo, "update-index", "--add", "--cacheinfo", f"{mode},{blob},{path}", env=env)
-
+        run_git(repo, "update-index", "--add", "--replace", "--cacheinfo", f"{mode},{blob},{path}", env=env)
 
 def show(repo, stage=False, snapshot=None):
     data = load(repo)

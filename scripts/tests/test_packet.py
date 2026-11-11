@@ -466,6 +466,43 @@ class Packet(unittest.TestCase):
         self.assert_in_stash("stash@{0}", "docs/group", "a file now holds the folder's name\n", "^3")
         self.assertEqual(self.status(), "")
 
+    def file_in_group_place(self, stage_deletion):
+        self.tracked_group()
+        self.begin("docs")
+        (self.repo / "docs/group/note.md").unlink()
+        (self.repo / "docs/group").rmdir()
+        if stage_deletion:
+            self.git("add", "-u", "docs/group")
+        self.put("docs/group", "a file now holds the folder's name\n")
+
+    def test_a_file_in_a_folders_place_with_only_the_deletion_staged_is_rejected(self):
+        # Review round 4, finding 1: the file took the folder's tree mode, and the stash could not be built.
+        self.file_in_group_place(stage_deletion=True)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
+        self.assertRegex(self.git("ls-tree", "stash@{0}^3", "docs/group"), r"^100644 blob ")
+        self.assertEqual(self.status(), "")
+
+    def test_a_file_in_a_folders_place_is_staged_after_the_folders_entries_go(self):
+        # Review round 4, finding 2: the file was added while the folder's entry was still in the index.
+        self.file_in_group_place(stage_deletion=False)
+        digest = self.snapshot(self.cli("show")[1])
+        code, _, err = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("show", ":docs/group"), "a file now holds the folder's name\n")
+        self.assertEqual(self.git("ls-files", "docs/group/note.md"), "")
+        self.assertRegex(self.git("ls-files", "-s", "docs/group"), r"^100644 ")
+
+    def test_a_folder_in_a_files_place_is_staged_with_file_modes(self):
+        self.begin("docs")
+        (self.repo / "docs/note.md").unlink()
+        self.put("docs/note.md/part.md", "a folder now holds the name\n")
+        digest = self.snapshot(self.cli("show")[1])
+        code, _, err = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("show", ":docs/note.md/part.md"), "a folder now holds the name\n")
+
     def test_a_kept_file_in_a_folders_place_holds_back_the_files_under_it(self):
         self.tracked_group()
         self.begin("docs")
