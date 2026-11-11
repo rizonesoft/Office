@@ -31,3 +31,35 @@ OVERALL: needs-attention
 2. extended
 3. extended
 4. extended
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-11T00:06:25Z
+- Effort: medium
+- Type: adversarial
+- Lines: 15
+- Digest: 48cac264be8b234a
+
+SECTION: D00 T03 §34
+PURPOSE: completion
+CONTRACT: sha256:ba6553a5f2946604bfcf72ca78469651cbadf61964081b6a581db561eee743af
+
+1. **[P1] Rejection still permits irreversible loss of a concurrent save.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1016` prescribes checking captured bytes immediately before overwriting or deleting a path. An editor can save after that check but before the mutation. Rejection then destroys bytes absent from the stash. The specified test can pass by injecting its save before the check, leaving this failure untested. **Remedy: extend** with a preservation protocol that protects the actual mutation, including editor saves that replace files. Where protection cannot be established, retain the path and report it unresolved. Test saves between the final comparison and both replacement and deletion.
+
+2. **[P2] The digest need not identify the content actually displayed for review.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1013` specifies printing diffs and then hashing working-tree bytes, without requiring both to use one captured snapshot. A diff can display version A, an editor save version B, and the digest identify B. The subsequent staging command accepts B although the reviewer only saw A. **Remedy: extend** to capture immutable inputs once and derive both the displayed change and its digest from those inputs. Add a test injecting a save between diff generation and hashing, proving undisplayed bytes cannot be accepted.
+
+3. **[P2] Staging has no transaction or interruption-recovery contract.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1015` describes individual index updates but only tests refusals before mutation. For a two-file packet, staging the first file can succeed and the second update fail because of an index lock or disk error, leaving a partially accepted index. No specified state or recovery procedure distinguishes that result from the original packet. **Remedy: extend** to prepare the complete index change separately and publish it atomically under Git’s index lock, verifying the original index has not changed. Test failure after preparing the first entry, concurrent index modification, and interruption around publication; require either an unchanged index or a recorded, recoverable completed acceptance.
+
+4. **[P2] An interrupted rejection can be accepted as a smaller packet.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1018` introduces rejection progress, but the eligibility rules at lines 1014 and 1015 do not exclude that state. If rejection returns one file and then fails on another, `show` can report the remaining in-scope change with unchanged `HEAD`; `show --stage` can accept it and close the packet, abandoning the rejection journal. **Remedy: extend** with explicit lifecycle rules: once rejection starts, staging must refuse, inspection must identify the incomplete rejection, and retry must resume it. Test `show` and `show --stage` after each specified rejection interruption.
+
+COMPLETE: no
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §46
+2. filed -> D00 T03 §47
+3. filed -> D00 T03 §48
+4. filed -> D00 T03 §49

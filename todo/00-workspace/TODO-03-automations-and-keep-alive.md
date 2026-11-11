@@ -81,6 +81,10 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 43 | §43 | Stamp replays the schedule | §41, §42 | [ ] |
 | 44 | §44 | Rotation round count and takeover | §41, §43 | [ ] |
 | 45 | §45 | Skills and prompts follow the schedule | §42, §43, §44 | [ ] |
+| 46 | §46 | Packet rejection keeps a save landing at write time | §34 | [ ] |
+| 47 | §47 | Packet display and digest from one capture | §34 | [ ] |
+| 48 | §48 | Packet staging publishes the index atomically | §34 | [ ] |
+| 49 | §49 | Packet lifecycle after a partial rejection | §34 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1278,6 +1282,84 @@ The skills still describe the old loop: one prompt with every lens, a severity s
 - [ ] Commit: `review: the skills and prompts describe the scheduled loop`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `-p "test_review_prompt.py"` pass, and `python scripts/review-dispatch.py --check-pin` prints `ok`.
+
+## 46. Packet Rejection Keeps a Save Landing at Write Time
+
+Filed 2026-11-11 from the completion review of §34 (`docs/reviews/00-workspace/D00-T03-s34-completion.md`, round 2, finding 1, P1). §34's `reject` checks, right before it writes, that a path still holds the bytes its stash captured, then returns the path to `HEAD`. An editor can save in the moment between that check and the write or delete, and those bytes are in no stash, so the rejection destroys them. This section makes the mutation itself safe: a path is moved aside before it is compared, and its `HEAD` content is put back only into a path nobody has recreated.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Move aside, compare, then write exclusively. Done when: a save injected at each point of the protocol is still on disk afterwards.
+
+- [ ] Change the return step of `reject` in `scripts/packet.py` to move each changed path aside first (`os.replace` into `build/packet-hold/<n>`), then compare the held bytes with the stash's captured blob. Done when: a test shows a path whose held bytes differ moved back unchanged (never overwritten) and named as unresolved. Cheaper substitute: comparing in place and then writing, which loses a save landing between the two.
+- [ ] Write a path's `HEAD` content back only with an exclusive create (`open(path, "xb")` to a temporary name in the same folder, then a link or rename that fails when the path exists), so a file an editor recreated after the move is never replaced. Done when: a test that recreates the path between the move and the write shows the editor's file kept byte for byte and the path named as unresolved.
+- [ ] Keep each held copy until its path is settled, and delete a held copy only once its bytes are proven to be in the stored stash. Done when: a test that stops `reject` after a move shows the held copy on disk and the next `reject` settling it.
+- [ ] Cover deletions the same way: a path the stash records as new or changed and `HEAD` lacks is moved aside and left absent only when nothing recreated it. Done when: a test recreating a deleted path keeps it and names it.
+- [ ] Report every unresolved path and exit 1 while any remains, keeping the packet open. Done when: tests show exit 1 naming each one and exit 0 once a retry finds none.
+- [ ] Commit: `agents: packet rejection keeps a save that lands while it writes`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes, with saves injected after the comparison and before the replacement and before the deletion.
+
+## 47. Packet Display and Digest From One Capture
+
+Filed 2026-11-11 from the completion review of §34 (round 2, finding 2, P2). §34's `show` prints the diffs and then hashes the working tree, so an editor save between the two can make the digest name bytes the reviewer never saw, and `show --stage --snapshot` would then accept them. This section reads every changed path once and derives the display and the digest from those same bytes.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Capture once, render and hash from the capture. Done when: a save injected between rendering and hashing cannot be staged.
+
+- [ ] Read each changed path's working-tree bytes and index blob once into a capture in `scripts/packet.py`, and render the unstaged and untracked parts of `show` from the capture (a unified diff of index blob to captured bytes) instead of a second `git diff` read of the working tree. Done when: a test that edits a file after the capture shows the displayed text and the digest both naming the captured bytes. Cheaper substitute: running `git diff` and hashing separately, which can show A and hash B.
+- [ ] Compute the `snapshot:` digest from the capture alone. Done when: a test injecting a save between the render and the hash shows the digest of the displayed bytes, and `show --stage --snapshot` with it refusing because the tree no longer holds them.
+- [ ] Commit: `agents: the packet display and its digest come from one read`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the injected-save test among them.
+
+## 48. Packet Staging Publishes the Index Atomically
+
+Filed 2026-11-11 from the completion review of §34 (round 2, finding 3, P2). §34's `show --stage` updates the index one path at a time, so a failure on the second path (an index lock, a full disk) leaves half a packet staged and nothing that tells it from the packet before. This section prepares the whole index change in a private index file and publishes it in one step under git's own index lock, after checking the live index has not changed.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Stage into a private index, publish it under `index.lock`. Done when: a failure at each step leaves the live index byte for byte as it was, or a recorded, finished acceptance.
+
+- [ ] Build the staged entries in a copy of the index (`GIT_INDEX_FILE` pointing at a temporary file in `.git`), with `git update-index` for every path, in `scripts/packet.py`. Done when: a test failing the second path's update shows the live index unchanged.
+- [ ] Publish the copy by creating `.git/index.lock` exclusively, checking that the live index still has the hash it had when the copy was made, writing the copy into the lock file and renaming it over `.git/index`. Done when: a test that changes the live index between the copy and the publication shows the refusal with the index unchanged, and a test holding `index.lock` shows a refusal that names it. Cheaper substitute: `git add`, path by path, which stages half a packet when one path fails.
+- [ ] Record the acceptance in `build/packet.json` before the publication and close the packet after it, so a run stopped at the rename is recognised on the next call as published or not by comparing the index hash. Done when: tests stopping before and after the rename show the next `show --stage` either finishing or reporting the acceptance done, never staging twice.
+- [ ] Commit: `agents: packet staging lands in the index all at once`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the three failure tests among them.
+
+## 49. Packet Lifecycle After a Partial Rejection
+
+Filed 2026-11-11 from the completion review of §34 (round 2, finding 4, P2). Once `reject` has started, the packet must not be accepted: if a rejection returns one path and stops on another, §34's `show` can see a smaller in-scope change and `show --stage` could accept it and close the packet, abandoning the rejection's record. This section gives the packet explicit states.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. A packet is open, rejecting or closed, and each verb checks the state. Done when: no verb but `reject` acts on a rejecting packet.
+
+- [ ] Add a `state` field to `build/packet.json` in `scripts/packet.py` (`open`, then `rejecting` from the moment `reject` records its stash commit), written through a temporary file and `os.replace`. Done when: a test reads `rejecting` after a `reject` stopped part way.
+- [ ] Make `show` name an incomplete rejection (its stash commit and the paths still to settle) and exit 1 on a rejecting packet. Done when: a test after each interruption point of `reject` shows that output.
+- [ ] Refuse `show --stage` with exit 2 on a rejecting packet, staging nothing. Done when: a test shows the refusal and the index unchanged. Cheaper substitute: letting the stage run on what is left, which accepts half a rejected packet.
+- [ ] Refuse `begin` while a packet is rejecting, naming `reject` as the way on. Done when: a test shows the refusal.
+- [ ] Commit: `agents: a packet being rejected can only be rejected`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with `show`, `show --stage` and `begin` checked after each interruption of `reject`.
 
 ## Verification
 
