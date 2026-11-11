@@ -85,6 +85,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 47 | §47 | Packet display and digest from one capture | §34 | [ ] |
 | 48 | §48 | Packet staging publishes the index atomically | §34 | [ ] |
 | 49 | §49 | Packet lifecycle after a partial rejection | §34 | [ ] |
+| 50 | §50 | Withdrawn sections | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1360,6 +1361,33 @@ Filed 2026-11-11 from the completion review of §34 (round 2, finding 4, P2). On
 - [ ] Commit: `agents: a packet being rejected can only be rejected`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with `show`, `show --stage` and `begin` checked after each interruption of `reject`.
+
+## 50. Withdrawn Sections
+
+> **Started:** 2026-11-11T06:55:00Z
+
+Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-implementer` and the Opus `section-writer` are removed). D00 T03 §34 built `scripts/packet.py` to accept or reject a writer agent's change, and §46 to §49 extend it; with no writer agent the command has no consumer, so the five sections can never be worth finishing. The plan has no way to retire one section: a file can be `superseded`, a section can only be stamped, and an open section counts against `query stats` forever, so the campaign could never end with `verified` equal to `total`. This section adds a withdrawal, recorded in the section with its reason and decider, then withdraws §34 and §46 to §49 and removes the code they leave behind.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Teach the graph a withdrawn section. Done when: `validate` accepts a withdrawn section, `query stats` leaves it out of `total`, and the plan shows it as withdrawn.
+2. Withdraw the five sections and remove `scripts/packet.py`. Done when: `query stats` no longer counts them and no file names `scripts/packet.py` except history records.
+
+- [ ] Read a `> **Withdrawn:** <UTC instant>: <who decided>: <reason>` line in a section body and a `[-]` box in its Implementation Order row in `scripts/lib/todo_graph.py`, and refuse either without the other, a withdrawn section that also carries a stamp, and a line without a decider and a reason. Done when: tests in `scripts/tests/test_todo_graph.py` show each refusal and an accepted withdrawal.
+- [ ] Refuse an open, non-withdrawn section that depends on a withdrawn one, naming both. Done when: a fixture where an open section depends on a withdrawn one exits 2 with both references, and the same fixture with the dependant withdrawn too validates.
+- [ ] Leave a withdrawn section out of `query ready`, `query blocked`, `resolve` exit 0 (it exits 3 as settled, with `withdrawn: true`) and the `total` of `query stats`, and add `"withdrawn": N` to `query stats`. Done when: tests show each.
+- [ ] Render a withdrawn row in the plan with `[-]` in Status and leave it out of the progress line's count, adding `, N withdrawn` to it when N is above zero. Done when: a test on a fixture tree shows both and `plan --check` fails when the plan is stale.
+- [ ] Count a withdrawn section as finished for a file's `done` status in the validator. Done when: a fixture file whose sections are all stamped or withdrawn validates with `status: done` and refuses `status: active`.
+- [ ] Document the withdrawal in `todo/README.md` (what it is for, the line, the `[-]` box, who may decide one: the owner, or the lead for a section whose consumer an owner decision removed) and in `.claude/skills/add-todo/SKILL.md` (a withdrawal goes through this, never by deleting a section). Done when: both name the line, the box and the dependant refusal.
+- [ ] Withdraw D00 T03 §34, §46, §47, §48 and §49 with the owner's 2026-11-11 decision as the reason. Done when: `python scripts/todo-graph.py query stats` shows `"withdrawn": 5`, and `resolve` on each exits 3.
+- [ ] Remove `scripts/packet.py` and `scripts/tests/test_packet.py`, and the `build/packet.json` mention in any document that still describes the command as live. Done when: a search of the repository outside `docs/reviews/`, `docs/phase-runs/` and the withdrawn sections finds no `packet.py`, and `python scripts/run-tests.py` passes.
+- [ ] Commit: `todo: withdraw a section whose purpose is gone`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the withdrawal tests among them, `python scripts/todo-graph.py validate` exits 0, and `python scripts/todo-graph.py query stats` shows `"withdrawn": 5`.
 
 ## Verification
 
