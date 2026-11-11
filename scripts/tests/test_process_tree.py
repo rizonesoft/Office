@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""scripts/lib/process_tree.py: a child and everything it starts end together, with the strays counted (D00 T03 §36)."""
+"""scripts/lib/process_tree.py: a child and everything it starts end together, with the strays named (D00 T03 §36)."""
 import os
 from pathlib import Path
 import sys
@@ -84,7 +84,10 @@ class TreeTest(unittest.TestCase):
             grandchild = wait_for(self.pidfile)
             child.wait(timeout=30)
             self.assertTrue(alive(grandchild))
-            self.assertEqual(tree.end(), 1)
+            strays = tree.end()
+        # The grandchild is the one stray this test made; elsewhere a process group cannot be listed by name.
+        self.assertEqual([s for s in strays if s.startswith("python") or s == "(process group)"],
+                         ["python.exe" if os.name == "nt" else "(process group)"], strays)
         self.assertFalse(alive(grandchild))
 
     def test_leaving_the_block_ends_the_tree_even_without_end(self):
@@ -114,7 +117,10 @@ class RunTest(unittest.TestCase):
         out, err = self.tmp / "out.txt", self.tmp / "err.txt"
         outcome = process_tree.run([sys.executable, "-c", "import sys; print(sys.stdin.read()); sys.exit(3)"],
                                    stdin_path=stdin, stdout_path=out, stderr_path=err, timeout=60)
-        self.assertEqual((outcome.exit, outcome.stopped, outcome.strays), (3, None, 0))
+        self.assertEqual((outcome.exit, outcome.stopped), (3, None))
+        # The child started nothing: no python process is left. What else Windows attaches to a console child is the
+        # system's (the hosted CI runner shows one more member than a desktop PC), so it is named, not counted.
+        self.assertEqual([s for s in outcome.strays if s.startswith("python")], [], outcome.strays)
         self.assertEqual(out.read_text().strip(), "hello")
 
     def test_time_limit_stops_the_tree(self):

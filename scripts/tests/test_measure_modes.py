@@ -415,7 +415,10 @@ class Runs(Fixture):
         session = run["stages"][0]["session"]
         self.assertEqual((session["exit"], session["stopped"]), (None, "time limit"))
         # The fake and its sleeping child, and on Windows the fake under its cmd.exe launcher: both were left running.
-        self.assertGreaterEqual(session["strays_stopped"], 1 if os.name == "nt" else 0)
+        if os.name == "nt":
+            self.assertIn("python.exe", session["strays_stopped"])
+        else:
+            self.assertIsInstance(session["strays_stopped"], list)
         child = int((self.control / f"child-{run['clone']}.pid").read_text())
         self.assertFalse(alive(child))
 

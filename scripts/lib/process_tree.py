@@ -29,6 +29,7 @@ NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a schedule
 CREATE_SUSPENDED = 0x00000004
 CREATE_NEW_PROCESS_GROUP = 0x00000200
 JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+CONSOLE_HOSTS = ("conhost.exe", "openconsole.exe")  # the console host of a console child, started by Windows
 EXTENDED_LIMIT_INFORMATION = 9  # JobObjectExtendedLimitInformation
 BASIC_ACCOUNTING_INFORMATION = 1  # JobObjectBasicAccountingInformation
 
@@ -197,20 +198,21 @@ class Tree:
     def _end_job(self, deadline):
         """Terminate the job and wait on each member's own handle until it has exited. The job's member count can read
         0 a moment before the last member's process object is signalled, so the count alone is not proof. Returns the
-        strays: members other than the child, not counting the console host Windows starts for a console child
-        (conhost.exe belongs to the child's console, not to anything the child started)."""
+        strays, the image names of the members other than the child that were still running, sorted, without the console
+        host Windows starts for a console child (it belongs to the child's console, not to anything the child started)."""
         synchronize_and_query = 0x00100000 | 0x1000  # SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION
         handles = []
-        strays = 0
+        strays = []
         try:
             for pid in self._members():
                 handle = self.kernel32.OpenProcess(synchronize_and_query, False, pid)
                 if not handle:
                     continue  # it exited between the listing and the open
                 handles.append(handle)
-                if pid != self.child.pid and self._image(handle) != "conhost.exe" \
+                image = self._image(handle) or "(unreadable)"
+                if pid != self.child.pid and image not in CONSOLE_HOSTS \
                         and self.kernel32.WaitForSingleObject(handle, 0) == 0x102:  # WAIT_TIMEOUT: still running
-                    strays += 1
+                    strays.append(image)
             self.kernel32.TerminateJobObject(self.job, 1)
             for handle in handles:
                 left = max(0, int((deadline - time.monotonic()) * 1000))
@@ -225,20 +227,21 @@ class Tree:
                 raise TreeError(f"the tree of process {self.child.pid} was still running {KILL_SECONDS} s after it was "
                                 f"stopped")
             time.sleep(POLL_SECONDS / 4)
-        return strays
+        return sorted(strays)
 
     def end(self):
-        """Stop every member, wait until they are gone and reap the child. Returns how many processes the child had
-        started that were still running when it was called (on Windows the exact count; elsewhere 1 when the child had
-        exited and its process group still had a member, else 0). Raises TreeError when the tree is still running
-        KILL_SECONDS later. Calling it again returns 0."""
+        """Stop every member, wait until they are gone and reap the child. Returns the processes the child had started
+        that were still running when it was called, as a sorted list of image names (on Windows each one; elsewhere,
+        where a process group cannot be listed, ["(process group)"] when the child had exited and its group still had a
+        member, else []). Raises TreeError when the tree is still running KILL_SECONDS later. Calling it again returns
+        []."""
         if self.child is None or self.ended:
-            return 0
+            return []
         deadline = time.monotonic() + KILL_SECONDS
         if os.name == "nt":
             strays = self._end_job(deadline)
         else:
-            strays = 1 if self.child.poll() is not None and self.active() else 0
+            strays = ["(process group)"] if self.child.poll() is not None and self.active() else []
             try:
                 os.killpg(self.child.pid, signal.SIGKILL)
             except (ProcessLookupError, PermissionError):
@@ -256,7 +259,7 @@ class Outcome:
     exit: int | None  # the child's exit code; None when it was stopped
     stopped: str | None  # why it was stopped: "time limit", "output limit" or "cancelled"; None when it ended itself
     seconds: float
-    strays: int  # processes the child left running, stopped with it
+    strays: list  # image names of the processes the child left running, stopped with it
 
 
 def _too_big(paths, max_bytes):
