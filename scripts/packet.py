@@ -28,7 +28,9 @@ unstaged. Then it closes the packet. Otherwise the index is left as it was.
 whole tree (index, tracked and untracked files, in `git stash push --include-untracked`'s shape) from the bytes it
 reads, without touching the tree, stores it with `git stash store` as `rejected packet: <name>`, and then returns
 each changed path to `HEAD`, checking right before each write that the path still holds the bytes the stash
-captured: a path saved meanwhile is kept on disk and named. Its progress is recorded in `build/packet.json`, so a
+captured: a path saved meanwhile is kept on disk and named, and the index goes back to `HEAD` only while it is still
+the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
+writes after them, so a folder that took a tracked file's name is emptied before the file returns. Its progress is recorded in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
 is settled and the tree holds no change; kept saves are named, and a further `reject` sets them aside too.
 
@@ -154,9 +156,12 @@ def close(repo):
 
 
 def read_bytes(repo, path):
-    """A path's working-tree bytes, or None when it is absent."""
+    """A path's working-tree bytes, or None when no file is there (absent, or a folder now holds the name)."""
+    target = repo / path
+    if target.is_dir():
+        return None
     try:
-        return (repo / path).read_bytes()
+        return target.read_bytes()
     except FileNotFoundError:
         return None
 
@@ -303,10 +308,11 @@ def head_content(repo, path):
 
 
 def return_path(repo, path, raw):
-    """Write `path` back to its HEAD bytes (or remove it when HEAD lacks it)."""
+    """Write `path` back to its HEAD bytes (or remove it when HEAD lacks it; a file already gone is settled)."""
     target = repo / path
     if raw is None:
-        os.unlink(target)
+        if target.is_file() or target.is_symlink():
+            os.unlink(target)
         parent = target.parent
         while parent != repo and not any(parent.iterdir()):
             parent.rmdir()
@@ -342,17 +348,30 @@ def reject(repo):
             store(repo, rejection["stash"], message)
         rejection["stored"] = True
         save(repo, data)
-    # The index's staged state is in the stash's index commit; returning it to HEAD again on a resume loses nothing.
-    run_git(repo, "read-tree", base)
+    # The index goes back to HEAD only while it is still the one the stash's index commit captured: an index staged
+    # after the capture (by the owner, between an interrupted reject and its retry) is in no stash, so it is kept.
+    index_now = text(repo, "write-tree").strip()
+    captured_index = text(repo, "rev-parse", f"{rejection['stash']}^2^{{tree}}").strip()
+    index_kept = False
+    if index_now == captured_index:
+        run_git(repo, "read-tree", base)
+    elif index_now != text(repo, "rev-parse", f"{base}^{{tree}}").strip():
+        index_kept = True
     failed = []
-    for path, recorded in sorted(rejection["paths"].items()):
-        if path in rejection["settled"]:
-            continue
+    contents = {p: head_content(repo, p) for p in rejection["paths"] if p not in rejection["settled"]}
+    # Removals first, deepest first, then writes, shallowest first: a folder that took a tracked file's name is
+    # emptied before the file is written back in its place.
+    order = sorted(contents, key=lambda p: (contents[p] is not None,
+                                            p.count("/") * (-1 if contents[p] is None else 1), p))
+    for path in order:
+        recorded = rejection["paths"][path]
         if sha(read_bytes(repo, path)) != recorded:
             rejection["settled"][path] = "kept"  # saved after the capture: in no stash, so it stays on disk
+        elif contents[path] is not None and (repo / path).is_dir():
+            rejection["settled"][path] = "kept"  # a folder holding a kept save still takes the file's name
         else:
             try:
-                return_path(repo, path, head_content(repo, path))
+                return_path(repo, path, contents[path])
             except OSError as exc:
                 failed.append(f"{path} ({exc})")
                 continue
@@ -367,10 +386,12 @@ def reject(repo):
     kept = [p for p, how in sorted(rejection["settled"].items()) if how == "kept"]
     del data["rejection"]
     left = dirty(repo)
-    if kept or left:
+    if kept or left or index_kept:
         save(repo, data)
         for path in kept:
             print(f"kept on disk, saved after the capture and not in the stash: {path}")
+        if index_kept:
+            print("kept the index: it was staged after the capture and is not in the stash")
         print("NOT FINISHED: the tree still holds changes saved during the rejection "
               f"({', '.join(sorted(set(kept + left)))}); run reject again to set them aside too", file=sys.stderr)
         return 1

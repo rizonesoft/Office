@@ -385,6 +385,52 @@ class Packet(unittest.TestCase):
         listed = self.git("stash", "list", "--format=%H").split()
         self.assertEqual(listed.count(stash), 1, listed)
 
+    def test_an_index_staged_between_an_interrupted_reject_and_its_retry_is_kept(self):
+        # Review round 1, finding 1: the retry returned the index to HEAD and lost the newer staged state.
+        self.begin("src")
+        self.put("src/a.py", "a = 21\n")
+        self.stopped_reject("store")
+        self.put("docs/note.md", "staged by the owner after the capture\n")
+        self.git("add", "docs/note.md")
+        self.put("docs/note.md", "note\n")  # and undone on disk, so the staged blob is the only copy
+        code, out, _ = self.cli("reject")
+        self.assertEqual(code, 1)
+        self.assertIn("kept the index", out)
+        self.assertEqual(self.git("show", ":docs/note.md"), "staged by the owner after the capture\n")
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        # A further reject sets the kept index aside in a stash of its own.
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged by the owner after the capture\n", "^2")
+        self.assertEqual(self.status(), "")
+
+    def test_a_staged_new_file_already_gone_from_disk_does_not_block_the_rejection(self):
+        # Review round 1, finding 2: unlinking the absent file failed on every retry.
+        self.begin("src")
+        self.put("src/staged.py", "staged then deleted\n")
+        self.git("add", "src/staged.py")
+        (self.repo / "src/staged.py").unlink()
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assert_in_stash("stash@{0}", "src/staged.py", "staged then deleted\n", "^2")
+        self.assertEqual(self.status(), "")
+
+    def test_a_folder_that_took_a_tracked_files_name_is_shown_and_rejected(self):
+        # Review round 1, finding 3: reading the folder as a file made both verbs exit 3.
+        self.begin("docs")
+        (self.repo / "docs/note.md").unlink()
+        self.put("docs/note.md/part.md", "a folder now holds the name\n")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("inside  docs/note.md\n", out)
+        self.assertIn("inside  docs/note.md/part.md\n", out)
+        self.assertIn("a folder now holds the name", out)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("docs/note.md"), "note\n")
+        self.assert_in_stash("stash@{0}", "docs/note.md/part.md", "a folder now holds the name\n", "^3")
+        self.assertEqual(self.status(), "")
+
     def test_a_path_that_cannot_be_written_keeps_the_packet_open_until_a_retry_finishes(self):
         self.begin("src")
         self.put("src/a.py", "a = 19\n")
