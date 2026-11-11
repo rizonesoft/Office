@@ -236,5 +236,5 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 - `python scripts/lessons.py check` exits 0 and CI runs it.
 - `python scripts/lessons.py query --role main --path scripts/lib/todo_graph.py` prints at most five lessons, identical on two runs.
 - `process-todo-section` and `review-todo-section` both name `scripts/lessons.py`.
-- `python scripts/lessons.py report --check` exits 0, and the 5,000-lesson and 40,000-line tests of §2 and §7 pass inside their time limits.
+- `python scripts/lessons.py report --check` exits 0, and the 5,000-lesson test of §2 passes inside its time limit (the 40,000-line ledger test went with §7, withdrawn 2026-11-11).
 - `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py plan --check` pass.

@@ -809,6 +809,15 @@ title: "TODO-01 -- Capture"
                 self.assertIsNone(refs)
                 self.assertIn("cannot be read", note)
 
+    def test_a_withdrawn_section_needs_no_office(self):
+        # D00 T03 §50 review round 2: a withdrawn section that names office kept the host check asking for Office.
+        printed = json.dumps([{"ref": "D02 T01 §1", "done": False, "withdrawn": True, "status": "active",
+                               "needs": ["office"]},
+                              {"ref": "D02 T01 §2", "done": False, "withdrawn": False, "status": "active",
+                               "needs": ["office"]}])
+        self.host.run = lambda argv, seconds=None: subprocess.CompletedProcess(argv, 0, printed, "")
+        self.assertEqual(self.needed(), ["D02 T01 §2"])
+
     def test_the_repository_tree_reads(self):
         rows = host_check.Host().sections()
         self.assertTrue(any(r["ref"] == "D00 T03 §12" for r in rows))

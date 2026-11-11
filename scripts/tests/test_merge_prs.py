@@ -406,6 +406,16 @@ class State(unittest.TestCase):
             with mock.patch("todo_graph.graph", return_value={"D00 T01 §1": done}):
                 self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), [])
 
+    def test_a_started_section_that_was_withdrawn_is_not_in_progress(self):
+        # D00 T03 §50 review round 2: a withdrawn section keeps its Started line, and merges stopped for good.
+        from test_todo_graph import withdraw
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(Path(tmp))
+            path = Path(tmp) / "todo/00-workspace/TODO-01-a.md"
+            text = withdraw(path.read_text(encoding="utf-8"), 1).replace("status: active", "status: done")
+            path.write_text(text, encoding="utf-8")
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), [])
+
     def test_the_campaign_owner_is_read_from_the_run_guard(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertIsNone(merge_prs.campaign_owner(tmp))

@@ -799,7 +799,9 @@ def office_needed(host):
         sections = host.sections()
     except Exception as exc:  # any failure to read the tree (a refusal, a git timeout, a bug) falls back to checking
         return None, f"the TODO tree cannot be read ({type(exc).__name__}: {exc}), so Office is checked"
-    refs = [s["ref"] for s in sections if not s["done"] and s["status"] != "superseded" and "office" in s["needs"]]
+    # A withdrawn section (D00 T03 §50) will never run, so it needs no Office.
+    refs = [s["ref"] for s in sections if not s["done"] and not s.get("withdrawn") and s["status"] != "superseded"
+            and "office" in s["needs"]]
     return refs, None
 
 
