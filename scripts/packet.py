@@ -162,7 +162,7 @@ def read_bytes(repo, path):
         return None
     try:
         return target.read_bytes()
-    except FileNotFoundError:
+    except (FileNotFoundError, NotADirectoryError):  # absent, or a file holds one of its parents' names
         return None
 
 
@@ -301,10 +301,25 @@ def store(repo, commit, message):
 
 
 def head_content(repo, path):
-    """The bytes git would check out for `path` at HEAD (smudged), or None when HEAD has no such file."""
-    if not text(repo, "ls-tree", "HEAD", "--", path).strip():
+    """The bytes git would check out for `path` at HEAD (smudged), or None when HEAD has no file there: no entry, or
+    a folder (a tree) or a submodule (a commit) at that name, whose own files are paths of their own."""
+    entry = text(repo, "ls-tree", "HEAD", "--", path).split()
+    if len(entry) < 2 or entry[1] != "blob":
         return None
     return run_git(repo, "cat-file", "--filters", f"HEAD:{path}")
+
+
+def blocked(repo, path):
+    """A path that cannot take a file now: a folder holds its name, or a file holds one of its parents' names."""
+    target = repo / path
+    if target.is_dir():
+        return True
+    parent = target.parent
+    while parent != repo:
+        if parent.exists() and not parent.is_dir():
+            return True
+        parent = parent.parent
+    return False
 
 
 def return_path(repo, path, raw):
@@ -314,8 +329,11 @@ def return_path(repo, path, raw):
         if target.is_file() or target.is_symlink():
             os.unlink(target)
         parent = target.parent
-        while parent != repo and not any(parent.iterdir()):
-            parent.rmdir()
+        while parent != repo:  # remove the folders this emptied; one already gone is passed over
+            if parent.is_dir():
+                if any(parent.iterdir()):
+                    break
+                parent.rmdir()
             parent = parent.parent
     else:
         atomic_write(target, raw)
@@ -367,8 +385,8 @@ def reject(repo):
         recorded = rejection["paths"][path]
         if sha(read_bytes(repo, path)) != recorded:
             rejection["settled"][path] = "kept"  # saved after the capture: in no stash, so it stays on disk
-        elif contents[path] is not None and (repo / path).is_dir():
-            rejection["settled"][path] = "kept"  # a folder holding a kept save still takes the file's name
+        elif contents[path] is not None and blocked(repo, path):
+            rejection["settled"][path] = "kept"  # a kept save (a folder or a file) still holds a name on its way
         else:
             try:
                 return_path(repo, path, contents[path])

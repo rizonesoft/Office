@@ -431,6 +431,62 @@ class Packet(unittest.TestCase):
         self.assert_in_stash("stash@{0}", "docs/note.md/part.md", "a folder now holds the name\n", "^3")
         self.assertEqual(self.status(), "")
 
+    def test_a_staged_file_whose_new_folder_is_gone_too_does_not_block_the_rejection(self):
+        # Review round 2, finding 1: the emptied-folder walk read a folder that no longer existed.
+        self.begin("src")
+        self.put("src/new/file.py", "staged in a new folder\n")
+        self.git("add", "src/new/file.py")
+        (self.repo / "src/new/file.py").unlink()
+        (self.repo / "src/new").rmdir()
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assert_in_stash("stash@{0}", "src/new/file.py", "staged in a new folder\n", "^2")
+        self.assertEqual(self.status(), "")
+
+    def tracked_group(self):
+        self.put("docs/group/note.md", "grouped note\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "a tracked folder")
+
+    def test_a_file_that_took_a_tracked_folders_name_is_rejected_and_the_folder_returns(self):
+        # Review round 2, finding 2: HEAD's tree entry was written into the file as if it were a blob.
+        self.tracked_group()
+        self.begin("docs")
+        (self.repo / "docs/group/note.md").unlink()
+        (self.repo / "docs/group").rmdir()
+        self.put("docs/group", "a file now holds the folder's name\n")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("inside  docs/group\n", out)
+        self.assertIn("inside  docs/group/note.md\n", out)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
+        self.assert_in_stash("stash@{0}", "docs/group", "a file now holds the folder's name\n", "^3")
+        self.assertEqual(self.status(), "")
+
+    def test_a_kept_file_in_a_folders_place_holds_back_the_files_under_it(self):
+        self.tracked_group()
+        self.begin("docs")
+        (self.repo / "docs/group/note.md").unlink()
+        (self.repo / "docs/group").rmdir()
+        self.put("docs/group", "the worker's file\n")
+        real = packet.store
+
+        def owner_saves(*args, **kwargs):
+            real(*args, **kwargs)
+            self.put("docs/group", "the owner saved over it mid-rejection\n")
+
+        with mock.patch.object(packet, "store", owner_saves):
+            code, out, _ = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        self.assertEqual(self.read("docs/group"), "the owner saved over it mid-rejection\n")
+        self.assertIn("kept on disk, saved after the capture and not in the stash: docs/group", out)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.read("docs/group/note.md"), "grouped note\n")
+        self.assertEqual(self.status(), "")
+
     def test_a_path_that_cannot_be_written_keeps_the_packet_open_until_a_retry_finishes(self):
         self.begin("src")
         self.put("src/a.py", "a = 19\n")
