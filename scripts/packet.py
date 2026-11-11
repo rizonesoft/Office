@@ -33,10 +33,19 @@ the one the stash captured (an index staged after the capture is kept and named)
 writes after them, so a folder that took a tracked file's name is emptied before the file returns.
 
 Every read, removal and write goes through one model of what occupies a name on disk (`occupant`: nothing, a file,
-a link, a Windows folder link, a junction, a real folder, something git does not record, or a path beyond a link
-or a file), so each kind is handled the same way in every step. A link or a junction is read, stashed and returned
-as a link (mode 120000) and is never followed: nothing is read, written or removed through one, a path below one
-counts as absent, and the link itself is the changed path. Its progress is recorded in `build/packet.json`, so a
+a link, a Windows folder link, a junction, a real folder, something git does not record, a path beyond a link or a
+file, or a name held under another spelling), so each kind is handled the same way in every step. A link or a
+junction is read, stashed and returned as a link (mode 120000) and is never followed: nothing is read, written or
+removed through one, a path below one counts as absent, and the link itself is the changed path.
+
+A path is its exact spelling. Each name is looked up in its own folder's list of names, so on a file system that
+ignores case `src/a.py` and `src/A.py` are two paths: the one the folder lists holds the file, the other is absent
+and is never read, written or removed through the first. A rename that changes only the case of a file or a folder,
+staged or made on disk alone (which git does not report), is therefore a removal of the old spelling and a new
+file under the new one, in `begin`, `show`, the staged index and the stash alike; `reject` removes the new spelling
+first and then writes `HEAD`'s, and holds `HEAD`'s back while a kept save still has the name.
+
+`reject` records its progress in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
 is settled and the tree holds no change; kept saves are named, and a further `reject` sets them aside too.
 
@@ -182,6 +191,7 @@ JUNCTION = "junction"        # Windows only: a junction or a mounted volume
 FOLDER = "folder"            # a real folder of this tree
 OTHER = "other"              # a pipe, a socket, a device: nothing git records, never read, written or removed
 BEYOND = "beyond"            # a parent's name is held by something that is not a real folder: outside this tree
+ALIAS = "alias"              # the name, or a parent's, is held under another spelling: that entry is a path of its own
 LINKS = (LINK, FOLDER_LINK, JUNCTION)
 JUNCTION_TAG = 0xA0000003    # IO_REPARSE_TAG_MOUNT_POINT
 
@@ -202,39 +212,81 @@ def kind_of(target):
     return FILE if stat.S_ISREG(found.st_mode) else OTHER
 
 
-def occupant(repo, path):
-    """What occupies `path` in the working tree, walking down from the repository so that nothing is ever looked at
-    through a link, a junction or a file: BEYOND when one of them holds a parent's name."""
-    here = repo
-    for part in PurePosixPath(path).parts[:-1]:
-        here = here / part
-        kind = kind_of(here)
-        if kind == NOTHING:
-            return NOTHING
+class Look:
+    """One look at the working tree: each folder's own list of names and each name's kind, read once. A step that
+    changes the tree never keeps one, so every answer it acts on is read fresh."""
+
+    def __init__(self):
+        self.listed, self.kinds = {}, {}
+
+    def names(self, folder):
+        """The names a real folder holds, exactly as it stores them."""
+        if folder not in self.listed:
+            try:
+                self.listed[folder] = frozenset(os.listdir(folder))
+            except (FileNotFoundError, NotADirectoryError):
+                self.listed[folder] = frozenset()
+        return self.listed[folder]
+
+    def kind(self, target):
+        if target not in self.kinds:
+            self.kinds[target] = kind_of(target)
+        return self.kinds[target]
+
+
+def stored_name(folder, name, listed):
+    """`name` is not among the names `folder` lists. The listed name of the entry that answers to it all the same
+    (another case on a file system that ignores case, a short name), or None when nothing answers."""
+    try:
+        wanted = os.lstat(folder / name)
+    except (FileNotFoundError, NotADirectoryError):
+        return None
+    for other in sorted(listed, key=lambda entry: (entry.casefold() != name.casefold(), entry)):
+        try:
+            if os.path.samestat(os.lstat(folder / other), wanted):
+                return other
+        except (FileNotFoundError, NotADirectoryError):
+            continue
+    raise OSError(f"{name} in {folder} answers under a spelling the folder does not list")
+
+
+def trail(repo, path, look=None):
+    """`path` walked down from the repository one name at a time: for each name something holds, (the path so far
+    as the folders themselves spell it, the kind of what holds it, whether its folder lists the name exactly as
+    `path` spells it). The walk goes on only through real folders, so nothing is looked at through a link, a
+    junction or a file, and it ends at the first name nothing holds."""
+    look = look or Look()
+    here, spelled, found = repo, [], []
+    for part in PurePosixPath(path).parts:
+        listed = look.names(here)
+        name = part if part in listed else stored_name(here, part, listed)
+        if name is None:
+            break
+        spelled.append(name)
+        here = here / name
+        kind = look.kind(here)
+        found.append(("/".join(spelled), kind, name == part))
         if kind != FOLDER:
-            return BEYOND
-    return kind_of(repo / path)
+            break
+    return found
 
 
-def link_above(repo, path, seen):
-    """The outermost parent of `path` inside the repository that is a link or a junction, or None. `seen` keeps
-    each folder's kind for the length of one listing."""
-    here = repo
-    for part in PurePosixPath(path).parts[:-1]:
-        here = here / part
-        if here not in seen:
-            seen[here] = kind_of(here)
-        if seen[here] in LINKS:
-            return here.relative_to(repo).as_posix()
-        if seen[here] != FOLDER:
-            return None
-    return None
+def occupant(repo, path, look=None):
+    """What occupies `path`, spelled exactly so, in the working tree: ALIAS when the name or a parent's is held
+    only under another spelling, BEYOND when a link, a junction or a file holds a parent's name."""
+    found = trail(repo, path, look)
+    if not all(exact for _, _, exact in found):
+        return ALIAS
+    if len(found) == len(PurePosixPath(path).parts):
+        return found[-1][1]
+    return BEYOND if found and found[-1][1] not in (FOLDER, NOTHING) else NOTHING
 
 
 def read_entry(repo, path):
     """What a path holds in the working tree, as git records it: ("link", its target) for a link of any kind (never
     followed, so a link to a folder or to nothing is kept as a link), ("file", its bytes) for a file, or None when
-    neither is there (nothing, a real folder, something git does not record, or a path beyond a link or a file)."""
+    neither is there (nothing, a real folder, something git does not record, a path beyond a link or a file, or a
+    name held only under another spelling: that entry is read under its own)."""
     kind, target = occupant(repo, path), repo / path
     try:
         if kind in LINKS:
@@ -261,22 +313,45 @@ def hollow(folder):
 
 
 def changed_paths(repo, base):
-    """Every path changed since `base` (base to index, index to working tree with both sides of a rename, and
-    untracked), as this command sees the tree: git for Windows looks through a junction, and this command never
-    does. So a link or a junction above a listed or tracked path is itself a changed path, every tracked path
+    """(every path changed since `base`, the untracked ones among them, the ones no diff of git's shows), as this
+    command sees the tree: base to index, index to working tree with both sides of a rename, and untracked. git
+    for Windows looks through a junction and takes one spelling of a name for another; this command does
+    neither. So a link or a junction above a listed or tracked path is itself a changed path, every tracked path
     below it is changed too (nothing of the tree is there any more), and an untracked file git lists behind it is
-    left out: it is outside the tree and is never read or touched."""
+    left out: it is outside the tree and is never read or touched. And a tracked path held on disk only under
+    another spelling is changed (it is absent), with the file or link that holds the name a path of its own,
+    untracked unless the index has that spelling too."""
     staged = names(repo, "diff", "--cached", "--name-only", "--no-renames", base)
     unstaged = names(repo, "diff", "--name-only", "--no-renames")
-    loose = names(repo, "ls-files", "--others", "--exclude-standard")
+    loose = set(names(repo, "ls-files", "--others", "--exclude-standard"))
     indexed = set(names(repo, "ls-files"))
-    tracked, seen, above = indexed | set(staged), {}, {}
-    for path in tracked | set(loose):
-        above[path] = link_above(repo, path, seen)
-    links = {link for link in above.values() if link}
-    untracked = {p for p in loose if not above[p]} | (links - tracked)
-    changed = set(staged) | set(unstaged) | untracked | {p for p in tracked if above[p]}
-    return sorted(changed), sorted(untracked)
+    tracked, look = indexed | set(staged), Look()
+    listed = set(staged) | set(unstaged)
+    changed, untracked = set(listed), set()
+    for path in tracked | loose:
+        found = trail(repo, path, look)
+        whole = len(found) == len(PurePosixPath(path).parts)
+        at, kind, _ = found[-1] if found else (None, NOTHING, True)
+        if not whole and kind in LINKS:  # a link or a junction holds a parent's name
+            if path in tracked:
+                changed.add(path)
+            if at not in tracked:
+                untracked.add(at)
+        elif not all(exact for _, _, exact in found):  # the name, or a parent's, is held under another spelling
+            if path in tracked:
+                changed.add(path)
+            if whole and kind in (FILE, *LINKS) and at not in indexed:
+                untracked.add(at)
+        elif path in loose:
+            untracked.add(path)
+    changed |= untracked
+    return sorted(changed), sorted(untracked), sorted(changed - listed - untracked)
+
+
+def pending(repo, base):
+    """git's own listing, and what this command lists as changed: a junction standing where tracked files were, or
+    a file renamed on disk to another case of its name, is a change here even when git for Windows reports none."""
+    return list(dict.fromkeys(dirty(repo) + changed_paths(repo, base)[0]))
 
 
 def capture(repo, paths):
@@ -306,12 +381,10 @@ def begin(repo, name, values):
     if not name.strip():
         raise Refused("a packet needs a name")
     paths = list(dict.fromkeys(packet_path(v) for v in values))
-    # git's own listing, and what this command would list as changed: a junction standing where tracked files
-    # were is a change here even when git for Windows, reading through it, reports none.
-    pending = list(dict.fromkeys(dirty(repo) + changed_paths(repo, "HEAD")[0]))
-    if pending:
+    held = pending(repo, "HEAD")
+    if held:
         raise Refused("the working tree holds changes; commit your own edits before the packet starts:\n"
-                      + "\n".join(f"  {p}" for p in pending))
+                      + "\n".join(f"  {p}" for p in held))
     at = head(repo)
     save(repo, {"name": name.strip(), "paths": paths, "head": at, "folder_links": folder_links(repo)})
     print(f"packet open: {name.strip()} ({len(paths)} path(s)) at {at}")
@@ -337,7 +410,8 @@ def stage_bytes(repo, base, captured, env=None):
     """Put exactly the captured entries in the index (or remove a path captured as absent). Removals go first, so a
     file that took a folder's name is added only once the folder's entries are gone, and `--replace` lets an entry
     take a name a staged file or folder still holds. A link is stored as git stores one, mode 120000 with its target
-    unfiltered; a file keeps its file mode and passes git's filters for its path."""
+    unfiltered; a file keeps its file mode and passes git's filters for its path. Each entry is the capture of its
+    exact spelling, so of two spellings of one name only the one its folder lists is added and the other is removed."""
     for path in sorted((p for p, e in captured.items() if e is None), key=lambda p: (-p.count("/"), p)):
         run_git(repo, "update-index", "--force-remove", "--", path, env=env)
     for path, entry in sorted((p, e) for p, e in captured.items() if e is not None):
@@ -356,12 +430,16 @@ def show(repo, stage=False, snapshot=None):
     if stage and not snapshot:
         raise Refused("show --stage needs --snapshot <the digest the main loop reviewed>")
     base, paths = data["head"], data["paths"]
-    changed, untracked = changed_paths(repo, base)
+    changed, untracked, unseen = changed_paths(repo, base)
     captured = capture(repo, changed)
     problems = []
-    print(f"packet: {data['name']}")
+    # One writer for everything up to the snapshot line, so the order holds whatever standard output is: text
+    # written before is flushed first, and these bytes are flushed before anything is printed after them.
+    sys.stdout.flush()
+    out = sys.stdout.buffer
+    out.write(f"packet: {data['name']}\n".encode("utf-8"))
     for path in changed:
-        print(f"{'inside ' if inside(path, paths) else 'outside'} {path}")
+        out.write(f"{'inside ' if inside(path, paths) else 'outside'} {path}\n".encode("utf-8"))
     outside = [p for p in changed if not inside(p, paths)]
     if outside:
         problems.append("outside the packet's paths: " + ", ".join(outside))
@@ -370,20 +448,23 @@ def show(repo, stage=False, snapshot=None):
         problems.append(f"HEAD moved from {base} to {now}: a worker never commits")
     if not changed:
         problems.append("nothing changed since begin")
-    out = sys.stdout.buffer
     out.write(f"--- staged ({base[:12]} to the index)\n".encode())
     out.write(run_git(repo, "diff", "--cached", "--no-renames", base))
     out.write(b"--- unstaged (the index to the working tree)\n")
     out.write(run_git(repo, "diff", "--no-renames"))
+    for path in unseen:  # absent as this command reads the tree, where git reads through a junction or a spelling
+        if captured.get(path) is None:
+            out.write(f"--- gone {path} (git shows no change: a link or another spelling holds the name)\n"
+                      .encode("utf-8"))
     for path in untracked:
         entry = captured.get(path)
         if entry is None:
             continue
         kind, raw = entry
         if kind == "link":
-            out.write(f"--- new link {path} -> ".encode() + raw + b"\n")
+            out.write(f"--- new link {path} -> ".encode("utf-8") + raw + b"\n")
             continue
-        out.write(f"--- new file {path} ({len(raw)} bytes)\n".encode())
+        out.write(f"--- new file {path} ({len(raw)} bytes)\n".encode("utf-8"))
         out.write(b"(binary)\n" if b"\0" in raw else raw + (b"" if raw.endswith(b"\n") or not raw else b"\n"))
     reviewed = digest(captured)
     out.write(f"snapshot: {reviewed}\n".encode())
@@ -461,20 +542,19 @@ def remove_occupant(target, kind):
         os.rmdir(target)  # refuses a folder that still holds anything, so nothing is lost with it
 
 
-def remove_empty_parents(repo, target):
-    """Remove each parent folder of `target` that is now empty, up to the repository, as git does after it removes
-    a file. A parent already gone is passed over; one that holds anything, or is not a real folder, ends the walk."""
-    parent = target.parent
-    while parent != repo:
-        kind = kind_of(parent)
+def remove_empty_parents(repo, path):
+    """Remove each parent folder of `path` that is now empty, up to the repository, as git does after it removes
+    a file. A parent already gone is passed over; one that holds anything, is not a real folder, or is there only
+    under another spelling ends the walk."""
+    for parent in list(PurePosixPath(path).parents)[:-1]:
+        kind = occupant(repo, parent.as_posix())
         if kind == FOLDER:
-            with os.scandir(parent) as found:
+            with os.scandir(repo / parent) as found:
                 if next(found, None) is not None:
                     return
-            os.rmdir(parent)
+            os.rmdir(repo / parent)
         elif kind != NOTHING:
             return
-        parent = parent.parent
 
 
 def temporary_beside(target):
@@ -528,20 +608,22 @@ def return_path(repo, path, entry, folder_link=False):
 
     HEAD has nothing there: a file or a link of any kind is removed (the link itself, never its target), a hollow
     folder is removed, a folder holding anything stays (its files are paths of their own), and a path beyond a
-    link or a file is left alone. Then the parents this emptied go.
+    link or a file, or held under another spelling, is left alone (that entry is a path of its own, removed or
+    kept under its own name). Then the parents this emptied go.
 
     HEAD has a file or a link there: it replaces a file or a link of any kind, takes a free name (its parent
     folders are made) or the name of a hollow folder (an empty folder is in no way a save); it is kept back when a
-    folder holding anything, or something git does not record, has the name, or when the path lies beyond a link,
-    a junction or a file (a write there would land outside the tree)."""
+    folder holding anything, or something git does not record, has the name, when the path lies beyond a link,
+    a junction or a file (a write there would land outside the tree), or while another spelling still holds the
+    name or a parent's (a write there would land on that entry: it goes first, under its own name)."""
     target, here = repo / path, occupant(repo, path)
     if entry is None:
         if here in (FILE, *LINKS) or (here == FOLDER and hollow(target)):
             remove_occupant(target, here)
-        if here != BEYOND:
-            remove_empty_parents(repo, target)
+        if here not in (BEYOND, ALIAS):
+            remove_empty_parents(repo, path)
         return True
-    if here in (BEYOND, OTHER) or (here == FOLDER and not hollow(target)):
+    if here in (BEYOND, OTHER, ALIAS) or (here == FOLDER and not hollow(target)):
         return False
     if here == FOLDER:
         remove_occupant(target, FOLDER)
@@ -561,7 +643,7 @@ def reject(repo):
         return 1
     rejection = data.get("rejection")
     if rejection is None:
-        changed, untracked = changed_paths(repo, base)
+        changed, untracked, _ = changed_paths(repo, base)
         if not changed and not dirty(repo):
             close(repo)
             print("nothing to set aside; packet closed")
@@ -589,7 +671,8 @@ def reject(repo):
     failed = []
     contents = {p: head_entry(repo, p) for p in rejection["paths"] if p not in rejection["settled"]}
     # Removals first, deepest first, then writes, shallowest first: a folder that took a tracked file's name is
-    # emptied before the file is written back in its place.
+    # emptied before the file is written back in its place, and another spelling of a name HEAD has (a rename that
+    # changed only the case) is removed under its own name before HEAD's spelling is written.
     order = sorted(contents, key=lambda p: (contents[p] is not None,
                                             p.count("/") * (-1 if contents[p] is None else 1), p))
     for path in order:
@@ -604,7 +687,7 @@ def reject(repo):
             except OSError as exc:
                 failed.append(f"{path} ({exc})")
                 continue
-            # Kept: a kept save (a folder, a file or a link) still holds the name or a name on its way.
+            # Kept: a kept save (a folder, a file, a link, another spelling) still holds the name or one on its way.
             rejection["settled"][path] = "returned" if took else "kept"
         save(repo, data)
     name = next((n for n, c, _ in stash_listing(repo) if c == rejection["stash"]), "stash")
@@ -615,7 +698,7 @@ def reject(repo):
         return 1
     kept = [p for p, how in sorted(rejection["settled"].items()) if how == "kept"]
     del data["rejection"]
-    left = dirty(repo)
+    left = pending(repo, base)
     if kept or left or index_kept:
         save(repo, data)
         for path in kept:

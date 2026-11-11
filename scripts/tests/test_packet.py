@@ -956,6 +956,209 @@ class Packet(unittest.TestCase):
         self.assertEqual(self.read("src/a.py"), "a = 1\n")
         self.assertEqual(self.status(), "")
 
+    # one name, two spellings (review round 9): a path is its exact spelling, never another that answers to it
+
+    def ignores_case(self):
+        return (self.repo / "SRC" / "A.PY").exists()
+
+    def respell(self, old, new):
+        """Rename on disk alone, by way of a third name, so a change of case only is made on every system."""
+        between = self.repo / (old + ".between")
+        (self.repo / old).rename(between)
+        between.rename(self.repo / new)
+
+    def names_in(self, folder):
+        return sorted(os.listdir(self.repo / folder))
+
+    def tracked_sub(self):
+        self.put("src/Sub/x.py", "x = 1\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "a tracked folder with a capital")
+
+    def test_occupant_answers_for_the_exact_spelling_and_nothing_goes_through_another(self):
+        if not self.ignores_case():
+            self.skipTest("this file system keeps two spellings apart by itself")
+        self.assertEqual(packet.occupant(self.repo, "src/a.py"), "file")
+        for other in ("src/A.py", "SRC/a.py", "SRC/A.PY", "SRC/new.py", "Src/new/deep.py"):
+            with self.subTest(spelling=other):
+                self.assertEqual(packet.occupant(self.repo, other), "alias")
+                self.assertIsNone(packet.read_entry(self.repo, other))
+                self.assertIs(packet.return_path(self.repo, other, ("file", b"written through\n")), False)
+                self.assertIs(packet.return_path(self.repo, other, None), True)
+        self.assertEqual(self.names_in("."), [".git", ".gitignore", "docs", "src"])
+        self.assertEqual(self.names_in("src"), ["a.py"])
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_a_staged_rename_that_changes_only_the_case_is_staged_as_the_new_spelling_alone(self):
+        # Review round 9, finding 1: both spellings read the one file, so both were added and the deletion was lost.
+        self.begin("src")
+        self.git("mv", "src/a.py", "src/A.py")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("inside  src/a.py\n", out)
+        self.assertIn("inside  src/A.py\n", out)
+        code, out, err = self.cli("show", "--stage", "--snapshot", self.snapshot(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("ls-files", "src").split(), ["src/A.py"])
+        self.assertEqual(sorted(self.git("diff", "--cached", "--name-only", "--no-renames").split()),
+                         ["src/A.py", "src/a.py"])
+        self.assertEqual(self.git("show", ":src/A.py"), "a = 1\n")
+        self.assertNotIn("left unstaged", out)
+
+    def test_a_rename_on_disk_that_changes_only_the_case_is_shown_and_staged_as_a_rename(self):
+        # git for Windows reports no change at all here: the index still says src/a.py and the folder says A.py.
+        self.begin("src")
+        self.respell("src/a.py", "src/A.py")
+        self.put("src/A.py", "a = 2, under the new spelling\n")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("inside  src/a.py\n", out)
+        self.assertIn("inside  src/A.py\n", out)
+        code, _, err = self.cli("show", "--stage", "--snapshot", self.snapshot(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("ls-files", "src").split(), ["src/A.py"])
+        self.assertEqual(self.git("show", ":src/A.py"), "a = 2, under the new spelling\n")
+        self.assertEqual(self.names_in("src"), ["A.py"])
+
+    def test_an_unedited_rename_on_disk_that_changes_only_the_case_is_a_change_git_does_not_list(self):
+        self.respell("src/a.py", "src/A.py")
+        code, _, err = self.cli("begin", "--name", NAME, "--path", "src")
+        self.assertEqual(code, 2)
+        self.assertIn("  src/a.py\n", err)
+        self.assertIn("  src/A.py\n", err)
+        self.respell("src/A.py", "src/a.py")
+        self.begin("src")
+        self.respell("src/a.py", "src/A.py")
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("--- new file src/A.py (6 bytes)\na = 1\n", out)
+        if self.ignores_case():  # elsewhere git lists the old spelling as deleted in its own diff
+            self.assertIn("--- gone src/a.py ", out)
+
+    def test_reject_of_a_staged_case_only_rename_returns_heads_spelling_and_stashes_the_workers(self):
+        self.begin("src")
+        self.git("mv", "src/a.py", "src/A.py")
+        self.put("src/A.py", "a = 3, edited after the rename\n")
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.names_in("src"), ["a.py"])
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.git("ls-files", "src").split(), ["src/a.py"])
+        self.assertEqual(self.status(), "")
+        self.assertEqual(self.git("ls-tree", "-r", "--name-only", "stash@{0}", "src").split(), ["src/A.py"])
+        self.assertEqual(self.git("ls-tree", "-r", "--name-only", "stash@{0}^2", "src").split(), ["src/A.py"])
+        self.assert_in_stash("stash@{0}", "src/A.py", "a = 3, edited after the rename\n")
+        self.assert_in_stash("stash@{0}", "src/A.py", "a = 1\n", "^2")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_reject_of_a_case_only_rename_on_disk_returns_heads_spelling_and_stashes_the_workers(self):
+        self.begin("src")
+        self.respell("src/a.py", "src/A.py")
+        self.put("src/A.py", "a = 4, the worker's\n")
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.names_in("src"), ["a.py"])
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.status(), "")
+        self.assertEqual(self.git("ls-tree", "-r", "--name-only", "stash@{0}", "src"), "")  # the old spelling is gone
+        self.assert_in_stash("stash@{0}", "src/A.py", "a = 4, the worker's\n", "^3")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_heads_spelling_is_held_back_while_a_kept_save_has_the_name_under_the_other(self):
+        self.begin("src")
+        self.respell("src/a.py", "src/A.py")
+        self.put("src/A.py", "a = 5, the worker's\n")
+        real = packet.store
+
+        def owner_saves(*args, **kwargs):
+            real(*args, **kwargs)
+            self.put("src/A.py", "a = 6, the owner saved this mid-rejection\n")
+
+        with mock.patch.object(packet, "store", owner_saves):
+            code, out, _ = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        self.assertEqual(self.names_in("src"), ["A.py"])  # neither written through nor removed for HEAD's spelling
+        self.assertEqual(self.read("src/A.py"), "a = 6, the owner saved this mid-rejection\n")
+        self.assertIn("kept on disk, saved after the capture and not in the stash: src/A.py", out)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.names_in("src"), ["a.py"])
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assert_in_stash("stash@{0}", "src/A.py", "a = 6, the owner saved this mid-rejection\n", "^3")
+        self.assert_in_stash("stash@{1}", "src/A.py", "a = 5, the worker's\n", "^3")
+        self.assertEqual(self.status(), "")
+
+    def respell_sub(self, staged):
+        if staged:  # git for Windows refuses the one-step move of a folder onto another case of its own name
+            self.git("mv", "src/Sub", "src/between")
+            self.git("mv", "src/between", "src/sub")
+        else:
+            self.respell("src/Sub", "src/sub")
+        self.put("src/sub/new.py", "new = 1\n")
+
+    def test_a_folder_renamed_only_in_case_is_staged_under_the_new_spelling_alone(self):
+        for staged in (True, False):
+            with self.subTest(staged=staged):
+                self.tracked_sub()
+                self.begin("src")
+                self.respell_sub(staged)
+                code, out, err = self.cli("show")
+                self.assertEqual(code, 0, err)
+                for path in ("src/Sub/x.py", "src/sub/x.py", "src/sub/new.py"):
+                    self.assertIn(f"inside  {path}\n", out)
+                self.assertNotIn("src/Sub/new.py", out)
+                code, _, err = self.cli("show", "--stage", "--snapshot", self.snapshot(out))
+                self.assertEqual(code, 0, err)
+                self.assertEqual(self.git("ls-files", "src").split(), ["src/a.py", "src/sub/new.py", "src/sub/x.py"])
+                self.assertEqual(self.git("show", ":src/sub/x.py"), "x = 1\n")
+                self.git("commit", "-q", "-m", "accepted")
+                self.git("mv", "src/sub", "src/between")  # back for the next round
+                self.git("mv", "src/between", "src/Sub")
+                self.git("rm", "-q", "-f", "src/Sub/new.py")
+                self.git("commit", "-q", "-m", "back")
+                self.respell("src/Sub", "src/between")  # git leaves the folder's spelling on disk as it was
+                self.respell("src/between", "src/Sub")
+                self.git("rm", "-q", "-f", "src/Sub/x.py")
+                self.git("commit", "-q", "-m", "without the folder")
+
+    def test_reject_of_a_folder_renamed_only_in_case_returns_heads_spelling(self):
+        for staged in (True, False):
+            with self.subTest(staged=staged):
+                self.tracked_sub()
+                self.begin("src")
+                self.respell_sub(staged)
+                code, _, err = self.cli("reject")
+                self.assertEqual(code, 0, err)
+                self.assertEqual(self.names_in("src"), ["Sub", "a.py"])
+                self.assertEqual(self.names_in("src/Sub"), ["x.py"])
+                self.assertEqual(self.read("src/Sub/x.py"), "x = 1\n")
+                self.assertEqual(self.status(), "")
+                self.assertEqual(self.git("ls-tree", "-r", "--name-only", "stash@{0}", "src/Sub"), "")
+                part = "" if staged else "^3"  # staged: tracked under the new spelling; on disk only: untracked
+                self.assert_in_stash("stash@{0}", "src/sub/x.py", "x = 1\n", part)
+                self.assert_in_stash("stash@{0}", "src/sub/new.py", "new = 1\n", "^3")
+                self.assertEqual(self.leftovers(), [])
+                self.git("rm", "-q", "-r", "src/Sub")
+                self.git("commit", "-q", "-m", "without the folder")
+
+    def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
+        # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
+        self.begin("src")
+        self.put("src/a.py", "a = 24\n")
+        self.put("src/new.py", "new\n")
+        code, out, err = self.cli("show")  # cli() reads standard output through a pipe
+        self.assertEqual(code, 0, err)
+        places = [out.index(line) for line in ("packet: " + NAME + "\n", "inside  src/a.py\n", "inside  src/new.py\n",
+                                               "--- staged (", "--- unstaged (", "--- new file src/new.py",
+                                               "snapshot: sha256:")]
+        self.assertEqual(places, sorted(places))
+        self.assertEqual(places[0], 0)
+        digest = self.snapshot(out)
+        code, out, err = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 0, err)
+        self.assertLess(out.index("snapshot: sha256:"), out.index("staged 2 path(s) exactly as reviewed"))
+
     def test_show_and_reject_refuse_without_an_open_packet(self):
         for verb in (("show",), ("show", "--stage", "--snapshot", "sha256:0"), ("reject",)):
             code, _, err = self.cli(*verb)
