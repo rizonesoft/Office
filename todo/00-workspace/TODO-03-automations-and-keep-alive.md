@@ -69,7 +69,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 31 | §32 | Validate checks plan row width | -- | [x] |
 | 32 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
 | 33 | §35 | Weekly owner digest | §1 | [x] |
-| 34 | §36 | Operating mode measurement command | -- | [ ] |
+| 34 | §36 | Operating mode measurement command | -- | [x] |
 | 35 | §37 | Operating mode rule and launcher | §36 | [ ] |
 | 36 | §38 | Parallel streams design record | §37 | [ ] |
 | 37 | §39 | Parallel streams sections authored | §38 | [ ] |
@@ -1027,9 +1027,12 @@ Owner decision 2026-11-10 (decision 30): which model leads, and whether it works
 - [x] Add `clean`, which removes only the clones the results file lists as this measurement's (each under the work folder), once the record is written, and refuses with exit 2 while a run holds the work folder's lock (`run` holds it for its whole life, across separate invocations). Done when: a test shows the listed clones gone, an unlisted folder beside them and the results file and logs kept, and the refusal while the lock is held. Cheaper substitute: leaving the clones in scratch, which is how gigabytes of stale copies pile up. **Corrected 2026-11-11:** the owned-clone inventory and the lock added after the plan review (gap 7).
 - [x] Write `results.json` after every stage through a temporary file and `os.replace`, with the measurement's identity (base commit, sections, arm table, budget, limits, fix-round limit), and resume from it stage by stage: a session that recorded an exit is never run again, a stage that started and recorded nothing is run again from the clone's last recorded candidate, and a second `run` whose identity differs is refused with exit 2. Done when: tests interrupt after a build, after the gates and inside a fix round, show the next call running only what is left, and show the mismatch refused. **Corrected 2026-11-11:** resume by stage and the identity check added after the plan review (gap 4).
 - [x] Record per run the cost, the wall time, the tokens per model (subagents included), the commit count and the diff size. Done when: a test over a fixture reply shows each field.
-- [ ] Commit: `campaign: measure the ways of working with one command`
+- [x] Commit: `campaign: measure the ways of working with one command`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_measure_modes.py"` passes with a fake `claude` and a fake reviewer, and no test starts a real session.
+
+> **Verified:** 2026-11-11 | §36 | 4c3968040e003b0dedf2d19cd442892b9d4728a5
+> **Review:** `docs/reviews/d00-t03-s36.json`
 
 ## 37. Operating Mode Rule and Launcher
 

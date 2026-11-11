@@ -50,7 +50,7 @@ Sections: 56 | Checklist items: 391
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                  | none                   | 6     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
 | [x]    | D00 T03 §35 | Weekly Owner Digest                             | none                   | 12    |
-| [ ]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
+| [x]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
 | [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 7     |
@@ -303,6 +303,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 66/157 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 67/157 verified sections, 25 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 440/1033 items completed (includes Commit items).
+Checklist: 441/1033 items completed (includes Commit items).
