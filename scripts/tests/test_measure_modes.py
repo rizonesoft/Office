@@ -516,6 +516,7 @@ class Resume(Fixture):
     def test_another_measurement_in_the_same_folder_is_refused(self):
         self.assertEqual(self.run_main(), 0)
         self.assertEqual(self.run_main("--budget", "5"), 2)
+        self.assertEqual(self.run_main("--parallel", "1"), 2)
         self.assertEqual(self.run_main(sections=("D00 T01 §2",)), 2)
 
     def test_a_finished_measurement_runs_nothing_again(self):

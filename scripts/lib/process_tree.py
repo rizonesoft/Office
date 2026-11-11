@@ -260,20 +260,22 @@ class Outcome:
 
 
 def _too_big(paths, max_bytes):
+    """Whether the files together hold more than `max_bytes`: a child that splits a flood between its output files
+    is bounded as one that writes it to one."""
+    total = 0
     for path in paths:
         try:
-            if Path(path).stat().st_size > max_bytes:
-                return True
+            total += Path(path).stat().st_size
         except OSError:
             continue  # not written yet
-    return False
+    return total > max_bytes
 
 
 def run(argv, cwd=None, stdin_path=None, stdout_path=None, stderr_path=None, timeout=None, max_bytes=None,
         watched=(), env=None, cancel=None):
     """Run `argv` to its end inside a Tree, with its standard input read from `stdin_path` and its output written to
-    the two files. The tree is stopped when the time limit passes, when any output file (the two, and every path in
-    `watched`) passes `max_bytes`, or when the `cancel` event (a threading.Event) is set, and it is always stopped at
+    the two files. The tree is stopped when the time limit passes, when the output files together (the two, and every
+    path in `watched`) pass `max_bytes`, or when the `cancel` event (a threading.Event) is set, and it is always stopped at
     the end, so whatever the child left running ends with it. Returns an Outcome."""
     started = time.monotonic()
     paths = [p for p in (stdout_path, stderr_path, *watched) if p]

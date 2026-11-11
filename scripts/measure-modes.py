@@ -325,7 +325,10 @@ class Measurement:
     def identity(self, base):
         return {"base": base, "sections": list(self.args.section), "arms": [asdict(a) for a in self.arms.values()],
                 "budget": self.args.budget, "minutes": self.args.minutes, "gate_minutes": self.args.gate_minutes,
-                "fix_rounds": self.args.fix_rounds}
+                "fix_rounds": self.args.fix_rounds,
+                # Concurrency is a condition of the measurement: sessions side by side contend for the PC, which
+                # changes wall times and can change what fits in the time limit.
+                "parallel": self.args.parallel}
 
     def save(self):
         with self.lock:

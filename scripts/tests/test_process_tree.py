@@ -138,6 +138,15 @@ class RunTest(unittest.TestCase):
         self.assertLess(outcome.seconds, 8)
         self.assertLess(out.stat().st_size, 32 * 1024 * 1024)
 
+    def test_the_output_files_are_bounded_together(self):
+        # 600 KB to each stream: neither alone passes 1 MB, together they do. Bounded at 1.2 MB, then it sleeps.
+        split = "import sys, time\nsys.stdout.write('x' * 600000); sys.stdout.flush()\n" \
+                "sys.stderr.write('y' * 600000); sys.stderr.flush()\ntime.sleep(120)\n"
+        outcome = process_tree.run([sys.executable, "-c", split], stdout_path=self.tmp / "out.txt",
+                                   stderr_path=self.tmp / "err.txt", timeout=60, max_bytes=1024 * 1024)
+        self.assertEqual(outcome.stopped, "output limit")
+        self.assertLess(outcome.seconds, 30)
+
     def test_a_watched_file_counts_toward_the_output_limit(self):
         side = self.tmp / "side.log"
         writer = f"open(r'{side}', 'w').write('y' * 2048); import time; time.sleep(120)"
