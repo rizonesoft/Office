@@ -99,7 +99,7 @@ class Packet(unittest.TestCase):
     def test_begin_records_name_paths_and_head_on_a_tree_without_changes(self):
         self.begin("src", "docs\\note.md", "./src")
         self.assertEqual(self.state(), {"name": NAME, "paths": ["src", "docs/note.md"],
-                                        "head": self.git("rev-parse", "HEAD").strip()})
+                                        "head": self.git("rev-parse", "HEAD").strip(), "folder_links": []})
         self.assertEqual(list((self.repo / "build").glob(".packet-*")), [])
 
     def test_begin_refuses_paths_that_leave_the_repository_and_a_second_packet(self):
@@ -600,6 +600,24 @@ class Packet(unittest.TestCase):
             self.assert_in_stash("stash@{0}", "src/new/file.txt", "outside the repository\n", "^2")
             self.assertEqual(self.status(), "")
 
+    def test_a_dangling_folder_link_comes_back_as_a_folder_link(self):
+        # Review round 7, finding 1: it came back as a file link, which Windows never lets reach into a folder.
+        if os.name != "nt" or not self.can_link():
+            self.skipTest("folder and file links differ only on Windows, and this account must be able to link")
+        self.git("config", "core.symlinks", "true")
+        os.symlink("..\\generated", self.repo / "src/gen", target_is_directory=True)  # as git for Windows writes it
+        self.git("add", "src/gen")
+        self.git("commit", "-q", "-m", "a link to a folder made by a build")
+        self.begin("src")
+        self.assertEqual(self.state()["folder_links"], ["src/gen"])
+        os.rmdir(self.repo / "src/gen")  # a folder link is removed as a folder on Windows
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(os.readlink(self.repo / "src/gen"), "..\\generated")
+        self.put("generated/made.txt", "built later\n")
+        self.assertEqual((self.repo / "src/gen/made.txt").read_bytes(), b"built later\n")
+        self.assertEqual(self.git("cat-file", "-p", "HEAD:src/gen"), "../generated")
+
     def test_an_empty_folder_in_a_tracked_files_place_settles(self):
         # Review round 3, finding 2: the empty folder blocked the file's return on every retry.
         self.begin("docs")
@@ -625,10 +643,10 @@ class Packet(unittest.TestCase):
         self.put("src/b.py", "b\n")
         real = packet.return_path
 
-        def locked(repo, path, raw):
+        def locked(repo, path, *args):
             if path == "src/a.py":
                 raise PermissionError("the file is open in another program")
-            return real(repo, path, raw)
+            return real(repo, path, *args)
 
         with mock.patch.object(packet, "return_path", locked):
             code, out, err = self.run_in_process("reject")

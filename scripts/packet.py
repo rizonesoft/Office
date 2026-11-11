@@ -48,6 +48,7 @@ import os
 from pathlib import Path, PurePosixPath
 import subprocess
 import sys
+import stat
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -156,6 +157,16 @@ def close(repo):
     (repo / STATE).unlink()
 
 
+def git_link_target(target):
+    """A link target as git records it: git for Windows reads `\\` in a link as `/` (and writes it back as `\\`)."""
+    return target.replace("\\", "/") if os.name == "nt" else target
+
+
+def disk_link_target(target):
+    """A recorded link target as git writes it on this system: Windows resolves a relative link only with `\\`."""
+    return target.replace("/", "\\") if os.name == "nt" else target
+
+
 def link_like(path):
     """A symbolic link or a Windows junction: a name that points elsewhere and is never entered, read through or
     removed as a folder of this tree."""
@@ -181,7 +192,7 @@ def read_entry(repo, path):
         return None  # git does not look through a linked folder; the link is a path of its own
     try:
         if link_like(target):
-            return ("link", os.fsencode(os.readlink(target)))
+            return ("link", os.fsencode(git_link_target(os.readlink(target))))
         if target.is_dir():
             return None
         return ("file", target.read_bytes())
@@ -237,6 +248,20 @@ def digest(captured):
     return "sha256:" + hashlib.sha256(lines.encode("utf-8")).hexdigest()
 
 
+def folder_links(repo):
+    """The tracked links that are folder links on disk now (Windows records the kind on the link itself, and a
+    dangling link's target cannot tell it later), so reject can return each as the kind it was."""
+    found = []
+    for line in text(repo, "ls-files", "-s", "-z").split("\0"):
+        meta, _, path = line.partition("\t")
+        if meta.startswith("120000 "):
+            target = repo / path
+            attributes = getattr(os.lstat(target), "st_file_attributes", 0) if target.is_symlink() else 0
+            if attributes & getattr(stat, "FILE_ATTRIBUTE_DIRECTORY", 0x10):
+                found.append(path)
+    return found
+
+
 def begin(repo, name, values):
     if (repo / STATE).exists():
         raise Refused(f"a packet is already open ({STATE}); show --stage or reject it first")
@@ -248,7 +273,7 @@ def begin(repo, name, values):
         raise Refused("the working tree holds changes; commit your own edits before the packet starts:\n"
                       + "\n".join(f"  {p}" for p in pending))
     at = head(repo)
-    save(repo, {"name": name.strip(), "paths": paths, "head": at})
+    save(repo, {"name": name.strip(), "paths": paths, "head": at, "folder_links": folder_links(repo)})
     print(f"packet open: {name.strip()} ({len(paths)} path(s)) at {at}")
     return 0
 
@@ -414,7 +439,7 @@ def remove_empty_folders(folder, repo):
         parent = parent.parent
 
 
-def return_path(repo, path, entry):
+def return_path(repo, path, entry, folder_link=False):
     """Put `path` back as HEAD has it (or remove it when HEAD has no file there; one already gone is settled)."""
     target = repo / path
     if under_link(repo, path):
@@ -434,7 +459,11 @@ def return_path(repo, path, entry):
     if kind == "link":
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_name(f".packet-link-{os.getpid()}-{target.name}")
-        os.symlink(os.fsdecode(raw), temporary)
+        # Windows keeps a folder link and a file link apart and never changes one into the other: a folder link
+        # recorded at begin, or one whose target is a folder now, comes back as a folder link.
+        on_disk = disk_link_target(os.fsdecode(raw))
+        folder = folder_link or (target.parent / on_disk).is_dir()
+        os.symlink(on_disk, temporary, target_is_directory=folder)
         os.replace(temporary, target)
     else:
         atomic_write(target, raw)
@@ -489,7 +518,7 @@ def reject(repo):
             rejection["settled"][path] = "kept"  # a kept save (a folder or a file) still holds a name on its way
         else:
             try:
-                return_path(repo, path, contents[path])
+                return_path(repo, path, contents[path], path in data.get("folder_links", []))
             except OSError as exc:
                 failed.append(f"{path} ({exc})")
                 continue
