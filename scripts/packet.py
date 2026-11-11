@@ -156,11 +156,17 @@ def close(repo):
     (repo / STATE).unlink()
 
 
+def link_like(path):
+    """A symbolic link or a Windows junction: a name that points elsewhere and is never entered, read through or
+    removed as a folder of this tree."""
+    return path.is_symlink() or path.is_junction()
+
+
 def under_link(repo, path):
     """Whether a parent of `path` inside the repository is a symbolic link (a path below it is outside the tree)."""
     parent = (repo / path).parent
     while parent != repo:
-        if parent.is_symlink():
+        if link_like(parent):
             return True
         parent = parent.parent
     return False
@@ -174,7 +180,7 @@ def read_entry(repo, path):
     if under_link(repo, path):
         return None  # git does not look through a linked folder; the link is a path of its own
     try:
-        if target.is_symlink():
+        if link_like(target):
             return ("link", os.fsencode(os.readlink(target)))
         if target.is_dir():
             return None
@@ -192,8 +198,8 @@ def sha(entry):
 
 def holds_no_file(folder):
     """A real folder with no file and no link anywhere under it: nothing in it can be lost."""
-    for _, dirs, files in os.walk(folder):
-        if files or any(os.path.islink(os.path.join(folder, d)) for d in dirs):
+    for here, dirs, files in os.walk(folder):
+        if files or any(link_like(Path(here, d)) for d in dirs):
             return False
     return True
 
@@ -202,8 +208,23 @@ def changed_paths(repo, base):
     """Every path changed since `base`: base to index, index to working tree (both sides of a rename), untracked."""
     staged = names(repo, "diff", "--cached", "--name-only", "--no-renames", base)
     unstaged = names(repo, "diff", "--name-only", "--no-renames")
+    # git for Windows looks through a junction and lists the files behind it, which are outside the tree: the
+    # junction itself is the changed path, captured and set aside as a link, and nothing behind it is touched.
     untracked = names(repo, "ls-files", "--others", "--exclude-standard")
+    links = {a for a in (link_ancestor(repo, p) for p in staged + unstaged + untracked) if a}
+    untracked = sorted({p for p in untracked if not link_ancestor(repo, p)} | links)
+    unstaged = [p for p in unstaged if not link_ancestor(repo, p)]
     return sorted(set(staged + unstaged + untracked)), untracked
+
+
+def link_ancestor(repo, path):
+    """The outermost parent of `path` inside the repository that is a link or a junction, or None."""
+    found, parent = None, (repo / path).parent
+    while parent != repo:
+        if link_like(parent):
+            found = parent
+        parent = parent.parent
+    return found.relative_to(repo).as_posix() if found else None
 
 
 def capture(repo, paths):
@@ -359,7 +380,7 @@ def head_entry(repo, path):
 
 
 def real_folder(target):
-    return target.is_dir() and not target.is_symlink()
+    return target.is_dir() and not link_like(target)
 
 
 def blocked(repo, path):
@@ -370,7 +391,7 @@ def blocked(repo, path):
         return True
     parent = target.parent
     while parent != repo:
-        if parent.is_symlink() or (parent.exists() and not parent.is_dir()):
+        if link_like(parent) or (parent.exists() and not parent.is_dir()):
             return True
         parent = parent.parent
     return False
@@ -384,7 +405,7 @@ def remove_empty_folders(folder, repo):
             os.rmdir(here)
     parent = folder.parent if not folder.exists() else None
     while parent is not None and parent != repo:
-        if parent.is_symlink():
+        if link_like(parent):
             break  # a linked folder is a path of its own, settled by its own entry, never removed or entered here
         if parent.is_dir():
             if any(parent.iterdir()):
@@ -399,10 +420,10 @@ def return_path(repo, path, entry):
     if under_link(repo, path):
         return  # below a linked folder: outside the tree, so nothing here is removed or written
     if entry is None:
-        if target.is_symlink():
+        if link_like(target):
             try:
                 os.unlink(target)
-            except PermissionError:  # a link to a folder on Windows is removed as a folder
+            except (PermissionError, IsADirectoryError):  # a folder link or a junction on Windows goes as a folder
                 os.rmdir(target)
         elif target.is_file():
             os.unlink(target)

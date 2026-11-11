@@ -577,6 +577,29 @@ class Packet(unittest.TestCase):
             self.assertRegex(self.git("ls-tree", "stash@{0}^3", "src/new"), r"^120000 blob ")
             self.assertEqual(self.status(), "")
 
+    def test_a_staged_file_under_a_folder_replaced_by_a_junction_never_reaches_through_it(self):
+        # Review round 6, finding 1: a Windows junction is not a symlink to is_symlink(), so the guard let it through.
+        try:
+            import _winapi
+        except ImportError:
+            self.skipTest("junctions are a Windows feature")
+        with tempfile.TemporaryDirectory() as outside:
+            (pathlib.Path(outside) / "file.txt").write_bytes(b"outside the repository\n")
+            self.begin("src")
+            self.put("src/new/file.txt", "outside the repository\n")
+            self.git("add", "src/new/file.txt")
+            (self.repo / "src/new/file.txt").unlink()
+            (self.repo / "src/new").rmdir()
+            _winapi.CreateJunction(outside, str(self.repo / "src/new"))
+            self.assertTrue((self.repo / "src/new").is_junction())
+            code, _, err = self.cli("reject")
+            self.assertEqual((pathlib.Path(outside) / "file.txt").read_bytes(), b"outside the repository\n")
+            self.assertEqual(code, 0, err)
+            self.assertFalse(os.path.lexists(self.repo / "src/new"))
+            self.assertTrue((pathlib.Path(outside) / "file.txt").is_file())
+            self.assert_in_stash("stash@{0}", "src/new/file.txt", "outside the repository\n", "^2")
+            self.assertEqual(self.status(), "")
+
     def test_an_empty_folder_in_a_tracked_files_place_settles(self):
         # Review round 3, finding 2: the empty folder blocked the file's return on every retry.
         self.begin("docs")
