@@ -1,0 +1,425 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
+"""Tests for scripts/packet.py: a worker's change is read whole, accepted exactly as reviewed, or set aside without
+losing a byte (D00 T03 §34)."""
+import importlib.util
+import io
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+SCRIPT = REPO / "scripts" / "packet.py"
+sys.path.insert(0, str(REPO / "scripts" / "lib"))
+from todo_graph import git as git_path  # noqa: E402  the absolute git, as the script uses
+
+SPEC = importlib.util.spec_from_file_location("packet", SCRIPT)
+packet = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(packet)
+
+NAME = "D00 T03 §34, test"
+
+
+class Stop(BaseException):
+    """A run that dies at a chosen point (BaseException, so nothing in the script handles it)."""
+
+
+class Packet(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.repo = pathlib.Path(self.tmp.name)
+        for args in (["init", "-q", "-b", "main"], ["config", "user.email", "t@example.com"],
+                     ["config", "user.name", "T"], ["config", "core.autocrlf", "false"],
+                     ["config", "commit.gpgsign", "false"]):
+            self.git(*args)
+        self.put(".gitignore", "build/\n")
+        self.put("src/a.py", "a = 1\n")
+        self.put("docs/note.md", "note\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "base")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def git(self, *args):
+        return subprocess.run([git_path(), "-C", str(self.repo), *args], capture_output=True, text=True,
+                              encoding="utf-8", check=True, timeout=60).stdout
+
+    def put(self, path, text):
+        target = self.repo / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(text.encode("utf-8"))
+
+    def read(self, path):
+        return (self.repo / path).read_bytes().decode("utf-8")
+
+    def cli(self, *args):
+        r = subprocess.run([sys.executable, "-B", str(SCRIPT), "--repo", str(self.repo), *args],
+                           capture_output=True, text=True, encoding="utf-8", timeout=120)
+        return r.returncode, r.stdout, r.stderr
+
+    def run_in_process(self, *args):
+        """main() in this process, so a test can stop it or save a file at a chosen point."""
+        out, err = io.TextIOWrapper(io.BytesIO(), encoding="utf-8"), io.StringIO()
+        with mock.patch.object(sys, "stdout", out), mock.patch.object(sys, "stderr", err):
+            code = packet.main(["--repo", str(self.repo), *args])
+            out.flush()
+        return code, out.buffer.getvalue().decode("utf-8"), err.getvalue()
+
+    def begin(self, *paths):
+        code, _, err = self.cli("begin", "--name", NAME, *[a for p in paths for a in ("--path", p)])
+        self.assertEqual(code, 0, err)
+
+    def status(self):
+        return self.git("status", "--porcelain=v1", "--untracked-files=all")
+
+    def state(self):
+        return json.loads((self.repo / "build/packet.json").read_text(encoding="utf-8"))
+
+    def snapshot(self, out):
+        return re.search(r"^snapshot: (sha256:[0-9a-f]{64})$", out, re.M)[1]
+
+    # begin
+
+    def test_begin_refuses_a_tree_with_changes_and_names_them(self):
+        self.put("src/a.py", "a = 2\n")
+        self.put("new/dir/b.py", "b\n")
+        code, _, err = self.cli("begin", "--name", "x", "--path", "src")
+        self.assertEqual(code, 2)
+        self.assertIn("src/a.py", err)
+        self.assertIn("new/dir/b.py", err)
+        self.assertFalse((self.repo / "build/packet.json").exists())
+
+    def test_begin_records_name_paths_and_head_on_a_tree_without_changes(self):
+        self.begin("src", "docs\\note.md", "./src")
+        self.assertEqual(self.state(), {"name": NAME, "paths": ["src", "docs/note.md"],
+                                        "head": self.git("rev-parse", "HEAD").strip()})
+        self.assertEqual(list((self.repo / "build").glob(".packet-*")), [])
+
+    def test_begin_refuses_paths_that_leave_the_repository_and_a_second_packet(self):
+        for bad in ("../x", "src/../../x", "/abs", "C:/abs", ".git/config", "", "."):
+            code, _, _ = self.cli("begin", "--name", "x", "--path", bad)
+            self.assertEqual(code, 2, bad)
+        self.begin("src")
+        code, _, err = self.cli("begin", "--name", "y", "--path", "docs")
+        self.assertEqual(code, 2)
+        self.assertIn("already open", err)
+
+    # show
+
+    def test_show_lists_every_kind_of_change_with_its_mark_and_prints_the_whole_change(self):
+        self.begin("src", "docs/note.md")
+        self.put("src/a.py", "a = 2\n")
+        self.git("add", "src/a.py")                      # staged
+        self.put("docs/note.md", "note, edited\n")       # unstaged
+        self.put("src/new.py", "new = True\n")           # a new file
+        self.put("src/deep/er/nest.py", "nest = 1\n")    # a new file in a new folder
+        self.put("owner.txt", "the owner saved this\n")  # outside: an owner's edit saved during the packet
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 1)
+        for line in ("inside  src/a.py", "inside  docs/note.md", "inside  src/new.py", "inside  src/deep/er/nest.py",
+                     "outside owner.txt"):
+            self.assertIn(line + "\n", out)
+        for shown in ("+a = 2", "+note, edited", "new = True", "nest = 1", "the owner saved this"):
+            self.assertIn(shown, out)
+        self.assertIn("outside the packet's paths: owner.txt", err)
+        self.snapshot(out)
+
+    def test_an_edit_staged_and_undone_in_the_working_tree_shows_both_versions(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 'B'\n")
+        self.git("add", "src/a.py")
+        self.put("src/a.py", "a = 1\n")  # back to HEAD's bytes, so git diff HEAD would show nothing
+        code, out, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertIn("inside  src/a.py\n", out)
+        staged, unstaged = out.split("--- unstaged", 1)
+        self.assertIn("+a = 'B'", staged)
+        self.assertIn("-a = 'B'", unstaged)
+        self.assertIn("+a = 1", unstaged)
+
+    def test_show_exits_0_when_every_change_is_inside_and_head_held(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 3\n")
+        self.put("src/new/b.py", "b\n")
+        code, _, err = self.cli("show")
+        self.assertEqual(code, 0, err)
+        self.assertTrue((self.repo / "build/packet.json").exists())
+
+    def test_show_exits_1_when_head_moved(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 4\n")
+        self.git("commit", "-q", "-am", "a worker committed")
+        self.put("src/a.py", "a = 5\n")
+        code, _, err = self.cli("show")
+        self.assertEqual(code, 1)
+        self.assertIn("HEAD moved", err)
+
+    def test_show_exits_1_on_an_empty_change(self):
+        self.begin("src")
+        code, _, err = self.cli("show")
+        self.assertEqual(code, 1)
+        self.assertIn("nothing changed", err)
+
+    def test_a_rename_out_of_the_packet_names_both_sides(self):
+        self.begin("src")
+        self.git("mv", "docs/note.md", "src/note.md")
+        code, out, _ = self.cli("show")
+        self.assertEqual(code, 1)
+        self.assertIn("outside docs/note.md\n", out)
+        self.assertIn("inside  src/note.md\n", out)
+
+    def test_a_sibling_whose_name_starts_with_a_packet_path_is_outside(self):
+        self.begin("src")
+        self.put("src2/x.py", "x\n")
+        self.put("src.txt", "y\n")
+        code, out, _ = self.cli("show")
+        self.assertEqual(code, 1)
+        self.assertIn("outside src2/x.py\n", out)
+        self.assertIn("outside src.txt\n", out)
+
+    def test_the_snapshot_names_the_bytes_and_changes_with_them(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 9\n")
+        first = self.snapshot(self.cli("show")[1])
+        self.assertEqual(self.snapshot(self.cli("show")[1]), first)
+        self.put("src/a.py", "a = 10\n")
+        self.assertNotEqual(self.snapshot(self.cli("show")[1]), first)
+
+    # show --stage
+
+    def test_stage_puts_exactly_the_reviewed_bytes_of_the_packet_paths_in_the_index_and_closes_it(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 6\n")
+        self.put("src/new/b.py", "b\n")
+        (self.repo / "src/a.py").rename(self.repo / "src/moved.py")
+        digest = self.snapshot(self.cli("show")[1])
+        code, out, err = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sorted(self.git("diff", "--cached", "--name-only").split()),
+                         ["src/a.py", "src/moved.py", "src/new/b.py"])
+        self.assertEqual(self.git("show", ":src/moved.py"), "a = 6\n")
+        self.assertEqual(self.git("ls-files", "src/a.py"), "")
+        self.assertEqual(self.status().count("??"), 0)
+        self.assertFalse((self.repo / "build/packet.json").exists())
+        self.assertIn("staged 3 path(s) exactly as reviewed", out)
+
+    def test_stage_needs_the_reviewed_snapshot_and_refuses_a_stale_one(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 11\n")
+        code, _, err = self.cli("show", "--stage")
+        self.assertEqual(code, 2)
+        self.assertIn("--snapshot", err)
+        digest = self.snapshot(self.cli("show")[1])
+        self.put("src/a.py", "a = 12, saved after the review\n")
+        code, _, err = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 1)
+        self.assertIn("no longer holds the reviewed snapshot", err)
+        self.assertEqual(self.git("diff", "--cached", "--name-only"), "")
+        self.assertTrue((self.repo / "build/packet.json").exists())
+
+    def test_stage_stages_nothing_after_a_refusal(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 7\n")
+        self.put("outside.txt", "o\n")
+        digest = self.snapshot(self.cli("show")[1])
+        code, _, _ = self.cli("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 1)
+        self.assertEqual(self.git("diff", "--cached", "--name-only"), "")
+        self.assertTrue((self.repo / "build/packet.json").exists())
+
+    def test_a_save_between_the_read_and_the_staging_is_left_unstaged_and_named(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 13, reviewed\n")
+        digest = self.snapshot(self.cli("show")[1])
+        real = packet.stage_bytes
+
+        def save_first(*args, **kwargs):
+            self.put("src/a.py", "a = 14, saved while staging\n")
+            return real(*args, **kwargs)
+
+        with mock.patch.object(packet, "stage_bytes", save_first):
+            code, out, err = self.run_in_process("show", "--stage", "--snapshot", digest)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.git("show", ":src/a.py"), "a = 13, reviewed\n")
+        self.assertEqual(self.read("src/a.py"), "a = 14, saved while staging\n")
+        self.assertIn("changed after the review, left unstaged: src/a.py", out)
+
+    # reject
+
+    def assert_in_stash(self, commit, path, text, part=""):
+        self.assertEqual(self.git("show", f"{commit}{part}:{path}"), text)
+
+    def test_reject_sets_every_change_aside_recoverably_and_empties_the_tree(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 8\n")                  # tracked edit
+        self.put("docs/note.md", "staged owner edit\n")
+        self.git("add", "docs/note.md")                  # staged edit
+        self.put("new/dir/c.py", "c\n")                  # untracked file in a new folder
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "new").exists())
+        self.assertFalse((self.repo / "build/packet.json").exists())
+        found = re.search(r"set aside as (stash@\{0\}) \(([0-9a-f]{40})\): rejected packet: D00 T03 §34, test", out)
+        self.assertIsNotNone(found, out)
+        self.assertIn("rejected packet: D00 T03 §34, test", self.git("stash", "list"))
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 8\n")
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged owner edit\n")
+        self.assert_in_stash("stash@{0}", "docs/note.md", "staged owner edit\n", "^2")  # the index commit
+        self.assert_in_stash("stash@{0}", "new/dir/c.py", "c\n", "^3")                   # the untracked commit
+        # git itself can bring the whole rejected change back.
+        self.git("stash", "apply", "--index", "stash@{0}")
+        self.assertEqual(self.read("src/a.py"), "a = 8\n")
+        self.assertEqual(self.read("new/dir/c.py"), "c\n")
+        self.assertIn("M  docs/note.md", self.status())
+
+    def test_reject_with_nothing_changed_closes_the_packet_without_a_stash(self):
+        self.begin("src")
+        code, out, _ = self.cli("reject")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.git("stash", "list"), "")
+        self.assertIn("nothing to set aside", out)
+
+    def test_reject_refuses_when_head_moved_and_changes_nothing(self):
+        for leave_more in (False, True):
+            with self.subTest(committed_plus_uncommitted=leave_more):
+                self.begin("src")
+                self.put("src/a.py", f"a = {leave_more}\n")
+                self.git("commit", "-q", "-am", "the worker committed")
+                if leave_more:
+                    self.put("src/b.py", "uncommitted\n")
+                before = self.status()
+                code, _, err = self.cli("reject")
+                self.assertEqual(code, 1)
+                self.assertIn("HEAD moved", err)
+                self.assertIn("the worker committed", err)
+                self.assertEqual(self.status(), before)
+                self.assertEqual(self.git("stash", "list"), "")
+                self.assertTrue((self.repo / "build/packet.json").exists())
+                (self.repo / "build/packet.json").unlink()
+                if leave_more:
+                    (self.repo / "src/b.py").unlink()
+
+    def test_a_save_after_the_capture_is_kept_on_disk_and_named(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 15, the worker's\n")
+        self.put("src/b.py", "b, the worker's\n")
+        real = packet.store
+
+        def owner_saves(*args, **kwargs):
+            real(*args, **kwargs)
+            self.put("src/a.py", "a = 16, the owner saved this mid-rejection\n")
+
+        with mock.patch.object(packet, "store", owner_saves):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        self.assertEqual(self.read("src/a.py"), "a = 16, the owner saved this mid-rejection\n")
+        self.assertFalse((self.repo / "src/b.py").exists())
+        self.assertIn("kept on disk, saved after the capture and not in the stash: src/a.py", out)
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 15, the worker's\n")
+        # A further reject sets the kept save aside too, in a stash of its own.
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 16, the owner saved this mid-rejection\n")
+        self.assert_in_stash("stash@{1}", "src/a.py", "a = 15, the worker's\n")
+        self.assertEqual(self.status(), "")
+
+    def stopped_reject(self, target, after=True):
+        """Run reject in-process and stop it at `target`, after (or before) the real call."""
+        real = getattr(packet, target)
+
+        def stop(*args, **kwargs):
+            if after:
+                real(*args, **kwargs)
+            raise Stop(target)
+
+        with mock.patch.object(packet, target, stop), self.assertRaises(Stop):
+            self.run_in_process("reject")
+
+    def test_a_reject_stopped_after_the_stash_commit_is_made_resumes_with_the_same_commit(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 17\n")
+        self.put("src/c.py", "c\n")
+        self.stopped_reject("store", after=False)
+        recorded = self.state()["rejection"]
+        self.assertFalse(recorded["stored"])
+        self.assertEqual(self.git("stash", "list"), "")
+        self.assertEqual(self.read("src/a.py"), "a = 17\n")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn(recorded["stash"], out)
+        self.assertEqual(self.git("rev-parse", "stash@{0}").strip(), recorded["stash"])
+        self.assertEqual(self.status(), "")
+
+    def test_a_reject_stopped_after_the_stash_is_stored_resumes_without_a_second_stash(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 18\n")
+        self.stopped_reject("store")
+        recorded = self.state()["rejection"]
+        self.assertEqual(len(self.git("stash", "list").splitlines()), 1)
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn(recorded["stash"], out)
+        self.assertEqual(len(self.git("stash", "list").splitlines()), 1)
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "build/packet.json").exists())
+
+    def test_a_resume_never_stores_the_same_stash_twice_even_under_a_later_stash(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 20\n")
+        self.stopped_reject("store")  # stored in git, but the record still says it is not
+        stash = self.state()["rejection"]["stash"]
+        # Someone stashes something else on top before the resume: a stash-shaped commit (HEAD and an index commit).
+        tree = self.git("rev-parse", "HEAD^{tree}").strip()
+        index = self.git("commit-tree", tree, "-p", "HEAD", "-m", "index on main").strip()
+        other = self.git("commit-tree", tree, "-p", "HEAD", "-p", index, "-m", "On main: another").strip()
+        self.git("stash", "store", "-m", "another stash", other)
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        listed = self.git("stash", "list", "--format=%H").split()
+        self.assertEqual(listed.count(stash), 1, listed)
+
+    def test_a_path_that_cannot_be_written_keeps_the_packet_open_until_a_retry_finishes(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 19\n")
+        self.put("src/b.py", "b\n")
+        real = packet.return_path
+
+        def locked(repo, path, raw):
+            if path == "src/a.py":
+                raise PermissionError("the file is open in another program")
+            return real(repo, path, raw)
+
+        with mock.patch.object(packet, "return_path", locked):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        self.assertIn("src/a.py", err)
+        stash = self.state()["rejection"]["stash"]
+        self.assertIn(stash, out)
+        self.assertEqual(self.state()["rejection"]["settled"], {"src/b.py": "returned"})
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn(stash, out)
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.status(), "")
+
+    def test_show_and_reject_refuse_without_an_open_packet(self):
+        for verb in (("show",), ("show", "--stage", "--snapshot", "sha256:0"), ("reject",)):
+            code, _, err = self.cli(*verb)
+            self.assertEqual(code, 2, verb)
+            self.assertIn("no packet is open", err)
+
+    def test_the_script_never_discards_or_takes_back_a_change(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        for word in ("stash drop", "stash pop", "stash clear", "restore", "clean", "reset"):
+            self.assertIsNone(re.search(re.escape(word), source, re.I), word)
+
+
+if __name__ == "__main__":
+    unittest.main()
