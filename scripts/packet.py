@@ -45,6 +45,13 @@ staged or made on disk alone (which git does not report), is therefore a removal
 file under the new one, in `begin`, `show`, the staged index and the stash alike; `reject` removes the new spelling
 first and then writes `HEAD`'s, and holds `HEAD`'s back while a kept save still has the name.
 
+Content is converted by the attributes of the tree it belongs to. A file `reject` returns is `HEAD`'s blob as
+`HEAD`'s own `.gitattributes` check it out (`git --attr-source=<HEAD>`), never as the working tree's do: those may be
+the very change being rejected, so a line-ending rule the worker changed or added has no say in what comes back.
+`reject` refuses (exit 2, nothing changed) under a git that cannot read attributes from a commit. Working-tree bytes,
+staged by `show --stage` or written into the stash, pass the working tree's attributes, as `git add` and
+`git stash push` pass them: the `.gitattributes` beside them is part of the same change and is stored with them.
+
 `reject` records its progress in `build/packet.json`, so a
 `reject` that stopped part way resumes on the next call with the same stash. It closes the packet once every path
 is settled and the tree holds no change; kept saves are named, and a further `reject` sets them aside too.
@@ -52,8 +59,8 @@ is settled and the tree holds no change; kept saves are named, and a further `re
 Nothing is ever discarded or taken back out of a stash by this command: a changed path may be the owner's.
 
 Exit 0 done, 1 the change is not acceptable as it stands or the rejection is not finished, 2 refused (a tree with
-changes at `begin`, no open packet, a packet already open, a bad path, a missing or stale `--snapshot`), 3 git or
-the file system failed.
+changes at `begin`, no open packet, a packet already open, a bad path, a missing or stale `--snapshot`, a git too
+old for `reject`), 3 git or the file system failed.
 """
 import argparse
 import hashlib
@@ -411,7 +418,11 @@ def stage_bytes(repo, base, captured, env=None):
     file that took a folder's name is added only once the folder's entries are gone, and `--replace` lets an entry
     take a name a staged file or folder still holds. A link is stored as git stores one, mode 120000 with its target
     unfiltered; a file keeps its file mode and passes git's filters for its path. Each entry is the capture of its
-    exact spelling, so of two spellings of one name only the one its folder lists is added and the other is removed."""
+    exact spelling, so of two spellings of one name only the one its folder lists is added and the other is removed.
+
+    The filters are the working tree's, on purpose: these are working-tree bytes, and the `.gitattributes` on disk
+    beside them is the one staged or stashed with them, so the blob is the one `git add` (for `show --stage`) and
+    `git stash push` (for the stash) would store, and it checks out again to the same bytes under those rules."""
     for path in sorted((p for p, e in captured.items() if e is None), key=lambda p: (-p.count("/"), p)):
         run_git(repo, "update-index", "--force-remove", "--", path, env=env)
     for path, entry in sorted((p, e) for p, e in captured.items() if e is not None):
@@ -514,16 +525,33 @@ def store(repo, commit, message):
     run_git(repo, "stash", "store", "-m", message, commit)
 
 
-def head_entry(repo, path):
-    """What git would check out at `path` from HEAD, as read_entry reads it: ("link", target) for a mode 120000
-    blob, ("file", its smudged bytes) for any other blob, or None when HEAD has no file there (no entry, or a folder or
-    a submodule at that name, whose own files are paths of their own)."""
-    entry = text(repo, "ls-tree", "HEAD", "--", path).split()
+def attributes_of(commit):
+    """git's option that reads every attribute from `commit`'s tree and none from the working tree."""
+    return f"--attr-source={commit}"
+
+
+def require_commit_attributes(repo, commit):
+    """Refuse, before anything is changed, under a git that does not know the option (older than 2.40): without it
+    a file could only come back as the working tree's attributes convert it, and those may be the rejected ones."""
+    try:
+        run_git(repo, attributes_of(commit), "rev-parse", "--git-dir")
+    except GitFailed as exc:
+        raise Refused("this git cannot read attributes from a commit (git 2.40 or later does), so HEAD's files "
+                      f"cannot be returned as HEAD checks them out; nothing was changed: {exc}") from None
+
+
+def head_entry(repo, base, path):
+    """What git checks out at `path` from the commit `base` (the packet's HEAD), as read_entry reads it: ("link",
+    target) for a mode 120000 blob, ("file", its bytes after git's checkout conversion) for any other blob, or None
+    when `base` has no file there (no entry, or a folder or a submodule at that name, whose own files are paths of
+    their own). The conversion (line endings, filters, encoding) is decided by `base`'s own attributes and never by
+    the working tree's `.gitattributes`: the answer is the same whatever the tree holds and whenever it is asked."""
+    entry = text(repo, "ls-tree", base, "--", path).split()
     if len(entry) < 2 or entry[1] != "blob":
         return None
     if entry[0] == "120000":
         return ("link", run_git(repo, "cat-file", "blob", entry[2]))
-    return ("file", run_git(repo, "cat-file", "--filters", f"HEAD:{path}"))
+    return ("file", run_git(repo, attributes_of(base), "cat-file", "--filters", f"{base}:{path}"))
 
 
 def remove_occupant(target, kind):
@@ -641,6 +669,7 @@ def reject(repo):
         print(f"NOT REJECTED: HEAD moved from {base} to {now}; nothing was changed and the packet stays open. "
               f"Reconcile these commits first:\n{commits}", file=sys.stderr)
         return 1
+    require_commit_attributes(repo, base)
     rejection = data.get("rejection")
     if rejection is None:
         changed, untracked, _ = changed_paths(repo, base)
@@ -669,7 +698,7 @@ def reject(repo):
     elif index_now != text(repo, "rev-parse", f"{base}^{{tree}}").strip():
         index_kept = True
     failed = []
-    contents = {p: head_entry(repo, p) for p in rejection["paths"] if p not in rejection["settled"]}
+    contents = {p: head_entry(repo, base, p) for p in rejection["paths"] if p not in rejection["settled"]}
     # Removals first, deepest first, then writes, shallowest first: a folder that took a tracked file's name is
     # emptied before the file is written back in its place, and another spelling of a name HEAD has (a rename that
     # changed only the case) is removed under its own name before HEAD's spelling is written.

@@ -1142,6 +1142,128 @@ class Packet(unittest.TestCase):
                 self.git("rm", "-q", "-r", "src/Sub")
                 self.git("commit", "-q", "-m", "without the folder")
 
+    # attributes: a file comes back as HEAD's own .gitattributes check it out, never as the rejected ones do
+
+    def checked_out_with_autocrlf(self, files):
+        """Commit `files` with core.autocrlf=true (the owner's setting) and let git itself check the whole tree
+        out again; returns the bytes git wrote for every tracked file."""
+        self.git("config", "core.autocrlf", "true")
+        for path, content in files.items():
+            self.put(path, content)
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "attributes fixture")
+        tracked = [name for name in self.git("ls-files", "-z").split("\0") if name]
+        for path in tracked:
+            (self.repo / path).unlink()
+        self.git("checkout", "--", ".")
+        self.assertEqual(self.status(), "")
+        return {path: (self.repo / path).read_bytes() for path in tracked}
+
+    def assert_tree_is(self, checkout):
+        self.assertEqual(self.status(), "")
+        tracked = [name for name in self.git("ls-files", "-z").split("\0") if name]
+        self.assertEqual({path: (self.repo / path).read_bytes() for path in tracked}, checkout)
+
+    def test_reject_returns_a_file_by_heads_attributes_when_the_worker_changed_its_rule(self):
+        # Round 10: HEAD's blob was converted by the .gitattributes on disk, the rejected one, so a hook whose rule
+        # the worker turned from eol=lf to eol=crlf came back with CRLF beside the LF rule that had returned.
+        checkout = self.checked_out_with_autocrlf({".gitattributes": "scripts/hooks/** text eol=lf\n",
+                                                   "scripts/hooks/pre-commit": "#!/bin/sh\necho ok\n"})
+        self.assertEqual(checkout["scripts/hooks/pre-commit"], b"#!/bin/sh\necho ok\n")
+        self.assertEqual(checkout["src/a.py"], b"a = 1\r\n")  # no rule: core.autocrlf decides
+        self.begin(".gitattributes", "scripts/hooks")
+        self.put(".gitattributes", "scripts/hooks/** text eol=crlf\n")
+        self.put("scripts/hooks/pre-commit", "#!/bin/sh\r\necho changed\r\n")
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assertEqual((self.repo / "scripts/hooks/pre-commit").read_bytes(), b"#!/bin/sh\necho ok\n")
+        self.assert_tree_is(checkout)
+        # The worker's change is whole in the stash, stored as git stash push stores it under the worker's rule.
+        self.assert_in_stash("stash@{0}", ".gitattributes", "scripts/hooks/** text eol=crlf\n")
+        self.assert_in_stash("stash@{0}", "scripts/hooks/pre-commit", "#!/bin/sh\necho changed\n")
+
+    def test_reject_returns_a_file_by_heads_attributes_when_the_worker_added_a_rule_head_lacks(self):
+        checkout = self.checked_out_with_autocrlf({"src/b.py": "b = 1\n"})
+        self.assertNotIn(".gitattributes", checkout)
+        self.assertEqual(checkout["src/a.py"], b"a = 1\r\n")
+        self.begin(".gitattributes", "src")
+        self.put(".gitattributes", "*.py text eol=lf\n")  # untracked: HEAD has no .gitattributes at all
+        self.put("src/a.py", "a = 2\n")
+        (self.repo / "src/b.py").unlink()
+        code, _, err = self.cli("reject")
+        self.assertEqual(code, 0, err)
+        self.assertFalse((self.repo / ".gitattributes").exists())
+        self.assertEqual((self.repo / "src/a.py").read_bytes(), b"a = 1\r\n")
+        self.assertEqual((self.repo / "src/b.py").read_bytes(), b"b = 1\r\n")
+        self.assert_tree_is(checkout)
+        self.assert_in_stash("stash@{0}", ".gitattributes", "*.py text eol=lf\n", "^3")
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 2\n")
+
+    def test_a_rule_kept_on_disk_has_no_say_in_what_returns_either(self):
+        # The rejected .gitattributes is saved again after the capture, so it stays on disk: the hook still
+        # comes back as HEAD's rule checks it out.
+        checkout = self.checked_out_with_autocrlf({".gitattributes": "scripts/hooks/** text eol=lf\n",
+                                                   "scripts/hooks/pre-commit": "#!/bin/sh\necho ok\n"})
+        self.begin(".gitattributes", "scripts/hooks")
+        self.put(".gitattributes", "scripts/hooks/** text eol=crlf\n")
+        self.put("scripts/hooks/pre-commit", "#!/bin/sh\r\necho changed\r\n")
+        real = packet.store
+
+        def store_then_save(*args):
+            real(*args)
+            self.put(".gitattributes", "scripts/hooks/** text eol=crlf\n# saved later\n")
+
+        with mock.patch.object(packet, "store", store_then_save):
+            code, _, err = self.run_in_process("reject")
+        self.assertEqual(code, 1)
+        self.assertIn(".gitattributes", err)
+        self.assertEqual(self.read(".gitattributes"), "scripts/hooks/** text eol=crlf\n# saved later\n")
+        self.assertEqual((self.repo / "scripts/hooks/pre-commit").read_bytes(), checkout["scripts/hooks/pre-commit"])
+
+    def test_reject_refuses_and_changes_nothing_when_git_cannot_read_attributes_from_a_commit(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 30\n")
+        self.put("src/new.py", "new\n")
+        real, asked = packet.run_git, []
+
+        def old_git(repo, *args, **kwargs):
+            if args[0].startswith("--attr-source="):
+                asked.append(args)
+                raise packet.GitFailed(f"git {args[0]} failed: unknown option: {args[0]}")
+            return real(repo, *args, **kwargs)
+
+        before = self.state()
+        with mock.patch.object(packet, "run_git", old_git):
+            code, _, err = self.run_in_process("reject")
+        self.assertEqual(code, 2, err)
+        self.assertEqual(len(asked), 1)  # asked once, before anything else, and nothing was converted without it
+        self.assertIn("cannot read attributes from a commit", err)
+        self.assertIn("nothing was changed", err)
+        self.assertEqual(self.read("src/a.py"), "a = 30\n")
+        self.assertEqual(self.read("src/new.py"), "new\n")
+        self.assertEqual(self.git("stash", "list"), "")
+        self.assertEqual(self.state(), before)
+        code, _, err = self.cli("reject")  # the packet is still open: the same call under a git that can
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.status(), "")
+
+    def test_a_file_from_head_is_never_converted_without_naming_heads_attributes(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 31\n")
+        real, converted = packet.run_git, []
+
+        def watch(repo, *args, **kwargs):
+            if "--filters" in args:
+                converted.append(args)
+            return real(repo, *args, **kwargs)
+
+        with mock.patch.object(packet, "run_git", watch):
+            code, _, err = self.run_in_process("reject")
+        self.assertEqual(code, 0, err)
+        at = self.git("rev-parse", "HEAD").strip()
+        self.assertEqual(converted, [(f"--attr-source={at}", "cat-file", "--filters", f"{at}:src/a.py")])
+
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
         self.begin("src")
