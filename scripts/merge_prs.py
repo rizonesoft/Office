@@ -85,11 +85,10 @@ def checked(runner, root, args, what):
 
 
 def in_progress_sections(root):
-    """Open TODO sections that carry a `Started:` line: work a merge must not land under. A withdrawn section keeps its
-    `Started:` line as history and is no work in progress (D00 T03 §50)."""
+    """Open TODO sections that carry a `Started:` line: work a merge must not land under."""
     import todo_graph
     return sorted(ref for ref, row in todo_graph.graph(root).items()
-                  if not row.done and not row.withdrawn and "> **Started:**" in row.body)
+                  if not row.done and "> **Started:**" in row.body)
 
 
 def campaign_owner(root):

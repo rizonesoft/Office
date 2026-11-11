@@ -9,7 +9,7 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 | `00-workspace/TODO-02-licensing-and-contributions.md` | Licensing and contributions |
 | `00-workspace/TODO-03-automations-and-keep-alive.md` | Automations and keep-alive |
 | `00-workspace/TODO-04-portable-build-tools.md` | Portable build tools |
-| `00-workspace/TODO-05-lessons-and-agent-ledger.md` | Lessons and agent ledger |
+| `00-workspace/TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews |
 | `00-workspace/TODO-07-owner-digest.md` | Owner digest follow-ups |
 | `01-brand/TODO-01-suite-naming.md` | Suite and app names |
 | `01-brand/TODO-02-icon-system.md` | Icon family (reopened 2026-11-10 by section 8) |

@@ -20,7 +20,6 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 - The open phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`), which §6 moves under the guard.
 - -> XREF: T04 §1 -- `tools.lock.json`, the lock file of the portable build tools, joins the pins §11 keeps at the latest stable release
 - -> XREF: D03 T01 §17 -- the authoring sections whose `Author` items §31 lists in the plan as files still to author
-- -> XREF: T05 §5 -- the lessons `scripts/packet.py` (§34) attaches to a packet, and the ledger it writes (T05 §6) (all withdrawn 2026-11-11 with `scripts/packet.py`, D00 T03 §50: no agent writes)
 - -> XREF: T07 §1 -- the owner digest follow-ups for §35 (a live run told from an abandoned guard, a long progress list, a failed send), in their own file because this one holds 55 sections
 
 ## Outcome
@@ -66,30 +65,16 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 27 | §27 | Review prompt builder | -- | [x] |
 | 28 | §28 | Host check scratch leftover rule | §26 | [x] |
 | 29 | §29 | Review prompt empty-input refusals | §27 | [x] |
-| 30 | §30 | Whole-candidate review diffs | §27, §29 | [ ] |
-| 31 | §31 | Plan lists files still to author | -- | [x] |
-| 32 | §32 | Validate checks plan row width | -- | [x] |
-| 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
-| 34 | §34 | Work packet acceptance command | -- | [-] |
-| 35 | §35 | Weekly owner digest | §1 | [x] |
-| 36 | §36 | Operating mode measurement command | -- | [ ] |
-| 37 | §37 | Operating mode rule and launcher | §36 | [ ] |
-| 38 | §38 | Parallel streams design record | §37 | [ ] |
-| 39 | §39 | Parallel streams sections authored | §38 | [ ] |
-| 40 | §40 | Review schedule in the pin | -- | [ ] |
-| 41 | §41 | Scheduled review passes | §40 | [ ] |
-| 42 | §42 | Plan review before the build | §41 | [ ] |
-| 43 | §43 | Stamp replays the schedule | §41, §42 | [ ] |
-| 44 | §44 | Rotation round count and takeover | §41, §43 | [ ] |
-| 45 | §45 | Skills and prompts follow the schedule | §42, §43, §44 | [ ] |
-| 46 | §46 | Packet rejection keeps a save landing at write time | §34 | [-] |
-| 47 | §47 | Packet display and digest from one capture | §34 | [-] |
-| 48 | §48 | Packet staging publishes the index atomically | §34 | [-] |
-| 49 | §49 | Packet lifecycle after a partial rejection | §34 | [-] |
-| 50 | §50 | Withdrawn sections | -- | [x] |
-| 51 | §51 | No deferral or adjacency owner is withdrawn | §50 | [ ] |
-| 52 | §52 | A withdrawn section authors nothing | §50 | [ ] |
-| 53 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
+| 30 | §31 | Plan lists files still to author | -- | [x] |
+| 31 | §32 | Validate checks plan row width | -- | [x] |
+| 32 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
+| 33 | §35 | Weekly owner digest | §1 | [x] |
+| 34 | §36 | Operating mode measurement command | -- | [ ] |
+| 35 | §37 | Operating mode rule and launcher | §36 | [ ] |
+| 36 | §38 | Parallel streams design record | §37 | [ ] |
+| 37 | §39 | Parallel streams sections authored | §38 | [ ] |
+| 38 | §50 | Withdrawn sections | -- | [x] |
+| 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -891,29 +876,6 @@ Filed 2026-11-10 from §27's completion review (round 2, findings 1 and 4, `docs
 > **Verified:** 2026-11-11 | §29 | b6fe3a1d06839c751a4f902673ef2088b52b6bd0
 > **Review:** `docs/reviews/d00-t03-s29.json`
 
-## 30. Whole-Candidate Review Diffs
-
-Filed 2026-11-10 from §27's completion review (round 2, findings 2 and 3, `docs/reviews/00-workspace/D00-T03-s27-completion.md`): §27 handles a candidate whose diff is over `MAX_DIFF_BYTES` by splitting it with `--path` into parts, each dispatched on its own. `scripts/review-dispatch.py` records each dispatch as a round, so parts would count as rounds against the cap and the round-9 severity stop, the last part's verdict would stand for the whole candidate in `stamp`, and a single file whose patch is over the limit could never be reviewed at all. Parts are the wrong shape: one candidate is one round. This section replaces splitting with a whole diff that is always delivered, inline when small and by file when large, so one dispatch is always one round over the whole candidate. -> XREF: §27
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Prove the reviewer can read a diff file. Done when: this section carries a `**Measured:**` line from a live dispatch whose reply quotes a marker line that exists only in the diff file.
-2. Deliver a large diff by file. Done when: a diff over the limit is written whole to `build/review/` and the prompt names it with its size and digest.
-3. Remove the parts. Done when: `--path`, the Scope block's "Not in this prompt" list and the skill's split rule are gone.
-
-- [ ] Measure, before any code changes, whether the pinned reviewer's read-only sandbox can read a file under `build/review/` in the repository: write a diff file there holding a marker line (a random token), dispatch a prompt through `scripts/review-dispatch.py` to a scratch record (not a section's findings file) asking for the marker, and record the result as a `**Measured:**` line under this section's context with the date, the token found or not, and the record's path. Done when: the line is there. If the marker is not returned, stop and record it: the remaining items depend on it, and the section is then re-planned with the route that does work (the measurement decides, never an assumption).
-- [ ] Write in the `round` subcommand of `scripts/review-prompt.py` a diff larger than `MAX_DIFF_BYTES` to `build/review/<first 12 of base>-<first 12 of tip>.diff` (temporary file then `os.replace`, read back and compared), and put in the prompt, in place of the inlined diff, the file's repository-relative path, its size in bytes, its SHA-256, and the instruction to read the whole file before giving any verdict and to end with `OVERALL: blocked` if it cannot be read. Done when: a test with a small limit shows the file's bytes equal `git diff`'s, and the prompt holding the path, size and digest and no diff body. Cheaper substitute: truncating the diff, or naming the range and leaving the reviewer to run git, which its sandbox cannot.
-- [ ] Remove the `--path` option, the "Not in this prompt" list and the `omitted` JSON key from the `round` subcommand, keeping the Scope block's list of every changed path. Done when: `--path` is an argparse error (exit 2), and the tests of §27 that used it are replaced by the by-file tests. Cheaper substitute: keeping `--path` beside the file route, which leaves two ways to review a large candidate and the round-counting defect in one of them.
-- [ ] Delete review diff files older than 14 days from `build/review/` at the start of every `round` run, and nothing else. Done when: a test with an old and a new file shows only the old one removed, and a file that cannot be deleted does not fail the run.
-- [ ] Replace the split rule in `.claude/skills/review-todo-section/SKILL.md` step 3 with one sentence: a candidate of any size is one prompt and one dispatch; when the command's JSON says `"diff": "file"`, the prompt points at `build/review/`, which is never committed. Done when: the skill has no mention of parts and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
-- [ ] Commit: `review: deliver every candidate's diff whole, by file when it is large`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes, and `python scripts/review-prompt.py round 'D00 T03 §30' HEAD~1 HEAD --path x --purpose x --governing y --out <scratch>\p.md` exits 2 with an argparse error naming `--path`.
-
 ## 31. Plan Lists Files Still to Author
 
 > **Started:** 2026-11-10T23:40:00Z
@@ -1000,39 +962,6 @@ Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The pla
 - [ ] Commit: `todo: group each phase of the plan by domain`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py plan --check` exits 0.
-
-## 34. Work Packet Acceptance Command
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: scripts/packet.py accepted or rejected a writer agent's change, and no writer agent is left (the Opus section-writer and the Fable principal-implementer are removed); the code goes with it and stays in history at d88fc20
-
-> **Started:** 2026-11-11T00:03:00Z
-
-**Corrected 2026-11-11:** the owner decided on 2026-11-11 that the main session writes every section and every fix round itself (`AGENTS.md`, Subagents); the one worker left is `principal-implementer` (Fable), on call for a review takeover and for architecture decision records, and its work still arrives as a packet accepted or rejected by the paragraph this section replaces (the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md`, and the quality bullet of `AGENTS.md`, Subagents). The command is therefore still needed, for that one worker. Decided here, as the industry-standard behaviour where the section is silent: `begin` also refuses while a packet is open, `show --stage` closes the packet once it has staged it, `reject` with nothing changed closes the packet without a stash, and `show` exits 1 on an empty change (a worker that returned nothing has nothing to accept). Reversing any of these is a small change to `scripts/packet.py` and its tests.
-
-Filed 2026-11-10. Since the owner's decision that workers write (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 27), the main loop accepts or rejects each worker's change by following a paragraph of git commands in `.claude/skills/process-todo-section/SKILL.md` (Delegation, the build step). Four review rounds in a row found a fault in that paragraph (`docs/reviews/orchestration-2026-11-10.md`: new files missing from `git diff`, the main loop's own edits counted as the worker's, a rejection that could delete an edit the owner saved meanwhile, new folders collapsed by `git status`, staged changes hidden). A procedure that is mechanical and has one right answer belongs in a script (`AGENTS.md`, Subagents, tier 1). This section replaces the paragraph with one command that has three verbs, so the main loop reads a complete change and can never destroy anything to reject it.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Write `scripts/packet.py` with `begin`, `show` and `reject`. Done when: each verb passes its fixture tests on a temporary repository.
-2. Point the skill and `AGENTS.md` at it. Done when: neither names a raw git command for packet acceptance.
-
-- [x] Write `begin` in `scripts/packet.py`: take `--name` and one or more `--path` values (files or folders the packet may change), refuse with exit 2 when `git status --porcelain --untracked-files=all` prints anything (naming the paths, so the main loop commits its own edits first), and write `build/packet.json` (the name, the paths and `HEAD`) through a temporary file and `os.replace`. Done when: tests in `scripts/tests/test_packet.py` show the refusal on a dirty fixture tree and the file on a clean one. Cheaper substitute: starting a packet over pending edits, which mixes two authors in one diff.
-- [x] Write `show`: list every changed path since `begin` (staged, unstaged and untracked, each new file listed by itself, both sides of a rename), mark each as inside or outside the packet's paths, and print the complete change in three parts: the staged change (`begin`'s `HEAD` to the index), the unstaged change (the index to the working tree) and the full text of every untracked file, then a `snapshot: sha256:<digest>` line over the bytes each changed path holds in the working tree (or its deletion). Done when: tests show a staged edit, an unstaged edit, a new file and a new file in a new folder all present in the output, each with its inside or outside mark, and a file staged as B and edited back to A in the working tree showing both B and A. **Groomed 2026-11-11:** completion finding 4 (it said `git diff HEAD`, which shows nothing for that file).
-- [x] Make `show` exit 0 only when every changed path is inside the packet's paths and `HEAD` is the commit `begin` recorded; exit 1 naming each outside path, and exit 1 when `HEAD` moved (a worker committed). Done when: tests show all three outcomes.
-- [x] Add `show --stage --snapshot <digest>`, which, when `show` would exit 0 and the snapshot it reads equals the digest the main loop reviewed, stages exactly the bytes it read and hashed (`git hash-object -w --stdin --path` and `git update-index --cacheinfo`, or `--force-remove` for a deletion), so a save landing after the review is never staged; it then names each path whose working tree no longer matches what it staged (left unstaged), and stages nothing otherwise. Done when: tests show the index holding only the packet's paths, the index unchanged after a refusal and after a digest that does not match, and a save injected between the read and the staging left unstaged and named. Cheaper substitute: `git add -A`, which sweeps in whatever else is in the tree, or `git add` after the review, which stages a save the main loop never read. **Groomed 2026-11-11:** completion finding 1.
-- [x] Write `reject`: build a stash of the whole working tree (index, tracked and untracked files, in the shape `git stash push --include-untracked` makes) from the bytes it reads, without touching the tree, and store it with `git stash store` under the message `rejected packet: <name>`; then return each changed path to `begin`'s `HEAD` only after checking, right before it writes, that the path still holds the bytes the stash captured, leaving and naming any path saved meanwhile; then print the stash's name and commit and remove `build/packet.json`. Done when: a test shows a tracked edit, a staged edit and an untracked file all recoverable from the stash and the tree without changes, and a save injected after the capture kept on disk byte for byte and named. Cheaper substitute: `git restore` and deleting files, which destroys an edit the owner saved while the worker ran, or `git stash push`, which captures and then empties the tree in one step and so loses a save landing between the two. **Groomed 2026-11-11:** completion finding 1.
-- [x] Refuse `reject` with exit 1 when `HEAD` is not the commit `begin` recorded: change nothing, keep the packet open with its baseline, and name the commits `begin`'s `HEAD`..`HEAD` holds for the main loop to reconcile. Done when: tests with a committed-only and a committed-plus-uncommitted worker change show the refusal, the tree and the stash list unchanged and the packet still open. **Groomed 2026-11-11:** completion finding 2.
-- [x] Record `reject`'s progress in `build/packet.json` (the stash commit before it is stored, then stored, then each path returned) through a temporary file and `os.replace`, so a `reject` that stopped part way resumes on the next call: it stores a recorded stash commit not yet in `git stash list`, finishes returning the paths that still hold the captured bytes, and never reports a finished rejection before the stash is stored and every path is settled. Done when: tests that stop `reject` after the stash commit is made, after it is stored and at a path that cannot be written (a write that fails) show the next `reject` naming the same stash commit and finishing, and the packet kept open until then. **Groomed 2026-11-11:** completion finding 3.
-- [x] Refuse `reject` and `show` with exit 2 when no packet is open, and never drop or pop a stash in any verb. Done when: tests show both refusals, and a search of `scripts/packet.py` finds no `stash drop`, `stash pop`, `stash clear`, `restore`, `clean` or `reset`.
-- [x] Replace the git commands in the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md` with the three verbs, one sentence each. Done when: the paragraph names `scripts/packet.py begin`, `show`, `show --stage` and `reject` and no `git status`, `git diff` or `git stash` command, and `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` still passes.
-- [x] Replace the same commands in the quality bullet of the Subagents section of `AGENTS.md` with the command's name. Done when: the bullet names `scripts/packet.py` and no raw git command.
-- [ ] Commit: `agents: accept and reject work packets through one command`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes, with a staged edit, a new file in a new folder and an owner edit saved during the packet each covered.
 
 ## 35. Weekly Owner Digest
 
@@ -1167,225 +1096,6 @@ The design record of §38 becomes work. This section authors the TODO file that 
 
 **Test checkpoint:** `python scripts/todo-graph.py validate` exits 0 and `Test-Path todo/00-workspace/TODO-06-parallel-streams.md` returns `True`.
 
-## 40. Review Schedule in the Pin
-
-Owner, 2026-11-10: the reviewer system is upgraded to the scheduled one the Recto repository runs (`D:\Recto\.conclave\reviewers.toml` and `D:\Recto\scripts\review-dispatch.py`, the same Conclave lineage as this repository's dispatcher). Here every review is one reviewer at one fixed effort with every lens every round, which is why sections spent 364 rounds between them. There the pin holds a schedule and the dispatcher picks each pass's effort and lenses: a plan review before the build at medium effort, a completion review at low, a first round at medium across the lenses, then low-effort adversarial rotation rounds, one medium escalation round after a low round that finds a `P1`, and the loop ending at the first round with no `P1` or `P2`. This is a port, not a copy: this repository's dispatcher has since gained `scripts/review-prompt.py`, contract digests and completion rules that Recto lacks, and they stay. §40 to §45 carry it out; this section brings the schedule into the pin and loads it strictly. The reviewer does not change (GPT-6 Astra, always).
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Load and check `[schedule]` in `scripts/review-dispatch.py`. Done when: a well-formed schedule loads and each malformed one is refused with its reason.
-2. Add the schedule to `.conclave/reviewers.toml`. Done when: `python scripts/review-dispatch.py --check-pin --json` reports it.
-
-- [ ] Port the lens table to `scripts/review-dispatch.py`: `LENSES`, a mapping from lens name to its prompt text, with the names `plan`, `plan-delivery`, `adversarial`, `integration`, `source-defect`, `consistency`, `quality`, `design`, `optimization` and `record` (source: `D:\Recto\scripts\review-dispatch.py`, `LENSES`), keeping this repository's `excellence` lens from `docs/review-round-prompt.md` as an eleventh name. Done when: a test in `scripts/tests/test_review_dispatch.py` lists exactly those names.
-- [ ] Port `check_step` and `check_schedule`: the schedule must hold exactly `plan`, `completion`, `rounds`, `rotation`, `escalation` and `severity_stop_after`; each step holds `effort` and, except `completion`, a non-empty list of distinct known `lenses`; an effort must be one the reviewer's CLI takes (`low`, `medium`, `high`, `xhigh`, `max` for codex); `rounds` is a non-empty list; `severity_stop_after` is a whole number from 0 to 33 and not a boolean. Done when: one test per refusal shows `Refused` with the key at fault. Cheaper substitute: reading the table without checking it, which lets a typo change how every section is reviewed.
-- [ ] Call `check_schedule` from `load_pin` when the pin has a `[schedule]`, and keep a pin without one loading as today. Done when: tests show both, and `--check-pin --json` includes the schedule when present.
-- [ ] Do not port the per-reviewer `efforts` override or the panel (`panel_record`): this repository has one reviewer by owner decision. Done when: a pin with `[schedule.efforts.<name>]` is refused as an unknown key, under test.
-- [ ] Add the schedule to `.conclave/reviewers.toml` with Recto's values: `severity_stop_after = 0`; `[schedule.plan]` medium with the `plan` lens; `[schedule.completion]` low; one `[[schedule.rounds]]` at medium with `adversarial`, `integration`, `source-defect`, `plan-delivery` and `design`; `[schedule.rotation]` low with `adversarial`; `[schedule.escalation]` medium with `adversarial`; and rewrite the file's comment to describe it. Done when: `python scripts/review-dispatch.py --check-pin` prints `ok`.
-- [ ] Commit: `review: load a review schedule from the pin`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` passes with the schedule tests among them, and `python scripts/review-dispatch.py --check-pin` prints `ok`.
-
-## 41. Scheduled Review Passes
-
-The dispatcher, not the caller, decides what each pass is. The caller says only which kind of pass it wants; the dispatcher reads the findings file, works out where the loop stands, and sets the effort and the lenses. That is what makes every section's loop run the same way.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Add `--kind` and the scheduling function. Done when: fixture findings files produce the expected step for each position.
-2. Record what each pass was. Done when: every recorded round names its pass, effort and lenses.
-
-- [ ] Add `--kind {round,completion,plan}` (default `round`), `--candidate` (a full commit, required for `completion` and `plan`) and `--surface` to `scripts/review-dispatch.py`. Done when: tests show the default, the refusal of `--kind plan` without `--candidate`, and argparse refusing another kind.
-- [ ] Port `returned_review` and `highest`: a recorded round counts as returned only when its reviewer is of another model family and its last line is `OVERALL: approve` or `OVERALL: needs-attention`; `highest` is the last `HIGHEST: P1|P2|P3|none` line of a review. Done when: tests show an outage, a `blocked` reply and a reply without a verdict not counted.
-- [ ] Port `scheduled`: with N returned rounds, the next pass is the escalation step when the last returned round ran at the rotation effort and its highest finding was `P1`; otherwise `rounds[N]` while one remains; otherwise the rotation step with the lens `rotation.lenses[(N - len(rounds)) % len(rotation.lenses)]`; the `design` lens is dropped unless `--surface` is given. Done when: tests cover the first round, the first rotation round, the lens cycle, an escalation after a `P1`, no escalation after a `P2`, and `design` with and without `--surface` (source: `D:\Recto\scripts\review-dispatch.py`, `scheduled`).
-- [ ] Pass the step's effort to the reviewer's command and append a lens block to the prompt naming the pass, its effort and each lens with its text (`lens_block`). Done when: a test with a fake `codex` shows the effort in its arguments and the lens text on its standard input, never in its arguments.
-- [ ] Record on every round, beside the existing fields, `Pass:` with one of `round`, `rotation` or `escalation`, and `Lenses:`. Recto infers the pass by replaying the schedule; here it is written down, because §44 counts rotation rounds. Done when: a test reads the three pass kinds back from a recorded file, and a record without `Pass:` (written before this section) still parses.
-- [ ] Record a plan pass under `## Plan review` and a completion pass as today, neither as a round. Done when: tests show a plan and a completion pass leaving the round count unchanged.
-- [ ] Print in the JSON summary the pass, its position, its effort, its lenses, `escalated`, and `severity_stop` (true when the reviewer returned, the position is past `severity_stop_after` and the highest finding is `P3`). Done when: a test asserts each key.
-- [ ] Commit: `review: the dispatcher schedules each pass`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` passes with the tests named above among them.
-
-## 42. Plan Review Before the Build
-
-Recto reviews the plan before it is built, at medium effort with one lens, and this repository does not. A gap found in the plan costs a paragraph; the same gap found in round five costs four rounds. This is separate from the completion review, which stays.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Write `docs/plan-review-prompt.md` and teach `scripts/review-prompt.py` to fill it. Done when: `python scripts/review-prompt.py plan '<ref>' --out <file>` writes a prompt.
-2. Record the pass. Done when: `--kind plan` appends one `## Plan review` section and refuses a second.
-
-- [ ] Write `docs/plan-review-prompt.md` from `D:\Recto\docs\plan-review-prompt.md`, adapted to this repository's section format, asking whether building the section as written gives a whole, correct result, and ending with `PLAN: complete` or `PLAN: gaps` and an `OVERALL:` line. Done when: `python scripts/check-design-doc.py docs/plan-review-prompt.md` exits 0.
-- [ ] Add a `plan` subcommand to `scripts/review-prompt.py` that fills that prompt from the section, as `completion` does for its prompt, with the same refusals for an unknown section and an unwritable `--out`. Done when: tests in `scripts/tests/test_review_prompt.py` show the filled prompt and both refusals.
-- [ ] Accept a plan reply only when it holds a `PLAN:` line followed by `OVERALL:`; a reply without them leaves the plan review open and is recorded as no review. Done when: a test shows the open state (source: `returned_pass`).
-- [ ] Refuse a second returned plan review of one section in one findings file, naming the first. Done when: a test shows the refusal. Cheaper substitute: accepting any number, which lets a run ask until it gets `complete`.
-- [ ] State how the plan review and the completion review differ in `docs/review-types.md`: the plan review asks whether the section's plan is right before anything is built; the completion review asks whether building it as written gives a whole feature, and its gaps extend the section. Done when: the document names both and their order.
-- [ ] Commit: `review: review the plan before the build`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` and `-p "test_review_dispatch.py"` pass with the plan tests among them.
-
-## 43. Stamp Replays the Schedule
-
-A schedule nobody checks is a suggestion. `stamp` replays the section's recorded passes against the schedule and refuses a receipt whose passes do not follow it, so a section cannot be stamped on rounds run at the wrong effort or without their lenses.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Port `schedule_ok` to `scripts/lib/todo_graph.py`. Done when: a record that follows the schedule stamps and one that does not is refused with the pass at fault.
-2. Take the severity stop from the pin. Done when: one number, in the pin, decides it.
-
-- [ ] Port `schedule_ok`, `pin_at` and `pin_schedule`: read the schedule from `.conclave/reviewers.toml` as it was at the stamped commit, replay every returned pass of the findings file through `scheduled`, and refuse the stamp when a pass's recorded effort or lenses differ from what the schedule gave it. Done when: tests in `scripts/tests/test_todo_graph.py` cover a loop that follows the schedule, a round at the wrong effort, a rotation round with the wrong lens, a missing escalation after a `P1`, and an outage that does not move the position.
-- [ ] Require a returned plan review (§42) whose candidate is the commit the build began at or an ancestor of it, for every section whose build began after this section stamps. Done when: tests show the requirement and the adoption boundary: a section already in its review loop before that keeps the rules it started under, as D00 T03 §16 did for the completion rules.
-- [ ] Replace `SEVERITY_CUTOFF_ROUND = 8` with the pin's `severity_stop_after`, read through `pin_schedule`, keeping 8 for a receipt whose pin had no schedule. Done when: a `stopped-low-severity` verdict at round 1 is accepted under the new pin and refused under the old one, and a test fails if the two numbers are ever stated in two places.
-- [ ] Store the schedule and the plan review in the receipt, and bump `completion_rules` to `3` for receipts written under the schedule, leaving version 1 and 2 receipts valid under their own rules. Done when: `python scripts/todo-graph.py validate` passes on this repository's 61 existing receipts unchanged, and a new fixture receipt holds both fields.
-- [ ] Update the stamp paragraphs of `todo/README.md` to describe the replay, the plan review and the stop. Done when: the README states each and names `.conclave/reviewers.toml` as the only place the numbers live.
-- [ ] Commit: `todo: stamp only a review loop that followed the schedule`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the tests named above among them, and `python scripts/todo-graph.py validate` exits 0.
-
-## 44. Rotation Round Count and Takeover
-
-Owner, 2026-11-10: the eight rounds before Fable takes a section over are rotation rounds only, and the cap of 33 is a cap on rotation rounds. The plan review, the completion review, the first medium round and the escalation rounds do not count toward either. The reason is what each number measures. The first round is expected to find things, and an escalation round is extra scrutiny of a `P1` already counted; only the rotation rounds show whether a section is converging. The consequence is stated so nobody is surprised by it: because an escalation can follow every rotation round, a section can have up to 8 rotation rounds, 8 escalations and its first round, 17 reviews, before the takeover, and up to 67 before the cap. The second takeover trigger, a finding that returns after it was reported fixed, does not wait for any count.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Count rotation rounds from the `Pass:` field (§41). Done when: the dispatcher's summary and `--list-rounds` give the count.
-2. Apply both numbers to rotation rounds. Done when: the cap and the takeover are tested on rotation counts.
-
-- [ ] Add `rotation_rounds` to the JSON summary of `scripts/review-dispatch.py` and to `--list-rounds --json`: the number of returned rounds whose `Pass:` is `rotation`. Done when: a test over a record with one first round, three rotation rounds and one escalation prints 3.
-- [ ] Add `takeover` to the JSON summary: true when the round just returned is rotation round 8 or later and its highest finding is `P1` or `P2`. The number 8 is `takeover_after` in `[schedule]`, validated like `severity_stop_after`. Done when: tests show false at rotation round 7 with a `P1`, true at 8 with a `P2`, false at 8 with only `P3`, and a refusal for a `takeover_after` outside 1 to 33.
-- [ ] Count the cap on rotation rounds in `scripts/lib/todo_graph.py`: `stopped-at-33` is accepted only on the pass that returns rotation round 33, and a 34th rotation round is refused, for receipts under the schedule; receipts written before keep the count of all rounds. Done when: tests show a section with 33 rotation rounds and 10 escalations stamping `stopped-at-33`, and one with 20 rotation rounds refused that verdict.
-- [ ] Record `rotation_rounds` in the receipt beside `rounds_spent`, and print it in `python scripts/todo-graph.py query rounds`. Done when: a fixture receipt holds it and the query shows it.
-- [ ] Commit: `review: count the takeover and the cap in rotation rounds`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_dispatch.py"` and `-p "test_todo_graph.py"` pass with the tests named above among them.
-
-## 45. Skills and Prompts Follow the Schedule
-
-The skills still describe the old loop: one prompt with every lens, a severity stop from round 9, a takeover counted in all rounds. This section makes the documents say what the dispatcher now does, so the lead does not have to reconcile two descriptions.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Update the round prompt and its builder. Done when: a round prompt carries no lens list of its own.
-2. Update the three skills. Done when: each names the kinds of pass and none names a number the pin holds.
-
-- [ ] Remove the `## Lenses` list from `docs/review-round-prompt.md`, leaving the severity rule and the reply format, and update `FILLS` and `PLACEHOLDERS` of `scripts/review-prompt.py` in the same commit: the dispatcher appends the lenses of each pass (§41). Done when: `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes and a built round prompt holds no lens name.
-- [ ] Add step 3a to `.claude/skills/process-todo-section/SKILL.md`, before the completion review: build the plan prompt with `python scripts/review-prompt.py plan`, dispatch it with `--kind plan --candidate <the commit the build starts from>`, and on `PLAN: gaps` correct the section before building. Done when: the skill names both commands and what each verdict leads to.
-- [ ] Rewrite the loop paragraph of `.claude/skills/review-todo-section/SKILL.md`: every round is dispatched with `--kind round` (and `--surface` on a `Surface: yes` section); the dispatcher's summary says which pass ran; `severity_stop: true` ends the loop; `takeover: true`, or a finding that returns after it was reported fixed, hands the section to `principal-implementer`; the cap is 33 rotation rounds. Done when: the paragraph holds no round number except by naming `.conclave/reviewers.toml`, and a test in `scripts/tests/test_skill_ci_gate.py` fails when the `--kind round` mention is removed.
-- [ ] Update `.claude/skills/independent-review/SKILL.md` and the Subagents and TODO workflow sections of `AGENTS.md` the same way. Done when: neither states "from round 9" or counts the takeover in all rounds.
-- [ ] Record the port in `docs/review-types.md`: where it came from, what was not ported (the panel and the per-reviewer efforts) and why. Done when: the document names both.
-- [ ] Commit: `review: the skills and prompts describe the scheduled loop`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` and `-p "test_review_prompt.py"` pass, and `python scripts/review-dispatch.py --check-pin` prints `ok`.
-
-## 46. Packet Rejection Keeps a Save Landing at Write Time
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
-
-Filed 2026-11-11 from the completion review of §34 (`docs/reviews/00-workspace/D00-T03-s34-completion.md`, round 2, finding 1, P1). §34's `reject` checks, right before it writes, that a path still holds the bytes its stash captured, then returns the path to `HEAD`. An editor can save in the moment between that check and the write or delete, and those bytes are in no stash, so the rejection destroys them. This section makes the mutation itself safe: a path is moved aside before it is compared, and its `HEAD` content is put back only into a path nobody has recreated.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Move aside, compare, then write exclusively. Done when: a save injected at each point of the protocol is still on disk afterwards.
-
-- [ ] Change the return step of `reject` in `scripts/packet.py` to move each changed path aside first (`os.replace` into `build/packet-hold/<n>`), then compare the held bytes with the stash's captured blob. Done when: a test shows a path whose held bytes differ moved back unchanged (never overwritten) and named as unresolved. Cheaper substitute: comparing in place and then writing, which loses a save landing between the two.
-- [ ] Write a path's `HEAD` content back only with an exclusive create (`open(path, "xb")` to a temporary name in the same folder, then a link or rename that fails when the path exists), so a file an editor recreated after the move is never replaced. Done when: a test that recreates the path between the move and the write shows the editor's file kept byte for byte and the path named as unresolved.
-- [ ] Keep each held copy until its path is settled, and delete a held copy only once its bytes are proven to be in the stored stash. Done when: a test that stops `reject` after a move shows the held copy on disk and the next `reject` settling it.
-- [ ] Cover deletions the same way: a path the stash records as new or changed and `HEAD` lacks is moved aside and left absent only when nothing recreated it. Done when: a test recreating a deleted path keeps it and names it.
-- [ ] Report every unresolved path and exit 1 while any remains, keeping the packet open. Done when: tests show exit 1 naming each one and exit 0 once a retry finds none.
-- [ ] Commit: `agents: packet rejection keeps a save that lands while it writes`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes, with saves injected after the comparison and before the replacement and before the deletion.
-
-## 47. Packet Display and Digest From One Capture
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
-
-Filed 2026-11-11 from the completion review of §34 (round 2, finding 2, P2). §34's `show` prints the diffs and then hashes the working tree, so an editor save between the two can make the digest name bytes the reviewer never saw, and `show --stage --snapshot` would then accept them. This section reads every changed path once and derives the display and the digest from those same bytes.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Capture once, render and hash from the capture. Done when: a save injected between rendering and hashing cannot be staged.
-
-- [ ] Read each changed path's working-tree bytes and index blob once into a capture in `scripts/packet.py`, and render the unstaged and untracked parts of `show` from the capture (a unified diff of index blob to captured bytes) instead of a second `git diff` read of the working tree. Done when: a test that edits a file after the capture shows the displayed text and the digest both naming the captured bytes. Cheaper substitute: running `git diff` and hashing separately, which can show A and hash B.
-- [ ] Compute the `snapshot:` digest from the capture alone. Done when: a test injecting a save between the render and the hash shows the digest of the displayed bytes, and `show --stage --snapshot` with it refusing because the tree no longer holds them.
-- [ ] Commit: `agents: the packet display and its digest come from one read`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the injected-save test among them.
-
-## 48. Packet Staging Publishes the Index Atomically
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
-
-Filed 2026-11-11 from the completion review of §34 (round 2, finding 3, P2). §34's `show --stage` updates the index one path at a time, so a failure on the second path (an index lock, a full disk) leaves half a packet staged and nothing that tells it from the packet before. This section prepares the whole index change in a private index file and publishes it in one step under git's own index lock, after checking the live index has not changed.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Stage into a private index, publish it under `index.lock`. Done when: a failure at each step leaves the live index byte for byte as it was, or a recorded, finished acceptance.
-
-- [ ] Build the staged entries in a copy of the index (`GIT_INDEX_FILE` pointing at a temporary file in `.git`), with `git update-index` for every path, in `scripts/packet.py`. Done when: a test failing the second path's update shows the live index unchanged.
-- [ ] Publish the copy by creating `.git/index.lock` exclusively, checking that the live index still has the hash it had when the copy was made, writing the copy into the lock file and renaming it over `.git/index`. Done when: a test that changes the live index between the copy and the publication shows the refusal with the index unchanged, and a test holding `index.lock` shows a refusal that names it. Cheaper substitute: `git add`, path by path, which stages half a packet when one path fails.
-- [ ] Record the acceptance in `build/packet.json` before the publication and close the packet after it, so a run stopped at the rename is recognised on the next call as published or not by comparing the index hash. Done when: tests stopping before and after the rename show the next `show --stage` either finishing or reporting the acceptance done, never staging twice.
-- [ ] Commit: `agents: packet staging lands in the index all at once`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the three failure tests among them.
-
-## 49. Packet Lifecycle After a Partial Rejection
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
-
-Filed 2026-11-11 from the completion review of §34 (round 2, finding 4, P2). Once `reject` has started, the packet must not be accepted: if a rejection returns one path and stops on another, §34's `show` can see a smaller in-scope change and `show --stage` could accept it and close the packet, abandoning the rejection's record. This section gives the packet explicit states.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. A packet is open, rejecting or closed, and each verb checks the state. Done when: no verb but `reject` acts on a rejecting packet.
-
-- [ ] Add a `state` field to `build/packet.json` in `scripts/packet.py` (`open`, then `rejecting` from the moment `reject` records its stash commit), written through a temporary file and `os.replace`. Done when: a test reads `rejecting` after a `reject` stopped part way.
-- [ ] Make `show` name an incomplete rejection (its stash commit and the paths still to settle) and exit 1 on a rejecting packet. Done when: a test after each interruption point of `reject` shows that output.
-- [ ] Refuse `show --stage` with exit 2 on a rejecting packet, staging nothing. Done when: a test shows the refusal and the index unchanged. Cheaper substitute: letting the stage run on what is left, which accepts half a rejected packet.
-- [ ] Refuse `begin` while a packet is rejecting, naming `reject` as the way on. Done when: a test shows the refusal.
-- [ ] Commit: `agents: a packet being rejected can only be rejected`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with `show`, `show --stage` and `begin` checked after each interruption of `reject`.
-
 ## 50. Withdrawn Sections
 
 > **Started:** 2026-11-11T06:55:00Z
@@ -1417,43 +1127,6 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 
 > **Verified:** 2026-11-11 | §50 | 920df9794ce485cc82564fad705151f94b935249
 > **Review:** `docs/reviews/d00-t03-s50.json`
-
-## 51. No Deferral or Adjacency Owner Is Withdrawn
-
-Filed 2026-11-11 from the completion review of §50 (`docs/reviews/00-workspace/D00-T03-s50-completion.md`, round 2, finding 1, P2). `validate` refuses a deferral whose owner does not exist or is stamped, and an adjacency owner that does not exist, but a withdrawn owner would pass both: work deferred to a section that will never run would have no owner while the graph says it has one. This section refuses both, so a withdrawal forces the deferred scope to be reassigned or explicitly given up.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Refuse a withdrawn owner. Done when: `validate` names both sections for a live deferral and for an adjacency key whose owner is withdrawn.
-
-- [ ] Refuse in `scripts/lib/todo_graph.py` a deferral line (the blockquoted Deferred marker) whose cross-referenced owner is withdrawn, naming the deferring section and the owner. Done when: a fixture in `scripts/tests/test_todo_graph.py` exits 2 with both references, and the same fixture with the marker changed to Resolved validates.
-- [ ] Refuse an `**Adjacency:**` key whose `@ DNN TNN §N` owner is withdrawn, naming the file, the key and the owner. Done when: a fixture exits 2 with all three, and the same fixture with the key reassigned to an open section validates.
-- [ ] Say in `todo/README.md`, beside the withdrawal rule, that a withdrawal moves or gives up every deferral and adjacency key it owns first. Done when: the README says so.
-- [ ] Commit: `todo: a withdrawn section owns no deferral or adjacency`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with both refusals among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
-
-## 52. A Withdrawn Section Authors Nothing
-
-Filed 2026-11-11 from the completion review of §50 (round 2, finding 2, P2). `to_author` lists every `Author` item's missing file and refuses one file named by two sections (D00 T03 §31), whoever owns the item. A withdrawn authoring section would keep its file in `### Still to author` and in `query stats.to_author`, and would block a replacement section from naming the same file. This section drops withdrawn owners from both, keeping their text as history.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Leave withdrawn owners out of authoring. Done when: a withdrawn section's file is not listed and can be named by another section.
-
-- [ ] Leave `Author` items of a withdrawn section out of `to_author` and of the two-sections refusal in `scripts/lib/todo_graph.py`. Done when: tests in `scripts/tests/test_todo_graph.py` show a withdrawn owner's missing file absent from the block and from `query stats`, and a second, open section naming the same file validating and listed.
-- [ ] Keep the ticked-without-file refusal for withdrawn sections too, so history cannot claim a file that is not there. Done when: a fixture with a withdrawn section's ticked `Author` item and no file exits 2.
-- [ ] Commit: `todo: a withdrawn section authors no file`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with these tests among them, and `python scripts/todo-graph.py plan --check` exits 0.
 
 ## 53. Automation Notices Go in the Weekly Digest
 

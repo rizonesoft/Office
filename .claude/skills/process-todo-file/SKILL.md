@@ -1,6 +1,6 @@
 ---
 name: process-todo-file
-description: Close out a TODO file whose sections are all shipped. Sweep for loose ends, run the file-level Verification block, reconcile deferrals, update the indexes, and confirm status done. Use when every Implementation Order row is [x] or withdrawn [-], or when asked to close a whole TODO file.
+description: Close out a TODO file whose sections are all shipped. Sweep for loose ends, run the file-level Verification block, reconcile deferrals, update the indexes, and confirm status done. Use when every Implementation Order row is [x], or when asked to close a whole TODO file.
 ---
 
 # Process TODO File
@@ -18,7 +18,7 @@ python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check
 ```
 
-Every row `[x]` or withdrawn (`[-]`, with its `Withdrawn:` line, D00 T03 §50), every `[x]` covered by a `Verified:` stamp with a matching receipt (the validator refuses otherwise), and the frontmatter already reads `status: done` (the last stamp sets it; a mismatch refuses validation). Fix any refusal first.
+Every row `[x]`, every `[x]` covered by a `Verified:` stamp with a matching receipt (the validator refuses otherwise), and the frontmatter already reads `status: done` (the last stamp sets it; a mismatch refuses validation). Fix any refusal first.
 
 ### 2. Run the file-level Verification block
 

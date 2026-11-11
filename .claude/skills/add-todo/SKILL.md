@@ -55,7 +55,7 @@ Commit as `todo: file <what> in <ref>`. Report the section address (`DNN TNN §N
 
 ## Guardrails
 
-- Do not delete a section whose purpose an owner decision removed: withdraw it (`[-]` in its row and a `> **Withdrawn:** <UTC>: <who decided>: <reason>` line, `todo/README.md`), and withdraw every open section that depends on it too, since `validate` refuses an open dependant of a withdrawn section.
+- A section whose purpose an owner decision removed is deleted, never kept as a dead row (owner, 2026-11-11; `todo/README.md`): remove its Implementation Order row (renumber the Order column) and its body, remove or repoint every dependency, XREF and mention of it, delete each open section that only served it, and add it to `todo/removed.json` with the date, who decided and why. Never delete a stamped section, and never reuse a removed reference.
 - Do not file work into a `[x]` section. New granularity on shipped work is a new section.
 - Do not write coarse umbrella sections or summary checkboxes; decompose into small single-responsibility sections and five-part micro-steps.
 - Do not write a cross-TODO reference without a section. `D03 T01` alone is not a dependency.

@@ -48,10 +48,7 @@ def completion_review(value):
 
 
 def plan_status(row, rows):
-    """A section's state for readers of `query plan`: verified, withdrawn (D00 T03 §50), deferred (its file is not
-    active), ready or blocked."""
-    if row.withdrawn:
-        return "withdrawn"
+    """A section's state for readers of `query plan`: verified, deferred (its file is not active), ready or blocked."""
     if row.done:
         return "verified"
     if row.status != "active":
@@ -131,12 +128,10 @@ def main():
         print(json.dumps(out, ensure_ascii=False))
     elif args.command == "query":
         if args.kind == "stats":
-            # A withdrawn section (D00 T03 §50) is settled and never counted in the total the campaign must reach.
-            result = {"total": sum(not r.withdrawn for r in rows.values()), "verified": sum(r.done for r in rows.values()),
+            result = {"total": len(rows), "verified": sum(r.done for r in rows.values()),
                       "ready": sum(disposition(r, rows) == 0 for r in rows.values()),
                       "blocked": sum(disposition(r, rows) == 4 for r in rows.values()),
-                      "to_author": len(to_author(ROOT, rows)),
-                      "withdrawn": sum(r.withdrawn for r in rows.values())}
+                      "to_author": len(to_author(ROOT, rows))}
         elif args.kind == "deferred":
             result = deferrals()
         elif args.kind == "adjacency":

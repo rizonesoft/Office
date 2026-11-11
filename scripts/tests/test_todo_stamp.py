@@ -126,14 +126,6 @@ class Tree(unittest.TestCase):
         self.assertIn(fragment, str(ctx.exception))
 
 
-def withdraw(text, n, line="> **Withdrawn:** 2026-11-11T06:55:00Z: owner: no consumer is left"):
-    """Withdraw section n of a todo_file text (D00 T03 §50): its row's box and the line under its heading."""
-    text, rows = re.subn(rf"^(\| \d+ \| §{n} \|[^\n]*\| )\[ \]( \|)$", r"\g<1>[-]\2", text, count=1, flags=re.M)
-    assert rows == 1, f"no open row for §{n}"
-    head = re.search(rf"^## {n}\. [^\n]*\n", text, re.M)
-    return text[:head.end()] + "\n" + line + "\n" + text[head.end():]
-
-
 class Stamp(Tree):
     def setUp(self):
         super().setUp()
@@ -1399,26 +1391,8 @@ class Stamp(Tree):
             ("low", ["design"]), ("low", ["optimization"]), ("low", ["record"])])
         self.assertEqual(json.loads(receipt.read_text(encoding="utf-8"))["rounds_spent"], 10)
 
-    # Office's own rules beside the reviewer kit's: withdrawn sections (D00 T03 §50), the pre-build completion records
-    # of receipts from before the plan review (D00 T03 §13), and the contract digest those receipts are bound to
-    # (D00 T03 §14 and §16).
-
-    def test_a_withdrawn_section_is_never_stamped(self):
-        path = self.root / self.TODO_A
-        path.write_text(withdraw(path.read_text(encoding="utf-8"), 2), encoding="utf-8")
-        with self.assertRaises(tg.Refused) as ctx:
-            self.stamp("D00 T01 §2", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        self.assertIn("withdrawn, so never stamped: D00 T01 §2", str(ctx.exception))
-
-    def test_stamping_the_last_open_section_beside_a_withdrawn_one_marks_the_file_done(self):
-        path = self.root / self.TODO_A
-        path.write_text(withdraw(path.read_text(encoding="utf-8"), 2), encoding="utf-8")
-        self.tick_work()
-        self.stamp("D00 T01 §1", self.sha, self.reviews, ["true -> ok"], "2026-10-13")
-        self.assertIn("status: done", path.read_text(encoding="utf-8"))
-        rows = tg.graph(self.root)
-        self.assertTrue(rows["D00 T01 §1"].done)
-        self.assertTrue(rows["D00 T01 §2"].withdrawn)
+    # Office's own rules beside the reviewer kit's: the pre-build completion records of receipts from before the plan
+    # review (D00 T03 §13), and the contract digest those receipts are bound to (D00 T03 §14 and §16).
 
     def test_a_pre_build_completion_record_is_never_a_round_report(self):
         self.tick_work()

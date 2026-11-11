@@ -539,117 +539,46 @@ class PlanWidthInValidate(Tree):
         self.assertEqual(sync, validate)
 
 
-LINE = "> **Withdrawn:** 2026-11-11T06:55:00Z: owner: no consumer is left"
+class Removed(Tree):
+    """A section an owner decision retired is deleted and listed in todo/removed.json (owner, 2026-11-11): the plan
+    never shows a retired row, and a retired reference is never given to another section."""
 
+    def removed(self, sections):
+        (self.root / tg.REMOVED).write_text(json.dumps({"schema_version": 1, "sections": sections}), encoding="utf-8")
 
-def withdraw(text, n, line=LINE, box="-"):
-    """Withdraw section n of a todo_file text: its row's box and the line under its heading."""
-    import re as _re
-    text = _re.sub(rf"^(\| \d+ \| §{n} \|[^\n]*\| )\[ \]( \|)$", rf"\g<1>[{box}]\2", text, count=1, flags=_re.M)
-    if line:
-        text = text.replace(f"## {n}. ", f"@@{n}@@", 1)
-        head_end = text.index("\n", text.index(f"@@{n}@@"))
-        text = text[:head_end] + "\n\n" + line + text[head_end:]
-        text = text.replace(f"@@{n}@@", f"## {n}. ", 1)
-    return text
+    def refused(self, fragment):
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.graph(self.root)
+        self.assertIn(fragment, str(ctx.exception))
 
+    ENTRY = {"date": "2026-11-11", "by": "owner", "reason": "no consumer is left"}
 
-class Withdrawn(Tree):
-    """A section an owner decision left without a purpose is withdrawn, not stamped and not counted (D00 T03 §50)."""
+    def test_a_listed_section_that_is_gone_validates(self):
+        self.write(todo_file([(1, "Keep", 0, "none", "--")]))
+        self.removed({"D00 T01 §2": self.ENTRY})
+        self.assertEqual(list(tg.graph(self.root)), ["D00 T01 §1"])
+        self.assertEqual(tg.removed_sections(self.root), {"D00 T01 §2": self.ENTRY})
 
-    def two(self, deps="--"):
-        return todo_file([(1, "Keep", 0, "none", "--"), (2, "Gone", 0, "none", deps)])
+    def test_a_removed_reference_is_never_reused(self):
+        self.write(todo_file([(1, "Keep", 0, "none", "--"), (2, "Back again", 0, "none", "--")]))
+        self.removed({"D00 T01 §2": self.ENTRY})
+        self.refused("lists this section as removed")
 
-    def test_a_withdrawn_section_validates_and_is_settled(self):
-        self.write(withdraw(self.two(), 2))
-        rows = tg.graph(self.root)
-        self.assertTrue(rows["D00 T01 §2"].withdrawn)
-        self.assertFalse(rows["D00 T01 §2"].done)
-        self.assertEqual(tg.disposition(rows["D00 T01 §2"], rows), 3)
-        self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows), 0)
+    def test_a_malformed_list_refuses(self):
+        self.write(todo_file([(1, "Keep", 0, "none", "--")]))
+        for bad in ({"D00 T01 2": self.ENTRY}, {"D00 T01 §2": {"date": "2026-11-11", "by": "owner"}},
+                    {"D00 T01 §2": {**self.ENTRY, "date": "11 November"}}, {"D00 T01 §2": {**self.ENTRY, "reason": " "}}):
+            with self.subTest(bad=bad):
+                self.removed(bad)
+                self.refused(tg.REMOVED)
+        (self.root / tg.REMOVED).write_text("{", encoding="utf-8")
+        self.refused("is not JSON")
 
-    def test_the_box_and_the_line_go_together(self):
-        self.write(withdraw(self.two(), 2, line=""))
-        self.refuses("withdrawn box and Withdrawn line must go together: D00 T01 §2")
-        self.write(withdraw(self.two(), 2, box=" "))
-        self.refuses("withdrawn box and Withdrawn line must go together: D00 T01 §2")
-
-    def test_the_line_needs_an_instant_a_decider_and_a_reason(self):
-        for bad in ("> **Withdrawn:** no consumer", "> **Withdrawn:** 2026-11-11: owner: gone",
-                    "> **Withdrawn:** 2026-02-30T07:00:00Z: owner: gone",   # review round 1: no such day
-                    "> **Withdrawn:** 2026-11-11T25:70:90Z: owner: gone",   # review round 1: no such time
-                    "> **Withdrawn:** 2026-11-11T06:55:00Z: owner:", "> **Withdrawn:** 2026-11-11T06:55:00Z: : gone"):
-            with self.subTest(line=bad):
-                self.write(withdraw(self.two(), 2, line=bad))
-                self.refuses("Withdrawn line needs '<UTC instant>: <who decided>: <reason>': D00 T01 §2")
-
-    def test_a_withdrawn_section_carries_no_stamp(self):
-        text = withdraw(self.two(), 2).replace(
-            "**Test checkpoint:** `true` exits 0.\n\n## Verification",
-            "**Test checkpoint:** `true` exits 0.\n\n> **Verified:** 2026-11-11 | §2 | " + "a" * 40
-            + "\n> **Review:** `docs/reviews/x.json`\n\n## Verification")
-        self.write(text)
-        self.refuses("checkbox/stamp/receipt mismatch: D00 T01 §2")
-
-    def test_open_work_never_depends_on_withdrawn_work(self):
-        self.write(withdraw(todo_file([(1, "Gone", 0, "none", "--"), (2, "Open", 0, "none", "§1")]), 1))
-        self.refuses("open section depends on withdrawn D00 T01 §1; withdraw it too or drop the edge: D00 T01 §2")
-        both = todo_file([(1, "Gone", 0, "none", "--"), (2, "Open", 0, "none", "§1")], status="done")
-        self.write(withdraw(withdraw(both, 1), 2))  # every section withdrawn: the file is done
-        tg.graph(self.root)
-
-    def test_a_file_of_stamped_and_withdrawn_sections_is_done(self):
-        text = withdraw(todo_file([(1, "Gone", 0, "none", "--")], status="done"), 1)
-        self.write(text)
-        tg.graph(self.root)
-        self.write(text.replace("status: done", "status: active"))
-        self.refuses("file status disagrees with stamps")
-
-    def test_the_plan_shows_the_box_and_leaves_it_out_of_the_count(self):
-        self.write(withdraw(self.two(), 2))
-        plan = tg.projection(self.root)
-        self.assertRegex(plan, r"\| \[-\]\s+\| D00 T01 §2 ")
-        self.assertIn("Progress: 0/1 verified sections, 1 withdrawn, 1 ready to run now.", plan)
-        tg.projections(self.root, sync=True)
-        self.write(self.two())
+    def test_a_row_takes_no_third_state(self):
+        text = todo_file([(1, "Keep", 0, "none", "--"), (2, "Gone", 0, "none", "--")])
+        self.write(text.replace("| 2 | §2 | Gone | -- | [ ] |", "| 2 | §2 | Gone | -- | [-] |"))
         with self.assertRaises(tg.Refused):
-            tg.projections(self.root)
-
-    def test_no_count_phrase_without_a_withdrawal(self):
-        self.write(self.two())
-        self.assertIn("Progress: 0/2 verified sections, 2 ready to run now.", tg.projection(self.root))
-
-    def cli(self, *args):
-        for name in ("todo-graph.py", "lib/todo_graph.py"):
-            target = self.root / "scripts" / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes((REPO / "scripts" / name).read_bytes())
-        r = subprocess.run([sys.executable, "-B", str(self.root / "scripts/todo-graph.py"), *args],
-                           capture_output=True, text=True, encoding="utf-8", timeout=120)
-        return r.returncode, r.stdout
-
-    def test_queries_leave_a_withdrawn_section_out_and_count_it(self):
-        self.write(withdraw(self.two(), 2))
-        code, out = self.cli("query", "stats")
-        self.assertEqual(code, 0)
-        stats = json.loads(out)
-        self.assertEqual((stats["total"], stats["verified"], stats["ready"], stats["blocked"], stats["withdrawn"]),
-                         (1, 0, 1, 0, 1))
-        for kind in ("ready", "blocked"):
-            code, out = self.cli("query", kind)
-            self.assertNotIn("D00 T01 §2", out, kind)
-        code, out = self.cli("resolve", "D00 T01 §2")
-        self.assertEqual(code, 3)
-        self.assertTrue(json.loads(out)["withdrawn"])
-        code, out = self.cli("query", "plan")
-        status = {s["ref"]: s["status"] for s in json.loads(out)["sections"]}
-        self.assertEqual(status, {"D00 T01 §1": "ready", "D00 T01 §2": "withdrawn"})
-
-    def test_query_plan_says_withdrawn_in_a_done_file_too(self):
-        self.write(withdraw(todo_file([(1, "Gone", 0, "none", "--")], status="done"), 1))
-        code, out = self.cli("query", "plan")
-        self.assertEqual(code, 0)
-        self.assertEqual(json.loads(out)["sections"][0]["status"], "withdrawn")
+            tg.graph(self.root)
 
 
 class OwnerAction(Tree):
@@ -674,10 +603,6 @@ class OwnerAction(Tree):
             with self.subTest(needs=needs):
                 self.write(self.one(needs, self.ACTION))
                 self.refuses("Owner action on a section that waits on no one: D00 T01 §1")
-
-    def test_a_withdrawn_waiting_section_needs_none(self):
-        self.write(withdraw(self.one("operator").replace("status: active", "status: done"), 1))
-        tg.graph(self.root)
 
 
 class Repository(unittest.TestCase):

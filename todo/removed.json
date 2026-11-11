@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "sections": {
+    "D00 T03 §30": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit: its prompts name the candidate commit and carry no diff, so there is no diff size limit to work around"
+    },
+    "D00 T03 §34": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T03 §40": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §41": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §42": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §43": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §44": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §45": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to import the Conclave SDK reviewer kit, which delivers this section's purpose"
+    },
+    "D00 T03 §46": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T03 §47": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T03 §48": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T03 §49": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T03 §51": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to remove the withdrawn section state: a retired section is deleted and listed here"
+    },
+    "D00 T03 §52": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 to remove the withdrawn section state: a retired section is deleted and listed here"
+    },
+    "D00 T05 §5": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T05 §6": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D00 T05 §7": {
+      "date": "2026-11-11",
+      "by": "owner",
+      "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    }
+  }
+}

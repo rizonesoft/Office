@@ -8,7 +8,7 @@ We are building a better product than Microsoft's, not a clone (owner, 2026-10-2
 
 ## Autonomy
 
-Act as the owner would, and better (owner, 2026-11-10; [docs/product-principles.md](./docs/product-principles.md)): decide what can be worked out and record it, improve the plan, skills, agents, runners, tools and methods as part of the product, repair the run's own failures at their owning layer with a test, and never plan less because something is hard or no competitor does it. Ask only for what the owner alone holds: a credential, a legal signature, money, or something that cannot be undone.
+Act as the owner would, and better (owner, 2026-11-10; [docs/product-principles.md](./docs/product-principles.md)): decide what can be worked out and record it, improve the plan, skills, agents, runners, tools and methods as part of the product, repair the run's own failures at their owning layer with a test, and never plan less because something is hard or no competitor does it. Ask only for what the owner alone holds: a credential, a legal signature, money, or something that cannot be undone. A question whose answer the session can work out is never asked (owner, 2026-11-11): when one option can be named as the recommendation, take it, record the decision and what reversing it costs, and carry on. No competitor sets the ceiling, whether Microsoft, Adobe, Apple or Google: where they are good we are measurably better, and "nobody has done it" is a reason to plan the work, never to drop it.
 
 ## Working rules
 

@@ -24,10 +24,12 @@ PLAN = "todo/implementation-plan.md"
 # What follows each "-> XREF:": one space and exactly one well-formed reference, nothing run into it.
 XREF_TARGET = re.compile(r" (?:D(?P<d>\d{2}) )?(?:T(?P<t>\d{2}) )?§(?P<s>[1-9]\d*)(?![\w§]|\.\d)")
 REF = re.compile(r"(?:D(?P<d>\d{2})\s+)?(?:T(?P<t>\d{2})\s+)?§(?P<s>[1-9]\d*)")
-ROW = re.compile(r"^\|\s*([1-9]\d*)\s*\|\s*§([1-9]\d*)\s*\|\s*([^|]+)\|\s*([^|]*)\|\s*\[([ x-])\]\s*\|$")
-# A section retired because an owner decision removed its purpose (D00 T03 §50): `[-]` in its row and this line in its
-# body, `> **Withdrawn:** <UTC instant>: <who decided>: <reason>`. It is settled, never runnable and not counted.
-WITHDRAWN = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z): ([^:]*\S[^:]*?): (\S.*)")
+ROW = re.compile(r"^\|\s*([1-9]\d*)\s*\|\s*§([1-9]\d*)\s*\|\s*([^|]+)\|\s*([^|]*)\|\s*\[([ x])\]\s*\|$")
+# Sections an owner decision retired (owner, 2026-11-11: a retired section is deleted, never kept as a `[-]` row). The
+# list names each with its date, who decided and why, so a review record that filed a gap to one still resolves and
+# the reference is never given to a different section.
+REMOVED = "todo/removed.json"
+SECTION_REF = re.compile(r"D\d{2} T\d{2} §[1-9]\d*")
 # What a section needs from outside the repository. The WAITING values are people, companies, or the
 # operator's own hands: a section naming one stays blocked until the answer is recorded and the Need
 # is removed from the section.
@@ -178,7 +180,6 @@ class Section:
     body: str
     receipt: str
     order: int = 0
-    withdrawn: bool = False
 
     def public(self):
         return {k: v for k, v in asdict(self).items() if k != "body"}
@@ -266,6 +267,27 @@ def changed_paths(root, base, candidate, ref):
     shown = _git(root, "-c", "core.quotepath=false", "diff", "--name-only", "--no-renames", "-z", base, candidate)
     require(shown.returncode == 0, f"cannot list the files changed between {base} and {candidate}: {ref}")
     return [name for name in shown.stdout.decode("utf-8", errors="replace").split("\0") if name]
+
+
+def removed_sections(root):
+    """ref -> {"date", "by", "reason"} for every section REMOVED lists; empty when the file is absent."""
+    path = Path(root) / REMOVED
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(read_text(path))
+    except ValueError:
+        raise Refused(f"{REMOVED} is not JSON") from None
+    listed = data.get("sections") if isinstance(data, dict) and data.get("schema_version") == 1 else None
+    require(isinstance(listed, dict) and all(
+        isinstance(ref, str) and SECTION_REF.fullmatch(ref) and isinstance(entry, dict)
+        and set(entry) == {"date", "by", "reason"}
+        and isinstance(entry["date"], str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["date"])
+        and all(isinstance(entry[key], str) and entry[key].strip() for key in ("by", "reason"))
+        for ref, entry in listed.items()),
+        f"{REMOVED} needs schema_version 1 and sections mapping each 'DNN TNN §N' to its date (YYYY-MM-DD), by and "
+        f"reason")
+    return listed
 
 
 def receipt_digest(data):
@@ -939,6 +961,7 @@ def graph(root=ROOT):
     root = Path(root)
     plan_config(root)
     legacy_receipts(root)  # a malformed freeze list refuses even before any old receipt is read against it
+    removed = removed_sections(root)
     sections, ids, files = {}, {}, {}
     head_commits = None
     filed_gaps = {}
@@ -1068,16 +1091,9 @@ def graph(root=ROOT):
             require(bool(freeze_check) == (frozen == "true"),
                     f"Freeze check must match frozen frontmatter: {ref}")
             done = rows[n][5] == "x"
-            withdrawn = rows[n][5] == "-"
             stamp_line = field(section_body, "Verified", False)
             receipt = field(section_body, "Review", False).strip("`")
-            withdrawal = field(section_body, "Withdrawn", False)
-            require(withdrawn == bool(withdrawal), f"withdrawn box and Withdrawn line must go together: {ref}")
-            # A withdrawn section with a stamp is refused below, by the box, stamp and receipt rule ([-] is not [x]).
-            if withdrawn:
-                parts = WITHDRAWN.fullmatch(withdrawal)
-                require(parts is not None and _instant(parts[1]) is not None,
-                        f"Withdrawn line needs '<UTC instant>: <who decided>: <reason>': {ref}")
+            require(ref not in removed, f"{REMOVED} lists this section as removed, so its reference is retired: {ref}")
             require(done == bool(stamp_line) == bool(receipt),
                     f"checkbox/stamp/receipt mismatch: {ref}")
             if done:
@@ -1091,7 +1107,7 @@ def graph(root=ROOT):
                 if isinstance(data.get("completion"), dict):
                     filed_gaps[ref] = data["completion"]["filed"]
             sections[ref] = Section(ref, relative, n, h[2], int(phase), deps, needs, done,
-                                    front["status"], section_body, receipt, int(rows[n][1]), withdrawn)
+                                    front["status"], section_body, receipt, int(rows[n][1]))
             files[relative][2].append(ref)
     for relative, (front, file_deps, refs, xrefs, adjacency) in files.items():
         require(len(set(file_deps)) == len(file_deps), f"duplicate file dependencies: {relative}")
@@ -1106,7 +1122,7 @@ def graph(root=ROOT):
             require(successor in ids and ids[successor] != relative,
                     f"superseded TODO must name its successor: {relative}")
         else:
-            require((front["status"] == "done") == all(sections[r].done or sections[r].withdrawn for r in refs),
+            require((front["status"] == "done") == all(sections[r].done for r in refs),
                     f"file status disagrees with stamps: {relative}")
         for key, (state, owner) in adjacency.items():
             if owner is not None:
@@ -1139,7 +1155,8 @@ def graph(root=ROOT):
                             f"stale deferral, owner {owner} shipped; close it as Resolved: {row.ref}")
     for ref, filed in filed_gaps.items():
         for target in filed:
-            require(target in sections, f"completion gap filed as {target}, which does not resolve: {ref}")
+            require(target in sections or target in removed,
+                    f"completion gap filed as {target}, which does not resolve: {ref}")
     # A stamped completion record's filed references resolve against the whole graph, known only now (D00 T03 §13).
     for sec in sections.values():
         if sec.done and sec.receipt:
@@ -1164,9 +1181,6 @@ def graph(root=ROOT):
                 stack[-1] = (ref, idx + 1)
                 require(dep in sections, f"unresolved dependency: {dep}")
                 require(dep not in visiting, f"dependency cycle: {dep}")
-                # Work that stays open never stands on work that was given up (D00 T03 §50).
-                require(not sections[dep].withdrawn or sections[ref].withdrawn or sections[ref].done,
-                        f"open section depends on withdrawn {dep}; withdraw it too or drop the edge: {ref}")
                 require(sections[dep].phase <= sections[ref].phase,
                         f"prerequisite in later phase: {ref} -> {dep}")
                 # A stamped section may sit on an open prerequisite only when an audit reopened that prerequisite
@@ -1251,7 +1265,7 @@ def settled(ref, rows):
 
 def disposition(row, rows):
     """0 ready, 3 already verified, 4 waiting (inactive file, open or suspect prerequisite, or a person to answer)."""
-    if row.done or row.withdrawn:
+    if row.done:
         return 3
     if row.status != "active" or set(row.needs) & WAITING \
             or any(not settled(d, rows) for d in row.depends):
@@ -1312,7 +1326,7 @@ def phase_table(phase, phase_rows):
     `projection()` both build it here, so validate refuses exactly what plan --sync cannot render (D00 T03 §32)."""
     table = markdown_table(
         ["Status", "Reference", "Deliverable", "Needs", "Items"],
-        [[f"[{'x' if row.done else '-' if row.withdrawn else ' '}]", row.ref, row.title,
+        [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
           ", ".join(row.needs) or "none", str(len(CHECKLIST.findall(row.body)))] for row in phase_rows],
     )
     # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
@@ -1381,10 +1395,7 @@ def projection(root=ROOT):
     ready = sum(disposition(r, all_rows) == 0 for r in rows)
     still = (f", {len(missing)} TODO {'file' if len(missing) == 1 else 'files'} still to author (not counted here)"
              if missing else "")
-    # A withdrawn section (D00 T03 §50) is shown in its table as [-] and left out of the count it can never join.
-    withdrawn = sum(r.withdrawn for r in rows)
-    gone = f", {withdrawn} withdrawn" if withdrawn else ""
-    lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows) - withdrawn} verified sections{gone}, "
+    lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows)} verified sections, "
               f"{ready} ready to run now{still}.", "",
               f"Checklist: {completed_items}/{total_items} items completed (includes Commit items).", ""]
     return "\n".join(lines)
@@ -1638,7 +1649,7 @@ def completion_ok(root, ref, path, rows=None):
                              f"('N. extended' or 'N. filed -> DNN TNN §N'): {ref}")
         if rows is not None:
             for gap, target in sorted(dispositions.items()):
-                require(target is None or target in rows,
+                require(target is None or target in rows or target in removed_sections(root),
                         f"gap {gap} of round {n} in {path} is filed to {target}, which is no section: {ref}")
         last["dispositions"] = dispositions  # gap -> filed section, or None for `extended`
     return last
@@ -1670,7 +1681,6 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     # A stamped section is only ever a retry (a stamp cut short before the plan was written): the request is compared
     # with its persisted receipt below, before anything is written.
     stamped = row.done
-    require(not row.withdrawn, f"withdrawn, so never stamped: {ref}")
     if not stamped:
         require(all(settled(d, rows) for d in row.depends),
                 f"open prerequisite, or one resting on a reopened section: {ref}")
@@ -1748,7 +1758,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     require(len(line.findall(text)) == 1, f"implementation row not found: {ref}")
     text = line.sub(r"\1[x]\2", text)
     siblings = [r for r in rows.values() if r.path == row.path and r.ref != ref]
-    if all(r.done or r.withdrawn for r in siblings):
+    if all(r.done for r in siblings):
         text, n = re.subn(r"\A(---\n(?:.*\n)*?)status: [a-z]+\n", r"\1status: done\n", text, count=1)
         require(n == 1, f"frontmatter status not found: {row.path}")
     original_plan_bytes = plan_path.read_bytes() if plan_path.is_file() else None

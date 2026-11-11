@@ -20,7 +20,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts" / "lib"))
 sys.path.insert(0, str(REPO / "scripts" / "tests"))
 import todo_graph as tg  # noqa: E402  (the library sits beside the scripts, not on the path)
-from test_todo_graph import FIXTURE_ACTION, todo_file, withdraw  # noqa: E402  (the shared TODO fixtures)
+from test_todo_graph import FIXTURE_ACTION, todo_file  # noqa: E402  (the shared TODO fixtures)
 
 SPEC = importlib.util.spec_from_file_location("owner_digest", REPO / "scripts" / "owner-digest.py")
 digest = importlib.util.module_from_spec(SPEC)
@@ -77,12 +77,6 @@ class Waiting(Tree):
         self.write(*waiting_file([(1, "Small", 0, "operator", "--"), (2, "Big", 0, "third-party", "--"),
                                   (3, "A", 0, "none", "§2"), (4, "B", 0, "none", "§2"), (5, "C", 0, "none", "§1")]))
         self.assertEqual([i["ref"] for i in digest.waiting(self.rows())], ["D00 T01 §2", "D00 T01 §1"])
-
-    def test_withdrawn_and_stamped_sections_wait_on_no_one(self):
-        # Mutation 4 of §35: the withdrawn section must be one that would otherwise wait on the owner.
-        text, name = waiting_file([(1, "Keep", 0, "none", "--"), (2, "Gone", 0, "operator", "--")])
-        self.write(withdraw(text, 2), name)
-        self.assertEqual(digest.waiting(self.rows()), [])
 
     def test_nothing_waiting_says_so(self):
         self.write(*waiting_file([(1, "A", 0, "none", "--")]))
@@ -215,7 +209,7 @@ class Ci(unittest.TestCase):
             root = pathlib.Path(tmp)
             long = "CI: unknown for aaaaaaa (" + "the network said no " * 8 + ")."
             with mock.patch.object(digest, "totals", return_value=dict.fromkeys(
-                    ("total", "verified", "ready", "blocked", "withdrawn", "to_author"), 0)), \
+                    ("total", "verified", "ready", "blocked", "to_author"), 0)), \
                     mock.patch.object(digest, "waiting", return_value=[]), \
                     mock.patch.object(digest, "verified_since", return_value=[]):
                 _, body, _ = digest.compose(root, {}, TODAY, [long], "Running")

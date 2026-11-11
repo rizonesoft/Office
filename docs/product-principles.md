@@ -11,6 +11,7 @@ Every inventoried command works where users expect it, with its shortcut and key
 ## Better is measured
 
 - **Faster than Office on the same PC.** D03 T01 §29 measures Office's own times on this PC for a fixed workload set (cold start, opening and saving large files, recalculation, scrolling, search). Each of our apps must beat every one of those numbers, and aims for half of Office's time. A budget is a test that fails, run in CI or on this PC, never a hope.
+- **Lighter than Office on the same PC.** D03 T01 §29 also records Office's memory for each workload (peak working set, and private bytes once idle after it). Each of our apps must use less at every one of those points, and aims for half. A memory budget is a test that fails, exactly as a time budget is.
 - **Instant feels instant.** Typing, scrolling, selection and resizing never drop a frame at 60 frames per second on the reference hardware, whatever the document size.
 - **Never lose work.** Every write is atomic, recovery is automatic, and undo reaches as far back as the user needs.
 

@@ -118,10 +118,9 @@ def reason(root, exc):
 
 def totals(rows, root):
     """The counts `query stats` prints, from the same graph."""
-    return {"total": sum(not r.withdrawn for r in rows.values()), "verified": sum(r.done for r in rows.values()),
+    return {"total": len(rows), "verified": sum(r.done for r in rows.values()),
             "ready": sum(todo_graph.disposition(r, rows) == 0 for r in rows.values()),
             "blocked": sum(todo_graph.disposition(r, rows) == 4 for r in rows.values()),
-            "withdrawn": sum(r.withdrawn for r in rows.values()),
             "to_author": len(todo_graph.to_author(root, rows))}
 
 
@@ -146,9 +145,9 @@ def verified_since(root, rows, today):
 
 
 def waiting(rows):
-    """Each open, non-withdrawn section waiting on the owner, with its owner action and how many open sections wait
+    """Each open section waiting on the owner, with its owner action and how many open sections wait
     behind it directly or through others, largest first, then in plan order."""
-    open_rows = {ref: r for ref, r in rows.items() if not r.done and not r.withdrawn}
+    open_rows = {ref: r for ref, r in rows.items() if not r.done}
     behind = {ref: set() for ref in open_rows}
     for ref, row in open_rows.items():
         stack, seen = list(row.depends), set()
@@ -268,7 +267,7 @@ def compose(root, rows, today, ci_lines, state):
     head = [f"Rizonesoft Office, week to {today.isoformat()}", "", *wrap(state),
             *[part for line in ci_lines for part in wrap(line.strip(), "  " if line.startswith("  ") else "")],
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
-                  f"{count['blocked']} blocked, {count['withdrawn']} withdrawn; {count['to_author']} TODO files still "
+                  f"{count['blocked']} blocked; {count['to_author']} TODO files still "
                   f"to author."), ""]
     if items:
         waiting_lines = [f"Waiting on you ({len(items)}):"]

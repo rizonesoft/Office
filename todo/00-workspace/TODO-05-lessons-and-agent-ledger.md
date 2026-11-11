@@ -3,33 +3,30 @@ schema_version: 1
 id: lessons-and-agent-ledger
 domain: 00-workspace
 status: active
-title: "TODO-05 -- Lessons and Agent Ledger"
+title: "TODO-05 -- Lessons"
 ---
 
-# TODO-05 -- Lessons and Agent Ledger
+# TODO-05 -- Lessons
 
-> **Goal:** What this project has already learned reaches whoever does the next piece of work. Every lesson is a small reviewed file in git, taken only from a verified source (a review finding that was confirmed and fixed, or an owner decision), found through a derived SQLite index, and handed to the main loop and to each worker as the few lessons that match the paths and the kind of work in front of them. Agents read lessons and never write them. A ledger records how each worker's packets ended, and a score built from it tells the main loop which tier to route a kind of work to.
+> **Goal:** What this project has already learned reaches whoever does the next piece of work. Every lesson is a small reviewed file in git, taken only from a verified source (a review finding that was confirmed and fixed, or an owner decision), found through a derived SQLite index, and handed to the main loop as the few lessons that match the paths and the kind of work in front of it. Agents read lessons and never write them.
 
 > **Current state:** Measured 2026-11-10. Nothing is carried from one piece of work to the next except what `AGENTS.md`, the skills and the TODO sections say: every agent, and every new session, starts knowing none of what earlier reviews found. The raw material exists: `docs/reviews/` holds 91 review records with 728 findings tagged `P1` or `P2`, and the same faults return (five rounds on 2026-11-10 found five faults in one hand-written git procedure, `docs/reviews/orchestration-2026-11-10.md`). No lesson file, index or ledger exists, and `docs/lessons/` does not exist. Claude Code's own per-agent memory is refused by `scripts/verify-agent-tiers.mjs` because it gives an agent Write and Edit, and because notes an agent writes for itself are reviewed by nobody. Python's `sqlite3` on this PC is SQLite 3.50.4 with FTS5. The owner chose files in git with a SQLite index over a vector database with embeddings on 2026-11-10; embeddings are not part of this file and are added later only if a lesson that exists is shown not to be found. **Scale (owner, 2026-11-10: it must still work on day 300):** the plan will hold thousands of sections, each with several review rounds, so this file is built for tens of thousands of findings, thousands of lessons and tens of thousands of packets: no file grows without bound (triage is one file per review record, the ledger one file per month), a query stays a few lessons however many match (ranked by how specific and how proven a lesson is, §2), the number of active lessons per area has a ceiling that forces them to be merged or turned into checks (§8), a lesson whose paths no longer exist is refused (§1), and the ranking step is one function so a second ranker can be added without changing the store.
 
 ## Inputs
 
 - `docs/reviews/**/*.md`: the review records the first lessons are taken from (§3), in the form `scripts/review-dispatch.py` writes (`## Round N`, findings tagged `P1`, `P2` or `P3` with `file:line`).
-- `AGENTS.md`, Subagents: the tiers, the work packet and the rule that an agent that errs is removed; §6 and §7 give that rule its evidence.
-- `docs/specs/2026-10-23-campaign-scope-design.md`, decisions 25, 27 and 28: workers, the routing ladder, and the three-way measurement whose result decides whether §6 and §7 are built.
+- `AGENTS.md`, Subagents: the reader fleet and the rule that an agent that errs is removed.
 - `scripts/lib/todo_graph.py`: the pattern for a derived, ignored cache under `build/` rebuilt from Markdown, which §2 follows.
-- -> XREF: T03 §34 -- `scripts/packet.py`, the command §5 extends to attach lessons and §6 extends to record outcomes (all withdrawn 2026-11-11 with `scripts/packet.py`, D00 T03 §50: no agent writes)
 
 ## Outcome
 
 - `python scripts/lessons.py check` exits 0 over `docs/lessons/`, and refuses a lesson with no source, an unknown field or a source file that does not exist.
 - `python scripts/lessons.py query --path <path> --role <role>` prints at most five lessons, the same ones in the same order on every run, from `build/lessons.sqlite`.
-- A section run reads the lessons for its paths before it builds, and a work packet carries the lessons for its paths and its worker's role.
-- `python scripts/ledger.py score` prints, per agent, model and kind of work, how many packets were accepted the first time, blocked or rejected.
+- A section run reads the lessons for its paths before it builds.
 
 **Adjacency:** all=not-applicable (developer tooling for the people and agents building the suite; no product records, settings or user documents)
 
-**Adjacency rationale:** Lessons and the ledger describe how this repository is built. They hold no user data, so none of the nine product keys applies.
+**Adjacency rationale:** Lessons describe how this repository is built. They hold no user data, so none of the nine product keys applies.
 
 ## Implementation Order
 
@@ -39,10 +36,7 @@ title: "TODO-05 -- Lessons and Agent Ledger"
 | 2 | §2 | Lesson index and query | §1 | [ ] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [ ] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
-| 5 | §5 | Work packets carry their lessons | §2, T03 §34 | [-] |
-| 6 | §6 | Packet outcome ledger | T03 §34 | [-] |
-| 7 | §7 | Agent score from the ledger | §6 | [-] |
-| 8 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
+| 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
 
 ## 1. Lesson Files and Their Checker
 
@@ -136,78 +130,6 @@ A lesson only helps if it is in front of whoever is about to repeat the mistake.
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` passes with the new test among them.
 
-## 5. Work Packets Carry Their Lessons
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it attaches lessons to work packets, and no agent is handed a packet any more
-
-A worker starts every packet knowing nothing. The packet command attaches the lessons for the packet's paths and the worker's role, so the brief the main loop writes always includes them and the main loop does not have to remember to look.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Make `scripts/packet.py begin` write the packet's lessons. Done when: `begin` with a role and paths writes the matching lessons to a file and prints its path.
-2. Tell the workers and the skill. Done when: each worker definition says to read the lessons in its packet first.
-
-- [ ] Add `--role` to `begin` in `scripts/packet.py` and write `build/packet-lessons.md`: the output of the §2 query for the packet's paths and that role, at most five lessons, or the one line `No lessons match this packet.` Done when: tests in `scripts/tests/test_packet.py` show the file with the expected fixture lessons and the one-line form.
-- [ ] Record the ids of the attached lessons in `build/packet.json`. Done when: a test reads them back.
-- [ ] State in the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md` that every worker brief includes the text of `build/packet-lessons.md`. Done when: the step says so and the skill test still passes.
-- [ ] Confirm the worker definition (`.claude/agents/principal-implementer.md`) tells the worker to read the lessons in its packet before it changes anything, to say in its reply which one applied, and never to write or edit a file under `docs/lessons/`, adding whichever sentence is missing. Done when: it holds all three and `node scripts/verify-agent-tiers.mjs` passes. **Corrected 2026-11-11:** this also named `.claude/agents/section-writer.md`, removed that day by decision 40.
-- [ ] Commit: `lessons: attach matching lessons to every work packet`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the lesson tests among them.
-
-## 6. Packet Outcome Ledger
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it records how each work packet ends, and no agent is handed a packet any more
-
-Whether a tier is good at a kind of work should be read from what happened, not remembered. The packet command already knows how each packet ends; this section makes it write that down. The way of working is chosen by measurement and measured again as the project grows (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 30), so the ledger is built whichever way is in use today: it records packets whenever workers are used, and stays empty while the lead works alone.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Append one record per packet outcome to the month's file, `docs/agents/ledger/<YYYY-MM>.jsonl`. Done when: accept, reject and block each write one line, and a packet in a new month starts a new file.
-
-- [ ] Add `--agent`, `--model`, `--effort` and `--kind` (`code`, `test`, `doc` or `fixture`) to `begin` in `scripts/packet.py`, stored in `build/packet.json`; refuse an effort above the tier's ceiling in `AGENTS.md` with exit 2. Done when: tests show the stored values and the refusal for `opus` with `high`.
-- [ ] Add `accept` to `scripts/packet.py`: when `show` would exit 0, append one JSON line to `docs/agents/ledger/<YYYY-MM>.jsonl`, the file of the current UTC month, so no ledger file grows past a month and an append never rewrites the project's whole history (the UTC time, the section reference given with `--section`, the packet's name, agent, model, effort, kind, paths, the attached lesson ids and `"outcome": "accepted"` with the attempt number) through a temporary file and `os.replace`, read it back, and stage the ledger with the packet's paths. Done when: a test shows the line and the staged ledger.
-- [ ] Make `reject` append the same record with `"outcome": "rejected"` and its `--reason` (`out-of-scope`, `gate-failed`, `wrong` or `blocked`). Done when: tests show one line per reason and exit 2 for a reason outside the list.
-- [ ] Count attempts: a packet begun again under the same name and section has the next attempt number. Done when: a test with a rejection then an acceptance shows attempts 1 and 2.
-- [ ] Add `python scripts/ledger.py check`, which refuses a ledger line that is not JSON, lacks a field or names an unknown outcome, and add it to the `gates` job of `.github/workflows/ci.yml`. Done when: tests show each refusal with the line number.
-- [ ] Commit: `agents: record how every work packet ends`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the ledger tests among them, and `python scripts/ledger.py check` exits 0.
-
-## 7. Agent Score From the Ledger
-
-> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it scores agents from the packet ledger (D00 T05 §6), which has nothing to record once no agent writes
-
-The score turns the ledger into a routing aid: which tier finishes which kind of work the first time. It changes where work is sent first. It never changes what is checked: the main loop reads every change, runs every gate and keeps the independent review whatever a score says. With an empty ledger it prints `no advice`.
-
-**Phase:** 0
-**Needs:** none
-**Surface:** no
-
-**Build order:**
-
-1. Write `scripts/ledger.py score`. Done when: it prints the table below from a fixture ledger.
-2. Tell the main loop how to use it. Done when: `AGENTS.md` states the rule.
-
-- [ ] Write `score` in `scripts/ledger.py`: per agent, exact model id and kind, the number of packets, the share accepted on the first attempt, and the counts rejected per reason. Done when: a test over a twelve-line fixture ledger prints the expected numbers. Cheaper substitute: one number per agent, which hides that a tier is good at tests and poor at parsers.
-- [ ] Keep model versions apart: a row is keyed by the exact model id, so a new model release starts with no history. Done when: a fixture with two ids for one agent prints two rows.
-- [ ] Mark a row `too few` below ten packets and give no share for it. Done when: a fixture row of nine packets prints the mark.
-- [ ] Add `advise --kind <kind>`, printing the cheapest tier whose row for that kind has at least ten packets and a first-attempt share of at least 0.8, or `no advice` when none has. Done when: tests show both outcomes and the tier order of `AGENTS.md`.
-- [ ] State in the Subagents section of `AGENTS.md`: the main loop may read `python scripts/ledger.py advise` when routing a packet; the score never reduces the reading of a change, a gate or the independent review; no brief, packet or worker definition ever contains a score. Done when: the section holds the three statements.
-- [ ] Add a test in `scripts/tests/test_packet.py` that `scripts/packet.py` opens no file under `docs/agents/ledger/` for reading while it writes `build/packet-lessons.md`, so no score can reach a worker's brief. Done when: the test fails when such a read is added.
-- [ ] Read the ledger in `score` one month file at a time and accept `--since <YYYY-MM>`, defaulting to the last twelve months. Done when: a test with 40,000 generated lines over 14 months prints the table in under five seconds and ignores the two oldest months by default.
-- [ ] Commit: `agents: score each tier by kind of work from the ledger`
-
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_ledger.py"` passes, and `python scripts/ledger.py score` exits 0.
-
 ## 8. Lesson Upkeep at Scale
 
 A store that only grows stops working: once hundreds of lessons match one path, the five a worker sees are a small sample and the rest are noise nobody reads. This section keeps the store small enough to stay true on day 300 (owner, 2026-11-10). Each area has a ceiling on active lessons; passing it is not an error to suppress but work to do: lessons about one thing are merged into one, and a lesson a check can enforce becomes that check and retires.
@@ -236,5 +158,5 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 - `python scripts/lessons.py check` exits 0 and CI runs it.
 - `python scripts/lessons.py query --role main --path scripts/lib/todo_graph.py` prints at most five lessons, identical on two runs.
 - `process-todo-section` and `review-todo-section` both name `scripts/lessons.py`.
-- `python scripts/lessons.py report --check` exits 0, and the 5,000-lesson test of §2 passes inside its time limit (the 40,000-line ledger test went with §7, withdrawn 2026-11-11).
+- `python scripts/lessons.py report --check` exits 0, and the 5,000-lesson test of §2 passes inside its time limit.
 - `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py plan --check` pass.
