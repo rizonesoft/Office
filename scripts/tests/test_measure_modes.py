@@ -650,7 +650,10 @@ class Decide(unittest.TestCase):
         self.assertEqual((code, verdict["arm"], verdict["resolved_model"]), (0, "opus-alone", "claude-opus-5-5"))
 
     def test_a_cost_tie_goes_to_fewer_reviews_then_to_the_shorter_wall_time(self):
-        code, verdict = self.decide(results({"opus-alone": approved(1.0, 1.0), "fable-alone": approved(2.0)}))
+        # Fewer reviews must beat a shorter wall time: fable has one review per section but the longer run.
+        code, verdict = self.decide(results({"opus-alone": approved(1.0, 1.0),
+                                             "fable-alone": approved(2.0, wall=300.0)}))
+        self.assertGreater(verdict["totals"]["fable-alone"]["wall_seconds"], verdict["totals"]["opus-alone"]["wall_seconds"])
         self.assertEqual((verdict["arm"], verdict["branch"]), ("fable-alone", "a tie on cost, broken by fewer reviews"))
         code, verdict = self.decide(results({"opus-alone": approved(2.0, wall=50.0),
                                              "fable-alone": approved(2.0, wall=80.0)}))
