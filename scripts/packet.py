@@ -88,7 +88,10 @@ repositories (the probe numbers are in the functions and the tests that rest on 
   link only when the target, opened from the link's folder, is a folder then or becomes one before that git
   process ends. A target that begins with a separator is never opened. `link_made` answers by that rule, from
   the stash's own trees and, for what no tree of the stash holds, the disk; `checked_out` gives the kind with
-  the target. A captured link git would bring back as the other kind, or whose kind neither settles, has no
+  the target. A target is judged by the place it leads to, never by its spelling: one written with a drive, out
+  of the repository and back in, in another case or through another link gets the answer its plain relative
+  spelling gets, from the same trees in the same order (`resolves_to_folder`, which also says what stays out
+  of reach). A captured link git would bring back as the other kind, or whose kind neither settles, has no
   form (below): a folder link to a folder no one has made yet comes back as a file link, so `reject` names it,
   removes nothing, and says what makes it storable (the attribute, or the target).
 - git leaves a tracked path alone when the stash's entry for it is the one `HEAD` has, so there the stash gives
@@ -164,8 +167,8 @@ import contextlib
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
-import posixpath
+import ntpath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import subprocess
 import sys
 import stat
@@ -883,19 +886,28 @@ def stash_place(commit, both, loose):
     return commit, commit, (both, f"{commit}^1", f"{commit}^2")
 
 
-def stash_entry(repo, commit, both, path, loose, kinds=None):
+def stash_entry(repo, commit, both, path, loose, kinds=None, links=None):
     """What stands at `path` once `git stash apply` has put the stash `commit` on the tree reject leaves, as
     read_entry would read it then. git writes a tracked path only where the stash's entry differs from the one of
     the commit it stands on (probes 16 and 21: a link and a file with the same blob in both stay as they were,
     whatever rule the stash adds for them), so for an entry that does not differ the answer is what reject
     itself returns there (`head_entry`, with `kinds` from `begin`'s record). Everything else is what git checks
-    out of the stash (`checked_out`)."""
+    out of the stash (`checked_out`).
+
+    A link's kind can hang on another link of the stash, the one its target ends at (`resolves_to_folder`). What
+    stands at that one is asked here again, of the step that writes it (a tracked link met from an untracked one
+    was written by the tracked step, under the stash commit's own attributes), so one rule says what every link
+    of the stash is, wherever it is met. `links` is the record of one such walk."""
     holder, source, others = stash_place(commit, both, loose)
     if not loose:
         stays = tree_entry(repo, f"{commit}^1", path)
         if stays is not None and stays == tree_entry(repo, commit, path):
             return head_entry(repo, f"{commit}^1", path, kinds)
-    return checked_out(repo, holder, source, path, others)
+
+    def standing(where, links):
+        return stash_entry(repo, commit, both, where, tree_entry(repo, commit, where) is None, kinds, links)
+
+    return checked_out(repo, holder, source, path, others, standing, links)
 
 
 def same_to_git(repo, commit, both, path, loose, entry, index, kinds=None):
@@ -1021,66 +1033,191 @@ def symlink_attribute(repo, source, path):
 
 
 CHAIN = 40  # more links in a row than any system follows: such a chain leads nowhere
+SEVERAL = "several names"  # a tree has more than one name that Windows reads as the one asked for
+WALKING = "walking"        # in a walk's record of links: the kind of this one is being worked out right now
 
 
-def resolves_to_folder(repo, tree, others, path, target, depth=0):
+def tree_children(repo, tree, folder):
+    """{name: (mode, type, object)} of what the commit or tree `tree` has directly in `folder` ("" for the top)."""
+    below = folder + "/" if folder else ""
+    listing, found = run_git(repo, "ls-tree", "-z", tree, *(("--", below) if below else ())), {}
+    for record in listing.split(b"\0"):
+        meta, _, name = record.decode("utf-8", "replace").partition("\t")
+        if len(meta.split()) == 3 and name.startswith(below) and name[len(below):] and "/" not in name[len(below):]:
+            found[name[len(below):]] = tuple(meta.split())
+    return found
+
+
+def tree_step(repo, tree, folder, name):
+    """(the name as `tree` spells it, its (mode, type, object)) for the entry of `folder` that Windows opens when
+    asked for `name`: Windows compares names without regard to case (probe 32e), so the target `..\\MADE` leads
+    to the tree's `made`. None when `tree` has no such name there, SEVERAL when it has more than one (a tree made
+    where case counts; only one of them can be on this disk, and nothing here says which)."""
+    listed = tree_children(repo, tree, folder)
+    alike = [other for other in listed if ntpath.normcase(other) == ntpath.normcase(name)]
+    if len(alike) == 1:
+        return alike[0], listed[alike[0]]
+    return SEVERAL if alike else None
+
+
+def tree_reaches(repo, tree, parts):
+    """Whether the commit or tree `tree` has anything at the path `parts` (names compared as `tree_step` does),
+    or a link at one of its parents' names, which may lead anywhere."""
+    folder = []
+    for place, part in enumerate(parts):
+        found = tree_step(repo, tree, "/".join(folder), part)
+        if found is None:
+            return False
+        if found is SEVERAL or place == len(parts) - 1 or found[1][0] == LINK_MODE:
+            return True
+        if found[1][1] != "tree":
+            return False
+        folder.append(found[0])
+    return False
+
+
+def within(root, place):
+    """The names from the folder `root` down to `place` (both absolute and without `..`), compared as Windows
+    compares them, or None when `place` is not `root` or below it."""
+    base, here = PureWindowsPath(root).parts, PureWindowsPath(place).parts
+    below = len(here) >= len(base) and all(ntpath.normcase(a) == ntpath.normcase(b) for a, b in zip(base, here))
+    return list(here[len(base):]) if below else None
+
+
+def led_to(folder, target):
+    """The absolute place a link in `folder` (absolute) with the recorded `target` leads to, as Windows works it
+    out: the NT prefix taken off (`git_link_target`), a target with a drive or a server taken as it stands, one
+    that begins with a separator from the top of `folder`'s drive, any other from `folder`, and every `..` taking
+    off the name before it whatever that name is, a link included (probes 32c and 32d). None for a target with a
+    drive and no separator after it (`C:x`): that one is read from wherever the process that makes the link
+    happens to stand on that drive (probe 32g)."""
+    spelled = git_link_target(target.replace("/", "\\")).replace("/", "\\")
+    drive, rest = ntpath.splitdrive(spelled)
+    if drive and not rest.startswith("\\"):
+        return None
+    return ntpath.normpath(ntpath.join(folder, spelled))
+
+
+def resolves_to_folder(repo, tree, others, path, target, standing=None, links=None):
     """Whether the link at `path` with the recorded `target` leads to a folder at the moment git, having written
     `tree`, makes the link: True, False, or None when nothing this command holds settles it.
 
     git for Windows asks the system to open the target from the link's own folder, through every link and
     junction on the way (probes 12 and 12h), and counts a folder that comes into being later in the same git
     process (probes 06, 06b, 09c and 09d). A target that begins with a separator is never opened (probes 13c
-    and 13g). So, in this order: such a target is no folder; a target with a drive, or one that leaves the
-    repository, is what the disk holds now (probes 13, 13b and 13d); a target inside the repository is what
-    `tree` has there, a folder for a tree, no folder for a file, and for a link whatever that link leads to
-    (probes 12f, 12g, 12i and 12j) unless its attribute makes a file link of it, which never opens as a folder
-    (probes 31 and 31c); and where `tree` has nothing there, what the disk holds now (an empty or an ignored
-    folder, probes 02 and 09f; `os.path.isdir` answers as git's own open does, probes 12, 31 and 31b), unless
-    one of `others` has something there: that is put there or taken away by another step than the one that
-    writes the link (probe 09e), and the answer is None."""
-    spelled = target.replace("\\", "/")
-    if spelled.startswith("/"):
+    and 13g): no folder. Any other target is judged by the place it leads to and never by how it is spelled.
+    The place is worked out first (`led_to`), and then one rule answers for it, the same rule whether the
+    target was written relative, with a drive, out of the repository and back in (`..\\<its folder>\\src\\made`),
+    in another case, or through another link:
+
+    - A place inside this repository (its real path, names compared as Windows compares them) is walked down
+      from the top one name at a time in `tree`. A folder of `tree` is gone into. A file is no folder. A link
+      that is not the last name is followed to wherever its own target leads from its own folder, whatever kind
+      of link it is (probe 32a: Windows goes through a file link to a folder on the way to a name below it).
+      A link that is the last name is followed only when it stands there as a folder link, since a file link
+      never opens as a folder (probes 31, 31c and 32b): `standing` says what stands at a link of `tree` (kind,
+      target) as `read_entry` would read it, by default what git's checkout of `tree` makes of it (probes 12f,
+      12g, 12i and 12j), and for a stash what `stash_entry` says, so a link git leaves as `HEAD` has it is the
+      kind it was at `begin`. A link whose kind is not settled settles nothing here either, and a link met
+      again while its own kind is being worked out is a loop, which leads nowhere (`links` is the walk's record).
+    - Where `tree` has nothing at a name of the walk, and one of `others` has something at the rest of the
+      path or a link on the way to it, the answer is None: that is put there or taken away by another step than
+      the one that writes the link (probe 09e).
+    - Otherwise, and for a place outside the repository or in git's own folder, the disk as it is now answers
+      (an empty or an ignored folder, probes 02 and 09f; a folder elsewhere, probes 13, 13b and 13d;
+      `os.path.isdir` answers as git's own open does, probes 12, 31 and 31b). A folder the disk has there whose
+      real path is another place inside the repository (reached through a junction or a link no tree has, a
+      drive letter that stands for a folder, a short name, a trailing dot) is that other place, and the rule
+      starts over from it.
+
+    Out of reach, and said here so that no one takes it for covered: a route the disk does not hold now. A
+    target that reaches the repository through a junction, another drive letter or a server share and ends at a
+    path `HEAD` has as a folder and the change takes away is no folder to the disk now, so the answer is False,
+    where the relative spelling of the same place answers None. Such a link is a file link or a dangling one
+    on disk at the capture, since its target is gone, so what the stash is held to is still what was captured."""
+    if target.replace("\\", "/").startswith("/"):
         return False
-    if len(spelled) > 2 and spelled[0].isalpha() and spelled[1:3] == ":/":
-        return os.path.isdir(spelled)
-    where = posixpath.normpath(posixpath.join(posixpath.dirname(path), spelled))
-    if where == ".":
-        return True
-    if where == ".." or where.startswith("../") or where == ".git" or where.startswith(".git/"):
-        return os.path.isdir(repo / where)
-    found = tree_entry(repo, tree, where)
-    if found is None:
-        if any(tree_entry(repo, other, where) is not None for other in others):
+    if standing is None:
+        def standing(where, links):
+            return checked_out(repo, tree, tree, where, others, links=links)
+    links = {} if links is None else links
+    links.setdefault(path, WALKING)
+    root = ntpath.normpath(os.path.realpath(repo))
+    place = led_to(ntpath.join(root, *PurePosixPath(path).parts[:-1]), target)
+    been = set()
+    for _ in range(CHAIN):
+        if place is None:
             return None
-        return os.path.isdir(repo / where)
-    if found[0] != LINK_MODE:
-        return found[1] != "blob"  # a tree, or a submodule's folder
-    if depth >= CHAIN or symlink_attribute(repo, tree, where) == LINK:
-        return False
-    onward = run_git(repo, "cat-file", "blob", found[2]).decode("utf-8", "replace")
-    return resolves_to_folder(repo, tree, others, where, onward, depth + 1)
+        if ntpath.normcase(place) in been:
+            return False
+        been.add(ntpath.normcase(place))
+        parts, disk = within(root, place), place
+        if parts is not None and not (parts and ntpath.normcase(parts[0]) == ".git"):
+            folder, disk = [], None
+            for depth, part in enumerate(parts):
+                found, rest = tree_step(repo, tree, "/".join(folder), part), parts[depth + 1:]
+                if found is SEVERAL:
+                    return None
+                if found is None or (found[1][1] == "commit" and rest):  # no tree has what a submodule holds
+                    if found is None and any(tree_reaches(repo, other, [*folder, *parts[depth:]]) for other in others):
+                        return None
+                    disk = ntpath.join(root, *folder, *parts[depth:])
+                    break
+                name, (mode, kind, blob) = found
+                if mode == LINK_MODE:
+                    here = "/".join([*folder, name])
+                    if not rest:
+                        if links.get(here) == WALKING:
+                            return False
+                        if here not in links:
+                            links[here] = WALKING
+                            links[here] = standing(here, links)
+                        stands = links[here][0] if links[here] is not None else None
+                        if stands not in (FOLDER_LINK, LINK, FILE):
+                            return None
+                        if stands != FOLDER_LINK:
+                            return False
+                    onward = led_to(ntpath.join(root, *folder),
+                                    run_git(repo, "cat-file", "blob", blob).decode("utf-8", "replace"))
+                    place = None if onward is None else ntpath.join(onward, *rest)
+                    break
+                if kind == "blob":
+                    return False
+                folder.append(name)
+            else:
+                return True
+            if disk is None:
+                continue
+        if not os.path.isdir(disk):
+            return False
+        real = ntpath.normpath(os.path.realpath(disk))
+        if within(root, real) is None or ntpath.normcase(real) == ntpath.normcase(ntpath.normpath(disk)):
+            return True
+        place = real
+    return False
 
 
 UNSETTLED = "a link of a kind the stash does not settle"  # equal to no kind an entry read from disk has
 
 
-def link_made(repo, source, others, path, target):
+def link_made(repo, source, others, path, target, standing=None, links=None):
     """The kind of link git makes at `path` for a mode 120000 entry holding `target`, once it has written the
     commit or tree `source`, by git for Windows's own rule (compat/mingw.c, mingw_create_symlink, measured on git
     2.56.0.windows.1 with the probes named here and in `resolves_to_folder`): the `symlink` attribute of
     `source` decides when it is set (`symlink_attribute`); else git makes a file link and turns it into a folder
-    link only when the target leads to a folder (probes 01, 02, 07, 08, 09 and 09b). UNSETTLED when that cannot
-    be told from the stash and the disk. Elsewhere a link has one kind."""
+    link only when the target leads to a folder (probes 01, 02, 07, 08, 09 and 09b), which is asked of the place
+    the target leads to and not of its spelling (`resolves_to_folder`, which `standing` and `links` are for).
+    UNSETTLED when that cannot be told from the stash and the disk. Elsewhere a link has one kind."""
     if os.name != "nt":
         return LINK
     asked = symlink_attribute(repo, source, path)
     if asked is not None:
         return asked
-    leads = resolves_to_folder(repo, source, others, path, target)
+    leads = resolves_to_folder(repo, source, others, path, target, standing, links)
     return UNSETTLED if leads is None else FOLDER_LINK if leads else LINK
 
 
-def checked_out(repo, commit, source, path, others=()):
+def checked_out(repo, commit, source, path, others=(), standing=None, links=None):
     """What git checks out at `path` from `commit`, as read_entry reads it afterwards: the one place that says
     what git will write at a name, for the stash check (`stash_entry`, `same_to_git`) and for what `reject`
     returns (`head_entry`) alike. None when `commit` has no file there (no entry, or a folder or a submodule at
@@ -1089,7 +1226,8 @@ def checked_out(repo, commit, source, path, others=()):
     A mode 120000 blob is what this repository's git makes of one. Where git makes no links (`makes_links`) it is
     (FILE, the target's bytes), the plain file git writes there, with no conversion. Where it makes them it is
     (the kind of link git makes, target): `link_made`, asked of `source`, the tree git has written by then, and
-    of `others` (`stash_place`). git never makes a junction (probes 14, 14b and 14c: to git a junction is a
+    of `others` (`stash_place`), with `standing` and `links` handed on to it for the links its target leads
+    through (`resolves_to_folder`). git never makes a junction (probes 14, 14b and 14c: to git a junction is a
     folder, it records none, and a recorded link comes back as a symbolic link). So a link captured from disk is
     never equal to what a git that makes no links would give back, a junction is equal to nothing git gives
     back under any setting, and a folder link and a file link are each equal only to their own kind.
@@ -1104,7 +1242,7 @@ def checked_out(repo, commit, source, path, others=()):
         raw = run_git(repo, "cat-file", "blob", entry[2])
         if not makes_links(repo):
             return (FILE, raw)
-        return (link_made(repo, source, others, path, raw.decode("utf-8", "replace")), raw)
+        return (link_made(repo, source, others, path, raw.decode("utf-8", "replace"), standing, links), raw)
     return (FILE, run_git(repo, attributes_of(source), "cat-file", "--filters", f"{commit}:{path}"))
 
 
