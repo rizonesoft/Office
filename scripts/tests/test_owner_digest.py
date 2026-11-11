@@ -69,7 +69,7 @@ class Waiting(Tree):
         items = digest.waiting(self.rows())
         self.assertEqual([(i["ref"], i["behind"], i["needs"]) for i in items], [("D00 T01 §1", 2, ["owner-decision"])])
         self.assertEqual(items[0]["action"], ACTION)
-        lines = "\n".join(digest.item_lines(items[0]))
+        lines = "\n".join(digest.item_lines(items[0], self.root))
         self.assertIn("2 open sections wait behind it", lines)
         self.assertIn("To do: " + ACTION[:40], lines)
 
@@ -300,6 +300,19 @@ class Size(Tree):
         self.assertNotIn("Owner", body)
         self.assertNotIn("Secret", body)
         self.assertIn("<path outside the repository>", body)
+
+    def test_a_long_path_is_cleared_before_it_is_wrapped_and_lines_stay_in_width(self):
+        # Review round 6: the guard ran on wrapped lines, so a long path's continuation and a placeholder longer than
+        # a short path both slipped through.
+        self.many(50)
+        long = (r"CI: unknown for aaaaaaa (gh: cannot read "
+                r"C:\Users\Owner\AppData\Roaming\GitHub CLI\profiles\work-account\config.yml).")
+        short = "x" * 71 + r" C:\a."
+        _, body, attachments = digest.compose(self.root, self.rows(), TODAY, [long, short], "Running")
+        for text in (body, *(t for _, t in attachments)):
+            self.assertNotIn("work-account", text)
+            self.assertNotIn("Owner", text)
+        self.assertTrue(all(len(line) <= digest.WIDTH for line in body.splitlines()))
 
     def test_no_line_names_a_path_outside_the_repository(self):
         self.many(50)

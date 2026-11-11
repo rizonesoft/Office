@@ -240,12 +240,14 @@ def ci_state(root, runner=subprocess.run):
 # The email
 
 
-def item_lines(item):
-    head = f"- {item['ref']} {item['title']} [{', '.join(item['needs'])}]"
+def item_lines(item, root):
+    """An item as wrapped lines; every text is cleared of paths before it is wrapped (`without_paths`)."""
+    head = f"- {item['ref']} {without_paths(item['title'], root)} [{', '.join(item['needs'])}]"
     if item["behind"]:
         many = item["behind"] != 1
         head += f", {item['behind']} open section{'s' if many else ''} wait{'' if many else 's'} behind it"
-    return [*wrap(head), *wrap(item["action"] or "(no owner action written)", "  To do: ")]
+    action = without_paths(item["action"], root) if item["action"] else "(no owner action written)"
+    return [*wrap(head), *wrap(action, "  To do: ")]
 
 
 def compose(root, rows, today, ci_lines, state):
@@ -253,6 +255,9 @@ def compose(root, rows, today, ci_lines, state):
     count = totals(rows, root)
     items = waiting(rows)
     built = verified_since(root, rows, today)
+    # Every text that came from outside this script is cleared of paths first, then wrapped and counted, so a path
+    # is never split across lines and a placeholder never pushes a line past WIDTH (D00 T03 §35 review round 6).
+    state, ci_lines = without_paths(state, root), [without_paths(line, root) for line in ci_lines]
     head = [f"Rizonesoft Office, week to {today.isoformat()}", "", *wrap(state),
             *[part for line in ci_lines for part in wrap(line.strip(), "  " if line.startswith("  ") else "")],
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
@@ -261,12 +266,13 @@ def compose(root, rows, today, ci_lines, state):
     if items:
         waiting_lines = [f"Waiting on you ({len(items)}):"]
         for item in items:
-            waiting_lines += item_lines(item)
+            waiting_lines += item_lines(item, root)
     else:
         waiting_lines = ["Nothing is waiting on you."]
     since = (today - datetime.timedelta(days=WINDOW_DAYS)).isoformat()
     progress = ([f"Verified since {since} ({len(built)}):"]
-                + [line for ref, title, stamped in built for line in wrap(f"- {ref} {title} ({stamped.isoformat()})")]
+                + [line for ref, title, stamped in built
+                   for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
     body = head + waiting_lines + [""] + progress
     attachments = []
@@ -275,7 +281,7 @@ def compose(root, rows, today, ci_lines, state):
         room = BODY_LINES - len(head) - 2
         kept, shown = [waiting_lines[0]], 0
         for item in items:
-            lines = item_lines(item)
+            lines = item_lines(item, root)
             if len(kept) + len(lines) > room // 2:
                 break
             kept += lines
@@ -289,8 +295,6 @@ def compose(root, rows, today, ci_lines, state):
             progress = cut
         body = head + kept + [""] + progress + notice  # the notice is the last line, as the attachment's pointer
     subject = f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
-    body = [without_paths(line, root) for line in body]
-    attachments = [(name, without_paths(text, root)) for name, text in attachments]
     return subject, "\n".join(body) + "\n", attachments
 
 
