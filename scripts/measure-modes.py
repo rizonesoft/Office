@@ -1,0 +1,634 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
+"""Measure the ways of working: build the same TODO sections with each arm, gate and review every result blind, and
+fix it with its own arm until a review approves it (D00 T03 §36; owner decision 30: the lead model is chosen by
+measurement, never by opinion).
+
+    python scripts/measure-modes.py run --section "D00 T03 §32" --section "D00 T03 §29" --section "D02 T01 §30"
+    python scripts/measure-modes.py run --section "D00 T03 §32" --base 402351a --work <folder> --budget 40
+    python scripts/measure-modes.py clean --work <folder>
+
+`run` clones the repository once per arm and section into the work folder (default: `measure-modes` under the scratch
+folder `OFFICE_SCRATCH` names, else the system temporary folder), at the base commit, with no remote and under folder
+names (`run-1`, `run-2`, ...) that do not reveal the arm; only `results.json` maps a run to its arm. Each section is
+resolved with `scripts/todo-graph.py resolve` in a clone at the base, so every arm gets the section as that commit has
+it. Each arm then runs as a headless Claude Code session (`claude -p`) with the task on standard input, a spending
+limit and a time limit, at most `--parallel` at a time, each in its own process tree (`scripts/lib/process_tree.py`),
+which is stopped when it passes the time limit or its output passes 50 MB and always when it ends.
+
+The harness, never the measured session, then judges the result: it records the clone's `HEAD` as the candidate, fails
+the `clean-tree` gate when the session left uncommitted or untracked files (it never commits for the arm), runs
+`validate`, `plan --check` and `run-tests.py`, and has the pinned reviewer review the range blind through the clone's
+own `scripts/review-dispatch.py` with one fixed prompt that names only the range and the section. A pass counts as a
+review only when the dispatcher exits 0 with a reviewer and a `HIGHEST:` line; anything else is `unreviewed`, is tried
+once more and is never approval. A result is approved when every gate passes and the review of that same candidate
+has no `P1` or `P2`; until then the same arm fixes it in the same clone (the review and the failed gates on standard
+input), up to `--fix-rounds` rounds.
+
+`results.json` is written after every stage through a temporary file and `os.replace`, with the measurement's
+identity. A second `run` on the same work folder resumes stage by stage: a session that recorded its exit is never run
+again, a stage that started and recorded nothing runs again from the clone's last recorded candidate, and a `run`
+whose identity differs is refused. `run` holds `measure.lock` in the work folder for its whole life; `clean` refuses
+while the lock is held and removes only the clones `results.json` lists, keeping the results and the logs.
+
+Exit 0 when every run reached an end, 1 when a run could not (a clone or a session could not start), 2 on a refusal
+(an argument, a section that is not ready, another run holding the folder, an identity mismatch), 130 when interrupted
+(every running tree is stopped and the interrupted stages run again on the next call).
+"""
+import argparse
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import tempfile
+import threading
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import process_tree
+
+SCHEMA = 1
+MAX_OUTPUT_BYTES = 50 * 1024 * 1024  # a session's output files together; past this the session is stopped
+REVIEW_SECONDS = 2400  # the dispatcher's own reviewer timeout is 1800 s; this bounds the dispatcher around it
+GIT_SECONDS = 600
+TAIL_LINES = 3
+APPROVING = ("none", "P3")  # a review whose worst finding is one of these approves, as the stamp's severity stop does
+HIGHEST = re.compile(r"^HIGHEST:\s*(P[123]|none)\s*$", re.MULTILINE | re.IGNORECASE)
+OVERALL = re.compile(r"^OVERALL:\s*(approve|needs-attention)\s*$", re.MULTILINE)
+FINDING = re.compile(r"^\s*(?:\d+[.)]|[-*])\s+\**\s*(P[123])\b")  # a numbered or bulleted finding opening with its tag
+PURPOSE = "Implements the TODO section named here."  # the one fixed purpose every blind review is given
+
+
+@dataclass(frozen=True)
+class Arm:
+    name: str
+    model: str  # a Claude Code model alias, so the latest model of the family is measured
+    subagents: bool  # whether the session may start the read-only agents of .claude/agents
+    instruction: str  # added to the task after the section text
+
+
+LEAD = ("Work as this repository's lead (AGENTS.md, Subagents): build everything yourself. The read-only Sonnet agents "
+        "in .claude/agents may find facts and run suites for you; no agent writes.")
+# The packet-routing arm measured on 2026-11-10 (`orchestrated`) lost on cost and quality and is not kept, and since
+# the owner made the main session the writer (decision 40) every arm works alone; the arms differ in the model.
+ARMS = (
+    Arm("opus-alone", "opus", True, LEAD),
+    Arm("fable-alone", "fable", True, LEAD),
+)
+
+TASK = """You are building one TODO section of this repository in a measurement. Process it with the \
+process-todo-section skill (.claude/skills/process-todo-section/SKILL.md): validate it against the repository, correct \
+the plan where it is wrong, build it, run its Test checkpoint and commit the work on main. This run is measured, so \
+skip the plan review (step 3a), and do not run review-todo-section, a stamp, a push or any campaign step: there is no \
+remote, and the harness gates and reviews what you commit. Leave nothing uncommitted.
+
+Section {ref}, {title} ({path}):
+
+{body}
+"""
+
+FIX = """The harness gated and reviewed your work on TODO section {ref} (commits {base}..{candidate}) and it is not \
+approved yet. Verify each finding and each failed gate below against the code, fix the real ones at their owning layer \
+with a test, and commit on main. The same rules hold: no plan review, review, stamp, push or campaign step, and leave \
+nothing uncommitted.
+
+Failed gates:
+{gates}
+
+Review ({review_path}):
+{review}
+"""
+
+
+class Refused(Exception):
+    """A refusal: exit 2 with the message."""
+
+
+class Cancelled(Exception):
+    """The measurement was interrupted; the stage that was running records nothing and runs again on resume."""
+
+
+def utc():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def load_arms(rows):
+    """The arm table, checked: at least one arm, names unique and non-empty, every field of its type."""
+    arms = tuple(rows)
+    if not arms:
+        raise Refused("the arm table is empty")
+    seen = set()
+    for arm in arms:
+        if not isinstance(arm, Arm) or not arm.name or not arm.model or not isinstance(arm.subagents, bool) \
+                or not isinstance(arm.instruction, str):
+            raise Refused(f"arm {arm!r} is not a complete row (name, model, subagents, instruction)")
+        if arm.name in seen:
+            raise Refused(f"the arm table names {arm.name} twice")
+        seen.add(arm.name)
+    return arms
+
+
+def scratch():
+    return Path(os.environ.get("OFFICE_SCRATCH") or tempfile.gettempdir())
+
+
+def atomic_json(path, data):
+    """Write `data` to `path` through a temporary file in the same folder and os.replace, then read it back."""
+    path = Path(path)
+    fd, tmp = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(data, handle, indent=1, ensure_ascii=False)
+            handle.write("\n")
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+    json.loads(path.read_text(encoding="utf-8"))  # read back: a file that does not parse is a failed write
+
+
+class Lock:
+    """`measure.lock` in the work folder, held for the life of one `run`: an exclusive lock on the open file, so it is
+    released by the system when the process dies and a second run or a `clean` sees it while it is held."""
+
+    def __init__(self, work):
+        self.path = Path(work) / "measure.lock"
+        self.handle = None
+
+    def __enter__(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = open(self.path, "a+b")
+        try:
+            if os.name == "nt":
+                import msvcrt
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            handle.close()
+            raise Refused(f"another measurement holds {self.path}; wait for it to end") from None
+        self.handle = handle
+        return self
+
+    def __exit__(self, *exc):
+        if self.handle is not None:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    self.handle.seek(0)
+                    msvcrt.locking(self.handle.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+            finally:
+                self.handle.close()
+                self.handle = None
+        return False
+
+
+def git(cwd, *args, check=True):
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+                            errors="replace", timeout=GIT_SECONDS)
+    if check and result.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed in {cwd}: {result.stderr.strip()[:500]}")
+    return result.stdout.strip()
+
+
+def tail(path, lines=TAIL_LINES):
+    try:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    return [line for line in text.splitlines() if line.strip()][-lines:]
+
+
+def remove_tree(path):
+    """Remove a folder and everything in it. Git writes its object files read-only, which Windows refuses to delete,
+    so a refused entry is made writable and removed again; anything still refused raises."""
+    def writable(function, name, _exc):
+        os.chmod(name, 0o700)
+        function(name)
+
+    if Path(path).exists():
+        shutil.rmtree(path, onexc=writable)
+
+
+def clone(repo, base, dest):
+    """A clone of `repo` at `base` on a `main` branch, with no remote and this repository's hooks enabled."""
+    remove_tree(dest)
+    subprocess.run(["git", "clone", "-q", "--no-checkout", "--no-hardlinks", str(repo), str(dest)], check=True,
+                   capture_output=True, timeout=GIT_SECONDS)
+    git(dest, "checkout", "-q", "-B", "main", base)
+    git(dest, "remote", "remove", "origin")
+    git(dest, "config", "core.hooksPath", "scripts/hooks")
+
+
+def resolve(clone_dir, ref):
+    """The section as the clone's commit has it: (task text, title, path); Refused when it is not open and ready."""
+    # Decoded as UTF-8, so the child is asked for UTF-8: without it Python writes in the console's code page.
+    result = subprocess.run([sys.executable, "scripts/todo-graph.py", "resolve", ref], cwd=clone_dir,
+                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GIT_SECONDS,
+                            env={**os.environ, "PYTHONUTF8": "1"})
+    why = {1: "no such section", 2: "not a section reference", 3: "already stamped",
+           4: "waiting on a dependency, its file's status or a Need"}
+    if result.returncode != 0:
+        raise Refused(f"{ref}: {why.get(result.returncode, f'resolve exited {result.returncode}')}")
+    try:
+        found = json.loads(result.stdout)
+        return TASK.format(ref=found["skill_arg"], title=found["title"], path=found["path"], body=found["body"])
+    except (ValueError, KeyError) as exc:
+        raise Refused(f"{ref}: resolve printed no section ({exc})") from None
+
+
+def usage(reply):
+    """The per-model token and cost figures of a `claude -p --output-format json` reply, subagents included."""
+    models = {}
+    for model, figures in (reply.get("modelUsage") or {}).items():
+        models[model] = {key: figures.get(key) for key in ("inputTokens", "outputTokens", "cacheReadInputTokens",
+                                                           "cacheCreationInputTokens", "costUSD")}
+    return models
+
+
+def parse_reply(path):
+    """The figures of a session's JSON reply, or an `error` naming why there are none."""
+    try:
+        reply = json.loads(Path(path).read_text(encoding="utf-8", errors="replace"))
+        if not isinstance(reply, dict):
+            raise ValueError("not an object")
+    except (OSError, ValueError) as exc:
+        return {"cost_usd": None, "error": f"no JSON reply ({exc})"}
+    return {"cost_usd": reply.get("total_cost_usd"), "turns": reply.get("num_turns"),
+            "duration_ms": reply.get("duration_ms"), "is_error": reply.get("is_error"),
+            "subtype": reply.get("subtype"), "models": usage(reply)}
+
+
+def parse_review(exit_code, stopped, output_path):
+    """A dispatcher's outcome as a review, or as `unreviewed` with the reason. Counts are of the numbered findings
+    by their severity tag; `highest` is the reply's own `HIGHEST:` line."""
+    if stopped:
+        return {"reviewed": False, "reason": f"the dispatcher was stopped ({stopped})"}
+    try:
+        data = json.loads(Path(output_path).read_text(encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        return {"reviewed": False, "reason": f"the dispatcher exited {exit_code} with no JSON result"}
+    if not isinstance(data, dict):
+        return {"reviewed": False, "reason": "the dispatcher's result is not an object"}
+    if exit_code != 0 or not data.get("reviewer"):
+        why = data.get("failover") or data.get("error") or "no reviewer"
+        return {"reviewed": False, "reason": f"the dispatcher exited {exit_code}: {why}"}
+    text = data.get("review") or ""
+    found = HIGHEST.findall(text)
+    if not found:
+        return {"reviewed": False, "reason": "the reply has no HIGHEST line"}
+    counts = {"P1": 0, "P2": 0, "P3": 0}
+    for line in text.splitlines():
+        tag = FINDING.match(line)
+        if tag:
+            counts[tag.group(1)] += 1
+    overall = OVERALL.findall(text)
+    highest = "none" if found[-1].lower() == "none" else found[-1].upper()
+    return {"reviewed": True, "reviewer": data.get("reviewer"), "highest": highest, "p1": counts["P1"],
+            "p2": counts["P2"], "p3": counts["P3"], "overall": overall[-1] if overall else None}
+
+
+class Measurement:
+    def __init__(self, args, arms, repo):
+        self.args = args
+        self.arms = {arm.name: arm for arm in arms}
+        self.repo = Path(repo)
+        self.work = Path(args.work)
+        self.logs = self.work / "logs"
+        self.results_path = self.work / "results.json"
+        self.lock = threading.Lock()
+        self.cancel = threading.Event()
+        self.claude = shutil.which("claude")
+        self.doc = None
+
+    # Identity and the results file
+
+    def identity(self, base):
+        return {"base": base, "sections": list(self.args.section), "arms": [asdict(a) for a in self.arms.values()],
+                "budget": self.args.budget, "minutes": self.args.minutes, "gate_minutes": self.args.gate_minutes,
+                "fix_rounds": self.args.fix_rounds}
+
+    def save(self):
+        with self.lock:
+            atomic_json(self.results_path, self.doc)
+
+    def open(self):
+        """Load or create the results file. A new measurement resolves every section in a base clone first, so a
+        section that is not ready is refused before any clone or session is made for the runs."""
+        base = git(self.repo, "rev-parse", "--verify", f"{self.args.base}^{{commit}}")
+        identity = self.identity(base)
+        if self.results_path.is_file():
+            try:
+                doc = json.loads(self.results_path.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                raise Refused(f"{self.results_path} cannot be read ({exc}); move it aside to start again") from None
+            if doc.get("identity") != identity:
+                differs = sorted(k for k in identity if (doc.get("identity") or {}).get(k) != identity[k])
+                raise Refused(f"{self.results_path} is another measurement (differs in {', '.join(differs)}); use "
+                              f"another --work folder or clean this one")
+            self.doc = doc
+            return
+        probe = self.work / "base"
+        self.work.mkdir(parents=True, exist_ok=True)
+        clone(self.repo, base, probe)
+        try:
+            tasks = {ref: resolve(probe, ref) for ref in self.args.section}
+        finally:
+            remove_tree(probe)
+        pairs = [(ref, arm) for ref in self.args.section for arm in self.arms]
+        secrets.SystemRandom().shuffle(pairs)  # run numbers in a random order, so a number says nothing of its arm
+        runs = {f"run-{n}": {"section": ref, "arm": arm, "clone": f"run-{n}", "stages": [], "end": None}
+                for n, (ref, arm) in enumerate(pairs, 1)}
+        self.doc = {"schema": SCHEMA, "identity": identity, "created": utc(), "tasks": tasks, "runs": runs,
+                    "clones": sorted(r["clone"] for r in runs.values())}
+        self.save()
+
+    # One run, stage by stage
+
+    def session(self, name, run, stage, stdin_text):
+        """Run the arm's headless session for `stage` in the run's clone and record its figures."""
+        arm = self.arms[run["arm"]]
+        number = len(run["stages"]) - 1  # the stage is already in the record
+        logs = self.logs / name
+        logs.mkdir(parents=True, exist_ok=True)
+        stdin_path = logs / f"stage-{number}.task.txt"
+        stdin_path.write_text(stdin_text, encoding="utf-8", newline="\n")
+        out, err = logs / f"stage-{number}.reply.json", logs / f"stage-{number}.err.txt"
+        argv = [self.claude, "-p", "--model", arm.model, "--output-format", "json", "--max-budget-usd",
+                str(self.args.budget), "--permission-mode", "bypassPermissions", "--no-session-persistence"]
+        if not arm.subagents:
+            argv += ["--disallowedTools", "Agent"]
+        outcome = process_tree.run(argv, cwd=self.work / run["clone"], stdin_path=stdin_path, stdout_path=out,
+                                   stderr_path=err, timeout=self.args.minutes * 60, max_bytes=MAX_OUTPUT_BYTES,
+                                   cancel=self.cancel)
+        if outcome.stopped == "cancelled":
+            raise Cancelled()
+        stage["session"] = {"exit": outcome.exit, "stopped": outcome.stopped, "wall_seconds": outcome.seconds,
+                            "strays_stopped": outcome.strays, **parse_reply(out)}
+
+    def bind(self, run, stage):
+        """Record the candidate the gates and the review judge, and what the run has changed since the base."""
+        clone_dir = self.work / run["clone"]
+        base = self.doc["identity"]["base"]
+        stage["candidate"] = git(clone_dir, "rev-parse", "HEAD")
+        stage["commits"] = int(git(clone_dir, "rev-list", "--count", f"{base}..HEAD") or 0)
+        stage["shortstat"] = git(clone_dir, "diff", "--shortstat", base, "HEAD")
+        left = git(clone_dir, "status", "--porcelain", "--untracked-files=all")
+        stage["uncommitted"] = len(left.splitlines()) if left else 0
+
+    def gates(self, name, run, stage):
+        clone_dir = self.work / run["clone"]
+        number = len(run["stages"]) - 1
+        results = {"clean-tree": {"exit": 0 if stage["uncommitted"] == 0 else 1,
+                                  "tail": [] if stage["uncommitted"] == 0 else
+                                  [f"{stage['uncommitted']} uncommitted or untracked paths left by the session"]}}
+        for gate, argv in (("validate", ["scripts/todo-graph.py", "validate"]),
+                           ("plan-check", ["scripts/todo-graph.py", "plan", "--check"]),
+                           ("tests", ["scripts/run-tests.py"])):
+            log = self.logs / name / f"stage-{number}.{gate}.log"
+            outcome = process_tree.run([sys.executable, *argv], cwd=clone_dir, stdout_path=log,
+                                       stderr_path=log.with_suffix(".err.log"), timeout=self.args.gate_minutes * 60,
+                                       max_bytes=MAX_OUTPUT_BYTES, cancel=self.cancel)
+            if outcome.stopped == "cancelled":
+                raise Cancelled()
+            results[gate] = {"exit": outcome.exit, "stopped": outcome.stopped, "seconds": outcome.seconds,
+                             "tail": tail(log) + tail(log.with_suffix(".err.log"))}
+        stage["gates"] = results
+
+    def review(self, name, run, stage):
+        """The blind review of the whole range, tried twice before it is recorded as unreviewed."""
+        clone_dir = self.work / run["clone"]
+        number = len(run["stages"]) - 1
+        base = self.doc["identity"]["base"]
+        prompt = self.logs / name / f"stage-{number}.review-prompt.md"
+        attempts = []
+        for attempt in (1, 2):
+            built = process_tree.run([sys.executable, "scripts/review-prompt.py", "--kind", "round", "--candidate",
+                                      stage["candidate"], "--base", base, "--ref", run["section"], "--purpose",
+                                      PURPOSE, "--out", str(prompt)], cwd=clone_dir, timeout=GIT_SECONDS,
+                                     stdout_path=prompt.with_suffix(".out.txt"),
+                                     stderr_path=prompt.with_suffix(".err.txt"), cancel=self.cancel)
+            if built.stopped == "cancelled":
+                raise Cancelled()
+            if built.exit != 0 or not prompt.is_file():
+                attempts.append({"reviewed": False, "reason": f"review-prompt.py exited {built.exit} "
+                                 f"({' '.join(tail(prompt.with_suffix('.err.txt'), 1))})"})
+                continue
+            out = self.logs / name / f"stage-{number}.review-{attempt}.json"
+            outcome = process_tree.run([sys.executable, "scripts/review-dispatch.py", "--writer", "claude", "--prompt",
+                                        str(prompt), "--kind", "round", "--candidate", stage["candidate"]],
+                                       cwd=clone_dir, stdout_path=out, stderr_path=out.with_suffix(".err.txt"),
+                                       timeout=REVIEW_SECONDS, max_bytes=MAX_OUTPUT_BYTES, cancel=self.cancel)
+            if outcome.stopped == "cancelled":
+                raise Cancelled()
+            verdict = parse_review(outcome.exit, outcome.stopped, out)
+            verdict["file"] = str(out)
+            attempts.append(verdict)
+            if verdict["reviewed"]:
+                break
+        stage["review"] = {**attempts[-1], "attempts": len(attempts)}
+
+    @staticmethod
+    def approved(stage):
+        gates_pass = all(g["exit"] == 0 and not g.get("stopped") for g in stage["gates"].values())
+        review = stage["review"]
+        return gates_pass and review["reviewed"] and review["highest"] in APPROVING
+
+    def fix_text(self, run, stage):
+        failed = [f"- {gate}: exit {g['exit']}{', stopped (' + g['stopped'] + ')' if g.get('stopped') else ''}; "
+                  + " | ".join(g["tail"]) for gate, g in stage["gates"].items()
+                  if g["exit"] != 0 or g.get("stopped")]
+        review = stage["review"]
+        if review["reviewed"]:
+            try:
+                text = json.loads(Path(review["file"]).read_text(encoding="utf-8"))["review"]
+            except (OSError, ValueError, KeyError):
+                text = "(the review file could not be read)"
+        else:
+            text = f"(no review: {review['reason']})"
+        return FIX.format(ref=run["section"], base=self.doc["identity"]["base"][:12], candidate=stage["candidate"][:12],
+                          gates="\n".join(failed) or "(none)", review_path=review.get("file", "none"), review=text)
+
+    def reset(self, run):
+        """Put the clone back at its last recorded candidate (the base before the first), so a stage that started and
+        recorded nothing runs again from the tree the record describes."""
+        clone_dir = self.work / run["clone"]
+        done = [s for s in run["stages"] if s.get("candidate")]
+        target = done[-1]["candidate"] if done else self.doc["identity"]["base"]
+        if not (clone_dir / ".git").exists():
+            clone(self.repo, self.doc["identity"]["base"], clone_dir)
+        git(clone_dir, "checkout", "-q", "-B", "main", target)
+        git(clone_dir, "reset", "-q", "--hard", target)
+        git(clone_dir, "clean", "-q", "-fdx")
+
+    def advance(self, name):
+        """Take one run from wherever its record stops to its end."""
+        run = self.doc["runs"][name]
+        while run["end"] is None:
+            self.check_cancel()
+            stage = run["stages"][-1] if run["stages"] else None
+            if stage is None:
+                stage = {"kind": "build", "started": utc()}
+                self.start_stage(run, stage)
+                self.save()
+            if "session" not in stage:
+                self.reset(run)
+                stdin_text = self.doc["tasks"][run["section"]] + "\n" + self.arms[run["arm"]].instruction + "\n" \
+                    if stage["kind"] == "build" else stage["task"]
+                self.session(name, run, stage, stdin_text)
+                self.save()
+            if "candidate" not in stage:
+                self.bind(run, stage)
+                self.save()
+            if "gates" not in stage:
+                self.gates(name, run, stage)
+                self.save()
+            if "review" not in stage:
+                self.review(name, run, stage)
+                self.save()
+            if self.approved(stage):
+                run["end"] = "approved"
+            elif not stage["review"]["reviewed"] and self.gates_pass(stage):
+                run["end"] = "unreviewed"  # nothing to fix and no verdict: never counted as approval
+            elif len(run["stages"]) - 1 >= self.args.fix_rounds:
+                run["end"] = "fix-rounds-exhausted"
+            else:
+                fix = {"kind": "fix", "started": utc(), "task": self.fix_text(run, stage)}
+                self.start_stage(run, fix)
+            self.save()
+
+    @staticmethod
+    def gates_pass(stage):
+        return all(g["exit"] == 0 and not g.get("stopped") for g in stage["gates"].values())
+
+    @staticmethod
+    def start_stage(run, stage):
+        run["stages"].append(stage)
+
+    def check_cancel(self):
+        if self.cancel.is_set():
+            raise Cancelled()
+
+    def go(self):
+        if not self.claude:
+            raise Refused("claude is not on PATH")
+        pending = [name for name, run in self.doc["runs"].items() if run["end"] is None]
+        failed = []
+        pool = ThreadPoolExecutor(max_workers=self.args.parallel)
+        futures = {pool.submit(self.advance, name): name for name in pending}
+        try:
+            while True:
+                done, waiting = wait(futures, timeout=0.5, return_when=FIRST_EXCEPTION)
+                for future in done:
+                    error = future.exception()
+                    if error is not None and not isinstance(error, Cancelled):
+                        failed.append(f"{futures[future]}: {error}")
+                if not waiting:
+                    break
+                futures = {f: n for f, n in futures.items() if f in waiting}
+        except KeyboardInterrupt:
+            self.cancel.set()  # each running tree is stopped by its own poll; the stage records nothing
+            pool.shutdown(wait=True, cancel_futures=True)
+            raise
+        pool.shutdown(wait=True)
+        if self.cancel.is_set():
+            raise KeyboardInterrupt  # a stage was cancelled from inside; the record is saved and resumes
+        for line in failed:
+            print(f"measure-modes: {line}", file=sys.stderr)
+        return 1 if failed else 0
+
+
+def summary(doc):
+    lines = []
+    for name, run in sorted(doc["runs"].items(), key=lambda kv: int(kv[0].split("-")[1])):
+        cost = sum((s.get("session") or {}).get("cost_usd") or 0 for s in run["stages"])
+        lines.append(f"{name}  {run['section']}  {run['arm']}  stages {len(run['stages'])}  ${cost:.2f}  "
+                     f"{run['end'] or 'open'}")
+    return "\n".join(lines)
+
+
+def cmd_run(args, arms, repo):
+    if args.parallel < 1 or args.fix_rounds < 0 or args.budget <= 0 or args.minutes <= 0 or args.gate_minutes <= 0:
+        raise Refused("--parallel must be at least 1, --fix-rounds 0 or more, and the limits above 0")
+    measurement = Measurement(args, arms, repo)
+    with Lock(args.work):
+        measurement.open()
+        code = measurement.go()
+    print(summary(measurement.doc))
+    print(f"results: {measurement.results_path}")
+    return code
+
+
+def cmd_clean(args):
+    work = Path(args.work)
+    results = work / "results.json"
+    if not results.is_file():
+        raise Refused(f"{results} does not exist: nothing is recorded, so nothing is removed")
+    with Lock(work):
+        doc = json.loads(results.read_text(encoding="utf-8"))
+        removed = []
+        for name in doc.get("clones", []):
+            target = (work / name).resolve()
+            if target.parent != work.resolve() or not re.fullmatch(r"run-\d+", name):
+                raise Refused(f"{results} lists {name!r}, which is not a clone of this work folder")
+            if target.exists():
+                remove_tree(target)
+                removed.append(name)
+    print(f"removed {len(removed)} clone(s) from {work}; kept {results.name} and logs")
+    return 0
+
+
+def parser():
+    p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawTextHelpFormatter,
+                                epilog='example:\n  python scripts/measure-modes.py run --section "D00 T03 §32" '
+                                       '--section "D00 T03 §29" --section "D02 T01 §30" --base HEAD')
+    sub = p.add_subparsers(dest="command", required=True)
+    default_work = str(scratch() / "measure-modes")
+    run = sub.add_parser("run", help="build, gate, review and fix each section with each arm")
+    run.add_argument("--section", action="append", required=True, metavar="REF",
+                     help='a ready TODO section, "DNN TNN §N"; repeat for each section')
+    run.add_argument("--base", default="HEAD", help="the commit every arm starts from (default HEAD)")
+    run.add_argument("--work", default=default_work, help=f"the work folder (default {default_work})")
+    run.add_argument("--budget", type=float, default=40, help="US dollars one session may spend (default 40)")
+    run.add_argument("--minutes", type=float, default=75, help="minutes one session may run (default 75)")
+    run.add_argument("--gate-minutes", type=float, default=45, help="minutes one gate may run (default 45)")
+    run.add_argument("--fix-rounds", type=int, default=6, help="fix rounds per run at most (default 6)")
+    run.add_argument("--parallel", type=int, default=3, help="sessions at a time at most (default 3)")
+    run.add_argument("--repo", default=str(ROOT), help=argparse.SUPPRESS)
+    clean = sub.add_parser("clean", help="remove the clones a finished measurement lists")
+    clean.add_argument("--work", default=default_work, help=f"the work folder (default {default_work})")
+    return p
+
+
+def main(argv=None, arms=ARMS):
+    args = parser().parse_args(argv)
+    try:
+        arms = load_arms(arms)
+        if args.command == "clean":
+            return cmd_clean(args)
+        if len(set(args.section)) != len(args.section):
+            raise Refused("a section is named twice")
+        return cmd_run(args, arms, args.repo)
+    except Refused as exc:
+        print(f"measure-modes refused: {exc}", file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("measure-modes: interrupted; every running tree was stopped and the next run resumes", file=sys.stderr)
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())
