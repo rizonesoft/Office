@@ -1539,6 +1539,201 @@ class Packet(unittest.TestCase):
                                 capture_output=True, check=True, timeout=60).stdout
         self.assertEqual(stored, b"a = 48\r\n")  # under `ruled`'s rule the blob would hold LF alone
 
+    # reject and the index: one read behind the listing and the stash (round 12, finding 1)
+
+    def every_kind_of_change(self):
+        """A tree holding each kind of change the tests above use, with a packet open over it; what `git status`
+        and both diffs say of it, and the bytes of its untracked files."""
+        for name in ("gone", "lost", "old", "kept"):
+            self.put(f"docs/{name}.md", f"{name}\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "more to change")
+        self.begin("src")
+        self.put("src/a.py", "a = 50\n")
+        self.git("add", "src/a.py")
+        self.put("src/a.py", "a = 51\n")                 # staged, then edited again
+        self.put("docs/note.md", "note, edited\n")       # an unstaged edit
+        self.put("src/staged.py", "staged = True\n")
+        self.git("add", "src/staged.py")                 # a staged new file
+        self.put("src/new.py", "new = True\n")           # an untracked file
+        self.put("new/dir/c.py", "c\n")                  # an untracked file in a new folder
+        self.git("rm", "-q", "docs/gone.md")             # a staged deletion
+        (self.repo / "docs/lost.md").unlink()            # an unstaged deletion
+        self.git("mv", "docs/old.md", "docs/renamed.md")  # a staged rename
+        return self.whole_state()
+
+    def whole_state(self):
+        loose = self.git("ls-files", "--others", "--exclude-standard", "-z").split("\0")
+        return {"status": self.status(), "staged": self.git("diff", "--cached"), "unstaged": self.git("diff"),
+                "untracked": {path: self.read(path) for path in loose if path}}
+
+    def paths_in(self, commit):
+        return set(filter(None, self.git("ls-tree", "-r", "-z", "--name-only", commit).split("\0")))
+
+    def reject_while_the_owner_stages(self, *staging):
+        """Run reject in-process; right after it has listed and read the changed paths, and before it builds the
+        stash, the owner's `git <staging>` lands in the live index. The stash commit and reject's result."""
+        real = packet.capture
+
+        def capture_then_stage(*args, **kwargs):
+            captured = real(*args, **kwargs)
+            if staging:
+                self.git(*staging)
+            return captured
+
+        with mock.patch.object(packet, "capture", capture_then_stage):
+            code, out, err = self.run_in_process("reject")
+        return self.git("rev-parse", "stash@{0}").strip(), code, out + err
+
+    def assert_the_stash_brings_back(self, stash, before):
+        """`stash` is in git's standard shape, and `git stash apply --index` on HEAD's tree brings back `before`."""
+        self.assertEqual(self.paths_in(stash) & self.paths_in(stash + "^3"), set(),
+                         "a path is in both the stash's working-tree commit and its untracked parent")
+        self.assertEqual(self.paths_in(stash + "^2") & self.paths_in(stash + "^3"), set(),
+                         "a path is in both the stash's index commit and its untracked parent")
+        for _ in range(3):  # whatever the first reject kept is set aside too, in stashes of its own
+            if not (self.repo / "build/packet.json").exists():
+                break
+            self.cli("reject")
+        self.assertEqual(self.status(), "")
+        self.assertFalse((self.repo / "build/packet.json").exists())
+        applied = subprocess.run([git_path(), "-C", str(self.repo), "stash", "apply", "--index", stash],
+                                 capture_output=True, text=True, encoding="utf-8", timeout=60)
+        self.assertEqual(applied.returncode, 0, applied.stdout + applied.stderr)
+        self.assertEqual(self.whole_state(), before)
+        self.assertEqual(sorted(p.name for p in (self.repo / ".git").glob("tmp*")), [])
+        self.assertFalse(self.lock_path().exists())
+
+    def test_reject_then_stash_apply_brings_back_every_kind_of_change(self):
+        before = self.every_kind_of_change()
+        stash, code, out = self.reject_while_the_owner_stages()
+        self.assertEqual(code, 0, out)
+        self.assertIn("tree returned to HEAD; packet closed", out)
+        self.assert_the_stash_brings_back(stash, before)
+
+    def test_an_untracked_file_staged_between_the_listing_and_the_stash_is_in_the_stash_once(self):
+        # Round 12: the file was listed as untracked, then the index read for the stash had it, so it went into
+        # both the working-tree commit and the untracked parent and `git stash apply --index` could not bring
+        # it back.
+        before = self.every_kind_of_change()
+        stash, code, out = self.reject_while_the_owner_stages("add", "src/new.py")
+        staged_in_stash = "src/new.py" in self.paths_in(stash + "^2")
+        self.assertTrue(staged_in_stash or (code == 1 and "kept the index" in out), out)
+        if not staged_in_stash:  # kept and named: the staging is still in the live index, in no stash yet
+            self.assertEqual(self.git("show", ":src/new.py"), "new = True\n")
+            self.assertTrue((self.repo / "build/packet.json").exists())
+            self.assertNotIn("packet closed", out)
+            self.assert_the_stash_brings_back(stash, before)
+            # The staging itself went into the next reject's stash, as its index commit.
+            self.assert_in_stash("stash@{0}", "src/new.py", "new = True\n", "^2")
+        else:
+            self.assertEqual(self.paths_in(stash) & self.paths_in(stash + "^3"), set())
+
+    def test_a_tracked_edit_staged_between_the_listing_and_the_stash_is_stashed_as_it_was_listed(self):
+        # The same two reads: docs/note.md was listed as an unstaged edit and stashed as a staged one.
+        before = self.every_kind_of_change()
+        stash, code, out = self.reject_while_the_owner_stages("add", "docs/note.md")
+        self.assertEqual(code, 1, out)
+        self.assertIn("kept the index", out)
+        self.assertEqual(self.git("show", ":docs/note.md"), "note, edited\n")
+        self.assertEqual(self.git("show", stash + "^2:docs/note.md"), "note\n")
+        self.assert_the_stash_brings_back(stash, before)
+
+    def test_a_file_unstaged_between_the_listing_and_the_stash_stays_in_the_stash_and_on_disk(self):
+        # The same two reads: docs/kept.md was listed as tracked and unchanged, then the index read for the stash
+        # no longer had it, so the stash recorded its deletion and applying the stash removed the file.
+        before = self.every_kind_of_change()
+        stash, code, out = self.reject_while_the_owner_stages("rm", "-q", "--cached", "docs/kept.md")
+        self.assertEqual(code, 1, out)
+        self.assertIn("kept the index", out)
+        self.assertEqual(self.read("docs/kept.md"), "kept\n")
+        self.assertIn("docs/kept.md", self.paths_in(stash))
+        self.assertIn("docs/kept.md", self.paths_in(stash + "^2"))
+        self.assert_the_stash_brings_back(stash, before)
+        self.assertEqual(self.read("docs/kept.md"), "kept\n")
+
+    def test_reject_asks_the_live_index_nothing_and_leaves_its_bytes_alone_until_the_stash_is_stored(self):
+        # Every git call that reads or writes an index, from the listing to the stored stash, names one private
+        # index file, the same one for the listing and for the stash's index commit.
+        self.every_kind_of_change()
+        asks = ("diff", "ls-files", "status", "write-tree", "read-tree", "update-index", "diff-index", "diff-files")
+        real, real_store, before = packet.run_git, packet.store, self.index_path().read_bytes()
+        live, private, seen = [], {}, {}
+
+        def watch(repo, *args, **kwargs):
+            if args[0] in asks and "stored" not in seen:
+                named = (kwargs.get("env") or {}).get("GIT_INDEX_FILE")
+                if named is None:
+                    live.append(args)
+                else:
+                    private.setdefault(named, []).append(args[0])
+            return real(repo, *args, **kwargs)
+
+        def store(*args, **kwargs):
+            seen["stored"] = self.index_path().read_bytes()
+            return real_store(*args, **kwargs)
+
+        with mock.patch.object(packet, "run_git", watch), mock.patch.object(packet, "store", store):
+            code, out, err = self.run_in_process("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(live, [])
+        self.assertEqual(seen["stored"], before)
+        listed = [calls for calls in private.values() if "ls-files" in calls and "diff" in calls]
+        self.assertEqual(len(listed), 1, private)
+        self.assertIn("status" if "status" in listed[0] else "diff", listed[0])
+        self.assertIn("write-tree", listed[0])  # the stash's index commit is the tree of the index that was listed
+
+    def test_a_save_made_in_the_second_the_index_was_written_is_still_listed_from_the_private_copy(self):
+        # git reads a file's content, whatever its recorded size and times say, when the file is as new as the
+        # index itself. A private copy stamped with the time it was made would be newer than every file, and a
+        # save of the same size made in the index's own second would be listed nowhere.
+        moment = 1_600_000_000 * 10**9  # seconds before any copy this test's reject can make
+        os.utime(self.repo / "src/a.py", ns=(moment, moment))
+        self.git("add", "src/a.py")  # the index records the file's time; its content is HEAD's still
+        self.begin("src")
+        self.put("src/a.py", "a = 9\n")  # the only change: the same size, and the time the index recorded
+        os.utime(self.repo / "src/a.py", ns=(moment, moment))
+        os.utime(self.index_path(), ns=(moment, moment))  # and the index was written in that same moment
+        code, out, err = self.cli("reject")
+        self.assertEqual(code, 0, out + err)
+        self.assertNotIn("nothing to set aside", out)
+        self.assert_in_stash("stash@{0}", "src/a.py", "a = 9\n")
+        self.assertEqual(self.read("src/a.py"), "a = 1\n")
+        self.assertEqual(self.status(), "")
+
+    def test_the_private_index_keeps_the_time_the_live_index_was_written(self):
+        self.begin("src")
+        self.put("src/a.py", "a = 62\n")
+        self.git("add", "src/a.py")
+        long_ago = 1_600_000_000 * 10**9
+        os.utime(self.index_path(), ns=(long_ago, long_ago))
+        raw = self.index_path().read_bytes()
+        with packet.index_snapshot(self.repo) as env:
+            copy = pathlib.Path(env["GIT_INDEX_FILE"])
+            self.assertNotEqual(copy, self.index_path())
+            self.assertEqual(copy.read_bytes(), raw)
+            self.assertEqual(os.stat(copy).st_mtime_ns, long_ago)
+            folder = copy.parent
+        self.assertFalse(folder.exists())
+        self.assertEqual(self.index_path().read_bytes(), raw)
+
+    def test_no_private_index_is_left_when_the_stash_cannot_be_built(self):
+        for target in ("capture", "build_stash"):
+            with self.subTest(fails=target):
+                self.begin("src")
+                self.put("src/a.py", "a = 63\n")
+                before, stashes = self.index_path().read_bytes(), self.git("stash", "list")
+                with mock.patch.object(packet, target, side_effect=OSError("no")):
+                    code, out, err = self.run_in_process("reject")
+                self.assertEqual(code, 3, out + err)
+                self.assertEqual(sorted(p.name for p in (self.repo / ".git").glob("tmp*")), [])
+                self.assertEqual(self.index_path().read_bytes(), before)
+                self.assertEqual(self.read("src/a.py"), "a = 63\n")
+                self.assertEqual(self.git("stash", "list"), stashes)
+                code, _, err = self.cli("reject")
+                self.assertEqual(code, 0, err)
+                self.assert_in_stash("stash@{0}", "src/a.py", "a = 63\n")
+
     def test_show_writes_the_marks_before_the_diffs_when_its_output_is_a_pipe(self):
         # The marks went through the text layer and the diffs past it, so a pipe or a file got the diffs first.
         self.begin("src")

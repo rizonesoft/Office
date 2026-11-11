@@ -32,10 +32,19 @@ captured: a path saved meanwhile is kept on disk and named, and the index goes b
 the one the stash captured (an index staged after the capture is kept and named). Removals run deepest first and
 writes after them, so a folder that took a tracked file's name is emptied before the file returns.
 
+`reject` reads the index once. Before it lists anything it reads the index file's bytes one time into a private
+copy (`index_snapshot`), and every question it then asks about the index is put to that copy and never to the live
+file: which paths are staged, changed, tracked or untracked, what mode a path has, and the tree the stash's index
+commit records. So the stash is in git's standard shape for the one index it records, whatever is staged while
+`reject` works: a path is in its working-tree commit or in its untracked parent, never in both, and
+`git stash apply --index` brings back exactly the state the copy and the files held. A staging that lands after that
+one read is in no stash: the live index then no longer holds the tree the stash recorded, so it is kept and named,
+and the next `reject` sets it aside in a stash of its own.
+
 `reject` writes the index in one place and as one step, under git's own lock (`return_index`). It makes
 `.git/index.lock` itself, as a new file and never over an existing one, so while it decides no git command can stage
 anything: git refuses, naming the lock. It reads the index file's bytes once, takes the tree those bytes hold from a
-private copy (no git command opens the live index meanwhile, here or when the stash is built), writes `HEAD`'s index
+private copy (no git command of `reject`'s opens the live index before its last check), writes `HEAD`'s index
 into the lock file and renames it over the index. A lock that is already there is never waited on and never removed:
 `reject` refuses before it changes anything (exit 2), or, when the lock appears later, stops with the stash stored
 (exit 3), naming the file both times, and the next `reject` carries on. Whatever fails, the lock `reject` made is
@@ -76,6 +85,7 @@ changes at `begin`, no open packet, a packet already open, a bad path, a missing
 old for `reject`, an index another git command holds locked when `reject` starts), 3 git or the file system failed.
 """
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -134,9 +144,11 @@ def head(repo):
     return text(repo, "rev-parse", "HEAD").strip()
 
 
-def dirty(repo):
-    """Every path `git status` reports, untracked files listed one by one, both sides of a rename."""
-    parts, entries, i = text(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0"), [], 0
+def dirty(repo, env=None):
+    """Every path `git status` reports, untracked files listed one by one, both sides of a rename. `env` names the
+    index asked (`index_snapshot`); without it, the live one."""
+    listing = text(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all", env=env)
+    parts, entries, i = listing.split("\0"), [], 0
     while i < len(parts):
         entry = parts[i]
         i += 1
@@ -344,19 +356,21 @@ def hollow(folder):
     return all(kind_of(child) == FOLDER and hollow(child) for child in children)
 
 
-def changed_paths(repo, base):
+def changed_paths(repo, base, env=None):
     """(every path changed since `base`, the untracked ones among them, the ones no diff of git's shows), as this
-    command sees the tree: base to index, index to working tree with both sides of a rename, and untracked. git
+    command sees the tree: base to index, index to working tree with both sides of a rename, and untracked. All
+    four listings ask the index `env` names (`index_snapshot`: one index behind the four, and behind whatever is
+    built from them); without it, the live one. git
     for Windows looks through a junction and takes one spelling of a name for another; this command does
     neither. So a link or a junction above a listed or tracked path is itself a changed path, every tracked path
     below it is changed too (nothing of the tree is there any more), and an untracked file git lists behind it is
     left out: it is outside the tree and is never read or touched. And a tracked path held on disk only under
     another spelling is changed (it is absent), with the file or link that holds the name a path of its own,
     untracked unless the index has that spelling too."""
-    staged = names(repo, "diff", "--cached", "--name-only", "--no-renames", base)
-    unstaged = names(repo, "diff", "--name-only", "--no-renames")
-    loose = set(names(repo, "ls-files", "--others", "--exclude-standard"))
-    indexed = set(names(repo, "ls-files"))
+    staged = names(repo, "diff", "--cached", "--name-only", "--no-renames", base, env=env)
+    unstaged = names(repo, "diff", "--name-only", "--no-renames", env=env)
+    loose = set(names(repo, "ls-files", "--others", "--exclude-standard", env=env))
+    indexed = set(names(repo, "ls-files", env=env))
     tracked, look = indexed | set(staged), Look()
     listed = set(staged) | set(unstaged)
     changed, untracked = set(listed), set()
@@ -426,10 +440,11 @@ def begin(repo, name, values):
 FILE_MODES = ("100644", "100755")
 
 
-def mode_of(repo, base, path):
-    """The mode a staged file keeps: its index entry's, else its mode in `base`, when that is a file's mode;
-    otherwise (no entry, a folder's tree, a submodule, a link now a file) a plain file's."""
-    for listing in (text(repo, "ls-files", "-s", "--", path), text(repo, "ls-tree", base, "--", path)):
+def mode_of(repo, base, path, env=None):
+    """The mode a staged file keeps: its entry's in the index being written (the one `env` names, else the live
+    one), else its mode in `base`, when that is a file's mode; otherwise (no entry, a folder's tree, a submodule,
+    a link now a file) a plain file's."""
+    for listing in (text(repo, "ls-files", "-s", "--", path, env=env), text(repo, "ls-tree", base, "--", path)):
         for line in listing.splitlines():
             meta, _, name = line.partition("\t")
             if name == path and meta:
@@ -457,7 +472,7 @@ def stage_bytes(repo, base, captured, env=None):
             mode = "120000"
         else:
             blob = run_git(repo, "hash-object", "-w", "--stdin", f"--path={path}", data=raw).decode().strip()
-            mode = mode_of(repo, base, path)
+            mode = mode_of(repo, base, path, env)
         run_git(repo, "update-index", "--add", "--replace", "--cacheinfo", f"{mode},{blob},{path}", env=env)
 
 
@@ -533,15 +548,42 @@ def lock_of(index):
     return index.with_name(index.name + ".lock")
 
 
-def index_bytes(index):
-    """The index file's bytes, read once, or None when there is no index yet. Only a regular file is read: an
-    index that is a link or anything else is refused, never read or replaced through."""
+def read_index(index):
+    """(the index file's bytes, the time it was last written), both from one open of the file, or (None, None)
+    when there is no index yet. Only a regular file is read: an index that is a link or anything else is refused,
+    never read or replaced through."""
     kind = kind_of(index)
     if kind == NOTHING:
-        return None
+        return None, None
     if kind != FILE:
         raise Refused(f"{index} is a {kind}, not a file: the index is never read or replaced through one")
-    return index.read_bytes()
+    with open(index, "rb") as handle:
+        return handle.read(), os.fstat(handle.fileno()).st_mtime_ns
+
+
+def index_bytes(index):
+    """The index file's bytes, read once, or None when there is no index yet."""
+    return read_index(index)[0]
+
+
+@contextlib.contextmanager
+def index_snapshot(repo):
+    """The live index, read once, as a private index file: the environment that makes a git command ask that copy
+    and never the live index. Whatever is staged after the one read is not in it, so every answer taken from it
+    (staged, changed, tracked, untracked, modes, the tree) is about one and the same index.
+
+    The copy keeps the time the live file was last written. git trusts a file's recorded size and times only when
+    the index was written after them, and reads the content of a file saved in the index's own second: a copy
+    stamped with a later time would pass such a save by, and the edit would be listed nowhere. git may write what
+    it learns of the files into the copy, as it does into the live index; the live index is not opened at all.
+    The copy and its folder are removed when the block ends, however it ends."""
+    raw, written = read_index(index_file(repo))
+    with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
+        copy = Path(tmp) / "index"
+        if raw is not None and written is not None:
+            copy.write_bytes(raw)
+            os.utime(copy, ns=(written, written))
+        yield {"GIT_INDEX_FILE": str(copy)}
 
 
 def fingerprint(raw):
@@ -645,11 +687,13 @@ def return_index(repo, base, data):
     return outcome
 
 
-def build_stash(repo, base, message, changed, untracked, captured):
-    """The commit `git stash push --include-untracked` would make, built from the captured bytes; the tree and the
-    live index are not touched: its bytes are read once and its tree is taken from a private copy, where git's own
-    `write-tree` on the live index would lock it and write it."""
-    index_tree = tree_of(repo, index_bytes(index_file(repo)))
+def build_stash(repo, base, message, changed, untracked, captured, index):
+    """The commit `git stash push --include-untracked` would make, built from the captured bytes and from `index`
+    (`index_snapshot`), the same copy of the index that `changed` and `untracked` were listed against: the index
+    commit is that copy's tree, the working-tree commit is that tree with the captured tracked paths put in, and
+    the untracked parent holds the paths that copy does not track, so no path is in both. The working tree and
+    the live index are not touched, and the live index is not read."""
+    index_tree = text(repo, "write-tree", env=index).strip()
     index_commit = text(repo, "commit-tree", index_tree, "-p", base, "-m", f"index on {message}").strip()
     with tempfile.TemporaryDirectory(dir=repo / ".git") as tmp:
         work_index = {"GIT_INDEX_FILE": str(Path(tmp) / "work")}
@@ -821,13 +865,17 @@ def reject(repo):
     refuse_held_index(repo)
     rejection = data.get("rejection")
     if rejection is None:
-        changed, untracked, _ = changed_paths(repo, base)
-        if not changed and not dirty(repo):
-            close(repo)
-            print("nothing to set aside; packet closed")
-            return 0
-        captured = capture(repo, changed)
-        commit = build_stash(repo, base, message, changed, untracked, captured)
+        # One read of the index, and every answer about it from that read: the listing, each path's place among
+        # the tracked or the untracked, and the stash's commits. return_index then compares the live index with
+        # the tree recorded here, under the lock, before it replaces anything.
+        with index_snapshot(repo) as index:
+            changed, untracked, _ = changed_paths(repo, base, env=index)
+            if not changed and not dirty(repo, env=index):
+                close(repo)
+                print("nothing to set aside; packet closed")
+                return 0
+            captured = capture(repo, changed)
+            commit = build_stash(repo, base, message, changed, untracked, captured, index)
         rejection = {"stash": commit, "stored": False, "paths": {p: sha(captured[p]) for p in changed},
                      "settled": {}}
         data["rejection"] = rejection
