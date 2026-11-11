@@ -147,6 +147,12 @@ class RunState(Tree):
         self.run_file("2026-11-11-phase-0.md", "PARKED 2026-11-11T05:00:00Z run=a x\n\n## Closeout run=b\n")
         self.assertTrue(digest.run_state(self.root).startswith("Completed"))
 
+    def test_a_mention_of_an_operator_stop_in_prose_is_no_stop(self):
+        # Review round 2, finding 2: the word anywhere in the file, a lesson or an audit line, read as a stop.
+        self.run_file("2026-11-11-phase-0.md", "- 2026-11-11T01:00:00Z opened; the earlier run's operator stop named"
+                      " the next row\n\n## Closeout run=a\n\n## Lessons\n\n- An operator stop is always honoured.\n")
+        self.assertTrue(digest.run_state(self.root).startswith("Completed"), digest.run_state(self.root))
+
     def test_the_newest_run_file_is_the_one_last_written_by_the_run(self):
         # Review round 1, finding 5: 2026-11-11-phase-0-2.md sorted after 2026-11-11-phase-1.md, written later.
         self.run_file("2026-11-11-phase-0-2.md", "- 2026-11-11T03:00:00Z opened\n## Closeout run=a\n")
@@ -200,7 +206,7 @@ class Ci(unittest.TestCase):
     def test_a_git_that_hangs_is_unknown_ci_not_a_crash(self):
         # Review round 1, finding 1: git() raised out of ci_state.
         with mock.patch.object(digest.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 60)):
-            self.assertEqual(digest.ci_state(REPO, self.runner(0)), ["CI: unknown (origin/main cannot be read)."])
+            self.assertEqual(digest.ci_state(REPO, self.runner(0)), ["CI: unknown (origin/main cannot be fetched)."])
 
     def test_long_ci_lines_are_wrapped_in_the_body(self):
         # Review round 1, finding 6.
@@ -219,7 +225,7 @@ class Ci(unittest.TestCase):
         self.assertTrue(self.state(self.runner(0, raises=subprocess.TimeoutExpired("ci", 300)))[0].startswith(
             "CI: unknown"))
         with mock.patch.object(digest, "git", return_value=None):
-            self.assertEqual(digest.ci_state(REPO, self.runner(0)), ["CI: unknown (origin/main cannot be read)."])
+            self.assertEqual(digest.ci_state(REPO, self.runner(0)), ["CI: unknown (origin/main cannot be fetched)."])
 
 
 class Size(Tree):
@@ -241,6 +247,21 @@ class Size(Tree):
         self.assertEqual(attachments[0][1].count("To do: "), 300)
         self.assertEqual(lines[2], "Running")  # the run state, CI and totals stay at the top
         self.assertTrue(lines[3].startswith("CI: "))
+        # Review round 2, finding 3: the attachment's pointer is the body's last line.
+        self.assertIn(f"in the attached {digest.ATTACHMENT}", " ".join(lines[-2:]))
+        self.assertTrue(lines[-1].endswith(f"{digest.ATTACHMENT}."), lines[-1])
+
+    def test_a_remote_that_cannot_be_fetched_is_unknown_ci(self):
+        # Review round 2, finding 1: the cached origin/main was checked, which may be a week old.
+        calls = []
+
+        def fake_git(root, *args):
+            calls.append(args)
+            return None if args[0] == "fetch" else "a" * 40
+        with mock.patch.object(digest, "git", fake_git):
+            self.assertEqual(digest.ci_state(self.root, lambda *a, **k: None),
+                             ["CI: unknown (origin/main cannot be fetched)."])
+        self.assertEqual(calls[0][:2], ("fetch", "--quiet"))
 
     def test_no_line_names_a_path_outside_the_repository(self):
         self.many(50)

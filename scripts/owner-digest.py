@@ -166,7 +166,8 @@ def ending(text, name):
         events.append((m.start(), f"Completed: {name} has its closeout."))
     for m in re.finditer(r"^PARKED (.*)$", text, re.M):
         events.append((m.start(), f"Parked: {m[1].strip()} ({name})"))
-    for m in re.finditer(r"operator stop", text, re.I):
+    # A stop recorded as an event (`- <UTC> operator stop ...` in Critical events), never a mention in prose.
+    for m in re.finditer(r"^- \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z operator stop\b", text, re.M | re.I):
         events.append((m.start(), f"Stopped by the operator ({name})."))
     return max(events)[1] if events else None
 
@@ -182,6 +183,9 @@ def latest_instant(path):
 
 def ci_state(root, runner=subprocess.run):
     """One line or more on CI for origin/main's head; never an exception, whatever the network does."""
+    # The head GitHub has now, not the one this clone last fetched: another clone may have pushed since.
+    if git(root, "fetch", "--quiet", "origin", "main") is None:
+        return ["CI: unknown (origin/main cannot be fetched)."]
     sha = git(root, "rev-parse", "origin/main")
     if not sha:
         return ["CI: unknown (origin/main cannot be read)."]
@@ -247,14 +251,14 @@ def compose(root, rows, today, ci_lines, state):
                 break
             kept += lines
             shown += 1
-        if items:
-            kept.append(f"... and {len(items) - shown} more, every one with its steps, in the attached {ATTACHMENT}.")
-        progress_room = BODY_LINES - len(head) - len(kept) - 1
+        notice = [""] + wrap(f"... and {len(items) - shown} more waiting on you, every one with its steps, in the "
+                              f"attached {ATTACHMENT}.")
+        progress_room = BODY_LINES - len(head) - len(kept) - 1 - len(notice)
         if len(progress) > progress_room:
             cut = progress[:max(progress_room - 1, 1)]
             cut.append(f"... and {len(built) - (len(cut) - 1)} more verified sections this week.")
             progress = cut
-        body = head + kept + [""] + progress
+        body = head + kept + [""] + progress + notice  # the notice is the last line, as the attachment's pointer
     subject = f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
     return subject, "\n".join(body) + "\n", attachments
 
