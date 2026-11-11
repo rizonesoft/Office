@@ -88,6 +88,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 50 | §50 | Withdrawn sections | -- | [x] |
 | 51 | §51 | No deferral or adjacency owner is withdrawn | §50 | [ ] |
 | 52 | §52 | A withdrawn section authors nothing | §50 | [ ] |
+| 53 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1050,11 +1051,14 @@ Owner decision 2026-11-10 (`docs/specs/2026-10-23-campaign-scope-design.md`, dec
 2. Send it weekly through the automations. Done when: the task is in `tasks.json` and the README, and a dry run of the task prints the email.
 
 - [ ] Write the progress part of `scripts/owner-digest.py`: from `python scripts/todo-graph.py query stats` and the stamp dates in the receipts under `docs/reviews/`, the sections verified in the last seven days (reference and title), the totals verified, ready and blocked, and the number of TODO files still to author (§31). Done when: a test in `scripts/tests/test_owner_digest.py` over a fixture tree with two receipts inside the week and one outside lists the two.
-- [ ] Write the waiting part: every open section whose Needs include `operator`, `owner-decision`, `third-party` or `store-account`, with its reference, its title, the first paragraph of its body as what is needed, and how many open sections depend on it directly or through others. Done when: a fixture with one such section and two dependants lists it with the count 2. Cheaper substitute: the list of references alone, which sends the owner into the TODO files to learn what to do.
+- [ ] Add an `**Owner action:**` field to the TODO format in `scripts/lib/todo_graph.py`: the exact steps the owner takes and where the answer is recorded, required by `validate` on every open, non-withdrawn section whose Needs include `operator`, `owner-decision`, `third-party` or `store-account`, and refused elsewhere. Done when: tests in `scripts/tests/test_todo_graph.py` show both refusals, and `todo/README.md` (What every section declares) names the field. **Groomed 2026-11-11:** completion finding 1 (a section's first paragraph says why, not what to do).
+- [ ] Write the owner action of each of the six sections that need one today (D00 T02 §3 and §4, D01 T01 §4, §7 and §8, D01 T03 §5), each from the section's own checklist and Needs. Done when: `python scripts/todo-graph.py validate` exits 0.
+- [ ] Write the waiting part: every open, non-withdrawn section whose Needs include `operator`, `owner-decision`, `third-party` or `store-account`, with its reference, its title, its Needs, its `**Owner action:**` text, and how many open sections depend on it directly or through others. Done when: a fixture with one such section and two dependants lists it with its owner action and the count 2. Cheaper substitute: the list of references alone, which sends the owner into the TODO files to learn what to do.
 - [ ] Order the waiting part by the number of dependants, largest first, and say `Nothing is waiting on you.` when it is empty. Done when: tests show the order and the empty form.
-- [ ] Add the state of the run: the last line of the newest file under `docs/phase-runs/` that starts with `PARKED` or `STOPPED`, or `Running: last commit <date>` from `git log -1`, and the state of CI from `python scripts/ci-status.py`. Done when: tests cover a parked run file and a running one.
-- [ ] Keep the email to plain text of at most 120 lines, with no line over 100 characters, and no secret or path outside the repository. Done when: a test with 300 fixture sections shows the cut with a last line that says how many more there are.
-- [ ] Send the digest through the transport of `.conclave/automations/alert.py` (the same sender and recipient), with `--dry-run` printing it and sending nothing. Done when: a test with a replaced opener shows one request with the digest as its body, and `--dry-run` makes none.
+- [ ] Add the state of the run, from the run guard and the newest run file together: `Running` (with the run id and the phase) while `build/claude-campaign-guard.json` exists; otherwise, from the newest file under `docs/phase-runs/`, `Completed` for a `## Closeout run=` heading, `Parked` with the reason of a column-0 `PARKED` line, `Stopped by the operator` for an operator stop recorded in its Critical events, and `Not running` with the date of the last commit when it shows none of these; `Unknown` with the reason when the files cannot be read. Done when: tests cover each state, the operator stop as `docs/phase-runs/2026-11-11-phase-0.md` records it included. **Groomed 2026-11-11:** completion finding 2.
+- [ ] Add the state of CI for `origin/main`'s head, from `python scripts/ci-status.py <that sha>`, reported as green, red (with the failing jobs it names), pending or unknown (with the reason, when `gh` or the fetch cannot be read), never an error that stops the email. Done when: tests with a replaced runner cover all four. **Groomed 2026-11-11:** completion finding 3 (the command needs a commit).
+- [ ] Keep the email body to plain text of at most 120 lines, with no line over 100 characters, and no secret or path outside the repository, keeping the run state, CI, totals and the first waiting items in the body and putting the whole waiting list, every item with its owner action, in a plain-text attachment whenever the body cannot hold it, with a last body line that names the attachment and how many items it adds. Done when: a test with 300 fixture waiting sections shows the cut body and an attachment holding all 300. **Groomed 2026-11-11:** completion finding 4.
+- [ ] Send the digest through the transport of `.conclave/automations/alert.py` (the same sender and recipient), with the attachment when there is one, and `--dry-run` printing it and sending nothing. Done when: a test with a replaced opener shows one request with the digest as its body (and the attachment when the list overflows), and `--dry-run` makes none.
 - [ ] Add the task `office-owner-digest` to `.conclave/automations/tasks.json` (weekly, Monday 07:00, timeout 5 minutes) and to `.conclave/automations/README.md`. Done when: `python scripts/tests/test_automations.py` passes, which fails when the README and `tasks.json` disagree.
 - [ ] Register the task on this PC with `pwsh .conclave/automations/install.ps1`. Done when: `Get-ScheduledTask -TaskPath '\Office\'` lists `office-owner-digest`.
 - [ ] Commit: `automations: send the owner one weekly digest`
@@ -1446,6 +1450,29 @@ Filed 2026-11-11 from the completion review of §50 (round 2, finding 2, P2). `t
 - [ ] Commit: `todo: a withdrawn section authors no file`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with these tests among them, and `python scripts/todo-graph.py plan --check` exits 0.
+
+## 53. Automation Notices Go in the Weekly Digest
+
+Filed 2026-11-11 from the completion review of §35 (`docs/reviews/00-workspace/D00-T03-s35-completion.md`, round 1, finding 5, P2). Decision 32 of `docs/specs/2026-10-23-campaign-scope-design.md` promises one weekly email and no other interruption, but three senders still email at once: `run.py` when a scheduled task fails (`.conclave/automations/run.py`, through `alert.py`), the host readiness check when a campaign parks (`scripts/check-campaign-host.py --notify`, `process-plan`'s Host readiness step), and the version notices of `check-visual-studio.py` and `check-python-pin.py`. This section records each notice for the digest instead, keeps one immediate email only where waiting a week would lose work, and says which in the README.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Record notices for the digest. Done when: every sender writes its notice to one place the digest reads.
+2. Decide and apply what still emails at once. Done when: the README names each sender and whether it waits for the digest.
+
+- [ ] Add a notice record to `.conclave/automations/alert.py`: one JSON line per notice in `build/automations/notices.jsonl` (sender, time, subject, body, written temp-then-replace through the whole file), with a reader that returns the notices since the last digest. Done when: tests in `scripts/tests/test_automations.py` show a written notice read back and one already reported left out.
+- [ ] Make `run.py` record a failed task's notice instead of emailing it, unless the same task has failed on three runs in a row, which still emails once. Done when: tests show a first failure recorded and not sent, and the third in a row sent once.
+- [ ] Make `check-campaign-host.py --notify` record its notice and email at once only when a campaign was running and parks for it, since that stops work the owner expects to continue. Done when: tests show both cases.
+- [ ] Make the version notices of `check-visual-studio.py` and `check-python-pin.py` record their notices and never email. Done when: tests show each recorded and no request made.
+- [ ] Add the notices since the last digest to `scripts/owner-digest.py` as their own part, and mark them reported once the digest is sent. Done when: a test shows the part and the notices left out of the next digest.
+- [ ] Say in `.conclave/automations/README.md` (How you hear about it) which notices wait for the Monday digest and which two still email at once, and why. Done when: the README names every sender.
+- [ ] Commit: `automations: notices wait for the weekly digest`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` and `-p "test_owner_digest.py"` pass, and `python scripts/owner-digest.py --dry-run` shows the notices part.
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.

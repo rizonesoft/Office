@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 67 | Checklist items: 454
+Sections: 68 | Checklist items: 464
 
 | Status | Reference   | Deliverable                                         | Needs                  | Items |
 | ------ | ----------- | --------------------------------------------------- | ---------------------- | ----- |
@@ -51,7 +51,7 @@ Sections: 67 | Checklist items: 454
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                      | none                   | 6     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                       | none                   | 9     |
 | [-]    | D00 T03 §34 | Work Packet Acceptance Command                      | none                   | 11    |
-| [ ]    | D00 T03 §35 | Weekly Owner Digest                                 | none                   | 9     |
+| [ ]    | D00 T03 §35 | Weekly Owner Digest                                 | none                   | 12    |
 | [ ]    | D00 T03 §36 | Operating Mode Measurement Command                  | none                   | 11    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                    | none                   | 9     |
 | [ ]    | D00 T03 §40 | Review Schedule in the Pin                          | none                   | 6     |
@@ -67,6 +67,7 @@ Sections: 67 | Checklist items: 454
 | [x]    | D00 T03 §50 | Withdrawn Sections                                  | none                   | 11    |
 | [ ]    | D00 T03 §51 | No Deferral or Adjacency Owner Is Withdrawn         | none                   | 4     |
 | [ ]    | D00 T03 §52 | A Withdrawn Section Authors Nothing                 | none                   | 3     |
+| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest          | none                   | 7     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                 | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                                | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                                | none                   | 6     |
@@ -314,6 +315,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 65/160 verified sections, 8 withdrawn, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 65/161 verified sections, 8 withdrawn, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 425/1096 items completed (includes Commit items).
+Checklist: 425/1106 items completed (includes Commit items).
