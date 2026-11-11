@@ -76,12 +76,12 @@ def git(root, *args):
 # An absolute path of this machine: a drive or a share on Windows, a home, a mount or a system folder elsewhere. The
 # email names none (D00 T03 §35: "no secret or path outside the repository"), whoever wrote the text: a run file, git,
 # gh's error through ci-status.py.
-# A path may hold spaces (`C:\Program Files\...`), so a match runs to the end of its clause: a quote, a closing
+# A path may hold spaces (a folder named in two words), so a match runs to the end of its clause: a quote, a closing
 # bracket, a comma followed by a space, or the end of the line. Losing the rest of an error's clause is the price of
 # never sending half a path.
 OUTSIDE = re.compile(r"""(?ix)
-    (?:\\\\\?\\)?[a-z]:[\\/](?:[^'"`)\r\n,]|,(?!\s))*                  # C:\Users\..., \\?\C:\...
-  | \\\\[^\s\\/'"`]+[\\/](?:[^'"`)\r\n,]|,(?!\s))*                      # \\server\share\...
+    (?:\\\\\?\\)?[a-z]:[\\/](?:[^'"`)\r\n,]|,(?!\s))*                  # a drive path, with or without the long-path prefix
+  | \\\\[^\s\\/'"`]+[\\/](?:[^'"`)\r\n,]|,(?!\s))*                      # a share path
   | (?<![\w.])/(?:home|Users|mnt|root|tmp|var|etc|opt|private)/(?:[^'"`)\r\n,]|,(?!\s))*
 """)
 
