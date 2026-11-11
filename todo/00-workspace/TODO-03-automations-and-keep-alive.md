@@ -1034,6 +1034,10 @@ Filed 2026-11-10. Since the owner's decision that workers write (`docs/specs/202
 
 ## 35. Weekly Owner Digest
 
+> **Started:** 2026-11-11T07:10:00Z
+
+**Corrected 2026-11-11:** since D00 T03 §50 a section can be withdrawn; a withdrawn section is waiting on nobody and is left out of the waiting part and its dependant counts, and the totals come from `query stats`, which already leaves withdrawn sections out of `total` and reports them under `withdrawn` (the digest shows that count too). README's "exactly three kinds" of email becomes four with this digest.
+
 Owner decision 2026-11-10 (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 32): the run never waits on the owner and never interrupts the owner. It works around every item only the owner can do, and once a week one email says what was built and what is waiting, with the exact steps for each waiting item. The owner's choice of this digest is the standing permission to send it (`AGENTS.md`, Safety, asks once before mail); it covers this one weekly email and nothing else. The digest is built by a script from the tree, so it costs no model tokens and says the same thing whoever runs it.
 
 **Phase:** 0
