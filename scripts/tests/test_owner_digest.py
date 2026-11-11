@@ -287,6 +287,11 @@ class Size(Tree):
             ("mounts /home/me/x and /mnt/r/scratch", "mounts <path outside the repository>"),
             (r"inside D:\Office\build\x.json here", r"inside build\x.json here"),
             ("inside D:/Office/build/x.json here", "inside build/x.json here"),
+            # Review round 7: a sibling sharing the prefix, and a climb out of the tree, are paths outside.
+            (r"backup D:\Office-backup\private\config.yml", "backup <path outside the repository>"),
+            (r"climb D:\Office\..\Private\config.yml", "climb <path outside the repository>"),
+            (r"climb D:\Office\build\..\..\Private\x", "climb <path outside the repository>"),
+            (r"stays D:\Office\build\..\docs\x.md", r"stays build\..\docs\x.md"),
             ("relative scripts/owner-digest.py and docs/x.md stay", "relative scripts/owner-digest.py and docs/x.md stay"),
         ]
         for text, expected in cases:

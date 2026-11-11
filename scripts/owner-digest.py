@@ -29,6 +29,7 @@ import datetime
 import importlib.util
 import json
 from pathlib import Path
+import posixpath
 import re
 import subprocess
 import sys
@@ -88,8 +89,14 @@ OUTSIDE = re.compile(r"""(?ix)
 def without_paths(text, root):
     """`text` with this repository's own absolute path made relative and every other absolute path named only as
     `<path outside the repository>`: the email's one guard for the class, applied to every line it sends."""
+    def inside(m):
+        # Only at a folder boundary, and only when the rest stays in the tree once `..` is resolved: a sibling such as
+        # `<root>-backup` or `<root>\..\Private` is a path outside (D00 T03 §35 review round 7).
+        rest = posixpath.normpath(m[1].replace("\\", "/"))
+        return "<path outside the repository>" if rest == ".." or rest.startswith("../") else m[1]
+
     for spelling in {str(root), str(root).replace("\\", "/")}:
-        text = re.sub(re.escape(spelling) + r"[\\/]?", "", text, flags=re.I)
+        text = re.sub(re.escape(spelling) + r"[\\/]((?:[^'\"`)\r\n,]|,(?!\s))*)", inside, text, flags=re.I)
     return OUTSIDE.sub("<path outside the repository>", text)
 
 
