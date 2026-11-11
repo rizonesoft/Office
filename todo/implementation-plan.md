@@ -50,7 +50,7 @@ Sections: 67 | Checklist items: 454
 | [x]    | D00 T03 §31 | Plan Lists Files Still to Author                    | none                   | 10    |
 | [x]    | D00 T03 §32 | Validate Checks Plan Row Width                      | none                   | 6     |
 | [ ]    | D00 T03 §33 | Plan Groups a Phase by Domain                       | none                   | 9     |
-| [ ]    | D00 T03 §34 | Work Packet Acceptance Command                      | none                   | 11    |
+| [-]    | D00 T03 §34 | Work Packet Acceptance Command                      | none                   | 11    |
 | [ ]    | D00 T03 §35 | Weekly Owner Digest                                 | none                   | 9     |
 | [ ]    | D00 T03 §36 | Operating Mode Measurement Command                  | none                   | 11    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                    | none                   | 9     |
@@ -60,10 +60,10 @@ Sections: 67 | Checklist items: 454
 | [ ]    | D00 T03 §43 | Stamp Replays the Schedule                          | none                   | 6     |
 | [ ]    | D00 T03 §44 | Rotation Round Count and Takeover                   | none                   | 5     |
 | [ ]    | D00 T03 §45 | Skills and Prompts Follow the Schedule              | none                   | 6     |
-| [ ]    | D00 T03 §46 | Packet Rejection Keeps a Save Landing at Write Time | none                   | 6     |
-| [ ]    | D00 T03 §47 | Packet Display and Digest From One Capture          | none                   | 3     |
-| [ ]    | D00 T03 §48 | Packet Staging Publishes the Index Atomically       | none                   | 4     |
-| [ ]    | D00 T03 §49 | Packet Lifecycle After a Partial Rejection          | none                   | 5     |
+| [-]    | D00 T03 §46 | Packet Rejection Keeps a Save Landing at Write Time | none                   | 6     |
+| [-]    | D00 T03 §47 | Packet Display and Digest From One Capture          | none                   | 3     |
+| [-]    | D00 T03 §48 | Packet Staging Publishes the Index Atomically       | none                   | 4     |
+| [-]    | D00 T03 §49 | Packet Lifecycle After a Partial Rejection          | none                   | 5     |
 | [ ]    | D00 T03 §50 | Withdrawn Sections                                  | none                   | 11    |
 | [ ]    | D00 T03 §51 | No Deferral or Adjacency Owner Is Withdrawn         | none                   | 4     |
 | [ ]    | D00 T03 §52 | A Withdrawn Section Authors Nothing                 | none                   | 3     |
@@ -75,9 +75,9 @@ Sections: 67 | Checklist items: 454
 | [ ]    | D00 T05 §2  | Lesson Index and Query                              | none                   | 8     |
 | [ ]    | D00 T05 §3  | First Lessons From the Review Records               | none                   | 6     |
 | [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                     | none                   | 5     |
-| [ ]    | D00 T05 §5  | Work Packets Carry Their Lessons                    | none                   | 5     |
-| [ ]    | D00 T05 §6  | Packet Outcome Ledger                               | none                   | 6     |
-| [ ]    | D00 T05 §7  | Agent Score From the Ledger                         | none                   | 8     |
+| [-]    | D00 T05 §5  | Work Packets Carry Their Lessons                    | none                   | 5     |
+| [-]    | D00 T05 §6  | Packet Outcome Ledger                               | none                   | 6     |
+| [-]    | D00 T05 §7  | Agent Score From the Ledger                         | none                   | 8     |
 | [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                              | none                   | 7     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -314,6 +314,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 64/168 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 64/160 verified sections, 8 withdrawn, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 414/1096 items completed (includes Commit items).
+Checklist: 424/1096 items completed (includes Commit items).

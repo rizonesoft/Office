@@ -20,7 +20,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 - The open phase 2 run (`docs/phase-runs/2026-10-20-phase-2.md`), which §6 moves under the guard.
 - -> XREF: T04 §1 -- `tools.lock.json`, the lock file of the portable build tools, joins the pins §11 keeps at the latest stable release
 - -> XREF: D03 T01 §17 -- the authoring sections whose `Author` items §31 lists in the plan as files still to author
-- -> XREF: T05 §5 -- the lessons `scripts/packet.py` (§34) attaches to a packet, and the ledger it writes (T05 §6)
+- -> XREF: T05 §5 -- the lessons `scripts/packet.py` (§34) attaches to a packet, and the ledger it writes (T05 §6) (all withdrawn 2026-11-11 with `scripts/packet.py`, D00 T03 §50: no agent writes)
 
 ## Outcome
 
@@ -69,7 +69,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 31 | §31 | Plan lists files still to author | -- | [x] |
 | 32 | §32 | Validate checks plan row width | -- | [x] |
 | 33 | §33 | Plan groups a phase by domain | §31, §32 | [ ] |
-| 34 | §34 | Work packet acceptance command | -- | [ ] |
+| 34 | §34 | Work packet acceptance command | -- | [-] |
 | 35 | §35 | Weekly owner digest | §1 | [ ] |
 | 36 | §36 | Operating mode measurement command | -- | [ ] |
 | 37 | §37 | Operating mode rule and launcher | §36 | [ ] |
@@ -81,10 +81,10 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 43 | §43 | Stamp replays the schedule | §41, §42 | [ ] |
 | 44 | §44 | Rotation round count and takeover | §41, §43 | [ ] |
 | 45 | §45 | Skills and prompts follow the schedule | §42, §43, §44 | [ ] |
-| 46 | §46 | Packet rejection keeps a save landing at write time | §34 | [ ] |
-| 47 | §47 | Packet display and digest from one capture | §34 | [ ] |
-| 48 | §48 | Packet staging publishes the index atomically | §34 | [ ] |
-| 49 | §49 | Packet lifecycle after a partial rejection | §34 | [ ] |
+| 46 | §46 | Packet rejection keeps a save landing at write time | §34 | [-] |
+| 47 | §47 | Packet display and digest from one capture | §34 | [-] |
+| 48 | §48 | Packet staging publishes the index atomically | §34 | [-] |
+| 49 | §49 | Packet lifecycle after a partial rejection | §34 | [-] |
 | 50 | §50 | Withdrawn sections | -- | [ ] |
 | 51 | §51 | No deferral or adjacency owner is withdrawn | §50 | [ ] |
 | 52 | §52 | A withdrawn section authors nothing | §50 | [ ] |
@@ -1001,6 +1001,8 @@ Filed 2026-11-10 (owner: "a Word phase with the entire Word dev in it"). The pla
 
 ## 34. Work Packet Acceptance Command
 
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: scripts/packet.py accepted or rejected a writer agent's change, and no writer agent is left (the Opus section-writer and the Fable principal-implementer are removed); the code goes with it and stays in history at d88fc20
+
 > **Started:** 2026-11-11T00:03:00Z
 
 **Corrected 2026-11-11:** the owner decided on 2026-11-11 that the main session writes every section and every fix round itself (`AGENTS.md`, Subagents); the one worker left is `principal-implementer` (Fable), on call for a review takeover and for architecture decision records, and its work still arrives as a packet accepted or rejected by the paragraph this section replaces (the build step of the Delegation section of `.claude/skills/process-todo-section/SKILL.md`, and the quality bullet of `AGENTS.md`, Subagents). The command is therefore still needed, for that one worker. Decided here, as the industry-standard behaviour where the section is silent: `begin` also refuses while a packet is open, `show --stage` closes the packet once it has staged it, `reject` with nothing changed closes the packet without a stash, and `show` exits 1 on an empty change (a worker that returned nothing has nothing to accept). Reversing any of these is a small change to `scripts/packet.py` and its tests.
@@ -1288,6 +1290,8 @@ The skills still describe the old loop: one prompt with every lens, a severity s
 
 ## 46. Packet Rejection Keeps a Save Landing at Write Time
 
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
+
 Filed 2026-11-11 from the completion review of §34 (`docs/reviews/00-workspace/D00-T03-s34-completion.md`, round 2, finding 1, P1). §34's `reject` checks, right before it writes, that a path still holds the bytes its stash captured, then returns the path to `HEAD`. An editor can save in the moment between that check and the write or delete, and those bytes are in no stash, so the rejection destroys them. This section makes the mutation itself safe: a path is moved aside before it is compared, and its `HEAD` content is put back only into a path nobody has recreated.
 
 **Phase:** 0
@@ -1309,6 +1313,8 @@ Filed 2026-11-11 from the completion review of §34 (`docs/reviews/00-workspace/
 
 ## 47. Packet Display and Digest From One Capture
 
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
+
 Filed 2026-11-11 from the completion review of §34 (round 2, finding 2, P2). §34's `show` prints the diffs and then hashes the working tree, so an editor save between the two can make the digest name bytes the reviewer never saw, and `show --stage --snapshot` would then accept them. This section reads every changed path once and derives the display and the digest from those same bytes.
 
 **Phase:** 0
@@ -1326,6 +1332,8 @@ Filed 2026-11-11 from the completion review of §34 (round 2, finding 2, P2). §
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the injected-save test among them.
 
 ## 48. Packet Staging Publishes the Index Atomically
+
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
 
 Filed 2026-11-11 from the completion review of §34 (round 2, finding 3, P2). §34's `show --stage` updates the index one path at a time, so a failure on the second path (an index lock, a full disk) leaves half a packet staged and nothing that tells it from the packet before. This section prepares the whole index change in a private index file and publishes it in one step under git's own index lock, after checking the live index has not changed.
 
@@ -1345,6 +1353,8 @@ Filed 2026-11-11 from the completion review of §34 (round 2, finding 3, P2). §
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the three failure tests among them.
 
 ## 49. Packet Lifecycle After a Partial Rejection
+
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it extends scripts/packet.py (D00 T03 §34), withdrawn with it because no writer agent is left
 
 Filed 2026-11-11 from the completion review of §34 (round 2, finding 4, P2). Once `reject` has started, the packet must not be accepted: if a rejection returns one path and stops on another, §34's `show` can see a smaller in-scope change and `show --stage` could accept it and close the packet, abandoning the rejection's record. This section gives the packet explicit states.
 
@@ -1379,16 +1389,16 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 1. Teach the graph a withdrawn section. Done when: `validate` accepts a withdrawn section, `query stats` leaves it out of `total`, and the plan shows it as withdrawn.
 2. Withdraw the five sections and remove `scripts/packet.py`. Done when: `query stats` no longer counts them and no file names `scripts/packet.py` except history records.
 
-- [ ] Read a `> **Withdrawn:** <UTC instant>: <who decided>: <reason>` line in a section body and a `[-]` box in its Implementation Order row in `scripts/lib/todo_graph.py`, and refuse either without the other, a withdrawn section that also carries a stamp, and a line without a decider and a reason. Done when: tests in `scripts/tests/test_todo_graph.py` show each refusal and an accepted withdrawal.
-- [ ] Refuse an open, non-withdrawn section that depends on a withdrawn one, naming both. Done when: a fixture where an open section depends on a withdrawn one exits 2 with both references, and the same fixture with the dependant withdrawn too validates.
-- [ ] Leave a withdrawn section out of `query ready`, `query blocked`, `resolve` exit 0 (it exits 3 as settled, with `withdrawn: true`) and the `total` of `query stats`, and add `"withdrawn": N` to `query stats`. Done when: tests show each.
-- [ ] Render a withdrawn row in the plan with `[-]` in Status and leave it out of the progress line's count, adding `, N withdrawn` to it when N is above zero. Done when: a test on a fixture tree shows both and `plan --check` fails when the plan is stale.
-- [ ] Count a withdrawn section as finished for a file's `done` status in the validator. Done when: a fixture file whose sections are all stamped or withdrawn validates with `status: done` and refuses `status: active`.
-- [ ] Count a withdrawn sibling as finished where `stamp` decides that a file is done, in `scripts/lib/todo_graph.py`. Done when: a test stamps the last open section of a fixture file whose other section is withdrawn, the file reads `status: done` and the graph validates afterwards. **Groomed 2026-11-11:** completion finding 2.
-- [ ] Give `plan_status` in `scripts/todo-graph.py` a `withdrawn` status, so `query plan` reports a withdrawn section as `withdrawn` and never `blocked`. Done when: a test shows it for a withdrawal in an active file and in a done file. **Groomed 2026-11-11:** completion finding 3.
-- [ ] Document the withdrawal in `todo/README.md` (what it is for, the line, the `[-]` box, who may decide one: the owner, or the lead for a section whose consumer an owner decision removed) and in `.claude/skills/add-todo/SKILL.md` (a withdrawal goes through this, never by deleting a section). Done when: both name the line, the box and the dependant refusal.
-- [ ] Withdraw D00 T03 §34, §46, §47, §48 and §49, and D00 T05 §5, §6 and §7 (lessons attached to work packets, the packet ledger and the agent score from it, which have no packets to work on once no agent writes), with the owner's 2026-11-11 decision as the reason. Done when: `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`, `resolve` on each exits 3, and `validate` passes with no open section left depending on any of them. **Groomed 2026-11-11:** completion finding 1 (it named five; D00 T05 §5 and §6 depend on §34 and §7 on §6).
-- [ ] Remove `scripts/packet.py` and `scripts/tests/test_packet.py`, and the `build/packet.json` mention in any document that still describes the command as live. Done when: a search of the repository outside `docs/reviews/`, `docs/phase-runs/` and the withdrawn sections finds no `packet.py`, and `python scripts/run-tests.py` passes.
+- [x] Read a `> **Withdrawn:** <UTC instant>: <who decided>: <reason>` line in a section body and a `[-]` box in its Implementation Order row in `scripts/lib/todo_graph.py`, and refuse either without the other, a withdrawn section that also carries a stamp, and a line without a decider and a reason. Done when: tests in `scripts/tests/test_todo_graph.py` show each refusal and an accepted withdrawal.
+- [x] Refuse an open, non-withdrawn section that depends on a withdrawn one, naming both. Done when: a fixture where an open section depends on a withdrawn one exits 2 with both references, and the same fixture with the dependant withdrawn too validates.
+- [x] Leave a withdrawn section out of `query ready`, `query blocked`, `resolve` exit 0 (it exits 3 as settled, with `withdrawn: true`) and the `total` of `query stats`, and add `"withdrawn": N` to `query stats`. Done when: tests show each.
+- [x] Render a withdrawn row in the plan with `[-]` in Status and leave it out of the progress line's count, adding `, N withdrawn` to it when N is above zero. Done when: a test on a fixture tree shows both and `plan --check` fails when the plan is stale.
+- [x] Count a withdrawn section as finished for a file's `done` status in the validator. Done when: a fixture file whose sections are all stamped or withdrawn validates with `status: done` and refuses `status: active`.
+- [x] Count a withdrawn sibling as finished where `stamp` decides that a file is done, in `scripts/lib/todo_graph.py`. Done when: a test stamps the last open section of a fixture file whose other section is withdrawn, the file reads `status: done` and the graph validates afterwards. **Groomed 2026-11-11:** completion finding 2.
+- [x] Give `plan_status` in `scripts/todo-graph.py` a `withdrawn` status, so `query plan` reports a withdrawn section as `withdrawn` and never `blocked`. Done when: a test shows it for a withdrawal in an active file and in a done file. **Groomed 2026-11-11:** completion finding 3.
+- [x] Document the withdrawal in `todo/README.md` (what it is for, the line, the `[-]` box, who may decide one: the owner, or the lead for a section whose consumer an owner decision removed) and in `.claude/skills/add-todo/SKILL.md` (a withdrawal goes through this, never by deleting a section). Done when: both name the line, the box and the dependant refusal.
+- [x] Withdraw D00 T03 §34, §46, §47, §48 and §49, and D00 T05 §5, §6 and §7 (lessons attached to work packets, the packet ledger and the agent score from it, which have no packets to work on once no agent writes), with the owner's 2026-11-11 decision as the reason. Done when: `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`, `resolve` on each exits 3, and `validate` passes with no open section left depending on any of them. **Groomed 2026-11-11:** completion finding 1 (it named five; D00 T05 §5 and §6 depend on §34 and §7 on §6).
+- [x] Remove `scripts/packet.py` and `scripts/tests/test_packet.py`, and the `build/packet.json` mention in any document that still describes the command as live. Done when: a search of the repository outside `docs/reviews/`, `docs/phase-runs/` and the withdrawn sections finds no `packet.py`, and `python scripts/run-tests.py` passes.
 - [ ] Commit: `todo: withdraw a section whose purpose is gone`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the withdrawal tests among them, `python scripts/todo-graph.py validate` exits 0, and `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`.

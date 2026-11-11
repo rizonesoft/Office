@@ -18,7 +18,7 @@ title: "TODO-05 -- Lessons and Agent Ledger"
 - `AGENTS.md`, Subagents: the tiers, the work packet and the rule that an agent that errs is removed; §6 and §7 give that rule its evidence.
 - `docs/specs/2026-10-23-campaign-scope-design.md`, decisions 25, 27 and 28: workers, the routing ladder, and the three-way measurement whose result decides whether §6 and §7 are built.
 - `scripts/lib/todo_graph.py`: the pattern for a derived, ignored cache under `build/` rebuilt from Markdown, which §2 follows.
-- -> XREF: T03 §34 -- `scripts/packet.py`, the command §5 extends to attach lessons and §6 extends to record outcomes
+- -> XREF: T03 §34 -- `scripts/packet.py`, the command §5 extends to attach lessons and §6 extends to record outcomes (all withdrawn 2026-11-11 with `scripts/packet.py`, D00 T03 §50: no agent writes)
 
 ## Outcome
 
@@ -39,9 +39,9 @@ title: "TODO-05 -- Lessons and Agent Ledger"
 | 2 | §2 | Lesson index and query | §1 | [ ] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [ ] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
-| 5 | §5 | Work packets carry their lessons | §2, T03 §34 | [ ] |
-| 6 | §6 | Packet outcome ledger | T03 §34 | [ ] |
-| 7 | §7 | Agent score from the ledger | §6 | [ ] |
+| 5 | §5 | Work packets carry their lessons | §2, T03 §34 | [-] |
+| 6 | §6 | Packet outcome ledger | T03 §34 | [-] |
+| 7 | §7 | Agent score from the ledger | §6 | [-] |
 | 8 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
 
 ## 1. Lesson Files and Their Checker
@@ -138,6 +138,8 @@ A lesson only helps if it is in front of whoever is about to repeat the mistake.
 
 ## 5. Work Packets Carry Their Lessons
 
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it attaches lessons to work packets, and no agent is handed a packet any more
+
 A worker starts every packet knowing nothing. The packet command attaches the lessons for the packet's paths and the worker's role, so the brief the main loop writes always includes them and the main loop does not have to remember to look.
 
 **Phase:** 0
@@ -159,6 +161,8 @@ A worker starts every packet knowing nothing. The packet command attaches the le
 
 ## 6. Packet Outcome Ledger
 
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it records how each work packet ends, and no agent is handed a packet any more
+
 Whether a tier is good at a kind of work should be read from what happened, not remembered. The packet command already knows how each packet ends; this section makes it write that down. The way of working is chosen by measurement and measured again as the project grows (`docs/specs/2026-10-23-campaign-scope-design.md`, decision 30), so the ledger is built whichever way is in use today: it records packets whenever workers are used, and stays empty while the lead works alone.
 
 **Phase:** 0
@@ -179,6 +183,8 @@ Whether a tier is good at a kind of work should be read from what happened, not 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_packet.py"` passes with the ledger tests among them, and `python scripts/ledger.py check` exits 0.
 
 ## 7. Agent Score From the Ledger
+
+> **Withdrawn:** 2026-11-11T07:00:00Z: lead, on the owner decision of 2026-11-11 that agents are read-only: it scores agents from the packet ledger (D00 T05 §6), which has nothing to record once no agent writes
 
 The score turns the ledger into a routing aid: which tier finishes which kind of work the first time. It changes where work is sent first. It never changes what is checked: the main loop reads every change, runs every gate and keeps the independent review whatever a score says. With an empty ledger it prints `no advice`.
 

@@ -23,7 +23,10 @@ PLAN = "todo/implementation-plan.md"
 # What follows each "-> XREF:": one space and exactly one well-formed reference, nothing run into it.
 XREF_TARGET = re.compile(r" (?:D(?P<d>\d{2}) )?(?:T(?P<t>\d{2}) )?§(?P<s>[1-9]\d*)(?![\w§]|\.\d)")
 REF = re.compile(r"(?:D(?P<d>\d{2})\s+)?(?:T(?P<t>\d{2})\s+)?§(?P<s>[1-9]\d*)")
-ROW = re.compile(r"^\|\s*([1-9]\d*)\s*\|\s*§([1-9]\d*)\s*\|\s*([^|]+)\|\s*([^|]*)\|\s*\[([ x])\]\s*\|$")
+ROW = re.compile(r"^\|\s*([1-9]\d*)\s*\|\s*§([1-9]\d*)\s*\|\s*([^|]+)\|\s*([^|]*)\|\s*\[([ x-])\]\s*\|$")
+# A section retired because an owner decision removed its purpose (D00 T03 §50): `[-]` in its row and this line in its
+# body, `> **Withdrawn:** <UTC instant>: <who decided>: <reason>`. It is settled, never runnable and not counted.
+WITHDRAWN = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z): ([^:]*\S[^:]*?): (\S.*)")
 # What a section needs from outside the repository. The WAITING values are people, companies, or the
 # operator's own hands: a section naming one stays blocked until the answer is recorded and the Need
 # is removed from the section.
@@ -157,6 +160,7 @@ class Section:
     body: str
     receipt: str
     order: int = 0
+    withdrawn: bool = False
 
     def public(self):
         return {k: v for k, v in asdict(self).items() if k != "body"}
@@ -572,8 +576,15 @@ def graph(root=ROOT):
             require(bool(freeze_check) == (frozen == "true"),
                     f"Freeze check must match frozen frontmatter: {ref}")
             done = rows[n][5] == "x"
+            withdrawn = rows[n][5] == "-"
             stamp_line = field(section_body, "Verified", False)
             receipt = field(section_body, "Review", False).strip("`")
+            withdrawal = field(section_body, "Withdrawn", False)
+            require(withdrawn == bool(withdrawal), f"withdrawn box and Withdrawn line must go together: {ref}")
+            # A withdrawn section with a stamp is refused below, by the box, stamp and receipt rule ([-] is not [x]).
+            if withdrawn:
+                require(WITHDRAWN.fullmatch(withdrawal) is not None,
+                        f"Withdrawn line needs '<UTC instant>: <who decided>: <reason>': {ref}")
             require(done == bool(stamp_line) == bool(receipt),
                     f"checkbox/stamp/receipt mismatch: {ref}")
             if done:
@@ -585,7 +596,7 @@ def graph(root=ROOT):
                     head_commits = _head_commits(root)
                 receipt_ok(root, receipt, ref, m[1], head_commits)
             sections[ref] = Section(ref, relative, n, h[2], int(phase), deps, needs, done,
-                                    front["status"], section_body, receipt, int(rows[n][1]))
+                                    front["status"], section_body, receipt, int(rows[n][1]), withdrawn)
             files[relative][2].append(ref)
     for relative, (front, file_deps, refs, xrefs, adjacency) in files.items():
         require(len(set(file_deps)) == len(file_deps), f"duplicate file dependencies: {relative}")
@@ -600,7 +611,7 @@ def graph(root=ROOT):
             require(successor in ids and ids[successor] != relative,
                     f"superseded TODO must name its successor: {relative}")
         else:
-            require((front["status"] == "done") == all(sections[r].done for r in refs),
+            require((front["status"] == "done") == all(sections[r].done or sections[r].withdrawn for r in refs),
                     f"file status disagrees with stamps: {relative}")
         for key, (state, owner) in adjacency.items():
             if owner is not None:
@@ -655,6 +666,9 @@ def graph(root=ROOT):
                 stack[-1] = (ref, idx + 1)
                 require(dep in sections, f"unresolved dependency: {dep}")
                 require(dep not in visiting, f"dependency cycle: {dep}")
+                # Work that stays open never stands on work that was given up (D00 T03 §50).
+                require(not sections[dep].withdrawn or sections[ref].withdrawn or sections[ref].done,
+                        f"open section depends on withdrawn {dep}; withdraw it too or drop the edge: {ref}")
                 require(sections[dep].phase <= sections[ref].phase,
                         f"prerequisite in later phase: {ref} -> {dep}")
                 # A stamped section may sit on an open prerequisite only when an audit reopened that prerequisite
@@ -739,7 +753,7 @@ def settled(ref, rows):
 
 def disposition(row, rows):
     """0 ready, 3 already verified, 4 waiting (inactive file, open or suspect prerequisite, or a person to answer)."""
-    if row.done:
+    if row.done or row.withdrawn:
         return 3
     if row.status != "active" or set(row.needs) & WAITING \
             or any(not settled(d, rows) for d in row.depends):
@@ -800,7 +814,7 @@ def phase_table(phase, phase_rows):
     `projection()` both build it here, so validate refuses exactly what plan --sync cannot render (D00 T03 §32)."""
     table = markdown_table(
         ["Status", "Reference", "Deliverable", "Needs", "Items"],
-        [[f"[{'x' if row.done else ' '}]", row.ref, row.title,
+        [[f"[{'x' if row.done else '-' if row.withdrawn else ' '}]", row.ref, row.title,
           ", ".join(row.needs) or "none", str(len(CHECKLIST.findall(row.body)))] for row in phase_rows],
     )
     # Every row is padded to the widest cell, so one long title wraps the whole table: name the widest section.
@@ -869,7 +883,10 @@ def projection(root=ROOT):
     ready = sum(disposition(r, all_rows) == 0 for r in rows)
     still = (f", {len(missing)} TODO {'file' if len(missing) == 1 else 'files'} still to author (not counted here)"
              if missing else "")
-    lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows)} verified sections, "
+    # A withdrawn section (D00 T03 §50) is shown in its table as [-] and left out of the count it can never join.
+    withdrawn = sum(r.withdrawn for r in rows)
+    gone = f", {withdrawn} withdrawn" if withdrawn else ""
+    lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows) - withdrawn} verified sections{gone}, "
               f"{ready} ready to run now{still}.", "",
               f"Checklist: {completed_items}/{total_items} items completed (includes Commit items).", ""]
     return "\n".join(lines)
@@ -1126,6 +1143,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     require(ref in rows, "unresolved section: " + ref)
     row = rows[ref]
     require(not row.done, f"already verified: {ref}")
+    require(not row.withdrawn, f"withdrawn, so never stamped: {ref}")
     require(all(settled(d, rows) for d in row.depends),
             f"open prerequisite, or one resting on a reopened section: {ref}")
     require(not set(row.needs) & WAITING,
@@ -1202,7 +1220,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     require(len(line.findall(text)) == 1, f"implementation row not found: {ref}")
     text = line.sub(r"\1[x]\2", text)
     siblings = [r for r in rows.values() if r.path == row.path and r.ref != ref]
-    if all(r.done for r in siblings):
+    if all(r.done or r.withdrawn for r in siblings):
         text, n = re.subn(r"\A(---\n(?:.*\n)*?)status: [a-z]+\n", r"\1status: done\n", text, count=1)
         require(n == 1, f"frontmatter status not found: {row.path}")
     plan_path = root / PLAN
