@@ -96,7 +96,8 @@ class Progress(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
             rows = {}
-            for n, date in ((1, "2026-11-16"), (2, "2026-11-10"), (3, "2026-11-09")):
+            # Review round 3: the window reaches back to last Monday (11-09), a day before 11-10, and stops there.
+            for n, date in ((1, "2026-11-16"), (2, "2026-11-09"), (3, "2026-11-08")):
                 receipt = f"docs/reviews/r{n}.json"
                 (root / receipt).parent.mkdir(parents=True, exist_ok=True)
                 (root / receipt).write_text(json.dumps({"date": date}), encoding="utf-8")

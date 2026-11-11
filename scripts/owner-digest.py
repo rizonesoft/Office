@@ -15,7 +15,7 @@ do. It is built from the tree alone, so it costs no model and says the same thin
 - the plan's totals, as `todo-graph.py query stats` counts them;
 - every open section waiting on the owner (Needs operator, owner-decision, third-party or store-account) with its
   `**Owner action:**`, ordered by how many open sections wait behind it, largest first;
-- the sections verified in the last seven days, from the dates in their receipts.
+- the sections verified since the same weekday a week ago, inclusive, from the dates in their receipts.
 
 The body is plain text of at most BODY_LINES lines of at most WIDTH characters. When the waiting list does not fit,
 the body keeps the first items and the whole list, every item with its owner action, goes in an attached text file
@@ -95,7 +95,10 @@ def totals(rows, root):
 
 def verified_since(root, rows, today):
     """(ref, title) of each section whose receipt is dated in the last WINDOW_DAYS days, newest first."""
-    since = today - datetime.timedelta(days=WINDOW_DAYS - 1)
+    # From the same weekday a week ago, inclusive: a receipt records only its day, so a section stamped on a Monday
+    # after that Monday's digest is in the next one. A Monday stamp before the digest can show twice, never not at all
+    # (D00 T03 §35 review round 3; D00 T07 §3 reports exact periods from the last delivered digest).
+    since = today - datetime.timedelta(days=WINDOW_DAYS)
     found = []
     for row in rows.values():
         if not row.done or not row.receipt:
@@ -236,9 +239,10 @@ def compose(root, rows, today, ci_lines, state):
             waiting_lines += item_lines(item)
     else:
         waiting_lines = ["Nothing is waiting on you."]
-    progress = ([f"Verified in the last {WINDOW_DAYS} days ({len(built)}):"]
+    since = (today - datetime.timedelta(days=WINDOW_DAYS)).isoformat()
+    progress = ([f"Verified since {since} ({len(built)}):"]
                 + [line for ref, title, stamped in built for line in wrap(f"- {ref} {title} ({stamped.isoformat()})")]
-                if built else [f"Nothing was verified in the last {WINDOW_DAYS} days."])
+                if built else [f"Nothing was verified since {since}."])
     body = head + waiting_lines + [""] + progress
     attachments = []
     if len(body) > BODY_LINES:
