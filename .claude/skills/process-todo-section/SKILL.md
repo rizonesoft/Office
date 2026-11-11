@@ -53,7 +53,7 @@ Write `Started:` now. If the section body carries no `> **Started:**` line, add 
 
 ## Delegation
 
-The main loop is the lead (`AGENTS.md`, Subagents): it decides, builds the section and every round of review fixes itself (owner, 2026-11-11: the main session is the writer, so the owner can follow the development), runs the gates and the review loop, triages and quotes. The readers read and run; no agent writes (owner, 2026-11-11). Hand a step over when its result can be checked, start independent readers in one message so they run side by side, and keep working on what does not depend on them. One command's worth of work is never delegated.
+The main loop is the lead (`AGENTS.md`, Subagents): it decides, builds the section and every review fix itself (owner, 2026-11-11: the main session is the writer, so the owner can follow the development), runs the gates and the review loop, triages and quotes. The readers read and run; no agent writes (owner, 2026-11-11). Hand a step over when its result can be checked, start independent readers in one message so they run side by side, and keep working on what does not depend on them. One command's worth of work is never delegated.
 
 - **Step 4, the build:** the main loop builds the section itself, as the Workflow's step 4 says, an architecture decision record under `docs/specs/` included. No agent writes (owner, 2026-11-11: the Opus `section-writer` and the Fable `principal-implementer` were removed), so there is no work packet to hand over and none to accept or reject. A build that is hard is the main loop's to split along its Build order steps, never to delegate.
 
@@ -61,7 +61,7 @@ The main loop is the lead (`AGENTS.md`, Subagents): it decides, builds the secti
 - **Step 2, facts about the world:** on a decision, specification or interoperability section, `source-researcher` answers numbered questions of fact from primary sources, each with its URL and quotation.
 - **Step 4, gates while iterating:** `test-runner` runs the affected test files, and the full suite (`python scripts/run-tests.py`) when the change is wide, writing each full log to scratch and returning its path.
 - **Steps 4 and 6, a gate that fails for no evident reason:** `debug-evidence` collects the timeline, the state and a safe reproduction before any theory is formed.
-- **Never delegated:** the seven answers of step 2 and every plan correction, the completion review's remedies, any write under `todo/` or `docs/reviews/`, every commit, anything that drives Office or the desktop (one desktop, one driver), the Test checkpoint of step 6, and the report.
+- **Never delegated:** the seven answers of step 2 and every plan correction, the plan review's remedies, any write under `todo/` or `docs/reviews/`, every commit, anything that drives Office or the desktop (one desktop, one driver), the Test checkpoint of step 6, and the report.
 
 What keeps the quality the main loop would have delivered alone:
 
@@ -101,28 +101,29 @@ Fix findings in the TODO file, before implementation, so plan and build never di
 
 Correct the plan, never the goalpost: narrowing a section so the code you were about to write happens to satisfy it is fitting the contract to the implementation. Report every plan correction alongside the implementation. If step 2 finds nothing, say so in one line and move on.
 
-### 3a. Completion review, before the build
+### 3a. Plan review by the pinned reviewer (one pass, before any code)
 
-One pass by the pinned reviewer asks whether building the corrected section as written gives the user a whole feature: every entry point, surface, state, error path, undo path and persistence read-back the feature implies, not only the piece the section names (owner decision 2026-10-23, D00 T03 §13). `stamp` refuses the section without this record.
+One pass by the pinned reviewer asks whether building the corrected section as written gives the user a whole feature: every entry point, surface, state, error path, undo path and persistence read-back the feature implies, not only the piece the section names. `stamp` refuses the section without it.
 
-1. Create `docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>-completion.md` with the single line `# Completion review: <ref>`, unless it already exists, and commit it before the first dispatch, so a restore always has a committed record to return to.
-2. Build the prompt with one command, never by hand (D00 T03 §27), then dispatch it. The command fills `docs/completion-review-prompt.md` with the section text, its `Contract:` digest and the file's Implementation Order table:
-   - First write the context file in scratch: the SPEC and inventory excerpts the section cites, copied in word for word (the reviewer's sandbox cannot run git), and the names of the neighbouring sections and files to read. Copying them in is the main loop's job: the command only checks that the file is not empty, never what it holds.
-   - Then run, with the arguments in this order: `python scripts/review-prompt.py completion '<ref>' --purpose "<what the feature is for the user, one or two sentences>" --context <scratch context file> --out <scratch prompt file>`.
-   - Only for a section with no SPEC or inventory citation (developer tooling), `--no-context "<why no further context applies>"` may take the place of `--context <file>`. The command refuses `--no-context` for a section that says `**Surface:** yes`, has an `> **Implements:**` line or names `design/SPEC.md`.
-   - Exit 0: the prompt is written and one JSON line names the contract digest. Exit 2: refused, with the reason on standard error and nothing written; fix what the reason names and run it again. Never edit the written prompt.
-   - Dispatch it: `python scripts/review-dispatch.py --writer claude --prompt <scratch prompt file> --record docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>-completion.md`.
-3. Read it back: the dispatch exits 0, `python scripts/review-dispatch.py --list-rounds` lists the new round, and its reply opens `SECTION: <ref>`, `PURPOSE: completion` and `CONTRACT: sha256:<digest>` (the digest the prompt carried) and holds one `COMPLETE:` line. `stamp` refuses a section whose contract changed after that round (D00 T03 §14): an edit after dispatch needs a fresh round.
-4. `COMPLETE: yes`: build. `COMPLETE: no`: give each numbered gap one remedy. Extend the section (with a `**Groomed YYYY-MM-DD:** completion finding N` note) when the piece belongs to its single responsibility; otherwise file a new section through `add-todo`, with an XREF back. Then write `## Outcome (round N)` in the record, N the round it answers, one line per gap: `N. extended` or `N. filed -> DNN TNN §N`.
-5. If any gap was extended, re-dispatch once (round N+1) and record its outcome the same way, except that every gap it still reports is filed as a new section: a section never gets a third returned pass. The limit counts returned passes, not attempts: an outage round in between does not use the re-check up, and `stamp` refuses while the last returned round still has an `extended` gap.
-6. Commit the record, with its outcome, after every returned round and before anything else; commit the section and any filed sections with it, then build.
+Once the section is corrected, commit it (with `plan --sync`) so the reviewer reads the exact contract you will build; that commit holds the `Started:` line, and the plan review's candidate must be that commit or an earlier one. Check the pin (`python scripts/review_pin.py --check` prints `ok`) and make sure it is committed: the section runs under the pin committed at this review's candidate, and a later pin change does not move it. Fill the prompt into a scratch file from `docs/plan-review-prompt.md` with `review-prompt.py` (the section through `--ref`, which also finds its TODO file), then run it:
+
+```powershell
+python scripts/review-prompt.py --kind plan --candidate <full SHA of that commit> --ref "D<NN> T<NN> §<N>" [--fidelity <design source>] --governing <the spec or plan> --out <scratch-plan-prompt.md>
+python scripts/review-dispatch.py --kind plan --candidate <full SHA of that commit> --writer claude --prompt <scratch-plan-prompt.md> --record docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md
+```
+
+`--fidelity` names the design source of a `Surface: yes` section and is left out otherwise. The reviewer reads the repository at the candidate, so the SPEC and inventory excerpts the section cites need no copying in.
+
+The dispatcher sets the effort and the `plan` lens from the pin's `[schedule] plan` step and appends a `## Plan review` section to the section's own findings file, the one its round and completion review will also be recorded in; a findings file takes one returned plan review. The reply must carry its `LENS plan: clean` or `LENS plan: findings` line and a `HIGHEST:` line and end `PLAN: complete` or `PLAN: gaps` then its `OVERALL:` line, or it is recorded as no review.
+
+On `PLAN: gaps`, give each gap one remedy. Fix every `P1` and `P2` gap in the section the same way as step 3 (corrected in place, dated), when the piece belongs to the section's single responsibility; otherwise, and for a `P3` you do not take, file a new section through `add-todo`, with an XREF back. Under the plan review in the findings file, add one line per gap: `- Planned: <gap> in <commit>` or `- Filed: DNN TNN §N (<gap>)`. There is no second plan review: the completion review after the build is what checks the result. Commit the findings file with the section and any filed sections, then build.
 
 Failure and recovery, so an unattended campaign neither stops nor loops:
 
-- No review (exit 1: the reviewer is missing, failed, timed out or blocked; or a reply without the `SECTION`, `PURPOSE` and `COMPLETE` lines): the section is parked with the reason in the run file, the campaign takes its next ready row, and this section is retried once at the next phase start. A second failure parks it for the owner.
-- Exit 2 (an argument or the pin was refused, or the review returned but `--record` refused the file): the dispatcher leaves the record byte for byte as it was, so there is nothing to restore; treat it as no review. A record `read_rounds` cannot read (`--list-rounds` does not list it): restore it from its last commit, which holds every returned round because each was committed as it returned, then treat it as no review.
-- A session that dies resumes from the record: a last round that already has its `## Outcome (round N)` is not dispatched again, and a pending re-check (step 5) runs once.
-- Adoption: a section whose code already exists (a review loop begun before 2026-10-23, such as D02 T01 §23, or a section reopened by `unstamp`) still gets one completion review of its contract before its stamp, and every gap is filed as a new section rather than extended. After a reopen the review must have run since the reopening.
+- No review (exit 1: the reviewer is missing, failed, timed out or blocked, or the reply lacks a required line): run the pass once more. A second failure parks the section with the reason in the run file, the campaign takes its next ready row, and this section is retried once at the next phase start; a failure there parks it for the owner.
+- Exit 2 (an argument or the pin was refused, the pass is out of order, or `--record` refused the file): nothing was appended. Fix what the message names. A findings file the dispatcher cannot read names its first unreadable line: a writer's own note must not sit under a heading that starts `## Round`, `## Plan review`, `## Completion review` or `## Reconciliation review`.
+- A session that dies resumes from the findings file: a returned plan review is never dispatched again.
+- A section reopened by `unstamp` keeps the plan review it has; its repair is a new section filed through `add-todo`, with its own plan review.
 
 ### 4. Build the corrected contract
 

@@ -13,9 +13,10 @@
                                                              # 4 waiting; a pasted plan row works too
     python scripts/todo-graph.py classify 'D02 T01 §1' ...   # dispositions as JSON
     python scripts/todo-graph.py stamp 'D02 T01 §1' --sha <40-char commit> \
-        --review '<round>:<report path>:<clean|fixed|stopped-at-33|stopped-low-severity>' --check '<command> -> <result>' \
-        --completion docs/reviews/<domain>/D02-T01-s1-completion.md \
-        [--cap-outcome '<what was done when the review cap was reached>']   # required with a stopped verdict
+        --plan docs/reviews/<domain>/D02-T01-s1.md \
+        --review '1:docs/reviews/<domain>/D02-T01-s1.md:<clean|fixed>' \
+        --completion 'docs/reviews/<domain>/D02-T01-s1.md:<complete|reconciled|filed>' \
+        --check '<command> -> <result>'
     python scripts/todo-graph.py unstamp 'D02 T01 §1' --reason '<what regressed, and the repair section>'
 
 Format and rules: todo/README.md. Stdlib only.
@@ -28,7 +29,7 @@ import re
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
-from todo_graph import (ROOT, Refused, adjacency_report, atomic, contract_digest, deferrals,  # noqa: E402
+from todo_graph import (ROOT, Refused, adjacency_report, atomic, deferrals,  # noqa: E402
                         disposition, extract_ref, graph, ordered, plan_config, projections, require, review_rounds,
                         settled, stamp, suspects, to_author, unstamp)
 
@@ -38,6 +39,12 @@ def review_round(value):
     require(len(parts) == 3 and parts[0].isdigit() and parts[1],
             f"--review takes round:report:verdict, not {value!r}")
     return {"round": int(parts[0]), "report": parts[1], "verdict": parts[2]}
+
+
+def completion_review(value):
+    report, _, verdict = value.rpartition(":")
+    require(bool(report) and bool(verdict), f"--completion takes <findings file>:<verdict>, not {value!r}")
+    return {"report": report, "verdict": verdict}
 
 
 def plan_status(row, rows):
@@ -74,15 +81,18 @@ def main():
     s.add_argument("--check", dest="checks", action="append", default=[])
     s.add_argument("--date", default=date.today().isoformat())
     s.add_argument("--cap-outcome", help="with a stopped-at verdict: what was done when the review cap was reached")
-    s.add_argument("--completion", required=True,
-                   help="the section's completion record, written before the build (D00 T03 §13)")
+    s.add_argument("--plan", help="required: <findings file>, the one-pass plan review before the build")
+    s.add_argument("--completion", type=completion_review,
+                   help="required: <findings file>:<verdict> of the completion review. complete: it found no gap. "
+                        "reconciled (three-pass pins): it returned gaps and a later reconciliation ended complete. "
+                        "filed: gaps filed as new sections, each on a '- Filed:' line (under three-pass only when "
+                        "the last pass's worst finding is below the pin's blocking levels). completed (rotation pins "
+                        "only): every gap was fixed in the section")
     u = sub.add_parser("unstamp", help="an audit found a stamped section regressed: reopen it, keeping the receipt")
     u.add_argument("ref")
     u.add_argument("--reason", required=True)
     u.add_argument("--at", default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                   help="the UTC instant of the reopening (default now); a completion review must run after it")
-    d = sub.add_parser("contract-digest", help="print the digest of a section's contract (D00 T03 §14)")
-    d.add_argument("ref")
+                   help="the UTC instant of the reopening (default now), recorded in the section's Unstamped line")
     args = p.parse_args()
     if args.command == "unstamp":
         revoked = unstamp(ROOT, args.ref, args.reason, args.at)
@@ -92,17 +102,10 @@ def main():
         return 0
     if args.command == "stamp":
         receipt = stamp(ROOT, args.ref, args.sha, args.review, args.checks, args.date, sync_plan=True,
-                        cap_outcome=args.cap_outcome, completion=args.completion)
+                        cap_outcome=args.cap_outcome, completion=args.completion, plan=args.plan)
         print(f"stamped {args.ref}; receipt {receipt}; plan synchronized")
         return 0
     rows = graph()
-    if args.command == "contract-digest":
-        ref, code = extract_ref(args.ref, rows)
-        if code:
-            print("TODO refused: no such section: " + args.ref, file=sys.stderr)
-            return 1
-        print(contract_digest(rows[ref]))
-        return 0
     if args.command == "plan":
         projections(sync=args.sync)
         print("plan synchronized" if args.sync else "plan current")

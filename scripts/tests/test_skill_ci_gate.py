@@ -198,7 +198,7 @@ PINNED = [
     ('phase', 'Then run the host readiness check',
      'd790d41adb7901713ca29916762cd12f4bfa1676c8eda5fd64b36f4ca1f5de42'),
     ('phase', "In the generated plan's table order, for each open row",
-     '72bbed2b8240b1c2fa2e52a80bb667ab4414a76fa9978b959f703ddda8143544'),
+     '5765665acd622c6fef2f08894bbf735949f14ddc53fc596bbfd1d2f78b70b5bb'),
     ('phase', 'When every row of the phase table is `[x]` or withdrawn',  # D00 T03 §50: a [-] row needs no stamp
      'c3ced9340d8fcb45ba7b5b97433436c8b15b2959c85c2263571636c1d6efdfbe'),
 ]

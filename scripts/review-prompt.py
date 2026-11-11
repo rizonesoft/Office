@@ -1,342 +1,264 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""Build the prompt for a completion review or for a code review round, from a TODO section reference (D00 T03 §27).
+"""Fill one of the review prompt templates in docs/ and write the prompt to send to the reviewer.
 
-    python scripts/review-prompt.py completion 'D02 T01 §6' --purpose "<what the feature is for the user>"
-        (--context <file> | --no-context "<reason>") --out <scratch file>
-    python scripts/review-prompt.py round 'D02 T01 §6' <base> <tip> --purpose "<what the candidate is meant to do>"
-        --governing "<the documents that apply>" [--note <file>] [--path <path> ...] --out <scratch file>
+    python scripts/review-prompt.py --kind round --candidate <40-char SHA> --ref "D00 T01 §7" \
+        --purpose "what the change is for" --governing docs/plan.md --out <scratch>/round.md
+    python scripts/review-prompt.py --kind reconciliation --candidate <repaired SHA> --failed <completion SHA> \
+        --findings docs/reviews/00-core/D00-T01-s1.md --gates <scratch>/gates.txt --governing docs/plan.md \
+        --out <scratch>/reconciliation.md
 
-Then pass `--out` to `python scripts/review-dispatch.py --writer claude --prompt <scratch file> --record <findings file>`.
-
-Exit 0: the prompt is written, and one line of JSON says what it holds. Exit 2: refused, with the reason on standard
-error and `--out` untouched. Nothing else is written, and no reviewer runs.
-
-completion fills `docs/completion-review-prompt.md` (the part below its `---` line): the reference and title, the
-section text, its contract digest, the purpose, the file's Implementation Order table, and the context. Exactly one of
-`--context` and `--no-context` is given; a section that says `**Surface:** yes`, has an `> **Implements:**` line or
-names `design/SPEC.md` needs `--context` (a file holding the SPEC and inventory excerpts it cites, inlined).
-
-round fills `docs/review-round-prompt.md` the same way: both commits as full SHAs, the purpose, the section as
-`resolve` prints it, a Scope block and the diff. `<base>` must be an ancestor of `<tip>` and a different commit, so a
-reversed, divergent or empty range is refused. The inlined diff may be at most MAX_DIFF_BYTES; a larger candidate is
-reviewed in parts with `--path`: the Scope block and the JSON `omitted` list name the changed paths this part leaves
-out, and the round is complete only when every changed path has been in one part.
-
-The prompt is a scratch file: `--out` inside the repository is refused. Stdlib only.
+`--kind` picks the template (plan, round, completion or reconciliation) from the docs/ folder beside this script's
+parent folder. The prompt is the template's text after its `---` line, with every placeholder (a backtick span that
+starts with `<` and ends with `>`) replaced by its value. A placeholder with no value is a refusal naming it, as is a
+value the kind has no place for: exit 2, a message on stderr, and nothing written, an existing `--out` untouched.
+Without `--ref` the lines that name the TODO section and its file are dropped; with `--ref` and no `--todo`, the file
+comes from `scripts/todo-graph.py resolve`. Prints the output path and exits 0. Stdlib only; writes are atomic.
 """
+from __future__ import annotations
+
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts" / "lib"))
-import todo_graph
-
-MAX_DIFF_BYTES = 400_000  # a round prompt above this is split with --path, never cut short
-GIT_SECONDS = 120
-TEMPLATES = {"completion": "docs/completion-review-prompt.md", "round": "docs/review-round-prompt.md"}
-# What each command replaces in its template, in the order the template has it: the exact text, then the key of the
-# value that takes its place.
-FILLS = {
-    "completion": (
-        ("`<DNN TNN §N> <title>`", "heading"),
-        ("`<inline the section from its heading to its Test checkpoint>`", "section"),
-        ("`<the line python scripts/todo-graph.py contract-digest '<DNN TNN §N>' prints for that same text, "
-         "sha256:...>`", "contract"),
-        ("`<one or two sentences>`", "purpose"),
-        ("`<inline the excerpts>`", "excerpts"),
-        ("`<inline them, or name the paths to read>`", "neighbours"),
-    ),
-    "round": (
-        ("`<FULL_SHA>` or `<BASE_SHA>..<TIP_SHA>` (inspect it with `git show` or `git diff`)", "range"),
-        ("`<one or two sentences>`", "purpose"),
-        ("`<DNN TNN §N>` (its contract: `python3 scripts/todo-graph.py resolve \"<DNN TNN §N>\"`)", "section"),
-        ("`<the spec, plan or design file that applies>`", "governing"),
-    ),
-}
-# Every backticked span holding `<` that each template has below its `---` line, in order: the ones filled above and
-# the ones that stay as the reviewer's reply format. A template whose spans differ from this list has changed, and the
-# command refuses it rather than send a placeholder nobody filled (or drop a field somebody added).
-PLACEHOLDERS = {
-    "completion": (
-        "<DNN TNN §N> <title>",
-        "<inline the section from its heading to its Test checkpoint>",
-        "<the line python scripts/todo-graph.py contract-digest '<DNN TNN §N>' prints for that same text, sha256:...>",
-        "<one or two sentences>",
-        "<inline the excerpts>",
-        "<inline them, or name the paths to read>",
-        "SECTION: <DNN TNN §N>",
-        "CONTRACT: sha256:<digest>",
-    ),
-    "round": (
-        "<FULL_SHA>",
-        "<BASE_SHA>..<TIP_SHA>",
-        "<one or two sentences>",
-        "<DNN TNN §N>",
-        "python3 scripts/todo-graph.py resolve \"<DNN TNN §N>\"",
-        "<the spec, plan or design file that applies>",
-    ),
-}
-
-
-def needs_context(body):
-    """Why a section's completion review needs a context file, or None when it does not. The Surface field is read
-    by `todo_graph.field`, the parser the TODO tree itself is validated with, so every spelling the tree accepts
-    (`**Surface:**  yes`, `> **Surface:** yes`) counts here too; an Implements line is matched with the same prefix."""
-    if todo_graph.field(body, "Surface", required=False) == "yes":
-        return "it says `**Surface:** yes`"
-    if re.search(r"^(?:> )?\*\*Implements:\*\*", body, re.M):
-        return "it has an `**Implements:**` line"
-    if "design/SPEC.md" in body:
-        return "it names `design/SPEC.md`"
-    return None
+TEMPLATES = {"plan": "plan-review-prompt.md", "round": "review-round-prompt.md",
+             "completion": "completion-review-prompt.md", "reconciliation": "reconciliation-review-prompt.md"}
+SHA = re.compile(r"[0-9a-f]{40}")
+REF = re.compile(r"D\d{2} T\d{2} §\d+")
+SPAN = re.compile(r"`[^`\n]+`")
+SECTION_TOKEN = "<DNN TNN §N>"
+TODO_FILE = "<path to the TODO file>"
+FIDELITY_SPAN = "`<the design source the section names>`, or `none (Surface: no)`"
+CANDIDATE_SPAN = "`<FULL_SHA>` or `<BASE_SHA>..<TIP_SHA>`"
+DEFAULT_FIDELITY = "none (Surface: no)"
 
 
 class Refused(Exception):
-    """The prompt cannot be built as asked; the message is the one-line reason."""
+    pass
 
 
-def spans(text):
-    """Every backticked span of `text` that holds `<`, in order. Backticks pair off in order within a line."""
-    found = []
-    for line in text.splitlines():
-        found += [span for span in re.findall(r"`([^`]*)`", line) if "<" in span]
-    return found
+def one_line(value: str | None) -> str | None:
+    """A single-line value (whitespace collapsed), or None when nothing was given."""
+    value = " ".join((value or "").split())
+    return value or None
 
 
-def template(root, kind):
-    """The prompt part of a template (below its `---` line), checked against PLACEHOLDERS before anything is filled."""
-    path = Path(root) / TEMPLATES[kind]
+def ticked(value: str) -> str:
+    return value if "`" in value else f"`{value}`"
+
+
+def read_template(kind: str) -> str:
+    path = Path(__file__).resolve().parent.parent / "docs" / TEMPLATES[kind]
     try:
-        text = todo_graph.read_text(path)
-    except (OSError, UnicodeError) as exc:
-        raise Refused(f"cannot read {TEMPLATES[kind]}: {exc}") from None
-    _, rule, body = text.partition("\n---\n")
+        text = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise Refused(f"template {path} cannot be read: {error.strerror or error}")
+    head, rule, body = text.partition("\n---\n")
     if not rule:
-        raise Refused(f"{TEMPLATES[kind]} has no `---` line, so where its prompt starts is unknown")
-    found, expected = spans(body), list(PLACEHOLDERS[kind])
-    if found != expected:
-        for index in range(max(len(found), len(expected))):
-            have = found[index] if index < len(found) else None
-            want = expected[index] if index < len(expected) else None
-            if have != want:
-                raise Refused(f"{TEMPLATES[kind]} changed: placeholder {index + 1} is {have!r}, expected {want!r}; "
-                              "update FILLS and PLACEHOLDERS in scripts/review-prompt.py to match the template")
-    for old, _ in FILLS[kind]:
-        if body.count(old) != 1:
-            raise Refused(f"{TEMPLATES[kind]} changed: {old!r} appears {body.count(old)} times, expected once")
+        raise Refused(f"template {path} has no `---` line before the prompt")
     return body.lstrip("\n")
 
 
-def fill(body, kind, values):
-    """Replace every FILLS text in one pass, so text that a value brings in is never itself replaced."""
-    by_text = {old: values[key] for old, key in FILLS[kind]}
-    pattern = re.compile("|".join(re.escape(old) for old in sorted(by_text, key=len, reverse=True)))
-    return pattern.sub(lambda m: by_text[m.group(0)], body)
-
-
-def fenced(text, language):
-    """`text` in a code fence longer than any run of backticks inside it."""
-    fence = "`" * max(4, max((len(run) for run in re.findall(r"`+", text)), default=0) + 1)
-    return f"\n\n{fence}{language}\n{text.rstrip()}\n{fence}\n"
-
-
-def section_row(root, reference):
+def resolve_todo(ref: str) -> str:
+    graph = Path(__file__).resolve().parent / "todo-graph.py"
+    if not graph.is_file():
+        raise Refused(f"--todo is needed: {graph.name} is not beside this script to look up {ref}")
     try:
-        rows = todo_graph.graph(Path(root))
-    except (todo_graph.Refused, OSError, UnicodeError) as exc:
-        raise Refused(f"the TODO tree does not validate: {exc}") from None
-    ref, code = todo_graph.extract_ref(reference, rows)
-    if code == 2:
-        raise Refused(f"no section reference in {reference!r} (write it as 'DNN TNN §N')")
-    if code == 1:
-        raise Refused(f"no such section: {ref}")
-    return ref, rows[ref]
-
-
-def section_text(row):
-    return f"## {row.number}. {row.title}\n\n{row.body.strip()}\n"
-
-
-def scratch_path(root, out):
-    """`--out` as an absolute path, refused when it lies inside the repository."""
-    path = Path(out).resolve()
-    if path == Path(root).resolve() or Path(root).resolve() in path.parents:
-        raise Refused(f"--out {out} is inside the repository; a prompt is a scratch file (the folder OFFICE_SCRATCH "
-                      "names, or the session scratchpad)")
+        result = subprocess.run([sys.executable, "-B", str(graph), "resolve", ref], capture_output=True, text=True,
+                                timeout=60)
+        path = json.loads(result.stdout).get("path")
+    except (OSError, subprocess.SubprocessError, ValueError, AttributeError) as error:
+        raise Refused(f"--todo is needed: looking up {ref} failed ({error})")
+    if not isinstance(path, str) or not path:
+        raise Refused(f"--todo is needed: {graph.name} resolve {ref!r} named no file (exit {result.returncode})")
     return path
 
 
-def write(out, prompt):
-    """Write the prompt through a temporary file then a replace. A file that cannot be written (a folder that does
-    not exist and cannot be made, a prompt left open in an editor) is a refusal like any other: exit 2, one line."""
+def fence(content: str) -> str:
+    ticks = "`" * max(3, max((len(run) for run in re.findall(r"`+", content)), default=0) + 1)
+    return f"{ticks}\n{content}\n{ticks}"
+
+
+def fill(body: str, args: argparse.Namespace, todo: str | None, gates: str | None) -> tuple[str, set[str], list[str]]:
+    """Returns the filled prompt, the options whose values landed, and the placeholders left without a value."""
+    used: set[str] = set()
+    unresolved: list[str] = []
+    sha = {"<FULL_SHA>": args.candidate, "<COMPLETION_SHA>": args.failed, "<LAST_SHA>": args.last,
+           "<BASE_SHA>": args.base, "<TIP_SHA>": args.candidate}
+    option = {"<FULL_SHA>": "--candidate", "<COMPLETION_SHA>": "--failed", "<LAST_SHA>": "--last",
+              "<BASE_SHA>": "--base", "<TIP_SHA>": "--candidate"}
+    purpose, governing = one_line(args.purpose), one_line(args.governing)
+    fidelity = one_line(args.fidelity)
+    findings = one_line(args.findings)
+
+    def need(value, flag, placeholder):
+        if value:
+            used.add(flag)
+            return value
+        unresolved.append(f"`{placeholder}` (give {flag})")
+        return None
+
+    def span(match: re.Match) -> str:
+        text = match.group(0)
+        inner = text[1:-1]
+        for token, value in sha.items():
+            if token in inner and value:
+                inner = inner.replace(token, value)
+                used.add(option[token])
+        for token in sha:
+            if token in inner:
+                missing = f"`{token}` (give {option[token]})"
+                if missing not in unresolved:
+                    unresolved.append(missing)
+        if SECTION_TOKEN in inner and args.ref:
+            inner = inner.replace(SECTION_TOKEN, args.ref)
+            used.add("--ref")
+        if not (inner.startswith("<") and inner.endswith(">")):
+            if inner == text[1:-1]:
+                return text
+            return f"`{inner}`"
+        if inner == TODO_FILE:
+            value = need(todo, "--todo", inner)
+            return ticked(value) if value else text
+        if inner.startswith("<one or two sentences"):
+            value = need(purpose, "--purpose", inner)
+            return value.rstrip(".") if value else text
+        if inner.endswith("that applies>"):
+            value = need(governing, "--governing", inner)
+            return ticked(value) if value else text
+        if inner.startswith("<docs/reviews/"):
+            value = need(findings, "--findings", inner)
+            return ticked(value) if value else text
+        if inner == "<quoted output>":
+            if gates:
+                used.add("--gates")
+                gate_hit[0] = True
+                return gate_mark
+            unresolved.append(f"`{inner}` (give --gates)")
+            return text
+        if f"`{inner}`" not in unresolved:
+            unresolved.append(f"`{inner}`")
+        return text
+
+    out_lines: list[str] = []
+    gate_mark = "\0" + os.urandom(8).hex() + "\0"   # NUL cannot arrive in an argument or a template line
+    gate_hit = [False]
+    for line in body.splitlines():
+        if not args.ref and SECTION_TOKEN in line:
+            continue
+        if not args.ref and not todo and TODO_FILE in line:
+            continue
+        if CANDIDATE_SPAN in line:
+            used.add("--candidate")
+            if args.base:
+                used.add("--base")
+                line = line.replace(CANDIDATE_SPAN, f"`{args.base}..{args.candidate}`, tip `{args.candidate}`")
+            else:
+                line = line.replace(CANDIDATE_SPAN, f"`{args.candidate}`")
+        if FIDELITY_SPAN in line:
+            used.add("--fidelity")
+            line = line.replace(FIDELITY_SPAN, ticked(fidelity or DEFAULT_FIDELITY))
+        gate_hit[0] = False
+        line = SPAN.sub(span, line)
+        # Only where the template's own gate placeholder was just replaced, by a mark made for this run: a value the
+        # writer supplied is never rescanned for it, whatever text it holds.
+        if gate_hit[0]:
+            if "\n" in gates or "`" in gates:
+                line = line.replace(gate_mark, "").rstrip().rstrip(".").rstrip() + "\n\n" + fence(gates) + "\n"
+            else:
+                line = line.replace(gate_mark, f"`{gates}`")
+        out_lines.append(line)
+    return "\n".join(out_lines).rstrip("\n") + "\n", used, unresolved
+
+
+def atomic_write(path: Path, text: str) -> None:
+    fd, temp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
-        todo_graph.atomic(out, prompt)
-    except OSError as exc:
-        raise Refused(f"cannot write --out {out}: {exc}") from None
+        try:
+            handle = os.fdopen(fd, "w", encoding="utf-8", newline="\n")
+        except BaseException:
+            os.close(fd)  # the descriptor is still ours: left open, Windows could not remove the temporary file
+            raise
+        with handle:
+            handle.write(text)
+        os.replace(temp, path)
+    except BaseException:
+        try:
+            os.unlink(temp)
+        except FileNotFoundError:
+            pass  # the replace already moved it
+        raise
 
 
-def one_line(text, what):
-    text = " ".join(text.split())
-    if not text:
-        raise Refused(f"{what} is empty")
-    return text
-
-
-def read_option(path, option):
+def run(args: argparse.Namespace) -> Path:
+    for name in ("candidate", "base", "failed", "last"):
+        value = getattr(args, name)
+        if value is not None and not SHA.fullmatch(value):
+            raise Refused(f"--{name} must be a full 40-character lowercase commit SHA, got {value!r}")
+    if args.ref is not None and not REF.fullmatch(args.ref):
+        raise Refused(f"--ref must look like 'D00 T01 §7', got {args.ref!r}")
+    given_last = args.last
+    if args.kind == "reconciliation" and args.failed and not args.last:
+        args.last = args.failed
+    body = read_template(args.kind)
+    todo = one_line(args.todo)
+    if not todo and args.ref and TODO_FILE in body:
+        todo = resolve_todo(args.ref)
+    gates = None
+    if args.gates is not None:
+        try:
+            gates = Path(args.gates).read_text(encoding="utf-8").strip("\n")
+        except (OSError, UnicodeError) as error:
+            raise Refused(f"--gates {args.gates} cannot be read: {getattr(error, 'strerror', None) or error}")
+        if not gates.strip():
+            raise Refused(f"--gates {args.gates} is empty")
+    text, used, unresolved = fill(body, args, todo, gates)
+    if unresolved:
+        raise Refused("no value for " + "; ".join(unresolved))
+    given = {"--base": args.base, "--ref": args.ref, "--todo": args.todo, "--fidelity": args.fidelity,
+             "--purpose": args.purpose, "--governing": args.governing, "--gates": args.gates,
+             "--findings": args.findings, "--failed": args.failed, "--last": given_last}
+    # A value the template has no place for is refused, never dropped silently.
+    extra = sorted(flag for flag, value in given.items() if value is not None and flag not in used)
+    if extra:
+        raise Refused(f"the {args.kind} prompt has no place for {', '.join(extra)}")
+    out = Path(args.out)
     try:
-        text = todo_graph.read_text(path).strip()
-    except UnicodeError:
-        raise Refused(f"{option} {path} is not UTF-8 text; save it as UTF-8 (in PowerShell: Set-Content -Encoding "
-                      "utf8NoBOM) and run the command again") from None
-    except OSError as exc:
-        raise Refused(f"cannot read {option} {path}: {exc}") from None
-    if not text:
-        raise Refused(f"{option} {path} is empty")
-    return text
+        if out.is_dir():
+            raise IsADirectoryError("is a directory")
+        atomic_write(out, text)
+    except OSError as error:
+        raise Refused(f"--out {out} cannot be written: {error.strerror or error}")
+    return out
 
 
-def completion(root, args):
-    ref, row = section_row(root, args.ref)
-    if (args.context is None) == (args.no_context is None):
-        raise Refused("give exactly one of --context <file> and --no-context <reason>")
-    if args.no_context is not None:
-        why = needs_context(row.body)
-        if why:
-            raise Refused(f"{ref} needs --context, not --no-context: {why}, so the SPEC and inventory excerpts it "
-                          "cites must be inlined in a context file")
-        context = "No further context: " + one_line(args.no_context, "--no-context")
-        excerpts = "none: " + one_line(args.no_context, "--no-context")
-    else:
-        context = read_option(args.context, "--context")
-        excerpts = "inlined with the neighbouring sections, below"
-    out = scratch_path(root, args.out)
-    body = template(root, "completion")
-    table = re.search(r"(?ms)^## Implementation Order\n.*?(?=^## )", todo_graph.read_text(Path(root) / row.path))
-    if table is None:
-        raise Refused(f"{row.path} has no Implementation Order table")
-    contract = todo_graph.contract_digest(row)
-    prompt = fill(body, "completion", {
-        "heading": f"`{ref} {row.title}`",
-        "section": fenced(section_text(row), "markdown"),
-        "contract": f"`{contract}`",
-        "purpose": one_line(args.purpose, "--purpose"),
-        "excerpts": excerpts,
-        "neighbours": f"\n\n{table.group(0).rstrip()}\n\n{context}\n",
-    })
-    write(out, prompt)
-    return {"kind": "completion", "ref": ref, "contract": contract, "out": str(out)}
-
-
-def git(root, *args, check=True):
-    """One git command in the repository: its output, or Refused. git comes from the absolute PATH entries only."""
-    try:
-        done = subprocess.run([todo_graph.git(), *args], cwd=root, capture_output=True, timeout=GIT_SECONDS)
-    except todo_graph.Refused as exc:
-        raise Refused(str(exc)) from None
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise Refused(f"git {args[0]} could not run: {exc}") from None
-    if check and done.returncode != 0:
-        raise Refused(f"git {args[0]} failed: " + " ".join(done.stderr.decode("utf-8", "replace").split())[:300])
-    return done
-
-
-def commit(root, name):
-    done = git(root, "rev-parse", "--verify", "--quiet", "--end-of-options", name + "^{commit}", check=False)
-    sha = done.stdout.decode("ascii", "replace").strip()
-    if done.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", sha):
-        raise Refused(f"git does not know the commit {name!r}")
-    return sha
-
-
-def names(root, base, tip, paths=()):
-    done = git(root, "diff", "--name-only", "-z", f"{base}..{tip}", "--", *paths)
-    return [name for name in done.stdout.decode("utf-8", "replace").split("\0") if name]
-
-
-def review_round(root, args):
-    ref, row = section_row(root, args.ref)
-    base, tip = commit(root, args.base), commit(root, args.tip)
-    if base == tip:
-        raise Refused(f"the base and the tip are the same commit ({base[:12]}), so there is nothing to review; give "
-                      "the commit before the candidate's first commit, then its last commit")
-    if git(root, "merge-base", "--is-ancestor", base, tip, check=False).returncode != 0:
-        if git(root, "merge-base", "--is-ancestor", tip, base, check=False).returncode == 0:
-            raise Refused(f"the range is reversed: {tip[:12]} comes before {base[:12]}; give the older commit first")
-        raise Refused(f"the range is divergent: {base[:12]} is not an ancestor of {tip[:12]}")
-    changed = names(root, base, tip)
-    if not changed:
-        raise Refused(f"{base[:12]}..{tip[:12]} changes no file (an empty diff)")
-    included = names(root, base, tip, args.path) if args.path else changed
-    if not included:
-        raise Refused("--path selects no changed file; the changed paths are: " + ", ".join(changed))
-    omitted = [name for name in changed if name not in included]
-    diff = git(root, "diff", f"{base}..{tip}", "--", *args.path).stdout
-    if len(diff) > MAX_DIFF_BYTES:
-        raise Refused(f"the diff to inline is {len(diff)} bytes, over the limit of {MAX_DIFF_BYTES}; review it in "
-                      "parts by giving --path <path> ... for some of the changed paths, then the rest")
-    out = scratch_path(root, args.out)
-    note = read_option(args.note, "--note") if args.note else ""
-    body = template(root, "round")
-    prompt = fill(body, "round", {
-        "range": f"`{base}..{tip}` (the diff is inlined below under \"Diff\", because your sandbox may not run git; "
-                 "the files in the working tree are at or after the tip)",
-        "purpose": one_line(args.purpose, "--purpose"),
-        "section": f"`{ref}` (its contract is inlined below under \"Section contract\")",
-        "governing": one_line(args.governing, "--governing"),
-    }).rstrip() + "\n"
-    if note:
-        prompt += f"\n## Note from the writer\n\n{note}\n"
-    scope = ["## Scope", "", f"The candidate `{base}..{tip}` changes {len(changed)} path(s).", "",
-             "Included in this prompt:", ""] + [f"- `{name}`" for name in included]
-    if omitted:
-        scope += ["", "Not in this prompt (review them in another round part):", ""]
-        scope += [f"- `{name}`" for name in omitted]
-        scope += ["", "This prompt covers only the included paths."]
-    prompt += "\n" + "\n".join(scope) + "\n"
-    resolved = json.dumps({**row.public(), "body": row.body}, indent=2, ensure_ascii=False)
-    prompt += f"\n## Section contract ({ref}, as `resolve` prints it){fenced(resolved, 'json')}"
-    prompt += f"\n## Diff{fenced(diff.decode('utf-8', 'replace'), 'diff')}"
-    write(out, prompt)
-    return {"kind": "round", "ref": ref, "base": base, "tip": tip, "included": included, "omitted": omitted,
-            "out": str(out)}
-
-
-def main(argv=None, root=ROOT):
-    parser = argparse.ArgumentParser(description="Build a completion or round review prompt for a TODO section.")
-    sub = parser.add_subparsers(dest="command", required=True)
-    c = sub.add_parser("completion", help="the completion review's prompt, before a section is built")
-    c.add_argument("ref", help="the section, as 'DNN TNN §N'")
-    c.add_argument("--purpose", required=True, help="what the feature is for the user, one or two sentences")
-    c.add_argument("--context", help="a file with the SPEC and inventory excerpts and the neighbouring sections")
-    c.add_argument("--no-context", help="why no further context applies (tooling sections only)")
-    c.add_argument("--out", required=True, help="the scratch file to write")
-    r = sub.add_parser("round", help="one code review round's prompt, after a section is built")
-    r.add_argument("ref", help="the section, as 'DNN TNN §N'")
-    r.add_argument("base", help="the commit before the candidate's first commit")
-    r.add_argument("tip", help="the candidate's last commit")
-    r.add_argument("--purpose", required=True, help="what the candidate is meant to do, one or two sentences")
-    r.add_argument("--governing", required=True, help="the spec, plan or design files that apply")
-    r.add_argument("--note", help="a file with anything else the reviewer must know (earlier rounds, owned gaps)")
-    r.add_argument("--path", nargs="+", default=[], help="review only these changed paths in this part")
-    r.add_argument("--out", required=True, help="the scratch file to write")
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--kind", required=True, choices=sorted(TEMPLATES))
+    parser.add_argument("--candidate", required=True, help="the full 40-character commit under review")
+    parser.add_argument("--out", required=True, help="the file the filled prompt is written to")
+    parser.add_argument("--base", help="the first commit before the range: the prompt names <base>..<candidate>")
+    parser.add_argument("--ref", help="the TODO section, 'D00 T01 §7'; without it the TODO lines are dropped")
+    parser.add_argument("--todo", help="the TODO file; found with todo-graph.py resolve when --ref is given")
+    parser.add_argument("--fidelity", help=f"the design source the section names (default: {DEFAULT_FIDELITY})")
+    parser.add_argument("--purpose", help="one or two sentences on what the change is for (round, completion)")
+    parser.add_argument("--governing", help="the spec, plan or design file that applies (all but round need it too)")
+    parser.add_argument("--gates", help="a file holding the gate output (reconciliation)")
+    parser.add_argument("--findings", help="the findings file of the section (reconciliation)")
+    parser.add_argument("--failed", help="the failed completion's candidate SHA (reconciliation)")
+    parser.add_argument("--last", help="the last reviewed candidate SHA (reconciliation; default --failed)")
     args = parser.parse_args(argv)
     try:
-        result = completion(root, args) if args.command == "completion" else review_round(root, args)
-    except Refused as exc:
-        print(f"refused: {exc}", file=sys.stderr)
+        print(run(args))
+    except Refused as error:
+        print(f"review-prompt refused: {error}", file=sys.stderr)
         return 2
-    except (OSError, UnicodeError) as exc:
-        # The boundary of the command: a file that cannot be read, decoded or written anywhere above is a refusal
-        # too, never a traceback, so the caller always gets exit 2 and one line to act on.
-        print(f"refused: {type(exc).__name__}: {' '.join(str(exc).split())}", file=sys.stderr)
-        return 2
-    print(json.dumps(result, ensure_ascii=False))
     return 0
 
 
