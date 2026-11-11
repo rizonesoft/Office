@@ -86,6 +86,8 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 48 | §48 | Packet staging publishes the index atomically | §34 | [ ] |
 | 49 | §49 | Packet lifecycle after a partial rejection | §34 | [ ] |
 | 50 | §50 | Withdrawn sections | -- | [ ] |
+| 51 | §51 | No deferral or adjacency owner is withdrawn | §50 | [ ] |
+| 52 | §52 | A withdrawn section authors nothing | §50 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1391,8 +1393,44 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the withdrawal tests among them, `python scripts/todo-graph.py validate` exits 0, and `python scripts/todo-graph.py query stats` shows `"withdrawn": 8`.
 
-## Verification
+## 51. No Deferral or Adjacency Owner Is Withdrawn
 
+Filed 2026-11-11 from the completion review of §50 (`docs/reviews/00-workspace/D00-T03-s50-completion.md`, round 2, finding 1, P2). `validate` refuses a deferral whose owner does not exist or is stamped, and an adjacency owner that does not exist, but a withdrawn owner would pass both: work deferred to a section that will never run would have no owner while the graph says it has one. This section refuses both, so a withdrawal forces the deferred scope to be reassigned or explicitly given up.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Refuse a withdrawn owner. Done when: `validate` names both sections for a live deferral and for an adjacency key whose owner is withdrawn.
+
+- [ ] Refuse in `scripts/lib/todo_graph.py` a deferral line (the blockquoted Deferred marker) whose cross-referenced owner is withdrawn, naming the deferring section and the owner. Done when: a fixture in `scripts/tests/test_todo_graph.py` exits 2 with both references, and the same fixture with the marker changed to Resolved validates.
+- [ ] Refuse an `**Adjacency:**` key whose `@ DNN TNN §N` owner is withdrawn, naming the file, the key and the owner. Done when: a fixture exits 2 with all three, and the same fixture with the key reassigned to an open section validates.
+- [ ] Say in `todo/README.md`, beside the withdrawal rule, that a withdrawal moves or gives up every deferral and adjacency key it owns first. Done when: the README says so.
+- [ ] Commit: `todo: a withdrawn section owns no deferral or adjacency`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with both refusals among them, and `python scripts/todo-graph.py validate` exits 0 on this repository.
+
+## 52. A Withdrawn Section Authors Nothing
+
+Filed 2026-11-11 from the completion review of §50 (round 2, finding 2, P2). `to_author` lists every `Author` item's missing file and refuses one file named by two sections (D00 T03 §31), whoever owns the item. A withdrawn authoring section would keep its file in `### Still to author` and in `query stats.to_author`, and would block a replacement section from naming the same file. This section drops withdrawn owners from both, keeping their text as history.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Leave withdrawn owners out of authoring. Done when: a withdrawn section's file is not listed and can be named by another section.
+
+- [ ] Leave `Author` items of a withdrawn section out of `to_author` and of the two-sections refusal in `scripts/lib/todo_graph.py`. Done when: tests in `scripts/tests/test_todo_graph.py` show a withdrawn owner's missing file absent from the block and from `query stats`, and a second, open section naming the same file validating and listed.
+- [ ] Keep the ticked-without-file refusal for withdrawn sections too, so history cannot claim a file that is not there. Done when: a fixture with a withdrawn section's ticked `Author` item and no file exits 2.
+- [ ] Commit: `todo: a withdrawn section authors no file`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with these tests among them, and `python scripts/todo-graph.py plan --check` exits 0.
+
+## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
 - `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py plan --check` pass.

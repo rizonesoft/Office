@@ -28,3 +28,29 @@ OVERALL: needs-attention
 1. extended
 2. extended
 3. extended
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-11T06:27:48Z
+- Effort: medium
+- Type: adversarial
+- Lines: 11
+- Digest: e9f076fdb22ead89
+
+SECTION: D00 T03 §50
+PURPOSE: completion
+CONTRACT: sha256:b7c44371635ca29fbda4b1d6d402cfa7468b352638078b8155d7c1fe80c9a96a
+
+1. **P2: Withdrawal can abandon a live deferral without failing validation.** `scripts/lib/todo_graph.py:629` checks that a deferral’s owner exists; line 632 only rejects a stamped owner. At line 607, adjacency ownership likewise requires only existence. A retained feature can therefore defer work to a withdrawn section without a dependency edge, pass the proposed dependency refusal, and retain no executable owner. **Extend** this section to reject live deferral and deferred-adjacency ownership pointing to withdrawn sections, naming both references. Require reassignment or an explicit disposition of the affected scope, with fixtures proving these cases refuse.
+
+2. **P2: Withdrawn authoring sections still advertise unfinished work.** `scripts/lib/todo_graph.py:699` collects `Author` items from every section, and line 721 reports missing files regardless of their owner’s withdrawal. Withdrawing an authoring section whose consumer disappeared would leave its file in “Still to author” and `query stats.to_author`, despite removing the section from runnable work. The duplicate-owner check at line 710 also prevents assigning that file to a replacement section while preserving the withdrawn checklist. **Extend** this section to exclude withdrawn owners from live authoring obligations and duplicate-owner checks while preserving their historical text. Test withdrawal with an absent target file and subsequent reassignment.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T03 §51
+2. filed -> D00 T03 §52

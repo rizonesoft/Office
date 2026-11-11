@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 65 | Checklist items: 447
+Sections: 67 | Checklist items: 454
 
 | Status | Reference   | Deliverable                                         | Needs                  | Items |
 | ------ | ----------- | --------------------------------------------------- | ---------------------- | ----- |
@@ -65,6 +65,8 @@ Sections: 65 | Checklist items: 447
 | [ ]    | D00 T03 §48 | Packet Staging Publishes the Index Atomically       | none                   | 4     |
 | [ ]    | D00 T03 §49 | Packet Lifecycle After a Partial Rejection          | none                   | 5     |
 | [ ]    | D00 T03 §50 | Withdrawn Sections                                  | none                   | 11    |
+| [ ]    | D00 T03 §51 | No Deferral or Adjacency Owner Is Withdrawn         | none                   | 4     |
+| [ ]    | D00 T03 §52 | A Withdrawn Section Authors Nothing                 | none                   | 3     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                 | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                                | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                                | none                   | 6     |
@@ -312,6 +314,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/13-vba/TODO-03-object-models.md`                     | D03 T01 §26 | [ ]    |
 | `todo/13-vba/TODO-04-trust-center.md`                      | D03 T01 §26 | [ ]    |
 
-Progress: 64/166 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 64/168 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 414/1089 items completed (includes Commit items).
+Checklist: 414/1096 items completed (includes Commit items).
