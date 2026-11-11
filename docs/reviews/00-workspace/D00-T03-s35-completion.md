@@ -34,3 +34,32 @@ OVERALL: needs-attention
 3. extended
 4. extended
 5. filed -> D00 T03 §53
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-11T07:11:33Z
+- Effort: medium
+- Type: adversarial
+- Lines: 13
+- Digest: d0aeb9b405d198f4
+
+SECTION: D00 T03 §35
+PURPOSE: completion
+CONTRACT: sha256:12f7ca69ad761064782da3a866b01646621395895e2763f44b14184a2dcd1b1c
+
+1. **P2: Guard existence can falsely report a stopped campaign as Running.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1058` explicitly makes file existence sufficient. However, `scripts/campaign_guard.py:153-157` recognises an ended guard whose file remains after interrupted cleanup, and lines 18-25 document that a dead session leaves its guard for handover. An ordinary session crash can therefore produce a weekly claim that work is running when nothing is executing. **Remedy: extend** the section to honour ended guards and distinguish an open guard from verified session activity. Report activity as unknown when it cannot be established. Test ended and abandoned guards, not only absent and present files.
+
+2. **P2: Progress overflow has no preservation path.** The progress requirement at `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1053` promises the sections verified during the week, but line 1060 reserves attachment preservation only for waiting items. A productive week with 130 completed sections exceeds the 120-line body before run state, CI, totals or waiting items are included. Implementing the stated truncation can silently lose the promised progress list; the 300-waiting-item test would still pass. **Remedy: extend** overflow handling to preserve the complete progress list in an attachment too, with explicit body counts. Test progress-only overflow and combined progress/waiting overflow.
+
+3. **P2: A transient send failure loses the weekly digest without a recovery path.** `todo/00-workspace/TODO-03-automations-and-keep-alive.md:1061-1063` specifies one send and a weekly trigger, but no pending-delivery state or retry. The existing runner records a failed command and returns (`.conclave/automations/run.py:130-144`); the installer provides missed-start catch-up, not failed-send recovery (`.conclave/automations/install.ps1:79-81`). If the network is unavailable on Monday morning, the next scheduled digest is a week later, when the original reporting window has disappeared. §53 owns failure notices, not digest delivery recovery. **Remedy: extend** the section with persisted reporting periods, bounded recovery after definite delivery failures, and an explicit policy for ambiguous send outcomes that avoids blind duplicate sends. Test failure followed by recovery and ensure the original progress remains reportable.
+
+COMPLETE: no
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Outcome (round 2)
+
+1. filed -> D00 T07 §1
+2. filed -> D00 T07 §2
+3. filed -> D00 T07 §3

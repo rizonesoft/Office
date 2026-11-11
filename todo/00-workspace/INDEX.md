@@ -8,6 +8,7 @@ Repository tooling that every later domain relies on.
 | `TODO-03-automations-and-keep-alive.md` | Scheduled jobs, run guard, keep-alive | active |
 | `TODO-04-portable-build-tools.md` | Pinned build tools fetched into the clone | active |
 | `TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews, agent ledger and score | active |
+| `TODO-07-owner-digest.md` | Owner digest follow-ups: live run, long weeks, failed sends | active |
 
 ## Completed
 

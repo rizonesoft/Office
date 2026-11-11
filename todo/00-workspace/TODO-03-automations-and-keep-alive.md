@@ -21,6 +21,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 - -> XREF: T04 §1 -- `tools.lock.json`, the lock file of the portable build tools, joins the pins §11 keeps at the latest stable release
 - -> XREF: D03 T01 §17 -- the authoring sections whose `Author` items §31 lists in the plan as files still to author
 - -> XREF: T05 §5 -- the lessons `scripts/packet.py` (§34) attaches to a packet, and the ledger it writes (T05 §6) (all withdrawn 2026-11-11 with `scripts/packet.py`, D00 T03 §50: no agent writes)
+- -> XREF: T07 §1 -- the owner digest follow-ups for §35 (a live run told from an abandoned guard, a long progress list, a failed send), in their own file because this one holds 55 sections
 
 ## Outcome
 
