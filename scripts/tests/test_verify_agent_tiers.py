@@ -94,16 +94,16 @@ ACCEPTED_BODIES = ["description: hello:" + NBSP + "\nmodel: sonnet\n",   # a non
                    "      command: echo ok\n"]                                     # YAML's compact sequences
 
 
-class Workers(unittest.TestCase):
-    """An agent reads and runs unless it is a declared worker on Opus or Fable (owner, 2026-11-10)."""
+class ReadOnly(unittest.TestCase):
+    """Every agent reads and runs: no agent holds an edit tool, whatever its tier (owner, 2026-11-11: the main session
+    writes, and the Opus section-writer and the Fable principal-implementer are removed)."""
 
-    RATIONALE = "model_rationale: Writes the sections.\n"
-    WORKER = RATIONALE + "write_scope: packet\n"
+    RATIONALE = "model_rationale: Judges what a reader cannot.\n"
 
     def setUp(self):
         self.assertIsNotNone(NODE, "node is not on PATH; the agent tier verifier cannot run")
 
-    def verify(self, model="opus", tools="Read, Grep", extra=RATIONALE):
+    def verify(self, model="sonnet", tools="Read, Grep", extra=""):
         with tempfile.TemporaryDirectory() as tmp:
             agents = Path(tmp) / ".claude" / "agents"
             agents.mkdir(parents=True)
@@ -112,70 +112,55 @@ class Workers(unittest.TestCase):
                 encoding="utf-8")
             return subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
 
-    def test_an_edit_tool_without_the_declaration_is_refused(self):
-        for model, extra in (("opus", self.RATIONALE), ("sonnet", "")):
+    def test_an_edit_tool_is_refused_on_every_tier(self):
+        for model, extra in (("sonnet", ""), ("opus", self.RATIONALE), ("fable", self.RATIONALE)):
             for tools in ("Read, Edit", "Read, Write", "Read, MultiEdit", "Read, NotebookEdit", "Read, Edit(src/**)"):
                 with self.subTest(model=model, tools=tools):
                     result = self.verify(model=model, tools=tools, extra=extra)
                     self.assertEqual(result.returncode, 1, result.stdout)
-                    self.assertIn("without \"write_scope: packet\"", result.stderr)
+                    self.assertIn("grants edit tools", result.stderr)
 
-    def test_a_declared_worker_on_opus_or_fable_passes(self):
-        for model in ("opus", "fable"):
+    def test_the_old_worker_declaration_is_refused(self):
+        for model, extra in (("fable", self.RATIONALE), ("opus", self.RATIONALE), ("sonnet", "")):
             with self.subTest(model=model):
-                result = self.verify(model=model, tools="Read, Grep, Bash, Edit, Write", extra=self.WORKER)
-                self.assertEqual(result.returncode, 0, result.stderr)
+                result = self.verify(model=model, tools="Read, Grep, Bash, Edit, Write",
+                                     extra=extra + "write_scope: packet\n")
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn('declares "write_scope:"', result.stderr)
+                self.assertIn("no agent writes", result.stderr)
 
-    def test_a_sonnet_agent_never_writes(self):
-        result = self.verify(model="sonnet", tools="Read, Grep, Edit", extra="write_scope: packet\n")
-        self.assertEqual(result.returncode, 1, result.stdout)
-        self.assertIn("a Sonnet agent never writes", result.stderr)
-
-    def test_a_sonnet_reader_passes(self):
-        result = self.verify(model="sonnet", tools="Read, Grep, Bash", extra="")
+    def test_a_reader_passes(self):
+        result = self.verify(tools="Read, Grep, Bash")
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_haiku_is_retired_whatever_it_declares(self):
         allowance = "mechanical_share: 100\nhaiku_replay: AGENTS.md\n"  # what the retired allowance asked for
-        for model, extra in (("claude-haiku-5-5", ""), ("claude-haiku-5-5", allowance), ("haiku", ""),
-                             ("claude-haiku-5-5", "write_scope: packet\n")):
+        for model, extra in (("claude-haiku-5-5", ""), ("claude-haiku-5-5", allowance), ("haiku", "")):
             with self.subTest(model=model, extra=extra[:12]):
                 result = self.verify(model=model, extra=extra)
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn("Haiku is retired", result.stderr)
 
-    def test_a_star_grant_is_refused_even_for_a_worker(self):
-        result = self.verify(tools="'*'", extra=self.WORKER)
+    def test_a_star_grant_is_refused(self):
+        result = self.verify(tools="'*'")
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("grants every tool", result.stderr)
 
-    def test_a_missing_tools_list_is_refused_even_for_a_worker(self):
+    def test_a_missing_tools_list_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             agents = Path(tmp) / ".claude" / "agents"
             agents.mkdir(parents=True)
-            (agents / "probe.md").write_text(
-                "---\nname: probe\ndescription: A probe agent\nmodel: opus\n" + self.WORKER + "---\n\nBody.\n",
-                encoding="utf-8")
+            (agents / "probe.md").write_text("---\nname: probe\ndescription: A probe agent\nmodel: sonnet\n---\n\nBody.\n",
+                                             encoding="utf-8")
             result = subprocess.run([NODE, str(VERIFIER)], cwd=tmp, capture_output=True, text=True)
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn('needs an explicit "tools:" list', result.stderr)
 
-    def test_any_other_write_scope_is_refused(self):
-        result = self.verify(tools="Read, Edit", extra=self.RATIONALE + "write_scope: anywhere\n")
-        self.assertEqual(result.returncode, 1, result.stdout)
-        self.assertIn('the only value is "packet"', result.stderr)
-
-    def test_a_worker_with_no_edit_tool_is_refused(self):
-        result = self.verify(tools="Read, Grep", extra=self.WORKER)
-        self.assertEqual(result.returncode, 1, result.stdout)
-        self.assertIn("grants no edit tool", result.stderr)
-
     def test_persistent_memory_is_refused_because_it_enables_edit_tools(self):
         # Claude Code enables Read, Write and Edit for an agent with memory, whatever its tools list says.
-        for extra in ("memory: project\n", "memory: user\n", "memory: local\n", "memory: project\nwrite_scope: packet\n"):
+        for extra in ("memory: project\n", "memory: user\n", "memory: local\n"):
             with self.subTest(extra=extra):
-                tools = "Read, Edit" if "write_scope" in extra else "Read, Grep"
-                result = self.verify(tools=tools, extra=self.RATIONALE + extra)
+                result = self.verify(extra=extra)
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn('declares "memory:"', result.stderr)
 
@@ -192,24 +177,20 @@ class Workers(unittest.TestCase):
                 if expected:
                     self.assertIn('declares "effort:', result.stderr)
 
-    def test_an_opus_worker_still_needs_its_rationale(self):
-        refused = self.verify(model="opus", tools="Read, Edit", extra="write_scope: packet\n")
+    def test_an_elevated_reader_still_needs_its_rationale(self):
+        refused = self.verify(model="opus")
         self.assertEqual(refused.returncode, 1, refused.stdout)
         self.assertIn("model_rationale", refused.stderr)
 
-    def test_the_fleet_is_sonnet_readers_and_the_one_fable_worker(self):
-        # Owner, 2026-11-11: the main session is the writer, so the only agent that writes is the Fable takeover.
-        fleet = {}
+    def test_the_fleet_is_sonnet_readers_only(self):
+        # Owner, 2026-11-11: agents are read-only; no writer agent of any tier is kept.
         for path in sorted((REPO / ".claude" / "agents").glob("*.md")):
             text = path.read_text(encoding="utf-8")
             model = next(line.split(":", 1)[1].strip() for line in text.splitlines() if line.startswith("model:"))
-            fleet[path.stem] = (model, "write_scope: packet" in text)
-        self.assertEqual({name for name, (_, writes) in fleet.items() if writes}, {"principal-implementer"})
-        self.assertEqual(fleet["principal-implementer"][0], "fable")
-        for name, (model, writes) in fleet.items():
-            if not writes:
-                self.assertEqual(model, "sonnet", name)
-
+            self.assertEqual(model, "sonnet", path.stem)
+            self.assertNotIn("write_scope", text, path.stem)
+        for gone in ("principal-implementer", "section-writer"):
+            self.assertFalse((REPO / ".claude" / "agents" / f"{gone}.md").exists(), gone)
 
 class Frontmatter(unittest.TestCase):
     def setUp(self):

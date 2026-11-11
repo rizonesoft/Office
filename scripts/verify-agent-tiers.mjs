@@ -6,9 +6,8 @@
 // The rule is in AGENTS.md: mechanical subtasks delegate to subagents on the
 // Sonnet tier; an elevated tier is reserved for work whose verdict quality
 // demands it; Haiku is retired (owner, 2026-11-10: what it was allowed for is a
-// script's job); and an agent reads and runs unless it is a declared worker
-// (`write_scope: packet`) on an elevated tier, which writes only what its work
-// packet names. A Sonnet agent never writes.
+// script's job); and every agent reads and runs: no agent holds an edit tool
+// (owner, 2026-11-11: the main session writes, and the writer agents are removed).
 //
 // A rule stated in prose is protected by discipline. This makes it protected by
 // a check: an agent with no `model:` line, an undeclared agent that could edit files, a
@@ -53,9 +52,8 @@ export const HOOKS_FIELD = "hooks";
  */
 export const EDIT_TOOLS = ["edit", "write", "multiedit", "notebookedit"];
 
-/** The field that declares a worker, and its one value. Only an elevated tier (Opus, Fable) may carry it. */
+/** The old field that declared a worker agent. No agent writes any more (owner, 2026-11-11), so it is refused. */
 export const WRITE_SCOPE_FIELD = "write_scope";
-export const WRITE_SCOPE_PACKET = "packet";
 
 /** Claude Code's persistent-memory field. It grants Read, Write and Edit implicitly, so no agent may carry it. */
 export const MEMORY_FIELD = "memory";
@@ -500,10 +498,6 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
       continue;
     }
 
-    if (isBase && fields.has(WRITE_SCOPE_FIELD)) {
-      errors.push(`${relative} declares "${WRITE_SCOPE_FIELD}:" on "${model}"; a Sonnet agent never writes (owner, 2026-11-10), so a worker is on Opus or Fable`);
-    }
-
     if (isElevated) {
       elevated += 1;
       // An elevated pin has to be argued for. Without this the expensive tier
@@ -521,24 +515,19 @@ export function verifyAgentTiers(repoRoot = process.cwd(), relativeRoot = join("
 }
 
 /**
- * A subagent reads and runs unless it is a declared worker. A worker carries
- * `write_scope: packet` (owner, 2026-11-10: workers get to write): it may hold
- * edit tools and writes only the paths its work packet names, and the main loop
- * reads its whole diff before anything is committed (AGENTS.md, Subagents). The
- * declaration is the point: an agent that gained an edit tool by accident still
- * fails here. `*` and a missing `tools:` list stay refused for every agent, and
- * a grant such as `Edit(src/**)` is still Edit, so the rule spec after the name
- * is ignored.
+ * No subagent writes (owner, 2026-11-11: agents are read-only; the main session writes every section and every
+ * fix round, and the writer agents, the Opus section-writer and the Fable principal-implementer, are removed).
+ * So no agent may hold an edit tool, whatever its tier, and the old worker declaration `write_scope:` is refused
+ * outright rather than read. `*` and a missing `tools:` list stay refused, because either grants the edit tools,
+ * and a grant such as `Edit(src/**)` is still Edit, so the rule spec after the name is ignored.
  */
 export function toolProblems(fields) {
   const problems = [];
-  const scope = fields.get(WRITE_SCOPE_FIELD);
-  const isWorker = scope !== undefined && scope.value === WRITE_SCOPE_PACKET;
-  if (scope !== undefined && !isWorker) {
-    problems.push(`declares "${WRITE_SCOPE_FIELD}: ${scope.value}"; the only value is "${WRITE_SCOPE_PACKET}"`);
+  if (fields.has(WRITE_SCOPE_FIELD)) {
+    problems.push(`declares "${WRITE_SCOPE_FIELD}:"; no agent writes (owner, 2026-11-11), so there is no worker to declare`);
   }
   // Claude Code enables Read, Write and Edit for an agent with persistent memory, whatever its `tools:` list says
-  // (review round 1 of docs/reviews/orchestration-2026-11-10.md), and those writes land outside any work packet.
+  // (review round 1 of docs/reviews/orchestration-2026-11-10.md).
   if (fields.has(MEMORY_FIELD)) {
     problems.push(`declares "${MEMORY_FIELD}:", which makes Claude Code enable Write and Edit outside the "tools:" list; no agent here keeps memory`);
   }
@@ -548,20 +537,13 @@ export function toolProblems(fields) {
     return problems;
   }
   const names = tools.split(",").map((tool) => tool.replace(/\(.*$/, "").trim().toLowerCase());
-  const hasEditTool = names.some((tool) => EDIT_TOOLS.includes(tool));
   if (names.includes("*")) {
     problems.push('grants every tool with "*"; list the tools, so what an agent can do is read from its definition');
-  } else if (hasEditTool && !isWorker) {
-    problems.push(
-      `grants edit tools (Edit, Write, MultiEdit or NotebookEdit) without "${WRITE_SCOPE_FIELD}: ${WRITE_SCOPE_PACKET}"; `
-      + "an agent reads and runs unless it is a declared worker",
-    );
-  } else if (isWorker && !hasEditTool) {
-    problems.push(`declares "${WRITE_SCOPE_FIELD}: ${WRITE_SCOPE_PACKET}" but grants no edit tool; a worker that cannot write is a reader, so drop the field`);
+  } else if (names.some((tool) => EDIT_TOOLS.includes(tool))) {
+    problems.push("grants edit tools (Edit, Write, MultiEdit or NotebookEdit); every agent reads and runs, and the main session writes (owner, 2026-11-11)");
   }
   return problems;
 }
-
 /**
  * The effort ceiling per tier (owner, 2026-11-10): Sonnet agents never run above `high`, Opus and Fable
  * agents never above `medium`. Extra effort is cheap on the cheap tiers, where it is what holds the quality bar; on
