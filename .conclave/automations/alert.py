@@ -165,7 +165,9 @@ def _read_notices(root: str) -> list[dict]:
     path = os.path.join(root, NOTICES)
     try:
         with open(path, encoding="utf-8") as fh:
-            lines = fh.read().splitlines()
+            # One record per "\n": str.splitlines() would also split at U+0085, U+2028 and U+2029, which a notice's
+            # text may hold and the writer keeps (D00 T03 §53, review round 1).
+            lines = [line.rstrip("\r") for line in fh.read().split("\n")]
     except FileNotFoundError:
         return []
     except (OSError, UnicodeDecodeError) as error:

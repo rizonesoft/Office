@@ -449,6 +449,17 @@ class Notices(Send):
         self.assertIn("Notices: the queue could not be read", requests[0]["text_body"])
         self.assertEqual(queue.read_bytes(), broken)
 
+    def test_a_path_in_a_notice_is_cleared_in_the_body_and_the_attachment(self):
+        # Review round 1, finding 2: the attachment's heading line took the subject as it came.
+        alert = digest.load_alert(self.root)
+        alert.record_notice("campaign", r"Cannot open C:\Users\Owner\Private\file.txt", "body", str(self.root))
+        code, _, requests = self.run_main([])
+        self.assertEqual(code, 0)
+        attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in requests[0]["attachments"]}
+        for text in (requests[0]["text_body"], attached["notices.txt"]):
+            self.assertNotIn("Private", text)
+            self.assertNotIn(r"C:\Users", text)
+
     def test_no_notices_adds_no_part(self):
         code, _, requests = self.run_main([])
         self.assertNotIn("Notices", requests[0]["text_body"])

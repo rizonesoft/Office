@@ -269,7 +269,7 @@ def notices_part(notices, root):
     lines = [f"Notices since the last digest ({len(notices)}):"]
     shown = 0
     for notice in notices:
-        summary = wrap(f"- {notice.get('at', '?')} {notice.get('sender', '?')}: "
+        summary = wrap(f"- {notice.get('at', '?')} {without_paths(str(notice.get('sender', '?')), root)}: "
                        f"{without_paths(str(notice.get('subject', '')), root)}")
         if len(lines) - 1 + len(summary) > NOTICE_LINES:
             break
@@ -280,7 +280,8 @@ def notices_part(notices, root):
                       f"{NOTICES_ATTACHMENT}.")
     else:
         lines += wrap(f"Each notice in full is in the attached {NOTICES_ATTACHMENT}.")
-    full = "\n\n".join(f"{n.get('at', '?')} {n.get('sender', '?')}: {n.get('subject', '')}\n\n"
+    full = "\n\n".join(f"{n.get('at', '?')} {without_paths(str(n.get('sender', '?')), root)}: "
+                       f"{without_paths(str(n.get('subject', '')), root)}\n\n"
                        f"{without_paths(str(n.get('body', '')), root)}" for n in notices) + "\n"
     return lines + [""], (NOTICES_ATTACHMENT, full)
 

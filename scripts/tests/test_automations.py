@@ -674,6 +674,15 @@ class NoticeQueue(unittest.TestCase):
             alert.pending_notices(self.root)
         self.assertEqual(self.queue.read_bytes(), broken)
 
+    def test_unicode_line_separators_in_a_notice_never_poison_the_queue(self):
+        # Review round 1, finding 1: U+0085, U+2028 and U+2029 are text, not record separators.
+        texts = ["A\u0085B", "A B", "A B"]
+        for text in texts:
+            alert.record_notice("campaign", f"subject {text}", f"body {text}", self.root)
+        alert.record_notice("run.py", "after", "b", self.root)
+        bodies = [n["body"] for n in alert.pending_notices(self.root)]
+        self.assertEqual(bodies, [f"body {t}" for t in texts] + ["b"])
+
     def test_a_failed_write_leaves_the_queue_whole(self):
         alert.record_notice("run.py", "kept", "b", self.root)
         before = self.queue.read_bytes()
