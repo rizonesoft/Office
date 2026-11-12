@@ -332,10 +332,18 @@ class Send(Tree):
         def __exit__(self, *exc):
             return False
 
+    activity = None  # SMTP2GO's activity log as the fake serves it: a list of events, or an exception to raise
+
     def run_main(self, argv, opener=None, attach=False):
         requests = []
+        self.searches = getattr(self, "searches", [])
 
         def capture(request, timeout=None):
+            if request.full_url.endswith("/activity/search"):  # the delivery evidence (D00 T03 §53)
+                self.searches.append(json.loads(request.data.decode()))
+                if isinstance(self.activity, Exception):
+                    raise self.activity
+                return self.Response(json.dumps({"data": {"events": self.activity or []}}).encode())
             requests.append(json.loads(request.data.decode()))
             return self.Response(json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "e1"}}).encode())
 
@@ -343,8 +351,12 @@ class Send(Tree):
         with mock.patch.object(digest, "ci_state", return_value=["CI: green for abc1234."]), \
                 mock.patch.object(digest, "run_state", return_value="Running"), redirect_stdout(out):
             alert = digest.load_alert(self.root)
+
+            def no_network(*a, **kw):
+                raise AssertionError("a test reached the network")
             with mock.patch.object(digest, "load_alert", return_value=alert), \
-                    mock.patch.object(alert, "key", return_value="k"):
+                    mock.patch.object(alert, "key", return_value="k"), \
+                    mock.patch.object(alert.urllib.request, "urlopen", no_network):
                 if attach:
                     real = digest.compose
                     with mock.patch.object(digest, "compose",
@@ -479,14 +491,38 @@ class Notices(Send):
         self.assertIn("log line 59 of failure 0", attached["notices.txt"])
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
-    def test_a_delivered_batch_that_cannot_be_marked_comes_back_marked_as_a_possible_repeat(self):
-        # Completion review: the send succeeds and the mark fails (a full disk).
-        def first():
-            alert = digest.load_alert(self.root)
-            with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")), \
-                    mock.patch.object(digest, "load_alert", return_value=alert):
-                self.assertEqual(self.run_main([])[0], 1)
-        self.assert_sent_again_in_full(*self.unconfirmed_then_next(first))
+    def delivered_then_mark_fails(self):
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")), \
+                mock.patch.object(digest, "load_alert", return_value=alert):
+            code, _, sent = self.run_main([])
+        self.assertEqual(code, 1)
+        return sent[0]["subject"]
+
+    def test_a_delivered_batch_that_cannot_be_marked_is_confirmed_by_the_log_and_never_sent_again(self):
+        # Completion review: the send succeeds and the mark fails (a full disk); SMTP2GO's log shows the digest.
+        subject = []
+        first = lambda: subject.append(self.delivered_then_mark_fails())
+        ids = self.queue(1)
+        first()
+        self.activity = [{"event": "delivered", "email_id": "e1", "subject": subject[0]}]
+        code, out, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
+        self.assertIn("1 confirmed sent", out)
+        search = self.searches[-1]
+        self.assertEqual(search["search_subject"], subject[0])
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+
+    def test_a_batch_the_log_does_not_show_is_sent_again(self):
+        self.activity = []
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.delivered_then_mark_fails))
+
+    def test_a_log_that_cannot_be_read_sends_the_batch_again(self):
+        self.activity = OSError("SMTP2GO is down")
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.delivered_then_mark_fails))
 
     def test_a_send_interrupted_after_the_claim_loses_nothing(self):
         # Reconciliation review: the process stops between the claim and the send's end.

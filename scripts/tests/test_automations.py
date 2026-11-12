@@ -711,6 +711,48 @@ class NoticeQueue(unittest.TestCase):
                                                                                   "the fixes"))
 
 
+class DeliveryEvidence(unittest.TestCase):
+    """alert.was_sent asks SMTP2GO's activity log whether a digest went out (D00 T03 §53)."""
+
+    class Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def ask(self, answer, subject="Office weekly: 1 waiting on you, 0 verified this week"):
+        seen = []
+
+        def opener(request, timeout=None):
+            seen.append((request.full_url, request.get_header("X-smtp2go-api-key"), json.loads(request.data)))
+            if isinstance(answer, Exception):
+                raise answer
+            return self.Response(json.dumps(answer).encode())
+        return alert.was_sent("api-k", subject, "2026-11-09T05:00:00Z", opener), seen
+
+    def test_the_request_names_the_subject_and_the_window(self):
+        _, seen = self.ask({"data": {"events": []}})
+        url, key, body = seen[0]
+        self.assertEqual((url, key), ("https://api.smtp2go.com/v3/activity/search", "api-k"))
+        self.assertEqual((body["search_subject"], body["start_date"]),
+                         ("Office weekly: 1 waiting on you, 0 verified this week", "2026-11-09T05:00:00Z"))
+        self.assertIn("end_date", body)
+
+    def test_only_an_event_with_exactly_that_subject_is_evidence(self):
+        exact = {"event": "delivered", "email_id": "E1", "subject": "Office weekly: 1 waiting on you, 0 verified this week"}
+        other = {**exact, "subject": "Office weekly: 2 waiting on you, 0 verified this week"}
+        self.assertTrue(self.ask({"data": {"events": [other, exact]}})[0])
+        self.assertFalse(self.ask({"data": {"events": [other]}})[0])
+        self.assertFalse(self.ask({"data": {"events": [{**exact, "email_id": ""}]}})[0])
+
+    def test_an_unreadable_log_is_refused(self):
+        for answer in (OSError("down"), {"data": None}, {"data": {"events": "x"}}, {"error": "bad key"}):
+            with self.subTest(answer=str(answer)):
+                with self.assertRaises(alert.Refused):
+                    self.ask(answer)
+
+
 class LastJsonLocking(unittest.TestCase):
     """Every last.json write holds the task lock, so a late alert and a newer run cannot interleave."""
 

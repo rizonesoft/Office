@@ -338,7 +338,7 @@ def compose(root, rows, today, ci_lines, state, notices=()):
     return subject, "\n".join(body) + "\n", attachments
 
 
-def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
+def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, sent=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
     args = parser.parse_args(argv)
@@ -354,7 +354,14 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
     # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
     try:
         if not args.dry_run:
-            alert.release_unconfirmed(str(root))  # an earlier digest that never confirmed: send its notices again
+            # A claim no digest confirmed: SMTP2GO's log says whether that digest went out. Sent, it is marked; not
+            # sent, or the log cannot be read, it is sent again, marked as a possible repeat (D00 T03 §53).
+            def asked(subject, since):  # the same opener as the send, so a test's fake answers both
+                return alert.was_sent(alert.key(), subject, since, opener or alert.urllib.request.urlopen)
+            settled = alert.settle_claims(str(root), sent or asked)
+            if any(settled.values()):
+                print(f"earlier claims: {settled['confirmed']} confirmed sent, {settled['released']} not sent, "
+                      f"{settled['unknown']} unknown (sent again)")
         batch = alert.pending_notices(str(root)) + (alert.claimed_notices(str(root)) if args.dry_run else [])
     except alert.Refused as error:
         batch = str(error)
@@ -368,7 +375,7 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
     digest_id = uuid.uuid4().hex
     if ids:
         try:
-            alert.claim_notices(ids, digest_id, str(root))
+            alert.claim_notices(ids, digest_id, str(root), subject)
         except alert.Refused as error:  # the queue cannot be written, so the batch could never be marked: not sent
             print(f"owner-digest not sent: the notices cannot be claimed: {error}", file=sys.stderr)
             return 1

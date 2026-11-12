@@ -105,6 +105,57 @@ def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen,
     return data.get("email_id", "")
 
 
+ACTIVITY = "https://api.smtp2go.com/v3/activity/search"
+
+
+def was_sent(api_key: str, subject: str, since: str, opener=urllib.request.urlopen) -> bool:
+    """Whether SMTP2GO's activity log holds an email with exactly this subject sent at or after `since` (UTC,
+    ISO-8601): the delivery evidence a claim is reconciled against (D00 T03 §53). `POST /v3/activity/search` with
+    `search_subject`, `start_date` and `end_date` (developers.smtp2go.com, "View account activity", read 2026-11-12;
+    `/email/search` is deprecated there). Refused when the log cannot be read. SMTP2GO keeps 5 days of activity on its
+    free plan and 30 on paid plans by default, so an older claim finds nothing and is sent again."""
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload = json.dumps({"start_date": since, "end_date": now, "search_subject": subject, "limit": 100}).encode()
+    request = urllib.request.Request(ACTIVITY, data=payload, method="POST", headers={
+        "Content-Type": "application/json", "Accept": "application/json", "X-Smtp2go-Api-Key": api_key})
+    try:
+        with opener(request, timeout=60) as response:
+            data = json.loads(response.read().decode() or "{}").get("data")
+    except (OSError, ValueError) as error:
+        raise Refused(f"SMTP2GO's activity log could not be read: {error}") from None
+    if not isinstance(data, dict) or not isinstance(data.get("events"), list):
+        raise Refused(f"SMTP2GO's activity log answered without events: {data}")
+    return any(isinstance(e, dict) and e.get("subject") == subject and e.get("email_id") for e in data["events"])
+
+
+def settle_claims(root: str = REPO, sent=None) -> dict:
+    """Reconcile every claimed, unconfirmed notice before a digest: a claim whose digest SMTP2GO shows as sent is
+    marked reported (never sent again); one it shows as not sent, or whose evidence cannot be read, is released and
+    sent again in full, marked as a possible repeat (a notice is never lost). `sent(subject, since)` answers for
+    SMTP2GO (default: `was_sent` with this repository's key). Returns {"confirmed": n, "released": n, "unknown": n}."""
+    if sent is None:
+        def sent(subject, since):
+            return was_sent(key(), subject, since)
+    counts = {"confirmed": 0, "released": 0, "unknown": 0}
+    digests = {}
+    for notice in claimed_notices(root):
+        claim = notice["claimed"]
+        digests.setdefault(claim.get("by"), (claim.get("subject"), claim.get("at"), []))[2].append(notice["id"])
+    for digest, (subject, since, ids) in digests.items():
+        try:
+            delivered = bool(subject and since and sent(subject, since))
+            outcome = "confirmed" if delivered else "released"
+        except Refused:
+            delivered, outcome = False, "unknown"
+        if delivered:
+            mark_reported(ids, root)
+        else:
+            release_claim(digest, root)
+        counts[outcome] += len(ids)
+    return counts
+
+
 def send_failure(name: str, task: dict, outcome: dict, tail: str, opener=urllib.request.urlopen,
                  host: str | None = None) -> str:
     subject, body = message(name, task, outcome, tail, host or socket.gethostname())
@@ -255,7 +306,7 @@ def _update(root: str, change) -> int:
     return changed
 
 
-def claim_notices(ids, digest: str, root: str = REPO) -> int:
+def claim_notices(ids, digest: str, root: str = REPO, subject: str | None = None) -> int:
     """Before a digest is sent, mark its batch as claimed by that digest and count the attempt, so a notice the next
     digest sends again says it may be a repeat. Refused when the queue cannot be written: then nothing may be sent."""
     import datetime
@@ -263,7 +314,9 @@ def claim_notices(ids, digest: str, root: str = REPO) -> int:
 
     def change(notice):
         if notice["id"] in wanted and not notice.get("reported") and not notice.get("claimed"):
-            notice["claimed"] = {"by": digest, "at": now}
+            # The digest's subject is kept with the claim, written before the send, so a later digest can ask the mail
+            # service whether that email went out (D00 T03 §53, the delivery evidence).
+            notice["claimed"] = {"by": digest, "at": now, "subject": subject}
             notice["attempts"] = int(notice.get("attempts") or 0) + 1
             return True
         return False
