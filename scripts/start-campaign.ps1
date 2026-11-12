@@ -150,10 +150,21 @@ $Host.UI.RawUI.WindowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office
 # happen between taking it and being sure it is given back: a normal end, an exit, an error anywhere below
 # (writing the record included), or Ctrl+C at a prompt all pass through the finally. The shortcut's window
 # stays open afterwards (-NoExit), and a lock it still held would refuse the next start.
+function Stop-CampaignProcesses {
+    # Everything the campaign started, ended by the job it was born into: before the next session starts, and before
+    # this launcher gives up the lock while its window stays open (the shortcut's -NoExit), so no process of an
+    # ended session is ever still writing when another start is admitted (decision 43).
+    if (-not $script:campaignJob -or $script:campaignJob -eq [IntPtr]::Zero) { return }
+    $left = [Office.CampaignJob]::EndOthers($script:campaignJob, 20)
+    if ($left -ne 0) {
+        Write-Host "Some of what the campaign started could not be ended ($left); close this window to end it." -ForegroundColor Red
+    }
+}
 function Remove-OwnRecord {
     # Only this launcher's own record is removed, never one another launcher wrote. The lock is released here too,
     # by closing it, and not left to the end of the process: the shortcut keeps its window open (-NoExit) after
     # the launcher has finished, and a lock still held by that idle window would refuse the next start.
+    Stop-CampaignProcesses
     $live = Get-LiveLauncher
     if ($live -and $live.Id -eq $PID) { Remove-Item -LiteralPath $launcherFile -Force -ErrorAction SilentlyContinue }
     if ($script:launcherLock) {
@@ -195,6 +206,37 @@ if (-not $DryRun) {
 [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetInformationJobObject(IntPtr job, int infoClass, IntPtr info, uint length);
 [DllImport("kernel32.dll", SetLastError = true)] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
 [DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
+[DllImport("kernel32.dll")] static extern uint GetCurrentProcessId();
+[DllImport("kernel32.dll", SetLastError = true)] static extern bool QueryInformationJobObject(IntPtr job, int infoClass, IntPtr info, uint length, IntPtr returned);
+[DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+[DllImport("kernel32.dll", SetLastError = true)] static extern bool TerminateProcess(IntPtr process, uint exitCode);
+[DllImport("kernel32.dll", SetLastError = true)] static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+[DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
+// Ends every process in the job except this one, and returns how many are still there after `seconds`.
+public static int EndOthers(IntPtr job, int seconds) {
+    const int room = 4096;                              // process numbers read at once
+    int size = 8 + room * IntPtr.Size;                  // JOBOBJECT_BASIC_PROCESS_ID_LIST
+    IntPtr list = Marshal.AllocHGlobal(size);
+    try {
+        uint self = GetCurrentProcessId();
+        DateTime deadline = DateTime.UtcNow.AddSeconds(seconds);
+        while (true) {
+            if (!QueryInformationJobObject(job, 3, list, (uint)size, IntPtr.Zero)) return -1;
+            int listed = Marshal.ReadInt32(list, 4), others = 0;
+            for (int i = 0; i < listed; i++) {
+                uint pid = (uint)Marshal.ReadIntPtr(list, 8 + i * IntPtr.Size).ToInt64();
+                if (pid == self) continue;
+                others++;
+                IntPtr process = OpenProcess(0x00100001, false, pid);   // SYNCHRONIZE | PROCESS_TERMINATE
+                if (process == IntPtr.Zero) continue;
+                TerminateProcess(process, 1);
+                WaitForSingleObject(process, 2000);
+                CloseHandle(process);
+            }
+            if (others == 0 || DateTime.UtcNow > deadline) return others;
+        }
+    } finally { Marshal.FreeHGlobal(list); }
+}
 // Returns the job's handle, which the caller keeps for the life of the process, or zero with the Win32 error.
 public static IntPtr Join(out int error) {
     error = 0;
@@ -382,6 +424,7 @@ while ($true) {
         agy --model $carbon --dangerously-skip-permissions -i $goal
     }
     $sessionExit = $LASTEXITCODE
+    Stop-CampaignProcesses  # a session that ended leaves nothing running, whatever follows
     if (Test-StopRequested) { break }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''

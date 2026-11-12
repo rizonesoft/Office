@@ -187,7 +187,8 @@ if ($env:OFFICE_FAKE_CHILD) {
     $child = Start-Process -FilePath (Get-Process -Id $PID).Path -NoNewWindow -PassThru `
         -ArgumentList '-NoLogo', '-NoProfile', '-Command', 'Start-Sleep -Seconds 300'
     Set-Content -LiteralPath (Join-Path $root 'child-pid.txt') -Value $child.Id
-    Start-Sleep -Seconds 300
+    # 'leave' is a session that ends at once and leaves its child behind; anything else keeps the session running.
+    if ($env:OFFICE_FAKE_CHILD -ne 'leave') { Start-Sleep -Seconds 300 }
 }
 # OFFICE_FAKE_EXIT is how the session ended: 0 is a clean exit, anything else a crash or an error.
 exit ([int]($env:OFFICE_FAKE_EXIT ?? '0'))
@@ -349,6 +350,29 @@ class LauncherRunTest(unittest.TestCase):
         while self.alive(child) and time.monotonic() < deadline:
             time.sleep(0.2)
         self.assertFalse(self.alive(child), "a process the campaign started outlived the launcher")
+
+    def test_a_crashed_session_leaves_nothing_running_while_the_window_stays_open(self):
+        # Round 1 of the launcher review: after a crash the shortcut's window stays open (-NoExit) and still holds
+        # the job, so what the session left running went on while the lock was already free for the next start.
+        self.env.update(OFFICE_FAKE_CHILD="leave", OFFICE_FAKE_EXIT="1")
+        first = subprocess.Popen(
+            [PWSH, "-NoLogo", "-NoProfile", "-NoExit", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
+             "-RestartSeconds", "1"],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env,
+            creationflags=NO_WINDOW)
+        self.processes.append(first)
+        self.wait_for(self.root / "child-pid.txt")
+        child = int((self.root / "child-pid.txt").read_text(encoding="utf-8").strip())
+        self.addCleanup(lambda: subprocess.run(["taskkill", "/T", "/F", "/PID", str(child)], capture_output=True,
+                                               creationflags=NO_WINDOW))
+        record = self.root / "build" / "campaign-launcher.json"
+        deadline = time.monotonic() + 90
+        while record.exists() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(record.exists(), "the launcher did not finish after the crash")
+        self.assertIsNone(first.poll(), "the window must still be open for this test to mean anything")
+        self.assertFalse(self.alive(child), "the crashed session's process was still running when the lock was free")
+        self.assertEqual(len(self.calls()), 1)  # and the crashed session was not started again
 
     def alive(self, pid):
         listed = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True,
