@@ -170,6 +170,8 @@ A lesson only helps if it is in front of whoever is about to repeat the mistake.
 
 ## 8. Lesson Upkeep at Scale
 
+> **Started:** 2026-11-12T13:44:07Z
+
 A store that only grows stops working: once hundreds of lessons match one path, the five a worker sees are a small sample and the rest are noise nobody reads. This section keeps the store small enough to stay true on day 300 (owner, 2026-11-10). Each area has a ceiling on active lessons; passing it is not an error to suppress but work to do: lessons about one thing are merged into one, and a lesson a check can enforce becomes that check and retires.
 
 **Phase:** 0
@@ -184,7 +186,7 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 - [ ] Write `report` in `scripts/lessons.py`: group active lessons by the first two folders of each `applies` glob (`*` is its own group), and print per group the number of active lessons, the number retired, and the lessons sorted by evidence count. Done when: a test over a fixture of three areas prints the three groups with the expected counts.
 - [ ] Add `report --check` with a ceiling of 40 active lessons per group (`LESSON_CEILING` in `scripts/lib/lessons.py`): exit 1 naming each group over it. Done when: a fixture group of 41 exits 1 and one of 40 exits 0. Cheaper substitute: raising the query limit as lessons pile up, which hands every worker a longer list and a larger context.
 - [ ] List in `report` the lessons that could be merged: two or more active lessons of one group that share a topic and whose globs are equal or nested. Done when: a fixture with two such lessons prints the pair and one with different topics does not.
-- [ ] List in `report` the lessons that still failed: an active lesson named by a triage line whose round ran after the lesson's `added` date (the round's `Run:` line in the review record gives the date), which means the same fault was found again although the lesson existed. Done when: a fixture with such a line prints the lesson and the later finding. Such a lesson is rewritten, turned into a check, or deleted as useless; it is never left as it is.
+- [ ] List in `report` the lessons that still failed: an active lesson named by a triage line whose round ran after the lesson's `added` date (the round's `Run:` line in the review record gives the date), **Corrected 2026-11-12:** since §9 a triage line names any pass (plan review, round, completion review, reconciliation), so the date is the `Run:` line of whichever pass the line names; which means the same fault was found again although the lesson existed. Done when: a fixture with such a line prints the lesson and the later finding. Such a lesson is rewritten, turned into a check, or deleted as useless; it is never left as it is.
 - [ ] Add to the closeout of `.claude/skills/process-phase/SKILL.md`: run `python scripts/lessons.py report --check`; for each group over the ceiling, and for each lesson listed as mergeable or as still failing, merge, retire with `retired_by`, rewrite or delete until the check exits 0, in a commit of its own. Done when: the skill names the command and the four remedies, and a test in `scripts/tests/test_skill_ci_gate.py` fails when the mention is removed.
 - [ ] State the ceiling and the four remedies in `docs/lessons/README.md` under a `## Upkeep` heading. Done when: `python scripts/check-design-doc.py docs/lessons/README.md --require Upkeep` exits 0.
 - [ ] Commit: `lessons: keep the store small enough to stay true`
