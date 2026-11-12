@@ -148,7 +148,7 @@ Sections: 28 | Checklist items: 194
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 24 | Checklist items: 159
+Sections: 24 | Checklist items: 160
 
 #### Workspace and tooling
 
@@ -162,7 +162,7 @@ Sections: 3 | Checklist items: 17 | Verified: 0
 
 #### Architecture and tech stack
 
-Sections: 21 | Checklist items: 142 | Verified: 0
+Sections: 21 | Checklist items: 143 | Verified: 0
 
 | Status | Reference   | Deliverable                            | Needs                   | Items |
 | ------ | ----------- | -------------------------------------- | ----------------------- | ----- |
@@ -183,7 +183,7 @@ Sections: 21 | Checklist items: 142 | Verified: 0
 | [ ]    | D03 T01 §12 | Foundation Plan                        | none                    | 7     |
 | [ ]    | D03 T01 §18 | Document Engines Domain Authoring      | none                    | 8     |
 | [ ]    | D03 T01 §28 | Versioning and Release Identity        | none                    | 8     |
-| [ ]    | D03 T01 §17 | Platform Domain Authoring              | none                    | 14    |
+| [ ]    | D03 T01 §17 | Platform Domain Authoring              | none                    | 15    |
 | [ ]    | D03 T01 §27 | Release Domain Authoring               | none                    | 5     |
 | [ ]    | D03 T01 §29 | Office Reference Benchmarks            | office, display-session | 5     |
 | [ ]    | D03 T01 §19 | Write Domain Authoring                 | none                    | 12    |
@@ -291,4 +291,4 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 
 Progress: 86/164 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 634/1160 items completed (includes Commit items).
+Checklist: 634/1161 items completed (includes Commit items).

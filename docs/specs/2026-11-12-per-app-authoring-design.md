@@ -70,7 +70,7 @@ Tools, each built and proved on the inventories that exist (the shell's and Word
 | I§18 coverage report | I§4, I§5, I§19, I§25 | A baseline-only app is one `pending inventory` row, exit 0. |
 | I§18, continued | | `--check` refuses a stale `COVERAGE.md`; the pre-commit hook runs it on inventory commits. |
 | I§22 ownership check | I§18 | Three states for an app: pending inventory, pending authoring, enforced. |
-| I§22, continued | | Strict from an app's first claim; `--all` refuses a pending app. |
+| I§22, continued | | Enforced from the stamp of the app's authoring section; `--all` holds every app as enforced. |
 | I§22, continued | | Unknown and double claims are refused in every state. |
 | I§22, continued | | It installs its own pre-commit hook, moved from A§13. |
 | I§28 dispositions | I§18, I§22, I§23 | Unchanged but for the pending rows. |
@@ -91,6 +91,8 @@ Decisions and authoring:
 | A§20 to A§24, continued | | Grid S§8, Stage S§9, Flow S§10, Plan S§11, Mail S§12. |
 | A§20 to A§24, continued | | Apply A§14 to the app's records; file platform gaps in `todo/04-platform/`. |
 | A§13 gate | A§25, A§26, A§27, I§22, S§14 | `--owners --check --all`; no pending app in any check. |
+
+An app is enforced from the stamp of its authoring section, not from its first claim: A§17's platform sections claim Word's Help tab records before A§19 has written Word's other owners, and each authoring section commits its files one at a time, so a first-claim rule would refuse the very commits that author the app. `design/inventory/authoring.json` names each app's authoring section (the shell's is A§17). Until that stamp the hook refuses only an unknown or a doubly owned claim; the authoring section itself runs `--owners --check --all --app <app>` as its last item, so it cannot be stamped with a record unowned.
 
 A§13 takes over, for all six apps and the shell: the ownership check with no pending app, the layout check, a coverage report with no pending app, a disposition on every record of a service A§14 decided, and S§14's check across the mock-ups.
 
