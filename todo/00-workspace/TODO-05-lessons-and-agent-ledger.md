@@ -193,6 +193,8 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 
 ## 9. Triage Covers Every Review Pass
 
+> **Started:** 2026-11-12T13:12:29Z
+
 Filed 2026-11-12 from the plan review of §4 (`docs/reviews/00-workspace/D00-T05-s4.md`, gap 2, P1). §3 identifies a finding by its round, and §1's lesson source by `#round-N/finding-K`. Under the three-pass schedule (owner decision 2026-11-11) a section has one round, and most of its findings come from the plan review, the completion review and the reconciliations, which `round_findings` in `scripts/lib/lessons.py` deliberately leaves out. So a confirmed and fixed finding of those passes cannot be triaged or cited by a lesson today. This section gives every pass an identity.
 
 **Phase:** 0
