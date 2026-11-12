@@ -541,6 +541,27 @@ class PlanWidthInValidate(Tree):
         self.assertEqual(sync, validate)
 
 
+class JoinedItems(Tree):
+    """A checklist box that does not start its own line is refused (D00 T04 §1, 2026-11-12: an edit ran two items
+    together and hid a deliverable inside the item before it)."""
+
+    def test_two_items_on_one_line_are_refused(self):
+        text = todo_file([(1, "A", 0, "none", "--")]).replace("- [ ] Work.\n", "- [ ] Work one.- [ ] Work two.\n", 1)
+        self.write(text)
+        with self.assertRaises(tg.Refused) as caught:
+            tg.graph(self.root)
+        self.assertIn("does not start its own line", str(caught.exception))
+
+    def test_a_box_after_prose_is_refused_and_a_quoted_one_is_not(self):
+        joined = todo_file([(1, "A", 0, "none", "--")]).replace("- [ ] Work.\n", "- [ ] Work.\nSee also - [ ] this.\n", 1)
+        self.write(joined)
+        with self.assertRaises(tg.Refused):
+            tg.graph(self.root)
+        quoted = todo_file([(1, "A", 0, "none", "--")]).replace("- [ ] Work.\n", "- [ ] Work: write `- [ ] Commit:` last.\n", 1)
+        self.write(quoted)
+        tg.graph(self.root)
+
+
 class PlanByDomain(Tree):
     """A phase that spans domains renders one block per domain; a single-domain phase renders as before (D00 T03
     §33)."""

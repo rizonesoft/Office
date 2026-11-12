@@ -1074,6 +1074,13 @@ def graph(root=ROOT):
                     and checks[-1][1].startswith("Commit:")
                     and not any(c[1].startswith("Commit:") for c in checks[:-1]),
                     f"2-{MAX_ITEMS_PER_SECTION} items (at least one work item, Commit last) required: {ref}")
+            # A checkbox that does not start its own line is no item: the plan cannot count it or tick it, and an edit
+            # that ran two items together once hid a deliverable inside the item before it (D00 T04 §1, 2026-11-12).
+            prose = [re.sub(r"`[^`]*`", "", line) for line in section_body.splitlines()]  # quoted boxes are text
+            joined = [line for line in prose if re.search(r"\S.*?- \[[ x]\] ", line)
+                      and not re.match(r"- \[[ x]\] ", line) or re.match(r"- \[[ x]\] .*\S- \[[ x]\] ", line)]
+            require(not joined, f"a checklist item does not start its own line ({joined[0][:60]}...): {ref}"
+                    if joined else "")
             require("`" in field(section_body, "Test checkpoint"),
                     f"runnable Test checkpoint required: {ref}")
             surface = field(section_body, "Surface")

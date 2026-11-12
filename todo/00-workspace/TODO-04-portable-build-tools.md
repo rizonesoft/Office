@@ -43,7 +43,9 @@ title: "TODO-04 -- Portable Build Tools"
 
 ## 1. Tool Lock File and Bootstrap Script
 
-> **Started:** 2026-11-12T02:45:00Z
+> **Duration:** started 2026-11-12T02:45:00Z, reopened 2026-11-12T03:39:44Z
+
+> **Started:** 2026-11-12T03:39:44Z
 
 One lock file names every carried tool, and one script turns it into a working tool folder. The script is the only thing that downloads: it is bounded, verifies before it unpacks, and leaves either a complete tool or nothing.
 
