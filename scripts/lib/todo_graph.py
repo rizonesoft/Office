@@ -69,6 +69,11 @@ FILED = re.compile(r"^- Filed: (D\d{2} T\d{2} §[1-9]\d*)(?![\w§]|\.\d)")
 PIN = ".conclave/reviewers.toml"
 PLAN_KEYS = {"report", "candidate", "reviewer", "model", "effort", "lenses"}
 STARTED = re.compile(r"^> \*\*Started:\*\* .+$", re.M)
+# A parked section stands at a committed candidate and waits on something outside the run (D00 T03 §59): another
+# section's stamp or a UTC instant. `> **Parked:** <UTC instant> until <what>: <reason>`, under its Started line.
+PARKED = re.compile(r"^> \*\*Parked:\*\*(.*)$", re.M)
+_PARKED_INSTANT = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"
+PARKED_TEXT = re.compile(rf" ({_PARKED_INSTANT}) (until (D\d{{2}} T\d{{2}} §\d+|{_PARKED_INSTANT}): \S.*)")
 # A round scripts/review-dispatch.py recorded in a findings file, reviewed or not ("## Round 2: none").
 ROUND_RECORD = re.compile(r"^## Round ([0-9]+): ", re.M)
 ADJACENCY_KEYS = ["list", "document", "settings", "reporting", "notifications", "permissions",
@@ -181,6 +186,7 @@ class Section:
     body: str
     receipt: str
     order: int = 0
+    parked: str = ""  # "until <what>: <reason>" while the section is parked (D00 T03 §59), else empty
 
     def public(self):
         return {k: v for k, v in asdict(self).items() if k != "body"}
@@ -621,7 +627,7 @@ def section_contract(root, sha, ref):
     body = section_text(shown.stdout.decode("utf-8").replace("\r\n", "\n"), int(m[3]))
     require(body is not None, f"the section is not in {rel} at {sha}: {ref}")
     body = re.sub(r"^(\s*- )\[[xX ]\](?= )", r"\1[ ]", body, flags=re.M)
-    body = re.sub(r"^> \*\*(?:Verified|Review|Started|Duration|Deferred|Resolved):\*\*[^\n]*(?:\n|$)", "", body,
+    body = re.sub(r"^> \*\*(?:Verified|Review|Started|Parked|Duration|Deferred|Resolved):\*\*[^\n]*(?:\n|$)", "", body,
                   flags=re.M)
     # Dated correction and completion notes record what happened; the promise is the text before them.
     body = re.sub(r" \*\*Corrected \d{4}-\d{2}-\d{2}[^*]*\*\*.*$", "", body, flags=re.M)
@@ -1114,9 +1120,14 @@ def graph(root=ROOT):
                 data = receipt_ok(root, receipt, ref, m[1], head_commits, surface=surface == "yes")
                 if isinstance(data.get("completion"), dict):
                     filed_gaps[ref] = data["completion"]["filed"]
+            parked = _parked(section_body, done, ref)
             sections[ref] = Section(ref, relative, n, h[2], int(phase), deps, needs, done,
-                                    front["status"], section_body, receipt, int(rows[n][1]))
+                                    front["status"], section_body, receipt, int(rows[n][1]), parked)
             files[relative][2].append(ref)
+    for ref, row in sections.items():
+        waits_on = parked_wait(row)
+        require(waits_on is None or _instant(waits_on) is not None or (waits_on in sections and waits_on != ref),
+                f"a Parked line waits on a section that does not exist, or on itself ({waits_on}): {ref}")
     for relative, (front, file_deps, refs, xrefs, adjacency) in files.items():
         require(len(set(file_deps)) == len(file_deps), f"duplicate file dependencies: {relative}")
         for dep in file_deps:
@@ -1271,14 +1282,58 @@ def settled(ref, rows):
     return True
 
 
-def disposition(row, rows):
-    """0 ready, 3 already verified, 4 waiting (inactive file, open or suspect prerequisite, or a person to answer)."""
+def _parked(body, done, ref):
+    """The `until <what>: <reason>` of a section's Parked line, or "" when it has none. Refuses a malformed line."""
+    lines = PARKED.findall(body)
+    if not lines:
+        return ""
+    require(len(lines) == 1, f"more than one Parked line: {ref}")
+    require(not done, f"a stamped section cannot be parked: {ref}")
+    require(STARTED.search(body) is not None, f"a Parked line needs a Started line (only started work is parked): {ref}")
+    m = PARKED_TEXT.fullmatch(lines[0].rstrip())
+    require(m is not None and _instant(m[1]) is not None and (_instant(m[3]) is not None or m[3].startswith("D")),
+            "a Parked line reads '> **Parked:** <UTC instant> until <DNN TNN §N or UTC instant>: <reason>': " + ref)
+    return m[2]
+
+
+def parked_wait(row):
+    """What a parked section waits on (a section reference or a UTC instant), or None when it is not parked."""
+    return row.parked[len("until "):].split(": ", 1)[0] if row.parked else None
+
+
+def wait_met(row, rows, now=None):
+    """Whether what a parked section waits on has happened: the named section is stamped, or the instant has passed."""
+    waits_on = parked_wait(row)
+    if waits_on is None:
+        return True
+    until = _instant(waits_on)
+    if until is None:
+        return rows[waits_on].done
+    now = (now or datetime.datetime.now(datetime.timezone.utc)).astimezone(datetime.timezone.utc)
+    return _instant(now.strftime("%Y-%m-%dT%H:%M:%SZ")) >= until
+
+
+def disposition(row, rows, now=None, static=False):
+    """0 ready, 3 already verified, 4 waiting (inactive file, open or suspect prerequisite, a person to answer, or
+    parked with its wait unmet). `static` holds every parked section as waiting, whatever the clock says: the
+    committed plan uses it, so the plan never changes without a commit."""
     if row.done:
         return 3
     if row.status != "active" or set(row.needs) & WAITING \
             or any(not settled(d, rows) for d in row.depends):
         return 4
+    if row.parked and (static or not wait_met(row, rows, now)):
+        return 4
     return 0
+
+
+def stats(rows, root=ROOT, now=None):
+    """The counts `query stats` prints. A parked section whose wait is unmet is blocked, not ready (D00 T03 §59)."""
+    return {"total": len(rows), "verified": sum(r.done for r in rows.values()),
+            "ready": sum(disposition(r, rows, now) == 0 for r in rows.values()),
+            "blocked": sum(disposition(r, rows, now) == 4 for r in rows.values()),
+            "parked": sum(bool(r.parked) for r in rows.values()),
+            "to_author": len(to_author(root, rows))}
 
 
 def ordered(sections):
@@ -1446,11 +1501,12 @@ def projection(root=ROOT):
         lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)
-    ready = sum(disposition(r, all_rows) == 0 for r in rows)
+    ready = sum(disposition(r, all_rows, static=True) == 0 for r in rows)
+    parked = sum(bool(r.parked) for r in rows)
     still = (f", {len(missing)} TODO {'file' if len(missing) == 1 else 'files'} still to author (not counted here)"
              if missing else "")
     lines += [f"Progress: {sum(r.done for r in rows)}/{len(rows)} verified sections, "
-              f"{ready} ready to run now{still}.", "",
+              f"{ready} ready to run now{f', {parked} parked' if parked else ''}{still}.", "",
               f"Checklist: {completed_items}/{total_items} items completed (includes Commit items).", ""]
     return "\n".join(lines)
 
@@ -1578,7 +1634,7 @@ def contract_digest(row):
     ships (changing only the marker) is the same contract, so a stamped section's receipt survives the closing."""
     body = row.body.replace("\r\n", "\n")
     body = re.sub(r"^- \[x\] ", "- [ ] ", body, flags=re.M)
-    body = re.sub(r"^> \*\*(?:Verified|Review|Started|Duration):\*\* .*(?:\n|$)", "", body, flags=re.M)
+    body = re.sub(r"^> \*\*(?:Verified|Review|Started|Parked|Duration):\*\* .*(?:\n|$)", "", body, flags=re.M)
     body = re.sub(r"^> \*\*Resolved:\*\*", "> **Deferred:**", body, flags=re.M)
     body = re.sub(r"\n{3,}", "\n\n", body).strip()
     text = f"## {row.number}. {row.title}\n\n{body}\n"

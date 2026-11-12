@@ -907,6 +907,122 @@ class GitPath(unittest.TestCase):
         self.assertNotIn('["git"', source)
 
 
+class Parked(Tree):
+    """A parked section is neither ready nor in progress, and returns by itself when its wait is over (D00 T03 §59)."""
+
+    STARTED = "> **Started:** 2026-11-12T00:00:00Z\n"
+    BEFORE = tg.datetime.datetime(2026, 11, 16, 5, 29, 59, tzinfo=tg.datetime.timezone.utc)
+    AFTER = tg.datetime.datetime(2026, 11, 16, 5, 30, 0, tzinfo=tg.datetime.timezone.utc)
+
+    def park(self, line, rows=((1, "A", 0, "none", "--"), (2, "B", 0, "none", "--")), started=True):
+        """Section 1 of the fixture with `line` under its Started line (or with no Started line)."""
+        head = (self.STARTED if started else "") + (line + "\n" if line else "")
+        self.write(todo_file(list(rows)).replace("## 1. A\n\n", "## 1. A\n\n" + head + "\n", 1))
+
+    def test_a_wait_on_a_section_is_read_back_and_holds_until_that_section_is_stamped(self):
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: the owner decides which risk to keep")
+        rows = tg.graph(self.root)
+        row = rows["D00 T01 §1"]
+        self.assertEqual(row.parked, "until D00 T01 §2: the owner decides which risk to keep")
+        self.assertEqual(tg.parked_wait(row), "D00 T01 §2")
+        self.assertEqual(row.public()["parked"], row.parked)
+        self.assertFalse(tg.wait_met(row, rows))
+        self.assertEqual(tg.disposition(row, rows), 4)
+        self.assertEqual(tg.disposition(rows["D00 T01 §2"], rows), 0)
+        stamped = {**rows, "D00 T01 §2": dataclasses.replace(rows["D00 T01 §2"], done=True)}
+        self.assertTrue(tg.wait_met(row, stamped))
+        self.assertEqual(tg.disposition(row, stamped), 0)
+
+    def test_a_wait_on_an_instant_holds_until_it_has_passed(self):
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until 2026-11-16T05:30:00Z: the first scheduled digest run")
+        rows = tg.graph(self.root)
+        row = rows["D00 T01 §1"]
+        self.assertEqual(tg.parked_wait(row), "2026-11-16T05:30:00Z")
+        self.assertEqual(tg.disposition(row, rows, self.BEFORE), 4)
+        self.assertEqual(tg.disposition(row, rows, self.AFTER), 0)
+        self.assertEqual(tg.disposition(row, rows, self.AFTER, static=True), 4)
+
+    def test_a_section_is_ready_without_the_line_and_again_once_it_is_removed(self):
+        self.park("")
+        rows = tg.graph(self.root)
+        self.assertEqual((rows["D00 T01 §1"].parked, tg.disposition(rows["D00 T01 §1"], rows)), ("", 0))
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until 2099-01-01T00:00:00Z: a far event")
+        rows = tg.graph(self.root)
+        self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows), 4)
+        self.park("")
+        rows = tg.graph(self.root)
+        self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows), 0)
+
+    def test_a_met_wait_does_not_lift_the_sections_other_waits(self):
+        line = "> **Parked:** 2026-11-12T01:00:00Z until 2026-11-16T05:30:00Z: an event"
+        self.park(line, rows=((1, "A", 0, "none", "§2"), (2, "B", 0, "none", "--")))
+        rows = tg.graph(self.root)
+        self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows, self.AFTER), 4)  # §2 is still open
+        self.park(line, rows=((1, "A", 0, "owner-decision", "--"), (2, "B", 0, "none", "--")))
+        rows = tg.graph(self.root)
+        self.assertEqual(tg.disposition(rows["D00 T01 §1"], rows, self.AFTER), 4)  # the owner has not answered
+
+    def test_malformed_lines_refuse_with_the_section_named(self):
+        when = "2026-11-12T01:00:00Z"
+        for line, fragment in (
+                (f"> **Parked:** {when}: no wait named", "a Parked line reads"),
+                ("> **Parked:** until D00 T01 §2: no instant", "a Parked line reads"),
+                (f"> **Parked:** {when} until D00 T01 §2:", "a Parked line reads"),
+                (f"> **Parked:** {when} until D00 T01 §2:   ", "a Parked line reads"),
+                (f"> **Parked:** {when} until next Monday: not an instant", "a Parked line reads"),
+                (f"> **Parked:** {when} until 2026-13-45T05:30:00Z: no such day", "a Parked line reads"),
+                (f"> **Parked:** {when} until D00 T01 §9: no such section", "does not exist, or on itself (D00 T01 §9)"),
+                (f"> **Parked:** {when} until D00 T01 §1: itself", "does not exist, or on itself (D00 T01 §1)"),
+                (f"> **Parked:** {when} until D00 T01 §2: one\n> **Parked:** {when} until D00 T01 §2: two",
+                 "more than one Parked line")):
+            self.park(line)
+            with self.assertRaises(tg.Refused, msg=line) as ctx:
+                tg.graph(self.root)
+            self.assertIn(fragment, str(ctx.exception), line)
+            self.assertIn("D00 T01 §1", str(ctx.exception), line)
+
+    def test_a_line_on_work_that_was_never_started_refuses(self):
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: nothing was started", started=False)
+        self.refuses("a Parked line needs a Started line (only started work is parked): D00 T01 §1")
+
+    def test_a_stamped_section_cannot_be_parked(self):
+        with self.assertRaises(tg.Refused) as ctx:
+            tg._parked("> **Started:** x\n> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: done already", True,
+                       "D00 T01 §1")
+        self.assertIn("a stamped section cannot be parked: D00 T01 §1", str(ctx.exception))
+
+    def test_parking_and_resuming_leave_the_contract_digest_as_it_was(self):
+        self.park("")
+        plain = tg.contract_digest(tg.graph(self.root)["D00 T01 §1"])
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: a decision")
+        self.assertEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), plain)
+        self.write(todo_file([(1, "A", 0, "none", "--"), (2, "B", 0, "none", "--")]).replace("- [ ] Work.", "- [ ] Other."))
+        self.assertNotEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), plain)
+
+    def progress(self):
+        return next(line for line in tg.projection(self.root).splitlines() if line.startswith("Progress:"))
+
+    def test_stats_and_the_progress_line_count_a_parked_section_and_restore_when_it_resumes(self):
+        self.park("")
+        before = tg.stats(tg.graph(self.root), self.root)
+        self.assertEqual(before, {"total": 2, "verified": 0, "ready": 2, "blocked": 0, "parked": 0, "to_author": 0})
+        line_before = self.progress()
+        self.assertEqual(line_before, "Progress: 0/2 verified sections, 2 ready to run now.")
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until 2026-11-16T05:30:00Z: an event")
+        rows = tg.graph(self.root)
+        self.assertEqual(tg.stats(rows, self.root, self.BEFORE),
+                         {"total": 2, "verified": 0, "ready": 1, "blocked": 1, "parked": 1, "to_author": 0})
+        self.assertEqual(self.progress(), "Progress: 0/2 verified sections, 1 ready to run now, 1 parked.")
+        # Once the instant has passed the section is ready again for a run, and the committed plan still says parked.
+        self.assertEqual(tg.stats(rows, self.root, self.AFTER),
+                         {"total": 2, "verified": 0, "ready": 2, "blocked": 0, "parked": 1, "to_author": 0})
+        with mock.patch.object(tg, "wait_met", return_value=True):
+            self.assertEqual(self.progress(), "Progress: 0/2 verified sections, 1 ready to run now, 1 parked.")
+        self.park("")
+        self.assertEqual(tg.stats(tg.graph(self.root), self.root), before)
+        self.assertEqual(self.progress(), line_before)
+
+
 class PerAppAuthoring(unittest.TestCase):
     """This repository's own tree: an app's sections are authored when its own inventory is done (D03 T01 §30,
     decision 44 of docs/specs/2026-10-23-campaign-scope-design.md)."""

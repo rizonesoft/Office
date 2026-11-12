@@ -41,6 +41,8 @@ Before the first edit in a session, read `todo/README.md` (the format every TODO
 
 Write `Started:` now. If the section body carries no `> **Started:**` line, add one directly under its heading with the current UTC instant. Do not overwrite an existing one on resume.
 
+A parked section (`> **Parked:**` under its `Started:` line; `todo/README.md`, Started and Parked) resumes only through this gate. While what it waits on has not happened, `resolve` exits 4 and prints `"wait_met": false`: stop there, and never remove the line to get past the gate. Once the wait is met `resolve` exits 0 with the line still in place: remove the line in the resume's first commit, before any other change, record in the section's findings file what the wait produced (the owner's answer, the event's result), and carry on from where the findings file stopped.
+
 ## Execution discipline
 
 - **Validate before building.** Step 2 is a gate, not a formality.

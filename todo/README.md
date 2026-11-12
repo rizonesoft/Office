@@ -80,6 +80,12 @@ Never a bare number, and never a cross-TODO reference without a section. Cross-r
 
 Do not rewrite a `[x]` section's checklist: that is the contract its stamp covers. New granularity on shipped work is a new section.
 
+### Started and Parked
+
+`> **Started:** <UTC instant>` goes directly under a section's heading when work on it begins (`process-todo-section`, Step 0) and stays until the stamp. A started, unstamped section is in progress: the dependency merge (`scripts/merge_prs.py`) lands nothing under it.
+
+`> **Parked:** <UTC instant> until <what>: <reason>` goes directly under the `Started:` line of an open section whose work stopped at a committed candidate and waits on something outside the run (D00 T03 §59). `<what>` is a section reference (`until D00 T03 §56`, met when that section is stamped) or a UTC instant (`until 2026-11-16T05:30:00Z`, met once it has passed), and the reason says what is waited for. The lead writes the line in the commit that records why the section stopped, and removes it in the first commit that resumes the work; it is never written over uncommitted work. While the wait is unmet the section is not ready: `query ready` leaves it out, `query blocked` lists it, `resolve` exits 4 and shows `parked` and `wait_met`, and `query stats` counts it in `blocked` and in `parked`. Once the wait is met the section is ready again by itself, with the line still in place, so every route that reads `query ready` finds it. The generated plan's progress line counts a section carrying the line as parked whether or not its wait has passed, so the committed plan never changes with the clock. A parked section is not in progress for the dependency merge until its line is removed. `validate` refuses the line on a section with no `Started:` line or with a stamp, a line with no instant, no `until`, an empty reason or a wait that is neither an instant nor another existing section, and a second line. The line is not part of the section's contract, as `Started:` is not.
+
 ### Micro/small items and 100% complete development plan
 
 - **Small, single-responsibility sections:** Never bundle multiple subsystems, dialogs, or workflows into one coarse umbrella section. Split work into small, single-responsibility sections that each deliver one coherent capability, with explicit `Depends On` edges in the Implementation Order table.

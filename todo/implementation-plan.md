@@ -290,6 +290,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 87/165 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 87/165 verified sections, 18 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 635/1186 items completed (includes Commit items).
+Checklist: 642/1186 items completed (includes Commit items).

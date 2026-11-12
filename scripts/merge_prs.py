@@ -85,10 +85,11 @@ def checked(runner, root, args, what):
 
 
 def in_progress_sections(root):
-    """Open TODO sections that carry a `Started:` line: work a merge must not land under."""
+    """Open TODO sections that carry a `Started:` line: work a merge must not land under. A parked section is not
+    one (D00 T03 §59): it stands at a committed candidate until its `Parked:` line is removed, which resumes it."""
     import todo_graph
     return sorted(ref for ref, row in todo_graph.graph(root).items()
-                  if not row.done and "> **Started:**" in row.body)
+                  if not row.done and "> **Started:**" in row.body and not row.parked)
 
 
 def campaign_owner(root):

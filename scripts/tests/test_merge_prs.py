@@ -400,6 +400,53 @@ class State(unittest.TestCase):
             self.tree(Path(tmp))
             self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), ["D00 T01 §1"])
 
+    PARKED = "> **Parked:** 2026-10-22T01:00:00Z until 2099-01-01T00:00:00Z: an event outside the run\n"
+
+    def park(self, root, numbers, sections=(1,)):
+        """The fixture tree with the given started sections, those in `numbers` parked (D00 T03 §59)."""
+        from test_todo_graph import todo_file
+        text = todo_file([(n, "AB"[n - 1], 0, "none", "--") for n in sections])
+        for n in sections:
+            head = f"## {n}. {'AB'[n - 1]}\n\n"
+            text = text.replace(head, head + "> **Started:** 2026-10-22T00:00:00Z\n"
+                                + (self.PARKED if n in numbers else "") + "\n")
+        (root / "todo" / "00-workspace" / "TODO-01-a.md").write_text(text, encoding="utf-8")
+
+    def test_a_parked_section_is_not_in_progress(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(Path(tmp))
+            self.park(Path(tmp), {1})
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), [])
+
+    def test_a_parked_section_whose_wait_is_over_stays_out_until_its_line_is_removed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(Path(tmp))
+            self.park(Path(tmp), {1})
+            path = Path(tmp) / "todo" / "00-workspace" / "TODO-01-a.md"
+            path.write_text(path.read_text(encoding="utf-8").replace("2099-01-01", "2001-01-01"), encoding="utf-8")
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), [])
+            path.write_text(path.read_text(encoding="utf-8").replace(self.PARKED.replace("2099", "2001"), ""),
+                            encoding="utf-8")
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), ["D00 T01 §1"])
+
+    def test_only_the_section_in_progress_is_named_beside_a_parked_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(Path(tmp))
+            self.park(Path(tmp), {1}, sections=(1, 2))
+            self.assertEqual(merge_prs.in_progress_sections(Path(tmp)), ["D00 T01 §2"])
+
+    def test_the_safety_check_passes_a_parked_section_and_refuses_one_in_progress(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(Path(tmp))
+            fake = Fake()
+            with mock.patch.object(merge_prs, "campaign_owner", return_value=None), \
+                    mock.patch.object(merge_prs, "guard_lock", return_value=None, create=True):
+                with self.assertRaises(merge_prs.Unsafe) as ctx:
+                    merge_prs.local_safety(fake, Path(tmp), None)
+                self.assertIn("a section is in progress: D00 T01 §1", str(ctx.exception))
+                self.park(Path(tmp), {1})
+                merge_prs.local_safety(fake, Path(tmp), None)
+
     def test_a_started_section_that_is_stamped_is_not_in_progress(self):
         with tempfile.TemporaryDirectory() as tmp:
             done = mock.Mock(done=True, body="> **Started:** 2026-10-22T00:00:00Z")

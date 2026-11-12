@@ -31,7 +31,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from todo_graph import (ROOT, Refused, adjacency_report, atomic, deferrals,  # noqa: E402
                         disposition, extract_ref, graph, ordered, plan_config, projections, require, review_rounds,
-                        settled, stamp, suspects, to_author, unstamp)
+                        settled, stamp, stats, suspects, unstamp, wait_met)
 
 
 def review_round(value):
@@ -116,7 +116,8 @@ def main():
             return 1
         row = rows[ref]
         unmet = [d for d in row.depends if not settled(d, rows)]
-        print(json.dumps({**row.public(), "body": row.body, "unmet_depends": unmet,
+        waiting = {"wait_met": wait_met(row, rows)} if row.parked else {}
+        print(json.dumps({**row.public(), **waiting, "body": row.body, "unmet_depends": unmet,
                           "skill_arg": ref, "exit": disposition(row, rows)},
                          indent=2, ensure_ascii=False))
         return disposition(row, rows)
@@ -128,10 +129,7 @@ def main():
         print(json.dumps(out, ensure_ascii=False))
     elif args.command == "query":
         if args.kind == "stats":
-            result = {"total": len(rows), "verified": sum(r.done for r in rows.values()),
-                      "ready": sum(disposition(r, rows) == 0 for r in rows.values()),
-                      "blocked": sum(disposition(r, rows) == 4 for r in rows.values()),
-                      "to_author": len(to_author(ROOT, rows))}
+            result = stats(rows)
         elif args.kind == "deferred":
             result = deferrals()
         elif args.kind == "adjacency":

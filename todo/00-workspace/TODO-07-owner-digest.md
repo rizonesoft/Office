@@ -118,6 +118,7 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 3, P2)
 ## 4. Scheduled Tasks Start on a Monday Morning
 
 > **Started:** 2026-11-12T14:37:35Z
+> **Parked:** 2026-11-12T20:53:08Z until 2026-11-16T05:30:00Z: the weekly digest's first run started by Task Scheduler, Monday 2026-11-16 at 07:05 local time, which its completion review requires and decision 32 forbids starting by hand
 
 Filed 2026-11-11 from `todo/findings.md` (the entry of 2026-11-11). The 2026-11-09 runs of `office-visual-studio` and `office-python-pin` ended with Task Scheduler result 0x8007010B (the directory name is invalid) before `run.py` started, while `office-pr-merge`, registered the same way, ran on 2026-11-11. `office-owner-digest` runs in the same Monday hour, so a digest could fail the same way and say nothing. This section finds the cause from the machine's own records and fixes it where it lives.
 
