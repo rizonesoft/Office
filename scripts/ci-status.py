@@ -116,15 +116,16 @@ def governing_run(tools, sha, seconds, repo):
     return max(runs, key=lambda r: str(r.get("createdAt", ""))) if runs else None
 
 
-def failing_steps(tools, run_id, seconds, repo):
-    """`job: step (conclusion)` for every job that did not succeed, or a note when the jobs cannot be read."""
+def failed_jobs(tools, run_id, seconds, repo):
+    """`job: step (conclusion)` for every job that has ended without succeeding, an empty list when none has, or None
+    when the jobs cannot be read. A job that is still running has no conclusion and is not one of them."""
     try:
         result = tools.call("gh", ["run", "view", str(run_id), "--repo", repo, "--json", "jobs"], seconds)
         jobs = json.loads(result.stdout)["jobs"] if result.returncode == 0 else None
     except (Unknown, ValueError, KeyError, TypeError):
         jobs = None
     if not isinstance(jobs, list):
-        return ["  (the failing jobs could not be read)"]
+        return None
     lines = []
     for job in jobs:
         if not isinstance(job, dict) or job.get("conclusion") in ("success", "skipped", None):
@@ -133,6 +134,14 @@ def failing_steps(tools, run_id, seconds, repo):
                  ("success", "skipped", None)]
         where = ", ".join(f"{s.get('name')} ({s.get('conclusion')})" for s in steps) or "no failing step reported"
         lines.append(f"  {job.get('name')} ({job.get('conclusion')}): {where}")
+    return lines
+
+
+def failing_steps(tools, run_id, seconds, repo):
+    """The failed jobs of a run that ended red, or a note when they cannot be read or none is reported."""
+    lines = failed_jobs(tools, run_id, seconds, repo)
+    if lines is None:
+        return ["  (the failing jobs could not be read)"]
     return lines or ["  (no failing job reported)"]
 
 
@@ -186,6 +195,20 @@ def status(tools, ref, now, deadline, log=None, clock=time.monotonic):
         return UNKNOWN, [f"unknown {short}: no {WORKFLOW} push run on {BRANCH} {int(waited)} s after the commit"]
     head = f"{short} run {run.get('databaseId')} attempt {run.get('attempt', 1)} {run.get('url', '')}".rstrip()
     if run.get("status") != "completed":
+        # A run of several jobs is red from its first failed job, however long the others still run (D00 T03 §60):
+        # a red CI is detected early. Jobs that cannot be read leave the run pending, as it was.
+        try:
+            failed = failed_jobs(tools, run.get("databaseId"), left(), repo)
+        except Unknown:
+            failed = None
+        if failed:
+            lines = [f"red {head} (a job failed; the run is still {run.get('status')})", *failed]
+            if log:
+                try:
+                    lines.append(write_log(tools, run.get("databaseId"), log, left(), repo))
+                except Unknown as exc:
+                    lines.append(f"  ({exc})")
+            return RED, lines
         return PENDING, [f"pending {head} ({run.get('status')})"]
     if run.get("conclusion") == "success":
         return GREEN, [f"green {head}"]

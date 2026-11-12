@@ -1,7 +1,7 @@
 name: ci
 
 # Keeps the TODO tree, the generated plan and the tooling tests honest on every push and pull request
-# (D00 T01 §3). Windows, because the product and its tooling are Windows only; Python is the newest stable
+# (D00 T01 §3): the quick checks in one job, the tests in four parallel shares (D00 T03 §60). Windows, because the product and its tooling are Windows only; Python is the newest stable
 # CPython, as scripts/check-python-pin.py requires of every interpreter the repository uses.
 
 on:
@@ -61,6 +61,40 @@ jobs:
         run: python scripts/check-spdx.py
       - name: Check the repository is REUSE compliant
         run: python -m reuse lint
-      - name: Run the tooling tests
-        # One process per test file, several at a time (scripts/run-tests.py); -v keeps every test's name in the log.
-        run: python scripts/run-tests.py -v
+
+  # The tooling tests, in four shares on four runners at once (D00 T03 §60), so a push's result arrives in a third
+  # of the time and no PC has to run the whole suite to know. A share is a job of its own, on a fresh runner: it
+  # checks the repository out, installs Python and the pinned requirements and restores the pinned build tools
+  # itself. fail-fast is off so every share reports; scripts/ci-status.py reads the run as red from the first share
+  # that fails, while the others finish.
+  tests:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        share: [1, 2, 3, 4]
+    name: tests (${{ matrix.share }}/4)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the tests of the TODO graph read real stamps, so they need real history, not a shallow clone.
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+          check-latest: true
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - name: Install the tooling requirements
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Restore the pinned build tools
+        uses: actions/cache@v6
+        with:
+          path: .tools
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock.json') }}
+      - name: Install the pinned build tools
+        run: python scripts/bootstrap-tools.py
+      - name: Run a share of the tooling tests
+        # One process per unit (a test file, or one class of a slow file), several at a time (scripts/run-tests.py);
+        # -v keeps every test's name in the log. To reproduce a red share: python scripts/run-tests.py --shard N/4
+        run: python scripts/run-tests.py -v --shard ${{ matrix.share }}/4

@@ -1,0 +1,112 @@
+{
+  "files": {
+    "test_automations.py": 18.8,
+    "test_bootstrap_tools.py": 6.6,
+    "test_bounded_fakes.py": 0.2,
+    "test_build_icons.py": 15.9,
+    "test_campaign_guard.py": 81.7,
+    "test_campaign_icon.py": 1.4,
+    "test_capture_ui.py": 56.4,
+    "test_check_campaign_host.py": 42.0,
+    "test_check_design_doc.py": 0.2,
+    "test_check_image_asset.py": 0.3,
+    "test_check_inventory.py": 32.2,
+    "test_check_spdx.py": 10.7,
+    "test_ci_recovery.py": 1.7,
+    "test_ci_status.py": 35.5,
+    "test_import_office_ids.py": 4.1,
+    "test_lessons.py": 122.2,
+    "test_measure_modes.py": 175.8,
+    "test_merge_prs.py": 0.4,
+    "test_no_hardcoded_paths.py": 0.3,
+    "test_no_worktrees.py": 0.2,
+    "test_one_containment.py": 0.3,
+    "test_owner_digest.py": 35.3,
+    "test_pin_automations.py": 34.4,
+    "test_pre_commit_hook.py": 12.0,
+    "test_process_tree.py": 10.5,
+    "test_review_dispatch.py": 56.0,
+    "test_review_pin.py": 3.3,
+    "test_review_prompt.py": 7.8,
+    "test_review_records.py": 0.3,
+    "test_run_tests.py": 36.7,
+    "test_secret_store.py": 0.4,
+    "test_skill_ci_gate.py": 0.3,
+    "test_start_campaign.py": 597.6,
+    "test_three_pass.py": 136.0,
+    "test_todo_graph.py": 160.2,
+    "test_todo_stamp.py": 461.1,
+    "test_verify_agent_tiers.py": 9.1,
+    "test_word_commands.py": 0.6
+  },
+  "classes": {
+    "test_campaign_guard.py": {
+      "CampaignParks": 5.1,
+      "Lifecycle": 9.9,
+      "Liveness": 9.4,
+      "Robustness": 9.6,
+      "StopHook": 47.2
+    },
+    "test_lessons.py": {
+      "Accepted": 5.0,
+      "CommandLine": 6.9,
+      "Globs": 2.6,
+      "IndexBuild": 10.8,
+      "Matching": 8.6,
+      "Ranking": 9.0,
+      "Reader": 1.5,
+      "RoundFixes": 4.4,
+      "RoundOne": 8.5,
+      "Sources": 4.4,
+      "Triage": 25.4,
+      "Upkeep": 25.5,
+      "Values": 6.2,
+      "WholeRun": 2.6
+    },
+    "test_measure_modes.py": {
+      "Clean": 13.6,
+      "Cycles": 35.7,
+      "Decide": 0.4,
+      "Due": 0.0,
+      "Help": 0.0,
+      "Resume": 30.8,
+      "ReviewParsing": 0.0,
+      "Runs": 88.4,
+      "Sections": 5.8
+    },
+    "test_start_campaign.py": {
+      "LauncherRunTest": 593.2,
+      "NoConsoleWindowTest": 0.0,
+      "StartCampaignModelTest": 0.0,
+      "StopControlTest": 4.1
+    },
+    "test_three_pass.py": {
+      "Antigravity": 1.3,
+      "Blocking": 16.0,
+      "Caps": 33.1,
+      "Chain": 29.1,
+      "Conditional": 16.3,
+      "Decoding": 0.6,
+      "Incomplete": 12.6,
+      "NoLenses": 4.4,
+      "SectionPin": 20.1,
+      "Writers": 1.9
+    },
+    "test_todo_graph.py": {
+      "GitPath": 0.0,
+      "Graph": 1.6,
+      "JoinedItems": 0.0,
+      "OwnerAction": 0.0,
+      "Parked": 0.1,
+      "PlanByDomain": 0.1,
+      "PlanWidthInValidate": 1.9,
+      "Removed": 0.0,
+      "Repository": 55.6,
+      "StillToAuthor": 66.9
+    },
+    "test_todo_stamp.py": {
+      "Stamp": 326.0,
+      "ThreePassStamp": 133.6
+    }
+  }
+}

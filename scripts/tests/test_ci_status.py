@@ -119,6 +119,52 @@ class States(Base):
             with self.subTest(state=state):
                 self.assertEqual(self.main(Fake(runs=[[run(status=state, conclusion="")]]))[0], 3)
 
+    SHARES = [{"name": "gates", "conclusion": "success", "steps": []},
+              {"name": "tests (1)", "conclusion": "success", "steps": []},
+              {"name": "tests (2)", "conclusion": "failure",
+               "steps": [{"name": "Set up job", "conclusion": "success"},
+                         {"name": "Run a share of the tooling tests", "conclusion": "failure"}]},
+              {"name": "tests (3)", "conclusion": None, "status": "in_progress", "steps": []},
+              {"name": "tests (4)", "conclusion": None, "status": "queued", "steps": []}]
+
+    def test_a_failed_job_is_red_at_once_while_other_jobs_still_run(self):
+        # D00 T03 §60: with the tests in parallel jobs, one share's failure is known long before the run ends.
+        fake = Fake(runs=[[run(status="in_progress", conclusion="")]], jobs=self.SHARES)
+        code, out = self.main(fake)
+        self.assertEqual(code, 1, out)
+        self.assertIn("a job failed; the run is still in_progress", out)
+        self.assertIn("tests (2) (failure): Run a share of the tooling tests (failure)", out)
+        for running in ("tests (1)", "tests (3)", "tests (4)", "gates"):
+            self.assertNotIn(running, out)
+
+    def test_a_wait_ends_on_the_first_failed_job_not_at_the_end_of_the_run(self):
+        fake = Fake(runs=[[run(status="in_progress", conclusion="")]], jobs=self.SHARES)
+        code, out = self.main(fake, "--wait", "--timeout", "1800")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(sum(1 for name, args in fake.argv if args[:2] == ["run", "list"]), 1)
+
+    def test_a_run_whose_jobs_are_all_running_or_green_stays_pending(self):
+        jobs = [dict(job, conclusion="success" if job["conclusion"] == "failure" else job["conclusion"])
+                for job in self.SHARES]
+        fake = Fake(runs=[[run(status="in_progress", conclusion="")]], jobs=jobs)
+        self.assertEqual(self.main(fake)[0], 3)
+
+    def test_jobs_that_cannot_be_read_leave_a_running_run_pending(self):
+        for failure in ("HTTP 502", ci.Unknown("gh timed out")):
+            fake = Fake(runs=[[run(status="in_progress", conclusion="")]], jobs=self.SHARES,
+                        fail={"gh run view": failure})
+            self.assertEqual(self.main(fake)[0], 3)
+
+    def test_every_job_green_is_green_and_a_finished_run_names_each_failed_share(self):
+        green = [dict(job, conclusion="success") for job in self.SHARES]
+        self.assertEqual(self.main(Fake(runs=[[run()]], jobs=green))[0], 0)
+        two = [dict(job, conclusion="failure" if job["name"] in ("tests (2)", "tests (4)") else "success")
+               for job in self.SHARES]
+        code, out = self.main(Fake(runs=[[run(conclusion="failure")]], jobs=two))
+        self.assertEqual(code, 1)
+        self.assertIn("tests (2) (failure)", out)
+        self.assertIn("tests (4) (failure)", out)
+
     def test_no_run_inside_the_grace_period_is_pending_and_after_it_unknown(self):
         self.assertEqual(self.main(Fake(runs=[[]]), minutes=5)[0], 3)
         code, out = self.main(Fake(runs=[[]]), minutes=11)

@@ -6,7 +6,12 @@ Each case runs `scripts/run-tests.py` over a throwaway folder of small test file
 runner is judged on results it cannot have arranged: a pass, a failure it must surface, a file that hangs with a
 child of its own, and a pattern that matches nothing.
 """
+import contextlib
+import importlib.util
+import io
+import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -14,6 +19,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 RUNNER = Path(__file__).resolve().parents[1] / "run-tests.py"
 RUNNER_SECONDS = 120  # far more than any case needs; past it the runner's whole tree is stopped
@@ -90,6 +96,14 @@ def alive(pid):
     return True
 
 
+def load_runner():
+    """scripts/run-tests.py as a module, for the tests that change one of its constants."""
+    spec = importlib.util.spec_from_file_location("run_tests_under_test", RUNNER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run(*args):
     """The runner's exit code and output; its whole tree is stopped if it outlives RUNNER_SECONDS."""
     extra = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
@@ -104,6 +118,184 @@ def run(*args):
         out, _ = process.communicate(timeout=30)
         raise AssertionError(f"the runner outlived {RUNNER_SECONDS} s:\n{out}") from None
     return process.returncode, out
+
+
+def fixture(classes):
+    """A test file whose classes each hold the named tests: {"A": ["test_a", ...], ...}."""
+    return "import unittest\n\n\n" + "\n\n".join(
+        f"class {cls}(unittest.TestCase):\n" + "".join(f"    def {name}(self):\n        pass\n\n" for name in names)
+        for cls, names in classes.items())
+
+
+INHERITED = ("import unittest\n\n\nclass Base(unittest.TestCase):\n    def test_shared(self):\n        pass\n\n\n"
+             "class Child(Base):\n    pass\n")
+
+
+class Shares(unittest.TestCase):
+    """`--shard i/n` (D00 T03 §60): the shares together run every test once, weighed by the recorded seconds."""
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.dir = Path(folder.name)
+        (self.dir / "test_big.py").write_text(
+            fixture({"Slow": ["test_s1", "test_s2"], "Quick": ["test_q1"], "Other": ["test_o1", "test_o2"]}),
+            encoding="utf-8")
+        (self.dir / "test_heirs.py").write_text(INHERITED, encoding="utf-8")
+        for name in ("test_a.py", "test_b.py", "test_c.py"):
+            (self.dir / name).write_text(fixture({"T": ["test_one", "test_two"]}), encoding="utf-8")
+
+    def durations(self, data):
+        (self.dir / "durations.json").write_text(json.dumps(data), encoding="utf-8")
+
+    def record(self):
+        return json.loads((self.dir / "durations.json").read_text(encoding="utf-8"))
+
+    RECORD = {"files": {"test_big.py": 100, "test_heirs.py": 70, "test_a.py": 9, "test_b.py": 2},
+              "classes": {"test_big.py": {"Slow": 50, "Quick": 5, "Other": 15},
+                          "test_heirs.py": {"Base": 30, "Child": 40}}}
+
+    def listed(self, share):
+        code, out = run("-s", str(self.dir), "--shard", share, "--list")
+        self.assertEqual(code, 0, out)
+        return out.split()
+
+    def executed(self, *args):
+        """Every test id the runner ran with these arguments, read from its verbose output."""
+        code, out = run("-s", str(self.dir), "-v", *args)
+        self.assertEqual(code, 0, out)
+        return sorted(re.findall(r"(?m)^(\w+) \((\w+\.\w+)\.\w+\)", out))
+
+    def test_every_test_runs_in_exactly_one_share_whatever_the_number_of_shares(self):
+        self.durations(self.RECORD)
+        whole = self.executed()
+        self.assertEqual(len(whole), 13)  # 5 in test_big, 2 in test_heirs (one inherited), 6 in the three small files
+        for count in (1, 2, 4, 7):
+            together = []
+            for share in range(1, count + 1):
+                together += self.executed("--shard", f"{share}/{count}")
+            self.assertEqual(sorted(together), whole, count)
+
+    def test_the_same_tree_and_record_give_the_same_shares(self):
+        self.durations(self.RECORD)
+        self.assertEqual([self.listed(f"{i}/3") for i in (1, 2, 3)], [self.listed(f"{i}/3") for i in (1, 2, 3)])
+
+    def test_the_recorded_seconds_decide_the_shares(self):
+        self.durations(self.RECORD)
+        self.assertEqual([self.listed(f"{i}/2") for i in (1, 2)],
+                         [["test_big.py::Slow", "test_big.py::Other", "test_a.py", "test_c.py"],  # 50 + 15 + 9 + 5
+                          ["test_heirs.py::Child", "test_heirs.py::Base", "test_big.py::Quick", "test_b.py"]])  # 77
+        changed = json.loads(json.dumps(self.RECORD))
+        changed["classes"]["test_big.py"] = {"Slow": 1, "Quick": 59, "Other": 15}
+        self.durations(changed)
+        self.assertEqual(self.listed("1/2")[0], "test_big.py::Quick")
+        self.assertEqual(self.listed("1/2"), ["test_big.py::Quick", "test_big.py::Other", "test_c.py", "test_b.py"])
+        self.assertIn("test_big.py::Slow", self.listed("2/2"))  # the unit that led share 1 is now the lightest
+
+    def test_a_class_added_or_renamed_since_the_record_still_runs(self):
+        self.durations(self.RECORD)
+        (self.dir / "test_big.py").write_text(
+            fixture({"Renamed": ["test_s1", "test_s2"], "Quick": ["test_q1"], "Other": ["test_o1", "test_o2"],
+                     "Added": ["test_new"]}), encoding="utf-8")
+        together = self.executed("--shard", "1/2") + self.executed("--shard", "2/2")
+        self.assertEqual(sorted(together), self.executed())
+        self.assertIn(("test_new", "test_big.Added"), together)
+        self.assertIn(("test_s1", "test_big.Renamed"), together)
+
+    def test_a_class_that_only_inherits_its_tests_is_a_unit_of_its_own(self):
+        self.durations(self.RECORD)
+        together = self.executed("--shard", "1/2") + self.executed("--shard", "2/2")
+        self.assertEqual(sorted(t for t in together if t[1].startswith("test_heirs.")),
+                         [("test_shared", "test_heirs.Base"), ("test_shared", "test_heirs.Child")])
+
+    def test_a_class_recorded_as_slow_is_dealt_into_parts_that_together_run_all_its_tests(self):
+        record = json.loads(json.dumps(self.RECORD))
+        record["classes"]["test_big.py"] = {"Slow": 150, "Quick": 5, "Other": 15}  # 150 s: three parts of a 2-test
+        self.durations(record)                                                    # class can only be two
+        units = self.listed("1/1")
+        self.assertIn("test_big.py::Slow#1/2", units)
+        self.assertIn("test_big.py::Slow#2/2", units)
+        self.assertNotIn("test_big.py::Slow", units)
+        (self.dir / "test_big.py").write_text(
+            fixture({"Slow": [f"test_s{n}" for n in range(1, 8)], "Quick": ["test_q1"], "Other": ["test_o1"]}),
+            encoding="utf-8")
+        self.assertEqual(sorted(u for u in self.listed("1/1") if "Slow" in u),
+                         ["test_big.py::Slow#1/3", "test_big.py::Slow#2/3", "test_big.py::Slow#3/3"])
+        together = []
+        for share in (1, 2, 3):
+            together += self.executed("--shard", f"{share}/3")
+        self.assertEqual(sorted(together), self.executed())
+        self.assertEqual(sum(1 for test, cls in together if cls == "test_big.Slow"), 7)
+        self.assertGreater(len({share for share in (1, 2, 3)
+                                if any("Slow#" in u for u in self.listed(f"{share}/3"))}), 1)
+
+    def test_a_file_the_record_does_not_know_runs_whole(self):
+        self.durations({"files": {}, "classes": {}})
+        units = self.listed("1/1")
+        self.assertEqual(sorted(units), ["test_a.py", "test_b.py", "test_big.py", "test_c.py", "test_heirs.py"])
+
+    def test_without_a_record_the_shares_still_cover_every_file(self):
+        self.assertEqual(sorted(self.listed("1/2") + self.listed("2/2")),
+                         ["test_a.py", "test_b.py", "test_big.py", "test_c.py", "test_heirs.py"])
+
+    def test_a_share_that_does_not_exist_is_a_usage_error(self):
+        for bad in ("0/4", "5/4", "x", "2", "1/0", "-1/2"):
+            code, out = run("-s", str(self.dir), "--shard", bad)
+            self.assertEqual(code, 2, bad + out)
+            self.assertIn("--shard takes I/N", out, bad)
+
+    def test_a_record_that_names_a_missing_file_or_is_malformed_is_refused(self):
+        self.durations({"files": {"test_gone.py": 3}, "classes": {}})
+        code, out = run("-s", str(self.dir), "--shard", "1/2")
+        self.assertEqual(code, 2, out)
+        self.assertIn("test_gone.py", out)
+        self.assertIn("--record-durations", out)
+        for bad in ('{"files": {}}', '{"files": {"test_a.py": "slow"}, "classes": {}}', "not json", "[]"):
+            (self.dir / "durations.json").write_text(bad, encoding="utf-8")
+            code, out = run("-s", str(self.dir), "--shard", "1/2")
+            self.assertEqual(code, 2, bad + out)
+            self.assertIn("durations.json", out, bad)
+
+    def test_recording_writes_every_file_run_and_keeps_the_rest(self):
+        self.durations({"files": {"test_a.py": 999, "test_c.py": 999}, "classes": {}})
+        code, out = run("-s", str(self.dir), "-p", "test_[ab]*.py", "--record-durations")
+        self.assertEqual(code, 0, out)
+        first = self.record()
+        self.assertEqual(sorted(first["files"]), ["test_a.py", "test_b.py", "test_big.py", "test_c.py"])
+        self.assertEqual(first["files"]["test_c.py"], 999)          # not run this time: kept as it was
+        self.assertLess(first["files"]["test_a.py"], 60)            # run: its measured seconds replaced the old
+        self.assertEqual(first["classes"], {})                      # nothing here is slow enough to split
+        code, out = run("-s", str(self.dir), "-p", "test_[ab]*.py", "--record-durations")
+        self.assertEqual(code, 0, out)
+        second = self.record()
+        self.assertEqual((sorted(second["files"]), second["classes"]), (sorted(first["files"]), first["classes"]))
+        self.assertEqual(list(self.dir.glob(".durations-*")), [])   # no temporary file left behind
+
+    def test_a_failed_run_records_nothing(self):
+        self.durations({"files": {"test_a.py": 999}, "classes": {}})
+        (self.dir / "test_b.py").write_text(FAILING, encoding="utf-8")
+        code, out = run("-s", str(self.dir), "--record-durations")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.record(), {"files": {"test_a.py": 999}, "classes": {}})
+        self.assertNotIn("durations:", out)
+
+    def test_a_slow_file_is_recorded_class_by_class_from_what_ran(self):
+        slow = ("import time, unittest\n\n\nclass Sleeper(unittest.TestCase):\n    def test_wait(self):\n"
+                "        time.sleep(0.4)\n\n\nclass Brisk(unittest.TestCase):\n    def test_wait(self):\n"
+                "        time.sleep(0.05)\n")
+        (self.dir / "test_slow.py").write_text(slow, encoding="utf-8")
+        runner = load_runner()
+        with mock.patch.object(runner, "SPLIT_OVER", 0.2), mock.patch.object(runner, "DEFAULT_START", self.dir):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner.main(["-s", str(self.dir), "-p", "test_slow.py", "--record-durations"]), 0)
+        classes = self.record()["classes"]["test_slow.py"]
+        self.assertEqual(sorted(classes), ["Brisk", "Sleeper"])
+        self.assertGreaterEqual(classes["Sleeper"], 0.4)
+        self.assertLess(classes["Brisk"], classes["Sleeper"])
+
+    def test_recording_and_a_share_cannot_be_asked_for_together(self):
+        code, out = run("-s", str(self.dir), "--shard", "1/2", "--record-durations")
+        self.assertEqual(code, 2, out)
 
 
 class RunTests(unittest.TestCase):
