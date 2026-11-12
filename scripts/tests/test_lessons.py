@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -52,6 +53,11 @@ OVERALL: needs-attention
 OVERALL: approve
 """
 SPEC_TEXT = "# Spec\n\n## Decisions\n\n1. **First:** one.\n2. **Second:** two.\n"
+# A second record with ten findings in one round, for tests that need many valid triage lines.
+RECORD2 = "docs/reviews/00-workspace/D99-T02-s1.md"
+RECORD2_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n"
+                + "".join(f"{n}. **P2, `scripts/a.py:{n}`:** finding {n} of ten.\n" for n in range(1, 11))
+                + "\nOVERALL: needs-attention\n")
 
 
 def git(root, *args):
@@ -63,7 +69,7 @@ class Store(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.root, True)
         files = {"docs/lessons/README.md": (ROOT / "docs" / "lessons" / "README.md").read_text(encoding="utf-8"),
-                 RECORD: RECORD_TEXT, cli.SPEC: SPEC_TEXT, "scripts/a.py": "x = 1\n", "scripts/lib/b.py": "y = 2\n"}
+                 RECORD: RECORD_TEXT, RECORD2: RECORD2_TEXT, cli.SPEC: SPEC_TEXT, "scripts/a.py": "x = 1\n", "scripts/lib/b.py": "y = 2\n"}
         for name, text in files.items():
             (self.root / name).parent.mkdir(parents=True, exist_ok=True)
             (self.root / name).write_text(text, encoding="utf-8")
@@ -143,8 +149,9 @@ class Accepted(Store):
 
     def test_a_mixed_folder_reads_only_the_lessons(self):
         self.write()
-        (self.folder / "triage").mkdir()
-        (self.folder / "triage" / "candidate.md").write_text("not a lesson at all\n", encoding="utf-8")
+        (self.folder / "triage" / "00-workspace").mkdir(parents=True)  # a triage file is never read as a lesson
+        (self.folder / "triage" / "00-workspace" / "D99-T01-s1.md").write_text(
+            "# Triage of D99 T01 §1\n\nround 1 finding 1: one-off, a typo\n", encoding="utf-8")
         code, out = self.check()
         self.assertEqual((code, out.strip()), (0, "1 lesson(s), all valid"))
         self.assertEqual([p.name for p in lessons.lesson_files(self.folder)], ["keep-gates-whole.md"])
@@ -523,10 +530,10 @@ class Ranking(Indexed):
             applies = globs[n % 4] if n < 300 else "scripts/lib/b.py"
             (self.folder / f"{lesson_id}.md").write_text(frontmatter.format(
                 id=lesson_id, applies=applies, month=1 + n % 12, day=1 + n % 28, n=n), encoding="utf-8")
-        triage = self.folder / "triage"
-        triage.mkdir()
-        (triage / "r.md").write_text("".join(f"f{n}: lesson:gen-0004\n" for n in range(3))
-                                     + "f: lesson:gen-0008\n", encoding="utf-8")
+        triage = self.folder / "triage" / "00-workspace"
+        triage.mkdir(parents=True)
+        (triage / "D99-T02-s1.md").write_text("".join(f"round 1 finding {n}: lesson:gen-0004\n" for n in (1, 2, 3))
+                                              + "round 1 finding 4: lesson:gen-0008\n", encoding="utf-8")
         lessons.build_index(self.root)
         import time
         started = time.monotonic()
@@ -585,15 +592,138 @@ class RoundOne(Indexed):
     def test_evidence_counts_a_lines_own_disposition_once(self):
         self.lesson("existing", applies="scripts/a.py", added="2026-11-01")
         self.lesson("other", applies="scripts/a.py", added="2026-11-09")
-        triage = self.folder / "triage"
-        triage.mkdir()
-        (triage / "r.md").write_text(
+        triage = self.folder / "triage" / "00-workspace"
+        triage.mkdir(parents=True)
+        (triage / "D99-T01-s1.md").write_text(
             "round 1 finding 1: one-off, already covered by lesson:existing and lesson:existing again\n"
             "round 1 finding 2: enforced:scripts/a.py (see lesson:existing)\n"
             "- round 2 finding 1: lesson:other, it recurs; compare lesson:other\n", encoding="utf-8")
         self.assertEqual(lessons.evidence(self.root), {"other": 1})
         shown, _ = lessons.query(self.root, paths=["scripts/a.py"])
         self.assertEqual([(l["id"], l["evidence"]) for l in shown], [("other", 1), ("existing", 0)])
+
+
+class Triage(Indexed):
+    """D00 T05 §3: the findings to triage, and the triage files that hold their dispositions."""
+
+    TWO = "docs/reviews/00-workspace/D99-T03-s1.md"
+    TWO_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **[P1] Alpha breaks.** `scripts/a.py:1` it does.\n"
+                "2. **P2, `scripts/a.py:2`: Beta breaks.** More.\n\nOVERALL: needs-attention\n\n"
+                "### Dispositions\n\n1. **[P1] Alpha breaks**: Fixed.\n\n"
+                "## Round 2: astra (`gpt-6-astra` via `codex`)\n\n1. **P1** Gamma breaks. Detail.\n"
+                "2. **P3:** a nit.\n3. **P2:** Delta breaks.\n4. **P2**, Epsilon breaks.\n\nOVERALL: needs-attention\n")
+
+    def setUp(self):
+        super().setUp()
+        (self.root / self.TWO).write_text(self.TWO_TEXT, encoding="utf-8")
+
+    def triage(self, record, text):
+        path = lessons.triage_path(self.root, record)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def listing(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(["candidates", *argv], root=self.root)
+        return code, out.getvalue().splitlines(), err.getvalue()
+
+    def keys(self, *argv):
+        code, lines, err = self.listing(*argv)
+        self.assertEqual(code, 0, err)
+        return [tuple(re.match(r"(\S+) round (\d+) finding (\d+) \[(P\d)\]", line).groups()) for line in lines]
+
+    def test_the_tagged_findings_are_listed_and_a_p3_is_not(self):
+        code, lines, err = self.listing(RECORD)
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(lines, [f"{RECORD} round 1 finding 1 [P1] scripts/a.py:3: the first finding.",
+                                 f"{RECORD} round 1 finding 2 [P2]: the second finding."])
+
+    def test_every_tag_form_is_read_and_the_writers_notes_after_a_round_are_not(self):
+        self.assertEqual(self.keys(self.TWO), [(self.TWO, "1", "1", "P1"), (self.TWO, "1", "2", "P2"),
+                                               (self.TWO, "2", "1", "P1"), (self.TWO, "2", "3", "P2"),
+                                               (self.TWO, "2", "4", "P2")])
+
+    def test_all_records_are_listed_when_none_is_named(self):
+        records = {key[0] for key in self.keys()}
+        self.assertEqual(records, {RECORD, RECORD2, self.TWO})
+
+    def test_untriaged_prints_exactly_what_is_left_and_a_removed_line_returns(self):
+        self.triage(self.TWO, "round 1 finding 1: one-off, a typo in a message\nround 2 finding 3: enforced:scripts/a.py\n")
+        self.triage(RECORD, "round 1 finding 1: one-off, the same number in another record\n")
+        left = self.keys("--untriaged", self.TWO, RECORD)
+        self.assertEqual(left, [(self.TWO, "1", "2", "P2"), (self.TWO, "2", "1", "P1"), (self.TWO, "2", "4", "P2"),
+                                (RECORD, "1", "2", "P2")])
+        self.triage(self.TWO, "round 2 finding 3: enforced:scripts/a.py\n")
+        self.assertIn((self.TWO, "1", "1", "P1"), self.keys("--untriaged", self.TWO))
+        self.triage(self.TWO, "".join(f"round {r} finding {k}: one-off, fixed and gone\n"
+                                      for r, k in ((1, 1), (1, 2), (2, 1), (2, 3), (2, 4))))
+        self.assertEqual(self.listing("--untriaged", self.TWO), (0, [], ""))
+
+    def test_each_bad_triage_line_is_refused_and_leaves_its_finding_untriaged(self):
+        self.lesson("a-lesson")
+        name = "docs/lessons/triage/00-workspace/D99-T03-s1.md"
+        cases = [
+            ("round 9 finding 1: one-off, no such round", "has no round 9 finding 1"),
+            ("round 1 finding 7: one-off, no such finding", "has no round 1 finding 7"),
+            ("round 1 finding 1: one-off, first\nround 1 finding 1: one-off, again", "already has a disposition"),
+            ("round 1 finding 1: one-off, first\nround 1 finding 1: lesson:a-lesson", "already has a disposition"),
+            ("round 1 finding 1: wontfix because", "'wontfix' is not lesson:<id>, enforced:<path> or one-off"),
+            ("round 1 finding 1: one-off", "one-off needs a reason"),
+            ("round 1 finding 1: enforced:scripts/gone.py", "names no file the repository holds"),
+            ("round 1 finding 1: lesson:no-such-lesson", "lesson:no-such-lesson names no lesson file"),
+            ("finding one is a lesson", "not a triage line"),
+        ]
+        for text, fragment in cases:
+            with self.subTest(fragment):
+                self.triage(self.TWO, text + "\n")
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                    code = cli.main(["check"], root=self.root)
+                self.assertEqual(code, 1)
+                self.assertIn(fragment, out.getvalue())
+                self.assertIn(f"{name}:", out.getvalue())
+                last = text.splitlines()[-1]
+                if last.startswith("round 1 finding 1") and "first" not in text:
+                    self.assertIn((self.TWO, "1", "1", "P1"), self.keys("--untriaged", self.TWO))
+
+    def test_a_triage_file_without_its_record_is_refused(self):
+        self.triage("docs/reviews/00-workspace/D99-T09-s9.md", "round 1 finding 1: one-off, orphaned\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = cli.main(["check"], root=self.root)
+        self.assertEqual(code, 1)
+        self.assertIn("its review record docs/reviews/00-workspace/D99-T09-s9.md does not exist", out.getvalue())
+
+    def test_a_valid_triage_passes_check_and_counts_as_evidence(self):
+        self.lesson("a-lesson")
+        self.triage(self.TWO, "# Triage\n\nround 1 finding 1: lesson:a-lesson\n- round 1 finding 2: lesson:a-lesson, the same\n"
+                              "round 2 finding 1: enforced:scripts/a.py\nround 2 finding 3: one-off, a typo\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())
+        self.assertEqual(lessons.evidence(self.root), {"a-lesson": 2})
+
+    def test_input_that_cannot_be_read_is_exit_1_naming_the_file(self):
+        (self.root / "docs/reviews/00-workspace/empty.md").write_text("# Notes\n\nNo review here.\n", encoding="utf-8")
+        for argv, fragment in ((["docs/reviews/00-workspace/missing.md"], "missing.md: cannot be read"),
+                               (["docs/reviews/00-workspace/empty.md"], "empty.md: holds no review round"),
+                               (["--untriaged", "scripts/a.py"], "scripts/a.py: holds no review round")):
+            with self.subTest(fragment):
+                code, lines, err = self.listing(*argv)
+                self.assertEqual((code, lines), (1, []))
+                self.assertIn(fragment, err)
+        lessons.triage_path(self.root, self.TWO).mkdir(parents=True)  # a folder where the triage file should be
+        code, lines, err = self.listing("--untriaged", self.TWO)
+        self.assertEqual(code, 0)  # no triage file at that path: every finding is still outstanding
+        self.assertEqual(len(lines), 5)
+        lessons.triage_path(self.root, self.TWO).rmdir()
+        path = self.triage(self.TWO, "round 1 finding 1: one-off, x\n")
+        path.write_bytes(b"\xff\xfe\x00 not utf-8 \xff")
+        code, lines, err = self.listing("--untriaged", self.TWO)
+        self.assertEqual((code, lines), (1, []))
+        self.assertIn("D99-T03-s1.md: cannot be read", err)
 
 
 class CommandLine(Indexed):

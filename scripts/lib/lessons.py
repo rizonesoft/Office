@@ -144,25 +144,50 @@ class Repository:
         return self._commits[ref]
 
 
-def finding_in(record_text, round_number, finding):
-    """Whether the record has a `## Round N` heading with a finding numbered `finding` in that round's text. The
-    round's text runs to its `OVERALL:` line or the next pass heading, so lens headings inside it (older records put
-    `## adversarial` at the same level) stay part of it, and a heading the writer adds after it does not."""
-    block = None
+# A finding in a review round: a numbered item whose text opens with its severity, in any form the records use:
+# `**P1, ...`, `**P1: ...`, `**P1:** ...`, `**[P1] ...`, `**P1** ...`, `**P1**, ...`.
+FINDING = re.compile(r"^\s*(\d+)\.\s+\*\*\[?(P[123])\]?(\*\*)?[,:]?(\*\*)?\s+(.*)$")
+LOCATION = re.compile(r"`([^`\s]+:\d+(?:-\d+)?)`")
+
+
+def round_findings(record_text):
+    """{round number: [finding, ...]} of a review record, each finding `{"k", "severity", "location", "sentence"}`.
+    A round's text runs from its `## Round N` heading to its `OVERALL:` line or the next pass heading, so lens
+    headings inside it (older records put `## adversarial` at the same level) stay part of it and a heading the writer
+    adds after it does not. `k` is the finding's place among the round's findings, from 1: the printed number where a
+    round numbers its findings once through, and a count through the round where an older record restarts the numbers
+    under each lens (82 of the first 1,003 findings share a printed number with another in their round)."""
+    rounds, current = {}, None
     for line in record_text.splitlines():
-        if block is None:
-            if re.match(rf"^## Round {round_number}\b", line):
-                block = []
+        match = re.match(r"^## Round (\d+)\b", line)
+        if match:
+            current = rounds.setdefault(int(match[1]), [])
+            continue
+        if current is None:
             continue
         if PASS_HEADING.match(line):
-            break
-        block.append(line)
+            current = None  # another pass (a plan, completion or reconciliation review) begins
+            continue
+        found = FINDING.match(line)
+        if found:
+            rest = found[5].replace("**", "")
+            where = LOCATION.search(rest)
+            told = re.sub(r"^`[^`]+`[:,]?\s*", "", rest)  # a finding that opens with its location says it once
+            sentence = re.split(r"(?<=[.!?])\s", told, maxsplit=1)[0].strip()
+            current.append({"k": len(current) + 1, "severity": found[2], "location": where[1] if where else "",
+                            "sentence": sentence[:200]})
         if line.startswith("OVERALL:"):
-            break
-    if block is None:
-        return None
-    return any(re.match(rf"^\s*{finding}\.\s", line) for line in block)
+            current = None
+    return rounds
 
+
+def finding_in(record_text, round_number, finding):
+    """None when the record has no `## Round N`; else whether that round has a finding `finding` (its place among the
+    round's findings, as `round_findings` counts them)."""
+    rounds = round_findings(record_text)
+    if int(round_number) not in rounds:
+        return None
+    return 1 <= int(finding) <= len(rounds[int(round_number)])
 
 def problems_of(lesson, repo, allowed_topics):
     """The rule problems of one read lesson, each naming the rule."""
@@ -259,8 +284,129 @@ def check_store(root):
         seen[lesson["id"]] = path.name
         found.extend(problems_of(lesson, repo, allowed))
         good.append(lesson)
+    found.extend(triage_problems(root))
     return found, good
 
+
+# Triage (D00 T05 §3): `docs/lessons/triage/<path>.md` holds the dispositions of the findings of the review record
+# `docs/reviews/<path>.md`, one file per record, one line per finding: `round N finding K: <disposition> [reason]`.
+
+REVIEWS = "docs/reviews"
+TRIAGE_LINE = re.compile(r"^\s*(?:[-*]\s+)?round (\d+) finding (\d+):\s+(\S+)(?:\s+(.*))?$")
+
+
+class RecordError(Exception):
+    """A review record or a triage file that cannot be used; the message names the file."""
+
+
+def triage_path(root, record):
+    """The triage file of the review record `record` (a repository path under docs/reviews/)."""
+    return Path(root) / "docs" / "lessons" / TRIAGE / PurePosixPath(record).relative_to(REVIEWS)
+
+
+def read_triage(root, record, repo=None):
+    """({(round, k): disposition} of the valid lines, [problem, ...]) of a record's triage file; both empty when
+    there is none. A line is valid when its finding exists in the record, no earlier line triaged it, and its
+    disposition is `lesson:<id>` naming a lesson file, `enforced:<path>` naming a file the repository holds, or
+    `one-off` followed by a reason. RecordError when the triage file or its record cannot be read."""
+    root = Path(root)
+    path = triage_path(root, record)
+    name = path.relative_to(root).as_posix()
+    if not path.is_file():
+        return {}, []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError) as error:
+        raise RecordError(f"{name}: cannot be read ({type(error).__name__})") from None
+    try:
+        rounds = round_findings((root / record).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError):
+        return {}, [f"{name}: its review record {record} does not exist or cannot be read"]
+    valid, problems = {}, []
+    for number, line in enumerate(lines, 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        where = f"{name}:{number}"
+        match = TRIAGE_LINE.match(line)
+        if not match:
+            problems.append(f"{where}: not a triage line (round N finding K: <disposition> [reason])")
+            continue
+        key, word, reason = (int(match[1]), int(match[2])), match[3], (match[4] or "").strip()
+        if key[0] not in rounds or not 1 <= key[1] <= len(rounds[key[0]]):
+            problems.append(f"{where}: {record} has no round {key[0]} finding {key[1]}")
+        elif key in valid:
+            problems.append(f"{where}: round {key[0]} finding {key[1]} already has a disposition ({valid[key]})")
+        elif word.startswith("lesson:"):
+            lesson_id = word[len("lesson:"):].rstrip(",.;")
+            if not ID.fullmatch(lesson_id) or not (root / "docs" / "lessons" / f"{lesson_id}.md").is_file():
+                problems.append(f"{where}: lesson:{lesson_id} names no lesson file")
+            else:
+                valid[key] = f"lesson:{lesson_id}"
+        elif word.startswith("enforced:"):
+            target = word[len("enforced:"):].rstrip(",.;")
+            held = (root / target).is_file() if repo is None else PurePosixPath(target) in repo.files
+            if not target or ".." in PurePosixPath(target).parts or not held:
+                problems.append(f"{where}: enforced:{target} names no file the repository holds")
+            else:
+                valid[key] = f"enforced:{target}"
+        elif word.rstrip(",.;:") == "one-off":
+            if not reason:
+                problems.append(f"{where}: one-off needs a reason")
+            else:
+                valid[key] = "one-off"
+        else:
+            problems.append(f"{where}: {word!r} is not lesson:<id>, enforced:<path> or one-off")
+    return valid, problems
+
+
+def triage_problems(root, repo=None):
+    """Every problem of every triage file under `root`, for `check`."""
+    root = Path(root)
+    base = root / "docs" / "lessons" / TRIAGE
+    found = []
+    for path in sorted(base.rglob("*.md")) if base.is_dir() else ():
+        record = (PurePosixPath(REVIEWS) / path.relative_to(base).as_posix()).as_posix()
+        try:
+            found.extend(read_triage(root, record, repo)[1])
+        except RecordError as error:
+            found.append(str(error))
+    return found
+
+
+def review_records(root):
+    """Every review record under docs/reviews/ that holds a round, as repository paths."""
+    base = Path(root) / REVIEWS
+    return [path.relative_to(root).as_posix() for path in sorted(base.rglob("*.md"))
+            if re.search(r"(?m)^## Round \d+\b", path.read_text(encoding="utf-8", errors="replace"))]
+
+
+def candidates(root, records=None, untriaged=False):
+    """The `P1` and `P2` findings of the review `records` (all under docs/reviews/ when none is named), each
+    `{"record", "round", "k", "severity", "location", "sentence"}`; with `untriaged`, only those with no valid line in
+    the record's triage file. RecordError naming the file when a named record is missing, unreadable or holds no
+    review round, or a triage file cannot be read: an input that was skipped must never look like nothing to do."""
+    root = Path(root)
+    named = records is not None and len(records) > 0
+    out = []
+    for record in (records if named else review_records(root)):
+        record = PurePosixPath(str(record).replace("\\", "/")).as_posix()
+        try:
+            text = (root / record).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as error:
+            raise RecordError(f"{record}: cannot be read ({type(error).__name__})") from None
+        rounds = round_findings(text)
+        if not rounds:
+            raise RecordError(f"{record}: holds no review round")
+        done = {}
+        if untriaged:
+            if not record.startswith(REVIEWS + "/"):
+                raise RecordError(f"{record}: is not under {REVIEWS}/, so it has no triage file")
+            done = read_triage(root, record)[0]
+        for number in sorted(rounds):
+            for finding in rounds[number]:
+                if finding["severity"] in ("P1", "P2") and (number, finding["k"]) not in done:
+                    out.append({"record": record, "round": number, **finding})
+    return out
 
 # The index (D00 T05 §2): `build/lessons.sqlite`, a cache of the active lessons that makes them findable. The files
 # are the truth; the index is rebuilt whenever they, or the triage files that count a lesson's evidence, change.
