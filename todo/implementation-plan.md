@@ -8,68 +8,69 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 58 | Checklist items: 418
+Sections: 59 | Checklist items: 421
 
-| Status | Reference   | Deliverable                                     | Needs                  | Items |
-| ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
-| [x]    | D00 T01 §1  | Design Document Checker                         | none                   | 7     |
-| [x]    | D00 T01 §2  | Image Asset Checker                             | none                   | 6     |
-| [x]    | D00 T01 §3  | Continuous Integration Workflow                 | none                   | 7     |
-| [x]    | D00 T02 §1  | SPDX Headers and Checker                        | none                   | 7     |
-| [x]    | D00 T02 §2  | Third-Party Notices File                        | none                   | 3     |
-| [x]    | D00 T02 §5  | Contributing Guide                              | none                   | 4     |
-| [x]    | D00 T03 §1  | Automation Runner, Alert and Installer          | none                   | 7     |
-| [x]    | D00 T03 §2  | Run Guard and Stop Hook                         | none                   | 7     |
-| [x]    | D00 T03 §3  | Keep-Alive Task and Session Observer            | none                   | 6     |
-| [x]    | D00 T03 §4  | Run Skills Create and Check the Guard           | none                   | 6     |
-| [x]    | D00 T03 §5  | Install the Tasks and Verify on This PC         | windows-host, attended | 5     |
-| [x]    | D00 T03 §6  | Adopt the Guard for the Open Phase 2 Run        | attended               | 4     |
-| [x]    | D00 T03 §7  | Run Guard Robustness Fixes                      | none                   | 5     |
-| [x]    | D00 T03 §8  | Agent Tier Verifier YAML Strictness             | none                   | 4     |
-| [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries              | none                   | 10    |
-| [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins                | windows-host, attended | 10    |
-| [x]    | D00 T03 §12 | Campaign Host Readiness Check                   | windows-host           | 11    |
-| [x]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review        | none                   | 17    |
-| [x]    | D00 T03 §14 | Completion Evidence Hardening                   | none                   | 7     |
-| [x]    | D00 T03 §15 | CI Watch and Red-Run Repair                     | none                   | 11    |
-| [x]    | D00 T03 §16 | Completion Evidence Adoption Boundary           | none                   | 4     |
-| [x]    | D00 T03 §17 | CI Push Reconciliation                          | none                   | 8     |
-| [x]    | D00 T03 §18 | CI Recovery Budget                              | none                   | 6     |
-| [x]    | D00 T03 §19 | CI Gate Checks                                  | none                   | 4     |
-| [x]    | D00 T03 §20 | CI Reconciliation at Scale                      | none                   | 5     |
-| [x]    | D00 T03 §21 | CI Recovery Closed on Resume                    | none                   | 4     |
-| [x]    | D00 T03 §22 | CI Reconciliation Past Limits                   | none                   | 5     |
-| [x]    | D00 T03 §23 | CI Reconciliation After Deleted Runs            | none                   | 6     |
-| [x]    | D00 T03 §24 | Resumable Newest-Page Refresh                   | none                   | 4     |
-| [x]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes         | windows-host           | 10    |
-| [x]    | D00 T03 §26 | Host Check Names Every File It Writes           | none                   | 5     |
-| [x]    | D00 T03 §27 | Review Prompt Builder                           | none                   | 11    |
-| [x]    | D00 T03 §28 | Host Check Scratch Leftover Rule                | none                   | 4     |
-| [x]    | D00 T03 §29 | Review Prompt Empty-Input Refusals              | none                   | 6     |
-| [x]    | D00 T03 §31 | Plan Lists Files Still to Author                | none                   | 10    |
-| [x]    | D00 T03 §32 | Validate Checks Plan Row Width                  | none                   | 6     |
-| [x]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
-| [x]    | D00 T03 §35 | Weekly Owner Digest                             | none                   | 12    |
-| [x]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
-| [x]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
-| [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
-| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 10    |
-| [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
-| [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
-| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains        | owner-decision         | 4     |
-| [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 19    |
-| [x]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 10    |
-| [x]    | D00 T04 §3  | Tool Bootstrap in CI                            | none                   | 6     |
-| [x]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 7     |
-| [ ]    | D00 T05 §1  | Lesson Files and Their Checker                  | none                   | 12    |
-| [ ]    | D00 T05 §2  | Lesson Index and Query                          | none                   | 8     |
-| [ ]    | D00 T05 §3  | First Lessons From the Review Records           | none                   | 6     |
-| [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                 | none                   | 5     |
-| [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                          | none                   | 7     |
-| [ ]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard | none                   | 3     |
-| [ ]    | D00 T07 §2  | Digest Keeps a Long Progress List               | none                   | 3     |
-| [ ]    | D00 T07 §3  | Digest Delivery Survives a Failed Send          | none                   | 4     |
-| [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning       | windows-host           | 5     |
+| Status | Reference   | Deliverable                                           | Needs                  | Items |
+| ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
+| [x]    | D00 T01 §1  | Design Document Checker                               | none                   | 7     |
+| [x]    | D00 T01 §2  | Image Asset Checker                                   | none                   | 6     |
+| [x]    | D00 T01 §3  | Continuous Integration Workflow                       | none                   | 7     |
+| [x]    | D00 T02 §1  | SPDX Headers and Checker                              | none                   | 7     |
+| [x]    | D00 T02 §2  | Third-Party Notices File                              | none                   | 3     |
+| [x]    | D00 T02 §5  | Contributing Guide                                    | none                   | 4     |
+| [x]    | D00 T03 §1  | Automation Runner, Alert and Installer                | none                   | 7     |
+| [x]    | D00 T03 §2  | Run Guard and Stop Hook                               | none                   | 7     |
+| [x]    | D00 T03 §3  | Keep-Alive Task and Session Observer                  | none                   | 6     |
+| [x]    | D00 T03 §4  | Run Skills Create and Check the Guard                 | none                   | 6     |
+| [x]    | D00 T03 §5  | Install the Tasks and Verify on This PC               | windows-host, attended | 5     |
+| [x]    | D00 T03 §6  | Adopt the Guard for the Open Phase 2 Run              | attended               | 4     |
+| [x]    | D00 T03 §7  | Run Guard Robustness Fixes                            | none                   | 5     |
+| [x]    | D00 T03 §8  | Agent Tier Verifier YAML Strictness                   | none                   | 4     |
+| [x]    | D00 T03 §9  | Dependency PR Merges at Boundaries                    | none                   | 10    |
+| [x]    | D00 T03 §10 | Retire the .NET and WinUI 3 Pins                      | windows-host, attended | 10    |
+| [x]    | D00 T03 §12 | Campaign Host Readiness Check                         | windows-host           | 11    |
+| [x]    | D00 T03 §13 | Single Writer, Cap 33, Completion Review              | none                   | 17    |
+| [x]    | D00 T03 §14 | Completion Evidence Hardening                         | none                   | 7     |
+| [x]    | D00 T03 §15 | CI Watch and Red-Run Repair                           | none                   | 11    |
+| [x]    | D00 T03 §16 | Completion Evidence Adoption Boundary                 | none                   | 4     |
+| [x]    | D00 T03 §17 | CI Push Reconciliation                                | none                   | 8     |
+| [x]    | D00 T03 §18 | CI Recovery Budget                                    | none                   | 6     |
+| [x]    | D00 T03 §19 | CI Gate Checks                                        | none                   | 4     |
+| [x]    | D00 T03 §20 | CI Reconciliation at Scale                            | none                   | 5     |
+| [x]    | D00 T03 §21 | CI Recovery Closed on Resume                          | none                   | 4     |
+| [x]    | D00 T03 §22 | CI Reconciliation Past Limits                         | none                   | 5     |
+| [x]    | D00 T03 §23 | CI Reconciliation After Deleted Runs                  | none                   | 6     |
+| [x]    | D00 T03 §24 | Resumable Newest-Page Refresh                         | none                   | 4     |
+| [x]    | D00 T03 §25 | Host Lock Baseline Across Policy Writes               | windows-host           | 10    |
+| [x]    | D00 T03 §26 | Host Check Names Every File It Writes                 | none                   | 5     |
+| [x]    | D00 T03 §27 | Review Prompt Builder                                 | none                   | 11    |
+| [x]    | D00 T03 §28 | Host Check Scratch Leftover Rule                      | none                   | 4     |
+| [x]    | D00 T03 §29 | Review Prompt Empty-Input Refusals                    | none                   | 6     |
+| [x]    | D00 T03 §31 | Plan Lists Files Still to Author                      | none                   | 10    |
+| [x]    | D00 T03 §32 | Validate Checks Plan Row Width                        | none                   | 6     |
+| [x]    | D00 T03 §33 | Plan Groups a Phase by Domain                         | none                   | 9     |
+| [x]    | D00 T03 §35 | Weekly Owner Digest                                   | none                   | 12    |
+| [x]    | D00 T03 §36 | Operating Mode Measurement Command                    | none                   | 14    |
+| [x]    | D00 T03 §37 | Operating Mode Rule and Launcher                      | none                   | 9     |
+| [x]    | D00 T03 §50 | Withdrawn Sections                                    | none                   | 11    |
+| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest            | none                   | 10    |
+| [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool           | none                   | 7     |
+| [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
+| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | owner-decision         | 4     |
+| [ ]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
+| [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                   | none                   | 19    |
+| [x]    | D00 T04 §2  | Tool Folder Resolver                                  | none                   | 10    |
+| [x]    | D00 T04 §3  | Tool Bootstrap in CI                                  | none                   | 6     |
+| [x]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder               | none                   | 7     |
+| [ ]    | D00 T05 §1  | Lesson Files and Their Checker                        | none                   | 12    |
+| [ ]    | D00 T05 §2  | Lesson Index and Query                                | none                   | 8     |
+| [ ]    | D00 T05 §3  | First Lessons From the Review Records                 | none                   | 6     |
+| [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                       | none                   | 5     |
+| [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 7     |
+| [ ]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 3     |
+| [ ]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 3     |
+| [ ]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 4     |
+| [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning             | windows-host           | 5     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -384,6 +385,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 75/159 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 75/160 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 534/1060 items completed (includes Commit items).
+Checklist: 534/1063 items completed (includes Commit items).
