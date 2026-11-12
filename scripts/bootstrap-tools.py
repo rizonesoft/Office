@@ -459,9 +459,17 @@ def probe(path, flags):
         text = Path(out).read_text(encoding="utf-8", errors="replace")
         if outcome.stopped:
             raise Failed(f"{path.name} was stopped ({outcome.stopped})")
+        if outcome.exit != 0:
+            raise Failed(f"{path.name} exited {outcome.exit}: {text.strip()[:200]}")
         return text
     finally:
         Path(out).unlink(missing_ok=True)
+
+
+def reports(text, pin):
+    """Whether `text` names version `pin` as a whole token: `4.4.5` but not `4.4.50` or `14.4.5`; a suffix after a
+    dash stays allowed (vcpkg prints `2026-09-26-<commit>`)."""
+    return re.search(rf"(?<![0-9A-Za-z.])v?{re.escape(pin)}(?![0-9A-Za-z]|\.[0-9])", text) is not None
 
 
 def versions(installed, run=probe):
@@ -476,9 +484,9 @@ def versions(installed, run=probe):
             problems.append(f"{program}: {error}")
             continue
         lines = [line.strip() for line in text.splitlines() if line.strip()]
-        shown = next((line for line in lines if pin in line), lines[0] if lines else "(no output)")
+        shown = next((line for line in lines if reports(line, pin)), lines[0] if lines else "(no output)")
         print(f"{program} ({owner} {pin}): {shown}")
-        if pin not in text:
+        if not reports(text, pin):
             problems.append(f"{program}: reports {shown!r}, not {owner}'s pinned {pin}")
     return problems
 

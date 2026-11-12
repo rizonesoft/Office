@@ -819,6 +819,25 @@ class Versions(Fixture):
         self.assertIn("vcpkg: vcpkg 2026-09-26 is not installed", err)
         self.assertIn("cmake (cmake 4.4.5)", out)  # the others still ran
 
+    def test_the_pin_must_be_a_whole_version(self):
+        for text, pin, expected in (("cmake version 4.4.50", "4.4.5", False), ("cmake version 14.4.5", "4.4.5", False),
+                                    ("cmake version 4.4.5.1", "4.4.5", False), ("cmake version 4.4.5", "4.4.5", True),
+                                    ("1.13.2", "1.13.2", True), ("version 2026-09-26-51bf87ca", "2026-09-26", True),
+                                    ("clangd version 23.1.5 (https://x)", "23.1.5", True), ("tool v0.19.0", "0.19.0", True)):
+            with self.subTest(text):
+                self.assertIs(boot.reports(text, pin), expected)
+        self.said["cmake.exe"] = "cmake version 4.4.50"
+        code, out, err = self.versions()
+        self.assertEqual(code, 1)
+        self.assertIn("cmake: reports", err)
+
+    def test_a_program_that_exits_nonzero_fails_its_probe(self):
+        program = self.tmp / "fail.cmd"
+        program.write_text("@echo cmake version 4.4.5\n@exit /b 3\n", encoding="utf-8")
+        with self.assertRaises(boot.Failed) as caught:
+            boot.probe(program, [])
+        self.assertIn("exited 3", str(caught.exception))
+
     def test_the_real_probe_runs_a_program_in_a_bounded_tree(self):
         program = self.tmp / "say.cmd"
         program.write_text("@echo say version 1.2.3\n", encoding="utf-8")
