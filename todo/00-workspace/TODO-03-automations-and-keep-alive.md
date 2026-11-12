@@ -1342,6 +1342,8 @@ Filed 2026-11-12 from the campaign's own run (`docs/phase-runs/2026-11-12-phase-
 > **Review:** `docs/reviews/d00-t03-s59.json`
 ## 60. CI Runs the Tooling Tests in Parallel Jobs
 
+> **Started:** 2026-11-12T23:05:36Z
+
 Filed 2026-11-13 from the owner's direction of 2026-11-12 (decision 45 of `docs/specs/2026-10-23-campaign-scope-design.md`: let CI do the heavy lifting, and detect a red CI early). Measured on run 43299441464: the one `gates` job of `.github/workflows/ci.yml` took 17 minutes, 14 minutes 22 seconds of it in the step `Run the tooling tests` (`python scripts/run-tests.py -v`, 38 files, four at a time on one runner). Two files hold most of it (`test_start_campaign.py` about 650 seconds and `test_todo_stamp.py` about 460 on this PC), so splitting by file alone cannot go below the slowest file. This section splits the tests across parallel jobs, down to the test class where a file is slow, so a push's result arrives in a third of the time and this PC never needs the full suite to know.
 
 **Phase:** 0
