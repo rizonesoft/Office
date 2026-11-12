@@ -1258,6 +1258,8 @@ Filed 2026-11-12 from the review of §53 (`docs/reviews/00-workspace/D00-T03-s53
 **Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_owner_digest.py"` pass with the chosen behaviour.
 ## 57. Completion Reviews Leave the Commit Item to the Stamp
 
+> **Started:** 2026-11-12T08:40:10Z
+
 Filed 2026-11-12 from the review of D00 T05 §1 (`docs/reviews/00-workspace/D00-T05-s1.md`, the completion review's gap 2 and the reconciliation's open P3): the reviewer reported the section's unticked `- [ ] Commit:` item as missing work, but `stamp` ticks that item itself when it writes the `Verified:` line (`scripts/lib/todo_graph.py`, the `Commit:` substitution), so the item is unticked by design until then. A reviewer who is not told this files a gap no writer should close by hand, and the gap then needs a reconciliation or a filed section of its own.
 
 **Phase:** 0
@@ -1269,7 +1271,7 @@ Filed 2026-11-12 from the review of D00 T05 §1 (`docs/reviews/00-workspace/D00-
 1. Say it in the prompts. Done when: the completion and reconciliation prompts state the rule.
 2. Prove a prompt carries it. Done when: a test reads it in a filled prompt.
 
-- [ ] State in `docs/completion-review-prompt.md` and in the reconciliation prompt `scripts/review-prompt.py` fills that the section's `- [ ] Commit:` item is ticked by `stamp` when it writes the `Verified:` line, so an unticked Commit item whose commit exists is never a gap. Done when: both prompts hold the sentence.
+- [ ] State in `docs/completion-review-prompt.md` and in `docs/reconciliation-review-prompt.md` (the template `scripts/review-prompt.py` fills for a reconciliation; **Corrected 2026-11-12:** the first wording said the script itself) that the section's `- [ ] Commit:` item is ticked by `stamp` when it writes the `Verified:` line, so an unticked Commit item whose commit exists is never a gap. Done when: both prompts hold the sentence.
 - [ ] Test that a filled completion prompt and a filled reconciliation prompt carry it. Done when: a test in `scripts/tests/test_review_prompt.py` fails with the sentence removed from either.
 - [ ] Commit: `review: the stamp ticks the Commit item, so a review never asks for it`
 
