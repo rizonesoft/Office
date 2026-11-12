@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T07 \u00a72",
+  "title": "Digest Keeps a Long Progress List",
+  "implementation_sha": "905da4d3812789278a7435ca1a86ac02026f97db",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_owner_digest.py\" -> Ran 62 tests, OK (the six overflow tests fail on the previous code)",
+    "bosun run -- python scripts/run-tests.py at 0102893 (the only later code change being owner-digest.py and its tests) -> Ran 1472 tests in 37 files, 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+    "verdict": "complete",
+    "candidate": "905da4d3812789278a7435ca1a86ac02026f97db",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+    "candidate": "2abb06fe215208f922f4bcf42da5491cd46b00a9",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "2abb06fe215208f922f4bcf42da5491cd46b00a9",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

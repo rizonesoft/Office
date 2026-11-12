@@ -29,7 +29,7 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Digest tells a live run from an abandoned guard | T03 §35 | [x] |
-| 2 | §2 | Digest keeps a long progress list | T03 §35 | [ ] |
+| 2 | §2 | Digest keeps a long progress list | T03 §35 | [x] |
 | 3 | §3 | Digest delivery survives a failed send | T03 §35 | [ ] |
 | 4 | §4 | Scheduled tasks start on a Monday morning | -- | [ ] |
 
@@ -77,9 +77,12 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 2, P2)
 - [x] Put the complete progress list in the attachment beside the waiting list. Done when: tests cover progress-only overflow and progress-and-waiting overflow, with every item in the attachment. **Corrected 2026-11-12:** today the body already starts with the run state, CI and totals, but an overflow attaches the waiting list whether or not it was cut and cuts the progress list with no attachment at all. The progress list goes in its own attachment, `verified-this-week.txt`, and each list is attached only when the body cuts it, so a progress-only overflow leaves the waiting list whole in the body; the waiting list keeps its place before the progress list, since it is what asks for the owner's action.
 - [x] Cut each list at whole items and count items, not lines: a wrapped entry is shown whole or not at all, and the count line says exactly how many items the attachment adds. Done when: a test whose cut falls on a wrapped title shows that item either whole or left out, the count equal to the items not shown, and every body line within 100 characters and the body within 120 lines in each overflow test. **Corrected 2026-11-12:** added after the plan review (gap 1, P2).
 - [x] Keep the notices part of D00 T03 §53 in its place between the waiting and the progress lists, and give it its room before either list takes any: its summary, an unreadable-queue line and the unconfirmed-delivery warning. Done when: a test with notices, an overflowing waiting list and an overflowing progress list shows every attachment's pointer in the body and all three attachments complete. **Corrected 2026-11-12:** added after the plan review (gap 2, P2).
-- [ ] Commit: `automations: the digest keeps a long progress list`
+- [x] Commit: `automations: the digest keeps a long progress list`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes with both overflow tests among them.
+
+> **Verified:** 2026-11-12 | §2 | 905da4d3812789278a7435ca1a86ac02026f97db
+> **Review:** `docs/reviews/d00-t07-s2.json`
 
 ## 3. Digest Delivery Survives a Failed Send
 
