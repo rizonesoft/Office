@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 58 | Checklist items: 414
+Sections: 58 | Checklist items: 415
 
 | Status | Reference   | Deliverable                                     | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
@@ -60,7 +60,7 @@ Sections: 58 | Checklist items: 414
 | [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 19    |
 | [x]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 10    |
 | [x]    | D00 T04 §3  | Tool Bootstrap in CI                            | none                   | 6     |
-| [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 6     |
+| [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 7     |
 | [ ]    | D00 T05 §1  | Lesson Files and Their Checker                  | none                   | 9     |
 | [ ]    | D00 T05 §2  | Lesson Index and Query                          | none                   | 8     |
 | [ ]    | D00 T05 §3  | First Lessons From the Review Records           | none                   | 6     |
@@ -386,4 +386,4 @@ These TODO files do not exist yet, so their sections and checklist items are not
 
 Progress: 73/159 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 513/1056 items completed (includes Commit items).
+Checklist: 513/1057 items completed (includes Commit items).
