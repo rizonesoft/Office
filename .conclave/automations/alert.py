@@ -428,17 +428,17 @@ def main(argv=None, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["--notice"]:
         return notice_main(argv[1:], root)
-    if argv[:1] == ["--list"]:  # what the queue holds that no digest has completed: pending, then claimed
+    if argv[:1] == ["--list"]:  # every notice no digest has completed, each with its text
         try:
-            pending, claimed = pending_notices(root), claimed_notices(root)
+            pending, claimed, unconfirmed = pending_notices(root), claimed_notices(root), unconfirmed_notices(root)
         except Refused as error:
             print(f"the notice queue cannot be read: {error}", file=sys.stderr)
             return 1
-        for notice in pending:
-            print(f"pending  {notice['at']} {notice['sender']}: {notice['subject']}")
-        for notice in claimed:
-            print(f"claimed by the digest of {notice['claimed']['at']}  {notice['at']} {notice['sender']}: "
-                  f"{notice['subject']}")
+        for state, notices in (("pending", pending), ("claimed", claimed), ("unconfirmed", unconfirmed)):
+            for notice in notices:
+                claim = f" (digest of {notice['claimed']['at']})" if notice.get("claimed") else ""
+                print(f"{state}{claim}  {notice['at']} {notice['sender']}: {notice['subject']}")
+                print("    " + "\n    ".join(str(notice.get("body", "")).splitlines() or [""]))
         return 0
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("name", help="the task that failed, e.g. office-python-pin")

@@ -314,12 +314,20 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
                    for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
     notice_lines, notice_file = notices_part(notices, root)
-    if unconfirmed:  # claimed past SMTP2GO's history with no answer: named once, never sent again
+    if unconfirmed:
+        # Claimed by an earlier digest whose delivery SMTP2GO can no longer confirm or deny (its history has passed):
+        # their full text goes in the attachment, said to be possibly already received, so none is lost and the one
+        # possible repeat is labelled (D00 T03 §53, reconciliation review 5).
         dates = sorted({str((n.get("claimed") or {}).get("at", "?"))[:10] for n in unconfirmed})
         notice_lines = notice_lines + wrap(
             f"{len(unconfirmed)} notice(s) of the digest of {', '.join(dates)} could not be confirmed delivered "
-            f"(SMTP2GO no longer holds its record); check that email, or run "
-            f"python .conclave/automations/alert.py --list for their text.") + [""]
+            f"(SMTP2GO no longer holds its record); each is in full in the attached {NOTICES_ATTACHMENT}, and may "
+            f"already have reached you.") + [""]
+        earlier = ("Could not be confirmed delivered by an earlier digest; it may already have reached you:\n\n"
+                   + "\n\n".join(f"{n.get('at', '?')} {without_paths(str(n.get('sender', '?')), root)}: "
+                                 f"{without_paths(str(n.get('subject', '')), root)}\n\n"
+                                 f"{without_paths(str(n.get('body', '')), root)}" for n in unconfirmed) + "\n")
+        notice_file = (NOTICES_ATTACHMENT, (notice_file[1] + "\n" if notice_file else "") + earlier)
     body = head + waiting_lines + [""] + notice_lines + progress
     attachments = [notice_file] if notice_file else []
     if len(body) > BODY_LINES:

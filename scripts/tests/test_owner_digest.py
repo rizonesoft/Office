@@ -547,14 +547,18 @@ class Notices(Send):
         code, _, third = self.run_main([])
         self.assertEqual(code, 0)
         body = " ".join(third[0]["text_body"].split())
-        self.assertNotIn("Notices since the last digest", body)  # never sent a second time
+        self.assertNotIn("Notices since the last digest", body)  # not presented as new
         self.assertIn("1 notice(s) of the digest of", body)
         self.assertIn("could not be confirmed delivered", body)
-        self.assertIn("alert.py --list", body)
+        self.assertIn("may already have reached you", body)
+        attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in third[0]["attachments"]}
+        self.assertIn("it may already have reached you", attached["notices.txt"])  # the one labelled repeat
+        self.assertIn("log line 59 of failure 0", attached["notices.txt"])  # its full text: nothing is lost
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
-        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # named once, then closed
-        self.assertIn("log line 59 of failure 0", queue[0]["body"])  # and its text is still there
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # closed only after that delivery
+        code, _, fourth = self.run_main([])
+        self.assertNotIn("could not be confirmed", fourth[0]["text_body"])  # and never again
 
     def test_another_digest_with_the_same_counts_is_never_taken_as_the_evidence(self):
         # Reconciliation review 4: subjects repeat week to week, so each digest's subject carries its own id.
@@ -620,17 +624,21 @@ class Notices(Send):
         self.assertEqual((code, requests), (1, []))
         self.assertEqual(len(self.pending()), 1)
 
-    def test_list_shows_pending_and_claimed_notices(self):
+    def test_list_shows_every_unfinished_notice_with_its_text(self):
         alert = digest.load_alert(self.root)
-        first, second = self.queue(2)
-        alert.claim_notices([first], "d1", str(self.root))
+        first, second, third = self.queue(3)
+        alert.claim_notices([first], "d1", str(self.root), "s1")
+        alert.claim_notices([third], "d3", str(self.root), "s3")
+        alert.mark_unconfirmed("d3", str(self.root))
         out = io.StringIO()
         with redirect_stdout(out):
             self.assertEqual(alert.main(["--list"], root=str(self.root)), 0)
-        lines = out.getvalue().splitlines()
-        self.assertEqual([line.split()[0] for line in lines], ["pending", "claimed"])
-        self.assertIn("task-1", lines[0])
-        self.assertIn("task-0", lines[1])
+        heads = [line for line in out.getvalue().splitlines() if not line.startswith("    ")]
+        self.assertEqual([line.split()[0] for line in heads], ["pending", "claimed", "unconfirmed"])
+        self.assertIn("task-1", heads[0])
+        self.assertIn("task-0", heads[1])
+        self.assertIn("task-2", heads[2])
+        self.assertIn("    log line 59 of failure 2", out.getvalue())  # the text of each, unconfirmed included
 
     def test_no_notices_adds_no_part(self):
         code, _, requests = self.run_main([])
