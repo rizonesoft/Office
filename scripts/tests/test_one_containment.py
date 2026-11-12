@@ -6,11 +6,11 @@
 `taskkill`: three private copies once lived in the host check, the review dispatcher and the test runner, and they
 shared a race (a job's member count reads 0 before its last member has exited) that only the shared helper fixed.
 
-The check covers the Python tools under `scripts/` and `scripts/lib/`, the code that starts and contains children of
-its own. Two other uses of `taskkill` are a different job and stay outside it: the launcher's `-Stop`
-(`scripts/start-campaign.ps1`) ends another, already running launcher's tree by the process id that launcher
-recorded, which no job of the stopping process holds; and the test files' teardown ends processes a test started
-through the tool under test, after that tool's own containment is what the test examined.
+The check covers the Python tools under `scripts/`, `scripts/lib/` and `.conclave/automations/` (D00 T03 §55), the
+code that starts and contains children of its own. Two other uses of `taskkill` are a different job and stay outside
+it: the launcher's `-Stop` (`scripts/start-campaign.ps1`) ends another, already running launcher's tree by the process
+id that launcher recorded, which no job of the stopping process holds; and the test files' teardown ends processes a
+test started through the tool under test, after that tool's own containment is what the test examined.
 """
 from pathlib import Path
 import re
@@ -24,15 +24,19 @@ FORBIDDEN = re.compile(r"CreateJobObjectW|\btaskkill\b")
 
 
 def offenders(scripts=SCRIPTS):
-    """`path:line` of every forbidden use in the Python tools under `scripts`, the helper excepted."""
+    """`path:line` of every forbidden use in the Python tools under `scripts` and `.conclave/automations` (D00 T03
+    §55), the helper excepted; paths are relative to the repository."""
+    root = scripts.parent
     helper = scripts / "lib" / "process_tree.py"
     found = []
-    for path in sorted([*scripts.glob("*.py"), *(scripts / "lib").glob("*.py")]):
+    tools = [*scripts.glob("*.py"), *(scripts / "lib").glob("*.py"),
+             *(root / ".conclave" / "automations").glob("*.py")]
+    for path in sorted(tools):
         if path == helper:
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if FORBIDDEN.search(line):
-                found.append(f"{path.relative_to(scripts).as_posix()}:{number}")
+                found.append(f"{path.relative_to(root).as_posix()}:{number}")
     return found
 
 
@@ -46,11 +50,15 @@ class OneContainment(unittest.TestCase):
     def test_a_private_copy_is_found(self):
         tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmp, True)
-        (tmp / "lib").mkdir()
-        (tmp / "lib" / "process_tree.py").write_text("CreateJobObjectW\n", encoding="utf-8")
-        (tmp / "tool.py").write_text("x = 1\nsubprocess.run(['taskkill', '/T'])\n", encoding="utf-8")
-        (tmp / "lib" / "other.py").write_text("kernel32.CreateJobObjectW(None, None)\n", encoding="utf-8")
-        self.assertEqual(offenders(tmp), ["lib/other.py:1", "tool.py:2"])
+        scripts = tmp / "scripts"
+        (scripts / "lib").mkdir(parents=True)
+        (tmp / ".conclave" / "automations").mkdir(parents=True)
+        (scripts / "lib" / "process_tree.py").write_text("CreateJobObjectW\n", encoding="utf-8")
+        (scripts / "tool.py").write_text("x = 1\nsubprocess.run(['taskkill', '/T'])\n", encoding="utf-8")
+        (scripts / "lib" / "other.py").write_text("kernel32.CreateJobObjectW(None, None)\n", encoding="utf-8")
+        (tmp / ".conclave" / "automations" / "run.py").write_text("taskkill\n", encoding="utf-8")
+        self.assertEqual(offenders(scripts), [".conclave/automations/run.py:1", "scripts/lib/other.py:1",
+                                              "scripts/tool.py:2"])
 
 
 if __name__ == "__main__":

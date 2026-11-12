@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -149,19 +150,14 @@ class Runner(unittest.TestCase):
         self.assertIn("it broke", tail)
 
     def test_a_timeout_stops_the_run_and_alerts(self):
-        killed = []
+        seen = []
 
-        class Hung:
-            pid = 0
+        def hung(argv, **kw):
+            seen.append(kw["timeout"])
+            return run.process_tree.Outcome(exit=None, stopped="time limit", seconds=60.0, strays=[])
 
-            def __init__(self, *a, **kw):
-                pass
-
-            def wait(self, timeout=None):
-                raise subprocess.TimeoutExpired("hung", timeout)
-
-        self.assertEqual(self.main("office-pass", popen=Hung, killer=killed.append), 124)
-        self.assertEqual(len(killed), 1)
+        self.assertEqual(self.main("office-pass", runner=hung), 124)
+        self.assertEqual(seen, [60])  # the task's own limit, in seconds
         self.assertTrue(self.last("office-pass")["timed_out"])
         self.assertEqual(len(self.alerts), 1)
 
@@ -186,9 +182,9 @@ class Runner(unittest.TestCase):
 
     def test_a_command_that_cannot_start_is_recorded_and_alerted(self):
         def cannot_start(*_a, **_kw):
-            raise PermissionError(13, "Access is denied")
+            raise run.process_tree.TreeError("start: Access is denied", "start", "Access is denied")
 
-        self.assertEqual(self.main("office-pass", popen=cannot_start), 126)
+        self.assertEqual(self.main("office-pass", runner=cannot_start), 126)
         outcome = self.last("office-pass")
         self.assertEqual(outcome["exit"], 126)
         self.assertIn("could not start", (self.root / outcome["log"]).read_text(encoding="utf-8"))
@@ -318,19 +314,18 @@ class RoundOneFixes(unittest.TestCase):
             self.assertNotEqual(first["log"], second["log"])
             self.assertTrue((Path(tmp) / first["log"]).exists() and (Path(tmp) / second["log"]).exists())
 
+    @staticmethod
+    def stuck(exit_code, stopped):
+        """A runner whose child ran (and stopped or not) and whose tree would not end afterwards."""
+        def runner(argv, **kw):
+            error = run.process_tree.TreeError("the tree of process 1 was still running 10 s after it was stopped")
+            error.outcome = run.process_tree.Outcome(exit=exit_code, stopped=stopped, seconds=1.0, strays=[])
+            raise error
+        return runner
+
     def test_a_failed_kill_still_records_the_timeout(self):
-        class Hung:
-            pid = 1
-            def __init__(self, *a, **kw):
-                pass
-            def wait(self, timeout=None):
-                raise subprocess.TimeoutExpired("x", timeout)
-
-        def broken_killer(proc):
-            raise subprocess.TimeoutExpired("taskkill", 60)
-
         with tempfile.TemporaryDirectory() as tmp:
-            outcome = run.execute("office-fixture", FIXTURE_TASK, tmp, popen=Hung, killer=broken_killer)
+            outcome = run.execute("office-fixture", FIXTURE_TASK, tmp, runner=self.stuck(None, "time limit"))
             self.assertEqual((outcome["exit"], outcome["timed_out"], outcome.get("cleanup_failed")), (124, True, True))
             self.assertTrue((Path(tmp) / "build" / "automations" / "office-fixture" / "last.json").exists())
             self.assertIn("could not stop", (Path(tmp) / outcome["log"]).read_text(encoding="utf-8"))
@@ -451,16 +446,13 @@ class RoundTwoFixes(unittest.TestCase):
             def wait(self, timeout=None):
                 raise subprocess.TimeoutExpired("x", timeout)
 
-        def broken_killer(proc):
-            raise OSError("taskkill failed")
-
         alerts = []
         with tempfile.TemporaryDirectory() as tmp:
             auto = Path(tmp) / ".conclave" / "automations"
             auto.mkdir(parents=True)
             (auto / "tasks.json").write_text(json.dumps(self.base()), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-fixture"], root=tmp, popen=Hung, killer=broken_killer,
+                code = run.main(["office-fixture"], root=tmp, runner=RoundOneFixes.stuck(None, "time limit"),
                                 alerter=lambda *a: alerts.append(a))
         self.assertEqual(code, 124)
         self.assertEqual(len(alerts), 1)
@@ -563,7 +555,7 @@ class RoundThreeFixes(unittest.TestCase):
 
     def test_a_launch_value_error_is_a_failed_run_and_alerted(self):
         def bad_popen(*a, **kw):
-            raise ValueError("embedded null byte")
+            raise run.process_tree.TreeError("start: embedded null byte", "start", "embedded null byte")
 
         alerts = []
         with tempfile.TemporaryDirectory() as tmp:
@@ -572,7 +564,7 @@ class RoundThreeFixes(unittest.TestCase):
             doc = {"schema_version": 1, "folder": chr(92) + "Office" + chr(92), "tasks": [FIXTURE_TASK]}
             (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-fixture"], root=tmp, popen=bad_popen, alerter=lambda *a: alerts.append(a))
+                code = run.main(["office-fixture"], root=tmp, runner=bad_popen, alerter=lambda *a: alerts.append(a))
         self.assertEqual(code, 126)
         self.assertEqual(len(alerts), 1)
 
@@ -634,6 +626,92 @@ class AlertRecord(unittest.TestCase):
         code, last = self.run_failing(refuse)
         self.assertEqual(code, 3)
         self.assertIn("bad sender", last["alert"]["error"])
+
+class SharedTree(unittest.TestCase):
+    """Each scheduled task runs in scripts/lib/process_tree.py's tree (D00 T03 §55)."""
+
+    PARENT = ("import subprocess, sys, time\n"
+              "c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'])\n"
+              "open(sys.argv[1], 'w').write(str(c.pid))\n"
+              "time.sleep(float(sys.argv[2]))\n")
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+
+    def task(self, sleep):
+        pid = self.root / "child.pid"
+        script = self.root / "parent.py"
+        script.write_text(self.PARENT, encoding="utf-8")
+        return {**FIXTURE_TASK, "command": [sys.executable, str(script), str(pid), str(sleep)]}, pid
+
+    @staticmethod
+    def alive(pid):
+        sys.path.insert(0, str(REPO / "scripts" / "tests"))
+        from test_process_tree import alive
+        return alive(pid)
+
+    def test_a_child_left_by_a_task_that_exited_0_ends_with_its_run(self):
+        task, pid = self.task(0)
+        outcome = run.execute("office-fixture", task, str(self.root))
+        self.assertEqual(outcome["exit"], 0)
+        self.assertFalse(self.alive(int(pid.read_text())))
+
+    def test_a_child_of_a_task_past_its_limit_ends_with_it(self):
+        task, pid = self.task(60)
+
+        def quick(argv, **kw):  # the real helper, with a limit of seconds instead of the task's minutes
+            return run.process_tree.run(argv, **{**kw, "timeout": 2})
+        outcome = run.execute("office-fixture", task, str(self.root), runner=quick)
+        self.assertEqual((outcome["exit"], outcome["timed_out"]), (124, True))
+        self.assertFalse(self.alive(int(pid.read_text())))
+
+    def main_with(self, runner):
+        auto = self.root / ".conclave" / "automations"
+        auto.mkdir(parents=True)
+        (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office" + chr(92),
+                                                     "tasks": [FIXTURE_TASK]}), encoding="utf-8")
+        alerts = []
+        with contextlib_redirect():
+            code = run.main(["office-fixture"], root=str(self.root), runner=runner,
+                            alerter=lambda *a: alerts.append(a) or "N1")
+        last = json.loads((self.root / "build/automations/office-fixture/last.json").read_text(encoding="utf-8"))
+        return code, last, (self.root / last["log"]).read_text(encoding="utf-8"), alerts
+
+    def test_a_tree_that_will_not_end_after_a_normal_exit_is_a_failure(self):
+        code, last, log, alerts = self.main_with(RoundOneFixes.stuck(0, None))
+        self.assertEqual((code, last["exit"], last.get("cleanup_failed"), last["timed_out"]), (125, 125, True, False))
+        self.assertIn("could not stop what the task started", log)
+        self.assertEqual(len(alerts), 1)
+
+    def test_a_tree_that_will_not_end_after_a_timeout_keeps_the_timeout(self):
+        code, last, log, alerts = self.main_with(RoundOneFixes.stuck(None, "time limit"))
+        self.assertEqual((code, last["exit"], last.get("cleanup_failed"), last["timed_out"]), (124, 124, True, True))
+        self.assertIn("could not stop what the task started", log)
+        self.assertEqual(len(alerts), 1)
+
+    def test_a_task_that_failed_keeps_its_own_code_when_its_tree_will_not_end(self):
+        code, last, _, _ = self.main_with(RoundOneFixes.stuck(4, None))
+        self.assertEqual((code, last["exit"], last.get("cleanup_failed")), (4, 4, True))
+
+    def test_run_py_finds_the_helper_in_its_own_repository(self):
+        auto = self.root / ".conclave" / "automations"
+        auto.mkdir(parents=True)
+        for name in ("run.py", "alert.py"):
+            shutil.copy(AUTO / name, auto / name)
+        (self.root / "scripts" / "lib").mkdir(parents=True)
+        for name in ("process_tree.py", "secret_store.py"):
+            shutil.copy(REPO / "scripts" / "lib" / name, self.root / "scripts" / "lib" / name)
+        task = {**FIXTURE_TASK, "command": [sys.executable, "-c", "print('ran in its tree')"]}
+        (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office" + chr(92),
+                                                     "tasks": [task]}), encoding="utf-8")
+        done = subprocess.run([sys.executable, str(auto / "run.py"), "office-fixture"], capture_output=True,
+                              text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        last = json.loads((self.root / "build/automations/office-fixture/last.json").read_text(encoding="utf-8"))
+        self.assertIn("ran in its tree", (self.root / last["log"]).read_text(encoding="utf-8"))
+
 
 class NoticeQueue(unittest.TestCase):
     """build/automations/notices.jsonl, the queue every sender records into for the weekly digest (D00 T03 §53)."""

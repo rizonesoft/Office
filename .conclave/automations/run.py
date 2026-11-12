@@ -7,11 +7,13 @@
 Task Scheduler starts this through `pythonw.exe` (install.ps1 registers every task in tasks.json with it). It
 runs the task's command from the repository root with the task's timeout, writes the combined output to
 `build/automations/<name>/<UTC>.log` (the newest 20 kept) and the outcome to `build/automations/<name>/last.json`,
-and on a non-zero exit, a timeout, or a command that cannot start (126) sends the failure email through
-alert.py. Every process it starts, and every nested launch in the tasks, carries CREATE_NO_WINDOW, so a
+and on a non-zero exit, a timeout, a command that cannot start (126) or a task whose tree cannot be stopped (125)
+records a failure notice for the weekly digest through alert.py (D00 T03 §53). Each task runs in its own process tree
+(scripts/lib/process_tree.py, D00 T03 §55), stopped at its time limit and always when it ends, so nothing a task
+started outlives its run; that tree starts with CREATE_NO_WINDOW, as does every nested launch in the tasks, so a
 scheduled run never opens a console on the desktop. Windows has no systemd
 `OnFailure=`, so this wrapper is the one place a failure is reported. Its own exit is the command's (124 on a
-timeout, or 3 when the alert could not be sent), so Task Scheduler's Last Run Result shows the failure too.
+timeout, 125 when its tree could not be stopped, or 3 when the notice could not be recorded), so Task Scheduler's Last Run Result shows the failure too.
 """
 
 from __future__ import annotations
@@ -22,7 +24,6 @@ import json
 import os
 import re
 import socket
-import subprocess
 import sys
 import tempfile
 
@@ -31,7 +32,6 @@ REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
 NAME = re.compile(r"^office-[a-z0-9-]+$")
 DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 KEEP_LOGS = 20
-NO_WINDOW = 0x08000000
 
 
 class TaskError(ValueError):
@@ -101,49 +101,65 @@ def _utc(stamp: bool = False) -> str:
     return now.strftime("%Y%m%dT%H%M%S.%fZ") + f"-{os.getpid()}" if stamp else now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _kill_tree(proc) -> None:
-    if os.name == "nt":
-        done = subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=60,
-                              creationflags=NO_WINDOW)
-        if done.returncode != 0 and proc.poll() is None:
-            raise OSError(f"taskkill exited {done.returncode}: {done.stderr.decode(errors='replace').strip()}")
-    else:
-        proc.kill()
-    proc.wait(timeout=60)
+def _process_tree():
+    """scripts/lib/process_tree.py, the repository's one contained start (D00 T03 §54, §55), loaded by path from the
+    repository this runner lives in, as review-dispatch.py loads it beside itself."""
+    path = os.path.join(REPO, "scripts", "lib", "process_tree.py")
+    if not os.path.isfile(path):  # a copy of this folder alone (the installer's own checks): only running needs it
+        return None
+    spec = importlib.util.spec_from_file_location("office_process_tree", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_kill_tree) -> dict:
-    """Run the task's command into a fresh log; returns the outcome recorded in last.json."""
+process_tree = _process_tree()
+CLEANUP_FAILED = 125  # the task ended, but what it started could not be stopped
+
+
+def execute(name: str, task: dict, root: str, runner=None) -> dict:
+    """Run the task's command into a fresh log, in its own process tree, which is stopped when the task passes its
+    time limit and always when it ends, so nothing it started outlives its run; returns the outcome recorded in
+    last.json. `runner` is process_tree.run unless a test supplies its own."""
+    if process_tree is None:
+        raise TaskError(f"{os.path.join(REPO, 'scripts', 'lib', 'process_tree.py')} is missing; a task runs in its "
+                        f"process tree")
+    runner = runner or process_tree.run
     folder = os.path.join(root, "build", "automations", name)
     os.makedirs(folder, exist_ok=True)
     log = os.path.join(folder, _utc(stamp=True) + ".log")
     outcome = {"name": name, "started": _utc(), "log": os.path.relpath(log, root).replace("\\", "/"),
                "timed_out": False}
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
-    with open(log, "wb") as out:
-        try:
-            proc = popen(resolve(task["command"]), cwd=root, stdout=out, stderr=subprocess.STDOUT,
-                         stdin=subprocess.DEVNULL, env=env, creationflags=NO_WINDOW if os.name == "nt" else 0)
-        except (OSError, ValueError) as error:  # never started: a failed run like any other, so it is alerted
-            out.write(f"run.py: could not start {task['command'][0]}: {error}\n".encode("utf-8"))
-            proc = None
+    note = None
+    try:
+        result = runner(resolve(task["command"]), cwd=root, stdout_path=log, stderr_path=log,
+                        timeout=task["timeout_minutes"] * 60, env=env)
+    except process_tree.TreeError as error:
+        if error.step is not None or error.outcome is None:  # never started: a failed run like any other
             outcome["exit"] = 126
-        if proc is not None:
-            try:
-                outcome["exit"] = proc.wait(timeout=task["timeout_minutes"] * 60)
-            except subprocess.TimeoutExpired:
+            note = f"run.py: could not start {task['command'][0]}: {error.why}"
+        else:  # it ran, and its tree would not end: a failure even when the task itself exited 0
+            result = error.outcome
+            outcome["cleanup_failed"] = True
+            note = f"run.py: could not stop what the task started: {error}"
+            if result.stopped == "time limit":
                 outcome.update(exit=124, timed_out=True)
-                try:
-                    killer(proc)
-                except (OSError, subprocess.SubprocessError) as error:  # still a timeout: recorded and alerted
-                    out.write(f"run.py: could not stop the timed-out process: {error}\n".encode("utf-8"))
-                    outcome["cleanup_failed"] = True
+            else:
+                outcome["exit"] = result.exit if result.exit not in (None, 0) else CLEANUP_FAILED
+    else:
+        if result.stopped == "time limit":
+            outcome.update(exit=124, timed_out=True)
+        else:
+            outcome["exit"] = result.exit if result.exit is not None else 1
+    if note:
+        with open(log, "a", encoding="utf-8") as fh:
+            fh.write(note + "\n")
     outcome["finished"] = _utc()
     with TaskLock(folder):
         _write_outcome(folder, outcome)
     _prune(folder)  # after the outcome is safe, and never fatal: a locked old log must not cost the alert
     return outcome
-
 
 class TaskLock:
     """An interprocess lock per task folder (msvcrt on Windows, flock elsewhere), held around every last.json read
@@ -233,7 +249,7 @@ def _alert_module():
     return module
 
 
-def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None, killer=_kill_tree) -> int:
+def main(argv: list[str], root: str = REPO, runner=None, alerter=None) -> int:
     if len(argv) != 1:
         print(__doc__.split("\n\n")[0], file=sys.stderr)
         return 2
@@ -250,7 +266,7 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
     if task is None:
         print(f"run: no task named {argv[0]} in tasks.json", file=sys.stderr)
         return 2
-    outcome = execute(argv[0], task, root, popen, killer)
+    outcome = execute(argv[0], task, root, runner)
     alert = _alert_module()
     _settle(alert, root, outcome)
     if outcome["exit"] == 0:

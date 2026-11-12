@@ -56,6 +56,7 @@ class TreeError(OSError):
         super().__init__(message)
         self.step = step
         self.why = why or message
+        self.outcome = None  # set by run() when the child ran and only its tree would not end
 
 
 def _why(exc):
@@ -474,7 +475,14 @@ def run(argv, cwd=None, stdin_path=None, stdout_path=None, stderr_path=None, tim
                     child.wait(timeout=poll)
                 except subprocess.TimeoutExpired:
                     pass  # the poll interval passed with the child still running: check the limits again
-            strays = tree.end()
+            try:
+                strays = tree.end()
+            except TreeError as error:
+                # The tree would not end: the caller still learns how the child ended and why it was stopped.
+                tree.ended = True  # leaving the block closes the job; it must not wait the same time again
+                error.outcome = Outcome(exit=None if stopped else child.poll(), stopped=stopped,
+                                        seconds=round(time.monotonic() - started, 1), strays=[])
+                raise
             # Checked once the tree is ended, so nothing is still writing: a child that floods and exits at once is
             # still over the limit.
             if stopped is None and max_bytes is not None and _too_big(paths, max_bytes):
