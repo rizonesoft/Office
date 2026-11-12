@@ -46,6 +46,11 @@ jobs:
         run: python scripts/bootstrap-tools.py --versions
       - name: Check the committed icons match their sources
         run: python scripts/build-icons.py --check
+      # The pool is what every push checks; the one-process path is the fallback where no pool can start, and a
+      # manual run times it against the pool on the same commit (D01 T02 §8).
+      - name: Check the icons drawn in one process (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        run: python scripts/build-icons.py --check --jobs 1
       - name: Validate the TODO tree
         run: python scripts/todo-graph.py validate
       - name: Check the generated plan is current
