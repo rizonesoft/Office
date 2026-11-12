@@ -33,6 +33,10 @@ A review source names a record under `docs/reviews/`, the `## Round N` heading i
 - A lesson shown to be wrong is deleted in a commit that says why.
 - No em dash or en dash appears in a lesson, as anywhere else in the repository.
 
+## Finding lessons
+
+`python scripts/lessons.py query --path <file> [--role main|reader] [--topic <word>] [--text "<words>"] [--limit N] [--why] [--json]` returns the few lessons that apply, in the same order every time (D00 T05 §2). A lesson matches when its roles include the role (`main` when not given) or are `all`, and one of its globs matches a path, or one of its topics is asked for, or its body holds every word of the text. Lessons whose glob matches come first, the most specific glob first (an exact path before a pattern, `*` last), then topic matches, then text matches; within each, the lesson with more findings behind it in the triage files, then the newer one. `--why` says what matched and how many matching lessons were not returned. The query reads `build/lessons.sqlite`, a cache it rebuilds by itself whenever a lesson or triage file changes, and it shows nothing while the store breaks a rule.
+
 ## Topics
 
 The words a lesson's `topics` may use. A new word is added here in the same commit as the first lesson that needs it.

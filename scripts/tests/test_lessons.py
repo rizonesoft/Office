@@ -5,12 +5,14 @@ docs/lessons/README.md refuses what breaks it. Each test builds its own small gi
 import contextlib
 import importlib.util
 import io
+import json
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 ROOT = SCRIPTS.parent
@@ -294,6 +296,285 @@ class WholeRun(Store):
         code, out = self.check()
         self.assertEqual(code, 1)
         self.assertIn("differs from the file name", out)
+
+
+class Indexed(Store):
+    """D00 T05 §2: the index and the query. Lessons here cite decision 1, so no commit is needed."""
+
+    def lesson(self, lesson_id, applies="*", topics="tests", roles="main", added="2026-11-01", body=None,
+               status="active", **more):
+        return self.write(body=body or f"The body of {lesson_id} says what to do.", name=lesson_id, id=lesson_id,
+                          applies=applies, topics=topics, roles=roles, added=added, status=status,
+                          source="decision-1", fix=None, **more)
+
+    def six(self):
+        self.lesson("specific-file", applies="scripts/a.py", topics="tooling")
+        self.lesson("whole-folder", applies="scripts/*.py", topics="tooling")
+        self.lesson("everything", applies="*", topics="process")
+        self.lesson("about-git", applies="scripts/lib/b.py", topics="git", body="Stage the plan before a commit.")
+        self.lesson("for-readers", applies="scripts/lib/b.py", topics="review", roles="reader",
+                    body="Quote the line a claim rests on.")
+        self.lesson("retired-one", applies="scripts/a.py", topics="tooling", status="retired",
+                    retired_by="scripts/a.py")
+
+    def ids(self, **kwargs):
+        shown, more = lessons.query(self.root, **kwargs)
+        return [lesson["id"] for lesson in shown], more
+
+    def cli(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(["query", *argv], root=self.root)
+        return code, out.getvalue(), err.getvalue()
+
+    def db(self):
+        return self.root / "build" / "lessons.sqlite"
+
+    def leftovers(self):
+        return [p.name for p in (self.root / "build").iterdir() if p.name != "lessons.sqlite"]
+
+
+class IndexBuild(Indexed):
+    def test_one_row_per_active_lesson_and_no_leftover_file(self):
+        self.six()
+        self.assertEqual(lessons.build_index(self.root), 5)
+        import sqlite3
+        db = sqlite3.connect(self.db())
+        try:
+            rows = sorted(row[0] for row in db.execute("SELECT id FROM lessons"))
+            globs = db.execute("SELECT COUNT(*) FROM globs").fetchone()[0]
+            bodies = db.execute("SELECT COUNT(*) FROM bodies").fetchone()[0]
+        finally:
+            db.close()
+        self.assertEqual(rows, ["about-git", "everything", "for-readers", "specific-file", "whole-folder"])
+        self.assertEqual((globs, bodies), (5, 5))
+        self.assertEqual(self.leftovers(), [])
+
+    def test_a_changed_lesson_is_seen_by_the_next_query_with_no_build_call(self):
+        self.six()
+        self.assertEqual(self.ids(text="Stage")[0], ["about-git"])
+        self.lesson("about-git", applies="scripts/lib/b.py", topics="git", body="Rebase before pushing, always.")
+        self.assertEqual(self.ids(text="Stage")[0], [])
+        self.assertEqual(self.ids(text="Rebase")[0], ["about-git"])
+
+    def test_added_deleted_and_retired_lessons_change_the_next_query(self):
+        self.six()
+        self.assertEqual(self.ids(topics_asked=["tooling"])[0], ["specific-file", "whole-folder"])
+        self.lesson("new-one", topics="tooling", added="2026-11-05")
+        self.assertIn("new-one", self.ids(topics_asked=["tooling"])[0])
+        (self.folder / "new-one.md").unlink()
+        self.assertNotIn("new-one", self.ids(topics_asked=["tooling"])[0])
+        self.lesson("whole-folder", applies="scripts/*.py", topics="tooling", status="retired",
+                    retired_by="scripts/a.py")
+        self.assertEqual(self.ids(topics_asked=["tooling"])[0], ["specific-file"])
+
+    def test_a_missing_or_corrupt_database_is_rebuilt(self):
+        self.six()
+        self.ids(text="Stage")
+        self.db().unlink()
+        self.assertEqual(self.ids(text="Stage")[0], ["about-git"])
+        self.db().write_bytes(b"this is not a database at all")
+        self.assertEqual(self.ids(text="Stage")[0], ["about-git"])
+
+    def test_a_failed_replace_keeps_the_earlier_database_and_leaves_no_file(self):
+        self.six()
+        self.ids(text="Stage")
+        before = self.db().read_bytes()
+        self.lesson("about-git", applies="scripts/lib/b.py", topics="git", body="Changed, so a rebuild is due.")
+        with mock.patch.object(lessons.os, "replace", side_effect=OSError(13, "the file is in use")):
+            with self.assertRaises(lessons.IndexError_):
+                lessons.query(self.root, text="Changed")
+            code, out, err = self.cli("--text", "Changed")
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("the lesson index could not be written", err)
+        self.assertEqual(self.db().read_bytes(), before)
+        self.assertEqual(self.leftovers(), [])
+
+    def test_an_invalid_store_shows_nothing_and_keeps_the_index(self):
+        self.six()
+        self.ids(text="Stage")
+        before = self.db().read_bytes()
+        cases = {"structurally broken": lambda: (self.folder / "broken.md").write_text("---\nid: broken\n---\nb\n",
+                                                                                           encoding="utf-8"),
+                 "a value rule": lambda: self.lesson("bad-topic", topics="gardening")}
+        for name, make in cases.items():
+            with self.subTest(name):
+                make()
+                code, out, err = self.cli("--text", "Stage")
+                self.assertEqual((code, out), (1, ""))
+                self.assertIn("so no lesson is shown", err)
+                self.assertTrue("missing key" in err or "gardening" in err, err)
+                self.assertEqual(self.db().read_bytes(), before)
+                for name_ in ("broken.md", "bad-topic.md"):
+                    (self.folder / name_).unlink(missing_ok=True)
+
+
+class Matching(Indexed):
+    def test_each_kind_of_match(self):
+        self.six()
+        self.assertEqual(self.ids(paths=["scripts/a.py"])[0], ["specific-file", "whole-folder", "everything"])
+        self.assertEqual(self.ids(topics_asked=["git"])[0], ["about-git"])
+        self.assertEqual(self.ids(text="plan commit")[0], ["about-git"])  # every word, in any order
+        self.assertEqual(self.ids(paths=["scripts/lib/b.py"], role="reader")[0], ["for-readers"])
+
+    def test_a_wrong_role_is_left_out_on_every_route(self):
+        self.six()
+        self.assertNotIn("for-readers", self.ids(paths=["scripts/lib/b.py"])[0])
+        self.assertEqual(self.ids(topics_asked=["review"])[0], [])
+        self.assertEqual(self.ids(text="Quote")[0], [])
+        self.assertEqual(self.ids(topics_asked=["review"], role="reader")[0], ["for-readers"])
+        self.assertEqual(self.ids(text="Quote", role="reader")[0], ["for-readers"])
+        self.lesson("for-all", roles="all", topics="review", applies="scripts/lib/b.py")
+        self.assertIn("for-all", self.ids(topics_asked=["review"])[0])
+        self.assertIn("for-all", self.ids(topics_asked=["review"], role="reader")[0])
+
+    def test_combined_and_repeated_selectors_return_each_lesson_once(self):
+        self.six()
+        found, more = self.ids(paths=["scripts/a.py", "scripts/lib/b.py"], topics_asked=["git", "tooling"],
+                               text="Stage", limit=10)
+        self.assertEqual(sorted(found), ["about-git", "everything", "specific-file", "whole-folder"])
+        self.assertEqual(len(found), len(set(found)))
+        self.assertEqual(more, 0)
+        # about-git matches by its glob, its topic and its text: once, and as a path match.
+        shown, _ = lessons.query(self.root, paths=["scripts/lib/b.py"], topics_asked=["git"], text="Stage")
+        self.assertEqual([(l["id"], l["tier"]) for l in shown if l["id"] == "about-git"], [("about-git", 0)])
+
+    def test_text_is_literal_words_never_an_expression(self):
+        self.six()
+        for text in ('"Stage', "Stage*", "Stage NEAR plan", "plan AND (commit", "col:Stage", "'; DROP TABLE lessons;--"):
+            with self.subTest(text):
+                found, _ = self.ids(text=text)
+                self.assertIn(found, (["about-git"], []))
+        self.assertEqual(self.ids(text="!!! ???")[0], [])  # no word at all matches nothing
+        self.assertEqual(self.ids(text="Stage*")[0], ["about-git"])
+        self.assertEqual(self.ids(text="Stage NEAR plan")[0], [])  # NEAR is a word the body does not hold
+
+
+class Ranking(Indexed):
+    def test_the_exact_order_holds_twice_and_across_a_rebuild(self):
+        self.lesson("a-star", applies="*", added="2026-11-09")
+        self.lesson("b-folder", applies="scripts/*.py")
+        self.lesson("c-file", applies="scripts/a.py")
+        self.lesson("d-file-newer", applies="scripts/a.py", added="2026-11-08")
+        self.lesson("e-file-same-date", applies="scripts/a.py", added="2026-11-08")
+        self.lesson("f-topic", applies="scripts/lib/b.py", topics="git")
+        self.lesson("g-text", applies="scripts/lib/b.py", topics="docs", body="A word such as zebra is rare.")
+        expected = ["d-file-newer", "e-file-same-date", "c-file", "b-folder", "a-star", "f-topic", "g-text"]
+        ask = dict(paths=["scripts/a.py"], topics_asked=["git"], text="zebra", limit=10)
+        self.assertEqual(self.ids(**ask)[0], expected)
+        self.assertEqual(self.ids(**ask)[0], expected)
+        self.db().unlink()
+        self.assertEqual(self.ids(**ask)[0], expected)
+
+    def test_evidence_from_the_triage_files_outranks_a_newer_date_and_refreshes_by_itself(self):
+        self.lesson("older", applies="scripts/a.py", added="2026-11-01")
+        self.lesson("newer", applies="scripts/a.py", added="2026-11-09")
+        self.assertEqual(self.ids(paths=["scripts/a.py"])[0], ["newer", "older"])
+        triage = self.folder / "triage" / "00-workspace"
+        triage.mkdir(parents=True)
+        (triage / "D99-T01-s1.md").write_text("round 1 finding 1: lesson:older\nround 1 finding 2: lesson:older\n"
+                                               "round 2 finding 1: one-off, a typo\n", encoding="utf-8")
+        shown, _ = lessons.query(self.root, paths=["scripts/a.py"])  # no build called: the digest covers triage
+        self.assertEqual([l["id"] for l in shown], ["older", "newer"])
+        self.assertIn("evidence 2", shown[0]["why"])
+        (triage / "D99-T01-s1.md").write_text("round 1 finding 1: enforced:scripts/a.py\n", encoding="utf-8")
+        shown, _ = lessons.query(self.root, paths=["scripts/a.py"])
+        self.assertEqual([l["id"] for l in shown], ["newer", "older"])
+        self.assertIn("evidence 0", shown[1]["why"])
+
+    def test_five_thousand_lessons_answer_in_under_two_seconds(self):
+        globs = ["scripts/a.py", "scripts/*.py", "scripts/**/*.py", "*"]
+        frontmatter = ("---\nid: {id}\napplies: {applies}\ntopics: tests\nroles: main\nsource: decision-1\n"
+                       "added: 2026-{month:02d}-{day:02d}\nstatus: active\n---\nLesson {n} body.\n")
+        for n in range(5000):
+            lesson_id = f"gen-{n:04d}"
+            applies = globs[n % 4] if n < 300 else "scripts/lib/b.py"
+            (self.folder / f"{lesson_id}.md").write_text(frontmatter.format(
+                id=lesson_id, applies=applies, month=1 + n % 12, day=1 + n % 28, n=n), encoding="utf-8")
+        triage = self.folder / "triage"
+        triage.mkdir()
+        (triage / "r.md").write_text("".join(f"f{n}: lesson:gen-0004\n" for n in range(3))
+                                     + "f: lesson:gen-0008\n", encoding="utf-8")
+        lessons.build_index(self.root)
+        import time
+        started = time.monotonic()
+        shown, more = lessons.query(self.root, paths=["scripts/a.py"])
+        elapsed = time.monotonic() - started
+        self.assertLess(elapsed, 2.0)
+        self.assertEqual(more, 295)
+        # The five most specific (the exact file), the best evidenced first, then the newest.
+        self.assertEqual([l["id"] for l in shown][:2], ["gen-0004", "gen-0008"])
+        self.assertTrue(all(l["why"].startswith("glob scripts/a.py") for l in shown))
+        self.assertEqual([l["id"] for l in shown], [l["id"] for l in lessons.query(self.root, paths=["scripts/a.py"])[0]])
+
+
+class CommandLine(Indexed):
+    def test_the_plain_and_json_forms(self):
+        self.six()
+        code, out, err = self.cli("--topic", "git")
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(out, "about-git  (decision-1)\n  Stage the plan before a commit.\n")
+        code, out, err = self.cli("--topic", "git", "--json")
+        self.assertEqual(json.loads(out), [{"id": "about-git", "source": "decision-1",
+                                            "body": "Stage the plan before a commit."}])
+
+    def test_why_names_the_reason_and_the_lessons_not_returned(self):
+        self.six()
+        code, out, err = self.cli("--path", "scripts/a.py", "--limit", "2", "--why")
+        self.assertEqual(code, 0)
+        self.assertIn("specific-file  (decision-1)\n  why: glob scripts/a.py; evidence 0\n", out)
+        self.assertIn("  why: glob scripts/*.py; evidence 0\n", out)
+        self.assertTrue(out.endswith("1 more matching lesson(s) not returned\n"))
+        self.assertNotIn("everything", out)  # it matched and was not shown: the count says so
+
+    def test_why_with_json_keeps_standard_output_one_array(self):
+        self.six()
+        code, out, err = self.cli("--path", "scripts/a.py", "--limit", "1", "--why", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out), [{"id": "specific-file", "source": "decision-1",
+                                            "body": "The body of specific-file says what to do.",
+                                            "why": "glob scripts/a.py; evidence 0"}])
+        self.assertEqual(err, "2 more matching lesson(s) not returned\n")
+
+    def test_the_edges(self):
+        self.six()
+        self.assertEqual(self.cli("--topic", "git")[1].split()[0], "about-git")  # the role defaults to main
+        self.assertEqual(self.cli("--topic", "review")[1], "")
+        for argv, fragment in ((["--role", "main"], "needs a --path"), (["--topic", "git", "--limit", "0"], "1 to 10"),
+                               (["--topic", "git", "--limit", "11"], "1 to 10"),
+                               (["--topic", "git", "--role", "principal-implementer"], "--role is one of"),
+                               (["--topic", "git", "--role", "all"], "--role is one of")):
+            with self.subTest(argv):
+                code, out, err = self.cli(*argv)
+                self.assertEqual((code, out), (2, ""))
+                self.assertIn(fragment, err)
+        self.assertEqual(self.cli("--topic", "ui"), (0, "", ""))  # no match: nothing, and not an error
+        self.assertEqual(self.cli("--topic", "ui", "--json")[:2], (0, "[]\n"))
+        self.assertEqual(self.cli("--topic", "git", "--limit", "10")[0], 0)
+
+    def test_an_empty_store_answers_with_nothing(self):
+        self.assertEqual(self.cli("--path", "scripts/x.py", "--role", "main"), (0, "", ""))
+
+    def test_the_command_end_to_end_as_a_process(self):
+        self.six()
+        scripts = self.root / "scripts"
+        shutil.copyfile(SCRIPTS / "lessons.py", scripts / "lessons.py")
+        shutil.copyfile(SCRIPTS / "lib" / "lessons.py", scripts / "lib" / "lessons.py")
+
+        def run(*argv):
+            done = subprocess.run([sys.executable, "-B", str(scripts / "lessons.py"), "query", *argv],
+                                  capture_output=True, text=True, timeout=120, encoding="utf-8")
+            return done.returncode, done.stdout, done.stderr
+        expected = [{"id": "specific-file", "source": "decision-1", "body": "The body of specific-file says what to do."},
+                    {"id": "whole-folder", "source": "decision-1", "body": "The body of whole-folder says what to do."}]
+        code, out, err = run("--path", "scripts/a.py", "--limit", "2", "--json")
+        self.assertEqual((code, json.loads(out)), (0, expected), err)
+        stamp = self.db().stat().st_mtime_ns
+        code, out, err = run("--path", "scripts/a.py", "--limit", "2", "--json")  # from the stored index
+        self.assertEqual((code, json.loads(out)), (0, expected), err)
+        self.assertEqual(self.db().stat().st_mtime_ns, stamp, "an unchanged store was indexed again")
+        code, out, err = run("--path", "scripts/a.py")
+        self.assertEqual(out.count("\n  The body of"), 3)
 
 
 if __name__ == "__main__":

@@ -1,197 +1,41 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""Check the lesson files of `docs/lessons/` against the rules of `docs/lessons/README.md` (D00 T05 §1).
+"""Check the lesson files of `docs/lessons/` and query them (D00 T05 §1 and §2; `docs/lessons/README.md`).
 
     python scripts/lessons.py check
+    python scripts/lessons.py query --path scripts/lib/tool_lock.py [--role main] [--topic tests] [--text "gate"]
+                                    [--limit 5] [--why] [--json]
 
-Every problem in every lesson is reported in one run, one line each naming the lesson; the exit is 0 when there is
-none, 1 when there is one, 2 when the lesson folder or its README cannot be read.
+`check` reports every problem in every lesson in one run, one line each naming the lesson: exit 0 when there is none,
+1 when there is one, 2 when the lesson folder or its README cannot be read.
+
+`query` returns the few lessons that apply, in one fixed order (`rank` in `scripts/lib/lessons.py`): a lesson matches
+when its roles include `--role` (default `main`) or are `all`, AND one of its globs matches a `--path`, or one of
+its topics is a `--topic`, or its body holds every word of `--text` (literal words, never an expression). It reads
+`build/lessons.sqlite`, rebuilt by itself whenever a lesson or triage file changed. Exit 0 with the lessons (none is
+not an error), 1 when the store breaks a rule or the index cannot be written (nothing is shown), 2 for arguments it
+refuses: no `--path`, `--topic` or `--text`, a `--limit` outside 1 to 10, a `--role` that is not `main` or `reader`.
 """
 import argparse
-from datetime import date
-from pathlib import Path, PurePosixPath
-import re
-import subprocess
+import json
+from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import lessons  # found through scripts/lib, put on the path just above
 
-ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-ROLES = {"main", "reader"}  # and `all`; the removed writer roles (section-writer, principal-implementer) are refused
-STATUSES = {"active", "retired"}
-MAX_BODY = 600
-DASHES = {"—": "em dash", "–": "en dash"}
-REVIEW_SOURCE = re.compile(r"^(?P<record>[^#\s]+\.md)#round-(?P<round>[1-9][0-9]{0,3})/finding-(?P<finding>[1-9][0-9]{0,3})$")
-DECISION_SOURCE = re.compile(r"^decision-(?P<number>[1-9][0-9]{0,5})$")  # bounded, so int() never fails
-SPEC = "docs/specs/2026-10-23-campaign-scope-design.md"
-GIT_SECONDS = 60
-
-
-def git(root, *args):
-    """(exit code, standard output) of a short git command in `root`."""
-    done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, timeout=GIT_SECONDS)
-    return done.returncode, done.stdout
-
-
-class Repository:
-    """What the checks ask of the repository: its files, its commits and the decisions of the campaign spec."""
-
-    def __init__(self, root):
-        self.root = Path(root)
-        code, out = git(self.root, "ls-files", "-z")
-        listed = out.split("\0") if code == 0 else []
-        # A tracked file must still be there: an unstaged deletion counts as gone.
-        self.files = [f for f in listed if f and (self.root / f).is_file()]
-        spec = self.root / SPEC
-        text = spec.read_text(encoding="utf-8") if spec.is_file() else ""
-        self.decisions = {int(m[1]) for m in re.finditer(r"(?m)^(\d+)\. \*\*", text)}
-
-    def matches(self, glob):
-        return any(PurePosixPath(f).full_match(glob) for f in self.files)
-
-    def commit_on_head(self, ref):
-        if not re.fullmatch(r"[0-9a-f]{7,40}", ref):
-            return False
-        code, _ = git(self.root, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
-        if code != 0:
-            return False
-        return git(self.root, "merge-base", "--is-ancestor", ref, "HEAD")[0] == 0
-
-
-# A review pass's heading: `## Round 3: astra (...)`, `## Completion review: ...`; the reviewer is always named.
-PASS_HEADING = re.compile(r"^## [A-Z][^:]*: [a-z0-9-]+ \(")
-
-
-def finding_in(record_text, round_number, finding):
-    """Whether the record has a `## Round N` heading with a finding numbered `finding` in that round's text. The
-    round's text runs to its `OVERALL:` line or the next pass heading, so lens headings inside it (older records put
-    `## adversarial` at the same level) stay part of it, and a heading the writer adds after it does not."""
-    block = None
-    for line in record_text.splitlines():
-        if block is None:
-            if re.match(rf"^## Round {round_number}\b", line):
-                block = []
-            continue
-        if PASS_HEADING.match(line):
-            break
-        block.append(line)
-        if line.startswith("OVERALL:"):
-            break
-    if block is None:
-        return None
-    return any(re.match(rf"^\s*{finding}\.\s", line) for line in block)
-
-
-def problems_of(lesson, repo, allowed_topics):
-    """The rule problems of one read lesson, each naming the rule."""
-    found = []
-    name = lesson["id"]
-
-    def say(rule, detail):
-        found.append(f"{name}: {rule}: {detail}")
-    for key, value in lesson.items():
-        if key != "body" and not value:
-            say("empty value", f"{key} is empty")
-    if lesson["id"] and not ID.fullmatch(lesson["id"]):
-        say("id", f"{lesson['id']!r} is not kebab-case")
-    if lesson["status"] and lesson["status"] not in STATUSES:
-        say("status", f"{lesson['status']!r} is neither active nor retired")
-    if lesson["added"]:
-        try:
-            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", lesson["added"]):
-                raise ValueError
-            date.fromisoformat(lesson["added"])
-        except ValueError:
-            say("added", f"{lesson['added']!r} is not a YYYY-MM-DD date")
-    if lesson["status"] == "retired" and not lesson.get("retired_by"):
-        say("retired_by", "a retired lesson names what now enforces it")
-    body = lesson["body"]
-    if not body:
-        say("body", "the body is empty")
-    elif re.search(r"\n\s*\n", body):
-        say("body", "the body is more than one paragraph")
-    if len(body) > MAX_BODY:
-        say("body length", f"{len(body)} characters, more than {MAX_BODY}")
-    for char, label in DASHES.items():
-        if any(char in value for value in lesson.values()):
-            say("dash", f"an {label}")
-    for key in ("applies", "topics", "roles"):
-        if lesson[key] and not lessons.items(lesson[key]):
-            say("empty value", f"{key} names nothing")
-    for word in lessons.items(lesson["topics"]):
-        if word not in allowed_topics:
-            say("topics", f"{word!r} is not in the README's Topics list")
-    roles = lessons.items(lesson["roles"])
-    for role in roles:
-        if role != "all" and role not in ROLES:
-            say("roles", f"{role!r} is not all, main or reader")
-    if "all" in roles and len(roles) > 1:
-        say("roles", "all stands alone")
-    source = lesson["source"]
-    review, decision = REVIEW_SOURCE.match(source), DECISION_SOURCE.match(source)
-    if review:
-        record = review["record"]
-        path = repo.root / record
-        if not record.startswith("docs/reviews/") or not path.is_file():
-            say("source", f"{record} is not a review record in the repository")
-        else:
-            present = finding_in(path.read_text(encoding="utf-8"), review["round"], review["finding"])
-            if present is None:
-                say("source", f"{record} has no ## Round {review['round']} heading")
-            elif not present:
-                say("source", f"round {review['round']} of {record} has no finding {review['finding']}")
-        fix = lesson.get("fix")
-        if not fix:
-            say("fix", "a review source names the commit that fixed the finding")
-        elif not repo.commit_on_head(fix):
-            say("fix", f"{fix!r} is not a commit in the history of HEAD")
-    elif decision:
-        if int(decision["number"]) not in repo.decisions:
-            say("source", f"{SPEC} has no decision {decision['number']}")
-        if lesson.get("fix"):
-            say("fix", "only a review source takes a fix commit")
-    elif source:
-        say("source", f"{source!r} is neither <record>#round-N/finding-K nor decision-<N>")
-    if lesson["status"] == "active":
-        for glob in lessons.items(lesson["applies"]):
-            if glob != "*" and not repo.matches(glob):
-                say("applies", f"{glob!r} matches no file the repository holds")
-    return found
+SPEC = lessons.SPEC
+finding_in = lessons.finding_in
 
 
 def check(root=ROOT):
     """Every problem of every lesson under `root`, one line each."""
-    root = Path(root)
-    folder = root / "docs" / "lessons"
-    readme = folder / "README.md"
-    allowed = lessons.topics(readme)
-    repo = Repository(root)
-    found, seen = [], {}
-    for path in lessons.lesson_files(folder):
-        try:
-            lesson = lessons.read(path)
-        except lessons.LessonError as error:
-            found.extend(error.problems)
-            continue
-        if lesson["id"] in seen:
-            found.append(f"{lesson['id']}: duplicate id: also {seen[lesson['id']]}")
-        seen[lesson["id"]] = path.name
-        found.extend(problems_of(lesson, repo, allowed))
-    return found
+    return lessons.check_store(root)[0]
 
 
-def main(argv=None, root=ROOT):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("check", help="check every lesson against the README's rules")
-    parser.parse_args(argv)
-    readme = Path(root) / "docs" / "lessons" / "README.md"
-    if not readme.is_file():
-        print(f"lessons: {readme} cannot be read", file=sys.stderr)
-        return 2
+def cmd_check(root):
     found = check(root)
     for problem in found:
         print(problem)
@@ -200,5 +44,63 @@ def main(argv=None, root=ROOT):
     return 1 if found else 0
 
 
+def cmd_query(args, root):
+    if not (args.path or args.topic or args.text):
+        print("lessons: query needs a --path, a --topic or --text", file=sys.stderr)
+        return 2
+    if not 1 <= args.limit <= lessons.MAX_LIMIT:
+        print(f"lessons: --limit is 1 to {lessons.MAX_LIMIT}", file=sys.stderr)
+        return 2
+    if args.role not in lessons.ROLES:
+        print(f"lessons: --role is one of {', '.join(sorted(lessons.ROLES))}", file=sys.stderr)
+        return 2
+    try:
+        shown, more = lessons.query(root, args.path or (), args.role, args.topic or (), args.text or "", args.limit)
+    except lessons.StoreInvalid as error:
+        for problem in error.problems:
+            print(problem, file=sys.stderr)
+        print(f"lessons: the store has {len(error.problems)} problem(s), so no lesson is shown; "
+              f"run python scripts/lessons.py check", file=sys.stderr)
+        return 1
+    except lessons.IndexError_ as error:
+        print(f"lessons: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        fields = ("id", "source", "body", "why") if args.why else ("id", "source", "body")
+        print(json.dumps([{key: lesson[key] for key in fields} for lesson in shown], indent=1))
+        if args.why:  # standard output stays one JSON array
+            print(f"{more} more matching lesson(s) not returned", file=sys.stderr)
+        return 0
+    for lesson in shown:
+        print(f"{lesson['id']}  ({lesson['source']})")
+        if args.why:
+            print(f"  why: {lesson['why']}")
+        print(f"  {lesson['body']}")
+    if args.why:
+        print(f"{more} more matching lesson(s) not returned")
+    return 0
+
+
+def main(argv=None, root=ROOT):
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("check", help="check every lesson against the README's rules")
+    query = sub.add_parser("query", help="the lessons that apply to a path, a topic or a text, in rank order")
+    query.add_argument("--path", action="append", help="a repository path the work touches (repeatable)")
+    query.add_argument("--role", default="main", help="who asks: main (the default) or reader")
+    query.add_argument("--topic", action="append", help="a topic of the README's list (repeatable)")
+    query.add_argument("--text", help="words every returned lesson's body holds")
+    query.add_argument("--limit", type=int, default=5, help="how many to return, 1 to 10 (default 5)")
+    query.add_argument("--why", action="store_true", help="say why each ranked where it did, and how many more matched")
+    query.add_argument("--json", action="store_true", help="print a JSON array")
+    args = parser.parse_args(argv)
+    readme = Path(root) / "docs" / "lessons" / "README.md"
+    if not readme.is_file():
+        print(f"lessons: {readme} cannot be read", file=sys.stderr)
+        return 2
+    return cmd_check(root) if args.command == "check" else cmd_query(args, root)
+
+
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     sys.exit(main())
