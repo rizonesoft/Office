@@ -60,7 +60,7 @@ Sections: 58 | Checklist items: 415
 | [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 19    |
 | [x]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 10    |
 | [x]    | D00 T04 §3  | Tool Bootstrap in CI                            | none                   | 6     |
-| [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 7     |
+| [x]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 7     |
 | [ ]    | D00 T05 §1  | Lesson Files and Their Checker                  | none                   | 9     |
 | [ ]    | D00 T05 §2  | Lesson Index and Query                          | none                   | 8     |
 | [ ]    | D00 T05 §3  | First Lessons From the Review Records           | none                   | 6     |
@@ -384,6 +384,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 73/159 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 74/159 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 519/1057 items completed (includes Commit items).
+Checklist: 520/1057 items completed (includes Commit items).

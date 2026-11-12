@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T04 \u00a74",
+  "title": "Launcher and clangd Use the Tool Folder",
+  "implementation_sha": "c7a2d47fe5deae8e6e7c50df887c30d979e7e634",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T04-s4.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_start_campaign.py\" -> Ran 35 tests, OK",
+    "pwsh scripts/start-campaign.ps1 -DryRun -> clangd: D:\\Office\\.tools\\llvm-23.1.5\\clang+llvm-23.1.5-x86_64-pc-windows-msvc\\bin\\clangd.exe",
+    "bosun run -- python scripts/run-tests.py -> Ran 1438 tests in 36 files in 723.7 s (4 at a time), 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T04-s4.md",
+    "verdict": "reconciled",
+    "candidate": "c7a2d47fe5deae8e6e7c50df887c30d979e7e634",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T04-s4.md",
+    "candidate": "3eb6903016287f1d4634f6a2211c0e3f50dd16c9",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "3eb6903016287f1d4634f6a2211c0e3f50dd16c9",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

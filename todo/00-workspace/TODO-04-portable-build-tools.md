@@ -2,7 +2,7 @@
 schema_version: 1
 id: portable-build-tools
 domain: 00-workspace
-status: active
+status: done
 title: "TODO-04 -- Portable Build Tools"
 ---
 
@@ -39,7 +39,7 @@ title: "TODO-04 -- Portable Build Tools"
 | 1 | §1 | Tool lock file and bootstrap script | -- | [x] |
 | 2 | §2 | Tool folder resolver | §1 | [x] |
 | 3 | §3 | Tool bootstrap in CI | §1 | [x] |
-| 4 | §4 | Launcher and clangd use the tool folder | §1, §2 | [ ] |
+| 4 | §4 | Launcher and clangd use the tool folder | §1, §2 | [x] |
 
 ## 1. Tool Lock File and Bootstrap Script
 
@@ -165,9 +165,12 @@ The campaign starts with the tools in place, and the C++ language server is the 
 - [x] Prove the integration by running the launcher, not by reading its source: in `scripts/tests/test_start_campaign.py`, a scratch clone with a stand-in bootstrap and host check that log their calls shows the bootstrap before the host check; a failing bootstrap still reaches the session; and the stand-in session runs `clangd` and records what ran, which is the fixture `clangd` from `--bin-dirs` while a different `clangd.exe` sits on the inherited `PATH`. Done when: those tests fail with the `PATH` preparation removed or with only the `clangd:` line printed. **Corrected 2026-11-12:** added after the plan review (gap 3, P1).
 - [x] Rewrite the second bullet of Code intelligence in `AGENTS.md`: `clangd` comes from `.tools/` after `python scripts/bootstrap-tools.py`, the launcher puts it on the session's `PATH`, and a session started any other way runs `python scripts/bootstrap-tools.py --bin-dirs` and prepends the result. Done when: the bullet no longer names Visual Studio's LLVM component as the source.
 - [x] Update decision 23 in `docs/specs/2026-10-23-campaign-scope-design.md` to cite this file's sections in place of "D03 T01 §12 and §17" for the bootstrap, keeping §12 and §17 for the build settings. Done when: the decision names `D00 T04 §1 to §4`.
-- [ ] Commit: `campaign: start with the pinned tools and the pinned clangd`
+- [x] Commit: `campaign: start with the pinned tools and the pinned clangd`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_start_campaign.py"` passes, and `pwsh scripts/start-campaign.ps1 -DryRun` prints a `clangd:` line with a path under `.tools`.
+
+> **Verified:** 2026-11-12 | §4 | c7a2d47fe5deae8e6e7c50df887c30d979e7e634
+> **Review:** `docs/reviews/d00-t04-s4.json`
 
 ## Verification
 
