@@ -6,7 +6,6 @@ Repository tooling that every later domain relies on.
 | ---- | ----- | ------ |
 | `TODO-02-licensing-and-contributions.md` | Licence, notices, contributor agreement | active |
 | `TODO-03-automations-and-keep-alive.md` | Scheduled jobs, run guard, keep-alive | active |
-| `TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews | active |
 | `TODO-07-owner-digest.md` | Owner digest follow-ups: live run, long weeks, failed sends | active |
 
 ## Completed
@@ -15,3 +14,4 @@ Repository tooling that every later domain relies on.
 | ---- | ----- | --------- |
 | `TODO-01-design-doc-tooling.md` | Design-doc and image checkers, CI | 2026-10-21 |
 | `TODO-04-portable-build-tools.md` | Pinned build tools fetched into the clone | 2026-11-12 |
+| `TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews | 2026-11-12 |
