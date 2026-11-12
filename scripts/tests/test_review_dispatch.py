@@ -54,26 +54,32 @@ FAKE_CLI = textwrap.dedent('''\
         # The reviewer starts a child that sleeps 60 s, then hangs (sleepchild) or floods stdout (floodchild).
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
         open(os.environ["FAKE_CHILD_PID"], "w").write(str(child.pid))
-        while True:
+        # Bounded (the global rules: a fake that writes in a loop has a bound): 64 MB at most, 32 times the
+        # dispatcher's limit, then it hangs as before. An unbounded flood once outlived a run and filled the scratch
+        # drive with 229 GB (2026-11-12).
+        for _ in range(1024):
             if mode == "floodchild":
                 sys.stdout.write("x" * 65536)
                 sys.stdout.flush()
             time.sleep(0.01)
+        time.sleep(60)
     if mode == "fail":
         sys.exit(3)
     if mode == "sleep":
         time.sleep(30)
     if mode == "flood":
-        while True:
+        for _ in range(1024):  # 64 MB at most, then a hang
             sys.stdout.write("x" * 65536)
             sys.stdout.flush()
             time.sleep(0.01)
+        time.sleep(60)
     if mode == "floodfile":
         with open(args[args.index("-o") + 1], "w") as out:
-            while True:
+            for _ in range(1024):  # 64 MB at most, then a hang
                 out.write("x" * 65536)
                 out.flush()
                 time.sleep(0.01)
+        time.sleep(60)
     if mode == "orphan":
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
         open(os.environ["FAKE_CHILD_PID"], "w").write(str(child.pid))

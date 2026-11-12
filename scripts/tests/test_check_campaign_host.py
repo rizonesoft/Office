@@ -1128,7 +1128,7 @@ class Probe(unittest.TestCase):
                 host_check.Host().run([sys.executable, "-c", burst], seconds=30)
         self.assertIn("wrote more than 1000000 bytes", str(caught.exception))
     def test_a_flood_of_output_is_stopped_at_the_bound(self):
-        flood = "import sys\nwhile True: sys.stdout.write('x' * 65536)"
+        flood = "import sys, time\nfor _ in range(1024): sys.stdout.write('x' * 65536)\ntime.sleep(60)"  # 64 MB at most
         with mock.patch.object(host_check, "MAX_PROBE_BYTES", 1_000_000):
             with self.assertRaises(host_check.Unreadable) as caught:
                 host_check.Host().run([sys.executable, "-c", flood], seconds=30)
