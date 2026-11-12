@@ -138,7 +138,34 @@ New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
 Add-Content -LiteralPath (Join-Path $root 'claude-calls.txt') -Value ($args -join ' ').Substring(0, 40)
 Set-Content -LiteralPath (Join-Path $root 'build/claude-campaign-guard.json') -Value '{"session_id":"s","run_file":"r"}'
 if ($env:CLAUDE_CODE_OAUTH_TOKEN) { Set-Content -LiteralPath (Join-Path $root 'token-seen.txt') -Value 'yes' }
+# What the session's own children would get for clangd: the program that runs, by its output, or none.
+$found = Get-Command clangd.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$ran = if ($found) { (& $found.Source | Out-String).Trim() } else { 'none' }
+Set-Content -LiteralPath (Join-Path $root 'clangd-ran.txt') -Value $ran
+Set-Content -LiteralPath (Join-Path $root 'session-path.txt') -Value $env:PATH
 exit 0
+"""
+
+# Stand-ins for the bootstrap and the host check, which log each call in order. The bootstrap's --bin-dirs prints
+# the folders OFFICE_FAKE_BIN_DIRS names and the problems OFFICE_FAKE_BIN_ERR names, and exits OFFICE_FAKE_BIN_EXIT.
+FAKE_BOOTSTRAP = """import os, sys
+from pathlib import Path
+root = Path(__file__).resolve().parents[1]
+with open(root / "order.txt", "a", encoding="utf-8") as log:
+    log.write("bootstrap " + " ".join(sys.argv[1:]) + "\\n")
+if sys.argv[1:] == ["--bin-dirs"]:
+    for folder in filter(None, os.environ.get("OFFICE_FAKE_BIN_DIRS", "").split(";")):
+        print(folder)
+    for problem in filter(None, os.environ.get("OFFICE_FAKE_BIN_ERR", "").split(";")):
+        print(problem, file=sys.stderr)
+    sys.exit(int(os.environ.get("OFFICE_FAKE_BIN_EXIT", "0")))
+sys.exit(int(os.environ.get("OFFICE_FAKE_BOOT_EXIT", "0")))
+"""
+FAKE_HOST_CHECK = """import sys
+from pathlib import Path
+with open(Path(__file__).resolve().parents[1] / "order.txt", "a", encoding="utf-8") as log:
+    log.write("host check\\n")
+sys.exit(0)
 """
 
 
@@ -154,7 +181,8 @@ class LauncherRunTest(unittest.TestCase):
         (self.root / "scripts").mkdir(parents=True)
         shutil.copyfile(LAUNCHER, self.root / "scripts" / "start-campaign.ps1")
         self.host_check = self.root / "scripts" / "check-campaign-host.py"
-        self.host_check.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        self.host_check.write_text(FAKE_HOST_CHECK, encoding="utf-8")
+        (self.root / "scripts" / "bootstrap-tools.py").write_text(FAKE_BOOTSTRAP, encoding="utf-8")
         # An importer that must never run: the launcher reads the env file and nothing else.
         (self.root / "scripts" / "import-secrets.py").write_text(
             "from pathlib import Path\nPath(__file__).resolve().parents[1].joinpath('importer-ran.txt').write_text('x')\n",
@@ -429,6 +457,85 @@ class LauncherRunTest(unittest.TestCase):
         self.assertFalse((self.root / "importer-ran.txt").exists())
         self.assertFalse((self.root / "build" / "campaign-launcher.json").exists())
         self.assertEqual(self.calls(), [])
+
+
+    # D00 T04 §4: the pinned tools, run for real. Two different programs stand in for two clangd builds, told
+    # apart by what they print: the pinned one is a copy of whoami, the machine's is a copy of hostname.
+
+    def clangd_fixtures(self):
+        system = Path(os.environ.get("SystemRoot") or r"C:\Windows") / "System32"
+        pinned = self.root / ".tools" / "llvm-1" / "bin"
+        machine = Path(self.tmp.name) / "machine-llvm"
+        other = self.root / ".tools" / "cmake-1" / "bin"
+        for folder in (pinned, machine, other):
+            folder.mkdir(parents=True)
+        shutil.copyfile(system / "whoami.exe", pinned / "clangd.exe")
+        shutil.copyfile(system / "hostname.exe", machine / "clangd.exe")
+        said = {name: subprocess.run([str(system / f"{name}.exe")], capture_output=True, text=True).stdout.strip()
+                for name in ("whoami", "hostname")}
+        self.env["PATH"] = str(self.bin) + os.pathsep + str(machine) + os.pathsep + self.env["PATH"]
+        return pinned, machine, other, said
+
+    def run_session(self, **env):
+        self.env.update(env)
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "clangd-ran.txt")
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        return output, (self.root / "clangd-ran.txt").read_text(encoding="utf-8").strip()
+
+    def order(self):
+        return (self.root / "order.txt").read_text(encoding="utf-8").splitlines()
+
+    def test_the_bootstrap_runs_before_the_host_check(self):
+        pinned, _, _, _ = self.clangd_fixtures()
+        self.run_session(OFFICE_FAKE_BIN_DIRS=str(pinned))
+        self.assertEqual(self.order()[:3], ["bootstrap ", "bootstrap --bin-dirs", "host check"])
+
+    def test_a_failed_bootstrap_still_starts_the_session(self):
+        pinned, _, _, _ = self.clangd_fixtures()
+        output, _ = self.run_session(OFFICE_FAKE_BOOT_EXIT="1", OFFICE_FAKE_BIN_DIRS=str(pinned))
+        self.assertIn("Build tools: the bootstrap failed (exit 1); the start goes on", output)
+        self.assertTrue(self.calls(), "no session was started")
+
+    def test_the_session_runs_the_pinned_clangd_not_the_machine_one(self):
+        pinned, machine, _, said = self.clangd_fixtures()
+        self.assertNotEqual(said["whoami"], said["hostname"])
+        output, ran = self.run_session(OFFICE_FAKE_BIN_DIRS=str(pinned))
+        self.assertEqual(ran, said["whoami"])
+        self.assertIn(f"clangd: {pinned / 'clangd.exe'}", output)
+
+    def test_after_a_partial_bootstrap_the_usable_folders_lead_and_the_problems_are_shown(self):
+        pinned, _, other, said = self.clangd_fixtures()
+        output, ran = self.run_session(OFFICE_FAKE_BIN_DIRS=f"{pinned};{other}", OFFICE_FAKE_BIN_EXIT="1",
+                                       OFFICE_FAKE_BIN_ERR="ninja 1.0 is not installed as tools.lock.json pins it")
+        self.assertEqual(ran, said["whoami"])
+        session_path = (self.root / "session-path.txt").read_text(encoding="utf-8").strip().split(";")
+        self.assertEqual(session_path[:2], [str(pinned), str(other)])
+        self.assertIn("Build tools: ninja 1.0 is not installed", output)
+        self.assertNotIn("ninja 1.0 is not installed", ";".join(session_path))
+
+    def test_without_a_pinned_clangd_the_machine_one_is_left_off_and_the_start_goes_on(self):
+        _, machine, other, _ = self.clangd_fixtures()
+        output, ran = self.run_session(OFFICE_FAKE_BIN_DIRS=str(other), OFFICE_FAKE_BIN_EXIT="1",
+                                       OFFICE_FAKE_BIN_ERR="llvm 1 is not installed as tools.lock.json pins it")
+        self.assertEqual(ran, "none")
+        self.assertIn("clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py)", output)
+        holding = [e for e in self.env["PATH"].split(os.pathsep) if e and (Path(e) / "clangd.exe").is_file()]
+        self.assertIn(str(machine), holding)
+        self.assertIn(f"{len(holding)} folder(s) holding another clangd were left off", output)
+        session_path = (self.root / "session-path.txt").read_text(encoding="utf-8")
+        self.assertNotIn(str(machine), session_path)
+        self.assertIn(str(other), session_path)
+        self.assertTrue(self.calls())
+
+    def test_a_dry_run_names_the_pinned_clangd_and_installs_nothing(self):
+        pinned, _, _, _ = self.clangd_fixtures()
+        self.env["OFFICE_FAKE_BIN_DIRS"] = str(pinned)
+        out = self.dry_run()
+        self.assertIn(f"clangd: {pinned / 'clangd.exe'}", out)
+        self.assertIn("Build tools: a real start runs python scripts/bootstrap-tools.py first.", out)
+        self.assertEqual(self.order(), ["bootstrap --bin-dirs", "host check"])
 
 
 if __name__ == "__main__":

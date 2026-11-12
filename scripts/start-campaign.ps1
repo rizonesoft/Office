@@ -159,6 +159,39 @@ if ($missing) {
     Exit-Launcher 2
 }
 
+# The pinned build tools (D00 T04 §4). The bootstrap runs before the host check, and a failure never stops a start:
+# a section that needs a tool runs the bootstrap itself and fails at its own gate. A dry run installs nothing.
+if ($DryRun) {
+    Write-Host 'Build tools: a real start runs python scripts/bootstrap-tools.py first.'
+} else {
+    python scripts/bootstrap-tools.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Build tools: the bootstrap failed (exit $LASTEXITCODE); the start goes on, and a section that needs a tool runs it again at its own gate." -ForegroundColor Yellow
+    }
+}
+# The installed tools' folders go first on this process's PATH, which the session and everything it starts inherit
+# (never the user's PATH). After a partial bootstrap --bin-dirs still prints every usable folder and exits 1: each
+# printed folder is kept, and each problem it reports is shown, never put on PATH.
+$toolDirs = @(python scripts/bootstrap-tools.py --bin-dirs 2>&1 | ForEach-Object {
+    if ($_ -is [System.Management.Automation.ErrorRecord]) { Write-Host "Build tools: $_" -ForegroundColor Yellow }
+    elseif ("$_" -and (Test-Path -LiteralPath "$_" -PathType Container)) { "$_" }
+})
+function Test-Holds([string]$Folder, [string]$Program) {
+    if (-not $Folder) { return $false }
+    try { return [System.IO.File]::Exists([System.IO.Path]::Combine($Folder, $Program)) } catch { return $false }
+}
+$env:PATH = (@($toolDirs) + @($env:PATH -split ';' | Where-Object { $_ })) -join ';'
+$pinnedClangd = @($toolDirs | Where-Object { Test-Holds $_ 'clangd.exe' })
+if ($pinnedClangd) {
+    Write-Host "clangd: $(Join-Path $pinnedClangd[0] 'clangd.exe')"
+} else {
+    # The clangd-lsp plugin finds clangd on PATH, so a machine copy must not be there for it to find instead.
+    $entries = @($env:PATH -split ';' | Where-Object { $_ })
+    $kept = @($entries | Where-Object { -not (Test-Holds $_ 'clangd.exe') })
+    $env:PATH = $kept -join ';'
+    Write-Host "clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py). $($entries.Count - $kept.Count) folder(s) holding another clangd were left off this session's PATH." -ForegroundColor Yellow
+}
+
 # The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.
 python scripts/check-campaign-host.py
 if ($LASTEXITCODE -ne 0) {
