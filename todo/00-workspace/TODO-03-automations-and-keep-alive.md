@@ -70,7 +70,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 32 | §33 | Plan groups a phase by domain | §31, §32 | [x] |
 | 33 | §35 | Weekly owner digest | §1 | [x] |
 | 34 | §36 | Operating mode measurement command | -- | [x] |
-| 35 | §37 | Operating mode rule and launcher | §36 | [ ] |
+| 35 | §37 | Operating mode rule and launcher | §36 | [x] |
 | 36 | §38 | Parallel streams design record | §37 | [ ] |
 | 37 | §39 | Parallel streams sections authored | §38 | [ ] |
 | 38 | §50 | Withdrawn sections | -- | [x] |
@@ -1067,9 +1067,12 @@ The measurement only decides something if a rule reads it. This section writes t
 - [x] State in `AGENTS.md` (Subagents) that `.conclave/operating-mode.json` names the lead model, and that the lead does the writing itself whichever model it is, with the readers and the on-call Fable worker. Done when: the section names the file. **Corrected 2026-11-12:** the plan review (gap 5) found this restoring the on-call Fable worker that the owner removed on 2026-11-11; the statement is that the lead writes everything, the hard fixes and the architecture decision records included, with only the Sonnet readers beside it, and the opening sentence of AGENTS.md (Subagents), which names the latest Opus, says the lead is the model the stored verdict names. **Corrected 2026-11-11:** this said the routing ladder applies when the stored mode orchestrates; the owner fixed working alone (decision 40), so no arm orchestrates.
 - [x] Add to `.claude/skills/process-plan/SKILL.md`, at a section boundary: measure again with `python scripts/measure-modes.py` on three ready sections when 300 sections were stamped since the stored verdict's base, or when the model a lead alias resolves to differs from the one the verdict recorded; apply the verdict and carry on; the launcher picks it up at its next start. Done when: the skill names both triggers and a test in `scripts/tests/test_skill_ci_gate.py` fails when the mention is removed. **Corrected 2026-11-12:** the plan review (gaps 1 and 4) found prose alone unproven and the lifecycle missing. The triggers are a command, `python scripts/measure-modes.py due --model <the lead session's own model id>`: exit 0 printing the reason when `query stats` shows 300 or more verified sections more than the verdict recorded at its decision, or when the given model differs from the verdict's; exit 1 when neither holds; exit 2 when the verdict or the count cannot be read. Tests cover 299 and 300, the same and a different model, and an unreadable verdict. The skill runs it at a section boundary, and when it exits 0 runs one cycle: `run` on three ready sections into a fresh work folder named for the day (`measure-modes-<date>`, resumed by the same command if interrupted), `decide --results` on that folder's `results.json`, then `clean`; with fewer than three ready sections it records the skip and checks again at the next boundary, and a refused `decide` keeps the stored verdict. A test runs two cycles on fixtures, the second replacing the verdict, and a third whose `decide` is refused leaving the second's verdict in place.
 - [x] Record the first verdict from the results of 2026-11-10 with `decide`. Done when: `.conclave/operating-mode.json` exists and the launcher's dry run shows its mode. **Corrected 2026-11-12:** those results (`docs/experiments/operating-mode-2026-11-10.json`) predate §36's `results.json` (a run's build and `fix_rounds` in place of `stages`, gate exits as numbers in fix rounds), so `decide --results <file>` reads both layouts through one converter, tested on a copy of each; the 2026-11-10 measurement's `orchestrated` arm is judged like any other and is ineligible (its third section never reached approval).
-- [ ] Commit: `campaign: let the measurement choose the lead model`
+- [x] Commit: `campaign: let the measurement choose the lead model`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_measure_modes.py"` and `-p "test_start_campaign.py"` pass, and `pwsh scripts/start-campaign.ps1 -DryRun` prints the stored mode.
+
+> **Verified:** 2026-11-12 | §37 | 39b0cec0c266b41c60b71a0778e9d35142abb12f
+> **Review:** `docs/reviews/d00-t03-s37.json`
 
 ## 38. Parallel Streams Design Record
 

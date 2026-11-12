@@ -51,7 +51,7 @@ Sections: 58 | Checklist items: 415
 | [x]    | D00 T03 §33 | Plan Groups a Phase by Domain                   | none                   | 9     |
 | [x]    | D00 T03 §35 | Weekly Owner Digest                             | none                   | 12    |
 | [x]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
-| [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
+| [x]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
 | [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
@@ -384,6 +384,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 74/159 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 75/159 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 521/1057 items completed (includes Commit items).
+Checklist: 522/1057 items completed (includes Commit items).

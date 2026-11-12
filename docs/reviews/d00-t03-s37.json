@@ -1,0 +1,86 @@
+{
+  "ref": "D00 T03 \u00a737",
+  "title": "Operating Mode Rule and Launcher",
+  "implementation_sha": "39b0cec0c266b41c60b71a0778e9d35142abb12f",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s37.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_measure_modes.py\" -> Ran 48 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_start_campaign.py\" -> Ran 35 tests, OK",
+    "pwsh scripts/start-campaign.ps1 -DryRun -> Lead model: opus, from .conclave/operating-mode.json",
+    "bosun run -- python scripts/run-tests.py -> Ran 1438 tests in 36 files, 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s37.md",
+    "verdict": "complete",
+    "candidate": "39b0cec0c266b41c60b71a0778e9d35142abb12f",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s37.md",
+    "candidate": "d17be31e2843bfbad3bd04b861d1c379e8b7642f",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "d17be31e2843bfbad3bd04b861d1c379e8b7642f",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
