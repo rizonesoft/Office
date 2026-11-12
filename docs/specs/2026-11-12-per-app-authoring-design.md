@@ -101,7 +101,7 @@ What the graph cannot show. A prerequisite list says which sections come first, 
 | I§17 shortcuts | All six apps' shortcut files | Word's file and the conflict check | I§8, I§10, I§12, I§14, I§16 |
 | S§4 ribbon chapter | The algorithm proved on Excel's Home tab | Proved on Word's Insert tab | S§8 to S§12 |
 | S§4, continued | Every app's Simplified Ribbon tabs | Word's tabs | S§8 to S§12 |
-| S§5 Backstage chapter | Every app's variants and Options categories | Word's, and how an app adds its own | S§8 to S§12 |
+| S§5 Backstage chapter | Every app's variants and Options categories | Word's; how an app adds its own | S§8 to S§12 |
 | S§6 status bar chapter | Every app's items, Excel's zoom range | The frame, Word's items and range | S§8 to S§12 |
 | S§13 accessibility chapter | The F6 cycle order per app | The shell's and Word's | S§8 to S§12 |
 | A§6 calculation engine | The function list from Excel's ribbon | The list from the standards | A§20 compares the two |
