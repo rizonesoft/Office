@@ -1372,17 +1372,24 @@ def phase_table(phase, phase_rows, domain=None):
     return table
 
 
-def author_table(missing):
-    """The `### Still to author` table (D00 T03 §31), refused like a phase table (D00 T03 §32)."""
-    table = markdown_table(["File", "Authored by", "Status"],
-                           [[f"`{item['path']}`", item["ref"], f"[{'x' if item['done'] else ' '}]"]
-                            for item in missing])
-    widest = max(missing, key=lambda item: len(item["path"]))
-    require(all(len(line) <= MAX_TABLE_ROW for line in table),
-            f"still-to-author table wraps raw md ({max(len(line) for line in table)} > {MAX_TABLE_ROW} chars); "
-            f"shorten the file name {widest['path']} (named by {widest['ref']})")
-    return table
+NOT_IN_PLAN = "### Not in the plan yet: sections still to be written"
 
+
+def author_sections(missing, rows):
+    """The table of the sections that still have TODO files to write, in plan order, each with how many (D00 T03
+    §58: the plan lists sections, never TODO files). `missing` is `to_author()`. A row over the table limit is
+    refused naming its section, as a phase table's is (D00 T03 §32); `validate` and `projection` both build it."""
+    counts = {}
+    for item in missing:
+        counts[item["ref"]] = counts.get(item["ref"], 0) + 1
+    table = markdown_table(["Status", "Reference", "Deliverable", "Files to write"],
+                           [[f"[{'x' if rows[ref].done else ' '}]", ref, rows[ref].title, str(count)]
+                            for ref, count in counts.items()])
+    for line, ref in zip(table[2:], counts):
+        require(len(line) <= MAX_TABLE_ROW,
+                f"the plan's table of sections still to be written wraps raw md ({len(line)} > {MAX_TABLE_ROW} "
+                f"chars); shorten the title of {ref}")
+    return table
 
 def _plan_tables_ok(root, rows):
     """Build every table the plan renders, grouped as projection() groups them, so a tree validate accepts always
@@ -1393,8 +1400,7 @@ def _plan_tables_ok(root, rows):
             phase_table(phase, group, folder)
     missing = to_author(root, rows)
     if missing:
-        for _, group in by_domain(missing, lambda item: item["path"]):
-            author_table(group)
+        author_sections(missing, rows)
 
 
 def projection(root=ROOT):
@@ -1431,14 +1437,12 @@ def projection(root=ROOT):
             lines.append("")
     missing = to_author(root, all_rows)
     if missing:
-        lines += ["### Still to author", "",
-                  "These TODO files do not exist yet, so their sections and checklist items are not in the totals "
-                  "above or below; each is written into the tree by the section beside it.", ""]
-        for folder, group in by_domain(missing, lambda item: item["path"]):
-            if folder is not None:
-                lines += [f"#### {config['domains'].get(folder, folder)}", ""]
-            lines += author_table(group)
-            lines.append("")
+        files = f"{len(missing)} TODO {'file is' if len(missing) == 1 else 'files are'}"
+        lines += [NOT_IN_PLAN, "",
+                  f"The sections of {files} not written yet, so they are in no phase above and in no total. They "
+                  f"join the phase tables as each file is written by the section named here, in plan order.", ""]
+        lines += author_sections(missing, all_rows)
+        lines.append("")
     total_items = sum(len(items) for items in checks.values())
     completed_items = sum(state == "x" for items in checks.values() for state, _ in items)
     ready = sum(disposition(r, all_rows) == 0 for r in rows)

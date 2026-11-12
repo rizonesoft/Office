@@ -443,22 +443,50 @@ class StillToAuthor(Tree):
         tg.graph(self.root)
         self.assertEqual(tg.to_author(self.root), [])
 
-    def test_the_plan_shows_the_block_and_the_count(self):
-        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build.",
-                            "- [ ] Author `todo/05-engine/TODO-03-text.md`: the text engine."]})
-        plan = tg.projection(self.root)
-        block = plan.split("### Still to author\n", 1)[1].split("\nProgress:", 1)[0]
-        rows = [line for line in block.splitlines() if line.startswith("| `todo/")]
-        self.assertEqual([row.split("|")[1].strip() for row in rows],
-                         ["`todo/04-platform/TODO-01-build.md`", "`todo/05-engine/TODO-03-text.md`"])
-        self.assertTrue(all(row.split("|")[2].strip() == "D00 T01 §1" and row.split("|")[3].strip() == "[ ]"
-                            for row in rows))
-        self.assertIn("| File ", block)
-        self.assertIn("These TODO files do not exist yet", block)
-        # The block sits after the last phase table and before the progress line.
-        self.assertLess(plan.index("### Phase 0"), plan.index("### Still to author"))
-        self.assertIn("ready to run now, 2 TODO files still to author (not counted here).", plan)
+    def block(self, plan):
+        return plan.split(tg.NOT_IN_PLAN + "\n", 1)[1].split("\nProgress:", 1)[0]
 
+    def section_rows(self, plan):
+        """[status, reference, deliverable, count] of each row of the block's table."""
+        return [[c.strip() for c in line.split("|")[1:5]] for line in self.block(plan).splitlines()
+                if line.startswith("| [")]
+
+    def test_the_plan_shows_the_authoring_sections_and_never_a_file(self):
+        # D00 T03 §58 (owner, 2026-11-12): the plan lists sections, never TODO files.
+        self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build.",
+                            "- [ ] Author `todo/05-engine/TODO-03-text.md`: the text engine."],
+                        2: ["- [ ] Author `todo/06-write/TODO-01-core.md`: Write."]})
+        plan = tg.projection(self.root)
+        self.assertEqual(self.section_rows(plan), [["[ ]", "D00 T01 §1", "S1", "2"], ["[ ]", "D00 T01 §2", "S2", "1"]])
+        self.assertNotIn("todo/", self.block(plan))
+        self.assertNotIn("| `todo/", plan)
+        self.assertNotIn("Still to author", plan)
+        self.assertIn("The sections of 3 TODO files are not written yet", self.block(plan))
+        self.assertIn("| Status | Reference  | Deliverable | Files to write |", self.block(plan))
+        # The block sits after the last phase table and before the progress line.
+        self.assertLess(plan.index("### Phase 0"), plan.index(tg.NOT_IN_PLAN))
+        self.assertIn("ready to run now, 3 TODO files still to author (not counted here).", plan)
+        self.assertEqual(sum(int(row[3]) for row in self.section_rows(plan)), len(tg.to_author(self.root)))
+
+    def test_the_rows_follow_plan_order(self):
+        table = "| 1 | §2 | S2 | -- | [ ] |\n| 2 | §1 | S1 | -- | [ ] |"
+        text = todo_file([(1, "S1", 0, "none", "--"), (2, "S2", 0, "none", "--")], table_override=table)
+        for path in ("todo/04-platform/TODO-01-a.md", "todo/04-platform/TODO-02-b.md"):
+            text = text.replace("- [ ] Work.\n", f"- [ ] Author `{path}`: it.\n", 1)
+        self.write(text)
+        self.assertEqual([row[1] for row in self.section_rows(tg.projection(self.root))], ["D00 T01 §2", "D00 T01 §1"])
+
+    def test_a_count_drops_as_a_file_appears_and_a_finished_section_leaves_the_table(self):
+        self.authoring({1: ["- [ ] Author `todo/00-workspace/TODO-02-b.md`: one.",
+                            "- [ ] Author `todo/00-workspace/TODO-03-c.md`: two."],
+                        2: ["- [ ] Author `todo/00-workspace/TODO-04-d.md`: three."]})
+        self.assertEqual([row[1:] for row in self.section_rows(tg.projection(self.root))],
+                         [["D00 T01 §1", "S1", "2"], ["D00 T01 §2", "S2", "1"]])
+        self.authored()  # TODO-02-b.md now exists
+        self.assertEqual([row[1:] for row in self.section_rows(tg.projection(self.root))],
+                         [["D00 T01 §1", "S1", "1"], ["D00 T01 §2", "S2", "1"]])
+        self.authored(name="TODO-03-c.md", ident="gamma")
+        self.assertEqual([row[1:] for row in self.section_rows(tg.projection(self.root))], [["D00 T01 §2", "S2", "1"]])
     def test_one_file_reads_in_the_singular(self):
         self.authoring({1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build."]})
         self.assertIn("ready to run now, 1 TODO file still to author (not counted here).", tg.projection(self.root))
@@ -468,18 +496,48 @@ class StillToAuthor(Tree):
         self.authoring({1: ["- [ ] Author `todo/00-workspace/TODO-02-b.md`: written."]})
         plan = tg.projection(self.root)
         self.assertNotIn("Still to author", plan)
+        self.assertNotIn("Not in the plan yet", plan)
+        self.assertNotIn("Files to write", plan)
         self.assertNotIn("still to author", plan)
         self.assertIn("ready to run now.", plan)
 
-    def test_a_row_wider_than_the_limit_refuses_naming_the_path(self):
+    def test_a_long_file_name_no_longer_refuses(self):
         path = "todo/04-platform/TODO-01-" + "x" * 80 + ".md"
-        self.authoring({1: [f"- [ ] Author `{path}`: too long a name."]})
-        with self.assertRaises(tg.Refused) as ctx:
-            tg.projections(self.root, sync=True)
-        self.assertIn("still-to-author table wraps raw md", str(ctx.exception))
-        self.assertIn(path, str(ctx.exception))
-        self.assertFalse((self.root / tg.PLAN).exists())
+        self.authoring({1: [f"- [ ] Author `{path}`: a long name."]})
+        tg.graph(self.root)
+        plan = tg.projections(self.root, sync=True)
+        self.assertNotIn(path, (self.root / tg.PLAN).read_text(encoding="utf-8"))
+        del plan
 
+    def test_a_title_that_fits_its_phase_row_but_not_this_table_refuses_naming_the_section(self):
+        # A phase row and this table's row differ in their other columns, so each has its own longest title. The
+        # longest one a phase row still takes is found, then shown to be refused here by validate and by the plan.
+        def tree(length):
+            for path in (self.root / "todo").rglob("*.md"):
+                path.unlink()
+            text = todo_file([(1, "T" * length, 0, "none", "--")])
+            self.write(text.replace("- [ ] Work.\n", "- [ ] Author `todo/04-platform/TODO-01-a.md`: it.\n", 1))
+
+        def refusal():
+            try:
+                tg.graph(self.root)
+                tg.projection(self.root)
+                return ""
+            except tg.Refused as error:
+                return str(error)
+        seen = {}
+        for length in range(60, 120):
+            tree(length)
+            seen[length] = refusal()
+        ours = [n for n, text in seen.items() if "sections still to be written wraps raw md" in text]
+        self.assertTrue(ours, "no title length is refused by the new table alone")
+        self.assertIn("shorten the title of D00 T01 §1", seen[ours[0]])
+        self.assertEqual(seen[ours[0] - 1], "")  # one character shorter is accepted by both tables
+        tree(ours[0])
+        with self.assertRaises(tg.Refused):
+            tg.graph(self.root)  # validate refuses it
+        with self.assertRaises(tg.Refused):
+            tg.projection(self.root)  # and so does the plan
     def test_a_stale_block_fails_the_check(self):
         self.authoring({1: ["- [ ] Author `todo/00-workspace/TODO-02-b.md`: soon."]})
         tg.projections(self.root, sync=True)
@@ -495,7 +553,10 @@ class StillToAuthor(Tree):
         stats = json.loads(r.stdout)
         self.assertEqual(stats["to_author"], len(tg.to_author()))
         plan = (REPO / tg.PLAN).read_text(encoding="utf-8")
-        self.assertEqual(plan.count("\n| `todo/"), stats["to_author"])
+        self.assertEqual(plan.count("\n| `todo/"), 0)  # D00 T03 §58: never a file in the plan
+        block = plan.split(tg.NOT_IN_PLAN + "\n", 1)[1].split("\nProgress:", 1)[0] if stats["to_author"] else ""
+        counts = [int(line.split("|")[4]) for line in block.splitlines() if line.startswith("| [")]
+        self.assertEqual(sum(counts), stats["to_author"])
 
 
 class PlanWidthInValidate(Tree):
@@ -531,15 +592,32 @@ class PlanWidthInValidate(Tree):
         self.write(todo_file([(1, "T" * 70, 0, "none", "--")]))
         self.assertEqual(self.cli("validate"), (0, ""))
 
-    def test_an_author_path_too_wide_for_its_table_is_refused_by_both_commands_alike(self):
+    def test_a_long_author_path_passes_both_commands_and_a_wide_title_is_refused_by_both_alike(self):
+        # D00 T03 §58: the plan renders no file name, so a long one is fine; the table of sections still to be
+        # written has its own width, checked by validate and by the plan alike.
         path = "todo/04-platform/TODO-01-" + "x" * 80 + ".md"
-        StillToAuthor.authoring(self, {1: [f"- [ ] Author `{path}`: too long a name."]})
+        StillToAuthor.authoring(self, {1: [f"- [ ] Author `{path}`: a long name."]})
+        self.assertEqual(self.cli("validate")[0], 0)
+        self.assertEqual(self.cli("plan", "--sync")[0], 0)
+
+        def tree(length):
+            for old in (self.root / "todo").rglob("TODO-*.md"):
+                old.unlink()
+            text = todo_file([(1, "T" * length, 0, "none", "--")])
+            self.write(text.replace("- [ ] Work.\n", "- [ ] Author `todo/04-platform/TODO-01-a.md`: it.\n", 1))
+        for length in range(60, 120):
+            tree(length)
+            try:
+                tg.graph(self.root)
+            except tg.Refused as error:
+                self.assertIn("sections still to be written wraps raw md", str(error), length)
+                break
+        else:
+            self.fail("no title was refused")
         validate, sync = self.cli("validate"), self.cli("plan", "--sync")
         self.assertEqual(validate[0], 2)
-        self.assertIn("still-to-author table wraps raw md", validate[1])
-        self.assertIn(path, validate[1])
+        self.assertIn("shorten the title of D00 T01 §1", validate[1])
         self.assertEqual(sync, validate)
-
 
 class JoinedItems(Tree):
     """A checklist box that does not start its own line is refused (D00 T04 §1, 2026-11-12: an edit ran two items
@@ -696,25 +774,16 @@ class PlanByDomain(Tree):
         self.assertEqual(str(by_validate.exception), str(by_sync.exception))
         self.assertFalse((self.root / tg.PLAN).exists())
 
-    def test_the_still_to_author_block_is_grouped_by_domain(self):
+    def test_the_sections_still_to_be_written_are_one_table_with_no_domain_headings(self):
+        # D00 T03 §58: the block lists sections, which are not grouped by the domains of the files they will write.
         StillToAuthor.authoring(self, {1: ["- [ ] Author `todo/06-write/TODO-01-core.md`: Write.",
                                            "- [ ] Author `todo/04-platform/TODO-01-build.md`: the build.",
                                            "- [ ] Author `todo/04-platform/TODO-02-shell.md`: the shell."]})
-        block = tg.projection(self.root).split("### Still to author\n", 1)[1].split("\nProgress:", 1)[0]
-        self.assertEqual([line for line in block.splitlines() if line.startswith("#### ")],
-                         ["#### 04-platform", "#### 06-write"])  # domain order, and a folder not on disk by name
-        platform, write = block.split("#### 04-platform\n", 1)[1].split("#### 06-write\n", 1)
-        cells = lambda text: [[c.strip() for c in line.split("|")[1:4]] for line in text.splitlines()
-                              if line.startswith("| `todo/")]
-        self.assertEqual(cells(platform), [["`todo/04-platform/TODO-01-build.md`", "D00 T01 §1", "[ ]"],
-                                           ["`todo/04-platform/TODO-02-shell.md`", "D00 T01 §1", "[ ]"]])
-        self.assertEqual(cells(write), [["`todo/06-write/TODO-01-core.md`", "D00 T01 §1", "[ ]"]])
-
-    def test_a_still_to_author_block_in_one_domain_has_no_domain_heading(self):
-        StillToAuthor.authoring(self, {1: ["- [ ] Author `todo/04-platform/TODO-01-build.md`: the build."]})
-        block = tg.projection(self.root).split("### Still to author\n", 1)[1]
+        block = tg.projection(self.root).split(tg.NOT_IN_PLAN + "\n", 1)[1].split("\nProgress:", 1)[0]
         self.assertNotIn("####", block)
-
+        self.assertNotIn("todo/", block)
+        self.assertEqual([[c.strip() for c in line.split("|")[1:5]] for line in block.splitlines()
+                          if line.startswith("| [")], [["[ ]", "D00 T01 §1", "S1", "3"]])
 
 class Removed(Tree):
     """A section an owner decision retired is deleted and listed in todo/removed.json (owner, 2026-11-11): the plan
