@@ -20,7 +20,7 @@ The agreements cover work whose copyright you own. If your contribution includes
 
 - Say so in the pull request, naming each such file or part, its author and its licence.
 - Third-party work is accepted only under a licence compatible with `GPL-3.0-or-later`, keeps its own notices, and is listed in [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md) in the same pull request.
-- Work written by someone else who has not signed an agreement is submitted by that person, not on their behalf.
+- That route is for work already published under such a licence by its author. Unpublished work that someone else wrote for this project (a colleague's patch, for example) is not third-party material: its author submits it and signs an agreement, and nobody submits it on their behalf.
 
 ## Where the text comes from
 
