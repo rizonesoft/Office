@@ -215,12 +215,17 @@ class LauncherRunTest(unittest.TestCase):
         return process
 
     def wait_for(self, path, seconds=60):
+        # Written, not merely created: the stand-ins create a file and then write it, and a reader between the two
+        # saw an empty file (CI run 43185835487, test_a_real_start_passes_the_stored_model).
         deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
-            if path.exists():
-                return
+            try:
+                if path.stat().st_size > 0:
+                    return
+            except OSError:
+                pass
             time.sleep(0.1)
-        self.fail(f"{path.name} did not appear within {seconds} seconds")
+        self.fail(f"{path.name} was not written within {seconds} seconds")
 
     def calls(self):
         path = self.root / "claude-calls.txt"
