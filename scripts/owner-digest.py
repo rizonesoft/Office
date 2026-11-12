@@ -463,12 +463,14 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
         # Nothing failed: a delivered digest, or one still being settled (its period is never sent again; the log
         # decides it at the next run). Nothing is sent and nothing changed.
         return 0
+    if not args.retry and not state["due"]:
+        # Owed from here until it is sent, so any failure before the send leaves the retry a digest to send.
+        state["due"] = True
+        if not stored():
+            return 1
     if unsettled:
         digest_state.supersede(state)  # the weekly digest goes out; the unsettled one is settled on its own
     if digest_state.tries_today(state, today) >= digest_state.MAX_TRIES:
-        if not args.retry and not state["due"]:
-            state["due"] = True
-            stored()
         print(f"owner-digest: {digest_state.MAX_TRIES} sends today already; the retry sends it tomorrow")
         return 0
     # The batch is captured here, before the email is composed, and claimed before it is sent: only these are marked
@@ -486,10 +488,13 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
     except alert.Refused as error:
         batch, unconfirmed = str(error), []
     since = digest_state.period_start(state, today)
-    last = state["delivered"]
-    previous = ("" if not last or last.get("confirmed", True) else
-                f"The digest of {last['at'][:10]} could not be confirmed delivered: SMTP2GO no longer holds its "
-                f"record, so it may not have reached you. This one starts where it ended.")
+    doubtful = list(state["unconfirmed"])
+    previous = ("" if not doubtful else
+                f"The digest{'s' if len(doubtful) > 1 else ''} of "
+                f"{', '.join(sorted({u['at'][:10] for u in doubtful}))} could not be confirmed delivered: SMTP2GO "
+                f"no longer holds {'their records' if len(doubtful) > 1 else 'its record'}, so "
+                f"{'they' if len(doubtful) > 1 else 'it'} may not have reached you (covering "
+                f"{'; '.join(f'{u['start']} to {u['end']}' for u in doubtful)}).")
     digest_id = uuid.uuid4().hex
     subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
                                          digest_id[:8], unconfirmed, since=since, previous=previous)
@@ -527,6 +532,8 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
     digest_state.deliver(state, email_id or "", True, state["attempt"]["at"])
+    if previous:
+        state["unconfirmed"] = [u for u in state["unconfirmed"] if u not in doubtful]  # named in a delivered digest
     stored()  # a failed write leaves `sending`, which the next run settles by the log: never a second send
     if ids:
         try:  # first the proof of delivery, in a second store, so a mark that fails cannot cause a repeat

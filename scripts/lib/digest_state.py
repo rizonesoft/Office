@@ -15,8 +15,11 @@ one digest run at a time.
   its own, and one found not sent makes `missed_from` its start, so its period is reported again.
 - `missed_from`: the earliest start of a period found not delivered after a later digest went out, or null; the next
   digest reaches back to it.
+- `unconfirmed`: attempts the log could no longer decide (past `alert.SETTLE_DAYS`), each `{"at", "start", "end"}`:
+  counted delivered, and named in the next digest that is delivered, then dropped.
 - `tries`: `{local date: sends that day}`, so no day takes more than MAX_TRIES sends, across restarts.
-- `due`: true when a weekly run could not send (the day's sends were spent); the retry sends it the next day.
+- `due`: true from the moment a weekly run starts until its digest is sent, so a run that fails before the send (a
+  notice queue that cannot be claimed, the day's sends spent) leaves the retry a digest to send.
 
 Every write is a temporary file then a replace. Stdlib only.
 """
@@ -33,7 +36,7 @@ STATE = os.path.join("build", "automations", "owner-digest.json")
 LOCK = os.path.join("build", "automations", "owner-digest.lock")
 MAX_TRIES = 4  # sends on one local day, the weekly run's included
 FIRST_DAYS = 7  # with nothing delivered yet, the first period starts this many days before the first attempt
-KEYS = {"delivered", "attempt", "open", "missed_from", "tries", "due"}
+KEYS = {"delivered", "attempt", "open", "missed_from", "unconfirmed", "tries", "due"}
 
 
 class StateError(Exception):
@@ -41,7 +44,8 @@ class StateError(Exception):
 
 
 def fresh() -> dict:
-    return {"delivered": None, "attempt": None, "open": [], "missed_from": None, "tries": {}, "due": False}
+    return {"delivered": None, "attempt": None, "open": [], "missed_from": None, "unconfirmed": [], "tries": {},
+            "due": False}
 
 
 def load(root) -> dict:
@@ -57,7 +61,8 @@ def load(root) -> dict:
     except ValueError:
         raise StateError(f"{STATE.replace(os.sep, '/')} is not JSON") from None
     if (not isinstance(data, dict) or set(data) != KEYS or not isinstance(data["tries"], dict)
-            or not isinstance(data["open"], list) or not all(isinstance(a, dict) for a in data["open"])):
+            or not all(isinstance(data[k], list) and all(isinstance(a, dict) for a in data[k])
+                       for k in ("open", "unconfirmed"))):
         raise StateError(f"{STATE.replace(os.sep, '/')} is not a delivery record")
     for part in ("delivered", "attempt"):
         if data[part] is not None and not isinstance(data[part], dict):
@@ -153,14 +158,13 @@ def settle(state: dict, ask, now: datetime.datetime, young_minutes: int, settle_
             else:
                 state["open"].remove(attempt)
                 state["missed_from"] = min(filter(None, [state["missed_from"], attempt["start"]]))
-        else:  # expired: no evidence can come any more
+        else:  # expired: no evidence can come any more; that digest itself is named in the next one
             said.append(f"the digest of {day} could not be confirmed; counted delivered, and said so")
+            state["unconfirmed"].append({"at": attempt["at"], "start": attempt["start"], "end": attempt["end"]})
             if current:
                 deliver(state, email_id="", confirmed=False, at=attempt["at"])
             else:
                 state["open"].remove(attempt)
-                if state["delivered"]:
-                    state["delivered"]["confirmed"] = False
     return said
 
 
@@ -174,10 +178,12 @@ def _judge(attempt, ask, now, young_minutes, settle_days, refused) -> str:
         answer = None  # the log cannot be read now: asked again at the next run, unless its history has passed
     if answer == "sent":
         return "sent"
-    if answer == "not-sent" or (answer == "absent" and age > datetime.timedelta(minutes=young_minutes)):
-        return "failed"
+    if answer == "not-sent":
+        return "failed"  # rejected or bounced: the log's own record of a failure
     if age > datetime.timedelta(days=settle_days):
-        return "expired"
+        return "expired"  # past the log's history its silence proves nothing, so an absence is not a failure
+    if answer == "absent" and age > datetime.timedelta(minutes=young_minutes):
+        return "failed"
     return "wait"  # pending, young and absent, or the log unreadable
 
 

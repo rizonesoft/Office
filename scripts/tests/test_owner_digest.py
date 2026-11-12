@@ -559,7 +559,8 @@ class Delivery(Send):
     def put(self, state):
         path = self.root / "build/automations/owner-digest.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        full = {"delivered": None, "attempt": None, "open": [], "missed_from": None, "tries": {}, "due": False}
+        full = {"delivered": None, "attempt": None, "open": [], "missed_from": None, "unconfirmed": [], "tries": {},
+                "due": False}
         full.update(state)
         path.write_text(json.dumps(full), encoding="utf-8")
 
@@ -616,11 +617,12 @@ class Delivery(Send):
 
                 def second_fails(root, state):
                     calls.append(1)
-                    if len(calls) == 2:  # the write after the send: as if the process died there
+                    if len(calls) == 3:  # after the owed mark and the attempt: the write after the send dies
                         raise OSError(5, "killed")
                     return real(root, state)
                 with mock.patch.object(digest.digest_state, "save", side_effect=second_fails):
                     self.go()
+                self.assertEqual(len(self.sends), 1, "the send itself went out")
                 self.assertEqual(self.state()["attempt"]["stage"], "sending")
                 self.activity = [{"event": "delivered", "email_id": "e1", "subject": self.sends[0]["subject"]}]
                 self.assertEqual(self.go("--retry")[0], 0)
@@ -640,6 +642,7 @@ class Delivery(Send):
             ([{"event": "processed", "email_id": "e", "subject": subject}], {"hours": 2}, "unsure", False),
             (OSError("down"), {"hours": 2}, "unsure", False),
             (OSError("history gone"), {"days": 6}, None, False),
+            ([], {"days": 7}, None, False),  # round 1: past the log's history an absence proves nothing
         ]
         for events, age, stage, resent in cases:
             with self.subTest(events=str(events)[:40], age=age):
@@ -731,13 +734,47 @@ class Delivery(Send):
         self.assertIn(f"since {TODAY.isoformat()}", self.since_line(self.sends[1]))
 
     def test_a_section_stamped_on_the_boundary_day_is_reported(self):
-        rows = {}
-        found = digest.verified_since(self.root, rows, TODAY, since=TODAY)
-        self.assertEqual(found, [])
-        with mock.patch.object(digest, "verified_since", wraps=digest.verified_since) as spy:
-            self.go()
-        self.assertEqual(spy.call_args[0][3], TODAY - datetime.timedelta(days=7))
+        # A receipt holds only its date, so the day a delivered period ended is inside the next one.
+        (self.root / "r.json").write_text(json.dumps({"date": TODAY.isoformat()}), encoding="utf-8")
+        row = types.SimpleNamespace(done=True, receipt="r.json", ref="D00 T09 §9", title="Stamped on the boundary")
+        self.put({"delivered": {"start": "2026-11-09", "end": TODAY.isoformat(), "token": "t", "email_id": "e",
+                                "at": "2026-11-16T07:00:00Z", "confirmed": True}})
+        real = digest.verified_since
+        with mock.patch.object(digest, "verified_since",
+                               side_effect=lambda root, rows, today, since=None: real(root, {"x": row}, today, since)):
+            self.go(today=TODAY + datetime.timedelta(days=7))
+        self.assertIn("D00 T09 §9 Stamped on the boundary", self.sends[0]["text_body"])
+        self.assertEqual(real(self.root, {"x": row}, TODAY + datetime.timedelta(days=7),
+                              TODAY + datetime.timedelta(days=1)), [])  # the day after the boundary leaves it out
 
+    def test_a_weekly_run_that_fails_before_its_send_is_sent_by_the_retry(self):
+        # Round 1: the notices could not be claimed, so nothing was recorded and the retry saw nothing to do.
+        self.go()
+        Notices.queue(self, 1)
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert, "claim_notices", side_effect=alert.Refused("the queue is locked")), \
+                mock.patch.object(digest, "load_alert", return_value=alert):
+            code, _, _ = self.run_main([], opener=self.opener, today=TODAY + datetime.timedelta(days=7))
+        self.assertEqual((code, len(self.sends)), (1, 1))
+        self.assertTrue(self.state()["due"])
+        self.assertEqual(self.go("--retry", today=TODAY + datetime.timedelta(days=7))[0], 0)
+        self.assertEqual(len(self.sends), 2)
+        self.assertFalse(self.state()["due"])
+
+    def test_an_older_attempt_that_expires_is_named_by_its_own_date(self):
+        # Round 1: the latest, confirmed delivery was questioned instead of the older digest that expired.
+        old = self.attempt("unsure", {"days": 6}, start="2026-11-02", end="2026-11-09")
+        self.put({"open": [old], "delivered": {"start": "2026-11-09", "end": "2026-11-16", "token": "t",
+                                               "email_id": "e", "at": self.ago(days=1), "confirmed": True}})
+        self.activity = OSError("history gone")
+        self.go(today=TODAY + datetime.timedelta(days=7))
+        body = " ".join(self.sends[0]["text_body"].split())
+        self.assertIn(f"The digest of {old['at'][:10]} could not be confirmed delivered", body)
+        self.assertIn("covering 2026-11-02 to 2026-11-09", body)
+        self.assertTrue(self.state()["delivered"]["confirmed"])
+        self.assertEqual(self.state()["unconfirmed"], [])  # named in a delivered digest, so not again
+        self.go(today=TODAY + datetime.timedelta(days=14))
+        self.assertNotIn("could not be confirmed delivered", self.sends[1]["text_body"])
     def test_an_unsure_period_is_not_sent_again_and_a_missed_one_is(self):
         self.put({"attempt": self.attempt("unsure", {"minutes": 5}, start="2026-11-02", end="2026-11-09")})
         self.activity = []
