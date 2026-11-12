@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T03 \u00a754",
+  "title": "One Process-Tree Containment for Every Tool",
+  "implementation_sha": "bf906a62988234db1cb8e53578b5e01d9146eff7",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s54.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_process_tree.py\" -> Ran 16 tests, OK",
+    "python scripts/run-tests.py -p test_one_containment.py -> OK",
+    "bosun run -- python scripts/run-tests.py -> Ran 1329 tests in 34 files in 499.8 s (4 at a time), 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s54.md",
+    "verdict": "complete",
+    "candidate": "bf906a62988234db1cb8e53578b5e01d9146eff7",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s54.md",
+    "candidate": "2ea2c109e696ac214b1c7dc38814bbd61e1b56b6",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "2ea2c109e696ac214b1c7dc38814bbd61e1b56b6",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

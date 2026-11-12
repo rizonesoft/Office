@@ -75,7 +75,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 37 | §39 | Parallel streams sections authored | §38 | [ ] |
 | 38 | §50 | Withdrawn sections | -- | [x] |
 | 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
-| 40 | §54 | One process-tree containment for every tool | §36 | [ ] |
+| 40 | §54 | One process-tree containment for every tool | §36 | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1190,9 +1190,12 @@ Filed 2026-11-11 while building §36. The repository starts children in a contai
 - [x] Replace the job helpers and `kill_tree` in `scripts/review-dispatch.py` with the helper, keeping its output-size watch and its outcomes (`timed out`, `returned more than ... bytes`, `could not start`). Done when: `test_review_dispatch.py` passes and the file calls no `CreateJobObjectW`. **Corrected 2026-11-12:** the dispatcher names the failed start step in its outcome (`could not start: assign to job: ...`) and its tests force each step to fail; the helper's `TreeError` therefore carries the step (`create job`, `configure job`, `start`, `assign to job`, `resume`), and those tests force the helper's steps, so every outcome string the dispatcher records today is kept.
 - [x] Replace the job object and `taskkill /T /F` in `scripts/run-tests.py` with the helper. Done when: `test_run_tests.py` passes, including its timeout test, and the file calls no `taskkill`.
 - [x] Add `scripts/tests/test_one_containment.py`, which fails when any file under `scripts/` other than `scripts/lib/process_tree.py` calls `CreateJobObjectW` or runs `taskkill`. Done when: it fails on today's tree before the three moves and passes after them. **Corrected 2026-11-12:** the plan review (gap 1) found `taskkill` also in `scripts/start-campaign.ps1` and in three test files, which this section does not move. The check covers the Python tools that contain a child they start, `scripts/*.py` and `scripts/lib/*.py`; it names as outside its scope, with the reason in its docstring, the launcher's `-Stop` (it ends another, already running launcher's tree by its recorded process id, which no job of this process holds) and the test files' teardown of processes a test started through the tool under test.
-- [ ] Commit: `tools: one process-tree containment for every tool`
+- [x] Commit: `tools: one process-tree containment for every tool`
 
 **Test checkpoint:** `python scripts/run-tests.py -p "test_process_tree.py"`, `-p "test_check_campaign_host.py"`, `-p "test_review_dispatch.py"`, `-p "test_run_tests.py"` and `-p "test_one_containment.py"` pass.
+
+> **Verified:** 2026-11-12 | §54 | bf906a62988234db1cb8e53578b5e01d9146eff7
+> **Review:** `docs/reviews/d00-t03-s54.json`
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
