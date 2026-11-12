@@ -64,13 +64,17 @@ class Pool(unittest.TestCase):
         self.assertGreater(count, 400)
 
     def test_the_pool_draws_what_this_process_draws(self):
-        wanted = [(d.icon_svg("write", "sm"), 16, 16, None), (d.icon_svg("grid", "lg"), 48, 48, None),
-                  (d.icon_svg(d.SUITE, "md"), 32, 32, "#ffffff")]
+        # 25 distinct rasters: more than three of the chunks of 8 the pool hands out, so two workers each draw some
+        # and the results come back from separately completed chunks.
+        wanted = [(d.drawing_for(key, px), px, px, None) for key in d.APPS for px in (16, 20, 24, 32)]
+        wanted.append((d.icon_svg(d.SUITE, "md"), 32, 32, "#ffffff"))
+        self.assertEqual(len(set(wanted)), 25)
         drawn = build_icons.draw_all(wanted, 2)
         self.assertEqual(list(drawn), wanted)
         for request in wanted:
-            self.assertEqual(drawn[request], build_icons.svg_raster.svg_to_png(request))
-            self.assertEqual(drawn[request], build_icons.render(*request))
+            self.assertEqual(drawn[request], build_icons.svg_raster.svg_to_png(request), request[1:])
+        self.assertEqual(len({bytes(data) for data in drawn.values()}), 25)  # no raster handed back for another
+        self.assertEqual(drawn[wanted[0]], build_icons.render(*wanted[0]))
 
     def test_a_raster_that_is_not_a_png_or_is_the_wrong_size_is_refused_before_assembly(self):
         for bad in (b"not a png at all", png(7)):
