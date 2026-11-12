@@ -758,12 +758,17 @@ class DeliveryEvidence(unittest.TestCase):
                 with self.assertRaises(alert.Refused):
                     self.ask(answer)
 
-    def settle(self, answer, age):
+    def settle(self, answer, age, evidence=False):
         import datetime
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
+        scratch = mock.patch.dict(os.environ, {"OFFICE_SCRATCH": str(Path(tmp.name) / "scratch")})
+        scratch.start()
+        self.addCleanup(scratch.stop)
         notice = alert.record_notice("run.py", "s", "b", tmp.name)
         alert.claim_notices([notice], "d1", tmp.name, self.SUBJECT)
+        if evidence:
+            alert.record_sent("d1", "E1")
         claimed_at = alert.claimed_notices(tmp.name)[0]["claimed"]["at"]
         now = datetime.datetime.strptime(claimed_at, "%Y-%m-%dT%H:%M:%SZ").replace(
             tzinfo=datetime.timezone.utc) + age
@@ -779,16 +784,20 @@ class DeliveryEvidence(unittest.TestCase):
     def test_settling_by_what_the_log_says(self):
         import datetime
         day, hour = datetime.timedelta(days=1), datetime.timedelta(hours=2)
-        cases = {  # answer, age: (outcome counted, pending, still claimed)
-            ("sent", day): ("confirmed", 0, 0), ("not-sent", day): ("released", 1, 0),
-            ("absent", day): ("released", 1, 0), ("absent", 6 * day): ("expired", 0, 0),
-            ("pending", day): ("kept", 0, 1), ("not-sent", datetime.timedelta(minutes=5)): ("kept", 0, 1),
-            ("pending", 6 * day): ("expired", 0, 0), ("not-sent", 6 * day): ("expired", 0, 0),
-            ("sent", 6 * day): ("confirmed", 0, 0),
+        cases = {  # answer, age, the digest's own record of acceptance: (outcome counted, pending, still claimed)
+            ("sent", day, False): ("confirmed", 0, 0), ("not-sent", day, False): ("released", 1, 0),
+            ("not-sent", datetime.timedelta(minutes=5), True): ("released", 1, 0),  # a bounce decides at any age
+            ("not-sent", 6 * day, True): ("released", 1, 0),
+            ("absent", day, False): ("released", 1, 0), ("absent", datetime.timedelta(minutes=5), False): ("kept", 0, 1),
+            ("absent", day, True): ("kept", 0, 1),  # accepted, not yet in the log: wait, a bounce may still come
+            ("pending", day, True): ("kept", 0, 1), ("pending", day, False): ("kept", 0, 1),
+            ("pending", 6 * day, True): ("confirmed", 0, 0),  # the log can no longer decide: the record does
+            ("pending", 6 * day, False): ("expired", 0, 0), ("absent", 6 * day, False): ("expired", 0, 0),
+            ("sent", 6 * day, False): ("confirmed", 0, 0),
         }
-        for (answer, age), (outcome, pending, claimed) in cases.items():
-            with self.subTest(answer=answer, age=age):
-                counts, now_pending, now_claimed = self.settle(answer, age)
+        for (answer, age, evidence), (outcome, pending, claimed) in cases.items():
+            with self.subTest(answer=answer, age=age, evidence=evidence):
+                counts, now_pending, now_claimed = self.settle(answer, age, evidence)
                 self.assertEqual(counts[outcome], 1)
                 self.assertEqual((len(now_pending), len(now_claimed)), (pending, claimed))
                 if outcome == "expired":  # neither sent again nor dropped: kept, named once by the next digest

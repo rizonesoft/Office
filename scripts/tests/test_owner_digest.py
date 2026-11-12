@@ -599,6 +599,28 @@ class Notices(Send):
         code, _, fourth = self.run_main([])
         self.assertNotIn("could not be confirmed", fourth[0]["text_body"])  # and never again
 
+    def test_an_unconfirmed_notice_once_delivered_is_never_delivered_again(self):
+        # Reconciliation review 7: the digest that carries an unconfirmed notice claims it like any other.
+        ids = self.queue(1)
+        self.interrupted_send()
+        self.age_claims(hours=24 * 6)
+        self.activity = OSError("SMTP2GO no longer holds it")
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")), \
+                mock.patch.object(digest, "load_alert", return_value=alert):
+            code, _, carried = self.run_main([])  # it goes out in full, labelled, and the mark fails
+        self.assertEqual(code, 1)
+        self.assertIn("could not be confirmed delivered", " ".join(carried[0]["text_body"].split()))
+        self.age_claims(hours=24 * 6)
+        code, out, after = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("could not be confirmed", after[0]["text_body"])
+        self.assertNotIn("Notices since the last digest", after[0]["text_body"])
+        self.assertIn("1 confirmed sent", out)
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+
     def test_another_digest_with_the_same_counts_is_never_taken_as_the_evidence(self):
         # Reconciliation review 4: subjects repeat week to week, so each digest's subject carries its own id.
         ids = self.queue(1)

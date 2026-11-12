@@ -205,20 +205,22 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
         except (TypeError, ValueError):
             age = datetime.timedelta(days=SETTLE_DAYS + 1)  # a claim with no readable time can never be settled
         try:
-            answer = ask(subject, since) if subject and since else "pending"
+            answer = ask(subject, since) if subject and since else "unreadable"
         except Refused:
+            answer = "unreadable"
+        expired = age > datetime.timedelta(days=SETTLE_DAYS)
+        # Within the log's history the log alone decides: delivered, or rejected and bounced, settle the claim, and
+        # anything else (in flight, unreadable, or absent while the digest's own record says SMTP2GO accepted it, or
+        # while the log may still lag the send) waits for the next settlement, so a late bounce is still seen. Only
+        # once the log can no longer decide does the digest's own record of acceptance count as delivered.
+        if answer in ("sent", "not-sent"):
+            pass
+        elif expired:
+            answer = "sent" if sent_evidence(digest) else "expired"
+        elif answer == "absent" and not sent_evidence(digest) and age >= datetime.timedelta(minutes=YOUNG_MINUTES):
+            answer = "not-sent"  # never reached SMTP2GO at all
+        else:
             answer = "pending"
-        # The log decides when it can: delivered, or rejected and bounced. Where it is silent (absent, in flight,
-        # unreadable, or past its history), the digest's own record that SMTP2GO accepted it, written before its mark
-        # failed, decides; without that record an absent email is one that was never sent.
-        if answer in ("absent", "pending") and sent_evidence(digest):
-            answer = "sent"
-        elif answer == "absent":
-            answer = "not-sent"
-        if answer == "not-sent" and age < datetime.timedelta(minutes=YOUNG_MINUTES):
-            answer = "pending"  # the log may lag the send by minutes
-        if answer == "not-sent" and age > datetime.timedelta(days=SETTLE_DAYS):
-            answer = "pending"  # past the log's history an empty answer proves nothing
         if answer == "sent":
             mark_reported(ids, root)
             clear_sent(digest)
@@ -406,10 +408,13 @@ def claim_notices(ids, digest: str, root: str = REPO, subject: str | None = None
     wanted, now = set(ids), datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def change(notice):
-        if notice["id"] in wanted and not notice.get("reported") and not notice.get("claimed"):
+        if notice["id"] in wanted and not notice.get("reported") and (not notice.get("claimed")
+                                                                       or notice.get("unconfirmed")):
             # The digest's subject is kept with the claim, written before the send, so a later digest can ask the mail
-            # service whether that email went out (D00 T03 §53, the delivery evidence).
+            # service whether that email went out (D00 T03 §53, the delivery evidence). An unconfirmed notice this
+            # digest carries is claimed by it like any other, so the same proof and settlement cover it.
             notice["claimed"] = {"by": digest, "at": now, "subject": subject}
+            notice["unconfirmed"] = False
             notice["attempts"] = int(notice.get("attempts") or 0) + 1
             return True
         return False
