@@ -35,6 +35,8 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 
 ## 1. Digest Tells a Live Run From an Abandoned Guard
 
+> **Started:** 2026-11-12T09:30:39Z
+
 Filed 2026-11-11 from the completion review of T03 §35 (`docs/reviews/00-workspace/D00-T03-s35-completion.md`, round 2, finding 1, P2). T03 §35 reports `Running` while `build/claude-campaign-guard.json` exists, but a session that crashed leaves its guard in place for the launcher's handover (`scripts/campaign_guard.py`), and an `end` interrupted after its marker leaves one too. This section reports a run as running only when the guard's session shows life.
 
 **Phase:** 0
@@ -45,7 +47,7 @@ Filed 2026-11-11 from the completion review of T03 §35 (`docs/reviews/00-worksp
 
 1. Read the guard as `campaign_guard.py` reads it. Done when: an ended, an abandoned and a live guard each report their own state.
 
-- [ ] Ask `python scripts/campaign_guard.py whoami` (or the function behind it) from `scripts/owner-digest.py` instead of testing the guard file's existence, and report `Running` only for an open guard whose state file shows a heartbeat or a hook call in the last hour, `Stalled since <time>` for an open guard without one, and the run file's own state for an ended guard. Done when: tests in `scripts/tests/test_owner_digest.py` cover a live, a stalled and an ended guard.
+- [ ] Ask `python scripts/campaign_guard.py whoami` (or the function behind it) from `scripts/owner-digest.py` instead of testing the guard file's existence, and report `Running` only for an open guard whose state file shows a heartbeat or a hook call in the last hour, (**Corrected 2026-11-12:** the state file records no such time, and the heartbeat fires only while the session is idle and the Stop hook only when a turn ends, so a session busy for an hour would read stalled. `campaign_guard.py` gains `liveness(root, now)`: `health` and the Stop hook write `seen_at` into the state file, and a run's last sign of life is the newer of `seen_at` and the newest commit on `HEAD` since the guard's `job_created_at`; the digest asks that function, and a test shows a busy session whose commits keep it `Running`) `Stalled since <time>` for an open guard without one, and the run file's own state for an ended guard. Done when: tests in `scripts/tests/test_owner_digest.py` cover a live, a stalled and an ended guard.
 - [ ] Report `Unknown` with the reason when the guard or its state cannot be read. Done when: a test with a malformed guard shows it.
 - [ ] Commit: `automations: the digest tells a live run from an abandoned guard`
 
