@@ -1160,6 +1160,23 @@ class Upkeep(Indexed):
         self.assertEqual([p.name for p in lessons.triage_path(self.root, RECORD2).parent.iterdir()],
                          ["D99-T02-s1.md"])  # no temporary file left
 
+    def test_deleting_a_lesson_clears_it_from_other_lessons_apart_keys(self):
+        # Round 1: a deleted lesson stayed named in another's `apart`, and the store then failed its own check.
+        self.lesson("first", applies="scripts/a.py", body=self.words(1), apart="second, third")
+        self.lesson("second", applies="scripts/a.py", body=self.words(2))
+        self.lesson("third", applies="scripts/a.py", body=self.words(3))
+        self.assertEqual(self.reassign("second", "--to", "one-off", "no", "longer", "useful", "--delete")[0], 0)
+        self.assertEqual(lessons.read(self.folder / "first.md")["apart"], "third")
+        self.assertEqual(self.report("--check")[0], 0)
+        self.assertEqual(self.reassign("third", "--to", "lesson:first", "--delete")[0], 0)
+        first = lessons.read(self.folder / "first.md")
+        self.assertNotIn("apart", first)
+        self.assertEqual(first["body"], self.words(1))  # the body, where the word apart could also stand, is untouched
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())
+        self.assertEqual(sorted(p.name for p in self.folder.glob("*") if p.is_file()), ["README.md", "first.md"])
+
     def test_reassign_refuses_what_does_not_exist(self):
         self.lesson("keeper", applies="scripts/a.py")
         for argv, fragment in ((["ghost", "--to", "lesson:keeper"], "no lesson 'ghost' to reassign"),

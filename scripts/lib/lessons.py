@@ -869,7 +869,8 @@ def report(root):
 def reassign(root, lesson_id, disposition, delete=False):
     """Rewrite every `lesson:<lesson_id>` triage line to `disposition` (`lesson:<other>` when merging, `enforced:<path>`
     when a check replaced the lesson, `one-off <reason>` when it taught nothing), each triage file through a temporary
-    file and a replace, and with `delete` remove the lesson file. Returns how many lines changed. ValueError when the
+    file and a replace, and with `delete` remove the lesson file and take its id out of every other lesson's `apart`
+    key. Returns how many triage lines changed. ValueError when the
     lesson or the target does not exist or the disposition is not one of the three."""
     root = Path(root)
     folder = root / "docs" / "lessons"
@@ -904,14 +905,35 @@ def reassign(root, lesson_id, disposition, delete=False):
             else:
                 rewritten.append(line)
         if rewritten != lines:
-            fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-            try:
-                with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
-                    handle.write("\n".join(rewritten))
-                os.replace(tmp, path)
-            except BaseException:
-                Path(tmp).unlink(missing_ok=True)
-                raise
+            _replace_text(path, "\n".join(rewritten))
     if delete:
+        # Another lesson that kept itself `apart` from this one must not be left naming a file that is gone.
+        for path in lesson_files(folder):
+            if path.stem == lesson_id:
+                continue
+            lines = path.read_text(encoding="utf-8").split("\n")
+            rewritten = []
+            for line in lines:
+                match = re.match(r"^apart:[ \t]*(.*)$", line)
+                if match and rewritten.count("---") < 2:
+                    left = [other for other in items(match[1]) if other != lesson_id]
+                    if left:
+                        rewritten.append("apart: " + ", ".join(left))
+                    continue  # an `apart` that named only the deleted lesson goes with it
+                rewritten.append(line)
+            if rewritten != lines:
+                _replace_text(path, "\n".join(rewritten))
         (folder / f"{lesson_id}.md").unlink()
     return changed
+
+
+def _replace_text(path, text):
+    """Write `text` to `path` through a temporary file beside it and a replace."""
+    fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
