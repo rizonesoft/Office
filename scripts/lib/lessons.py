@@ -10,6 +10,7 @@ the rest) are `check_store`'s, which `scripts/lessons.py check` prints in one ru
 """
 import datetime
 import hashlib
+import json
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -266,7 +267,8 @@ def check_store(root):
 
 INDEX = os.path.join("build", "lessons.sqlite")
 TRIAGE = "triage"
-DISPOSITION = re.compile(r"\blesson:([a-z0-9]+(?:-[a-z0-9]+)*)")
+# A triage line is `<finding>: <disposition> [reason]`; its disposition is the first word after the first colon.
+DISPOSITION = re.compile(r"^\s*(?:[-*]\s+)?[^:\n]+:\s+lesson:([a-z0-9]+(?:-[a-z0-9]+)*)(?=[\s,.;]|$)")
 MAX_LIMIT = 10
 
 
@@ -289,25 +291,51 @@ def _store_files(root):
     return lesson_files(folder), triage, readme
 
 
-def store_digest(root):
-    """A digest of the lesson files, the triage files and the README by name, size and modification time: what the
-    index stores to know it is current. Reading no file's content keeps a query over thousands of lessons quick."""
+def cited_records(lessons):
+    """The review records the lessons cite, sorted: part of what the index's digest covers."""
+    found = set()
+    for lesson in lessons:
+        match = REVIEW_SOURCE.match(lesson.get("source", ""))
+        if match:
+            found.add(match["record"])
+    return sorted(found)
+
+
+def store_digest(root, records=()):
+    """A digest of everything a valid index depends on, so a query never serves a store that `check` would now
+    refuse: the lesson files, the triage files and the README by name, size and modification time; the campaign
+    spec (its decisions) and the cited review `records` the same way; the commit at HEAD (a `fix` must be in its
+    history); and git's list of tracked files with those deleted from the working tree (an `applies` glob must match
+    a file that is still there). No file's content is read, so a query over thousands of lessons stays quick."""
+    root = Path(root)
     digest = hashlib.sha256()
-    for group in _store_files(root):
-        for path in group:
+
+    def stamp(path):
+        try:
             stat = path.stat()
             digest.update(f"{path.relative_to(root).as_posix()}\0{stat.st_size}\0{stat.st_mtime_ns}\n".encode())
+        except OSError:
+            digest.update(f"{path}\0gone\n".encode())
+    for group in _store_files(root):
+        for path in group:
+            stamp(path)
+    for name in (SPEC, *records):
+        stamp(root / name)
+    for args in (("rev-parse", "HEAD"), ("ls-files", "-z"), ("ls-files", "-d", "-z")):
+        code, out = git(root, *args)
+        digest.update(f"{' '.join(args)}\0{code}\0".encode() + hashlib.sha256(out.encode()).digest())
     return digest.hexdigest()
-
 
 def evidence(root):
     """{lesson id: findings behind it}: the lines of the files under `docs/lessons/triage/` whose disposition is
-    `lesson:<id>` (§3 writes those files; with none, every count is zero)."""
+    `lesson:<id>` (§3 writes those files; with none, every count is zero). Each line counts once, by the word that
+    follows its first colon; a lesson mentioned in the reason of another disposition is not counted."""
     counts = {}
     for path in _store_files(root)[1]:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-            for lesson_id in DISPOSITION.findall(line):
-                counts[lesson_id] = counts.get(lesson_id, 0) + 1
+            match = DISPOSITION.match(line)  # the line's own disposition, once: a lesson named in a reason is not one
+            if match:
+                counts[match[1]] = counts.get(match[1], 0) + 1
     return counts
 
 
@@ -316,10 +344,11 @@ def build_index(root):
     so an interrupted or failed build leaves the earlier index whole. StoreInvalid when a rule is broken;
     IndexError_ when the file cannot be written. Returns the number of active lessons indexed."""
     root = Path(root)
-    digest = store_digest(root)
     problems, lessons = check_store(root)
     if problems:
         raise StoreInvalid(problems)
+    records = cited_records(lessons)
+    digest = store_digest(root, records)
     counts = evidence(root)
     target = root / INDEX
     tmp = None
@@ -337,6 +366,7 @@ def build_index(root):
                 "CREATE VIRTUAL TABLE bodies USING fts5(id UNINDEXED, body);")
             active = [lesson for lesson in lessons if lesson["status"] == "active"]
             db.execute("INSERT INTO meta VALUES ('digest', ?)", (digest,))
+            db.execute("INSERT INTO meta VALUES ('records', ?)", (json.dumps(records),))
             db.executemany("INSERT INTO lessons VALUES (?, ?, ?, ?, ?, ?, ?)", [
                 (l["id"], ",".join(items(l["roles"])), ",".join(items(l["topics"])), l["source"], l["added"],
                  l["body"], counts.get(l["id"], 0)) for l in active])
@@ -368,11 +398,12 @@ def open_index(root):
         try:
             db = sqlite3.connect(target)
             try:
-                row = db.execute("SELECT value FROM meta WHERE key = 'digest'").fetchone()
-                current = bool(row) and row[0] == store_digest(root)
+                meta = dict(db.execute("SELECT key, value FROM meta"))
+                records = json.loads(meta.get("records", "[]"))
+                current = meta.get("digest") == store_digest(root, records)
             finally:
                 db.close()
-        except sqlite3.Error:
+        except (sqlite3.Error, ValueError, TypeError):
             current = False  # not a database, or not this one: rebuilt
     if not current:
         build_index(root)
@@ -380,12 +411,13 @@ def open_index(root):
 
 
 def specificity(glob):
-    """How specific a glob is: its literal characters less its wildcard characters, so an exact path outranks a
-    pattern of the same or greater length (`scripts/a.py` is 12, `scripts/*.py` 10, `scripts/**/*.py` 9) and `*`,
-    which applies to everything, is the least specific of all."""
-    wild = sum(glob.count(char) for char in "*?[]")
-    return len(glob) - 2 * wild
-
+    """How specific a glob is, as a pair that sorts: (1 for an exact path with no wildcard, else 0; its literal
+    characters less its wildcards). An exact path therefore outranks every pattern that also matches it, whatever
+    their lengths; among patterns `scripts/*.py` (10) outranks `scripts/**/*.py` (9); a bracket class is one wildcard,
+    so the characters inside it earn nothing; and `*`, which applies to everything, is the least specific of all."""
+    plain = re.sub(r"\[[^\]]*\]", "?", glob)
+    wild = sum(plain.count(char) for char in "*?")
+    return (0 if wild else 1, len(plain) - 2 * wild)
 
 def rank(found):
     """The one order every query result takes. `found` is {id: lesson} where each lesson holds `tier` (0 a glob
@@ -394,7 +426,8 @@ def rank(found):
     most specific glob first; then a topic match; then a text match by FTS5's rank; within each, more evidence, then
     the newer date, then the id."""
     def key(lesson):
-        within = -lesson["specific"] if lesson["tier"] == 0 else lesson["text_rank"] if lesson["tier"] == 2 else 0
+        exact, literal = lesson["specific"]
+        within = (-exact, -literal) if lesson["tier"] == 0 else (0, lesson["text_rank"] if lesson["tier"] == 2 else 0)
         newer = -datetime.date.fromisoformat(lesson["added"]).toordinal()
         return (lesson["tier"], within, -lesson["evidence"], newer, lesson["id"])
     return sorted(found.values(), key=key)
@@ -432,9 +465,9 @@ def query(root, paths=(), role="main", topics_asked=(), text="", limit=5):
             best = max(matched, key=specificity)
             lesson.update(tier=0, specific=specificity(best), text_rank=0.0, why=f"glob {best}")
         elif asked:
-            lesson.update(tier=1, specific=0, text_rank=0.0, why=f"topic {asked[0]}")
+            lesson.update(tier=1, specific=(0, 0), text_rank=0.0, why=f"topic {asked[0]}")
         elif lesson_id in ranks:
-            lesson.update(tier=2, specific=0, text_rank=ranks[lesson_id], why=f"text {' '.join(words)}")
+            lesson.update(tier=2, specific=(0, 0), text_rank=ranks[lesson_id], why=f"text {' '.join(words)}")
         else:
             continue
         lesson["why"] += f"; evidence {lesson['evidence']}"

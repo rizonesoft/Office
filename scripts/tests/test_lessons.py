@@ -508,6 +508,62 @@ class Ranking(Indexed):
         self.assertEqual([l["id"] for l in shown], [l["id"] for l in lessons.query(self.root, paths=["scripts/a.py"])[0]])
 
 
+class RoundOne(Indexed):
+    """Round 1 of D00 T05 §2's review."""
+
+    def test_a_cached_index_is_not_served_once_check_would_refuse_the_store(self):
+        self.lesson("about-a", applies="scripts/a.py", topics="tooling")
+        self.assertEqual(self.ids(topics_asked=["tooling"])[0], ["about-a"])
+        (self.root / "scripts" / "a.py").unlink()  # the file the lesson is about is gone; the lesson did not change
+        with self.assertRaises(lessons.StoreInvalid) as caught:
+            lessons.query(self.root, topics_asked=["tooling"])
+        self.assertIn("'scripts/a.py' matches no file", caught.exception.problems[0])
+        code, out, err = self.cli("--topic", "tooling")
+        self.assertEqual((code, out), (1, ""))
+        (self.root / "scripts" / "a.py").write_text("x = 1\n", encoding="utf-8")
+        self.assertEqual(self.ids(topics_asked=["tooling"])[0], ["about-a"])  # back, and served again
+
+    def test_a_cited_record_or_a_decision_that_changes_ends_the_cache_too(self):
+        self.write()  # the review-sourced lesson of the fixture, citing RECORD round 1 finding 2
+        self.assertEqual(self.ids(topics_asked=["tests"])[0], ["keep-gates-whole"])
+        record = self.root / RECORD
+        record.write_text(RECORD_TEXT.replace("2. **P2:** the second finding.\n", ""), encoding="utf-8")
+        with self.assertRaises(lessons.StoreInvalid):
+            lessons.query(self.root, topics_asked=["tests"])
+        record.write_text(RECORD_TEXT, encoding="utf-8")
+        self.assertEqual(self.ids(topics_asked=["tests"])[0], ["keep-gates-whole"])
+        (self.folder / "keep-gates-whole.md").unlink()
+        self.lesson("by-decision", topics="tests")
+        self.assertEqual(self.ids(topics_asked=["tests"])[0], ["by-decision"])
+        (self.root / cli.SPEC).write_text("# Spec\n\nNo decisions any more.\n", encoding="utf-8")
+        with self.assertRaises(lessons.StoreInvalid):
+            lessons.query(self.root, topics_asked=["tests"])
+
+    def test_an_exact_path_outranks_every_pattern_whatever_its_length(self):
+        self.lesson("exact", applies="scripts/a.py")
+        self.lesson("bracket-class", applies="scripts/[abcdefghijklmnopqrstuvwxyz]*.py", added="2026-11-09")
+        self.lesson("deep-pattern", applies="scripts/**/*.py", added="2026-11-09")
+        self.lesson("folder-pattern", applies="scripts/*.py", added="2026-11-09")
+        # The two broad patterns tie on specificity (9 each), so the id settles them.
+        self.assertEqual(self.ids(paths=["scripts/a.py"])[0], ["exact", "folder-pattern", "bracket-class", "deep-pattern"])
+        self.assertEqual(self.ids(paths=["scripts/a.py"], limit=1), (["exact"], 3))
+        self.assertGreater(lessons.specificity("scripts/a.py"), lessons.specificity("scripts/[a-z]*.py"))
+        self.assertLess(lessons.specificity("*"), lessons.specificity("scripts/**/*.py"))
+
+    def test_evidence_counts_a_lines_own_disposition_once(self):
+        self.lesson("existing", applies="scripts/a.py", added="2026-11-01")
+        self.lesson("other", applies="scripts/a.py", added="2026-11-09")
+        triage = self.folder / "triage"
+        triage.mkdir()
+        (triage / "r.md").write_text(
+            "round 1 finding 1: one-off, already covered by lesson:existing and lesson:existing again\n"
+            "round 1 finding 2: enforced:scripts/a.py (see lesson:existing)\n"
+            "- round 2 finding 1: lesson:other, it recurs; compare lesson:other\n", encoding="utf-8")
+        self.assertEqual(lessons.evidence(self.root), {"other": 1})
+        shown, _ = lessons.query(self.root, paths=["scripts/a.py"])
+        self.assertEqual([(l["id"], l["evidence"]) for l in shown], [("other", 1), ("existing", 0)])
+
+
 class CommandLine(Indexed):
     def test_the_plain_and_json_forms(self):
         self.six()
