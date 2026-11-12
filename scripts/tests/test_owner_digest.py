@@ -6,6 +6,7 @@ import datetime
 import importlib.util
 import io
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -43,6 +44,10 @@ class Tree(unittest.TestCase):
         (self.root / ".conclave/automations/alert.py").write_bytes((REPO / ".conclave/automations/alert.py").read_bytes())
         (self.root / "scripts/lib").mkdir(parents=True)
         (self.root / "scripts/lib/secret_store.py").write_bytes((REPO / "scripts/lib/secret_store.py").read_bytes())
+        # The digest's second store of delivery evidence lives under the scratch folder: a private one per test.
+        scratch = mock.patch.dict(os.environ, {"OFFICE_SCRATCH": str(self.root / "scratch")})
+        scratch.start()
+        self.addCleanup(scratch.stop)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -517,6 +522,8 @@ class Notices(Send):
         first = lambda: subject.append(self.delivered_then_mark_fails())
         ids = self.queue(1)
         first()
+        for evidence in (self.root / "scratch" / "office-digest-evidence").glob("*.json"):
+            evidence.unlink()  # the second store failed too: only SMTP2GO's log can say
         self.age_claims(hours=2)
         self.activity = [{"event": "delivered", "email_id": "e1", "subject": subject[0]}]
         code, out, second = self.run_main([])
@@ -529,13 +536,45 @@ class Notices(Send):
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
-    def test_a_batch_the_log_does_not_show_is_sent_again(self):
+    def test_a_batch_the_log_does_not_show_and_nothing_proves_sent_is_sent_again(self):
         self.activity = []
-        self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.delivered_then_mark_fails))
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.interrupted_send))
+
+    def test_a_digest_the_log_does_not_show_yet_but_smtp2go_accepted_is_not_repeated(self):
+        self.queue(1)
+        self.delivered_then_mark_fails()
+        self.age_claims(hours=2)
+        self.activity = []  # the log lags or has purged it; the digest's own record says it was accepted
+        code, _, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
+
+    def interrupted_send(self):
+        def interrupted(request, timeout=None):
+            raise KeyboardInterrupt
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_main([], opener=interrupted)
+
+    def test_a_delivered_digest_whose_mark_failed_is_never_repeated_even_after_the_log_is_gone(self):
+        # Reconciliation review 6: delivered, the mark fails, the PC is off past SMTP2GO's history.
+        ids = self.queue(1)
+        self.delivered_then_mark_fails()
+        self.age_claims(hours=24 * 6)
+        self.activity = OSError("SMTP2GO no longer holds it")
+        code, out, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
+        self.assertNotIn("could not be confirmed", second[0]["text_body"])
+        self.assertNotIn("attachments", second[0])
+        self.assertIn("1 confirmed sent", out)
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+        self.assertEqual(list((self.root / "scratch" / "office-digest-evidence").glob("*.json")), [])
 
     def test_a_log_that_cannot_be_read_keeps_the_claim_until_it_can_judge_it_or_the_evidence_is_gone(self):
         ids = self.queue(1)
-        self.delivered_then_mark_fails()
+        self.interrupted_send()  # cut off mid-send: no proof of delivery either way
         self.age_claims(hours=2)
         self.activity = OSError("SMTP2GO is down")
         code, out, second = self.run_main([])

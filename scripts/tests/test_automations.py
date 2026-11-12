@@ -745,12 +745,12 @@ class DeliveryEvidence(unittest.TestCase):
 
     def test_only_a_delivered_event_of_exactly_that_subject_is_proof(self):
         self.assertEqual(self.ask(self.events("processed", "delivered"))[0], "sent")
-        self.assertEqual(self.ask(self.events("delivered", subject="Office weekly: 2 waiting"))[0], "not-sent")
+        self.assertEqual(self.ask(self.events("delivered", subject="Office weekly: 2 waiting"))[0], "absent")
         for failed in ("rejected", "hard-bounced", "soft-bounced"):
             with self.subTest(failed):
                 self.assertEqual(self.ask(self.events("processed", failed))[0], "not-sent")
         self.assertEqual(self.ask(self.events("processed"))[0], "pending")
-        self.assertEqual(self.ask({"data": {"events": []}})[0], "not-sent")
+        self.assertEqual(self.ask({"data": {"events": []}})[0], "absent")
 
     def test_an_unreadable_log_is_refused(self):
         for answer in (OSError("down"), {"data": None}, {"data": {"events": "x"}}, {"error": "bad key"}):
@@ -781,6 +781,7 @@ class DeliveryEvidence(unittest.TestCase):
         day, hour = datetime.timedelta(days=1), datetime.timedelta(hours=2)
         cases = {  # answer, age: (outcome counted, pending, still claimed)
             ("sent", day): ("confirmed", 0, 0), ("not-sent", day): ("released", 1, 0),
+            ("absent", day): ("released", 1, 0), ("absent", 6 * day): ("expired", 0, 0),
             ("pending", day): ("kept", 0, 1), ("not-sent", datetime.timedelta(minutes=5)): ("kept", 0, 1),
             ("pending", 6 * day): ("expired", 0, 0), ("not-sent", 6 * day): ("expired", 0, 0),
             ("sent", 6 * day): ("confirmed", 0, 0),

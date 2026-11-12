@@ -411,8 +411,13 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
     if ids or unconfirmed:
+        try:  # first the proof of delivery, in a second store, so a mark that fails cannot cause a repeat
+            alert.record_sent(digest_id, email_id or "")
+        except OSError as error:
+            print(f"owner-digest: the delivery evidence could not be written: {error}", file=sys.stderr)
         try:
             marked = alert.mark_reported(ids + [n["id"] for n in unconfirmed], str(root))
+            alert.clear_sent(digest_id)
             print(f"marked {marked} notice(s) reported")
         except alert.Refused as error:  # delivered but unconfirmed: the next digest sends them again, so marked
             print(f"owner-digest: the delivered notices could not be marked; the next digest repeats them, marked as "

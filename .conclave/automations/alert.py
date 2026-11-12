@@ -116,8 +116,8 @@ YOUNG_MINUTES = 60  # a log can lag a send by minutes ("allow around two minutes
 
 def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlopen) -> str:
     """What SMTP2GO's activity log says of the email with exactly this subject sent at or after `since` (UTC,
-    ISO-8601): "sent" when it shows it delivered, "not-sent" when it shows it rejected or bounced or shows no such
-    email, "pending" while it shows it only in flight (D00 T03 §53). `POST /v3/activity/search` with `search_subject`,
+    ISO-8601): "sent" when it shows it delivered, "not-sent" when it shows it rejected or bounced, "pending" while it
+    shows it only in flight, "absent" when it shows no such email (D00 T03 §53). `POST /v3/activity/search` with `search_subject`,
     `start_date` and `end_date` (developers.smtp2go.com, "View account activity", read 2026-11-12; `/email/search` is
     deprecated there). Refused when the log cannot be read."""
     import datetime
@@ -140,7 +140,45 @@ def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlop
         return "not-sent"  # rejected or bounced: a final failure, whatever came before it
     if kinds:
         return "pending"  # processed or deferred: on its way, not yet proof either way
-    return "not-sent"
+    return "absent"
+
+
+def _evidence_folder() -> str:
+    """A second store for "this digest was delivered", outside the repository's volume where the scratch folder is
+    elsewhere (OFFICE_SCRATCH, else the system temporary folder), so the failed write that left a batch claimed does
+    not also lose the proof that its digest went out (D00 T03 §53, reconciliation review 6)."""
+    import tempfile
+    return os.path.join(os.environ.get("OFFICE_SCRATCH") or tempfile.gettempdir(), "office-digest-evidence")
+
+
+def record_sent(digest: str, email_id: str) -> None:
+    """Write the delivery evidence of a digest SMTP2GO accepted, through a temporary file and os.replace."""
+    import tempfile
+    folder = _evidence_folder()
+    os.makedirs(folder, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix=f"{digest}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump({"digest": digest, "email_id": email_id}, fh)
+        os.replace(tmp, os.path.join(folder, f"{digest}.json"))
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def sent_evidence(digest: str) -> bool:
+    try:
+        with open(os.path.join(_evidence_folder(), f"{digest}.json"), encoding="utf-8") as fh:
+            return json.load(fh).get("digest") == digest
+    except (OSError, ValueError):
+        return False
+
+
+def clear_sent(digest: str) -> None:
+    try:
+        os.unlink(os.path.join(_evidence_folder(), f"{digest}.json"))
+    except FileNotFoundError:
+        pass
 
 
 def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
@@ -170,12 +208,20 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
             answer = ask(subject, since) if subject and since else "pending"
         except Refused:
             answer = "pending"
+        # The log decides when it can: delivered, or rejected and bounced. Where it is silent (absent, in flight,
+        # unreadable, or past its history), the digest's own record that SMTP2GO accepted it, written before its mark
+        # failed, decides; without that record an absent email is one that was never sent.
+        if answer in ("absent", "pending") and sent_evidence(digest):
+            answer = "sent"
+        elif answer == "absent":
+            answer = "not-sent"
         if answer == "not-sent" and age < datetime.timedelta(minutes=YOUNG_MINUTES):
             answer = "pending"  # the log may lag the send by minutes
         if answer == "not-sent" and age > datetime.timedelta(days=SETTLE_DAYS):
             answer = "pending"  # past the log's history an empty answer proves nothing
         if answer == "sent":
             mark_reported(ids, root)
+            clear_sent(digest)
             counts["confirmed"] += len(ids)
         elif answer == "not-sent":
             release_claim(digest, root)
