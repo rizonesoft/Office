@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 58 | Checklist items: 403
+Sections: 58 | Checklist items: 407
 
 | Status | Reference   | Deliverable                                     | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
@@ -57,7 +57,7 @@ Sections: 58 | Checklist items: 403
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
 | [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains        | owner-decision         | 4     |
-| [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 12    |
+| [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 16    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                            | none                   | 6     |
 | [ ]    | D00 T04 §4  | Launcher and clangd Use the Tool Folder         | none                   | 6     |
@@ -386,4 +386,4 @@ These TODO files do not exist yet, so their sections and checklist items are not
 
 Progress: 70/159 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 478/1045 items completed (includes Commit items).
+Checklist: 478/1049 items completed (includes Commit items).
