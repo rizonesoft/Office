@@ -55,6 +55,7 @@ if ($Uninstall) {
   return
 }
 
+. (Join-Path $here 'task-settings.ps1')  # New-OfficeTaskSettings: the restart on a failed launch (D00 T07 §4)
 $pythonw = (Get-Command pythonw.exe -ErrorAction Ignore).Source  # absent is the throw below
 if (-not $pythonw) { throw 'pythonw.exe is not on PATH; install Python 3 for Windows first' }
 $runner = Join-Path $here 'run.py'
@@ -76,9 +77,7 @@ foreach ($task in $manifest.tasks) {
   } else {
     $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $trigger.weekly -At $trigger.at -RandomDelay (New-TimeSpan -Minutes 5)
   }
-  $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew `
-      -ExecutionTimeLimit (New-TimeSpan -Minutes ($task.timeout_minutes + 5)) `
-      -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+  $settings = New-OfficeTaskSettings -TimeoutMinutes $task.timeout_minutes
   Register-ScheduledTask -TaskPath $folder -TaskName $task.name -Description $task.description `
       -Action $action -Trigger $t -Settings $settings -Principal $principal -Force | Out-Null
 }
@@ -92,6 +91,18 @@ foreach ($task in $existing) {
 }
 # Filtered rather than -TaskPath: the folder does not exist until a task is registered, and -TaskPath on a
 # missing folder is an error, which would fail an install of an empty task list on a clean machine.
+# Task Scheduler's own log is what records a launch that never reached run.py; it is off by default and turning it
+# on needs an elevated window, so this says plainly which it is (D00 T07 §4).
+$schedulerLog = 'Microsoft-Windows-TaskScheduler/Operational'
+if ((wevtutil gl $schedulerLog 2>$null | Select-String -SimpleMatch 'enabled: true')) {
+  Write-Host "Task Scheduler's operational log is on."
+} else {
+  wevtutil sl $schedulerLog /e:true 2>$null | Out-Null
+  if ($LASTEXITCODE -eq 0) { Write-Host "Task Scheduler's operational log was off and is now on." }
+  else {
+    Write-Host "Task Scheduler's operational log is off, so a launch that fails leaves no record of why. Turn it on once from an elevated window: wevtutil sl $schedulerLog /e:true" -ForegroundColor Yellow
+  }
+}
 $now = @(Get-ScheduledTask | Where-Object TaskPath -eq $folder)
 if ($now.Count -eq 0) { Write-Host "No tasks registered under $folder" }
 else { $now | Get-ScheduledTaskInfo | Select-Object TaskName, NextRunTime, LastRunTime, LastTaskResult | Format-Table -AutoSize }

@@ -233,6 +233,54 @@ def latest_instant(path):
     return datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
+# Task Scheduler's own success statuses: none of them is a failure (D00 T07 §4). 0x41301 is the digest's own task
+# while it composes this email; 0x41303 is a task that has not run yet.
+TASK_FINE = {0x0, 0x41300, 0x41301, 0x41302, 0x41303, 0x41325}
+TASK_QUERY = ("$ErrorActionPreference = 'Stop'; @(Get-ScheduledTask | Where-Object TaskPath -eq '{folder}' | "
+              "ForEach-Object {{ $i = $_ | Get-ScheduledTaskInfo; [pscustomobject]@{{ name = $_.TaskName; "
+              "result = [uint32]$i.LastTaskResult; last = $i.LastRunTime.ToString('yyyy-MM-dd') }} }}) | "
+              "ConvertTo-Json -Compress -AsArray")
+TASK_SECONDS = 60
+
+
+def task_state(root, runner=subprocess.run):
+    """Lines on the scheduled tasks of `.conclave/automations/tasks.json`, asked of Task Scheduler itself and never
+    of the task logs, since a task that fails to start writes none: one line for each task whose last result is a
+    failure, one for each listed task that is not installed, and one saying the state is unknown when the query
+    cannot be made or read. A healthy set gives no line."""
+    try:
+        manifest = json.loads((root / ".conclave" / "automations" / "tasks.json").read_text(encoding="utf-8"))
+        folder, listed = str(manifest["folder"]), [str(task["name"]) for task in manifest["tasks"]]
+        if not re.fullmatch(r"\\[A-Za-z0-9 _\\-]*\\", folder):
+            raise ValueError("the task folder is not a Task Scheduler path")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return [f"Scheduled tasks: unknown (tasks.json cannot be read: {reason(root, exc)})."]
+    if not listed:
+        return []
+    try:
+        done = runner(["pwsh", "-NoProfile", "-NonInteractive", "-Command", TASK_QUERY.format(folder=folder)],
+                      capture_output=True, text=True, timeout=TASK_SECONDS, creationflags=NO_WINDOW)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return [f"Scheduled tasks: unknown (Task Scheduler could not be asked: {type(exc).__name__})."]
+    if done.returncode != 0:
+        return [f"Scheduled tasks: unknown (the Task Scheduler query exited {done.returncode})."]
+    try:
+        rows = json.loads(done.stdout or "[]")
+        found = {str(row["name"]): (int(row["result"]), str(row["last"])) for row in rows}
+    except (ValueError, KeyError, TypeError):
+        return ["Scheduled tasks: unknown (the Task Scheduler query's answer cannot be read)."]
+    lines = []
+    for name in listed:
+        if name not in found:
+            lines.append(f"Scheduled tasks: {name} is listed in tasks.json and is not installed; run "
+                         f".conclave/automations/install.ps1.")
+            continue
+        result, last = found[name]
+        if result not in TASK_FINE:
+            lines.append(f"Scheduled tasks: {name} last ended with 0x{result:08X} on {last}; a result like this "
+                         f"with no log under build/automations means it never reached its runner.")
+    return lines
+
 def ci_state(root, runner=subprocess.run):
     """One line or more on CI for origin/main's head; never an exception, whatever the network does."""
     # The head GitHub has now, not the one this clone last fetched: another clone may have pushed since.
@@ -321,7 +369,8 @@ def fit(head, blocks, room, noun, attachment):
     return shown, False
 
 
-def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=(), since=None, previous=""):
+def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=(), since=None, previous="",
+            tasks=()):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
@@ -335,7 +384,8 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
             *[part for line in ci_lines for part in wrap(line.strip(), "  " if line.startswith("  ") else "")],
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
                   f"{count['blocked']} blocked; {count['to_author']} TODO files still "
-                  f"to author."), *(wrap(without_paths(previous, root)) if previous else []), ""]
+                  f"to author."), *(wrap(without_paths(previous, root)) if previous else []),
+            *[part for line in tasks for part in wrap(without_paths(line, root))], ""]
     # Each list is a header and whole items (an item is every wrapped line of one entry), so a cut never splits an
     # entry and its count is of items, never lines (D00 T07 §2).
     waiting_blocks = [item_lines(item, root) for item in items]
@@ -413,7 +463,8 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
         except alert.Refused as error:
             batch, unconfirmed = str(error), []
         subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
-                                             uuid.uuid4().hex[:8], unconfirmed, since=since)
+                                             uuid.uuid4().hex[:8], unconfirmed, since=since,
+                                             tasks=task_state(root, runner))
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
             print(f"\n--- attachment {name} ---\n{text}", end="")
@@ -500,7 +551,8 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
                 f"{'; '.join(f'{u['start']} to {u['end']}' for u in doubtful)}).")
     digest_id = uuid.uuid4().hex
     subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
-                                         digest_id[:8], unconfirmed, since=since, previous=previous)
+                                         digest_id[:8], unconfirmed, since=since, previous=previous,
+                                         tasks=task_state(root, runner))
     ids = ([n["id"] for n in batch] if isinstance(batch, list) else []) + [n["id"] for n in unconfirmed]
     if ids:
         try:

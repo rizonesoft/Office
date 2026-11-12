@@ -347,7 +347,7 @@ class InstallerDryRun(unittest.TestCase):
     def fixture(self, tmp, tasks, folder=None):
         auto = Path(tmp) / ".conclave" / "automations"
         auto.mkdir(parents=True)
-        for name in ("install.ps1", "run.py", "alert.py"):
+        for name in ("install.ps1", "task-settings.ps1", "run.py", "alert.py"):
             (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
         doc = {"schema_version": 1, "folder": folder or chr(92) + "Office" + chr(92), "tasks": tasks}
         (auto / "tasks.json").write_text(json.dumps(doc), encoding="utf-8")
@@ -369,6 +369,26 @@ class InstallerDryRun(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("not valid", result.stdout + result.stderr)
 
+    def test_every_task_is_registered_to_restart_after_a_failed_launch(self):
+        # D00 T07 §4: on 2026-11-09 two tasks ended with 0x8007010B before run.py started and were not tried again.
+        probe = (". '{0}'; $s = New-OfficeTaskSettings -TimeoutMinutes 5; "
+                 "\"$($s.RestartCount) $($s.RestartInterval) $($s.ExecutionTimeLimit) $($s.StartWhenAvailable)\"")
+        done = subprocess.run(["pwsh", "-NoProfile", "-Command", probe.format(AUTO / "task-settings.ps1")],
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stdout.strip(), "3 PT10M PT10M True")
+        installer = (AUTO / "install.ps1").read_text(encoding="utf-8")
+        self.assertIn(". (Join-Path $here 'task-settings.ps1')", installer)
+        self.assertIn("$settings = New-OfficeTaskSettings -TimeoutMinutes $task.timeout_minutes", installer)
+        self.assertNotIn("New-ScheduledTaskSettingsSet", installer)  # one place sets them, shared with the proof
+        proof = (AUTO / "check-task-retry.ps1").read_text(encoding="utf-8")
+        self.assertIn("New-OfficeTaskSettings -TimeoutMinutes 5 -RestartCount $RestartCount -RestartMinutes 1", proof)
+        self.assertNotIn("New-ScheduledTaskSettingsSet", proof)
+
+    def test_the_installer_says_whether_the_scheduler_log_is_on(self):
+        installer = (AUTO / "install.ps1").read_text(encoding="utf-8")
+        self.assertIn("wevtutil sl $schedulerLog /e:true", installer)
+        self.assertIn("Turn it on once from an elevated window: wevtutil sl $schedulerLog /e:true", installer)
     def test_uninstall_dry_run_previews_removal(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = self.pwsh(self.fixture(tmp, [FIXTURE_TASK]), "-Uninstall", "-DryRun")
@@ -468,7 +488,7 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             auto = Path(tmp) / ".conclave" / "automations"
             auto.mkdir(parents=True)
-            for name in ("install.ps1", "run.py", "alert.py"):
+            for name in ("install.ps1", "task-settings.ps1", "run.py", "alert.py"):
                 (auto / name).write_text((AUTO / name).read_text(encoding="utf-8"), encoding="utf-8")
             folder = chr(92) + "Office" + chr(92)
             (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": folder, "tasks": tasks}),

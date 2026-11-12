@@ -469,7 +469,8 @@ class Send(Tree):
 
         out = io.StringIO()
         with mock.patch.object(digest, "ci_state", return_value=["CI: green for abc1234."]), \
-                mock.patch.object(digest, "run_state", return_value="Running"), redirect_stdout(out):
+                mock.patch.object(digest, "run_state", return_value="Running"), \
+                mock.patch.object(digest, "task_state", return_value=getattr(self, "task_lines", [])), redirect_stdout(out):
             alert = digest.load_alert(self.root)
 
             def no_network(*a, **kw):
@@ -704,6 +705,7 @@ class Delivery(Send):
             codes.append(digest.main(argv, root=self.root, today=TODAY, opener=self.opener))
         with mock.patch.object(digest, "ci_state", return_value=["CI: green."]), \
                 mock.patch.object(digest, "run_state", return_value="Running"), \
+                mock.patch.object(digest, "task_state", return_value=getattr(self, "task_lines", [])), \
                 mock.patch.object(digest.digest_state, "load", side_effect=slow_load), redirect_stdout(io.StringIO()):
             alert = digest.load_alert(self.root)
             with mock.patch.object(digest, "load_alert", return_value=alert), \
@@ -854,6 +856,88 @@ class Delivery(Send):
         self.assertEqual(task["trigger"], {"at_logon_delay_minutes": 5, "every_minutes": 360})
         self.assertEqual(task["command"], ["python", "scripts/owner-digest.py", "--retry"])
 
+
+class ScheduledTasks(Send):
+    """D00 T07 §4: the digest asks Task Scheduler itself which task failed to start."""
+
+    def setUp(self):
+        super().setUp()
+        (self.root / ".conclave/automations/tasks.json").write_text(json.dumps({
+            "schema_version": 1, "folder": "\\Office\\",
+            "tasks": [{"name": name} for name in ("office-owner-digest", "office-python-pin", "office-pr-merge")]}),
+            encoding="utf-8")
+
+    def asked(self, rows=None, code=0, stdout=None, error=None):
+        calls = []
+
+        def runner(argv, **kwargs):
+            calls.append((argv, kwargs))
+            if error:
+                raise error
+            return types.SimpleNamespace(returncode=code, stdout=json.dumps(rows) if stdout is None else stdout, stderr="")
+        return digest.task_state(self.root, runner), calls
+
+    def row(self, name, result, last="2026-11-09"):
+        return {"name": name, "result": result, "last": last}
+
+    def test_a_failed_launch_with_no_runner_log_is_named_with_its_code_and_day(self):
+        lines, calls = self.asked([self.row("office-owner-digest", 0x41301), self.row("office-python-pin", 0x8007010B),
+                                   self.row("office-pr-merge", 0)])
+        self.assertEqual(lines, ["Scheduled tasks: office-python-pin last ended with 0x8007010B on 2026-11-09; a result "
+                                 "like this with no log under build/automations means it never reached its runner."])
+        self.assertFalse((self.root / "build" / "automations").exists())  # no task log was read to know it
+        argv, kwargs = calls[0]
+        self.assertEqual(argv[:4], ["pwsh", "-NoProfile", "-NonInteractive", "-Command"])
+        self.assertIn("Where-Object TaskPath -eq '\\Office\\'", argv[4])
+        self.assertEqual(kwargs["timeout"], digest.TASK_SECONDS)
+
+    def test_running_ready_never_run_and_queued_are_not_failures(self):
+        for status in (0x0, 0x41300, 0x41301, 0x41302, 0x41303, 0x41325):
+            with self.subTest(hex(status)):
+                rows = [self.row(name, status) for name in ("office-owner-digest", "office-python-pin", "office-pr-merge")]
+                self.assertEqual(self.asked(rows)[0], [])
+        self.assertNotIn(0x8007010B, digest.TASK_FINE)
+        self.assertEqual(len(self.asked([self.row("office-owner-digest", 1), self.row("office-python-pin", 0x800710E0),
+                                         self.row("office-pr-merge", 0)])[0]), 2)
+
+    def test_a_listed_task_the_scheduler_does_not_hold_is_not_installed(self):
+        lines, _ = self.asked([self.row("office-owner-digest", 0), self.row("office-pr-merge", 0),
+                               self.row("some-other-task", 0x8007010B)])  # a task tasks.json does not list is not ours
+        self.assertEqual(lines, ["Scheduled tasks: office-python-pin is listed in tasks.json and is not installed; run "
+                                 ".conclave/automations/install.ps1."])
+
+    def test_a_query_that_fails_or_cannot_be_read_is_unknown(self):
+        cases = [(dict(code=1, stdout=""), "the Task Scheduler query exited 1"),
+                 (dict(stdout="not json"), "the Task Scheduler query's answer cannot be read"),
+                 (dict(stdout='[{"name": "x"}]'), "the Task Scheduler query's answer cannot be read"),
+                 (dict(error=FileNotFoundError(2, "no pwsh")), "Task Scheduler could not be asked: FileNotFoundError"),
+                 (dict(error=subprocess.TimeoutExpired("pwsh", 60)), "Task Scheduler could not be asked: TimeoutExpired")]
+        for kwargs, fragment in cases:
+            with self.subTest(fragment):
+                lines, _ = self.asked(**kwargs)
+                self.assertEqual(lines, [f"Scheduled tasks: unknown ({fragment})."])
+        (self.root / ".conclave/automations/tasks.json").write_text("{", encoding="utf-8")
+        self.assertTrue(self.asked([])[0][0].startswith("Scheduled tasks: unknown (tasks.json cannot be read"))
+
+    def test_the_lines_are_in_the_digest_and_an_unknown_state_still_sends_it(self):
+        self.task_lines = ["Scheduled tasks: office-python-pin last ended with 0x8007010B on 2026-11-09; a result like "
+                           "this with no log under build/automations means it never reached its runner."]
+        code, _, requests = self.run_main([])
+        self.assertEqual(code, 0)
+        body = " ".join(requests[0]["text_body"].split())
+        self.assertIn("office-python-pin last ended with 0x8007010B on 2026-11-09", body)
+        self.assertLess(requests[0]["text_body"].index("Scheduled tasks:"), requests[0]["text_body"].index("Waiting on you"))
+        self.assertTrue(all(len(line) <= digest.WIDTH for line in requests[0]["text_body"].splitlines()))
+        (self.root / "build/automations/owner-digest.json").unlink()
+        self.task_lines = ["Scheduled tasks: unknown (the Task Scheduler query exited 1)."]
+        code, _, requests = self.run_main([])
+        self.assertEqual(code, 0)  # the digest is delivered all the same
+        self.assertIn("Scheduled tasks: unknown (the Task Scheduler query exited 1).", requests[0]["text_body"])
+
+    def test_a_healthy_set_prints_nothing(self):
+        self.task_lines = []
+        _, _, requests = self.run_main([])
+        self.assertNotIn("Scheduled tasks", requests[0]["text_body"])
 
 class Notices(Send):
     """The queued notices in the digest, and the batch marked only once it was delivered (D00 T03 §53)."""
