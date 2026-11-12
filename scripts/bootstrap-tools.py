@@ -42,8 +42,51 @@ import tool_lock  # found through scripts/lib, put on the path just above
 LOCK = ROOT / "tools.lock.json"
 TOOLS = ROOT / ".tools"
 RECEIPT = ".installed.json"
+RUN_LOCK = "bootstrap.lock"  # held by the one run that may change .tools/
 READ_SECONDS = 60
+LOCK_SECONDS = 60  # a second run waits this long for the first, then refuses
 CHUNK = 1 << 20
+
+
+class RunLock:
+    """An exclusive lock on `.tools/bootstrap.lock` for the whole run, so two bootstraps never delete or promote each
+    other's work (round 1); the system releases it when the holder dies."""
+
+    def __init__(self, tools):
+        self.path = Path(tools) / RUN_LOCK
+        self.handle = None
+
+    def __enter__(self):
+        self.handle = open(self.path, "a+b")
+        deadline = time.monotonic() + LOCK_SECONDS
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    self.handle.seek(0)
+                    msvcrt.locking(self.handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except OSError:
+                if time.monotonic() > deadline:
+                    self.handle.close()
+                    raise Failed(f"another bootstrap still holds {self.path} after {LOCK_SECONDS} s") from None
+                time.sleep(0.2)
+
+    def __exit__(self, *exc):
+        try:
+            if os.name == "nt":
+                import msvcrt
+                self.handle.seek(0)
+                msvcrt.locking(self.handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+        return False
 
 
 class Failed(Exception):
@@ -71,7 +114,9 @@ def fetch(name, entry, folder, opener, deadline_seconds):
                     while True:
                         if time.monotonic() - started > deadline_seconds:
                             raise Failed(f"{name}: the download passed its deadline of {deadline_seconds:.0f} s")
-                        block = response.read(CHUNK)
+                        # read1 returns what has arrived (at most CHUNK) instead of waiting for a full CHUNK, so a
+                        # server sending a little at a time cannot hold one read past the deadline (round 1).
+                        block = response.read1(CHUNK)
                         if not block:
                             break
                         got += len(block)
@@ -228,6 +273,8 @@ def clean(lock, tools):
     """Remove staging and set-aside folders, leftover downloads, and folders of versions the lock no longer names."""
     current = {f"{name}-{tool['version']}" for name, tool in lock.items()}
     for path in tools.iterdir():
+        if path.name == RUN_LOCK:
+            continue
         stale = path.name.endswith(".partial") or ".stale-" in path.name or path.name.startswith("download-")
         older = path.is_dir() and path.name not in current and any(
             path.name.startswith(f"{name}-") for name in lock)
@@ -277,18 +324,24 @@ def main(argv=None, opener=urllib.request.urlopen, lock_path=LOCK, tools=TOOLS, 
         print("every tool is installed as pinned" if not problems else f"{len(problems)} tool(s) need the bootstrap")
         return 1 if problems else 0
     tools.mkdir(exist_ok=True)
-    clean(lock, tools)
     wanted = list(lock) if not args.only else [n for n in lock if n in args.only or any(
         n in lock[o].get("requires", []) for o in args.only)]
     failed = 0
-    for name in wanted:
-        tool = lock[name]
-        try:
-            changed = install(name, tool["version"], tool["archives"][arch], tools, opener, args.deadline * 60)
-            print(f"{name} {tool['version']}: {'installed' if changed else 'already installed'}")
-        except Failed as error:
-            print(f"bootstrap-tools: {error}", file=sys.stderr)
-            failed += 1
+    try:
+        with RunLock(tools):
+            clean(lock, tools)
+            for name in wanted:
+                tool = lock[name]
+                try:
+                    changed = install(name, tool["version"], tool["archives"][arch], tools, opener,
+                                      args.deadline * 60)
+                    print(f"{name} {tool['version']}: {'installed' if changed else 'already installed'}")
+                except Failed as error:
+                    print(f"bootstrap-tools: {error}", file=sys.stderr)
+                    failed += 1
+    except Failed as error:  # another run holds the folder
+        print(f"bootstrap-tools: {error}", file=sys.stderr)
+        return 1
     return 1 if failed else 0
 
 

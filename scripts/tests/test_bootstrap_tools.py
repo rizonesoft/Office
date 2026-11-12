@@ -16,6 +16,7 @@ import tarfile
 import tempfile
 import time
 import unittest
+from unittest import mock
 import zipfile
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -80,7 +81,15 @@ class Server:
             def read(self, n=-1):
                 if mode == "stall":
                     raise socket.timeout("timed out")
-                if mode == "trickle":
+                if mode == "trickle":  # a buffered read waits for all n bytes of a server sending 16 at a time
+                    time.sleep(min(5.0, 0.05 * max(n, 16) / 16))
+                    return super().read(16)
+                return super().read(n)
+
+            def read1(self, n=-1):
+                if mode == "stall":
+                    raise socket.timeout("timed out")
+                if mode == "trickle":  # what has arrived: 16 bytes after a short wait
                     time.sleep(0.05)
                     return super().read(16)
                 return super().read(n)
@@ -131,6 +140,10 @@ class Fixture(unittest.TestCase):
         return sorted(p.name for p in self.tools.iterdir() if p.name.endswith(".partial") or ".stale-" in p.name
                       or p.name.startswith("download-")) if self.tools.exists() else []
 
+    def entries(self, folder=None):
+        """The names in a folder of `.tools/`, the run lock aside."""
+        return sorted(p.name for p in (folder or self.tools).iterdir() if p.name != boot.RUN_LOCK)
+
 
 class Lock(unittest.TestCase):
     def good(self):
@@ -163,6 +176,28 @@ class Lock(unittest.TestCase):
         for mutate, fragment in cases:
             with self.subTest(fragment):
                 self.refused(mutate, fragment)
+
+    def test_the_cli_refuses_each_named_fault_with_exit_2_and_the_tool(self):
+        # Completion review gap 2: the four faults the section names, through the command line.
+        faults = {"unknown key": lambda d: d["t"].update(colour="red"),
+                  "https": lambda d: d["t"]["archives"]["x64"].update(url="http://a.invalid/t.zip"),
+                  "sha256": lambda d: d["t"]["archives"]["x64"].update(sha256="ABC"),
+                  "no arm64": lambda d: d["t"]["archives"].pop("arm64")}
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        from contextlib import redirect_stderr
+        for fragment, mutate in faults.items():
+            with self.subTest(fragment):
+                data = self.good()
+                mutate(data)
+                (tmp / "tools.lock.json").write_text(json.dumps(data), encoding="utf-8")
+                err = io.StringIO()
+                with redirect_stderr(err):
+                    code = boot.main([], lock_path=tmp / "tools.lock.json", tools=tmp / ".tools", arch="x64")
+                self.assertEqual(code, 2)
+                self.assertIn(fragment, err.getvalue())
+                self.assertIn("t:", err.getvalue())
+                self.assertFalse((tmp / ".tools").exists())
 
     def test_the_cli_refuses_a_bad_lock_with_exit_2(self):
         tmp = Path(tempfile.mkdtemp())
@@ -263,9 +298,29 @@ class Install(Fixture):
         self.assertFalse(old.exists())
         self.assertEqual(self.leftovers(), [])
 
+    def test_a_slow_server_cannot_hold_a_read_past_the_deadline(self):
+        # Round 1, findings 1 and 4: the deadline is checked between arrivals, not after a full buffered chunk.
+        url = self.archives["cmake"][0]
+        self.server.mode = {url: "trickle"}
+        started = time.monotonic()
+        code, out = self.boot("--only", "cmake", "--deadline", "0.002")
+        self.assertEqual(code, 1)
+        self.assertIn("deadline", out)
+        self.assertLess(time.monotonic() - started, 3)
+
+    def test_a_second_run_waits_for_the_first_and_then_refuses(self):
+        # Round 1, finding 2: two runs never change .tools/ at once.
+        self.tools.mkdir()
+        with mock.patch.object(boot, "LOCK_SECONDS", 0.3), boot.RunLock(self.tools):
+            code, out = self.boot()
+        self.assertEqual(code, 1)
+        self.assertIn("another bootstrap still holds", out)
+        self.assertEqual(self.entries(), [])
+        self.assertEqual(self.boot()[0], 0)  # once the first is gone, the next run proceeds
+
     def test_only_installs_the_named_tool_and_an_unknown_name_exits_2(self):
         self.assertEqual(self.boot("--only", "cmake")[0], 0)
-        self.assertEqual(sorted(p.name for p in self.tools.iterdir()), ["cmake-1.0"])
+        self.assertEqual(self.entries(), ["cmake-1.0"])
         self.assertEqual(self.boot("--only", "ghost")[0], 2)
 
 
@@ -282,7 +337,7 @@ class Refusals(Fixture):
         code, out = self.boot()
         self.assertEqual(code, 1, out)
         self.assertIn(fragment, out)
-        self.assertEqual([p.name for p in self.tools.iterdir()], [])
+        self.assertEqual(self.entries(), [])
         self.assertFalse((self.tmp / "escape.txt").exists())
 
     def test_a_climbing_member_is_refused_in_zip_and_tar_xz(self):
@@ -306,10 +361,20 @@ class Refusals(Fixture):
                 self.serve("bad", data, fmt, ["t"])
                 self.refuses("link")
 
+    def test_more_than_the_pinned_size_is_refused_in_every_format(self):
+        # Completion review gap 2: the size refusal for zip, tar.xz and exe alike.
+        for fmt, data in (("zip", zip_bytes({"t/a.txt": b"a"})), ("tar.xz", tar_xz_bytes({"t/a.txt": b"a"})),
+                          ("exe", b"MZ")):
+            with self.subTest(fmt):
+                self.serve("big", data, fmt, [] if fmt == "exe" else ["t"])
+                url = f"https://x.invalid/big.{fmt}"
+                self.server.files[url] = data + b"x" * (boot.CHUNK * 2)
+                self.refuses("more than the pinned")
+
     def test_an_exe_installs_as_its_single_file(self):
         self.serve("tool", b"MZ", "exe", [])
         self.assertEqual(self.boot()[0], 0)
-        self.assertEqual(sorted(p.name for p in (self.tools / "tool-1.0").iterdir()), [boot.RECEIPT, "tool.exe"])
+        self.assertEqual(self.entries(self.tools / "tool-1.0"), [boot.RECEIPT, "tool.exe"])
 
 
 class Repository(unittest.TestCase):
