@@ -33,7 +33,8 @@ OBLIGATIONS = [
         "read every lesson it prints"]),
     ("each outcome of the read is handled", "section", [
         "exit 0 with lessons, they are read and the build follows them",
-        "exit 0 with none, no lesson applies, which the report (step 8) says in one line",
+        "exit 0 with none, no lesson applies, which one line records under a `## Writer note:` heading in the "
+        "section's findings file, beside the plan review (step 3a)",
         "exit 1, the store breaks a rule or the index cannot be written, and a failed query has read nothing: run "
         "`python scripts/lessons.py check`, fix what it names, and run the query again until it exits 0",
         "exit 2, the command is wrong"]),
