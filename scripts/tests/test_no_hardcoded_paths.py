@@ -20,8 +20,8 @@ ENV_FALLBACK = re.compile(r"""environ\.get\(\s*["'](?:SystemRoot|ProgramFiles(?:
                           r"""C:\\{1,2}(?:Windows|Program Files(?: \(x86\))?)["']""")
 
 
-def offenders(root=ROOT):
-    found = []
+def scanned(root=ROOT):
+    """(relative path, path) of every file the scan reads."""
     for folder in FOLDERS:
         base = root / folder
         for path in sorted(base.rglob("*")) if base.is_dir() else ():
@@ -29,9 +29,15 @@ def offenders(root=ROOT):
             if (not path.is_file() or path.suffix.lower() not in SUFFIXES or "__pycache__" in path.parts
                     or rel.startswith("scripts/tests/")):  # tests hold fixture strings, which nothing opens
                 continue
-            for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-                if MACHINE_PATH.search(ENV_FALLBACK.sub("", line)):
-                    found.append(f"{rel}:{number}: {line.strip()[:120]}")
+            yield rel, path
+
+
+def offenders(root=ROOT):
+    found = []
+    for rel, path in scanned(root):
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if MACHINE_PATH.search(ENV_FALLBACK.sub("", line)):
+                found.append(f"{rel}:{number}: {line.strip()[:120]}")
     return found
 
 
@@ -43,6 +49,24 @@ class NoHardcodedPaths(unittest.TestCase):
         for line in ('LOG = Path(r"R:\\scratch\\x.log")', "out = 'D:/GitHub/Office/build'", 'cd /home/someone/work',
                      "open('/mnt/c/Users/x')", 'p = "C:\\\\Users\\\\someone\\\\file"'):
             self.assertTrue(MACHINE_PATH.search(ENV_FALLBACK.sub("", line)), line)
+
+    def test_the_tool_resolver_is_scanned_and_a_drive_path_in_it_fails(self):
+        """D00 T04 §2: the resolver and the bootstrap are among the files scanned."""
+        import shutil
+        import tempfile
+        files = ("scripts/bootstrap-tools.py", "scripts/lib/tool_lock.py")
+        names = {rel for rel, _ in scanned()}
+        for rel in files:
+            self.assertIn(rel, names)
+        for rel in files:
+            with self.subTest(rel), tempfile.TemporaryDirectory() as tmp:
+                copy = Path(tmp) / rel
+                copy.parent.mkdir(parents=True)
+                shutil.copyfile(ROOT / rel, copy)
+                self.assertEqual(offenders(Path(tmp)), [])
+                with open(copy, "a", encoding="utf-8") as out:
+                    out.write('\nNINJA = r"D:\\Tools\\ninja.exe"\n')
+                self.assertEqual(len(offenders(Path(tmp))), 1)
 
     def test_an_environment_fallback_and_ordinary_text_pass(self):
         for line in ('os.path.join(os.environ.get("SystemRoot") or r"C:\\Windows", "System32", "taskkill.exe")',

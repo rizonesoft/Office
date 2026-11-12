@@ -45,7 +45,7 @@ import tool_lock  # found through scripts/lib, put on the path just above
 
 LOCK = ROOT / "tools.lock.json"
 TOOLS = ROOT / ".tools"
-RECEIPT = ".installed.json"
+RECEIPT = tool_lock.RECEIPT
 RUN_LOCK = "bootstrap.lock"  # held by the one run that may change .tools/
 READ_SECONDS = 60
 LOCK_SECONDS = 60  # a second run waits this long for the first, then refuses
@@ -265,8 +265,8 @@ def unpack(name, entry, archive, staging):
 
 def _unpack(name, entry, archive, staging, used):
     keep, fmt = entry["keep"], entry["format"]
-    if fmt == "exe":
-        program = PurePosixPath(entry["url"].split("?")[0]).name
+    if fmt == "exe":  # installed under its tool's name, one name on every architecture (vcpkg-arm64.exe is vcpkg.exe)
+        program = f"{name}.exe"
         with open(archive, "rb") as source:
             write_member(staging, checked_member(name, program), source)
         return
@@ -451,6 +451,9 @@ def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None)
     parser.add_argument("--check", action="store_true", help="download nothing; exit 1 unless every tool is installed")
     parser.add_argument("--only", action="append", metavar="NAME", help="install only this tool (repeatable)")
     parser.add_argument("--deadline", type=float, default=30, help="minutes one download may take (default 30)")
+    parser.add_argument("--where", metavar="PROGRAM", help="print the path of an installed program, or refuse")
+    parser.add_argument("--bin-dirs", action="store_true",
+                        help="print the program folders of every tool installed as pinned, one per line")
     args = parser.parse_args(argv)
     arch = arch or tool_lock.host_arch()
     try:
@@ -467,6 +470,21 @@ def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None)
         print("bootstrap-tools refused: --deadline must be above 0", file=sys.stderr)
         return 2
     tools = Path(tools)
+    if args.where or args.bin_dirs:
+        installed = tool_lock.Tools(lock_path, tools, arch)
+        if args.where:
+            try:
+                print(installed.path(args.where))
+            except tool_lock.ToolMissing as error:
+                print(f"bootstrap-tools: {error}", file=sys.stderr)
+                return 1
+            return 0
+        dirs, problems = installed.bin_dirs()
+        for folder in dirs:
+            print(folder)
+        for problem in problems:
+            print(f"bootstrap-tools: {problem}", file=sys.stderr)
+        return 1 if problems else 0
     if args.check:
         problems = {n: p for n, p in status(lock, tools, arch).items() if p}
         for name, problem in problems.items():

@@ -571,6 +571,169 @@ class SecondCycleCompletion(Fixture):
         self.assertTrue((self.tools / "vcpkg-registry-1.0").is_dir())
 
 
+class Resolver(Fixture):
+    """D00 T04 §2: programs are found in the tool folder only, and every way a tool can be missing is refused."""
+
+    def setUp(self):
+        super().setUp()
+        self.assertEqual(self.boot()[0], 0)
+        # A program of the same name first on PATH, which the resolver must never return.
+        self.decoys = self.tmp / "decoys"
+        self.decoys.mkdir()
+        for program in ("cmake.exe", "clangd.exe", "vcpkg.exe"):
+            (self.decoys / program).write_bytes(b"machine copy")
+        patcher = mock.patch.dict(os.environ, {"PATH": str(self.decoys) + os.pathsep + os.environ.get("PATH", "")})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tools_(self, arch="x64"):
+        return tool_lock.Tools(self.lock_path, self.tools, arch)
+
+    def refused(self, program, *fragments):
+        with self.assertRaises(tool_lock.ToolMissing) as caught:
+            self.tools_().path(program)
+        text = str(caught.exception)
+        for fragment in fragments + ("python scripts/bootstrap-tools.py",):
+            self.assertIn(fragment, text)
+        self.assertNotIn(str(self.decoys), text)
+        return text
+
+    def test_a_program_is_found_in_the_tool_folder_not_on_path(self):
+        self.assertEqual(str(shutil.which("cmake")).lower(), str(self.decoys / "cmake.exe").lower())  # the decoy is first
+        for program, inside in (("cmake", "cmake-1.0/cmake-1/bin/cmake.exe"), ("clangd.exe", "llvm-1.0/llvm-1/bin/clangd.exe"),
+                                ("vcpkg", "vcpkg-1.0/vcpkg.exe")):
+            with self.subTest(program):
+                self.assertEqual(self.tools_().path(program), (self.tools / inside).resolve())
+                self.assertEqual(tool_lock.tool_path(program, self.lock_path, self.tools, "x64"),
+                                 (self.tools / inside).resolve())
+
+    def test_an_empty_tool_folder_refuses_with_no_fallback(self):
+        shutil.rmtree(self.tools)
+        self.refused("cmake", "cmake 1.0", "not installed")
+
+    def test_each_way_a_tool_is_missing_is_refused(self):
+        folder = self.tools / "cmake-1.0"
+        program = folder / "cmake-1" / "bin" / "cmake.exe"
+        receipt = folder / tool_lock.RECEIPT
+        original = receipt.read_text(encoding="utf-8")
+
+        def newer_lock():
+            self.lock["cmake"]["archives"]["x64"]["sha256"] = "b" * 64
+            self.write_lock()
+
+        def restore_lock():
+            self.lock["cmake"]["archives"]["x64"] = entry(*self.archives["cmake"][:2], *self.archives["cmake"][2:])
+            self.write_lock()
+        cases = [
+            ("a newer lock entry", newer_lock, restore_lock, "not installed"),
+            ("a missing receipt", receipt.unlink, lambda: receipt.write_text(original, encoding="utf-8"), "not installed"),
+            ("a malformed receipt", lambda: receipt.write_text("{not json", encoding="utf-8"),
+             lambda: receipt.write_text(original, encoding="utf-8"), "not installed"),
+            ("a deleted program", program.unlink, lambda: program.write_bytes(b"cmake"), "missing or changed cmake.exe"),
+            ("a same-size change", lambda: program.write_bytes(b"CMAKE"), lambda: program.write_bytes(b"cmake"),
+             "missing or changed cmake.exe"),
+        ]
+        for label, break_, mend, fragment in cases:
+            with self.subTest(label):
+                break_()
+                self.refused("cmake", "cmake 1.0", fragment)
+                mend()
+                self.assertEqual(self.tools_().path("cmake"), program.resolve())
+
+    def test_a_missing_or_stale_required_tool_is_refused(self):
+        registry = self.tools / "vcpkg-registry-1.0"
+        aside = self.tmp / "registry-aside"
+        registry.rename(aside)
+        self.refused("vcpkg", "vcpkg requires vcpkg-registry 1.0", "not installed")
+        aside.rename(registry)
+        self.lock["vcpkg-registry"]["version"] = "2.0"  # the lock moved on; 1.0 is stale
+        self.write_lock()
+        self.refused("vcpkg", "vcpkg requires vcpkg-registry 2.0")
+
+    def test_a_program_no_tool_provides_is_refused_as_such(self):
+        with self.assertRaises(tool_lock.ToolMissing) as caught:
+            self.tools_().path("nmake")
+        self.assertIn("no tool of tools.lock.json provides nmake.exe", str(caught.exception))
+
+    def test_one_name_on_every_architecture(self):
+        url = "https://x.invalid/vcpkg-arm64.exe"
+        data = b"MZ vcpkg arm64"
+        self.server.files[url] = data
+        self.lock["vcpkg"]["archives"]["arm64"] = entry(url, data, "exe", [], [])
+        self.write_lock()
+        arm = self.tmp / "arm-tools"
+        out, err = io.StringIO(), io.StringIO()
+        from contextlib import redirect_stderr, redirect_stdout
+        with redirect_stdout(out), redirect_stderr(err):
+            self.assertEqual(boot.main([], opener=self.server, lock_path=self.lock_path, tools=arm, arch="arm64"), 0)
+            self.assertEqual(boot.main(["--where", "vcpkg"], lock_path=self.lock_path, tools=arm, arch="arm64"), 0)
+        self.assertTrue((arm / "vcpkg-1.0" / "vcpkg.exe").is_file())
+        self.assertFalse((arm / "vcpkg-1.0" / "vcpkg-arm64.exe").exists())
+        self.assertEqual(self.tools_("arm64").__class__(self.lock_path, arm, "arm64").path("vcpkg"),
+                         (arm / "vcpkg-1.0" / "vcpkg.exe").resolve())
+        self.assertIn(str((arm / "vcpkg-1.0" / "vcpkg.exe").resolve()), out.getvalue())
+        self.assertEqual(self.tools_("x64").path("vcpkg"), (self.tools / "vcpkg-1.0" / "vcpkg.exe").resolve())
+
+    def test_tool_env_checks_the_registry_itself(self):
+        folder = (self.tools / "vcpkg-registry-1.0" / "vcpkg-2026").resolve()
+        self.assertEqual(tool_lock.tool_env(self.lock_path, self.tools, "x64"), {"VCPKG_ROOT": str(folder)})
+        shutil.rmtree(self.tools / "vcpkg-registry-1.0")
+        with self.assertRaises(tool_lock.ToolMissing) as caught:
+            tool_lock.tool_env(self.lock_path, self.tools, "x64")
+        self.assertIn("vcpkg-registry 1.0 is not installed", str(caught.exception))
+        self.assertIn("python scripts/bootstrap-tools.py", str(caught.exception))
+        self.lock["vcpkg-registry"]["archives"]["x64"]["sha256"] = "c" * 64  # stale against the lock as well
+        self.write_lock()
+        with self.assertRaises(tool_lock.ToolMissing):
+            tool_lock.tool_env(self.lock_path, self.tools, "x64")
+        self.lock["vcpkg-registry"]["archives"]["x64"] = entry(*self.archives["vcpkg-registry"])
+        self.write_lock()
+        self.assertEqual(self.boot()[0], 0)  # the bootstrap repairs it
+        self.assertEqual(tool_lock.tool_env(self.lock_path, self.tools, "x64"), {"VCPKG_ROOT": str(folder)})
+
+    def test_where_prints_the_path_or_refuses(self):
+        code, out = self.boot("--where", "ninja")
+        self.assertEqual(code, 1)
+        self.assertIn("no tool of tools.lock.json provides ninja.exe", out)
+        code, out = self.boot("--where", "cmake")
+        self.assertEqual((code, out.strip()), (0, str((self.tools / "cmake-1.0/cmake-1/bin/cmake.exe").resolve())))
+        shutil.rmtree(self.tools / "cmake-1.0")
+        code, out = self.boot("--where", "cmake")
+        self.assertEqual(code, 1)
+        self.assertIn("cmake 1.0 is not installed", out)
+        self.assertNotIn(str(self.decoys), out)
+
+    def bin_dirs(self):
+        out, err = io.StringIO(), io.StringIO()
+        from contextlib import redirect_stderr, redirect_stdout
+        with redirect_stdout(out), redirect_stderr(err):
+            code = boot.main(["--bin-dirs"], lock_path=self.lock_path, tools=self.tools, arch="x64")
+        return code, out.getvalue().splitlines(), err.getvalue()
+
+    def test_bin_dirs_prints_only_usable_folders(self):
+        every = [str((self.tools / f).resolve()) for f in
+                 ("cmake-1.0/cmake-1/bin", "llvm-1.0/llvm-1/bin", "vcpkg-1.0", "vcpkg-registry-1.0/vcpkg-2026")]
+        code, lines, err = self.bin_dirs()
+        self.assertEqual((code, lines, err), (0, every, ""))
+        # Partial: llvm is gone. Its folder is left out and named, the rest printed, exit 1.
+        shutil.rmtree(self.tools / "llvm-1.0")
+        code, lines, err = self.bin_dirs()
+        self.assertEqual(code, 1)
+        self.assertEqual(lines, [every[0], every[2], every[3]])
+        self.assertIn("llvm 1.0 is not installed", err)
+        self.assertIn("python scripts/bootstrap-tools.py", err)
+        # Stale: cmake's program changed. Left out too.
+        (self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").write_bytes(b"CMAKE")
+        code, lines, err = self.bin_dirs()
+        self.assertEqual((code, lines), (1, [every[2], every[3]]))
+        self.assertIn("cmake 1.0 has a missing or changed cmake-1/bin/cmake.exe", err)
+        # Empty: nothing on stdout.
+        shutil.rmtree(self.tools)
+        code, lines, err = self.bin_dirs()
+        self.assertEqual((code, lines), (1, []))
+        self.assertEqual(err.count("is not installed"), 4)
+
+
 class Refusals(Fixture):
     """An archive that would write outside the tool's folder is refused in each format (gap 5 of the plan review)."""
 

@@ -33,7 +33,7 @@ python scripts/run-tests.py                      # every test file, several at a
 python scripts/bootstrap-tools.py                # the pinned build tools of tools.lock.json, into .tools/
 ```
 
-The build tools (CMake, Ninja, sccache, vcpkg and the LLVM tools) are pinned by version and SHA-256 in `tools.lock.json` and fetched by `python scripts/bootstrap-tools.py` into `.tools/` in the clone, which git ignores; `python scripts/bootstrap-tools.py --check` says whether they are all there. Nothing uses a machine install of them.
+The build tools (CMake, Ninja, sccache, vcpkg and the LLVM tools) are pinned by version and SHA-256 in `tools.lock.json` and fetched by `python scripts/bootstrap-tools.py` into `.tools/` in the clone, which git ignores; `python scripts/bootstrap-tools.py --check` says whether they are all there. A script finds a program with `tool_path()` in `scripts/lib/tool_lock.py` (`python scripts/bootstrap-tools.py --where ninja` on the command line), and `--bin-dirs` prints the folders to put first on a child process's `PATH`. Nothing uses a machine install of them.
 
 These are the steps CI runs in [.github/workflows/ci.yml](./.github/workflows/ci.yml). Read the test summary as well as its result: a test whose tool is missing (`pwsh`, for example) is skipped, not failed, so check the skip count before trusting a local pass.
 

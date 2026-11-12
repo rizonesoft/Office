@@ -8,7 +8,11 @@ host architecture (`x64`, `arm64`), an optional `requires` list (tools that must
 (bytes), `format` (`zip`, `tar.xz` or `exe`), `keep` (the member paths or path prefixes to unpack; empty for an `exe`),
 `bin` (the folders, relative to the tool's folder, that hold its programs) and an optional `note`. Anything else is
 refused with the tool's name, so a typo can never become a download from the wrong place.
+
+It also answers where an installed program is (D00 T04 §2): `tool_path`, `tool_env` and `bin_dirs` look in the
+clone's `.tools/` folder only, never on `PATH`, so a machine's own Ninja or CMake is never used by accident.
 """
+import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import platform
@@ -20,6 +24,12 @@ TOOL_KEYS = {"version", "archives", "requires", "note"}
 ARCHIVE_KEYS = {"url", "sha256", "size", "format", "keep", "bin", "note"}
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
+ROOT = Path(__file__).resolve().parents[2]
+LOCK = ROOT / "tools.lock.json"
+TOOLS = ROOT / ".tools"
+RECEIPT = ".installed.json"  # what bootstrap-tools.py writes in a tool's folder once it is installed whole
+BOOTSTRAP = "python scripts/bootstrap-tools.py"
+ENV = {"VCPKG_ROOT": "vcpkg-registry"}  # a variable a build tool needs, and the tool whose folder it names
 
 
 class LockError(Exception):
@@ -119,3 +129,164 @@ def load(path):
 def host_arch():
     """`arm64` on an Arm64 Windows host, `x64` otherwise (the two architectures the suite builds for)."""
     return "arm64" if platform.machine().lower() in ("arm64", "aarch64") else "x64"
+
+
+class ToolMissing(Exception):
+    """A program's tool is not installed as the lock pins it; the message names the tool and the bootstrap command."""
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as source:
+        for block in iter(lambda: source.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _bins(entry):
+    """The tool's program folders, relative to its folder, as POSIX paths ('' for the folder itself)."""
+    return ["" if b in (".", "./") else b.rstrip("/") for b in (entry["bin"] or ["."])]
+
+
+def receipt(folder, entry):
+    """The receipt's recorded files ({relative path: [size, sha256]}) when `folder` was installed from exactly this
+    lock entry, or None. A lookup checks only this and the programs it hands out; `bootstrap-tools.py --check`
+    re-hashes every file."""
+    try:
+        data = json.loads((folder / RECEIPT).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("entry") != entry or data.get("sha256") != entry["sha256"]:
+        return None
+    files = data.get("files")
+    if not isinstance(files, dict) or not files or not all(
+            isinstance(v, list) and len(v) == 2 and type(v[0]) is int and isinstance(v[1], str) for v in files.values()):
+        return None
+    if not all((folder / b).is_dir() for b in _bins(entry)):
+        return None
+    return files
+
+
+def _unchanged(path, recorded):
+    try:
+        return path.is_file() and path.stat().st_size == recorded[0] and _sha256(path) == recorded[1]
+    except OSError:
+        return False
+
+
+class Tools:
+    """The installed tools of one clone, for one architecture."""
+
+    def __init__(self, lock=None, tools=None, arch=None):
+        self.lock = load(lock or LOCK)
+        self.tools = Path(tools or TOOLS)
+        self.arch = arch or host_arch()
+
+    def folder(self, name):
+        return self.tools / f"{name}-{self.lock[name]['version']}"
+
+    def entry(self, name):
+        return self.lock[name]["archives"][self.arch]
+
+    def refusal(self, name, problem):
+        return ToolMissing(f"{name} {self.lock[name]['version']} {problem}; run `{BOOTSTRAP}` to install it")
+
+    def installed(self, name, seen=()):
+        """The receipt's files of `name`, with every tool it requires installed too; ToolMissing otherwise."""
+        files = receipt(self.folder(name), self.entry(name))
+        if files is None:
+            raise self.refusal(name, "is not installed as tools.lock.json pins it (missing, older or damaged)")
+        for needed in self.lock[name].get("requires", []):
+            if needed not in seen:
+                try:
+                    self.installed(needed, seen + (name,))
+                except ToolMissing as error:
+                    raise ToolMissing(f"{name} requires {error}") from None
+        return files
+
+    def owners(self, program):
+        """The tools whose lock entry would provide `program` (a file name), installed or not."""
+        found = []
+        for name in self.lock:
+            entry = self.entry(name)
+            if entry["format"] == "exe":
+                if program.lower() == f"{name}.exe":
+                    found.append(name)
+                continue
+            for b in _bins(entry):
+                relative = f"{b}/{program}" if b else program
+                if any(relative.lower() == k.lower() or relative.lower().startswith(k.rstrip("/").lower() + "/")
+                       for k in entry["keep"]):
+                    found.append(name)
+                    break
+        return found
+
+    def path(self, program):
+        """The absolute path of `program` (`ninja` or `ninja.exe`) inside the tool folder; ToolMissing otherwise."""
+        file = program if program.lower().endswith(".exe") else f"{program}.exe"
+        if not file or "/" in file or "\\" in file:
+            raise ToolMissing(f"{program!r} is not a program name")
+        owners = self.owners(file)
+        if not owners:
+            raise ToolMissing(f"no tool of tools.lock.json provides {file}; run `{BOOTSTRAP}` after adding one")
+        problem = None
+        for name in owners:
+            try:
+                files = self.installed(name)
+            except ToolMissing as error:
+                problem = problem or error
+                continue
+            for b in _bins(self.entry(name)):
+                relative = f"{b}/{file}" if b else file
+                recorded = next((v for k, v in files.items() if k.lower() == relative.lower()), None)
+                if recorded is None:
+                    continue
+                path = self.folder(name) / relative
+                if not _unchanged(path, recorded):
+                    raise self.refusal(name, f"has a missing or changed {file}")
+                return path.resolve()
+            # installed whole without it: a kept folder that does not hold this program, so not its owner
+        raise problem or ToolMissing(f"no tool of tools.lock.json provides {file}")
+
+    def env(self):
+        """{variable: folder} a build tool needs beside its path; ToolMissing when the folder's tool is not
+        installed as pinned."""
+        out = {}
+        for variable, name in ENV.items():
+            if name not in self.lock:
+                continue
+            self.installed(name)
+            out[variable] = str((self.folder(name) / _bins(self.entry(name))[0]).resolve())
+        return out
+
+    def bin_dirs(self):
+        """([folder, ...], [problem, ...]): the program folders of each tool that passes the `path` checks (its
+        receipt, the tools it requires and every program its folders hold, unchanged), and one problem per tool
+        that does not."""
+        dirs, problems = [], []
+        for name in self.lock:
+            try:
+                files = self.installed(name)
+                entry = self.entry(name)
+                for b in _bins(entry):
+                    for relative, recorded in files.items():
+                        parent = relative.rpartition("/")[0]
+                        if parent == b and relative.lower().endswith(".exe") and \
+                                not _unchanged(self.folder(name) / relative, recorded):
+                            raise self.refusal(name, f"has a missing or changed {relative}")
+            except ToolMissing as error:
+                problems.append(str(error))
+                continue
+            dirs.extend(str((self.folder(name) / b).resolve()) for b in _bins(entry))
+        return dirs, problems
+
+
+def tool_path(program, lock=None, tools=None, arch=None):
+    """The absolute path of `program` in the clone's tool folder (never `PATH`); ToolMissing when its tool is not
+    installed as pinned."""
+    return Tools(lock, tools, arch).path(program)
+
+
+def tool_env(lock=None, tools=None, arch=None):
+    """The variables a build tool needs beside its path (`VCPKG_ROOT`); ToolMissing when their tool is missing."""
+    return Tools(lock, tools, arch).env()
