@@ -13,6 +13,15 @@ Rizonesoft Office is licensed under GPL-3.0-or-later. This file lists the third-
 - Licence: OFL-1.1. The full licence text ships beside the font as `design/fonts/plus-jakarta-sans/OFL.txt` (also `LICENSES/OFL-1.1.txt`).
 - Obligations (OFL-1.1 conditions 1 to 5): the font is never sold on its own; every copy, in the repository and in each installer and MSIX package, carries the copyright line above and the OFL text; a modified version may keep the name, because the font declares no Reserved Font Name; the authors' and copyright holders' names are never used to promote, endorse or advertise a modified version, except to acknowledge their contribution or with their written permission; and the font, modified or not, is distributed only under OFL-1.1, never under the suite's GPL.
 
+## Legal texts
+
+### Project Harmony contributor agreements
+
+- What: the Harmony Individual and Entity Contributor License Agreements, version 1.0, kept as published in `docs/legal/harmony/ha-cla-i-v1.txt` and `docs/legal/harmony/ha-cla-e-v1.txt` (the text of the published `.odt` files, one paragraph per block), and the two agreements `scripts/build-contributor-agreements.py` builds from them, `docs/legal/rizonesoft-cla.md` and `docs/legal/rizonesoft-cla-entity.md`.
+- Changed: in the built agreements only, the placeholders are filled in (recipient, instructions, governing law), the chosen outbound licence option is kept and the other four left out, the optional Media clause is left out, and headings and a Review section are added. The templates themselves are unmodified.
+- Upstream: the Project Harmony community, harmonyagreements.org, fetched 2026-11-13.
+- Licence: CC-BY-3.0 (Creative Commons Attribution 3.0 Unported), as each template states; the full text is `LICENSES/CC-BY-3.0.txt`. The attribution it requires is this entry and the line at the end of each agreement.
+
 ## Data sources
 
 ### Office control identifier baseline

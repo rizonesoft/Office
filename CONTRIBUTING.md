@@ -15,7 +15,7 @@ Every source file states its licence in its first lines. Add these two lines at 
 
 `python scripts/check-spdx.py` refuses a source file without exactly one licence line, and CI runs it on every push; the copyright line is the convention every file follows, not a checked rule. Third-party material keeps its own licence and needs an entry in [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) before it lands.
 
-Outside contributions also need a signed contributor licence agreement, which keeps a commercial edition possible. Its text will live at `docs/legal/rizonesoft-cla.md` once it has been reviewed by a lawyer (D00 T02 §3); until then, a pull request from an outside contributor cannot be merged.
+Outside contributions also need a signed contributor licence agreement, which keeps a commercial edition possible while you keep your copyright. Sign the [individual agreement](./docs/legal/rizonesoft-cla.md) for your own work, or have your organisation sign the [entity agreement](./docs/legal/rizonesoft-cla-entity.md) when it owns what you write; [docs/legal/README.md](./docs/legal/README.md) says which applies, how to sign on your first pull request, and what to do about work you do not own. Both are the Project Harmony agreements with their choices filled in, approved by the owner on 2026-11-13 and not yet reviewed by a lawyer.
 
 ## Build and test
 
