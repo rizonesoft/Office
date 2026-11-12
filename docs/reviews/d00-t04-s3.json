@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T04 \u00a73",
+  "title": "Tool Bootstrap in CI",
+  "implementation_sha": "e864d9ee31e88c96a3fa64bae38094a4ec61b828",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T04-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_bootstrap_tools.py\" -> Ran 50 tests, OK",
+    "python scripts/ci-status.py 28dcaf5 --wait -> green run 43162074642 (bootstrap, --check, --versions and 1430 tooling tests: success)",
+    "warm cache run 43160502532 -> Cache restored from key tools-Windows-X64-844ab1a3..., every tool already installed"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T04-s3.md",
+    "verdict": "reconciled",
+    "candidate": "e864d9ee31e88c96a3fa64bae38094a4ec61b828",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T04-s3.md",
+    "candidate": "67bbb4bb35edc6f2098097d0f58e25e9a6170f6f",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "67bbb4bb35edc6f2098097d0f58e25e9a6170f6f",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

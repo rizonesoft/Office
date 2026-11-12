@@ -38,7 +38,7 @@ title: "TODO-04 -- Portable Build Tools"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Tool lock file and bootstrap script | -- | [x] |
 | 2 | §2 | Tool folder resolver | §1 | [x] |
-| 3 | §3 | Tool bootstrap in CI | §1 | [ ] |
+| 3 | §3 | Tool bootstrap in CI | §1 | [x] |
 | 4 | §4 | Launcher and clangd use the tool folder | §1, §2 | [ ] |
 
 ## 1. Tool Lock File and Bootstrap Script
@@ -137,9 +137,12 @@ CI builds with the same pinned tools as this PC. A cache keyed on the lock file 
 - [x] Add a step that prints each tool's version through `python scripts/bootstrap-tools.py --where <program>` and the program's version flag. Done when: the run log shows every version in `tools.lock.json`. **Corrected 2026-11-12** (plan review gap 3, P2): the probes are the seven programs, `cmake --version`, `ninja --version`, `sccache --version`, `vcpkg version`, `clangd --version`, `clang-tidy --version` and `clang-format --version`, and the step fails unless each output holds its tool's pin; `vcpkg-registry` is source data with no program, so it is proved by `--check` (its receipt for the pinned entry, every file re-hashed). The probe is `python scripts/bootstrap-tools.py --versions`, tested with fixture programs that print a matching and a wrong version.
 - [x] Push and read the run with `python scripts/ci-status.py`. Done when: the run on the pushed HEAD is green and its log shows the bootstrap downloading each tool. **Corrected 2026-11-12** (plan review gaps 1 and 2, P2): the command is `python scripts/ci-status.py <sha> --wait`, which reports the run ID; the successful step's log is read with `gh run view <id> --log`. A cold run's bootstrap prints `<tool> <version>: installed` for each of the six tools, and that is the line quoted.
 - [x] Read the bootstrap step of the next push's run on the same `tools.lock.json` (the review record's commit will do). Done when: that log shows the cache restored and no download line, quoted in the section's findings file. **Corrected 2026-11-12** (plan review gap 2, P2): the bootstrap prints no download line either way, so the proof is the cache step's `Cache restored from key:` line with the exact key, and `<tool> <version>: already installed` for each of the six tools, set beside the cold run's `installed` lines. Cheaper substitute: assuming the cache works because the step exists.
-- [ ] Commit: `ci: bootstrap the pinned build tools behind a cache`
+- [x] Commit: `ci: bootstrap the pinned build tools behind a cache`
 
 **Test checkpoint:** `python scripts/ci-status.py` reports the `ci.yml` run on the pushed HEAD green, and that run's log holds the `--check` step with exit 0.
+
+> **Verified:** 2026-11-12 | §3 | e864d9ee31e88c96a3fa64bae38094a4ec61b828
+> **Review:** `docs/reviews/d00-t04-s3.json`
 
 ## 4. Launcher and clangd Use the Tool Folder
 
