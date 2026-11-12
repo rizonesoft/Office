@@ -8,11 +8,11 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 62 | Checklist items: 478
+Sections: 63 | Checklist items: 481
 
 #### Workspace and tooling
 
-Sections: 61 | Checklist items: 471 | Verified: 58
+Sections: 62 | Checklist items: 474 | Verified: 58
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -77,6 +77,7 @@ Sections: 61 | Checklist items: 471 | Verified: 58
 | [x]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 5     |
 | [x]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 10    |
 | [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning             | windows-host           | 9     |
+| [ ]    | D00 T07 §5  | Weekly Digest's First Scheduled Send Is Read Back     | windows-host           | 3     |
 
 #### Architecture and tech stack
 
@@ -270,6 +271,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 86/163 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 86/164 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 627/1120 items completed (includes Commit items).
+Checklist: 627/1123 items completed (includes Commit items).

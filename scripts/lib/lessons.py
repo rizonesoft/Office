@@ -158,6 +158,8 @@ LOOKS_LIKE_A_FINDING = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\bP[123]\b")
 # A completion gap that names its class before its severity: `**missing-in-scope, P2**: ...` or `..., P2:** ...`.
 FINDING_BY_CLASS = re.compile(r"^\s*(\d+)\.\s+\*\*(?:missing-in-scope|missing-out-of-scope|in-scope|out-of-scope)"
                               r"(?:\s*/\s*[a-z-]+)?,\s*(P[123]):?\*\*:?\s+(.*)$")
+# A reconciliation's own finding, labelled as new before its severity: `**New finding, P3: Its title.** ...`.
+FINDING_NEW = re.compile(r"^\s*(\d+)\.\s+\*\*New finding,\s*(P[123]):?(?:\*\*)?:?\s+(.*)$")
 # In a reconciliation, an item saying an earlier gap is closed or open reports on that gap; it is not a new finding.
 # The status is the label itself: the bold text opens with it (`**closed, P2:**`, `**open, P3, gap 2:**`), or the
 # severity is followed directly by it (`**P1, open: ...`). The words inside a finding's title are not a status.
@@ -212,6 +214,10 @@ def pass_findings(record_text):
         elif classed:
             rest = classed[3].replace("**", "")
             current.append(_finding(len(current) + 1, classed[2], LOCATION.search(rest), rest))
+        elif FINDING_NEW.match(line):
+            new = FINDING_NEW.match(line)
+            rest = new[3].replace("**", "")
+            current.append(_finding(len(current) + 1, new[2], LOCATION.search(rest), rest))
         elif LOOKS_LIKE_A_FINDING.match(line):
             current.append({"k": len(current) + 1, "severity": "?", "location": "", "sentence": line.strip()[:200]})
         if PASS_END.match(line):

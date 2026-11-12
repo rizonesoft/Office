@@ -780,6 +780,20 @@ class Triage(Indexed):
     def all_passes(self):
         (self.root / self.ALL).write_text(self.ALL_TEXT, encoding="utf-8")
 
+    def test_a_reconciliation_finding_labelled_new_is_read(self):
+        # D00 T07 §4's reconciliation wrote `**New finding, P3: ...**`; the reader refused the record as unknown.
+        record = "docs/reviews/00-workspace/D99-T06-s2.md"
+        (self.root / record).write_text(
+            "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            "1. **open, P1: The run remains unproved.** Still open.\n"
+            "2. **closed, P3: Finding struck.** Done.\n"
+            "3. **New finding, P3: Incorrect repair attribution.** `docs/a.md:174` names the wrong commit.\n\n"
+            "RECONCILIATION: gaps\n", encoding="utf-8")
+        code, lines, err = self.listing(record, "--p3")
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual([line[len(record) + 1:] for line in lines],
+                         ["reconciliation 1 finding 1 [P3] docs/a.md:174: Incorrect repair attribution."])
+
     def test_every_pass_lists_exactly_its_tagged_findings(self):
         self.all_passes()
         code, lines, err = self.listing(self.ALL)

@@ -32,6 +32,7 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 | 2 | §2 | Digest keeps a long progress list | T03 §35 | [x] |
 | 3 | §3 | Digest delivery survives a failed send | T03 §35 | [x] |
 | 4 | §4 | Scheduled tasks start on a Monday morning | -- | [ ] |
+| 5 | §5 | Weekly digest's first scheduled send is read back | §4 | [ ] |
 
 ## 1. Digest Tells a Live Run From an Abandoned Guard
 
@@ -141,6 +142,24 @@ Filed 2026-11-11 from `todo/findings.md` (the entry of 2026-11-11). The 2026-11-
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` passes, and `Get-ScheduledTask -TaskPath '\Office\' | Get-ScheduledTaskInfo` shows `LastTaskResult` 0 for every task after a run started by Task Scheduler.
 
+## 5. Weekly Digest's First Scheduled Send Is Read Back
+
+Filed from D00 T07 §4's reconciliation, 2026-11-12. §4 proved that Task Scheduler starts every task: four of the five ended 0 on a normal run, and `office-owner-digest` ended 0 on a run that found its lock held and sent nothing, because a normal run emails the owner and decision 32 allows one such email a week, on Monday. What is not yet proved is that task's normal run: the Scheduler starting it on its own trigger, the digest composed and sent, and the delivery recorded. That can first be read on Monday 2026-11-16 after 07:05 local time, and this section cannot be done before then.
+
+**Phase:** 0
+**Needs:** windows-host
+**Surface:** no
+
+**Build order:**
+
+1. Read the Monday run back from Task Scheduler and the digest's own records. Done when: the record quotes the result, the log and the delivered week.
+2. Fix whatever the run shows. Done when: the cause and fix are recorded, or the record states nothing needed fixing.
+
+- [ ] On or after Monday 2026-11-16 07:05 local time, read `office-owner-digest` back from Task Scheduler and from its own records. Done when: `docs/reviews/00-workspace/D00-T07-s5.md` quotes `Get-ScheduledTask -TaskPath '\Office\' -TaskName office-owner-digest | Get-ScheduledTaskInfo` with a `LastRunTime` on the trigger's day and `LastTaskResult` 0, the name of that run's log under `build/automations/office-owner-digest/` with `exit: 0` in `last.json`, and the delivered week in `build/automations/owner-digest.json`, with no address, token or message body printed. Cheaper substitute: starting the task by hand, which proves the launch §4 already proved and sends a second email.
+- [ ] If the run failed, did not start or sent nothing, find the cause from the Scheduler's result, the task log and the digest's state, and fix it in the layer that owns it with a test that fails before the fix. Done when: the record names the cause and the fix, or states that the run succeeded and nothing needed fixing.
+- [ ] Commit: `automations: the weekly digest's first scheduled send is read back`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes, and the record holds the Scheduler's own answer for the Monday run.
 ## Verification
 - `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes.
 - `python scripts/owner-digest.py --dry-run` prints a digest for this repository and exits 0.
