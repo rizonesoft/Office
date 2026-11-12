@@ -270,8 +270,9 @@ def notices_part(notices, root):
     lines = [f"Notices since the last digest ({len(notices)}):"]
     shown = 0
     for notice in notices:
+        repeat = " (sent before, unconfirmed; it may repeat)" if notice.get("attempts") else ""
         summary = wrap(f"- {notice.get('at', '?')} {without_paths(str(notice.get('sender', '?')), root)}: "
-                       f"{without_paths(str(notice.get('subject', '')), root)}")
+                       f"{without_paths(str(notice.get('subject', '')), root)}{repeat}")
         if len(lines) - 1 + len(summary) > NOTICE_LINES:
             break
         lines += summary
@@ -287,7 +288,7 @@ def notices_part(notices, root):
     return lines + [""], (NOTICES_ATTACHMENT, full)
 
 
-def compose(root, rows, today, ci_lines, state, notices=(), stale=()):
+def compose(root, rows, today, ci_lines, state, notices=()):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
@@ -313,9 +314,6 @@ def compose(root, rows, today, ci_lines, state, notices=(), stale=()):
                    for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
     notice_lines, notice_file = notices_part(notices, root)
-    if stale:  # claimed by an earlier digest that could not complete its record: counted, never sent again
-        notice_lines = notice_lines + wrap(f"{len(stale)} notice(s) went out in an earlier digest whose record could not "
-                                           f"be completed; python .conclave/automations/alert.py --list shows them.") + [""]
     body = head + waiting_lines + [""] + notice_lines + progress
     attachments = [notice_file] if notice_file else []
     if len(body) > BODY_LINES:
@@ -355,11 +353,12 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
     # reported, once the send succeeded, so a notice recorded meanwhile, a dry run and a refused send leave notices
     # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
     try:
-        batch = alert.pending_notices(str(root))
-        stale = alert.claimed_notices(str(root))
+        if not args.dry_run:
+            alert.release_unconfirmed(str(root))  # an earlier digest that never confirmed: send its notices again
+        batch = alert.pending_notices(str(root)) + (alert.claimed_notices(str(root)) if args.dry_run else [])
     except alert.Refused as error:
-        batch, stale = str(error), []
-    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch, stale)
+        batch = str(error)
+    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch)
     if args.dry_run:
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
@@ -381,18 +380,17 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
         if ids:
             try:
                 alert.release_claim(digest_id, str(root))
-            except alert.Refused as release:  # they stay claimed; `alert.py --list` shows them and the next digest
-                print(f"owner-digest: the notices stay claimed: {release}", file=sys.stderr)  # says so
+            except alert.Refused as release:  # they stay claimed; the next digest releases and sends them
+                print(f"owner-digest: the notices stay claimed until the next digest: {release}", file=sys.stderr)
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
-    done = ids + [n["id"] for n in stale]  # the stale ones were reported as a count in this digest
-    if done:
+    if ids:
         try:
-            marked = alert.mark_reported(done, str(root))
+            marked = alert.mark_reported(ids, str(root))
             print(f"marked {marked} notice(s) reported")
-        except alert.Refused as error:  # delivered; they stay claimed, so the next digest counts them, never resends
-            print(f"owner-digest: the delivered notices could not be marked and stay claimed: {error}",
-                  file=sys.stderr)
+        except alert.Refused as error:  # delivered but unconfirmed: the next digest sends them again, so marked
+            print(f"owner-digest: the delivered notices could not be marked; the next digest repeats them, marked as "
+                  f"possible repeats: {error}", file=sys.stderr)
             return 1
     return 0
 

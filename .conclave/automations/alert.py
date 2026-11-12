@@ -226,9 +226,21 @@ def pending_notices(root: str = REPO) -> list[dict]:
 
 
 def claimed_notices(root: str = REPO) -> list[dict]:
-    """Notices a digest claimed but whose report was never completed: that digest was delivered and could not mark
-    them, or it stopped before its send. They are not sent again (D00 T03 §53, completion review)."""
+    """Notices a digest claimed and never confirmed: it was delivered and could not mark them, or it stopped before
+    or during its send. Nothing on disk tells the two apart."""
     return [n for n in _read_notices(root) if n.get("claimed") and not n.get("reported")]
+
+
+def release_unconfirmed(root: str = REPO) -> int:
+    """Give every claimed, unconfirmed notice back to the queue, keeping its `attempts`, so the next digest sends it
+    again, marked as possibly repeated. A notice is never lost to a digest that may not have gone out (D00 T03 §53,
+    reconciliation review: of a repeat and a loss, the repeat is the one the owner can see and discard)."""
+    def change(notice):
+        if notice.get("claimed") and not notice.get("reported"):
+            notice["claimed"] = None
+            return True
+        return False
+    return _update(root, change)
 
 
 def _update(root: str, change) -> int:
@@ -244,14 +256,15 @@ def _update(root: str, change) -> int:
 
 
 def claim_notices(ids, digest: str, root: str = REPO) -> int:
-    """Before a digest is sent, mark its batch as claimed by that digest, so a send that succeeds and then cannot be
-    marked never sends the batch twice. Refused when the queue cannot be written: then nothing may be sent."""
+    """Before a digest is sent, mark its batch as claimed by that digest and count the attempt, so a notice the next
+    digest sends again says it may be a repeat. Refused when the queue cannot be written: then nothing may be sent."""
     import datetime
     wanted, now = set(ids), datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def change(notice):
         if notice["id"] in wanted and not notice.get("reported") and not notice.get("claimed"):
             notice["claimed"] = {"by": digest, "at": now}
+            notice["attempts"] = int(notice.get("attempts") or 0) + 1
             return True
         return False
     return _update(root, change)

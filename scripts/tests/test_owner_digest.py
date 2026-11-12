@@ -460,24 +460,59 @@ class Notices(Send):
             self.assertNotIn("Private", text)
             self.assertNotIn(r"C:\Users", text)
 
-    def test_a_delivered_batch_that_cannot_be_marked_is_never_sent_again(self):
-        # Completion review: the send succeeds, the mark fails (a full disk), the next digest runs.
+    def unconfirmed_then_next(self, first_run):
+        """Run `first_run`, a digest that claims its batch and never confirms it, then a normal digest; return the
+        second digest's request and the queue after it."""
         ids = self.queue(1)
-        alert = digest.load_alert(self.root)
-        with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")):
-            with mock.patch.object(digest, "load_alert", return_value=alert):
-                code, _, first = self.run_main([])
-        self.assertEqual(code, 1)
-        self.assertIn("Notices since the last digest (1):", first[0]["text_body"])
+        first_run()
+        self.assertEqual(self.pending(), [])  # claimed, so not pending until the next digest releases it
         code, _, second = self.run_main([])
         self.assertEqual(code, 0)
-        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
-        self.assertIn("1 notice(s) went out in an earlier digest", second[0]["text_body"])
-        self.assertNotIn("attachments", second[0])  # the notice's text is not sent a second time
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
+        return ids, second[0], queue
+
+    def assert_sent_again_in_full(self, ids, request, queue):
+        self.assertIn("Notices since the last digest (1):", request["text_body"])
+        self.assertIn("(sent before, unconfirmed; it may repeat)", " ".join(request["text_body"].split()))
+        attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in request["attachments"]}
+        self.assertIn("log line 59 of failure 0", attached["notices.txt"])
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
+    def test_a_delivered_batch_that_cannot_be_marked_comes_back_marked_as_a_possible_repeat(self):
+        # Completion review: the send succeeds and the mark fails (a full disk).
+        def first():
+            alert = digest.load_alert(self.root)
+            with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")), \
+                    mock.patch.object(digest, "load_alert", return_value=alert):
+                self.assertEqual(self.run_main([])[0], 1)
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(first))
+
+    def test_a_send_interrupted_after_the_claim_loses_nothing(self):
+        # Reconciliation review: the process stops between the claim and the send's end.
+        def first():
+            def interrupted(request, timeout=None):
+                raise KeyboardInterrupt
+            with self.assertRaises(KeyboardInterrupt):
+                self.run_main([], opener=interrupted)
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(first))
+
+    def test_a_refused_send_whose_release_fails_loses_nothing(self):
+        def first():
+            alert = digest.load_alert(self.root)
+
+            def refuse(request, timeout=None):
+                return self.Response(json.dumps({"data": {"succeeded": 0, "failed": 1}}).encode())
+            with mock.patch.object(alert, "release_claim", side_effect=alert.Refused("read-only")), \
+                    mock.patch.object(digest, "load_alert", return_value=alert):
+                self.assertEqual(self.run_main([], opener=refuse)[0], 1)
+        self.assert_sent_again_in_full(*self.unconfirmed_then_next(first))
+
+    def test_a_notice_sent_once_carries_no_repeat_mark(self):
+        self.queue(1)
+        code, _, requests = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("may repeat", requests[0]["text_body"])
     def test_a_batch_that_cannot_be_claimed_is_not_sent(self):
         self.queue(1)
         alert = digest.load_alert(self.root)
