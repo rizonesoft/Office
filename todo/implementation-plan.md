@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 57 | Checklist items: 399
+Sections: 58 | Checklist items: 403
 
 | Status | Reference   | Deliverable                                     | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
@@ -56,6 +56,7 @@ Sections: 57 | Checklist items: 399
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
 | [ ]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
+| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains        | owner-decision         | 4     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 6     |
 | [ ]    | D00 T04 §3  | Tool Bootstrap in CI                            | none                   | 6     |
@@ -383,6 +384,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 69/158 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 69/159 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 473/1041 items completed (includes Commit items).
+Checklist: 473/1045 items completed (includes Commit items).

@@ -77,6 +77,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 | 40 | §54 | One process-tree containment for every tool | §36 | [x] |
 | 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [ ] |
+| 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1226,6 +1227,26 @@ Filed 2026-11-12 after §54 was stamped. `.conclave/automations/run.py`, which r
 
 **Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_one_containment.py"` pass.
 
+## 56. Digest Delivery When No Evidence Remains
+
+Filed 2026-11-12 from the review of §53 (`docs/reviews/00-workspace/D00-T03-s53.md`, reconciliations 6 to 9). The weekly digest claims its notices before sending, records SMTP2GO's acceptance in a second store, and settles every claim daily against SMTP2GO's activity log. One state stays undecidable: SMTP2GO accepted the digest, every write to the notice queue failed until the PC went off, and the PC stayed off past SMTP2GO's activity history (five days on its free plan). Nothing can then say whether the owner received it, and the two failures trade against each other: (a) count the acceptance as delivery, as §53 does now and as its contract reads ("marked reported only after the send succeeds"), so a bounce SMTP2GO no longer shows goes unseen; or (b) deliver those notices again in full, labelled "may already have reached you", so a delivered digest can repeat once. The reviewer holds §53 to both, which no design can meet; the owner chooses, and §53 is reconciled to that choice.
+
+**Phase:** 0
+**Needs:** owner-decision
+**Owner action:** Reply in a campaign session "digest: acceptance" (a: a possible unseen bounce) or "digest: repeat" (b: a possible labelled repeat) for the one state where SMTP2GO no longer holds a digest's record; the session records it here and removes this Need.
+**Surface:** no
+
+**Build order:**
+
+1. Record the choice. Done when: this section names it with the date.
+2. Apply it. Done when: `settle_claims` in `.conclave/automations/alert.py` follows it and §53's reconciliation runs.
+
+- [ ] Record the owner's choice in this section, with the date. Done when: the choice is written here and the `owner-decision` Need is removed.
+- [ ] Apply the choice in `settle_claims` of `.conclave/automations/alert.py`: (a) keeps the acceptance record counting as delivery once the log can no longer decide; (b) marks such a claim unconfirmed, so the next digest carries it in full, labelled. Done when: `scripts/tests/test_automations.py` (`test_settling_by_what_the_log_says`) holds the chosen row and `test_owner_digest.py` shows the chosen digest.
+- [ ] Run §53's next reconciliation with the choice in its findings file. Done when: the reconciliation is recorded in `docs/reviews/00-workspace/D00-T03-s53.md`.
+- [ ] Commit: `automations: the digest follows the owner's choice where no evidence remains`
+
+**Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_owner_digest.py"` pass with the chosen behaviour.
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
