@@ -14,6 +14,8 @@ import unittest
 SKILLS = Path(__file__).resolve().parents[2] / ".claude" / "skills"
 PLAN = SKILLS / "process-plan" / "SKILL.md"
 PHASE = SKILLS / "process-phase" / "SKILL.md"
+SECTION = SKILLS / "process-todo-section" / "SKILL.md"
+REVIEW = SKILLS / "review-todo-section" / "SKILL.md"
 
 EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any change to one is a deliberate test edit
     'green': "- 0 (green): run the dependency merge below first, while the tree is still clean and `HEAD` pushed. If it merged anything, `main` has a new head on GitHub, which the local `HEAD` may not have (`merged-then-failed`: the pull after the merge failed): run `git fetch origin main` and `git pull --ff-only origin main` so the clone matches the merged head (if it still cannot, park with `ci-unknown: cannot align with origin/main`, since no repair can start from a stale checkout), then `python scripts/ci-status.py HEAD --wait --timeout 1800` and act on it by these same rules (repair, wait, retry or park), all before any row is claimed. Then append `ci-pending <sha> <UTC>` and `ci-green <sha>` for each push checked, and the merge's outcome, to the run file; they ride with the next section's commit, so no bookkeeping push exists to go unchecked.",
@@ -24,6 +26,40 @@ EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any cha
 
 # (obligation, skill, phrases that must all appear)
 OBLIGATIONS = [
+    # D00 T05 §4: a section reads its lessons before it builds, and its review writes them before the last pass.
+    ("lessons are read before the build", "section", [
+        "**Read the lessons first.** Before building, run `python scripts/lessons.py query --role main --path <path>`",
+        "with one `--path` for each path the section names",
+        "read every lesson it prints"]),
+    ("each outcome of the read is handled", "section", [
+        "exit 0 with lessons, they are read and the build follows them",
+        "exit 0 with none, no lesson applies, which the report (step 8) says in one line",
+        "exit 1, the store breaks a rule or the index cannot be written, and a failed query has read nothing: run "
+        "`python scripts/lessons.py check`, fix what it names, and run the query again until it exits 0",
+        "exit 2, the command is wrong"]),
+    ("the round's findings are triaged", "review", [
+        "**Triage the round's findings before the completion review.**",
+        "give every finding of the round that was confirmed and fixed one line in the record's triage file, "
+        "`docs/lessons/triage/<path>.md` for `docs/reviews/<path>.md`",
+        "`round N finding K: <disposition> [reason]`",
+        "`lesson:<id>` (the kind can recur and no check stops it)",
+        "`enforced:<path>` (a check or test in the repository now stops it)",
+        "`one-off` with a reason",
+        "Write the lesson file for each new `lesson:<id>`"]),
+    ("triage lands in the reviewed candidate", "review", [
+        "before the completion review is dispatched",
+        "Run `python scripts/lessons.py check` until it exits 0 and commit the lines and the lessons, so they are in "
+        "the candidate the completion review reads",
+        "triaged the same way before the next reconciliation is dispatched"]),
+    ("an enforceable lesson is retired", "review", [
+        "A lesson this section's own work made enforceable (it added the check or the test) is retired in the same "
+        "commit: `status: retired` with `retired_by` naming it"]),
+    ("a resume writes no second line", "review", [
+        "On a resumed section run `python scripts/lessons.py candidates --untriaged <the record>` and write only "
+        "what it prints: a finding never gets a second line"]),
+    ("the passes covered are named", "review", [
+        "This covers the round's findings; those of the plan review, the completion review and the reconciliations "
+        "are triaged once D00 T05 §9 gives those passes an identity"]),
     ("parks record a notice, never an email", "plan", [  # D00 T03 §53: decision 32, one weekly email only
         "Nothing emails at once: decision 32 allows one weekly email, the owner digest, and no other interruption",
         "recorded them as a notice for the weekly owner digest through `.conclave/automations/alert.py`",
@@ -238,7 +274,8 @@ def missing(texts):
 
 class SkillCiGate(unittest.TestCase):
     def setUp(self):
-        self.texts = {"plan": PLAN.read_text(encoding="utf-8"), "phase": PHASE.read_text(encoding="utf-8")}
+        self.texts = {"plan": PLAN.read_text(encoding="utf-8"), "phase": PHASE.read_text(encoding="utf-8"),
+                 "section": SECTION.read_text(encoding="utf-8"), "review": REVIEW.read_text(encoding="utf-8")}
 
     def test_every_obligation_is_present(self):
         self.assertEqual(missing(self.texts), [])
@@ -260,6 +297,21 @@ class SkillCiGate(unittest.TestCase):
                 self.assertIn(name, missing(copy))
 
 
+    def test_the_lesson_steps_sit_where_they_take_effect(self):
+        # D00 T05 §4: the read comes before the build step, and the triage between the round and the completion
+        # review, so both are in the candidate the last pass reads.
+        section, review = self.texts["section"], self.texts["review"]
+        self.assertLess(section.index("### 2. Validate the plan before building it"),
+                        section.index("**Read the lessons first.**"))
+        self.assertLess(section.index("**Read the lessons first.**"), section.index("### 4. Build the corrected contract"))
+        self.assertLess(review.index("2. **The round**"), review.index("**Triage the round's findings before the completion review.**"))
+        self.assertLess(review.index("**Triage the round's findings before the completion review.**"),
+                        review.index("3. **The completion review** of the final candidate"))
+        moved = review.replace("   **Triage the round's findings before the completion review.**", "", 1) \
+            + "\n**Triage the round's findings before the completion review.**\n"
+        self.assertGreater(moved.index("**Triage the round's findings before the completion review.**"),
+                           moved.index("3. **The completion review** of the final candidate"))
+
     def test_every_pinned_paragraph_is_unchanged(self):
         self.assertEqual(pin_failures(self.texts), [])
 
@@ -275,7 +327,8 @@ class SkillCiGate(unittest.TestCase):
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--print-pins"]:
-        texts = {"plan": PLAN.read_text(encoding="utf-8"), "phase": PHASE.read_text(encoding="utf-8")}
+        texts = {"plan": PLAN.read_text(encoding="utf-8"), "phase": PHASE.read_text(encoding="utf-8"),
+                 "section": SECTION.read_text(encoding="utf-8"), "review": REVIEW.read_text(encoding="utf-8")}
         for skill, prefix, _ in PINNED:
             line = pinned_line(texts[skill], prefix)
             print(skill, prefix, hashlib.sha256(line.encode("utf-8")).hexdigest() if line else "MISSING")

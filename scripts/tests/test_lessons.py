@@ -747,6 +747,42 @@ class Triage(Indexed):
         self.assertGreater(len(found), 700)
         self.assertIn("docs/reviews/02-interface/D02-T01-s2.md", {item["record"] for item in found})
 
+    def test_the_review_skills_triage_step_walked_through(self):
+        # D00 T05 §4: what `review-todo-section` tells the lead to do between the round and the completion review.
+        self.assertEqual(len(self.keys("--untriaged", self.TWO)), 5)  # the round's confirmed findings to triage
+        self.lesson("ownership-is-checked-when-acting", applies="scripts/a.py", topics="tooling",
+                    body="Check ownership in the step that acts, never at an earlier check.")
+        self.triage(self.TWO, "# Triage of D99 T03 §1\n\nround 1 finding 1: lesson:ownership-is-checked-when-acting\n"
+                              "round 1 finding 2: enforced:scripts/a.py\nround 2 finding 1: one-off, a typo in a message\n"
+                              "round 2 finding 3: lesson:ownership-is-checked-when-acting\n"
+                              "round 2 finding 4: enforced:scripts/lib/b.py\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())  # the dispositions validate
+        self.assertEqual(self.listing("--untriaged", self.TWO), (0, [], ""))  # nothing left, and a resume adds none
+        shown, _ = lessons.query(self.root, paths=["scripts/a.py"])  # the next section's read step finds it
+        self.assertEqual([(l["id"], l["evidence"]) for l in shown], [("ownership-is-checked-when-acting", 2)])
+        # The section added the check that enforces it, so the lesson is retired in the same commit.
+        self.lesson("ownership-is-checked-when-acting", applies="scripts/a.py", topics="tooling", status="retired",
+                    retired_by="scripts/a.py", body="Check ownership in the step that acts, never at an earlier check.")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(["check"], root=self.root), 0)
+        self.assertEqual(lessons.query(self.root, paths=["scripts/a.py"]), ([], 0))  # retired: no longer returned
+
+    def test_a_failed_query_reads_nothing(self):
+        # The section skill's read step: exit 1 shows no lesson, so it cannot count as the read.
+        self.lesson("a-lesson", applies="scripts/a.py")
+        self.lesson("bad-topic", applies="scripts/a.py", topics="gardening")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(["query", "--role", "main", "--path", "scripts/a.py"], root=self.root)
+        self.assertEqual((code, out.getvalue()), (1, ""))
+        self.assertIn("run python scripts/lessons.py check", err.getvalue())
+        (self.folder / "bad-topic.md").unlink()  # repaired, as the skill says, and the query run again
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["query", "--role", "main", "--path", "scripts/a.py"], root=self.root), 0)
+        self.assertIn("a-lesson", out.getvalue())
+
     def test_a_triage_file_without_its_record_is_refused(self):
         self.triage("docs/reviews/00-workspace/D99-T09-s9.md", "round 1 finding 1: one-off, orphaned\n")
         out = io.StringIO()
