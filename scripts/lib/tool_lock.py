@@ -148,10 +148,10 @@ def _bins(entry):
     return ["" if b in (".", "./") else b.rstrip("/") for b in (entry["bin"] or ["."])]
 
 
-def receipt(folder, entry):
+def receipt(folder, entry, name):
     """The receipt's recorded files ({relative path: [size, sha256]}) when `folder` was installed from exactly this
-    lock entry, or None. A lookup checks only this and the programs it hands out; `bootstrap-tools.py --check`
-    re-hashes every file."""
+    lock entry in the layout the installer now writes, or None. A lookup checks only this and the programs it hands
+    out; `bootstrap-tools.py --check` re-hashes every file."""
     try:
         data = json.loads((folder / RECEIPT).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -162,6 +162,8 @@ def receipt(folder, entry):
     if not isinstance(files, dict) or not files or not all(
             isinstance(v, list) and len(v) == 2 and type(v[0]) is int and isinstance(v[1], str) for v in files.values()):
         return None
+    if entry["format"] == "exe" and set(files) != {f"{name}.exe"}:
+        return None  # an older layout (Arm64's vcpkg-arm64.exe before D00 T04 §2): reinstalled under the tool's name
     if not all((folder / b).is_dir() for b in _bins(entry)):
         return None
     return files
@@ -193,7 +195,7 @@ class Tools:
 
     def installed(self, name, seen=()):
         """The receipt's files of `name`, with every tool it requires installed too; ToolMissing otherwise."""
-        files = receipt(self.folder(name), self.entry(name))
+        files = receipt(self.folder(name), self.entry(name), name)
         if files is None:
             raise self.refusal(name, "is not installed as tools.lock.json pins it (missing, older or damaged)")
         for needed in self.lock[name].get("requires", []):

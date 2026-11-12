@@ -674,6 +674,37 @@ class Resolver(Fixture):
         self.assertIn(str((arm / "vcpkg-1.0" / "vcpkg.exe").resolve()), out.getvalue())
         self.assertEqual(self.tools_("x64").path("vcpkg"), (self.tools / "vcpkg-1.0" / "vcpkg.exe").resolve())
 
+    def test_an_installation_in_the_old_exe_layout_is_reinstalled(self):
+        """Round 1: an Arm64 vcpkg installed as vcpkg-arm64.exe before the rename keeps a receipt for the same lock
+        entry; it must count as not installed, so the next bootstrap puts it under the tool's name."""
+        url = "https://x.invalid/vcpkg-arm64.exe"
+        data = b"MZ vcpkg arm64"
+        self.server.files[url] = data
+        self.lock["vcpkg"]["archives"]["arm64"] = entry(url, data, "exe", [], [])
+        self.write_lock()
+        arm = self.tmp / "arm-tools"
+        quiet = io.StringIO()
+        from contextlib import redirect_stderr, redirect_stdout
+
+        def run(*argv):
+            with redirect_stdout(quiet), redirect_stderr(quiet):
+                return boot.main(list(argv), opener=self.server, lock_path=self.lock_path, tools=arm, arch="arm64")
+        self.assertEqual(run(), 0)
+        folder = arm / "vcpkg-1.0"
+        (folder / "vcpkg.exe").rename(folder / "vcpkg-arm64.exe")  # the layout the previous installer wrote
+        receipt = json.loads((folder / tool_lock.RECEIPT).read_text(encoding="utf-8"))
+        receipt["files"] = {"vcpkg-arm64.exe": receipt["files"]["vcpkg.exe"]}
+        (folder / tool_lock.RECEIPT).write_text(json.dumps(receipt), encoding="utf-8")
+        self.assertEqual(run("--check"), 1)
+        with self.assertRaises(tool_lock.ToolMissing) as caught:
+            tool_lock.tool_path("vcpkg", self.lock_path, arm, "arm64")
+        self.assertIn("vcpkg 1.0 is not installed", str(caught.exception))
+        calls = len(self.server.calls)
+        self.assertEqual(run("--only", "vcpkg"), 0)
+        self.assertEqual(len(self.server.calls), calls + 1)  # downloaded again
+        self.assertEqual(tool_lock.tool_path("vcpkg", self.lock_path, arm, "arm64"), (folder / "vcpkg.exe").resolve())
+        self.assertFalse((folder / "vcpkg-arm64.exe").exists())
+
     def test_tool_env_checks_the_registry_itself(self):
         folder = (self.tools / "vcpkg-registry-1.0" / "vcpkg-2026").resolve()
         self.assertEqual(tool_lock.tool_env(self.lock_path, self.tools, "x64"), {"VCPKG_ROOT": str(folder)})

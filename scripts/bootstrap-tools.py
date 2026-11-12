@@ -314,16 +314,11 @@ def manifest(folder):
     return files
 
 
-def receipt_ok(folder, entry):
-    """Whether `folder` holds a receipt for exactly this lock entry and every file it records, unchanged."""
-    try:
-        receipt = json.loads((folder / RECEIPT).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return False
-    if not isinstance(receipt, dict) or receipt.get("entry") != entry or receipt.get("sha256") != entry["sha256"]:
-        return False
-    files = receipt.get("files")
-    if not isinstance(files, dict) or not files:
+def receipt_ok(folder, entry, name):
+    """Whether `folder` holds a receipt for exactly this lock entry, in the current layout, and every file it records,
+    unchanged."""
+    files = tool_lock.receipt(folder, entry, name)
+    if files is None:
         return False
     for relative, (size, digest) in files.items():
         path = folder / relative
@@ -332,8 +327,7 @@ def receipt_ok(folder, entry):
                 return False
         except OSError:
             return False
-    return all((folder / b).is_dir() for b in entry["bin"])
-
+    return True
 
 def promote(staging, destination):
     """Move `staging` into place; a damaged destination is set aside first and then removed."""
@@ -357,7 +351,7 @@ def promote(staging, destination):
 def install(name, version, entry, tools, opener, deadline_seconds):
     """Install one tool's archive for this host, unless an unchanged installation is already there."""
     destination = tools / f"{name}-{version}"
-    if destination.is_dir() and receipt_ok(destination, entry):
+    if destination.is_dir() and receipt_ok(destination, entry, name):
         return False
     staging = tools / f"{name}-{version}.partial"
     if staging.exists():
@@ -437,7 +431,7 @@ def clean(lock, tools):
 
 def status(lock, tools, arch):
     """{name: problem or None} for every tool: installed as pinned, with every tool it requires installed too."""
-    own = {name: None if receipt_ok(tools / f"{name}-{tool['version']}", tool["archives"][arch])
+    own = {name: None if receipt_ok(tools / f"{name}-{tool['version']}", tool["archives"][arch], name)
            else "missing or damaged" for name, tool in lock.items()}
     result = {}
     for name, tool in lock.items():
