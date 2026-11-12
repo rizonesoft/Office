@@ -8,6 +8,7 @@ import tempfile
 import textwrap
 import time
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
@@ -158,6 +159,79 @@ class RunTest(unittest.TestCase):
         writer = f"open(r'{side}', 'w').write('y' * 2048); import time; time.sleep(120)"
         outcome = process_tree.run([sys.executable, "-c", writer], timeout=60, max_bytes=1024, watched=[side])
         self.assertEqual(outcome.stopped, "output limit")
+
+
+class ForTheTools(unittest.TestCase):
+    """What the host check, the review dispatcher and the test runner need of the helper (D00 T03 §54)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_piped_input_reaches_the_child(self):
+        out = self.tmp / "out.txt"
+        outcome = process_tree.run([sys.executable, "-c", "import sys; print(sys.stdin.read().upper())"],
+                                   stdout_path=out, stdin_text="hello", timeout=60)
+        self.assertEqual((outcome.exit, out.read_text().strip()), (0, "HELLO"))
+
+    def test_a_child_that_never_reads_its_input_cannot_block_the_caller(self):
+        # 8 MB of input, more than any pipe buffer, to a child that exits without reading.
+        started = time.monotonic()
+        outcome = process_tree.run([sys.executable, "-c", "import time; time.sleep(0.5)"],
+                                   stdin_text="x" * 8_000_000, timeout=30)
+        self.assertEqual(outcome.exit, 0)
+        self.assertLess(time.monotonic() - started, 20)
+
+    def test_standard_error_can_share_the_output_file(self):
+        out = self.tmp / "both.txt"
+        process_tree.run([sys.executable, "-c", "import sys; print('out'); sys.stdout.flush(); print('err', "
+                          "file=sys.stderr)"], stdout_path=out, stderr_path=out, timeout=60)
+        self.assertEqual(sorted(out.read_text().split()), ["err", "out"])
+
+    def test_the_memory_limit_fails_a_tree_past_it_and_not_one_below(self):
+        grandchild = "x = bytearray({} * 1024 * 1024); print(len(x))"
+        parent = "import subprocess, sys; sys.exit(subprocess.run([sys.executable, '-c', {!r}]).returncode)"
+        limit = 256 * 1024 * 1024
+        over = process_tree.run([sys.executable, "-c", parent.format(grandchild.format(600))],
+                                stdout_path=self.tmp / "over.txt", timeout=60, memory_bytes=limit)
+        under = process_tree.run([sys.executable, "-c", parent.format(grandchild.format(16))],
+                                 stdout_path=self.tmp / "under.txt", timeout=60, memory_bytes=limit)
+        self.assertNotEqual(over.exit, 0)
+        self.assertNotIn(str(600 * 1024 * 1024), (self.tmp / "over.txt").read_text())
+        self.assertEqual(under.exit, 0)
+        self.assertIn(str(16 * 1024 * 1024), (self.tmp / "under.txt").read_text())
+
+    @unittest.skipUnless(os.name == "nt", "the start steps are the Windows job's")
+    def test_each_failed_start_step_is_named_with_the_child_reaped_and_the_job_closed_once(self):
+        for method, step in (("_create_job", "create job"), ("_configure_job", "configure job"),
+                             ("_assign", "assign to job"), ("_resume", "resume")):
+            with self.subTest(step):
+                closed, children = [], []
+                real_close, real_popen = process_tree.Tree._close_job, process_tree.subprocess.Popen
+
+                def close(this, real=real_close):
+                    if this.job is not None:
+                        closed.append(1)
+                    real(this)
+
+                def popen(*args, **kwargs):
+                    children.append(real_popen(*args, **kwargs))
+                    return children[-1]
+
+                with mock.patch.object(process_tree.Tree, method, side_effect=OSError("injected failure")), \
+                        mock.patch.object(process_tree.Tree, "_close_job", close), \
+                        mock.patch.object(process_tree.subprocess, "Popen", popen):
+                    with self.assertRaises(process_tree.TreeError) as caught:
+                        process_tree.run([sys.executable, "-c", "import time; time.sleep(60)"], timeout=30)
+                self.assertEqual((caught.exception.step, caught.exception.why), (step, "injected failure"))
+                self.assertEqual(str(caught.exception), f"{step}: injected failure")
+                self.assertEqual(len(closed), 0 if step == "create job" else 1)
+                for child in children:
+                    self.assertIsNotNone(child.returncode, "the suspended child was not killed and reaped")
+                    self.assertFalse(alive(child.pid))
 
 
 if __name__ == "__main__":

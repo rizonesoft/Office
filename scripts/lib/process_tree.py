@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import threading
 import time
 
 POLL_SECONDS = 0.2
@@ -34,9 +35,27 @@ EXTENDED_LIMIT_INFORMATION = 9  # JobObjectExtendedLimitInformation
 BASIC_ACCOUNTING_INFORMATION = 1  # JobObjectBasicAccountingInformation
 
 
-class TreeError(OSError):
-    """The containment could not be set up, or a tree would not end."""
+def _feed(pipe, text):
+    try:
+        pipe.write(text.encode("utf-8"))
+        pipe.close()
+    except (BrokenPipeError, OSError):
+        pass  # the child stopped reading or exited; its exit code and output say what happened
 
+
+class TreeError(OSError):
+    """The containment could not be set up, or a tree would not end. `step` names the start step that failed
+    (`create job`, `configure job`, `start`, `assign to job`, `resume`), None for a tree that would not end; `why` is
+    the cause without the step."""
+
+    def __init__(self, message, step=None, why=None):
+        super().__init__(message)
+        self.step = step
+        self.why = why or message
+
+
+def _why(exc):
+    return getattr(exc, "strerror", None) or str(exc) or type(exc).__name__
 
 def _win32():
     import ctypes
@@ -86,73 +105,115 @@ def _win32():
 
 
 class Tree:
-    """One child and all its descendants. Use as a context manager: leaving it always ends the tree."""
+    """One child and all its descendants. Use as a context manager: leaving it always ends the tree.
+
+    Each start step is its own method (`_create_job`, `_configure_job`, `_assign`, `_resume`, `_close_job`), so a test
+    can make one fail and see the step named in the TreeError, the child killed and reaped, and the job closed once."""
 
     def __init__(self, memory_bytes=None):
-        self.memory_bytes = memory_bytes  # Windows: a limit on the whole job's committed memory; None for none
+        # A limit on what the tree may commit: on Windows the whole job's memory, elsewhere each member's address space
+        # (POSIX has no job; every member inherits the same bound). None for none.
+        self.memory_bytes = memory_bytes
         self.job = None
         self.child = None
         self.ended = False
 
+    def _create_job(self):
+        job = self.kernel32.CreateJobObjectW(None, None)
+        if not job:
+            raise self.ctypes.WinError(self.ctypes.get_last_error())
+        return job
+
+    def _configure_job(self, job):
+        info = self.extended()
+        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if self.memory_bytes:
+            info.BasicLimitInformation.LimitFlags |= 0x200  # JOB_OBJECT_LIMIT_JOB_MEMORY
+            info.JobMemoryLimit = self.memory_bytes
+        if not self.kernel32.SetInformationJobObject(job, EXTENDED_LIMIT_INFORMATION, self.ctypes.byref(info),
+                                                     self.ctypes.sizeof(info)):
+            raise self.ctypes.WinError(self.ctypes.get_last_error())
+
+    def _assign(self, child):
+        if not self.kernel32.AssignProcessToJobObject(self.job, int(child._handle)):
+            raise self.ctypes.WinError(self.ctypes.get_last_error())
+
+    def _resume(self, child):
+        # NtResumeProcess, because Popen keeps no handle to the primary thread that ResumeThread would need.
+        status = self.ntdll.NtResumeProcess(int(child._handle))
+        if status:
+            raise OSError(f"NtResumeProcess returned {status & 0xFFFFFFFF:#010x}")
+
+    def _close_job(self):
+        """Terminate every member and close the job's handle, exactly once."""
+        if self.job is not None:
+            job, self.job = self.job, None
+            self.kernel32.TerminateJobObject(job, 1)
+            self.kernel32.CloseHandle(job)
+
     def __enter__(self):
         if os.name == "nt":
-            self.ctypes, self.kernel32, self.ntdll, extended, self.accounting = _win32()
-            self.job = self.kernel32.CreateJobObjectW(None, None)
-            if not self.job:
-                raise TreeError(f"CreateJobObjectW failed (error {self.ctypes.get_last_error()})")
-            info = extended()
-            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
-            if self.memory_bytes:
-                info.BasicLimitInformation.LimitFlags |= 0x200  # JOB_OBJECT_LIMIT_JOB_MEMORY
-                info.JobMemoryLimit = self.memory_bytes
-            if not self.kernel32.SetInformationJobObject(self.job, EXTENDED_LIMIT_INFORMATION,
-                                                         self.ctypes.byref(info), self.ctypes.sizeof(info)):
-                error = self.ctypes.get_last_error()
-                self.kernel32.CloseHandle(self.job)
-                self.job = None
-                raise TreeError(f"SetInformationJobObject failed (error {error})")
+            self.ctypes, self.kernel32, self.ntdll, self.extended, self.accounting = _win32()
+            try:
+                self.job = self._create_job()
+            except OSError as exc:
+                raise TreeError(f"create job: {_why(exc)}", "create job", _why(exc)) from None
+            try:
+                self._configure_job(self.job)
+            except OSError as exc:
+                self._close_job()
+                raise TreeError(f"configure job: {_why(exc)}", "configure job", _why(exc)) from None
         return self
 
     def __exit__(self, *exc):
         try:
             self.end()
         finally:
-            if self.job is not None:
-                self.kernel32.CloseHandle(self.job)  # kill on close: nothing survives the handle either
-                self.job = None
+            if os.name == "nt":
+                self._close_job()  # kill on close: nothing survives the handle either
         return False
 
-    def start(self, argv, cwd=None, stdin=None, stdout=None, stderr=None, env=None):
-        """Start the one child of this tree. `stdin`, `stdout` and `stderr` are open files or None (the null device),
-        never pipes: a pipe nobody drains stalls the child, and a harness has no reason to hold output in memory."""
+    def start(self, argv, cwd=None, stdin=None, stdout=None, stderr=None, env=None, stdin_text=None):
+        """Start the one child of this tree. `stdin`, `stdout` and `stderr` are open files, `subprocess.STDOUT` for
+        `stderr`, or None (the null device), never pipes for output: a pipe nobody drains stalls the child. Standard
+        input may instead be `stdin_text`, written to a pipe from a thread once the child runs, so a child that never
+        reads cannot block the caller."""
         if self.child is not None:
             raise TreeError("a tree holds one child; start another tree")
-        stdin = subprocess.DEVNULL if stdin is None else stdin
+        stdin = subprocess.PIPE if stdin_text is not None else subprocess.DEVNULL if stdin is None else stdin
         stdout = subprocess.DEVNULL if stdout is None else stdout
         stderr = subprocess.DEVNULL if stderr is None else stderr
-        if os.name != "nt":
-            self.child = subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=stdout, stderr=stderr, env=env,
-                                          start_new_session=True)
-            return self.child
-        flags = CREATE_SUSPENDED | CREATE_NEW_PROCESS_GROUP | NO_WINDOW
-        child = subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=stdout, stderr=stderr, env=env,
-                                 creationflags=flags)
-        handle = int(child._handle)
-        # Joined while suspended, so nothing it starts is outside the job; NtResumeProcess resumes it because Popen
-        # keeps no handle to the primary thread that ResumeThread would need.
-        if not self.kernel32.AssignProcessToJobObject(self.job, handle):
-            error = self.ctypes.get_last_error()
-            child.kill()
-            child.wait()
-            raise TreeError(f"AssignProcessToJobObject failed (error {error})")
-        status = self.ntdll.NtResumeProcess(handle)
-        if status:
-            child.kill()
-            child.wait()
-            raise TreeError(f"NtResumeProcess failed (status {status & 0xFFFFFFFF:#x})")
-        self.child = child
-        return child
+        try:
+            if os.name != "nt":
+                limit = None
+                if self.memory_bytes:
+                    bound = self.memory_bytes
 
+                    def limit():
+                        import resource
+                        resource.setrlimit(resource.RLIMIT_AS, (bound, bound))
+                child = subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=stdout, stderr=stderr, env=env,
+                                         start_new_session=True, preexec_fn=limit)
+            else:
+                child = subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=stdout, stderr=stderr, env=env,
+                                         creationflags=CREATE_SUSPENDED | CREATE_NEW_PROCESS_GROUP | NO_WINDOW)
+        except (OSError, ValueError) as exc:
+            raise TreeError(f"start: {_why(exc)}", "start", _why(exc)) from None
+        if os.name == "nt":
+            # Joined while suspended, so nothing it starts can be outside the job.
+            for step, action in (("assign to job", self._assign), ("resume", self._resume)):
+                try:
+                    action(child)
+                except OSError as exc:
+                    child.kill()
+                    child.wait()
+                    if child.stdin is not None:
+                        child.stdin.close()
+                    raise TreeError(f"{step}: {_why(exc)}", step, _why(exc)) from None
+        self.child = child
+        if stdin_text is not None:
+            threading.Thread(target=_feed, args=(child.stdin, stdin_text), daemon=True).start()
+        return child
     def active(self):
         """How many processes of the tree are running, the child included (Windows: read from the job; elsewhere:
         whether the process group still has a member, so 0 or at least 1)."""
@@ -275,19 +336,23 @@ def _too_big(paths, max_bytes):
 
 
 def run(argv, cwd=None, stdin_path=None, stdout_path=None, stderr_path=None, timeout=None, max_bytes=None,
-        watched=(), env=None, cancel=None):
-    """Run `argv` to its end inside a Tree, with its standard input read from `stdin_path` and its output written to
-    the two files. The tree is stopped when the time limit passes, when the output files together (the two, and every
-    path in `watched`) pass `max_bytes`, or when the `cancel` event (a threading.Event) is set, and it is always stopped at
-    the end, so whatever the child left running ends with it. Returns an Outcome."""
+        watched=(), env=None, cancel=None, stdin_text=None, memory_bytes=None, poll_seconds=None):
+    """Run `argv` to its end inside a Tree, with its standard input read from `stdin_path` (or written from
+    `stdin_text`) and its output written to the two files (one file when `stderr_path` is `stdout_path`). The tree is
+    stopped when the time limit passes, when the output files together (the two, and every path in `watched`) pass
+    `max_bytes`, or when the `cancel` event (a threading.Event) is set, and it is always stopped at the end, so whatever
+    the child left running ends with it. `memory_bytes` bounds what the tree may commit (Tree). Returns an Outcome;
+    raises TreeError when the tree cannot be set up or will not end."""
     started = time.monotonic()
-    paths = [p for p in (stdout_path, stderr_path, *watched) if p]
+    poll = POLL_SECONDS if poll_seconds is None else poll_seconds
+    shared = stderr_path is not None and stdout_path is not None and Path(stderr_path) == Path(stdout_path)
+    paths = list(dict.fromkeys(p for p in (stdout_path, None if shared else stderr_path, *watched) if p))
     stdin = open(stdin_path, "rb") if stdin_path else None
     out = open(stdout_path, "wb") if stdout_path else None
-    err = open(stderr_path, "wb") if stderr_path else None
+    err = subprocess.STDOUT if shared else open(stderr_path, "wb") if stderr_path else None
     try:
-        with Tree() as tree:
-            child = tree.start(argv, cwd=cwd, stdin=stdin, stdout=out, stderr=err, env=env)
+        with Tree(memory_bytes=memory_bytes) as tree:
+            child = tree.start(argv, cwd=cwd, stdin=stdin, stdout=out, stderr=err, env=env, stdin_text=stdin_text)
             stopped = None
             while child.poll() is None:
                 if cancel is not None and cancel.is_set():
@@ -300,15 +365,17 @@ def run(argv, cwd=None, stdin_path=None, stdout_path=None, stderr_path=None, tim
                     stopped = "output limit"
                     break
                 try:
-                    child.wait(timeout=POLL_SECONDS)
+                    child.wait(timeout=poll)
                 except subprocess.TimeoutExpired:
-                    pass
-            if stopped is None and max_bytes is not None and _too_big(paths, max_bytes):
-                stopped = "output limit"  # a child that floods and exits at once is still over the limit
+                    pass  # the poll interval passed with the child still running: check the limits again
             strays = tree.end()
+            # Checked once the tree is ended, so nothing is still writing: a child that floods and exits at once is
+            # still over the limit.
+            if stopped is None and max_bytes is not None and _too_big(paths, max_bytes):
+                stopped = "output limit"
             code = None if stopped else child.returncode
     finally:
         for handle in (stdin, out, err):
-            if handle is not None:
+            if handle is not None and handle is not subprocess.STDOUT:
                 handle.close()
     return Outcome(exit=code, stopped=stopped, seconds=round(time.monotonic() - started, 1), strays=strays)

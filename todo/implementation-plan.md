@@ -384,4 +384,4 @@ These TODO files do not exist yet, so their sections and checklist items are not
 
 Progress: 68/157 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 457/1033 items completed (includes Commit items).
+Checklist: 463/1033 items completed (includes Commit items).

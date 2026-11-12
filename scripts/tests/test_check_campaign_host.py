@@ -1050,8 +1050,9 @@ class Probe(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", "the job object is the Windows containment")
     def test_a_job_that_never_empties_is_reported_not_trusted(self):
-        with mock.patch.object(host_check.Containment, "active", lambda self: 1), \
-                mock.patch.object(host_check, "KILL_SECONDS", 1):
+        # The containment is scripts/lib/process_tree.py's (D00 T03 §54): a tree whose job never empties.
+        with mock.patch.object(host_check.process_tree.Tree, "active", lambda self: 1), \
+                mock.patch.object(host_check.process_tree, "KILL_SECONDS", 1):
             with self.assertRaises(host_check.Unreadable) as caught:
                 host_check.Host().run([sys.executable, "-c", "print(1)"])
         self.assertIn("could not be ended", str(caught.exception))
@@ -1097,10 +1098,14 @@ class Probe(unittest.TestCase):
     def test_a_nested_capture_is_held_to_the_job_memory_limit(self):
         grandchild = "x = bytearray(600 * 1024 * 1024); print(len(x))"
         parent = f"import subprocess, sys; sys.exit(subprocess.run([sys.executable, '-c', {grandchild!r}]).returncode)"
+        bounded = f"import subprocess, sys; sys.exit(subprocess.run([sys.executable, '-c', {'x = bytearray(16 * 1024 * 1024); print(len(x))'!r}]).returncode)"
         with mock.patch.object(host_check, "PROBE_MEMORY_BYTES", 256 * 1024 * 1024):
             r = host_check.Host().run([sys.executable, "-c", parent], seconds=60)
+            below = host_check.Host().run([sys.executable, "-c", bounded], seconds=60)
         self.assertNotEqual(r.returncode, 0)
         self.assertNotIn("629145600", r.stdout)
+        # A bounded allocation below the limit succeeds: the failure above is the limit, not a launch that broke.
+        self.assertEqual((below.returncode, below.stdout.strip()), (0, "16777216"))
 
     def test_output_and_exit_code_are_returned(self):
         r = host_check.Host().run([sys.executable, "-c", "import sys; print('hello'); sys.exit(3)"])

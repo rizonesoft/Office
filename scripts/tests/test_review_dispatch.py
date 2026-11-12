@@ -163,7 +163,8 @@ class Harness(unittest.TestCase):
         self.repo = Path(self._tmp.name) / "repo"
         (self.repo / "scripts").mkdir(parents=True)
         (self.repo / ".conclave").mkdir()
-        for name in ("review-dispatch.py", "review_pin.py"):
+        for name in ("review-dispatch.py", "review_pin.py", "lib/process_tree.py"):
+            (self.repo / "scripts" / name).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(SCRIPTS / name, self.repo / "scripts" / name)
         (self.repo / ".conclave/reviewers.toml").write_text(FIXTURE_PIN, encoding="utf-8")
         self.bin = Path(self._tmp.name) / "bin"
@@ -738,6 +739,10 @@ class Dispatch(Harness):
         self.assertEqual(summary["failover"], [{"reviewer": "sol", "reason": "returned more than 2000000 bytes"}])
         self.assert_child_gone()
 
+    # The dispatcher's start steps by the names these tests have always used, and the helper method each now is.
+    STEPS = {"create_windows_job": "_create_job", "configure_windows_job": "_configure_job",
+             "assign_windows_job": "_assign", "resume_windows_process": "_resume"}
+
     def start_failure(self, step_function):
         """Run a reviewer that would start a child and hang, with `step_function` of the dispatcher failing: the
         reason names the step, the suspended reviewer is dead and reaped, no child exists, the job handle was ended
@@ -747,20 +752,24 @@ class Dispatch(Harness):
         code = ("import subprocess, sys, time; c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); "
                 f"open({str(child_pid)!r}, 'w').write(str(c.pid)); time.sleep(60)")
         started, closed, processes = [], [], []
-        real_popen, real_close = module.subprocess.Popen, module.close_windows_job
+        # Since D00 T03 §54 the steps are the shared helper's (scripts/lib/process_tree.py), which the dispatcher
+        # loads beside itself: the injected failure, the Popen spy and the close spy are set on it.
+        tree = module.process_tree
+        real_popen, real_close = tree.subprocess.Popen, tree.Tree._close_job
 
         def popen(*args, **kwargs):
             processes.append(real_popen(*args, **kwargs))
             self.addCleanup(kill_pid, processes[-1].pid)
             return processes[-1]
 
-        def close(job):
-            closed.append(job)
-            real_close(job)
+        def close(this):
+            if this.job is not None:
+                closed.append(this.job)
+            real_close(this)
 
-        with unittest.mock.patch.object(module, step_function, side_effect=OSError("injected failure")), \
-                unittest.mock.patch.object(module.subprocess, "Popen", popen), \
-                unittest.mock.patch.object(module, "close_windows_job", close):
+        with unittest.mock.patch.object(tree.Tree, self.STEPS[step_function], side_effect=OSError("injected failure")), \
+                unittest.mock.patch.object(tree.subprocess, "Popen", popen), \
+                unittest.mock.patch.object(tree.Tree, "_close_job", close):
             began = time.monotonic()
             result = module.run([sys.executable, "-c", code], None, 30, [Path(self._tmp.name) / "out.txt"])
             elapsed = time.monotonic() - began
@@ -804,7 +813,8 @@ class Dispatch(Harness):
                                ("assign_windows_job", "assign to job"), ("resume_windows_process", "resume")):
             with self.subTest(step=step):
                 printed = io.StringIO()
-                with unittest.mock.patch.object(module, function, side_effect=OSError("injected failure")), \
+                with unittest.mock.patch.object(module.process_tree.Tree, self.STEPS[function],
+                                                side_effect=OSError("injected failure")), \
                         unittest.mock.patch.dict(os.environ, environment), contextlib.redirect_stdout(printed):
                     code = module.main(["--writer", "claude", "--prompt", str(self.prompt), "--pin",
                                         str(self.repo / ".conclave/reviewers.toml")])

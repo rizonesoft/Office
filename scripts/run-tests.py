@@ -13,10 +13,10 @@ independent processes. Measured on 2026-11-10 with 958 tests in 22 files: 394 s 
 against 176 s four at a time on a busy PC. The largest files start first. Each child writes to a temporary file, so
 no pipe can fill and stall it, and nothing is held in memory but the result lines.
 
-A file that outlives `--timeout` has its whole process tree stopped (`taskkill /T /F` on Windows, the process
-group elsewhere) and is reported as TIMEOUT; an interrupt stops every running file the same way. A file that ends
-by itself is contained too: on Windows it runs in a job object that is closed when it ends, elsewhere its process
-group is signalled, so a process a test started and never stopped ends with its file. `python -B` is passed on to
+Every file runs in its own process tree (`scripts/lib/process_tree.py`: on Windows a job object it joins before it
+runs, elsewhere its own process group), so a file that outlives `--timeout` is stopped with everything it started
+and reported as TIMEOUT, an interrupt stops every running file the same way, and a process a test started and never
+stopped ends with its file even when the file ended by itself. `python -B` is passed on to
 every file, so a run asked not to write bytecode leaves none (the mutation checks depend on that).
 
 Exit 0 when every file passed, 1 when any failed or timed out, 2 on a usage error or when no file matched.
@@ -26,14 +26,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from pathlib import Path
 import re
-import signal
-import subprocess
 import sys
 import tempfile
 import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import process_tree  # found through scripts/lib, put on the path just above
 DEFAULT_START = ROOT / "scripts" / "tests"
 DEFAULT_TIMEOUT = 1800  # seconds a single file may run; the slowest takes about a minute
 MAX_DEFAULT_JOBS = 4  # the tests start git, node and PowerShell children of their own, so more gains little
@@ -46,147 +46,46 @@ def default_jobs():
     return min(MAX_DEFAULT_JOBS, max(1, (os.cpu_count() or 2) // 2))
 
 
-def stop_tree(process):
-    """Stop a child and everything it started, and say so when that could not be done."""
-    if process.poll() is not None:
-        return
-    try:
-        if os.name == "nt":
-            taskkill = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "taskkill.exe")
-            done = subprocess.run([taskkill, "/T", "/F", "/PID", str(process.pid)], stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL, timeout=30, check=False)
-            if done.returncode != 0 and process.poll() is None:
-                print(f"run-tests: taskkill exited {done.returncode} for the tree of pid {process.pid}",
-                      file=sys.stderr)
-        else:
-            os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        return  # it ended between the poll and the signal
-    except (OSError, subprocess.SubprocessError) as error:
-        print(f"run-tests: could not stop the tree of pid {process.pid}: {error}", file=sys.stderr)
-    try:
-        process.wait(timeout=30)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        print(f"run-tests: pid {process.pid} outlived its tree stop and was killed alone; a child of it may remain",
-              file=sys.stderr)
-
-
-class Job:
-    """A Windows job object that ends every process in it when closed, so what a test file started and left
-    running ends with the file even though its parent, the file's own process, is already gone."""
-
-    def __init__(self, process):
-        import ctypes
-        from ctypes import wintypes
-
-        class Basic(ctypes.Structure):
-            _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
-                        ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
-                        ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
-                        ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
-                        ("SchedulingClass", wintypes.DWORD)]
-
-        class Extended(ctypes.Structure):
-            _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", ctypes.c_uint64 * 6),
-                        ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
-                        ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
-
-        kill_on_close, extended_limits = 0x2000, 9
-        self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        self.kernel32.CreateJobObjectW.restype = wintypes.HANDLE
-        self.kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
-        self.kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
-                                                          wintypes.DWORD]
-        self.kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
-        self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        self.handle = self.kernel32.CreateJobObjectW(None, None)
-        if not self.handle:
-            raise ctypes.WinError(ctypes.get_last_error())
-        limits = Extended()
-        limits.BasicLimitInformation.LimitFlags = kill_on_close
-        if not (self.kernel32.SetInformationJobObject(self.handle, extended_limits, ctypes.byref(limits),
-                                                      ctypes.sizeof(limits))
-                and self.kernel32.AssignProcessToJobObject(self.handle, int(process._handle))):
-            error = ctypes.WinError(ctypes.get_last_error())
-            self.close()
-            raise error
-
-    def close(self):
-        if self.handle:
-            self.kernel32.CloseHandle(self.handle)
-            self.handle = None
-
-
-def end_leftovers(process, job):
-    """End whatever a finished test file left running: close its job on Windows, signal its group elsewhere."""
-    if job is not None:
-        job.close()
-    elif os.name != "nt":
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            return  # the usual case: the file left nothing behind
-
-
 class Runner:
     def __init__(self, start, verbose, timeout):
         self.start, self.verbose, self.timeout = start, verbose, timeout
-        self.live, self.lock, self.cancelled = set(), threading.Lock(), False
+        self.stop = threading.Event()  # set by cancel(): every running file's tree is stopped at its next poll
 
     def run(self, name):
-        """One test file in its own process: (name, outcome, seconds, tests, skipped, output)."""
+        """One test file in its own process tree: (name, outcome, seconds, tests, skipped, output)."""
         command = [sys.executable, *(["-B"] if sys.dont_write_bytecode else []),
                    "-m", "unittest", "discover", "-s", str(self.start), "-p", name]
         if self.verbose:
             command.append("-v")
+        if self.stop.is_set():
+            return name, "CANCELLED", 0.0, 0, 0, ""
         handle, log = tempfile.mkstemp(prefix="office-tests-", suffix=".log")
-        began, job = time.monotonic(), None
+        os.close(handle)
+        began = time.monotonic()
         try:
-            with os.fdopen(handle, "wb") as out:
-                with self.lock:
-                    if self.cancelled:
-                        return name, "CANCELLED", 0.0, 0, 0, ""
-                    extra = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
-                             else {"start_new_session": True})
-                    process = subprocess.Popen(command, cwd=str(ROOT), stdout=out, stderr=subprocess.STDOUT,
-                                               stdin=subprocess.DEVNULL, **extra)
-                    self.live.add(process)
-                if os.name == "nt":
-                    try:
-                        job = Job(process)
-                    except OSError as error:  # the file still runs; say that it is not contained
-                        print(f"run-tests: {name} runs outside a job object: {error}", file=sys.stderr)
-                try:
-                    code = process.wait(timeout=self.timeout)
-                    outcome = "ok" if code == 0 else "FAIL"
-                except subprocess.TimeoutExpired:
-                    stop_tree(process)
-                    outcome = "TIMEOUT"
-                finally:
-                    end_leftovers(process, job)
-                    with self.lock:
-                        self.live.discard(process)
-            text = Path(log).read_text(encoding="utf-8", errors="replace")
+            try:
+                outcome = process_tree.run(command, cwd=str(ROOT), stdout_path=log, stderr_path=log,
+                                           timeout=self.timeout, cancel=self.stop)
+                result = {"time limit": "TIMEOUT", "cancelled": "CANCELLED"}.get(
+                    outcome.stopped, "ok" if outcome.exit == 0 else "FAIL")
+                note = ""
+            except process_tree.TreeError as error:  # it never ran, or its tree would not end: a failure, said aloud
+                result, note = "FAIL", f"\nrun-tests: {name}: {error}\n"
+            text = Path(log).read_text(encoding="utf-8", errors="replace") + note
         finally:
             try:
                 os.unlink(log)
             except OSError as error:  # a process the file started still holds it open
                 print(f"run-tests: left {log}: {error}", file=sys.stderr)
-        if self.cancelled and outcome != "ok":
-            outcome = "CANCELLED"
+        if self.stop.is_set() and result != "ok":
+            result = "CANCELLED"
         ran = RAN.search(text)
         skipped = SKIPPED.search(text)
-        return (name, outcome, time.monotonic() - began, int(ran.group(1)) if ran else 0,
+        return (name, result, time.monotonic() - began, int(ran.group(1)) if ran else 0,
                 int(skipped.group(1)) if skipped else 0, text)
 
     def cancel(self):
-        with self.lock:
-            self.cancelled = True
-            live = list(self.live)
-        for process in live:
-            stop_tree(process)
-
+        self.stop.set()
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Run the tooling tests one file per process, in parallel.")

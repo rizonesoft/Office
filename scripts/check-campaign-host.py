@@ -31,7 +31,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import signal
 import socket
 import subprocess
 import sys
@@ -43,6 +42,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import github_origin
 import pin_proposal
+import process_tree
 import todo_graph
 
 VS_MAJOR = 18  # Visual Studio 2026, whose MSVC toolset builds the C++23 code (D03 T01 §2)
@@ -78,7 +78,6 @@ PROBE_SECONDS = 120  # every subprocess probe ends by then, so a hung tool canno
 MAX_PROBE_BYTES = 8 * 1024 * 1024  # vswhere with packages prints well under 1 MB
 POLL_SECONDS = 0.1
 PROBE_MEMORY_BYTES = 2 * 1024**3  # all of a probe's processes together; the TODO reader needs about 60 MB
-KILL_SECONDS = 10  # an ended probe is gone by then; past it the probe is reported and left
 REVIEWER_STATUS = {"codex": ["login", "status"]}  # exits 0 only when the CLI is signed in
 SECTIONS_CODE = """import json, sys
 sys.path.insert(0, sys.argv[1])
@@ -367,34 +366,29 @@ class Host:
         output is never printed (it may name the signed-in account).
         """
         limit = PROBE_SECONDS if seconds is None else seconds
+        name = Path(argv[0]).name
         # A descendant ended a moment ago may still hold the output files, so a failed removal is ignored.
         with tempfile.TemporaryDirectory(prefix="campaign-host-", ignore_cleanup_errors=True) as scratch:
             paths = Path(scratch) / "out", Path(scratch) / "err"
-            too_big = lambda: any(p.stat().st_size > MAX_PROBE_BYTES for p in paths)
-            with open(paths[0], "wb") as out, open(paths[1], "wb") as err, Containment() as box:
-                work = Path(scratch) / "work"
-                work.mkdir()
-                process = box.start(argv, out, err, cwd or work)
-                problem, deadline = None, time.monotonic() + limit
-                while process.poll() is None:
-                    if too_big():
-                        problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
-                        break
-                    if time.monotonic() > deadline:
-                        problem = f"did not finish within {limit} seconds"
-                        break
-                    time.sleep(POLL_SECONDS)
-                if not box.end(process):
-                    problem = (problem or "left processes running") + ", and could not be ended"
-            if problem is None and too_big():
-                problem = f"wrote more than {MAX_PROBE_BYTES} bytes"
-            if problem:
-                raise Unreadable(f"{Path(argv[0]).name} {problem}")
-
+            work = Path(scratch) / "work"
+            work.mkdir()
+            try:
+                # The memory limit bounds what any member buffers (a nested capture of git or WSL output included),
+                # which the output files alone cannot see. Read at call time, so a test can lower it.
+                outcome = process_tree.run(argv, cwd=cwd or work, stdout_path=paths[0], stderr_path=paths[1],
+                                           timeout=limit, max_bytes=MAX_PROBE_BYTES, memory_bytes=PROBE_MEMORY_BYTES,
+                                           poll_seconds=POLL_SECONDS)
+            except process_tree.TreeError as exc:
+                raise Unreadable(f"{name} could not start: {exc}" if exc.step else
+                                 f"{name} left processes running, and could not be ended") from None
+            if outcome.stopped == "output limit":
+                raise Unreadable(f"{name} wrote more than {MAX_PROBE_BYTES} bytes")
+            if outcome.stopped == "time limit":
+                raise Unreadable(f"{name} did not finish within {limit} seconds")
             def read(path):
                 with open(path, "rb") as handle:
                     return handle.read(MAX_PROBE_BYTES).decode("utf-8", errors="replace")
-            return subprocess.CompletedProcess(argv, process.returncode, read(paths[0]), read(paths[1]))
+            return subprocess.CompletedProcess(argv, outcome.exit, read(paths[0]), read(paths[1]))
     def notify(self, subject, body):
         """Email the operator through alert.py, in a contained child with a deadline: the sender reads its key through
         WSL with pipes, and a descendant holding one must not keep the campaign from parking."""
@@ -423,126 +417,6 @@ class Host:
 
     def free_bytes(self):
         return shutil.disk_usage(self.root).free
-
-
-class Containment:
-    """A probe and everything it starts, ended together: a Windows job object, or a POSIX session's process group."""
-
-    def __enter__(self):
-        self.job = None
-        if os.name == "nt":
-            import ctypes
-            from ctypes import wintypes
-
-            class Basic(ctypes.Structure):  # JOBOBJECT_BASIC_LIMIT_INFORMATION
-                _fields_ = [("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
-                            ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER), ("LimitFlags", wintypes.DWORD),
-                            ("MinimumWorkingSetSize", ctypes.c_size_t), ("MaximumWorkingSetSize", ctypes.c_size_t),
-                            ("ActiveProcessLimit", wintypes.DWORD), ("Affinity", ctypes.c_size_t),
-                            ("PriorityClass", wintypes.DWORD), ("SchedulingClass", wintypes.DWORD)]
-
-            class Extended(ctypes.Structure):  # JOBOBJECT_EXTENDED_LIMIT_INFORMATION
-                _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", ctypes.c_ulonglong * 6),
-                            ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
-                            ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
-
-            self.ctypes = ctypes
-            self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-            self.ntdll = ctypes.WinDLL("ntdll")
-            self.kernel32.CreateJobObjectW.restype = wintypes.HANDLE
-            self.kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
-            for name in ("SetInformationJobObject", "AssignProcessToJobObject", "TerminateJobObject", "CloseHandle"):
-                getattr(self.kernel32, name).restype = wintypes.BOOL
-            self.kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
-                                                              wintypes.DWORD]
-            self.kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
-            self.kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
-            self.kernel32.QueryInformationJobObject.restype = wintypes.BOOL
-            self.kernel32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
-                                                                wintypes.DWORD, ctypes.c_void_p]
-            self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-            self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
-            self.job = self.kernel32.CreateJobObjectW(None, None)
-            if not self.job:
-                raise Unreadable(f"CreateJobObjectW failed (error {ctypes.get_last_error()})")
-            info = Extended()
-            # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_JOB_MEMORY: the memory limit bounds what any member
-            # buffers (a nested capture of git or WSL output included), which the output files alone cannot see.
-            info.BasicLimitInformation.LimitFlags = 0x2000 | 0x200
-            info.JobMemoryLimit = PROBE_MEMORY_BYTES
-            if not self.kernel32.SetInformationJobObject(self.job, 9, ctypes.byref(info), ctypes.sizeof(info)):
-                self.kernel32.CloseHandle(self.job)  # 9 = JobObjectExtendedLimitInformation
-                raise Unreadable(f"SetInformationJobObject failed (error {ctypes.get_last_error()})")
-        return self
-
-    def start(self, argv, out, err, cwd):
-        """Start the probe in `cwd`, a scratch folder: Windows looks for a bare program name in the working directory
-        first, so neither the probe nor anything it starts by a bare name runs a program planted in the repository."""
-        if os.name != "nt":
-            def limit():  # per process on POSIX, where there is no job: each member is held to the same bound
-                import resource
-                resource.setrlimit(resource.RLIMIT_AS, (PROBE_MEMORY_BYTES, PROBE_MEMORY_BYTES))
-            return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
-                                    start_new_session=True, preexec_fn=limit)
-        create_suspended = 0x00000004
-        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err, cwd=cwd,
-                                   creationflags=create_suspended | pin_proposal.NO_WINDOW)
-        handle = int(process._handle)
-        # Joined while suspended, so nothing it starts can be outside the job. NtResumeProcess resumes it: Popen keeps
-        # no handle to the primary thread that ResumeThread would need.
-        if not self.kernel32.AssignProcessToJobObject(self.job, handle):
-            process.kill()
-            raise Unreadable(f"AssignProcessToJobObject failed (error {self.ctypes.get_last_error()})")
-        status = self.ntdll.NtResumeProcess(handle)
-        if status:
-            process.kill()
-            raise Unreadable(f"NtResumeProcess failed (status {status & 0xFFFFFFFF:#x})")
-        return process
-
-    def active(self):
-        """How many processes are still in the job (termination is asynchronous: TerminateJobObject only starts it)."""
-        ctypes = self.ctypes
-
-        class Accounting(ctypes.Structure):  # JOBOBJECT_BASIC_ACCOUNTING_INFORMATION
-            _fields_ = [("TotalUserTime", ctypes.c_longlong), ("TotalKernelTime", ctypes.c_longlong),
-                        ("ThisPeriodTotalUserTime", ctypes.c_longlong),
-                        ("ThisPeriodTotalKernelTime", ctypes.c_longlong), ("TotalPageFaultCount", ctypes.c_ulong),
-                        ("TotalProcesses", ctypes.c_ulong), ("ActiveProcesses", ctypes.c_ulong),
-                        ("TotalTerminatedProcesses", ctypes.c_ulong)]
-
-        info = Accounting()
-        if not self.kernel32.QueryInformationJobObject(self.job, 1, ctypes.byref(info), ctypes.sizeof(info), None):
-            return None  # 1 = JobObjectBasicAccountingInformation; unreadable counts as not yet empty
-        return info.ActiveProcesses
-
-    def end(self, process):
-        """End the probe and every descendant; True when all of them are gone within KILL_SECONDS, so no output is
-        still pending when the caller measures it."""
-        deadline = time.monotonic() + KILL_SECONDS
-        if os.name == "nt":
-            self.kernel32.TerminateJobObject(self.job, 1)
-            while self.active() != 0:
-                if time.monotonic() > deadline:
-                    return False
-                time.sleep(POLL_SECONDS)
-        else:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError):
-                pass  # nothing in the group is left to kill
-        if process.poll() is None:
-            process.kill()  # through the handle
-        try:
-            process.wait(timeout=max(0.0, deadline - time.monotonic()))
-            return True
-        except subprocess.TimeoutExpired:
-            return False
-
-    def __exit__(self, *exc):
-        if self.job:
-            self.kernel32.TerminateJobObject(self.job, 1)
-            self.kernel32.CloseHandle(self.job)  # KILL_ON_JOB_CLOSE ends anything that is somehow still in it
-        return False
 
 
 @contextlib.contextmanager
