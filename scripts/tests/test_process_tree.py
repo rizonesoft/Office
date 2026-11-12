@@ -234,5 +234,96 @@ class ForTheTools(unittest.TestCase):
                     self.assertFalse(alive(child.pid))
 
 
+@unittest.skipUnless(os.name == "nt", "the job's start steps and member listing are Windows only")
+class RoundOneFindings(unittest.TestCase):
+    """D00 T03 §54, review round 1."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_an_interrupt_during_the_start_kills_the_suspended_child(self):
+        children = []
+        real_popen = process_tree.subprocess.Popen
+
+        def popen(*args, **kwargs):
+            children.append(real_popen(*args, **kwargs))
+            return children[-1]
+
+        with mock.patch.object(process_tree.Tree, "_assign", side_effect=KeyboardInterrupt), \
+                mock.patch.object(process_tree.subprocess, "Popen", popen):
+            with self.assertRaises(KeyboardInterrupt):
+                with process_tree.Tree() as tree:
+                    tree.start([sys.executable, "-c", "import time; time.sleep(60)"])
+        self.assertEqual(len(children), 1)
+        self.assertIsNotNone(children[0].returncode)
+        self.assertFalse(alive(children[0].pid))
+
+    def test_members_that_join_while_the_tree_ends_are_gone_when_end_returns(self):
+        # A child that keeps starting short-lived-to-be grandchildren (at most 40, each sleeping 60 s), and a member
+        # listing slowed by 60 ms, so members join between the listing and the terminate.
+        pids = self.tmp / "pids.txt"
+        spawner = textwrap.dedent(f"""
+            import subprocess, sys, time
+            with open({str(pids)!r}, "a") as f:
+                for _ in range(40):
+                    c = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+                    f.write(f"{{c.pid}}\\n")
+                    f.flush()
+                    time.sleep(0.02)
+            time.sleep(60)
+        """)
+        real_members = process_tree.Tree._members
+
+        def slow_members(this):
+            found = real_members(this)
+            time.sleep(0.06)
+            return found
+
+        import ctypes
+        import threading
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+        kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+        unsignalled = 0
+        for attempt in range(10):
+            pids.write_text("")
+            handles, stop = {}, threading.Event()
+
+            def watch():  # hold a handle on each grandchild the moment it is written, as the reviewer's probe did
+                while not stop.is_set():
+                    for pid in pids.read_text().split():
+                        if pid not in handles:
+                            handle = kernel32.OpenProcess(0x00100000, False, int(pid))  # SYNCHRONIZE
+                            if handle:
+                                handles[pid] = handle
+                    time.sleep(0.005)
+
+            watcher = threading.Thread(target=watch, daemon=True)
+            watcher.start()
+            try:
+                with mock.patch.object(process_tree.Tree, "_members", slow_members):
+                    with process_tree.Tree() as tree:
+                        tree.start([sys.executable, "-c", spawner])
+                        deadline = time.monotonic() + 30
+                        while len(handles) < 3 and time.monotonic() < deadline:
+                            time.sleep(0.01)
+                        tree.end()
+                        # The instant end() returns: every member it ended must already be signalled.
+                        unsignalled += sum(kernel32.WaitForSingleObject(h, 0) != 0 for h in list(handles.values()))
+            finally:
+                stop.set()
+                watcher.join(timeout=5)
+                for handle in handles.values():
+                    kernel32.WaitForSingleObject(handle, 10000)
+                    kernel32.CloseHandle(handle)
+        self.assertEqual(unsignalled, 0, "members were still running when end() returned")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -30,6 +30,10 @@ NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a schedule
 CREATE_SUSPENDED = 0x00000004
 CREATE_NEW_PROCESS_GROUP = 0x00000200
 JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+INVALID_HANDLE = -1  # INVALID_HANDLE_VALUE: CreateIoCompletionPort makes a new port
+ASSOCIATE_COMPLETION_PORT_INFORMATION = 7  # JobObjectAssociateCompletionPortInformation
+JOB_MSG_ACTIVE_PROCESS_ZERO, JOB_MSG_NEW_PROCESS, JOB_MSG_EXIT_PROCESS, JOB_MSG_ABNORMAL_EXIT_PROCESS = 4, 6, 7, 8
+STOP_KEY = 0x5354  # a completion key no job message carries: _close_job's word to the watcher to stop
 CONSOLE_HOSTS = ("conhost.exe", "openconsole.exe")  # the console host of a console child, started by Windows
 EXTENDED_LIMIT_INFORMATION = 9  # JobObjectExtendedLimitInformation
 BASIC_ACCOUNTING_INFORMATION = 1  # JobObjectBasicAccountingInformation
@@ -99,9 +103,23 @@ def _win32():
     kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
     kernel32.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
                                                     ctypes.POINTER(wintypes.DWORD)]
+    kernel32.CreateIoCompletionPort.restype = wintypes.HANDLE
+    kernel32.CreateIoCompletionPort.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.c_size_t, wintypes.DWORD]
+    kernel32.GetQueuedCompletionStatus.restype = wintypes.BOOL
+    kernel32.GetQueuedCompletionStatus.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD),
+                                                   ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_void_p),
+                                                   wintypes.DWORD]
+    kernel32.PostQueuedCompletionStatus.restype = wintypes.BOOL
+    kernel32.PostQueuedCompletionStatus.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_size_t, ctypes.c_void_p]
+    kernel32.IsProcessInJob.restype = wintypes.BOOL
+    kernel32.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
     ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
     ntdll.NtResumeProcess.restype = ctypes.c_int32
-    return ctypes, kernel32, ntdll, Extended, Accounting
+
+    class Port(ctypes.Structure):  # JOBOBJECT_ASSOCIATE_COMPLETION_PORT
+        _fields_ = [("CompletionKey", ctypes.c_void_p), ("CompletionPort", wintypes.HANDLE)]
+
+    return ctypes, kernel32, ntdll, Extended, Accounting, Port
 
 
 class Tree:
@@ -115,6 +133,11 @@ class Tree:
         # (POSIX has no job; every member inherits the same bound). None for none.
         self.memory_bytes = memory_bytes
         self.job = None
+        self.port = None  # the job's completion port (Windows), drained by the watcher thread
+        self.watcher = None
+        self.members = {}  # pid -> handle of every member the port announced and that may still be running
+        self.members_lock = threading.Lock()
+        self.emptied = threading.Event()  # the port said the job has no active process
         self.child = None
         self.ended = False
 
@@ -133,6 +156,49 @@ class Tree:
         if not self.kernel32.SetInformationJobObject(job, EXTENDED_LIMIT_INFORMATION, self.ctypes.byref(info),
                                                      self.ctypes.sizeof(info)):
             raise self.ctypes.WinError(self.ctypes.get_last_error())
+        # The completion port announces every member as it joins and when the job empties, so end() knows each one
+        # even if it joined and was terminated between two listings (D00 T03 §54, review round 1).
+        port = self.kernel32.CreateIoCompletionPort(INVALID_HANDLE, None, 0, 1)
+        if not port:
+            raise self.ctypes.WinError(self.ctypes.get_last_error())
+        self.port = port
+        association = self.port_info(None, port)
+        if not self.kernel32.SetInformationJobObject(job, ASSOCIATE_COMPLETION_PORT_INFORMATION,
+                                                     self.ctypes.byref(association), self.ctypes.sizeof(association)):
+            raise self.ctypes.WinError(self.ctypes.get_last_error())
+        self.watcher = threading.Thread(target=self._watch, daemon=True)
+        self.watcher.start()
+
+    def _watch(self):
+        """Drain the job's completion port until _close_job posts the stop key: hold a handle on each new member (if
+        it is still in this job, so a reused process id is never mistaken for one), drop it once the member has
+        exited, and note when the job has emptied."""
+        ctypes = self.ctypes
+        message, key, overlapped = ctypes.c_ulong(), ctypes.c_size_t(), ctypes.c_void_p()
+        while True:
+            if not self.kernel32.GetQueuedCompletionStatus(self.port, ctypes.byref(message), ctypes.byref(key),
+                                                           ctypes.byref(overlapped), 0xFFFFFFFF):
+                return  # the port was closed
+            if key.value == STOP_KEY:
+                return
+            pid = overlapped.value or 0
+            if message.value == JOB_MSG_NEW_PROCESS:
+                self.emptied.clear()
+                handle = self.kernel32.OpenProcess(0x00100000 | 0x1000, False, pid)  # SYNCHRONIZE | QUERY_LIMITED
+                if handle:
+                    inside = ctypes.c_int()
+                    if self.kernel32.IsProcessInJob(handle, self.job, ctypes.byref(inside)) and inside.value:
+                        with self.members_lock:
+                            self.members[pid] = handle
+                    else:
+                        self.kernel32.CloseHandle(handle)
+            elif message.value in (JOB_MSG_EXIT_PROCESS, JOB_MSG_ABNORMAL_EXIT_PROCESS):
+                with self.members_lock:
+                    handle = self.members.get(pid)
+                    if handle and self.kernel32.WaitForSingleObject(handle, 0) == 0:  # exited: nothing left to wait on
+                        self.kernel32.CloseHandle(self.members.pop(pid))
+            elif message.value == JOB_MSG_ACTIVE_PROCESS_ZERO:
+                self.emptied.set()
 
     def _assign(self, child):
         if not self.kernel32.AssignProcessToJobObject(self.job, int(child._handle)):
@@ -145,15 +211,26 @@ class Tree:
             raise OSError(f"NtResumeProcess returned {status & 0xFFFFFFFF:#010x}")
 
     def _close_job(self):
-        """Terminate every member and close the job's handle, exactly once."""
+        """Terminate every member and close the job's handle, exactly once; stop the watcher and close its port and
+        the handles it holds."""
         if self.job is not None:
             job, self.job = self.job, None
             self.kernel32.TerminateJobObject(job, 1)
             self.kernel32.CloseHandle(job)
+        if self.port is not None:
+            port, self.port = self.port, None
+            if self.watcher is not None:
+                self.kernel32.PostQueuedCompletionStatus(port, 0, STOP_KEY, None)
+                self.watcher.join(timeout=KILL_SECONDS)
+            self.kernel32.CloseHandle(port)
+            with self.members_lock:
+                for handle in self.members.values():
+                    self.kernel32.CloseHandle(handle)
+                self.members.clear()
 
     def __enter__(self):
         if os.name == "nt":
-            self.ctypes, self.kernel32, self.ntdll, self.extended, self.accounting = _win32()
+            self.ctypes, self.kernel32, self.ntdll, self.extended, self.accounting, self.port_info = _win32()
             try:
                 self.job = self._create_job()
             except OSError as exc:
@@ -200,16 +277,20 @@ class Tree:
         except (OSError, ValueError) as exc:
             raise TreeError(f"start: {_why(exc)}", "start", _why(exc)) from None
         if os.name == "nt":
-            # Joined while suspended, so nothing it starts can be outside the job.
+            # Joined while suspended, so nothing it starts can be outside the job. Until both steps are done the child
+            # is not yet the tree's, so anything that stops them, an interrupt included, kills and reaps it here: a
+            # suspended child outside the job would otherwise be left behind by a job that does not hold it.
             for step, action in (("assign to job", self._assign), ("resume", self._resume)):
                 try:
                     action(child)
-                except OSError as exc:
+                except BaseException as exc:
                     child.kill()
                     child.wait()
                     if child.stdin is not None:
                         child.stdin.close()
-                    raise TreeError(f"{step}: {_why(exc)}", step, _why(exc)) from None
+                    if isinstance(exc, OSError):
+                        raise TreeError(f"{step}: {_why(exc)}", step, _why(exc)) from None
+                    raise
         self.child = child
         if stdin_text is not None:
             threading.Thread(target=_feed, args=(child.stdin, stdin_text), daemon=True).start()
@@ -258,37 +339,62 @@ class Tree:
 
     def _end_job(self, deadline):
         """Terminate the job and wait on each member's own handle until it has exited. The job's member count can read
-        0 a moment before the last member's process object is signalled, so the count alone is not proof. Returns the
-        strays, the image names of the members other than the child that were still running, sorted, without the console
-        host Windows starts for a console child (it belongs to the child's console, not to anything the child started)."""
+        0 a moment before the last member's process object is signalled, so the count alone is not proof, and a member
+        can join while the tree is being ended (a child starting one as the terminate arrives): so the members are
+        listed, terminated and waited on again until a listing finds no member not already waited on and the count
+        agrees. Returns the strays, the image names of the members other than the child that were still running when
+        this was called, sorted, without the console host Windows starts for a console child (it belongs to the
+        child's console, not to anything the child started)."""
         synchronize_and_query = 0x00100000 | 0x1000  # SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION
-        handles = []
+        handles = {}
         strays = []
+        first = True
+
+        def overdue():
+            return TreeError(f"the tree of process {self.child.pid} was still running {KILL_SECONDS} s after it was "
+                             f"stopped")
         try:
-            for pid in self._members():
-                handle = self.kernel32.OpenProcess(synchronize_and_query, False, pid)
-                if not handle:
-                    continue  # it exited between the listing and the open
-                handles.append(handle)
-                image = self._image(handle) or "(unreadable)"
-                if pid != self.child.pid and image not in CONSOLE_HOSTS \
-                        and self.kernel32.WaitForSingleObject(handle, 0) == 0x102:  # WAIT_TIMEOUT: still running
-                    strays.append(image)
-            self.kernel32.TerminateJobObject(self.job, 1)
-            for handle in handles:
-                left = max(0, int((deadline - time.monotonic()) * 1000))
-                if self.kernel32.WaitForSingleObject(handle, left) != 0:  # WAIT_OBJECT_0: the process has exited
-                    raise TreeError(f"the tree of process {self.child.pid} was still running {KILL_SECONDS} s after "
-                                    f"it was stopped")
+            while True:
+                new = []
+                for pid in self._members():
+                    if pid in handles:
+                        continue
+                    handle = self.kernel32.OpenProcess(synchronize_and_query, False, pid)
+                    if not handle:
+                        continue  # it exited between the listing and the open
+                    handles[pid] = handle
+                    new.append(handle)
+                    image = self._image(handle) or "(unreadable)"
+                    if first and pid != self.child.pid and image not in CONSOLE_HOSTS \
+                            and self.kernel32.WaitForSingleObject(handle, 0) == 0x102:  # WAIT_TIMEOUT: running
+                        strays.append(image)
+                first = False
+                self.kernel32.TerminateJobObject(self.job, 1)
+                for handle in new:
+                    left = max(0, int((deadline - time.monotonic()) * 1000))
+                    if self.kernel32.WaitForSingleObject(handle, left) != 0:  # WAIT_OBJECT_0: the process has exited
+                        raise overdue()
+                if not new and self.active() == 0:
+                    break
+                if time.monotonic() > deadline:
+                    raise overdue()
+                if not new:
+                    time.sleep(POLL_SECONDS / 4)  # counted but not yet listed: look again
+            # The count is 0. Every member the port announced is in `self.members` until it has exited; wait for the
+            # port to report the job empty (the messages of every exit come before it), then on each member's handle.
+            if self.port is not None:
+                if not self.emptied.wait(timeout=max(0.0, deadline - time.monotonic())):
+                    raise overdue()
+                with self.members_lock:
+                    waiting = list(self.members.values())
+                for handle in waiting:
+                    left = max(0, int((deadline - time.monotonic()) * 1000))
+                    if self.kernel32.WaitForSingleObject(handle, left) != 0:
+                        raise overdue()
+            return sorted(strays)
         finally:
-            for handle in handles:
+            for handle in handles.values():
                 self.kernel32.CloseHandle(handle)
-        while self.active():  # a member that joined after the listing is ended by the terminate too
-            if time.monotonic() > deadline:
-                raise TreeError(f"the tree of process {self.child.pid} was still running {KILL_SECONDS} s after it was "
-                                f"stopped")
-            time.sleep(POLL_SECONDS / 4)
-        return sorted(strays)
 
     def end(self):
         """Stop every member, wait until they are gone and reap the child. Returns the processes the child had started
