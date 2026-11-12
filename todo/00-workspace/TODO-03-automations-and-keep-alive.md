@@ -1208,6 +1208,8 @@ Filed 2026-11-11 while building §36. The repository starts children in a contai
 
 ## 55. Scheduled Tasks Run in the Shared Process Tree
 
+> **Started:** 2026-11-12T02:10:00Z
+
 Filed 2026-11-12 after §54 was stamped. `.conclave/automations/run.py`, which runs every scheduled task, holds a fourth private containment outside the `scripts/` folders §54's check covers: `_kill_tree` runs `taskkill /T /F` only when a task passes its time limit, so a task that ends by itself leaves whatever it started running (a `gh` or `git` child, a test that started a fake), and `taskkill /T` walks parent links, which a process whose parent already exited no longer has. This section runs each task in `scripts/lib/process_tree.py`'s tree and widens the check.
 
 **Phase:** 0
