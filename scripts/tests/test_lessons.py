@@ -1190,6 +1190,11 @@ class Upkeep(Indexed):
         def cited_record_missing():
             self.write(name="cites", id="cites", applies="*", source="docs/reviews/00-workspace/gone.md#round-1/finding-1")
 
+        def cited_record_unreadable():
+            (self.root / "docs/reviews/00-workspace/garbled.md").write_bytes(b"## Round 1\n\xff\xfe not utf-8 \xff\n")
+            self.write(name="cites", id="cites", applies="*",
+                       source="docs/reviews/00-workspace/garbled.md#round-1/finding-1")
+
         def bad_triage_line():
             self.triage(RECORD2, "round 1 finding 99: lesson:good\n")
 
@@ -1205,6 +1210,7 @@ class Upkeep(Indexed):
         cases = [(unreadable_lesson, "broken.md: cannot be read"),
                  (structurally_broken_lesson, "broken.md: missing key"),
                  (cited_record_missing, "gone.md is not a review record in the repository"),
+                 (cited_record_unreadable, "docs/reviews/00-workspace/garbled.md cannot be read (UnicodeDecodeError)"),
                  (bad_triage_line, "has no round 1 finding 99"),
                  (triage_names_no_lesson, "lesson:no-such-lesson names no lesson file"),
                  (triage_without_record, "its review record docs/reviews/00-workspace/D99-T99-s9.md does not exist"),

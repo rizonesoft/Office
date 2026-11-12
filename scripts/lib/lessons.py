@@ -324,9 +324,15 @@ def problems_of(lesson, repo, allowed_topics):
                 say("source", f"a {kind} is named with its number ({kind}-N)")
             else:
                 number = int(number or 1)
-                present = finding_at(path.read_text(encoding="utf-8"), kind, number, review["finding"])
+                try:
+                    present = finding_at(path.read_text(encoding="utf-8"), kind, number, review["finding"])
+                except (OSError, UnicodeDecodeError) as error:
+                    present = "unread"  # a record that is there and cannot be read is a refusal, not a crash
+                    say("source", f"{record} cannot be read ({type(error).__name__})")
                 heading = f"## Round {number}" if kind == "round" else f"{pass_label(kind, number)} review"
-                if present is None:
+                if present == "unread":
+                    pass
+                elif present is None:
                     say("source", f"{record} has no {heading} heading")
                 elif not present:
                     say("source", f"{pass_label(kind, number)} of {record} has no finding {review['finding']}")
