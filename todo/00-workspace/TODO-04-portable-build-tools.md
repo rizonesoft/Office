@@ -146,6 +146,8 @@ CI builds with the same pinned tools as this PC. A cache keyed on the lock file 
 
 ## 4. Launcher and clangd Use the Tool Folder
 
+> **Started:** 2026-11-12T05:49:48Z
+
 The campaign starts with the tools in place, and the C++ language server is the pinned `clangd`, not whichever one a machine has. A failed bootstrap never stops a start: the sections that need a tool run the bootstrap themselves and fail at their own gate.
 
 **Phase:** 0
