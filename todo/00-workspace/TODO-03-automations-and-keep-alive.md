@@ -1271,8 +1271,8 @@ Filed 2026-11-12 from the review of D00 T05 §1 (`docs/reviews/00-workspace/D00-
 1. Say it in the prompts. Done when: the completion and reconciliation prompts state the rule.
 2. Prove a prompt carries it. Done when: a test reads it in a filled prompt.
 
-- [ ] State in `docs/completion-review-prompt.md` and in `docs/reconciliation-review-prompt.md` (the template `scripts/review-prompt.py` fills for a reconciliation; **Corrected 2026-11-12:** the first wording said the script itself) that the section's `- [ ] Commit:` item is ticked by `stamp` when it writes the `Verified:` line, so an unticked Commit item whose commit exists is never a gap. Done when: both prompts hold the sentence.
-- [ ] Test that a filled completion prompt and a filled reconciliation prompt carry it. Done when: a test in `scripts/tests/test_review_prompt.py` fails with the sentence removed from either.
+- [x] State in `docs/completion-review-prompt.md` and in `docs/reconciliation-review-prompt.md` (the template `scripts/review-prompt.py` fills for a reconciliation; **Corrected 2026-11-12:** the first wording said the script itself) that the section's `- [ ] Commit:` item is ticked by `stamp` when it writes the `Verified:` line, so an unticked Commit item whose commit exists is never a gap. Done when: both prompts hold the sentence.
+- [x] Test that a filled completion prompt and a filled reconciliation prompt carry it. Done when: a test in `scripts/tests/test_review_prompt.py` fails with the sentence removed from either.
 - [ ] Commit: `review: the stamp ticks the Commit item, so a review never asks for it`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes with the new test among them.

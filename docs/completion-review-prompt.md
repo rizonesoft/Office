@@ -28,6 +28,8 @@ List every piece the feature needs to be complete for a user, then mark each one
 - Persistence and its read-back: what is saved, where, written temp-file-then-replace, and read back on the next start.
 - Tests that would fail if the piece broke.
 
+The section's `- [ ] Commit:` item is ticked by `stamp` when it writes the section's `Verified:` line, so an unticked Commit item whose commit exists is never a gap.
+
 Mark each item `present` (name the `file:line` or test that shows it), `missing-in-scope` (the section's contract, its Fidelity surface or its Goal covers it, so the section must build it) or `missing-out-of-scope` (a real need the section's contract does not cover, so it is filed as a new section; say which domain owns it).
 
 Proportionality: list only needs that arise in this repository's real operation: real input the project accepts (a file, request or message from outside is hostile, so a crafted one a user receives is real), a real user action, or a real operating-system, disk or hardware condition. Do not list a need that only a contrived scenario creates (an attacker who already controls the machine, the clock, the repository, the build or the tools, or a precondition no real file, user or system produces).

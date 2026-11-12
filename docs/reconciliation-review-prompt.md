@@ -22,6 +22,8 @@ You are an independent reviewer. Do not modify any file. A completion review of 
 2. Each repair: does it introduce a regression, a weakened test or a narrowed behaviour?
 3. The section's contract: are its promises the same as when the completion review read them? The stamp compares the section's text at both commits and refuses a changed promise.
 
+The section's `- [ ] Commit:` item is ticked by `stamp` when it writes the section's `Verified:` line, so an unticked Commit item whose commit exists is never a gap.
+
 Proportionality: report only what arises in this repository's real operation, not what only a contrived scenario creates.
 
 ## Reply format

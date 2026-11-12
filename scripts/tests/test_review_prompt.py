@@ -99,6 +99,18 @@ class Filler(unittest.TestCase):
         return done.stderr
 
 
+class CommitItem(Filler):
+    """D00 T03 §57: the completion and reconciliation prompts say the stamp ticks the Commit item."""
+
+    SENTENCE = ("The section's `- [ ] Commit:` item is ticked by `stamp` when it writes the section's `Verified:` "
+                "line, so an unticked Commit item whose commit exists is never a gap.")
+
+    def test_the_completion_and_reconciliation_prompts_say_it(self):
+        for kind in ("completion", "reconciliation"):
+            with self.subTest(kind):
+                self.assertIn(self.SENTENCE, self.ok(kind))
+
+
 class FillEachKind(Filler):
     def test_every_kind_fills_with_no_placeholder_left(self):
         for kind in KINDS:
