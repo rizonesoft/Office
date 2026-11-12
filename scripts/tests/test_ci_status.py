@@ -124,8 +124,12 @@ class States(Base):
               {"name": "tests (2)", "conclusion": "failure",
                "steps": [{"name": "Set up job", "conclusion": "success"},
                          {"name": "Run a share of the tooling tests", "conclusion": "failure"}]},
-              {"name": "tests (3)", "conclusion": None, "status": "in_progress", "steps": []},
-              {"name": "tests (4)", "conclusion": None, "status": "queued", "steps": []}]
+              # A job that has not ended, as `gh run view --json jobs` prints it: an empty conclusion, and steps
+              # that have none either (run 43329884668 was read as red from exactly this shape).
+              {"name": "tests (3)", "conclusion": "", "status": "in_progress",
+               "steps": [{"name": "Set up job", "conclusion": "success", "status": "completed"},
+                         {"name": "Run a share of the tooling tests", "conclusion": "", "status": "in_progress"}]},
+              {"name": "tests (4)", "conclusion": "", "status": "queued", "steps": []}]
 
     def test_a_failed_job_is_red_at_once_while_other_jobs_still_run(self):
         # D00 T03 §60: with the tests in parallel jobs, one share's failure is known long before the run ends.
@@ -146,7 +150,15 @@ class States(Base):
     def test_a_run_whose_jobs_are_all_running_or_green_stays_pending(self):
         jobs = [dict(job, conclusion="success" if job["conclusion"] == "failure" else job["conclusion"])
                 for job in self.SHARES]
-        fake = Fake(runs=[[run(status="in_progress", conclusion="")]], jobs=jobs)
+        for state in ("in_progress", "queued"):
+            fake = Fake(runs=[[run(status=state, conclusion="")]], jobs=jobs)
+            code, out = self.main(fake)
+            self.assertEqual(code, 3, out)
+            self.assertTrue(out.startswith("pending "), out)
+        every_job_running = [{"name": f"tests ({n})", "conclusion": "", "status": "in_progress",
+                              "steps": [{"name": "Set up job", "conclusion": "", "status": "in_progress"}]}
+                             for n in (1, 2, 3, 4)] + [{"name": "gates", "conclusion": None, "status": "queued"}]
+        fake = Fake(runs=[[run(status="queued", conclusion="")]], jobs=every_job_running)
         self.assertEqual(self.main(fake)[0], 3)
 
     def test_jobs_that_cannot_be_read_leave_a_running_run_pending(self):

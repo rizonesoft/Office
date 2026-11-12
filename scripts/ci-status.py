@@ -128,9 +128,10 @@ def failed_jobs(tools, run_id, seconds, repo):
         return None
     lines = []
     for job in jobs:
-        if not isinstance(job, dict) or job.get("conclusion") in ("success", "skipped", None):
+        # A job or step that has not ended has no conclusion: gh prints "" for it, the API null. Neither is a failure.
+        if not isinstance(job, dict) or (job.get("conclusion") or None) in ("success", "skipped", None):
             continue
-        steps = [s for s in job.get("steps") or [] if isinstance(s, dict) and s.get("conclusion") not in
+        steps = [s for s in job.get("steps") or [] if isinstance(s, dict) and (s.get("conclusion") or None) not in
                  ("success", "skipped", None)]
         where = ", ".join(f"{s.get('name')} ({s.get('conclusion')})" for s in steps) or "no failing step reported"
         lines.append(f"  {job.get('name')} ({job.get('conclusion')}): {where}")
