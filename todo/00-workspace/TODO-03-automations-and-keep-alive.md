@@ -76,7 +76,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 38 | §50 | Withdrawn sections | -- | [x] |
 | 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 | 40 | §54 | One process-tree containment for every tool | §36 | [x] |
-| 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [ ] |
+| 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [x] |
 | 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
@@ -1225,9 +1225,12 @@ Filed 2026-11-12 after §54 was stamped. `.conclave/automations/run.py`, which r
 - [x] Load the helper by path from `scripts/lib/process_tree.py` under the repository root `run.py` is given, as `review-dispatch.py` does. **Corrected 2026-11-12:** loaded from the repository `run.py` itself lives in (beside it, as the dispatcher does), not from the `root` a test passes, so a fixture root needs no copy; a copy of the automations folder alone (the installer's checks) still validates and only a task run needs the helper. Done when: a test runs `run.py` from a copy of the automations folder against a fixture root holding the helper.
 - [x] Prove a task's leftover child ends with its run. Done when: a test whose task starts a sleeping child and exits 0 shows the child gone when `execute()` returns, and the same for a task that passes its limit.
 - [x] Extend `scripts/tests/test_one_containment.py` to the Python files under `.conclave/automations/`. Done when: it fails on `run.py` before the move and passes after it.
-- [ ] Commit: `automations: run each scheduled task in the shared process tree`
+- [x] Commit: `automations: run each scheduled task in the shared process tree`
 
 **Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_one_containment.py"` pass.
+
+> **Verified:** 2026-11-12 | §55 | bf1e57bfa5a923a80d119a23779694691061ffc2
+> **Review:** `docs/reviews/d00-t03-s55.json`
 
 ## 56. Digest Delivery When No Evidence Remains
 

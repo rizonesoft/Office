@@ -55,7 +55,7 @@ Sections: 58 | Checklist items: 403
 | [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
-| [ ]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
+| [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
 | [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains        | owner-decision         | 4     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 12    |
 | [ ]    | D00 T04 §2  | Tool Folder Resolver                            | none                   | 6     |
@@ -384,6 +384,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 69/159 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 70/159 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 477/1045 items completed (includes Commit items).
+Checklist: 478/1045 items completed (includes Commit items).

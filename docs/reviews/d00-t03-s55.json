@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T03 \u00a755",
+  "title": "Scheduled Tasks Run in the Shared Process Tree",
+  "implementation_sha": "bf1e57bfa5a923a80d119a23779694691061ffc2",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s55.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/run-tests.py -p \"test_automations.py\" -> OK",
+    "python scripts/run-tests.py -p \"test_one_containment.py\" -> OK",
+    "bosun run -- python scripts/run-tests.py -> Ran 1377 tests in 35 files in 520.8 s (4 at a time), 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s55.md",
+    "verdict": "complete",
+    "candidate": "bf1e57bfa5a923a80d119a23779694691061ffc2",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s55.md",
+    "candidate": "520ebed4e9567a1b437079896657aa0e4b1afeb6",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "520ebed4e9567a1b437079896657aa0e4b1afeb6",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
