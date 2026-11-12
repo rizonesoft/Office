@@ -688,6 +688,49 @@ class Triage(Indexed):
                 if last.startswith("round 1 finding 1") and "first" not in text:
                     self.assertIn((self.TWO, "1", "1", "P1"), self.keys("--untriaged", self.TWO))
 
+    def test_a_finding_with_two_lines_stays_outstanding(self):
+        # Round 1: the first of two conflicting lines was kept, so the finding left the untriaged list.
+        self.lesson("a-lesson")
+        self.triage(self.TWO, "round 1 finding 1: one-off, a typo\nround 1 finding 1: lesson:a-lesson\n"
+                              "round 1 finding 1: enforced:scripts/a.py\nround 1 finding 2: one-off, fine\n")
+        left = self.keys("--untriaged", self.TWO)
+        self.assertIn((self.TWO, "1", "1", "P1"), left)
+        self.assertNotIn((self.TWO, "1", "2", "P2"), left)
+        self.assertEqual(lessons.evidence(self.root).get("a-lesson", 0), 1)  # check refuses the store all the same
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 1)
+        self.assertEqual(out.getvalue().count("already has a disposition"), 2)
+
+    def test_the_location_first_form_is_read(self):
+        # Round 1: `` **`path:line` (P2): ...`` findings of an older record were dropped without a word.
+        record = "docs/reviews/00-workspace/D99-T04-s1.md"
+        (self.root / record).write_text(
+            "## Round 1: sol (`gpt` via `codex`)\n\n"
+            "1. **`design/x.md:42` (P2): Installation is reported instead of licensing status.** More.\n"
+            "2. **`a.py:1` and `b.py:2` (P1): Two places share one defect.** More.\n\nOVERALL: needs-attention\n",
+            encoding="utf-8")
+        code, lines, err = self.listing(record)
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(lines, [
+            f"{record} round 1 finding 1 [P2] design/x.md:42: Installation is reported instead of licensing status.",
+            f"{record} round 1 finding 2 [P1] a.py:1: Two places share one defect."])
+
+    def test_a_severity_in_an_unknown_form_refuses_the_record(self):
+        record = "docs/reviews/00-workspace/D99-T05-s1.md"
+        (self.root / record).write_text(
+            "## Round 1: sol (`gpt` via `codex`)\n\n1. **Severity P1 (blocking)** A form nobody has taught the reader.\n"
+            "\nOVERALL: needs-attention\n", encoding="utf-8")
+        code, lines, err = self.listing(record)
+        self.assertEqual((code, lines), (1, []))
+        self.assertIn("round 1 finding 1 names a severity in a form this reader does not know", err)
+        self.assertEqual(self.listing()[0], 1)  # and listing every record refuses too, rather than skip it
+
+    def test_every_record_of_this_repository_is_read_whole(self):
+        found = lessons.candidates(ROOT)
+        self.assertGreater(len(found), 700)
+        self.assertIn("docs/reviews/02-interface/D02-T01-s2.md", {item["record"] for item in found})
+
     def test_a_triage_file_without_its_record_is_refused(self):
         self.triage("docs/reviews/00-workspace/D99-T09-s9.md", "round 1 finding 1: one-off, orphaned\n")
         out = io.StringIO()

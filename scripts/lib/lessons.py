@@ -148,6 +148,10 @@ class Repository:
 # `**P1, ...`, `**P1: ...`, `**P1:** ...`, `**[P1] ...`, `**P1** ...`, `**P1**, ...`.
 FINDING = re.compile(r"^\s*(\d+)\.\s+\*\*\[?(P[123])\]?(\*\*)?[,:]?(\*\*)?\s+(.*)$")
 LOCATION = re.compile(r"`([^`\s]+:\d+(?:-\d+)?)`")
+# The one other form: the location first, the severity in brackets: `` **`path:line` (P2): ...``.
+FINDING_BY_PLACE = re.compile(r"^\s*(\d+)\.\s+\*\*((?:`[^`]+`(?:\s*(?:,|and)\s*)?)+)\s*\((P[123])\)[:,]?\s+(.*)$")
+# A numbered item whose bold opening names a severity: a finding, in a known form or not.
+LOOKS_LIKE_A_FINDING = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\bP[123]\b")
 
 
 def round_findings(record_text):
@@ -168,7 +172,17 @@ def round_findings(record_text):
         if PASS_HEADING.match(line):
             current = None  # another pass (a plan, completion or reconciliation review) begins
             continue
-        found = FINDING.match(line)
+        found, placed = FINDING.match(line), FINDING_BY_PLACE.match(line)
+        if placed and not found:
+            rest = placed[4].replace("**", "")
+            where = LOCATION.search(placed[2])
+            sentence = re.split(r"(?<=[.!?])\s", rest, maxsplit=1)[0].strip()
+            current.append({"k": len(current) + 1, "severity": placed[3], "location": where[1] if where else "",
+                            "sentence": sentence[:200]})
+        elif not found and LOOKS_LIKE_A_FINDING.match(line):
+            # A severity in a form this reader does not know: kept, marked, so the caller refuses the record
+            # instead of dropping the finding.
+            current.append({"k": len(current) + 1, "severity": "?", "location": "", "sentence": line.strip()[:200]})
         if found:
             rest = found[5].replace("**", "")
             where = LOCATION.search(rest)
@@ -322,7 +336,7 @@ def read_triage(root, record, repo=None):
         rounds = round_findings((root / record).read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return {}, [f"{name}: its review record {record} does not exist or cannot be read"]
-    valid, problems = {}, []
+    valid, problems, conflicted = {}, [], set()
     for number, line in enumerate(lines, 1):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -334,8 +348,12 @@ def read_triage(root, record, repo=None):
         key, word, reason = (int(match[1]), int(match[2])), match[3], (match[4] or "").strip()
         if key[0] not in rounds or not 1 <= key[1] <= len(rounds[key[0]]):
             problems.append(f"{where}: {record} has no round {key[0]} finding {key[1]}")
-        elif key in valid:
-            problems.append(f"{where}: round {key[0]} finding {key[1]} already has a disposition ({valid[key]})")
+        elif key in valid or key in conflicted:
+            # Two lines for one finding: neither stands, so the finding stays outstanding until one is removed.
+            problems.append(f"{where}: round {key[0]} finding {key[1]} already has a disposition"
+                            + (f" ({valid[key]})" if key in valid else ""))
+            valid.pop(key, None)
+            conflicted.add(key)
         elif word.startswith("lesson:"):
             lesson_id = word[len("lesson:"):].rstrip(",.;")
             if not ID.fullmatch(lesson_id) or not (root / "docs" / "lessons" / f"{lesson_id}.md").is_file():
@@ -397,6 +415,11 @@ def candidates(root, records=None, untriaged=False):
         rounds = round_findings(text)
         if not rounds:
             raise RecordError(f"{record}: holds no review round")
+        unread = [(number, f) for number in sorted(rounds) for f in rounds[number] if f["severity"] == "?"]
+        if unread:
+            number, finding = unread[0]
+            raise RecordError(f"{record}: round {number} finding {finding['k']} names a severity in a form this "
+                              f"reader does not know ({finding['sentence'][:80]}); teach round_findings the form")
         done = {}
         if untriaged:
             if not record.startswith(REVIEWS + "/"):
