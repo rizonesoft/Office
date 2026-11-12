@@ -242,7 +242,11 @@ def build_parallel(jobs):
         return b""
 
     build(draw=collect)
-    drawn = draw_all(list(requests), jobs)
+    try:
+        drawn = draw_all(list(requests), jobs)
+    except OSError as exc:  # no process pool can start here (a restricted session): the serial build is the same build
+        print(f"build-icons: cannot start a process pool ({exc}); drawing in this process", file=sys.stderr)
+        return build()
     for (_, width, height, _), data in drawn.items():
         checked(data, width, height)
     return build(draw=lambda svg, width, height=None, background=None:

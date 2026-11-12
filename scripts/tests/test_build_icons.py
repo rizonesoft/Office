@@ -86,6 +86,17 @@ class Pool(unittest.TestCase):
             self.assertIn("rasteriser returned a bad PNG", str(ctx.exception))
             self.assertEqual(len(passes), 1)  # the collecting pass only: nothing was assembled from the bad raster
 
+    def test_where_no_pool_can_start_the_build_draws_in_this_process_and_says_so(self):
+        denied = mock.Mock(side_effect=PermissionError(13, "Access is denied"))
+        err = io.StringIO()
+        with mock.patch.object(build_icons, "render", self.tagged):
+            serial = build_icons.build()
+            with mock.patch.object(build_icons, "draw_all", denied), mock.patch.object(build_icons, "rasteriser"), \
+                    contextlib.redirect_stderr(err):
+                self.assertEqual(build_icons.build_parallel(4), serial)
+        self.assertIn("cannot start a process pool", err.getvalue())
+        self.assertIn("drawing in this process", err.getvalue())
+
     def test_a_worker_that_dies_breaks_the_pool_and_leaves_no_process_behind(self):
         import multiprocessing
         with self.assertRaises(build_icons.BrokenProcessPool):
