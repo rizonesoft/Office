@@ -81,7 +81,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
 | 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
-| 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [ ] |
+| 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1362,11 +1362,14 @@ Filed 2026-11-13 from the owner's direction of 2026-11-12 (decision 45 of `docs/
 - [x] Split `.github/workflows/ci.yml` into a `checks` job (the installs, the tool pins, the icons, `validate`, `plan --check`, the lesson store, SPDX and REUSE) and a `tests` job with a matrix of four shares running `python scripts/run-tests.py -v --shard ${{ matrix.share }}/4`, with `fail-fast: false` so every share reports. Done when: the run of this section's commit shows five jobs, all green, and its total time from the first job's start to the last job's end is under 7 minutes; the run id and the times are recorded in this section as a `**Measured:**` line. Cheaper substitute: raising the runner's parallel count, which the two slow files defeat. **Corrected 2026-11-13 (plan review, gap 2; and validation):** the quick checks stay in the job named `gates`, the name the campaign's records and the owner digest already quote, and each of the four `tests` jobs is a fresh runner that does its own checkout with full history, the pinned Python, the tooling requirements (the tests import Pillow and the rasteriser) and the pinned build tools; nothing is taken from another job. Done when, in addition: the run shows each share installing its own requirements and passing.
 - [x] Keep `scripts/ci-status.py` true over several jobs: green only when every job of the push's run is green, red naming each failed job and step, pending while any job runs. Done when: tests in `scripts/tests/test_ci_status.py` with a fake `gh` show a run with one failed share reported red with that job's name, a run with one share still running reported pending, and all five green reported green. **Corrected 2026-11-13 (plan review, gap 1):** a failed share is red at once, while the run is still in progress and other shares run: failure comes before pending, which is what detects a red CI early (decision 45), and a `--wait` ends there. Jobs that cannot be read leave a running run pending. Done when, in addition: tests show a run in progress with one failed share and others running or queued reported red with the failed job and step named and no other job, a wait ending on it after one look, a run in progress with no failed job pending, and unreadable jobs pending. Cheaper substitute: reading the run's own conclusion only, which loses which share failed.
 - [x] Say in `AGENTS.md` (Tests) and `.claude/agents/test-runner.md` that the full suite is CI's, in shares, and how to run one share locally to reproduce a red one (`python scripts/run-tests.py --shard <i>/4`). Done when: both name the command and `python -m unittest discover -s scripts/tests -p "test_skill*.py"` passes.
-- [ ] Commit: `ci: run the tooling tests in parallel jobs`
+- [x] Commit: `ci: run the tooling tests in parallel jobs`
 
 **Measured:** 2026-11-13, run 43329884668 on commit 022d94f, the first with the tests in shares: five jobs, all green, 5 minutes 4 seconds from the first job's start (23:33:44Z) to the last job's end (23:38:48Z); `gates` 2 minutes 10 seconds, the four shares 3 minutes 9 seconds to 5 minutes 4 seconds. The run before the split, 43299441464, took 17 minutes in one job. Each share checked the repository out and installed its own requirements and build tools.
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_run_tests.py"` and `-p "test_ci_status.py"` pass with the tests named above among them, and `python scripts/ci-status.py HEAD` reports the five-job run of this section's commit green.
+
+> **Verified:** 2026-11-13 | §60 | 56729c6617e79749a58244ac9568c4a26b67b11f
+> **Review:** `docs/reviews/d00-t03-s60.json`
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
