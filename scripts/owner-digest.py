@@ -34,6 +34,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import uuid
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
@@ -286,7 +287,7 @@ def notices_part(notices, root):
     return lines + [""], (NOTICES_ATTACHMENT, full)
 
 
-def compose(root, rows, today, ci_lines, state, notices=()):
+def compose(root, rows, today, ci_lines, state, notices=(), stale=()):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
@@ -312,6 +313,9 @@ def compose(root, rows, today, ci_lines, state, notices=()):
                    for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
     notice_lines, notice_file = notices_part(notices, root)
+    if stale:  # claimed by an earlier digest that could not complete its record: counted, never sent again
+        notice_lines = notice_lines + wrap(f"{len(stale)} notice(s) went out in an earlier digest whose record could not "
+                                           f"be completed; python .conclave/automations/alert.py --list shows them.") + [""]
     body = head + waiting_lines + [""] + notice_lines + progress
     attachments = [notice_file] if notice_file else []
     if len(body) > BODY_LINES:
@@ -347,34 +351,50 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
         return 2
     today = today or datetime.date.today()
     alert = load_alert(root)
-    # The batch is captured here, before the email is composed: only these are marked reported, and only once the
-    # send succeeded, so a notice recorded meanwhile, a dry run and a refused send all leave notices pending.
+    # The batch is captured here, before the email is composed, and claimed before it is sent: only these are marked
+    # reported, once the send succeeded, so a notice recorded meanwhile, a dry run and a refused send leave notices
+    # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
     try:
         batch = alert.pending_notices(str(root))
+        stale = alert.claimed_notices(str(root))
     except alert.Refused as error:
-        batch = str(error)
-    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch)
+        batch, stale = str(error), []
+    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch, stale)
     if args.dry_run:
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
             print(f"\n--- attachment {name} ---\n{text}", end="")
         return 0
+    ids = [n["id"] for n in batch] if isinstance(batch, list) else []
+    digest_id = uuid.uuid4().hex
+    if ids:
+        try:
+            alert.claim_notices(ids, digest_id, str(root))
+        except alert.Refused as error:  # the queue cannot be written, so the batch could never be marked: not sent
+            print(f"owner-digest not sent: the notices cannot be claimed: {error}", file=sys.stderr)
+            return 1
     try:
         kwargs = {"attachments": attachments} if attachments else {}
         email_id = alert.send(alert.key(), subject, body, opener or alert.urllib.request.urlopen, **kwargs)
     except (alert.Refused, OSError, ValueError) as error:
         print(f"owner-digest not sent: {error}", file=sys.stderr)
+        if ids:
+            try:
+                alert.release_claim(digest_id, str(root))
+            except alert.Refused as release:  # they stay claimed; `alert.py --list` shows them and the next digest
+                print(f"owner-digest: the notices stay claimed: {release}", file=sys.stderr)  # says so
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
-    if isinstance(batch, list) and batch:
+    done = ids + [n["id"] for n in stale]  # the stale ones were reported as a count in this digest
+    if done:
         try:
-            marked = alert.mark_reported([n["id"] for n in batch], str(root))
+            marked = alert.mark_reported(done, str(root))
             print(f"marked {marked} notice(s) reported")
-        except alert.Refused as error:  # sent, but they stay pending: the next digest reports them again
-            print(f"owner-digest: the notices stay pending: {error}", file=sys.stderr)
+        except alert.Refused as error:  # delivered; they stay claimed, so the next digest counts them, never resends
+            print(f"owner-digest: the delivered notices could not be marked and stay claimed: {error}",
+                  file=sys.stderr)
             return 1
     return 0
-
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")

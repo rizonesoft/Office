@@ -3,6 +3,7 @@
 """Queue the operator's notices for the weekly digest, and send the emails this repository sends.
 
     python .conclave/automations/alert.py --notice SUBJECT BODY_FILE   queue a notice (the campaign's parks)
+    python .conclave/automations/alert.py --list                       the notices no digest has completed
     python .conclave/automations/alert.py NAME            send the failure email for NAME's last run now (by hand)
     python .conclave/automations/alert.py NAME --dry-run  print that email instead, reading no key
 
@@ -220,8 +221,50 @@ def record_notice(sender: str, subject: str, body: str, root: str = REPO) -> str
 
 
 def pending_notices(root: str = REPO) -> list[dict]:
-    """The notices no digest has reported yet, oldest first."""
-    return [n for n in _read_notices(root) if not n.get("reported")]
+    """The notices no digest has reported or claimed yet, oldest first."""
+    return [n for n in _read_notices(root) if not n.get("reported") and not n.get("claimed")]
+
+
+def claimed_notices(root: str = REPO) -> list[dict]:
+    """Notices a digest claimed but whose report was never completed: that digest was delivered and could not mark
+    them, or it stopped before its send. They are not sent again (D00 T03 §53, completion review)."""
+    return [n for n in _read_notices(root) if n.get("claimed") and not n.get("reported")]
+
+
+def _update(root: str, change) -> int:
+    """Apply `change(notice) -> bool` to every notice under the lock and write the queue; how many it changed."""
+    try:
+        with _QueueLock(root):
+            notices = _read_notices(root)
+            changed = sum(1 for notice in notices if change(notice))
+            _write_notices(root, notices)
+    except OSError as error:
+        raise Refused(f"{NOTICES} could not be written: {error}") from None
+    return changed
+
+
+def claim_notices(ids, digest: str, root: str = REPO) -> int:
+    """Before a digest is sent, mark its batch as claimed by that digest, so a send that succeeds and then cannot be
+    marked never sends the batch twice. Refused when the queue cannot be written: then nothing may be sent."""
+    import datetime
+    wanted, now = set(ids), datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def change(notice):
+        if notice["id"] in wanted and not notice.get("reported") and not notice.get("claimed"):
+            notice["claimed"] = {"by": digest, "at": now}
+            return True
+        return False
+    return _update(root, change)
+
+
+def release_claim(digest: str, root: str = REPO) -> int:
+    """After a refused send, give the digest's claimed notices back to the queue."""
+    def change(notice):
+        if (notice.get("claimed") or {}).get("by") == digest and not notice.get("reported"):
+            notice["claimed"] = None
+            return True
+        return False
+    return _update(root, change)
 
 
 def mark_reported(ids, root: str = REPO) -> int:
@@ -229,18 +272,13 @@ def mark_reported(ids, root: str = REPO) -> int:
     read keeps `reported: null`. Returns how many were marked."""
     import datetime
     wanted, now = set(ids), datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    try:
-        with _QueueLock(root):
-            notices = _read_notices(root)
-            marked = 0
-            for notice in notices:
-                if notice["id"] in wanted and not notice.get("reported"):
-                    notice["reported"] = now
-                    marked += 1
-            _write_notices(root, notices)
-    except OSError as error:
-        raise Refused(f"{NOTICES} could not be written: {error}") from None
-    return marked
+
+    def change(notice):
+        if notice["id"] in wanted and not notice.get("reported"):
+            notice["reported"] = now
+            return True
+        return False
+    return _update(root, change)
 
 
 def tail_of(path: str, lines: int = LOG_LINES) -> str:
@@ -277,6 +315,18 @@ def main(argv=None, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["--notice"]:
         return notice_main(argv[1:], root)
+    if argv[:1] == ["--list"]:  # what the queue holds that no digest has completed: pending, then claimed
+        try:
+            pending, claimed = pending_notices(root), claimed_notices(root)
+        except Refused as error:
+            print(f"the notice queue cannot be read: {error}", file=sys.stderr)
+            return 1
+        for notice in pending:
+            print(f"pending  {notice['at']} {notice['sender']}: {notice['subject']}")
+        for notice in claimed:
+            print(f"claimed by the digest of {notice['claimed']['at']}  {notice['at']} {notice['sender']}: "
+                  f"{notice['subject']}")
+        return 0
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("name", help="the task that failed, e.g. office-python-pin")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")

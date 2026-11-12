@@ -460,6 +460,45 @@ class Notices(Send):
             self.assertNotIn("Private", text)
             self.assertNotIn(r"C:\Users", text)
 
+    def test_a_delivered_batch_that_cannot_be_marked_is_never_sent_again(self):
+        # Completion review: the send succeeds, the mark fails (a full disk), the next digest runs.
+        ids = self.queue(1)
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert, "mark_reported", side_effect=alert.Refused("disk full")):
+            with mock.patch.object(digest, "load_alert", return_value=alert):
+                code, _, first = self.run_main([])
+        self.assertEqual(code, 1)
+        self.assertIn("Notices since the last digest (1):", first[0]["text_body"])
+        code, _, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
+        self.assertIn("1 notice(s) went out in an earlier digest", second[0]["text_body"])
+        self.assertNotIn("attachments", second[0])  # the notice's text is not sent a second time
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+
+    def test_a_batch_that_cannot_be_claimed_is_not_sent(self):
+        self.queue(1)
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert, "claim_notices", side_effect=alert.Refused("read-only")):
+            with mock.patch.object(digest, "load_alert", return_value=alert):
+                code, _, requests = self.run_main([])
+        self.assertEqual((code, requests), (1, []))
+        self.assertEqual(len(self.pending()), 1)
+
+    def test_list_shows_pending_and_claimed_notices(self):
+        alert = digest.load_alert(self.root)
+        first, second = self.queue(2)
+        alert.claim_notices([first], "d1", str(self.root))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(alert.main(["--list"], root=str(self.root)), 0)
+        lines = out.getvalue().splitlines()
+        self.assertEqual([line.split()[0] for line in lines], ["pending", "claimed"])
+        self.assertIn("task-1", lines[0])
+        self.assertIn("task-0", lines[1])
+
     def test_no_notices_adds_no_part(self):
         code, _, requests = self.run_main([])
         self.assertNotIn("Notices", requests[0]["text_body"])
