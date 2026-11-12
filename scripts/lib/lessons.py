@@ -159,7 +159,10 @@ LOOKS_LIKE_A_FINDING = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\bP[123]\b")
 FINDING_BY_CLASS = re.compile(r"^\s*(\d+)\.\s+\*\*(?:missing-in-scope|missing-out-of-scope|in-scope|out-of-scope)"
                               r"(?:\s*/\s*[a-z-]+)?,\s*(P[123])\*\*:?\s+(.*)$")
 # In a reconciliation, an item saying an earlier gap is closed or open reports on that gap; it is not a new finding.
-STATUS = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\b(?:closed|open)\b")
+# The status is the label itself: the bold text opens with it (`**closed, P2:**`, `**open, P3, gap 2:**`), or the
+# severity is followed directly by it (`**P1, open: ...`). The words inside a finding's title are not a status.
+STATUS = re.compile(r"^\s*\d+\.\s+\*\*(?:(?:closed|open)\b"
+                    r"|\[?P[123]\]?,\s*(?:`[^`]+`[,:]\s*)*(?:closed|open)(?:\s+overall)?\s*:)")
 PASS_START = re.compile(r"^## (?:(Plan review|Completion review|Reconciliation review)\b|Round (\d+)\b)")
 PASS_KINDS = {"Plan review": "plan", "Completion review": "completion", "Reconciliation review": "reconciliation"}
 PASS_END = re.compile(r"^(?:OVERALL|COMPLETION|RECONCILIATION):")
@@ -174,10 +177,16 @@ def pass_findings(record_text):
     numbers them once through; older rounds restart the numbers under each lens: 82 of the first 1,003 findings share
     a printed number within their round). A pass's text runs from its heading to its closing line (`OVERALL:`,
     `COMPLETION:` or `RECONCILIATION:`) or the next pass heading, so lens headings inside it stay part of it and what
-    the writer adds after it does not. A numbered item that names a severity in a form this reader does not know is
+    the writer adds after it does not; text inside a fenced code block is a quotation and is not read. A numbered item
+    that names a severity in a form this reader does not know is
     kept with severity `?`, for the caller to refuse the record instead of dropping the finding."""
-    passes, counts, current, kind = {}, {}, None, None
+    passes, counts, current, kind, fenced = {}, {}, None, None, False
     for line in record_text.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced  # a fenced block quotes text: an example heading or finding in it is neither
+            continue
+        if fenced:
+            continue
         start = PASS_START.match(line)
         if start:
             if start[2]:

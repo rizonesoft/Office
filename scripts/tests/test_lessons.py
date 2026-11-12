@@ -792,6 +792,34 @@ class Triage(Indexed):
             "reconciliation 1 finding 1 [P2] scripts/a.py:12: A new defect in the repair.",
             "reconciliation 3 finding 1 [P1] scripts/a.py:13: A defect the third pass found."])
 
+    def test_a_status_is_its_label_not_a_word_in_a_title(self):
+        # Round 1 of §9: a new finding titled "... leaves the file handle open" was dropped as a status line.
+        record = "docs/reviews/00-workspace/D99-T08-s1.md"
+        (self.root / record).write_text(
+            "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            "1. **P2, `scripts/a.py:12`: Repair leaves the file handle open.** Reproduce by cancelling.\n"
+            "2. **P1, `scripts/a.py:13`: A closed socket is written to.** More.\n"
+            "3. **closed, P2:** an earlier gap.\n4. **open, P3, gap 2:** another.\n"
+            "5. **P1, open: completion gap 1.** Still open.\n6. **P2, closed: a recovery command.** Done.\n"
+            "7. **closed (original P2):** done.\n"
+            "8. **P1, `scripts/a.py:14`: open overall: an earlier requirement.** Still open.\n\nRECONCILIATION: gaps\n",
+            encoding="utf-8")
+        code, lines, err = self.listing(record)
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual([line[len(record) + 1:] for line in lines], [
+            "reconciliation 1 finding 1 [P2] scripts/a.py:12: Repair leaves the file handle open.",
+            "reconciliation 1 finding 2 [P1] scripts/a.py:13: A closed socket is written to."])
+
+    def test_a_fenced_block_is_a_quotation(self):
+        # The same review quoted a heading and a finding in a code block; both were read as real.
+        record = "docs/reviews/00-workspace/D99-T09-s1.md"
+        (self.root / record).write_text(
+            "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **P2: A reader bug.** A reviewer can return:\n\n"
+            "   ```text\n   ## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n"
+            "   1. **P2, `scripts/a.py:12`: Repair leaves the file handle open.**\n   RECONCILIATION: gaps\n   ```\n\n"
+            "2. **P2: A second finding after the quotation.** More.\n\nOVERALL: needs-attention\n", encoding="utf-8")
+        self.assertEqual(self.keys(record), [(record, "1", "1", "P2"), (record, "1", "2", "P2")])
+
     def test_three_real_records_of_this_repository_read_every_pass(self):
         expect = {"docs/reviews/00-workspace/D00-T05-s4.md": {"plan": 4, "round 1": 1, "completion": 2},
                   "docs/reviews/00-workspace/D00-T07-s3.md": {"plan": 6, "round 1": 3, "completion": 2},
