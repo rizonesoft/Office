@@ -251,9 +251,10 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         print(f"run: no task named {argv[0]} in tasks.json", file=sys.stderr)
         return 2
     outcome = execute(argv[0], task, root, popen, killer)
+    alert = _alert_module()
+    _settle(alert, root, outcome)
     if outcome["exit"] == 0:
         return 0
-    alert = _alert_module()
     folder = os.path.join(root, "build", "automations", argv[0])
 
     def record(name, task, outcome, tail):
@@ -270,6 +271,22 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         return 3
     _record_alert(root, folder, outcome, {"noticed_at": _utc(), "notice_id": notice if isinstance(notice, str) else None})
     return outcome["exit"]
+
+
+def _settle(alert, root: str, outcome: dict) -> None:
+    """Settle the owner digest's unconfirmed claims against SMTP2GO's log at every scheduled run, so a claim the log
+    could not judge on Monday is asked again daily while the log still holds its evidence (D00 T03 §53). What
+    happened goes into this run's log; it never changes the task's own outcome."""
+    try:
+        if not alert.claimed_notices(root):
+            return
+        settled = alert.settle_claims(root)
+        note = (f"run.py: digest claims settled: {settled['confirmed']} confirmed sent, {settled['released']} "
+                f"not sent, {settled['kept']} kept, {settled['expired']} past the log")
+    except Exception as error:  # the queue or the log could not be read: the next run asks again
+        note = f"run.py: digest claims not settled: {type(error).__name__}: {error}"
+    with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
+        fh.write(f"\n{note}\n")
 
 
 def _record_alert(root: str, folder: str, outcome: dict, result: dict) -> None:

@@ -108,12 +108,18 @@ def send(api_key: str, subject: str, body: str, opener=urllib.request.urlopen,
 ACTIVITY = "https://api.smtp2go.com/v3/activity/search"
 
 
-def was_sent(api_key: str, subject: str, since: str, opener=urllib.request.urlopen) -> bool:
-    """Whether SMTP2GO's activity log holds an email with exactly this subject sent at or after `since` (UTC,
-    ISO-8601): the delivery evidence a claim is reconciled against (D00 T03 §53). `POST /v3/activity/search` with
-    `search_subject`, `start_date` and `end_date` (developers.smtp2go.com, "View account activity", read 2026-11-12;
-    `/email/search` is deprecated there). Refused when the log cannot be read. SMTP2GO keeps 5 days of activity on its
-    free plan and 30 on paid plans by default, so an older claim finds nothing and is sent again."""
+DELIVERED = "delivered"
+NOT_DELIVERED = ("rejected", "hard-bounced", "soft-bounced", "bounce", "refused", "spam", "cancelled")
+SETTLE_DAYS = 5  # SMTP2GO keeps 5 days of activity on its free plan; past this no evidence can come
+YOUNG_MINUTES = 60  # a log can lag a send by minutes ("allow around two minutes"): younger empty answers wait
+
+
+def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlopen) -> str:
+    """What SMTP2GO's activity log says of the email with exactly this subject sent at or after `since` (UTC,
+    ISO-8601): "sent" when it shows it delivered, "not-sent" when it shows it rejected or bounced or shows no such
+    email, "pending" while it shows it only in flight (D00 T03 §53). `POST /v3/activity/search` with `search_subject`,
+    `start_date` and `end_date` (developers.smtp2go.com, "View account activity", read 2026-11-12; `/email/search` is
+    deprecated there). Refused when the log cannot be read."""
     import datetime
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = json.dumps({"start_date": since, "end_date": now, "search_subject": subject, "limit": 100}).encode()
@@ -126,35 +132,58 @@ def was_sent(api_key: str, subject: str, since: str, opener=urllib.request.urlop
         raise Refused(f"SMTP2GO's activity log could not be read: {error}") from None
     if not isinstance(data, dict) or not isinstance(data.get("events"), list):
         raise Refused(f"SMTP2GO's activity log answered without events: {data}")
-    return any(isinstance(e, dict) and e.get("subject") == subject and e.get("email_id") for e in data["events"])
+    kinds = {str(e.get("event", "")).lower() for e in data["events"]
+             if isinstance(e, dict) and e.get("subject") == subject and e.get("email_id")}
+    if DELIVERED in kinds:
+        return "sent"
+    if kinds & set(NOT_DELIVERED):
+        return "not-sent"  # rejected or bounced: a final failure, whatever came before it
+    if kinds:
+        return "pending"  # processed or deferred: on its way, not yet proof either way
+    return "not-sent"
 
 
-def settle_claims(root: str = REPO, sent=None) -> dict:
-    """Reconcile every claimed, unconfirmed notice before a digest: a claim whose digest SMTP2GO shows as sent is
-    marked reported (never sent again); one it shows as not sent, or whose evidence cannot be read, is released and
-    sent again in full, marked as a possible repeat (a notice is never lost). `sent(subject, since)` answers for
-    SMTP2GO (default: `was_sent` with this repository's key). Returns {"confirmed": n, "released": n, "unknown": n}."""
-    if sent is None:
-        def sent(subject, since):
-            return was_sent(key(), subject, since)
-    counts = {"confirmed": 0, "released": 0, "unknown": 0}
+def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
+    """Reconcile every claimed, unconfirmed notice against the delivery evidence (D00 T03 §53). A claim whose digest
+    SMTP2GO shows delivered is marked reported and never sent again; one it shows rejected, bounced or absent is
+    released and sent again in full. One it cannot judge yet (the log unreadable, the email in flight, or absent but
+    younger than YOUNG_MINUTES) is kept and asked again at the next settlement, which every scheduled task runs; only
+    a claim still undecided after SETTLE_DAYS, when SMTP2GO no longer holds its evidence, is released and sent again
+    marked as a possible repeat, since a lost notice is the one failure the owner cannot see. `ask(subject, since)`
+    answers for SMTP2GO (default: `delivery` with this repository's key). Returns the count per outcome."""
+    import datetime
+    if ask is None:
+        def ask(subject, since):
+            return delivery(key(), subject, since)
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    counts = {"confirmed": 0, "released": 0, "kept": 0, "expired": 0}
     digests = {}
     for notice in claimed_notices(root):
         claim = notice["claimed"]
         digests.setdefault(claim.get("by"), (claim.get("subject"), claim.get("at"), []))[2].append(notice["id"])
     for digest, (subject, since, ids) in digests.items():
         try:
-            delivered = bool(subject and since and sent(subject, since))
-            outcome = "confirmed" if delivered else "released"
+            age = now - datetime.datetime.strptime(since, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+        except (TypeError, ValueError):
+            age = datetime.timedelta(days=SETTLE_DAYS + 1)  # a claim with no readable time can never be settled
+        try:
+            answer = ask(subject, since) if subject and since else "pending"
         except Refused:
-            delivered, outcome = False, "unknown"
-        if delivered:
+            answer = "pending"
+        if answer == "not-sent" and age < datetime.timedelta(minutes=YOUNG_MINUTES):
+            answer = "pending"
+        if answer == "sent":
             mark_reported(ids, root)
-        else:
+            counts["confirmed"] += len(ids)
+        elif answer == "not-sent":
             release_claim(digest, root)
-        counts[outcome] += len(ids)
+            counts["released"] += len(ids)
+        elif age > datetime.timedelta(days=SETTLE_DAYS):
+            release_claim(digest, root)
+            counts["expired"] += len(ids)
+        else:
+            counts["kept"] += len(ids)
     return counts
-
 
 def send_failure(name: str, task: dict, outcome: dict, tail: str, opener=urllib.request.urlopen,
                  host: str | None = None) -> str:

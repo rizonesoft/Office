@@ -712,7 +712,9 @@ class NoticeQueue(unittest.TestCase):
 
 
 class DeliveryEvidence(unittest.TestCase):
-    """alert.was_sent asks SMTP2GO's activity log whether a digest went out (D00 T03 §53)."""
+    """alert.delivery asks SMTP2GO's activity log what became of a digest, and settle_claims acts on it (D00 T03 §53)."""
+
+    SUBJECT = "Office weekly: 1 waiting on you, 0 verified this week"
 
     class Response(io.BytesIO):
         def __enter__(self):
@@ -721,7 +723,7 @@ class DeliveryEvidence(unittest.TestCase):
         def __exit__(self, *exc):
             return False
 
-    def ask(self, answer, subject="Office weekly: 1 waiting on you, 0 verified this week"):
+    def ask(self, answer, subject=SUBJECT):
         seen = []
 
         def opener(request, timeout=None):
@@ -729,22 +731,26 @@ class DeliveryEvidence(unittest.TestCase):
             if isinstance(answer, Exception):
                 raise answer
             return self.Response(json.dumps(answer).encode())
-        return alert.was_sent("api-k", subject, "2026-11-09T05:00:00Z", opener), seen
+        return alert.delivery("api-k", subject, "2026-11-09T05:00:00Z", opener), seen
+
+    def events(self, *kinds, subject=SUBJECT):
+        return {"data": {"events": [{"event": kind, "email_id": "E1", "subject": subject} for kind in kinds]}}
 
     def test_the_request_names_the_subject_and_the_window(self):
         _, seen = self.ask({"data": {"events": []}})
         url, key, body = seen[0]
         self.assertEqual((url, key), ("https://api.smtp2go.com/v3/activity/search", "api-k"))
-        self.assertEqual((body["search_subject"], body["start_date"]),
-                         ("Office weekly: 1 waiting on you, 0 verified this week", "2026-11-09T05:00:00Z"))
+        self.assertEqual((body["search_subject"], body["start_date"]), (self.SUBJECT, "2026-11-09T05:00:00Z"))
         self.assertIn("end_date", body)
 
-    def test_only_an_event_with_exactly_that_subject_is_evidence(self):
-        exact = {"event": "delivered", "email_id": "E1", "subject": "Office weekly: 1 waiting on you, 0 verified this week"}
-        other = {**exact, "subject": "Office weekly: 2 waiting on you, 0 verified this week"}
-        self.assertTrue(self.ask({"data": {"events": [other, exact]}})[0])
-        self.assertFalse(self.ask({"data": {"events": [other]}})[0])
-        self.assertFalse(self.ask({"data": {"events": [{**exact, "email_id": ""}]}})[0])
+    def test_only_a_delivered_event_of_exactly_that_subject_is_proof(self):
+        self.assertEqual(self.ask(self.events("processed", "delivered"))[0], "sent")
+        self.assertEqual(self.ask(self.events("delivered", subject="Office weekly: 2 waiting"))[0], "not-sent")
+        for failed in ("rejected", "hard-bounced", "soft-bounced"):
+            with self.subTest(failed):
+                self.assertEqual(self.ask(self.events("processed", failed))[0], "not-sent")
+        self.assertEqual(self.ask(self.events("processed"))[0], "pending")
+        self.assertEqual(self.ask({"data": {"events": []}})[0], "not-sent")
 
     def test_an_unreadable_log_is_refused(self):
         for answer in (OSError("down"), {"data": None}, {"data": {"events": "x"}}, {"error": "bad key"}):
@@ -752,6 +758,65 @@ class DeliveryEvidence(unittest.TestCase):
                 with self.assertRaises(alert.Refused):
                     self.ask(answer)
 
+    def settle(self, answer, age):
+        import datetime
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        notice = alert.record_notice("run.py", "s", "b", tmp.name)
+        alert.claim_notices([notice], "d1", tmp.name, self.SUBJECT)
+        claimed_at = alert.claimed_notices(tmp.name)[0]["claimed"]["at"]
+        now = datetime.datetime.strptime(claimed_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=datetime.timezone.utc) + age
+
+        def ask(subject, since):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+        counts = alert.settle_claims(tmp.name, ask, now)
+        return counts, alert.pending_notices(tmp.name), alert.claimed_notices(tmp.name)
+
+    def test_settling_by_what_the_log_says(self):
+        import datetime
+        day, hour = datetime.timedelta(days=1), datetime.timedelta(hours=2)
+        cases = {  # answer, age: (outcome counted, pending, still claimed)
+            ("sent", day): ("confirmed", 0, 0), ("not-sent", day): ("released", 1, 0),
+            ("pending", day): ("kept", 0, 1), ("not-sent", datetime.timedelta(minutes=5)): ("kept", 0, 1),
+            ("pending", 6 * day): ("expired", 1, 0), ("sent", 6 * day): ("confirmed", 0, 0),
+        }
+        for (answer, age), (outcome, pending, claimed) in cases.items():
+            with self.subTest(answer=answer, age=age):
+                counts, now_pending, now_claimed = self.settle(answer, age)
+                self.assertEqual(counts[outcome], 1)
+                self.assertEqual((len(now_pending), len(now_claimed)), (pending, claimed))
+        counts, now_pending, now_claimed = self.settle(alert.Refused("down"), hour)
+        self.assertEqual((counts["kept"], len(now_claimed)), (1, 1))  # an unreadable log keeps the claim
+
+    def test_every_scheduled_run_settles_the_claims(self):
+        import datetime
+        with tempfile.TemporaryDirectory() as tmp:
+            auto = Path(tmp) / ".conclave" / "automations"
+            auto.mkdir(parents=True)
+            task = {**FIXTURE_TASK, "command": [sys.executable, "-c", "print('ok')"]}
+            (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office" + chr(92),
+                                                         "tasks": [task]}), encoding="utf-8")
+            notice = alert.record_notice("run.py", "s", "b", tmp)
+            alert.claim_notices([notice], "d1", tmp, self.SUBJECT)
+            asked = []
+            real = run._alert_module
+
+            def fake_alert():
+                module = real()
+                module.SECRETS_ROOT = alert.SECRETS_ROOT
+                module.delivery = lambda key, subject, since, *a: asked.append(subject) or "sent"
+                module.key = lambda: "k"
+                return module
+            with mock.patch.object(run, "_alert_module", fake_alert), contextlib_redirect():
+                self.assertEqual(run.main(["office-fixture"], root=tmp), 0)
+            self.assertEqual(asked, [self.SUBJECT])
+            self.assertEqual(alert.claimed_notices(tmp), [])
+            log = Path(tmp) / json.loads((Path(tmp) / "build/automations/office-fixture/last.json").read_text())["log"]
+            self.assertIn("digest claims settled: 1 confirmed sent", log.read_text(encoding="utf-8"))
+            self.assertTrue(datetime)
 
 class LastJsonLocking(unittest.TestCase):
     """Every last.json write holds the task lock, so a late alert and a newer run cannot interleave."""

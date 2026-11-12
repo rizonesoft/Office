@@ -478,11 +478,23 @@ class Notices(Send):
         ids = self.queue(1)
         first_run()
         self.assertEqual(self.pending(), [])  # claimed, so not pending until the next digest releases it
+        self.age_claims(hours=2)  # past the minutes a log may lag a send
         code, _, second = self.run_main([])
         self.assertEqual(code, 0)
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         return ids, second[0], queue
+
+    def age_claims(self, hours):
+        """Move every claim's time back by `hours`, as if the digest that made it ran that long ago."""
+        import datetime
+        path = self.root / "build/automations/notices.jsonl"
+        notices = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        for notice in notices:
+            if notice.get("claimed"):
+                at = datetime.datetime.strptime(notice["claimed"]["at"], "%Y-%m-%dT%H:%M:%SZ")
+                notice["claimed"]["at"] = (at - datetime.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        path.write_text("".join(json.dumps(n) + "\n" for n in notices), encoding="utf-8")
 
     def assert_sent_again_in_full(self, ids, request, queue):
         self.assertIn("Notices since the last digest (1):", request["text_body"])
@@ -505,6 +517,7 @@ class Notices(Send):
         first = lambda: subject.append(self.delivered_then_mark_fails())
         ids = self.queue(1)
         first()
+        self.age_claims(hours=2)
         self.activity = [{"event": "delivered", "email_id": "e1", "subject": subject[0]}]
         code, out, second = self.run_main([])
         self.assertEqual(code, 0)
@@ -520,9 +533,33 @@ class Notices(Send):
         self.activity = []
         self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.delivered_then_mark_fails))
 
-    def test_a_log_that_cannot_be_read_sends_the_batch_again(self):
+    def test_a_log_that_cannot_be_read_keeps_the_claim_until_it_can_judge_it_or_the_evidence_is_gone(self):
+        ids = self.queue(1)
+        self.delivered_then_mark_fails()
+        self.age_claims(hours=2)
         self.activity = OSError("SMTP2GO is down")
-        self.assert_sent_again_in_full(*self.unconfirmed_then_next(self.delivered_then_mark_fails))
+        code, out, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("Notices since the last digest", second[0]["text_body"])  # neither repeated nor lost
+        self.assertIn("1 kept to ask again", out)
+        self.assertEqual(self.pending(), [])
+        self.age_claims(hours=24 * 6)  # past the five days SMTP2GO keeps its activity log
+        code, _, third = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assert_sent_again_in_full(ids, third[0], [json.loads(line) for line in (
+            self.root / "build/automations/notices.jsonl").read_text(encoding="utf-8").splitlines()])
+
+    def test_a_digest_the_log_shows_bounced_is_sent_again(self):
+        subject = []
+        ids = self.queue(1)
+        subject.append(self.delivered_then_mark_fails())
+        self.age_claims(hours=2)
+        self.activity = [{"event": "processed", "email_id": "e1", "subject": subject[0]},
+                         {"event": "hard-bounced", "email_id": "e1", "subject": subject[0]}]
+        code, _, second = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assert_sent_again_in_full(ids, second[0], [json.loads(line) for line in (
+            self.root / "build/automations/notices.jsonl").read_text(encoding="utf-8").splitlines()])
 
     def test_a_send_interrupted_after_the_claim_loses_nothing(self):
         # Reconciliation review: the process stops between the claim and the send's end.

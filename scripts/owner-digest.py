@@ -357,11 +357,11 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
             # A claim no digest confirmed: SMTP2GO's log says whether that digest went out. Sent, it is marked; not
             # sent, or the log cannot be read, it is sent again, marked as a possible repeat (D00 T03 §53).
             def asked(subject, since):  # the same opener as the send, so a test's fake answers both
-                return alert.was_sent(alert.key(), subject, since, opener or alert.urllib.request.urlopen)
+                return alert.delivery(alert.key(), subject, since, opener or alert.urllib.request.urlopen)
             settled = alert.settle_claims(str(root), sent or asked)
             if any(settled.values()):
                 print(f"earlier claims: {settled['confirmed']} confirmed sent, {settled['released']} not sent, "
-                      f"{settled['unknown']} unknown (sent again)")
+                      f"{settled['kept']} kept to ask again, {settled['expired']} past the log (sent again)")
         batch = alert.pending_notices(str(root)) + (alert.claimed_notices(str(root)) if args.dry_run else [])
     except alert.Refused as error:
         batch = str(error)
