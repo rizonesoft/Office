@@ -40,6 +40,8 @@ title: "TODO-05 -- Lessons"
 
 ## 1. Lesson Files and Their Checker
 
+> **Started:** 2026-11-12T07:29:55Z
+
 A lesson is one small Markdown file a person can read and a reviewer can refuse. The checker is what keeps the store trustworthy: nothing enters without a source, and nothing an agent wrote for itself is a lesson.
 
 **Phase:** 0
