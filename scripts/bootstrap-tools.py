@@ -41,7 +41,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
-import tool_lock  # found through scripts/lib, put on the path just above
+import process_tree  # found through scripts/lib, put on the path just above
+import tool_lock
 
 LOCK = ROOT / "tools.lock.json"
 TOOLS = ROOT / ".tools"
@@ -440,7 +441,49 @@ def status(lock, tools, arch):
     return result
 
 
-def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None):
+# Each installed program and the arguments that print its version (D00 T04 §3). vcpkg-registry is source data with
+# no program: --check proves it, its receipt for the pinned entry with every file re-hashed.
+PROBES = (("cmake", ["--version"]), ("ninja", ["--version"]), ("sccache", ["--version"]), ("vcpkg", ["version"]),
+          ("clangd", ["--version"]), ("clang-tidy", ["--version"]), ("clang-format", ["--version"]))
+PROBE_SECONDS = 60
+PROBE_BYTES = 1 << 20
+
+
+def probe(path, flags):
+    """What `path flags` prints (its output and errors together), run in a process tree bounded in time and bytes."""
+    fd, out = tempfile.mkstemp(prefix="probe-", suffix=".txt")
+    os.close(fd)
+    try:
+        outcome = process_tree.run([str(path), *flags], stdout_path=out, stderr_path=out, timeout=PROBE_SECONDS,
+                                   max_bytes=PROBE_BYTES)
+        text = Path(out).read_text(encoding="utf-8", errors="replace")
+        if outcome.stopped:
+            raise Failed(f"{path.name} was stopped ({outcome.stopped})")
+        return text
+    finally:
+        Path(out).unlink(missing_ok=True)
+
+
+def versions(installed, run=probe):
+    """Print each program's version line; the problems, one per program missing or not at its tool's pin."""
+    problems = []
+    for program, flags in PROBES:
+        try:
+            owner, path = installed.locate(program)
+            pin = installed.lock[owner]["version"]
+            text = run(path, flags)
+        except (tool_lock.ToolMissing, Failed, process_tree.TreeError, OSError) as error:
+            problems.append(f"{program}: {error}")
+            continue
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        shown = next((line for line in lines if pin in line), lines[0] if lines else "(no output)")
+        print(f"{program} ({owner} {pin}): {shown}")
+        if pin not in text:
+            problems.append(f"{program}: reports {shown!r}, not {owner}'s pinned {pin}")
+    return problems
+
+
+def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None, run=probe):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--check", action="store_true", help="download nothing; exit 1 unless every tool is installed")
     parser.add_argument("--only", action="append", metavar="NAME", help="install only this tool (repeatable)")
@@ -448,6 +491,8 @@ def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None)
     parser.add_argument("--where", metavar="PROGRAM", help="print the path of an installed program, or refuse")
     parser.add_argument("--bin-dirs", action="store_true",
                         help="print the program folders of every tool installed as pinned, one per line")
+    parser.add_argument("--versions", action="store_true",
+                        help="run each program's version flag; exit 1 unless every one reports its pin")
     args = parser.parse_args(argv)
     arch = arch or tool_lock.host_arch()
     try:
@@ -464,8 +509,13 @@ def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None)
         print("bootstrap-tools refused: --deadline must be above 0", file=sys.stderr)
         return 2
     tools = Path(tools)
-    if args.where or args.bin_dirs:
+    if args.where or args.bin_dirs or args.versions:
         installed = tool_lock.Tools(lock_path, tools, arch)
+        if args.versions:
+            problems = versions(installed, run)
+            for problem in problems:
+                print(f"bootstrap-tools: {problem}", file=sys.stderr)
+            return 1 if problems else 0
         if args.where:
             try:
                 print(installed.path(args.where))

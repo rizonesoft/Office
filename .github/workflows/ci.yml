@@ -31,6 +31,19 @@ jobs:
           cache-dependency-path: scripts/requirements.txt
       - name: Install the tooling requirements
         run: python -m pip install -r scripts/requirements.txt
+      # The pinned build tools (D00 T04 §3). The cache only saves downloads: the key moves with tools.lock.json, and
+      # the bootstrap below re-hashes every restored file, so a cache hit is never trusted unchecked.
+      - name: Restore the pinned build tools
+        uses: actions/cache@v6
+        with:
+          path: .tools
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock.json') }}
+      - name: Install the pinned build tools
+        run: python scripts/bootstrap-tools.py
+      - name: Check the build tools are installed as pinned
+        run: python scripts/bootstrap-tools.py --check
+      - name: Show each build tool's version against its pin
+        run: python scripts/bootstrap-tools.py --versions
       - name: Check the committed icons match their sources
         run: python scripts/build-icons.py --check
       - name: Validate the TODO tree

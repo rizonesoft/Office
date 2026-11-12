@@ -769,6 +769,62 @@ class Resolver(Fixture):
         self.assertEqual(err.count("is not installed"), 4)
 
 
+class Versions(Fixture):
+    """D00 T04 §3: --versions runs each program's version flag and fails unless it reports its tool's pin."""
+
+    PROBES = (("cmake", ["--version"]), ("clangd", ["--version"]), ("vcpkg", ["version"]))
+
+    def setUp(self):
+        super().setUp()
+        for name, version in (("cmake", "4.4.5"), ("llvm", "23.1.5"), ("vcpkg", "2026-09-26")):
+            self.lock[name]["version"] = version
+        self.write_lock()
+        self.assertEqual(self.boot()[0], 0)
+        self.said = {"cmake.exe": "cmake version 4.4.5\n\nCMake suite maintained by Kitware",
+                     "clangd.exe": "LLVM (http://llvm.org/):\n  clangd version 23.1.5 (https://github.com/llvm)",
+                     "vcpkg.exe": "vcpkg package management program version 2026-09-26-51bf87ca"}
+        self.ran = []
+        patcher = mock.patch.object(boot, "PROBES", self.PROBES)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def run_(self, path, flags):
+        self.ran.append((path, flags))
+        return self.said[path.name]
+
+    def versions(self):
+        out, err = io.StringIO(), io.StringIO()
+        from contextlib import redirect_stderr, redirect_stdout
+        with redirect_stdout(out), redirect_stderr(err):
+            code = boot.main(["--versions"], lock_path=self.lock_path, tools=self.tools, arch="x64", run=self.run_)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_every_program_at_its_pin_passes_and_is_printed(self):
+        code, out, err = self.versions()
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("cmake (cmake 4.4.5): cmake version 4.4.5", out)
+        self.assertIn("clangd (llvm 23.1.5): clangd version 23.1.5", out)  # the line with the pin, not the first
+        self.assertIn("vcpkg (vcpkg 2026-09-26): vcpkg package management program version 2026-09-26", out)
+        self.assertEqual([(p, f) for p, f in self.ran][2], ((self.tools / "vcpkg-2026-09-26/vcpkg.exe").resolve(), ["version"]))
+
+    def test_a_wrong_version_or_a_missing_program_fails_naming_it(self):
+        self.said["clangd.exe"] = "clangd version 22.1.0"
+        code, out, err = self.versions()
+        self.assertEqual(code, 1)
+        self.assertIn("clangd: reports 'clangd version 22.1.0', not llvm's pinned 23.1.5", err)
+        self.said["clangd.exe"] = "clangd version 23.1.5"
+        shutil.rmtree(self.tools / "vcpkg-2026-09-26")
+        code, out, err = self.versions()
+        self.assertEqual(code, 1)
+        self.assertIn("vcpkg: vcpkg 2026-09-26 is not installed", err)
+        self.assertIn("cmake (cmake 4.4.5)", out)  # the others still ran
+
+    def test_the_real_probe_runs_a_program_in_a_bounded_tree(self):
+        program = self.tmp / "say.cmd"
+        program.write_text("@echo say version 1.2.3\n", encoding="utf-8")
+        self.assertIn("say version 1.2.3", boot.probe(program, []))
+
+
 class Refusals(Fixture):
     """An archive that would write outside the tool's folder is refused in each format (gap 5 of the plan review)."""
 

@@ -225,6 +225,10 @@ class Tools:
 
     def path(self, program):
         """The absolute path of `program` (`ninja` or `ninja.exe`) inside the tool folder; ToolMissing otherwise."""
+        return self.locate(program)[1]
+
+    def locate(self, program):
+        """(the tool it was found in, its absolute path) for `program`; ToolMissing otherwise."""
         file = program if program.lower().endswith(".exe") else f"{program}.exe"
         if not file or "/" in file or "\\" in file:
             raise ToolMissing(f"{program!r} is not a program name")
@@ -246,7 +250,7 @@ class Tools:
                 path = self.folder(name) / relative
                 if not _unchanged(path, recorded):
                     raise self.refusal(name, f"has a missing or changed {file}")
-                return path.resolve()
+                return name, path.resolve()
             # installed whole without it: a kept folder that does not hold this program, so not its owner
         raise problem or ToolMissing(f"no tool of tools.lock.json provides {file}")
 
