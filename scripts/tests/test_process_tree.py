@@ -204,6 +204,22 @@ class ForTheTools(unittest.TestCase):
         self.assertEqual(under.exit, 0)
         self.assertIn(str(16 * 1024 * 1024), (self.tmp / "under.txt").read_text())
 
+    def test_a_tree_that_will_not_end_reports_how_the_child_ended(self):
+        # D00 T03 §55, review round 1: run() attaches the partial outcome when end() fails, after a normal exit and
+        # after a time limit, so run.py can tell exit 125 from a timeout.
+        def stuck(tree):  # as the real end(): a new error per tree, and nothing once the tree is marked ended
+            if tree.ended:
+                return []
+            raise process_tree.TreeError("the tree of process 1 was still running 10 s after it was stopped")
+        with mock.patch.object(process_tree.Tree, "end", stuck):
+            with self.assertRaises(process_tree.TreeError) as normal:
+                process_tree.run([sys.executable, "-c", "import sys; sys.exit(0)"], timeout=60)
+            with self.assertRaises(process_tree.TreeError) as limited:
+                process_tree.run([sys.executable, "-c", "import time; time.sleep(60)"], timeout=1)
+        self.assertIsNone(normal.exception.step)
+        self.assertEqual((normal.exception.outcome.exit, normal.exception.outcome.stopped), (0, None))
+        self.assertEqual((limited.exception.outcome.exit, limited.exception.outcome.stopped), (None, "time limit"))
+
     @unittest.skipUnless(os.name == "nt", "the start steps are the Windows job's")
     def test_each_failed_start_step_is_named_with_the_child_reaped_and_the_job_closed_once(self):
         for method, step in (("_create_job", "create job"), ("_configure_job", "configure job"),
