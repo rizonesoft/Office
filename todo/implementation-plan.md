@@ -113,7 +113,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 44 | Checklist items: 289
+Sections: 28 | Checklist items: 194
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -130,22 +130,12 @@ Sections: 44 | Checklist items: 289
 | [x]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 8     |
 | [x]    | D02 T01 §5  | Word Ribbon               | office, windows-host, display-session | 10    |
 | [ ]    | D02 T01 §6  | Word Panes, Dialogs       | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §7  | Excel Ribbon              | office, windows-host, display-session | 9     |
-| [ ]    | D02 T01 §8  | Excel Panes, Dialogs      | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §9  | PowerPoint Ribbon         | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §10 | PowerPoint Panes, Dialogs | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §11 | Visio Ribbon              | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §13 | Project Ribbon            | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 9     |
-| [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
-| [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 7     |
-| [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 9     |
+| [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 9     |
+| [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 13    |
 | [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 6     |
 | [ ]    | D02 T01 §28 | Record Dispositions       | none                                  | 6     |
-| [ ]    | D02 T01 §29 | Inventory Layout Tables   | none                                  | 9     |
+| [ ]    | D02 T01 §29 | Inventory Layout Tables   | none                                  | 10    |
 | [ ]    | D02 T01 §30 | Built-App Layout Check    | none                                  | 8     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes  | none                                  | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision    | none                                  | 5     |
@@ -153,18 +143,12 @@ Sections: 44 | Checklist items: 289
 | [ ]    | D02 T02 §4  | Ribbon Component Chapter  | office, windows-host, display-session | 8     |
 | [ ]    | D02 T02 §5  | Backstage Chapter         | none                                  | 6     |
 | [ ]    | D02 T02 §6  | Status Bar Chapter        | none                                  | 4     |
-| [ ]    | D02 T02 §7  | Word Surface Chapter      | none                                  | 5     |
-| [ ]    | D02 T02 §8  | Excel Surface Chapter     | none                                  | 5     |
-| [ ]    | D02 T02 §9  | PowerPoint Chapter        | none                                  | 5     |
-| [ ]    | D02 T02 §10 | Visio Surface Chapter     | none                                  | 6     |
-| [ ]    | D02 T02 §11 | Project Surface Chapter   | none                                  | 6     |
-| [ ]    | D02 T02 §12 | Outlook Surface Chapter   | none                                  | 6     |
+| [ ]    | D02 T02 §7  | Word Surface Chapter      | none                                  | 8     |
 | [ ]    | D02 T02 §13 | Accessibility Chapter     | none                                  | 5     |
-| [ ]    | D02 T02 §14 | Mockups and Sign-Off      | none                                  | 5     |
 
 ### Phase 3: Architecture and tech stack
 
-Sections: 32 | Checklist items: 230
+Sections: 24 | Checklist items: 159
 
 #### Workspace and tooling
 
@@ -178,7 +162,7 @@ Sections: 3 | Checklist items: 17 | Verified: 0
 
 #### Architecture and tech stack
 
-Sections: 29 | Checklist items: 213 | Verified: 0
+Sections: 21 | Checklist items: 142 | Verified: 0
 
 | Status | Reference   | Deliverable                            | Needs                   | Items |
 | ------ | ----------- | -------------------------------------- | ----------------------- | ----- |
@@ -203,22 +187,56 @@ Sections: 29 | Checklist items: 213 | Verified: 0
 | [ ]    | D03 T01 §27 | Release Domain Authoring               | none                    | 5     |
 | [ ]    | D03 T01 §29 | Office Reference Benchmarks            | office, display-session | 5     |
 | [ ]    | D03 T01 §19 | Write Domain Authoring                 | none                    | 12    |
-| [ ]    | D03 T01 §20 | Grid Domain Authoring                  | none                    | 11    |
-| [ ]    | D03 T01 §21 | Stage Domain Authoring                 | none                    | 11    |
-| [ ]    | D03 T01 §22 | Mail Domain Authoring                  | none                    | 10    |
-| [ ]    | D03 T01 §23 | Flow Domain Authoring                  | none                    | 10    |
-| [ ]    | D03 T01 §24 | Plan Domain Authoring                  | none                    | 10    |
-| [ ]    | D03 T01 §25 | Interoperability Domain Authoring      | none                    | 4     |
-| [ ]    | D03 T01 §26 | VBA Domain Authoring                   | none                    | 5     |
-| [ ]    | D03 T01 §13 | Inventory Ownership Gate               | none                    | 10    |
 
-### Phase 4: Shared platform
+### Phase 4: Shared platform, engines and Write
 
 Sections: 1 | Checklist items: 5
 
 | Status | Reference   | Deliverable        | Needs | Items |
 | ------ | ----------- | ------------------ | ----- | ----- |
 | [ ]    | D00 T03 §11 | C++ Toolchain Pins | none  | 5     |
+
+### Phase 5: Applications
+
+Sections: 24 | Checklist items: 202
+
+#### Interface inventory and specification
+
+Sections: 16 | Checklist items: 119 | Verified: 0
+
+| Status | Reference   | Deliverable               | Needs                                 | Items |
+| ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
+| [ ]    | D02 T01 §7  | Excel Ribbon              | office, windows-host, display-session | 9     |
+| [ ]    | D02 T01 §8  | Excel Panes, Dialogs      | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §9  | PowerPoint Ribbon         | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §10 | PowerPoint Panes, Dialogs | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §11 | Visio Ribbon              | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §13 | Project Ribbon            | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 9     |
+| [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
+| [ ]    | D02 T02 §8  | Excel Surface Chapter     | none                                  | 8     |
+| [ ]    | D02 T02 §9  | PowerPoint Chapter        | none                                  | 8     |
+| [ ]    | D02 T02 §10 | Visio Surface Chapter     | none                                  | 9     |
+| [ ]    | D02 T02 §11 | Project Surface Chapter   | none                                  | 9     |
+| [ ]    | D02 T02 §12 | Outlook Surface Chapter   | none                                  | 9     |
+| [ ]    | D02 T02 §14 | Mockups and Sign-Off      | none                                  | 4     |
+
+#### Architecture and tech stack
+
+Sections: 8 | Checklist items: 83 | Verified: 0
+
+| Status | Reference   | Deliverable                       | Needs | Items |
+| ------ | ----------- | --------------------------------- | ----- | ----- |
+| [ ]    | D03 T01 §20 | Grid Domain Authoring             | none  | 13    |
+| [ ]    | D03 T01 §21 | Stage Domain Authoring            | none  | 13    |
+| [ ]    | D03 T01 §22 | Mail Domain Authoring             | none  | 12    |
+| [ ]    | D03 T01 §23 | Flow Domain Authoring             | none  | 12    |
+| [ ]    | D03 T01 §24 | Plan Domain Authoring             | none  | 12    |
+| [ ]    | D03 T01 §25 | Interoperability Domain Authoring | none  | 4     |
+| [ ]    | D03 T01 §26 | VBA Domain Authoring              | none  | 5     |
+| [ ]    | D03 T01 §13 | Inventory Ownership Gate          | none  | 12    |
 
 ### Phase 7: Release
 
@@ -271,6 +289,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 86/164 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 86/164 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 627/1124 items completed (includes Commit items).
+Checklist: 634/1160 items completed (includes Commit items).

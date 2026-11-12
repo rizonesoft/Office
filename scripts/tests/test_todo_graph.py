@@ -907,6 +907,80 @@ class GitPath(unittest.TestCase):
         self.assertNotIn('["git"', source)
 
 
+class PerAppAuthoring(unittest.TestCase):
+    """This repository's own tree: an app's sections are authored when its own inventory is done (D03 T01 §30,
+    decision 44 of docs/specs/2026-10-23-campaign-scope-design.md)."""
+
+    INVENTORY = {"word": (5, 6), "excel": (7, 8), "powerpoint": (9, 10), "visio": (11, 12), "project": (13, 14),
+                 "outlook": (15, 16)}
+    AUTHORING = {19: ("word", 7), 20: ("excel", 8), 21: ("powerpoint", 9), 22: ("outlook", 12), 23: ("visio", 10),
+                 24: ("project", 11)}  # authoring section: (the app it writes, its surface chapter in D02 T02)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = tg.graph(REPO)
+        cls.place = {row.ref: i for i, row in enumerate(tg.ordered(cls.rows))}
+
+    def reach(self, ref):
+        """Every prerequisite of ref, however far back."""
+        seen, stack = set(), list(self.rows[ref].depends)
+        while stack:
+            current = stack.pop()
+            if current not in seen:
+                seen.add(current)
+                stack.extend(self.rows[current].depends)
+        return seen
+
+    def inventory(self, *apps):
+        return {f"D02 T01 §{n}" for app in apps for n in self.INVENTORY[app]}
+
+    def test_the_platform_and_write_wait_for_no_other_apps_inventory(self):
+        others = self.inventory("excel", "powerpoint", "visio", "project", "outlook")
+        for ref in ("D03 T01 §17", "D03 T01 §19"):
+            self.assertEqual(self.reach(ref) & others, set(), ref)
+
+    def test_each_later_app_reaches_its_own_inventory_and_words_and_no_other(self):
+        for number, (app, _) in self.AUTHORING.items():
+            reached = self.reach(f"D03 T01 §{number}") & self.inventory(*self.INVENTORY)
+            self.assertEqual(reached, self.inventory(app, "word"), f"D03 T01 §{number}")
+
+    def test_the_platform_keeps_what_it_is_written_from(self):
+        reached = self.reach("D03 T01 §17")
+        needed = {"D02 T01 §4", "D02 T01 §5", "D02 T01 §6", "D02 T02 §3", "D02 T02 §4", "D02 T02 §5", "D02 T02 §6",
+                  "D03 T01 §12", "D02 T01 §29", "D02 T01 §30"}
+        self.assertEqual(needed - reached, set())
+
+    def test_each_app_keeps_its_inventory_chapter_and_decisions(self):
+        for number, (app, chapter) in self.AUTHORING.items():
+            ref = f"D03 T01 §{number}"
+            needed = self.inventory(app) | {f"D02 T02 §{chapter}", "D03 T01 §17", "D03 T01 §18", "D03 T01 §29",
+                                            "D03 T01 §12"}
+            self.assertEqual(needed - self.reach(ref), set(), ref)
+            self.assertIn(f"D02 T02 §{chapter}", self.rows[ref].depends, ref)
+
+    def test_each_chapter_draws_its_mock_up_from_the_glyph_decision(self):
+        for _, chapter in self.AUTHORING.values():
+            self.assertIn("D02 T02 §2", self.rows[f"D02 T02 §{chapter}"].depends, f"D02 T02 §{chapter}")
+
+    def test_no_authoring_waits_for_the_check_across_the_six_mock_ups(self):
+        for number in (17, *self.AUTHORING):
+            self.assertNotIn("D02 T02 §14", self.reach(f"D03 T01 §{number}"), number)
+
+    def test_the_gate_keeps_the_guarantees_that_span_the_six_apps(self):
+        reached = self.reach("D03 T01 §13")
+        needed = self.inventory(*self.INVENTORY) | {f"D03 T01 §{n}" for n in self.AUTHORING} | {
+            "D02 T02 §14", "D02 T01 §18", "D02 T01 §22", "D02 T01 §28", "D02 T01 §29"}
+        self.assertEqual(needed - reached, set())
+
+    def test_the_path_to_the_platform_and_write_runs_before_the_other_apps_inventories(self):
+        first_other = min(self.place[ref] for ref in
+                          self.inventory("excel", "powerpoint", "visio", "project", "outlook"))
+        self.assertEqual(first_other, self.place["D02 T01 §7"])
+        path = self.reach("D03 T01 §17") | self.reach("D03 T01 §19") | {"D03 T01 §17", "D03 T01 §19"}
+        late = sorted(ref for ref in path if self.place[ref] > first_other)
+        self.assertEqual(late, [])
+
+
 if __name__ == "__main__":
     unittest.main()
 

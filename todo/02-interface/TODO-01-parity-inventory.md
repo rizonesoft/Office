@@ -56,7 +56,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 15 | §15 | Outlook ribbons | §3, §19, §23, §24, §26 | [ ] |
 | 16 | §16 | Outlook panes, dialogs | §15 | [ ] |
 | 17 | §17 | Keyboard shortcuts | §1, §20, §23, §26 | [ ] |
-| 18 | §18 | Inventory coverage report | §4, §6, §8, §10, §12, §14, §16, §17, §19, §25 | [ ] |
+| 18 | §18 | Inventory coverage report | §4, §5, §19, §25 | [ ] |
 | 19 | §19 | Control ID baseline | §1, §21 | [x] |
 | 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
@@ -245,7 +245,7 @@ Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, P
 
 Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data, Review, View, Automate, Help) and contextual tab (Table Design, PivotTable Analyze, PivotTable Design, Chart Design, Format, Picture Format, Shape Format, Sparkline, Header and Footer, Query, Timeline, Slicer).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -270,7 +270,7 @@ Every built-in Excel tab (File, Home, Insert, Draw, Page Layout, Formulas, Data,
 
 Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context menu, Backstage pages, Excel Options, task panes (Format Cells pane forms, PivotTable Fields, Queries and Connections, Selection, Clipboard), status bar aggregates and their customise menu, and dialogs (Format Cells, Insert Function, Function Arguments, Name Manager, Data Validation, Conditional Formatting Rules Manager, Sort, Paste Special, Go To Special, Goal Seek, Scenario Manager).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -293,7 +293,7 @@ Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context 
 
 Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, Animations, Slide Show, Record, Review, View, Help) and contextual tab (Shape Format, Picture Format, Table Design, Table Layout, Chart Design, Chart Format, SmartArt Design, Video Format, Playback, Audio Format, Equation).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -316,7 +316,7 @@ Every built-in PowerPoint tab (File, Home, Insert, Draw, Design, Transitions, An
 
 PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, Reading, Slide Master, Handout Master, Notes Master, Slide Show, Presenter View), the thumbnail pane, notes pane, status bar, Backstage and Options, task panes (Animation Pane, Selection, Format Shape, Design Ideas), and dialogs.
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -341,7 +341,7 @@ Every built-in Visio tab (File, Home, Insert, Draw, Design, Data, Process, Revie
 
 **Answered 2026-10-20:** the owner registered the Visio licence; the subscription store now holds `visioproretail` (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). The capture refuses if Visio still shows a licence notice.
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -366,7 +366,7 @@ Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick 
 
 **Answered 2026-10-20:** the owner registered the Visio licence; the subscription store now holds `visioproretail` (D02 T01 §2, `design/inventory/REFERENCE.md` `## Licensing`). The capture refuses if Visio still shows a licence notice.
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -388,7 +388,7 @@ Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick 
 
 Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, plus Developer when enabled) and contextual Format tabs (Gantt Chart Tools, Timeline Tools, Task Usage Tools, Resource Sheet Tools, Report Design and Report Table and Chart tabs).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -410,7 +410,7 @@ Every built-in Project tab (File, Task, Resource, Report, Project, View, Help, p
 
 Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usage, Team Planner, Network Diagram, Calendar, Resource Sheet, Resource Usage, Resource Graph, Timeline, Task Sheet, Task Form, Resource Form), the view bar and split view, default tables and their columns, Backstage and Project Options, status bar, and dialogs (Task Information, Resource Information, Project Information, Change Working Time, Assign Resources, Level Resources, Baseline).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -433,7 +433,7 @@ Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usa
 
 Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item window (new message, read message, appointment, meeting, contact, task). The capture follows the Outlook client chosen in §2.
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -458,7 +458,7 @@ Outlook has a ribbon per module (Mail, Calendar, People, Tasks) and per item win
 
 Outlook's layout beyond the ribbon: navigation bar, folder pane, message list with its columns and conversation grouping, reading pane positions, To-Do Bar, calendar views (Day, Work Week, Week, Month, Schedule), People views, search scopes, Backstage (Info with Account Settings, Rules, Automatic Replies), Outlook Options, and dialogs (Account Settings, Rules and Alerts, Signatures and Stationery, Categories, Address Book).
 
-**Phase:** 2
+**Phase:** 5
 **Needs:** office, windows-host, display-session
 **Surface:** no
 
@@ -517,6 +517,8 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 - [ ] Add an implemented count in `scripts/inventory-report.py` by scanning `todo/**/*.md` for `[x]` sections whose `> **Implements:**` lines name inventory ids (§22). Done when: a fixture stamped section implementing the Word Bold control counts it as implemented. Cheaper substitute: a hand-maintained percentage.
 - [ ] Add `--app`, `--kind` and `--cited-in <file>` filters to `scripts/inventory-report.py`, where `--cited-in` reports the percentage of matching record ids that appear in the file, and `--control-types` reports which `controlType` values the file names. Done when: a fixture spec citing half the Word tabs reports 50 percent for `--app word --kind tab`. Cheaper substitute: a citation count with no denominator.
 - [ ] Write `design/inventory/COVERAGE.md` atomically with rows at most 120 characters. Done when: `python scripts/check-design-doc.py design/inventory/COVERAGE.md` exits 0. Cheaper substitute: printing to the console only.
+- [ ] Report an app that has a `baseline.json` and no captured record file as one `pending inventory` row in `scripts/inventory-report.py`, with its baseline count and exit 0, so the report is built and proved on the inventories that exist (the shell's and Word's). Done when: a test over a fixture with one captured app and one baseline-only app prints the captured app's counts and the other app's `pending inventory` row, and exits 0. Cheaper substitute: failing, or printing a row of zeros, for an app nobody has captured yet. **Corrected 2026-11-12:** added by D03 T01 §30 (decision 44 of `docs/specs/2026-10-23-campaign-scope-design.md`): this section depended on every app's inventory (§6, §8, §10, §12, §14, §16) and on §17, none of which the tool reads to be built; it now depends on §4, §5, §19 and §25, and D03 T01 §13 requires a report with no pending app.
+- [ ] Add `--check` to `scripts/inventory-report.py`: generate the report again and exit 1, naming `design/inventory/COVERAGE.md`, when the committed file differs; and run it from `scripts/hooks/pre-commit` for commits that stage `design/inventory/`, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: a test shows a stale `COVERAGE.md` exits 1 and a fresh one exits 0, and staging a new inventory record without the regenerated report refuses the commit. Cheaper substitute: a checklist item in each inventory section asking for the report to be run again, which nothing enforces. **Corrected 2026-11-12:** added by D03 T01 §30, so the report is run again as each inventory lands.
 - [ ] Write `scripts/tests/test_inventory_report.py`. Done when: the suite passes and fails when the implemented scan is disabled.
 - [ ] Commit: `inventory: add coverage report`
 
@@ -621,6 +623,10 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [ ] Report an id claimed on the `> **Implements:**` lines of more than one section in `scripts/inventory-report.py --owners`. Done when: a fixture with two sections claiming one id reports both references. Cheaper substitute: allowing silent co-ownership.
 - [ ] Add `--check` to `scripts/inventory-report.py --owners`: exit 1 while any record is unowned, any claim is unknown or any id has two owners; exit 0 otherwise. Done when: the three fixtures above exit 1 and a fully cited fixture exits 0. Cheaper substitute: always exiting 0 and relying on someone reading the list.
 - [ ] Add `--app` filtering to `--owners` so one app can be brought to zero at a time. Done when: `--owners --check --app word` ignores unowned Excel ids in a fixture. Cheaper substitute: a whole-tree check only.
+- [ ] Give every app (the shell counts as one) one of three states in `scripts/inventory-report.py --owners`, printed beside its counts: `pending inventory` (no captured record), `pending authoring` (captured records and no section claiming any of them) and `enforced` (at least one of its records claimed). Done when: a test over a fixture with one app in each state prints the three states. Cheaper substitute: treating every unowned record as a failure, which refuses every commit between an app's capture and its authoring. **Corrected 2026-11-12:** added by D03 T01 §30 after its plan review (gap 1): the shell's and Word's records are captured long before D03 T01 §17 and §19 write the sections that own them.
+- [ ] Make `--owners --check` strict per app from its first claim: an `enforced` app with an unowned `build` or `equivalent` record exits 1, a pending app does not, and an unknown or doubly owned claim exits 1 in every state. Done when: tests show a pending-authoring app with every record unowned exits 0 and names the app as pending, the same app after one claim exits 1 naming each record still unowned, and an unknown claim and a double claim each exit 1 while every app is pending. Cheaper substitute: enforcing only at the gate, which lets a section of an authored app drop a claim unnoticed. **Corrected 2026-11-12:** added by D03 T01 §30 (gap 1).
+- [ ] Add `--all` to `--owners --check`: exit 1 naming each app that is still pending. Done when: tests show the pending fixtures above exit 1 under `--all` and a fully claimed fixture exits 0. Cheaper substitute: reading the pending list by eye at the gate. **Corrected 2026-11-12:** added by D03 T01 §30; D03 T01 §13 runs it, so the proof over all six apps and the shell stays where it was.
+- [ ] Add `python scripts/inventory-report.py --owners --check` to `scripts/hooks/pre-commit` for commits that stage `todo/` or `design/inventory/`, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: staging a section of an enforced fixture app with one claim removed refuses the commit, and staging a new record of a pending app does not. Cheaper substitute: running the check only at the gate. **Corrected 2026-11-12:** moved here from D03 T01 §13 by D03 T01 §30, so the check holds Write's sections from the day they are written.
 - [ ] Write the owners tests in `scripts/tests/test_inventory_report.py`: unowned, unknown, doubly owned, filtered, example-only and fully claimed fixtures. Done when: the suite passes and fails when the unowned list is forced empty. Cheaper substitute: one happy-path test.
 - [ ] Commit: `inventory: add record-level ownership check`
 
@@ -769,7 +775,7 @@ Owner decision 2026-10-22 (`docs/specs/2026-10-23-campaign-scope-design.md`, dec
 - [ ] Add an optional `disposition` field to the record definition in `design/inventory/schema.json` with the values `build` (the default when absent), `equivalent` and `excluded`. Done when: a fixture record with `"disposition": "unknown"` fails `python scripts/check-inventory.py`. Cheaper substitute: a free-text note field, which no check can read.
 - [ ] Require `dispositionReason` (one sentence, no web address, under the schema's `noLink` rule) when `disposition` is `equivalent` or `excluded`, naming the cloud service and, for `equivalent`, what replaces it. Done when: fixtures without a reason fail and with one pass in `scripts/tests/test_check_inventory.py`. Cheaper substitute: allowing a bare `excluded`.
 - [ ] Count dispositions in `scripts/inventory-report.py`: coverage reports `build`, `equivalent` and `excluded` separately per app, and an `excluded` record counts as accounted for. Done when: a test over a three-record fixture prints each count. Cheaper substitute: dropping excluded records from the totals, which hides them.
-- [ ] Make `python scripts/inventory-report.py --owners --check` (§22) refuse an `excluded` record that a section claims on an `> **Implements:**` line, and require every `build` or `equivalent` record to be owned. Done when: a test with a claimed excluded record and one with an unowned equivalent record each exit 1 naming the id. Cheaper substitute: letting excluded records be claimed, which reopens dead controls.
+- [ ] Make `python scripts/inventory-report.py --owners --check` (§22) refuse an `excluded` record that a section claims on an `> **Implements:**` line, and require every `build` or `equivalent` record to be owned. Done when: a test with a claimed excluded record and one with an unowned equivalent record each exit 1 naming the id. Cheaper substitute: letting excluded records be claimed, which reopens dead controls. **Corrected 2026-11-12:** restated by D03 T01 §30: "every `build` or `equivalent` record owned" holds for an app from its first claim (§22's `enforced` state) and for all apps under `--all`; the tests here use fixtures, so the tool is built and proved before the later apps are captured.
 - [ ] Document the field in `design/inventory/REFERENCE.md` with the owner decision and the rule that only D03 T01 §14 sets it. Done when: `python scripts/check-design-doc.py design/inventory/REFERENCE.md --require Disposition` exits 0. Cheaper substitute: the schema description alone.
 - [ ] Commit: `inventory: add record dispositions for cloud features`
 
@@ -796,6 +802,7 @@ Filed 2026-11-10 (owner: the plan must hold the features "complete with button l
 - [ ] Report in `--layout-check` every section that claims a parent's children on its `> **Implements:**` lines (§22) and carries no block for that parent, with exit 1. Done when: a fixture section claiming two controls of one group with no block is named with the group's id.
 - [ ] Say in the `--layout-check` message for a stamped section that the inventory changed after its stamp and that the repair is a new section through `add-todo` with `unstamp`, since a stamped section is never rewritten (`todo/README.md`). Done when: a fixture stamped section with a stale block prints that sentence and exits 1.
 - [ ] Add `--write <TODO file>` to `--layout-check`, which replaces each stale block in that file's open sections with the generated one through a temporary file and `os.replace`, and touches nothing in a stamped section. Done when: a test shows a stale open block rewritten to the generated bytes, the file otherwise identical, and a stale stamped block left as it was. Cheaper substitute: asking the author to paste the output again by hand.
+- [ ] Add `python scripts/inventory-report.py --layout-check` to `scripts/hooks/pre-commit` beside the ownership check, for the same staged paths, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: staging a section whose layout block was edited by hand refuses the commit, and a tree with no layout block yet passes. Cheaper substitute: running the check only at the gate. **Corrected 2026-11-12:** moved here from D03 T01 §13 by D03 T01 §30, so the check holds every block from the first one written.
 - [ ] Commit: `inventory: print and check layout blocks`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes with the tests named above among them, `python scripts/inventory-report.py --layout word.home.paragraph` prints 15 control rows, and `python scripts/inventory-report.py --layout-check` exits 0.
