@@ -137,8 +137,8 @@ def fetch(name, entry, folder, opener, deadline_seconds):
 
 
 def kept(member, keep):
-    """Whether an archive member is one the lock keeps: the exact path, or under a kept folder."""
-    return any(member == k or member.startswith(k.rstrip("/") + "/") for k in keep)
+    """The `keep` path or prefix that keeps an archive member (the exact path, or a folder above it), or None."""
+    return next((k for k in keep if member == k or member.startswith(k.rstrip("/") + "/")), None)
 
 
 def checked_member(name, member):
@@ -158,7 +158,17 @@ def write_member(staging, relative, source):
 
 
 def unpack(name, entry, archive, staging):
-    """Unpack the kept members of `archive` into `staging`, refusing a member or link that leaves it."""
+    """Unpack the kept members of `archive` into `staging`, refusing a member or link that leaves it, and a `keep`
+    path or prefix that produced no file (a wrong prefix would otherwise leave, say, the LLVM headers out)."""
+    keep, fmt = entry["keep"], entry["format"]
+    used = set()
+    _unpack(name, entry, archive, staging, used)
+    unused = [k for k in keep if k not in used]
+    if fmt != "exe" and unused:
+        raise Failed(f"{name}: the archive has nothing under the kept path {unused[0]!r}")
+
+
+def _unpack(name, entry, archive, staging, used):
     keep, fmt = entry["keep"], entry["format"]
     if fmt == "exe":
         program = PurePosixPath(entry["url"].split("?")[0]).name
@@ -169,17 +179,20 @@ def unpack(name, entry, archive, staging):
         with zipfile.ZipFile(archive) as bundle:
             for info in bundle.infolist():
                 member = checked_member(name, info.filename)
-                if info.is_dir() or not kept(member, keep):
+                selector = None if info.is_dir() else kept(member, keep)
+                if selector is None:
                     continue
                 if stat.S_ISLNK(info.external_attr >> 16):
                     raise Failed(f"{name}: the archive holds a link, {member!r}, which a zip cannot keep safely")
                 with bundle.open(info) as source:
                     write_member(staging, member, source)
+                used.add(selector)
         return
     with tarfile.open(archive, mode="r:xz") as bundle:
         for info in bundle:
             member = checked_member(name, info.name)
-            if info.isdir() or not kept(member, keep):
+            selector = None if info.isdir() else kept(member, keep)
+            if selector is None:
                 continue
             if info.issym() or info.islnk():
                 base = PurePosixPath(member).parent if info.issym() else PurePosixPath(".")
@@ -195,6 +208,7 @@ def unpack(name, entry, archive, staging):
                 continue
             with source:
                 write_member(staging, member, source)
+            used.add(selector)
 
 
 def manifest(folder):
@@ -231,8 +245,16 @@ def promote(staging, destination):
     if destination.exists():
         aside = destination.with_name(f"{destination.name}.stale-{secrets.token_hex(4)}")
         destination.rename(aside)
-        staging.rename(destination)
-        shutil.rmtree(aside, ignore_errors=False)
+        try:
+            staging.rename(destination)
+        except OSError:
+            aside.rename(destination)  # the earlier installation goes back where it was
+            raise
+        try:
+            shutil.rmtree(aside)
+        except OSError as error:  # in place and complete; the set-aside folder goes at the next run's cleanup
+            print(f"bootstrap-tools: {aside.name} could not be removed yet ({error}); the next run removes it",
+                  file=sys.stderr)
     else:
         staging.rename(destination)
 
@@ -246,12 +268,14 @@ def install(name, version, entry, tools, opener, deadline_seconds):
     if staging.exists():
         shutil.rmtree(staging)
     archive = fetch(name, entry, tools, opener, deadline_seconds)
+    step = "unpacking"
     try:
         staging.mkdir()
         unpack(name, entry, archive, staging)
         missing = [b for b in entry["bin"] if not (staging / b).is_dir()]
         if missing:
             raise Failed(f"{name}: the archive has no {', '.join(missing)} folder")
+        step = "writing the receipt"
         files = manifest(staging)
         if not files:
             raise Failed(f"{name}: nothing the lock keeps is in the archive")
@@ -260,7 +284,12 @@ def install(name, version, entry, tools, opener, deadline_seconds):
         with os.fdopen(fd, "w", encoding="utf-8") as out:
             json.dump(receipt, out, indent=1)
         os.replace(tmp, staging / RECEIPT)
+        step = "promotion"
         promote(staging, destination)
+    except OSError as error:  # a full disk, a denied write, a file another process holds
+        shutil.rmtree(staging, ignore_errors=True)
+        raise Failed(f"{name}: {step} failed: {error}; any earlier installation is untouched, and running the "
+                     f"bootstrap again once that is fixed installs it") from None
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
@@ -272,6 +301,7 @@ def install(name, version, entry, tools, opener, deadline_seconds):
 def clean(lock, tools):
     """Remove staging and set-aside folders, leftover downloads, and folders of versions the lock no longer names."""
     current = {f"{name}-{tool['version']}" for name, tool in lock.items()}
+    problems = []
     for path in tools.iterdir():
         if path.name == RUN_LOCK:
             continue
@@ -279,10 +309,14 @@ def clean(lock, tools):
         older = path.is_dir() and path.name not in current and any(
             path.name.startswith(f"{name}-") for name in lock)
         if stale or older:
-            if path.is_dir():
-                shutil.rmtree(path)
-            else:
-                path.unlink()
+            try:
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+            except OSError as error:  # a file another process holds: left for the next run, and said
+                problems.append(f"cleanup of {path.name} failed: {error}")
+    return problems
 
 
 def status(lock, tools, arch):
@@ -329,7 +363,9 @@ def main(argv=None, opener=urllib.request.urlopen, lock_path=LOCK, tools=TOOLS, 
     failed = 0
     try:
         with RunLock(tools):
-            clean(lock, tools)
+            for problem in clean(lock, tools):
+                print(f"bootstrap-tools: {problem}", file=sys.stderr)
+                failed += 1
             for name in wanted:
                 tool = lock[name]
                 try:

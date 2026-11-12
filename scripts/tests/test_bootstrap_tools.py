@@ -324,6 +324,75 @@ class Install(Fixture):
         self.assertEqual(self.boot("--only", "ghost")[0], 2)
 
 
+class FreshPlanGaps(Fixture):
+    """D00 T04 §1, the fresh plan review: every kept path produces a file, and file-system failures are refusals."""
+
+    def test_a_kept_path_that_produced_nothing_refuses_the_archive(self):
+        url, _, fmt, keep, bin_ = self.archives["llvm"]
+        without = tar_xz_bytes({"llvm-1/bin/clangd.exe": b"clangd"})  # the programs, but no header folder
+        self.server.files[url] = without
+        self.lock["llvm"]["archives"]["x64"] = entry(url, without, fmt, keep, bin_)
+        self.write_lock()
+        code, out = self.boot("--only", "llvm")
+        self.assertEqual(code, 1)
+        self.assertIn("nothing under the kept path 'llvm-1/lib/clang/1/include'", out)
+        self.assertFalse((self.tools / "llvm-1.0").exists())
+        self.assertEqual(self.leftovers(), [])
+
+    def test_a_failure_while_unpacking_or_writing_the_receipt_is_a_refusal_and_a_rerun_succeeds(self):
+        for target, step in (("write_member", "unpacking"), ("manifest", "writing the receipt")):
+            with self.subTest(step):
+                with mock.patch.object(boot, target, side_effect=OSError(28, "No space left on device")):
+                    code, out = self.boot("--only", "cmake")
+                self.assertEqual(code, 1)
+                self.assertIn(f"cmake: {step} failed", out)
+                self.assertIn("No space left on device", out)
+                self.assertFalse((self.tools / "cmake-1.0").exists())
+                self.assertEqual(self.leftovers(), [])
+        self.assertEqual(self.boot("--only", "cmake")[0], 0)
+
+    def test_a_failed_promotion_puts_the_earlier_installation_back(self):
+        self.assertEqual(self.boot("--only", "cmake")[0], 0)
+        before = (self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes()
+        url, _, fmt, keep, bin_ = self.archives["cmake"]
+        newer = zip_bytes({"cmake-1/bin/cmake.exe": b"cmake rebuilt", "cmake-1/share/cmake-1/m.cmake": b"m"})
+        self.server.files[url] = newer
+        self.lock["cmake"]["archives"]["x64"] = entry(url, newer, fmt, keep, bin_)
+        self.write_lock()
+        real = Path.rename
+
+        def held(self_, target):
+            if self_.name.endswith(".partial"):
+                raise PermissionError(32, "The process cannot access the file because it is being used")
+            return real(self_, target)
+        with mock.patch.object(Path, "rename", held):
+            code, out = self.boot("--only", "cmake")
+        self.assertEqual(code, 1)
+        self.assertIn("cmake: promotion failed", out)
+        self.assertEqual((self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes(), before)
+        self.assertEqual(self.leftovers(), [])
+        self.assertEqual(self.boot("--only", "cmake")[0], 0)
+        self.assertEqual((self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes(), b"cmake rebuilt")
+
+    def test_a_leftover_that_cannot_be_removed_is_said_and_the_rest_installs(self):
+        self.tools.mkdir()
+        held_folder = self.tools / "cmake-0.9"
+        held_folder.mkdir()
+        real = shutil.rmtree
+
+        def refuse(path, *a, **kw):
+            if Path(path).name == "cmake-0.9":
+                raise PermissionError(32, "being used by another process")
+            return real(path, *a, **kw)
+        with mock.patch.object(boot.shutil, "rmtree", refuse):
+            code, out = self.boot("--only", "cmake")
+        self.assertEqual(code, 1)
+        self.assertIn("cleanup of cmake-0.9 failed", out)
+        self.assertTrue((self.tools / "cmake-1.0").is_dir())  # the install went on
+        self.assertEqual(self.boot("--only", "cmake")[0], 0)  # the fault removed, the next run cleans it
+        self.assertFalse(held_folder.exists())
+
+
 class Refusals(Fixture):
     """An archive that would write outside the tool's folder is refused in each format (gap 5 of the plan review)."""
 
