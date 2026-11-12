@@ -88,6 +88,8 @@ One lock file names every carried tool, and one script turns it into a working t
 
 ## 2. Tool Folder Resolver
 
+> **Started:** 2026-11-12T04:18:18Z
+
 Every script that starts a build tool asks one function where it is, and that function answers from the tool folder only. This is what keeps a machine's own Ninja or CMake from being used by accident.
 
 **Phase:** 0
@@ -100,7 +102,7 @@ Every script that starts a build tool asks one function where it is, and that fu
 2. Expose it on the command line. Done when: `python scripts/bootstrap-tools.py --where ninja` prints the path.
 
 - [ ] Add `tool_path(program)` to `scripts/lib/tool_lock.py`: find the program in the `bin` folders of the installed tools the lock file names and return its absolute path, found from the repository's own location. Done when: a test with a fixture tool folder returns the fixture path while a different program of the same name sits first on `PATH`. Cheaper substitute: `shutil.which`, which returns whatever the machine has.
-- [ ] Refuse in `tool_path` a program whose tool is missing or stale, with a message that names the tool and the command `python scripts/bootstrap-tools.py`. Done when: a test with an empty tool folder shows the refusal and the command in its text, and no fallback to `PATH`.
+- [ ] Refuse in `tool_path` a program whose tool is missing or stale, with a message that names the tool and the command `python scripts/bootstrap-tools.py`. Done when: a test with an empty tool folder shows the refusal and the command in its text, and no fallback to `PATH`. **Corrected 2026-11-12:** missing or stale is judged as a lookup can afford: the tool's receipt must be the one for the lock's current entry (§1's `.installed.json`), every tool it requires must be installed, and the program itself must match its recorded size and SHA-256; the full payload check stays with `bootstrap-tools.py --check`, since hashing CMake's 8,979 files on every lookup would make each build call wait seconds.
 - [ ] Add `tool_env()` to `scripts/lib/tool_lock.py`, returning the variables a build tool needs beside its path: `VCPKG_ROOT` set to the installed `vcpkg-registry` folder (the registry archive's top folder), which §1 pins as its own tool that `vcpkg` requires. Done when: a test with an installed fixture registry returns its folder, and the refusal of `tool_path` when the registry is missing. **Corrected 2026-11-12:** added when §1's plan review split vcpkg into the registry and its tool (D00 T04 §1, gap 1).
 - [ ] Add `--where <program>` to `scripts/bootstrap-tools.py`, printing the path and exiting 0, or the refusal and exiting 1. Done when: a test shows both outcomes.
 - [ ] Add `--bin-dirs` to `scripts/bootstrap-tools.py`, printing one installed `bin` folder per line for a caller that must prepend them to a child process's `PATH` (the launcher in §4, the CMake presets D03 T01 §17 authors). Done when: a test with two fixture tools prints both folders and nothing else.
