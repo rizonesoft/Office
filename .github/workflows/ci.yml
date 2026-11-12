@@ -50,6 +50,8 @@ jobs:
         run: python scripts/todo-graph.py validate
       - name: Check the generated plan is current
         run: python scripts/todo-graph.py plan --check
+      - name: Check the lesson store
+        run: python scripts/lessons.py check
       - name: Check every source file states its licence
         run: python scripts/check-spdx.py
       - name: Check the repository is REUSE compliant
