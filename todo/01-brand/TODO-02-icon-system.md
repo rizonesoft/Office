@@ -249,6 +249,8 @@ The family is compared side by side with Microsoft's current app and file icons 
 
 ## 8. Parallel Icon Rasterising
 
+> **Started:** 2026-11-12T21:56:29Z
+
 Filed 2026-11-10 from a measurement of the gates the campaign runs after every section: `python scripts/build-icons.py --check` takes 59 seconds on this PC and 67 in CI (run 42683957141), all of it in `render`, which draws 533 distinct rasters one after another on one processor. A trial on 2026-11-10 drew the same rasters in a process pool and brought the check to 19 seconds with byte-identical output (991 files current); threads gained nothing (120 rasters in 16.4 s serial, 15.6 s on 8 threads), because the rasteriser holds the interpreter lock. The trial was not kept: `docs/brand/icon-distinctness.md` carries the reviewer's sign-off against a digest of `scripts/build-icons.py` (§7), so a change to that file needs the sign-off renewed, which this section does.
 
 **Phase:** 1
