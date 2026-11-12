@@ -27,6 +27,8 @@ Requires the packages pinned in scripts/requirements.txt: resvg_py (rasteriser),
 outlines), Pillow (verification).
 """
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 import io
 import json
 import os
@@ -41,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import icon_design as d
 import filetype_design as ft
 import brand_design as bd
+import svg_raster
 
 PNG_SIZES = (16, 20, 24, 32, 40, 48, 64, 96, 128, 256, 512, 1024)
 FILE_PNG_SIZES = PNG_SIZES[:-1]
@@ -71,10 +74,12 @@ def rasteriser():
 
 def render(svg, width, height=None, background=None):
     height = height or width
-    kwargs = {"svg_string": svg, "width": width, "height": height}
-    if background:
-        kwargs["background"] = background
-    data = bytes(rasteriser().svg_to_bytes(**kwargs))
+    rasteriser()  # SetupRequired first, before the one call that needs the package
+    return checked(svg_raster.svg_to_png((svg, width, height, background or None)), width, height)
+
+
+def checked(data, width, height):
+    """A raster as the rasteriser returned it, refused unless it is a PNG of the size asked for."""
     if data[:8] != b"\x89PNG\r\n\x1a\n" or png_size(data) != (width, height):
         raise RuntimeError(f"rasteriser returned a bad PNG for {width}x{height}")
     return data
@@ -107,8 +112,10 @@ def icons():
     return [d.SUITE, *d.APPS]
 
 
-def build():
-    """Return {relative path: bytes} for every output. Pure apart from the rasteriser."""
+def build(draw=None):
+    """Return {relative path: bytes} for every output. Pure apart from the rasteriser. `draw` stands in for `render`
+    (same arguments); without it the module's `render` is used, as found when the call is made."""
+    paint = draw or render
     out = {}
     cache = {}
 
@@ -117,7 +124,7 @@ def build():
         text = svg_for(shown or px)
         key = (text, px, background)
         if key not in cache:
-            cache[key] = render(text, px, background=background)
+            cache[key] = paint(text, px, background=background)
         return cache[key]
 
     # App and suite icons.
@@ -179,23 +186,23 @@ def build():
         w, h = float(vb[0]), float(vb[1])
         for scale in (1, 2):
             height = round(h * scale)
-            out[f"assets/brand/png/{name}-{height}.png"] = render(text, round(w * scale), height)
+            out[f"assets/brand/png/{name}-{height}.png"] = paint(text, round(w * scale), height)
 
     # README banner, light and dark: the SVG and a 2x PNG for the README.
     for theme in bd.THEMES:
         text = bd.banner_svg(theme)
         out[f"design/github/banner-{theme}.svg"] = text.encode("utf-8")
-        out[f"docs/assets/github/banner-{theme}.png"] = render(text, bd.BANNER_W * 2, bd.BANNER_H * 2)
+        out[f"docs/assets/github/banner-{theme}.png"] = paint(text, bd.BANNER_W * 2, bd.BANNER_H * 2)
     # App lineup strip, light and dark: the SVG and a 2x PNG for the README.
     for theme in bd.THEMES:
         text = bd.lineup_svg(theme)
         w, h = (int(v) for v in text.split('viewBox="0 0 ', 1)[1].split('"', 1)[0].split())
         out[f"design/github/lineup-{theme}.svg"] = text.encode("utf-8")
-        out[f"docs/assets/github/lineup-{theme}.png"] = render(text, 2 * w, 2 * h)
+        out[f"docs/assets/github/lineup-{theme}.png"] = paint(text, 2 * w, 2 * h)
     # Social preview: GitHub shows it when the repository link is shared (uploaded by hand in the repository settings).
     social = bd.social_preview_svg()
     out["design/github/social-preview.svg"] = social.encode("utf-8")
-    out["docs/assets/github/social-preview.png"] = render(social, bd.SOCIAL_W, bd.SOCIAL_H)
+    out["docs/assets/github/social-preview.png"] = paint(social, bd.SOCIAL_W, bd.SOCIAL_H)
 
     palette = {"apps": {k: {"name": f"Rizonesoft {v[0]}", "counterpart": v[1], "accent": d.APP_COLOR[k],
                             "light": v[2][0], "dark": v[2][1], "linuxId": LINUX_ID[k]} for k, v in d.APPS.items()},
@@ -203,6 +210,43 @@ def build():
                "fileTypes": {ext: {"app": k, "mime": m} for ext, (k, _, m) in ft.TYPES.items()}}
     out["assets/icons/palette.json"] = (json.dumps(palette, indent=2) + "\n").encode("utf-8")
     return out
+
+
+def default_jobs():
+    """All but one logical processor, at most 8: the rasters are many and small, and the PC stays usable."""
+    return max(1, min(8, (os.cpu_count() or 2) - 1))
+
+
+def draw_all(wanted, jobs, worker=svg_raster.svg_to_png):
+    """{request: PNG bytes} for every request, drawn by a pool of `jobs` processes.
+
+    However the draw ends (done, a worker gone, an interrupt), the pool is shut down with its pending work cancelled
+    and its processes reaped before this returns or raises, so no worker outlives the call."""
+    pool = ProcessPoolExecutor(max_workers=max(1, min(jobs, len(wanted))))
+    try:
+        return dict(zip(wanted, pool.map(worker, wanted, chunksize=8)))
+    finally:
+        pool.shutdown(wait=True, cancel_futures=True)
+
+
+def build_parallel(jobs):
+    """`build()`'s mapping, with the rasters drawn in a pool of `jobs` processes (D01 T02 §8).
+
+    One pass of `build` collects every distinct raster request, the pool draws them, each result is checked here as
+    `render` checks its own, and a second pass assembles the outputs from the drawn rasters."""
+    rasteriser()  # a missing package is reported once, from this process, before any worker starts
+    requests = {}
+
+    def collect(svg, width, height=None, background=None):
+        requests[(svg, width, height or width, background or None)] = None
+        return b""
+
+    build(draw=collect)
+    drawn = draw_all(list(requests), jobs)
+    for (_, width, height, _), data in drawn.items():
+        checked(data, width, height)
+    return build(draw=lambda svg, width, height=None, background=None:
+                 drawn[(svg, width, height or width, background or None)])
 
 
 def contact_sheet():
@@ -310,17 +354,26 @@ def main(argv=None):
     mode.add_argument("--check", action="store_true", help="fail if committed outputs differ from a fresh build")
     mode.add_argument("--contact-sheet", type=Path, metavar="PNG",
                       help="write a review sheet of the six app icons at 256, 48 and 32 px and stop")
+    parser.add_argument("--jobs", type=int, default=None, metavar="N",
+                        help="processes that draw the rasters (default: all but one logical processor, at most 8; "
+                             "1 draws in this process with no pool)")
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.jobs is not None and args.jobs < 1:
+        parser.error("--jobs must be 1 or more")
+    jobs = args.jobs or default_jobs()
     try:
         if args.contact_sheet:
             atomic_write(args.contact_sheet, contact_sheet())
             print(f"contact sheet: {args.contact_sheet}")
             return 0
-        files = build()
+        files = build() if jobs == 1 else build_parallel(jobs)
     except SetupRequired as exc:
         print(f"setup required: {exc}", file=sys.stderr)
         return 2
+    except BrokenProcessPool as exc:  # a worker died; nothing has been written
+        print(f"the raster pool failed: {exc or 'a worker process ended'}; run again, or with --jobs 1", file=sys.stderr)
+        return 1
     problems = verify(files)
     if problems:
         print("\n".join(problems), file=sys.stderr)

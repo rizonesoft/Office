@@ -11,6 +11,7 @@ import re
 import struct
 import sys
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
@@ -29,6 +30,125 @@ def png(px, color=(10, 20, 30, 255)):
     buf = io.BytesIO()
     Image.new("RGBA", (px, px), color).save(buf, "PNG")
     return buf.getvalue()
+
+
+def end_the_worker(request):
+    """A pool worker that ends its own process, as a crash would (D01 T02 §8). Importable, so a pool can run it."""
+    import os
+    os._exit(3)
+
+
+class Pool(unittest.TestCase):
+    """The rasters are drawn in a process pool, and the result is the serial build's (D01 T02 §8)."""
+
+    @staticmethod
+    def tagged(svg, width, height=None, background=None):
+        """A stand-in rasteriser: bytes that name the whole request, so a wrong or swapped raster shows."""
+        return repr((hash(svg), width, height or width, background or None)).encode()
+
+    def test_the_two_passes_assemble_exactly_what_the_serial_build_returns(self):
+        with mock.patch.object(build_icons, "render", self.tagged):
+            serial = build_icons.build()
+        asked = []
+
+        def draw_in_process(wanted, jobs):
+            asked.append((len(wanted), len(set(wanted)), jobs))
+            return {request: self.tagged(*request) for request in wanted}
+        with mock.patch.object(build_icons, "draw_all", draw_in_process), \
+                mock.patch.object(build_icons, "rasteriser"), mock.patch.object(build_icons, "checked", lambda d, w, h: d):
+            parallel = build_icons.build_parallel(3)
+        self.assertEqual(parallel, serial)
+        self.assertEqual(list(parallel), list(serial))  # the same outputs in the same order
+        (count, distinct, jobs), = asked
+        self.assertEqual((count, jobs), (distinct, 3))  # each distinct raster asked for once
+        self.assertGreater(count, 400)
+
+    def test_the_pool_draws_what_this_process_draws(self):
+        wanted = [(d.icon_svg("write", "sm"), 16, 16, None), (d.icon_svg("grid", "lg"), 48, 48, None),
+                  (d.icon_svg(d.SUITE, "md"), 32, 32, "#ffffff")]
+        drawn = build_icons.draw_all(wanted, 2)
+        self.assertEqual(list(drawn), wanted)
+        for request in wanted:
+            self.assertEqual(drawn[request], build_icons.svg_raster.svg_to_png(request))
+            self.assertEqual(drawn[request], build_icons.render(*request))
+
+    def test_a_raster_that_is_not_a_png_or_is_the_wrong_size_is_refused_before_assembly(self):
+        for bad in (b"not a png at all", png(7)):
+            passes = []
+
+            def build(draw=None, real=build_icons.build):
+                passes.append(draw)
+                return real(draw)
+            with mock.patch.object(build_icons, "draw_all", lambda wanted, jobs: {r: bad for r in wanted}), \
+                    mock.patch.object(build_icons, "rasteriser"), mock.patch.object(build_icons, "build", build):
+                with self.assertRaises(RuntimeError) as ctx:
+                    build_icons.build_parallel(2)
+            self.assertIn("rasteriser returned a bad PNG", str(ctx.exception))
+            self.assertEqual(len(passes), 1)  # the collecting pass only: nothing was assembled from the bad raster
+
+    def test_a_worker_that_dies_breaks_the_pool_and_leaves_no_process_behind(self):
+        import multiprocessing
+        with self.assertRaises(build_icons.BrokenProcessPool):
+            build_icons.draw_all([("a", 1, 1, None), ("b", 1, 1, None)], 2, worker=end_the_worker)
+        self.assertEqual(multiprocessing.active_children(), [])
+
+    def test_an_interrupt_cancels_the_pending_work_and_is_passed_on(self):
+        pool = mock.Mock()
+        pool.map.side_effect = KeyboardInterrupt
+        with mock.patch.object(build_icons, "ProcessPoolExecutor", return_value=pool):
+            with self.assertRaises(KeyboardInterrupt):
+                build_icons.draw_all([("a", 1, 1, None)], 2)
+        pool.shutdown.assert_called_once_with(wait=True, cancel_futures=True)
+
+    def run_main(self, argv, **patches):
+        err = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            for name, value in patches.items():
+                stack.enter_context(mock.patch.object(build_icons, name, value))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            return build_icons.main(argv), err.getvalue()
+
+    def test_a_broken_pool_is_reported_and_nothing_is_written(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            code, err = self.run_main(["--jobs", "2", "--root", tmp],
+                                      build_parallel=mock.Mock(side_effect=build_icons.BrokenProcessPool("gone")))
+            self.assertEqual(code, 1)
+            self.assertIn("the raster pool failed: gone", err)
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_a_missing_rasteriser_is_reported_once_and_no_worker_starts(self):
+        missing = mock.Mock(side_effect=build_icons.SetupRequired("resvg_py is not installed"))
+        pool = mock.Mock(side_effect=AssertionError("a pool was started"))
+        code, err = self.run_main(["--check", "--jobs", "2"], rasteriser=missing, ProcessPoolExecutor=pool)
+        self.assertEqual(code, 2)
+        self.assertEqual(err.count("setup required: resvg_py is not installed"), 1)
+        pool.assert_not_called()
+
+    def test_the_default_is_all_but_one_processor_between_one_and_eight(self):
+        for count, want in ((1, 1), (None, 1), (2, 1), (4, 3), (16, 8)):
+            with mock.patch.object(build_icons.os, "cpu_count", return_value=count):
+                self.assertEqual(build_icons.default_jobs(), want, count)
+
+    def test_one_job_draws_in_this_process_and_more_use_the_pool(self):
+        serial, parallel = mock.Mock(return_value={}), mock.Mock(return_value={})
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            self.run_main(["--jobs", "1", "--root", tmp], build=serial, build_parallel=parallel)
+            self.assertEqual((serial.call_count, parallel.call_count), (1, 0))
+            self.run_main(["--jobs", "2", "--root", tmp], build=serial, build_parallel=parallel)
+            parallel.assert_called_once_with(2)
+            self.assertEqual(serial.call_count, 1)
+            with mock.patch.object(build_icons, "default_jobs", return_value=5):
+                self.run_main(["--root", tmp], build=serial, build_parallel=parallel)
+            parallel.assert_called_with(5)
+
+    def test_fewer_than_one_job_is_refused(self):
+        for bad in ("0", "-2", "x"):
+            with self.assertRaises(SystemExit) as ctx, contextlib.redirect_stderr(io.StringIO()):
+                build_icons.main(["--check", "--jobs", bad])
+            self.assertEqual(ctx.exception.code, 2, bad)
 
 
 class Tiers(unittest.TestCase):
@@ -813,7 +933,8 @@ class MonoMark(unittest.TestCase):
 class DistinctnessReview(unittest.TestCase):
     REQUIRED_HEADINGS = ("Symbol contrast", "Distinctness rules", "Suite and app icons", "File-type icons", "Sign-off")
     GENERATORS = ("scripts/lib/icon_design.py", "scripts/lib/filetype_design.py", "scripts/lib/brand_design.py",
-                  "scripts/build-icons.py")
+                  "scripts/lib/svg_raster.py", "scripts/build-icons.py")
+    RENEWAL = "docs/reviews/01-brand/renewal-d01-t02-s8.md"  # D01 T02 §8: the generators changed, no drawing did
     RULE_PHRASES = {
         "R1": "No single letter",
         "R2": "No letter on a tile",
@@ -827,7 +948,8 @@ class DistinctnessReview(unittest.TestCase):
                   "FirstRunLogo.contrast-white_scale-100.png", "misc.exe", "wordicon.exe", "xlicons.exe",
                   "pptico.exe", "visicon.exe", "pj11icon.exe", "outicon.exe")
 
-    def validate_distinctness_doc(self, text: str, review_text: str | None = None) -> list[str]:
+    def validate_distinctness_doc(self, text: str, review_text: str | None = None,
+                                  renewal_text: str | None = None) -> list[str]:
         import hashlib
         problems = []
         if re.search(r"\|\s*fail\s*\|", text, flags=re.I):
@@ -921,6 +1043,18 @@ class DistinctnessReview(unittest.TestCase):
             review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
         if "## Round 1:" not in review_text or "- Digest: 77828b64d456e3b8" not in review_text:
             problems.append("review record missing Round 1 digest")
+        # The generators changed after the sign-off (D01 T02 §8): the digests above are only as good as the pinned
+        # reviewer's own record that no drawing changed, which the sign-off names with that round's digest.
+        renewal = re.search(r"\*\*Renewal \d{4}-\d{2}-\d{2} \(D01 T02 §8\):\*\*[^\n]*`" + re.escape(self.RENEWAL)
+                            + r"`[^\n]*digest `([0-9a-f]{16})`", signoff)
+        if not renewal:
+            problems.append("sign-off missing the D01 T02 §8 renewal and its review record")
+        else:
+            if renewal_text is None:
+                renewal_path = root / self.RENEWAL
+                renewal_text = renewal_path.read_text(encoding="utf-8") if renewal_path.exists() else ""
+            if "## Round " not in renewal_text or f"- Digest: {renewal.group(1)}" not in renewal_text:
+                problems.append("renewal record does not hold the round digest the sign-off names")
         return problems
 
     def test_distinctness_doc_is_complete_and_current(self):
@@ -950,6 +1084,19 @@ class DistinctnessReview(unittest.TestCase):
         self.assertTrue(self.validate_distinctness_doc(text.replace("5 (`lg`..`sm`)", "`lg`", 1)))
         self.assertTrue(self.validate_distinctness_doc(text.replace("No single letter", "Empty rule", 1)))
         self.assertTrue(self.validate_distinctness_doc(text, review_text="# Header only\n"))
+
+    def test_validator_rejects_a_missing_or_unbacked_renewal_and_a_stale_raster_digest(self):
+        import hashlib
+        text = (SCRIPTS.parent / "docs/brand/icon-distinctness.md").read_text(encoding="utf-8")
+        self.assertEqual(self.validate_distinctness_doc(text), [])
+        without = "\n".join(line for line in text.splitlines() if "**Renewal " not in line)
+        self.assertEqual(self.validate_distinctness_doc(without),
+                         ["sign-off missing the D01 T02 §8 renewal and its review record"])
+        self.assertEqual(self.validate_distinctness_doc(text, renewal_text="# Header only\n"),
+                         ["renewal record does not hold the round digest the sign-off names"])
+        raster = hashlib.sha256((SCRIPTS / "lib/svg_raster.py").read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        self.assertEqual(self.validate_distinctness_doc(text.replace(raster, "0" * 64, 1)),
+                         ["sign-off missing current digest for scripts/lib/svg_raster.py"])
 
 
 if __name__ == "__main__":
