@@ -149,11 +149,11 @@ The README shows the banner and lineup with `<picture>` so they match the visito
 
 ## 5. Upload Social Preview and Avatar
 
-GitHub accepts the social preview only through repository Settings, and the organisation avatar through organisation Settings. Both are owner actions on a public profile. **Groomed 2026-10-23:** moved from Phase 1 to Phase 99, since GitHub's settings page is the only way to upload them and an unattended campaign never takes an operator section (`docs/specs/2026-10-23-campaign-scope-design.md`).
+GitHub accepts the social preview only through repository Settings, and the organisation avatar through organisation Settings. Both are owner actions on a public profile. **Owner's decision, 2026-11-13 (in session):** the `rizonesoft` organisation avatar stays the company mark; the owner uploads the social preview. **Groomed 2026-10-23:** moved from Phase 1 to Phase 99, since GitHub's settings page is the only way to upload them and an unattended campaign never takes an operator section (`docs/specs/2026-10-23-campaign-scope-design.md`).
 
 **Phase:** 99
 **Needs:** operator
-**Owner action:** Upload `docs/assets/github/social-preview.png` at the repository's Settings, General, Social preview, and decide whether the `rizonesoft` organisation avatar becomes the suite mark or stays the company mark. Tell the session the decision; it records it in `docs/brand/NAMES.md` under `## GitHub` and removes `operator`.
+**Owner action:** Upload `docs/assets/github/social-preview.png` at the repository's Settings, General, Social preview, then tell a campaign session it is uploaded. The session checks it with `gh repo view --json openGraphImageUrl`, records the avatar decision of 2026-11-13 in `docs/brand/NAMES.md` under `## GitHub` and removes `operator`.
 **Surface:** no
 
 **Build order:**

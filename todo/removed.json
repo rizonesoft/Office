@@ -85,6 +85,21 @@
       "date": "2026-11-11",
       "by": "owner",
       "reason": "owner decision 2026-11-11 that agents are read-only: scripts/packet.py and the work packets it served were removed"
+    },
+    "D01 T01 §4": {
+      "date": "2026-11-13",
+      "by": "owner",
+      "reason": "owner decision 2026-10-22, confirmed in session 2026-11-13: the names stand without a register search; the knockout trademark screen is not pursued and its row is removed so the plan can finish"
+    },
+    "D01 T01 §7": {
+      "date": "2026-11-13",
+      "by": "owner",
+      "reason": "owner decision 2026-10-22, confirmed in session 2026-11-13: no attorney clearance opinion or trademark filing; a conflict is handled if a mark holder raises one"
+    },
+    "D01 T01 §8": {
+      "date": "2026-11-13",
+      "by": "owner",
+      "reason": "owner decision 2026-10-22, confirmed in session 2026-11-13: the repository stays rizonesoft/Office; no rename"
     }
   }
 }

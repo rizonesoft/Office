@@ -15,7 +15,7 @@ title: "TODO-01 -- Suite and App Naming"
 ## Inputs
 
 - Microsoft's published Trademark and Brand Guidelines (read, not linked: the repository holds no Microsoft links) (Word, Excel, PowerPoint, Visio, Outlook, Microsoft 365, Microsoft Office and Office 365 are registered marks and are excluded; "Office" is used only inside "Rizonesoft Office", never alone, never with a Microsoft-style version year, and never with Microsoft's logo styling).
-- USPTO trademark search https://tmsearch.uspto.gov, EUIPO eSearch plus, and WIPO Global Brand Database: the registers for the §4 knockout screen.
+- USPTO trademark search https://tmsearch.uspto.gov, EUIPO eSearch plus, and WIPO Global Brand Database: the registers a knockout screen would search (not pursued: owner, 2026-10-22; the section was removed on 2026-11-13).
 - Nice classes 9 (downloadable software) and 42 (software as a service): the classes every candidate is screened in.
 - -> XREF: D00 T01 §1 -- `scripts/check-design-doc.py` verifies every document this file writes
 - -> XREF: D01 T02 §1 -- the icon language takes the chosen names and the suite motif
@@ -38,12 +38,9 @@ title: "TODO-01 -- Suite and App Naming"
 | 1 | §1 | Naming brief and constraints | D00 T01 §1 | [x] |
 | 2 | §2 | Collision screen for the chosen names | §1 | [x] |
 | 3 | §3 | Owner selection of suite and app names | §2 | [x] |
-| 4 | §4 | Knockout trademark screen | §3 | [ ] |
-| 5 | §5 | Domain, GitHub and package availability | §3 | [x] |
-| 6 | §6 | Apply names across the repository | §5 | [x] |
-| 7 | §7 | Attorney clearance and filing | §4 | [ ] |
-| 8 | §8 | GitHub repository rename | §6 | [ ] |
-| 9 | §9 | Microsoft Store name reservation | §3 | [ ] |
+| 4 | §5 | Domain, GitHub and package availability | §3 | [x] |
+| 5 | §6 | Apply names across the repository | §5 | [x] |
+| 6 | §9 | Microsoft Store name reservation | §3 | [ ] |
 
 ## 1. Naming Brief and Constraints
 
@@ -131,31 +128,6 @@ Decision: Rizonesoft Office, 2026-10-20. House brand Rizonesoft; suite "Rizoneso
 > **Verified:** 2026-10-22 | §3 | 831b35c0536a55845ef4bd1092b854f437fe244c
 > **Review:** `docs/reviews/d01-t01-s3.json`
 
-## 4. Knockout Trademark Screen
-
-A knockout screen catches identical or near-identical live marks in classes 9 and 42 before money is spent on graphics. It is not legal clearance; §7 owns that.
-
-**Corrected 2026-10-22:** Needs said `none`. The USPTO, EUIPO and WIPO searches are interactive web applications with no public search API (a POST to the USPTO search endpoint is refused), so the section needs a browser session: a person at the registers, or the Claude in Chrome extension connected. An unattended run without one takes it as a leftover.
-
-**Owner decision 2026-10-22:** not pursued. The names stand without register searches: the project is open source, and a conflict is handled if a mark holder raises one (the likely worst case is a request to change a name). Parked in Phase 99 so it can be reopened by setting its phase back.
-
-**Phase:** 99
-**Needs:** display-session, owner-decision
-**Owner action:** Confirm the names to screen (`docs/brand/NAMES.md`), then either run the USPTO, EUIPO and WIPO searches for each in classes 9 and 42 or let a session on the desktop run them, and say which verdict (`clear`, `risk`, `blocked`) you accept per name. The results and verdicts go in `docs/brand/naming-clearance.md`, and the session removes `owner-decision`.
-**Surface:** no
-
-**Build order:**
-
-1. Search USPTO, EUIPO and WIPO for the suite name and each app name in classes 9 and 42. Done when: `docs/brand/naming-clearance.md` has one row per name per register with result counts and the search date.
-
-- [ ] Search the USPTO register for each chosen name and record live marks in classes 9 and 42 in `docs/brand/naming-clearance.md`. Done when: each name has a USPTO row with the query string and date. Cheaper substitute: searching the suite name only.
-- [ ] Search EUIPO eSearch plus for each chosen name and record live marks in `docs/brand/naming-clearance.md`. Done when: each name has an EUIPO row. Cheaper substitute: treating the US result as global.
-- [ ] Search the WIPO Global Brand Database for each chosen name and record live marks in `docs/brand/naming-clearance.md`. Done when: each name has a WIPO row. Cheaper substitute: skipping WIPO because the first two were clean.
-- [ ] Write a Verdict line per name in `docs/brand/naming-clearance.md`: `clear`, `risk` (with the conflicting mark) or `blocked`. Done when: no name is left without a verdict, and any `blocked` name returns to §3 as a recorded swap. Cheaper substitute: a single verdict for the whole suite.
-- [ ] Commit: `brand: record knockout trademark screen`
-
-**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require USPTO --require EUIPO --require WIPO --require Verdicts` exits 0.
-
 ## 5. Domain, GitHub and Package Availability
 
 > **Started:** 2026-10-22T01:30:00Z
@@ -207,50 +179,6 @@ Once names are clear, contributor-facing documents stop calling the product "Off
 
 > **Verified:** 2026-10-22 | §6 | 13ad86f30241299507b83fbbb1ed1dfd1ee0e8c8
 > **Review:** `docs/reviews/d01-t01-s6.json`
-
-## 7. Attorney Clearance and Filing
-
-A full clearance opinion and any trademark filing need a trademark attorney and money, so this is operator work. It does not block engineering, but it must close before the first public release.
-
-**Owner decision 2026-10-22:** not pursued. No clearance opinion or filing either: the project is open source, and a conflict is handled if a mark holder raises one (the likely worst case is a request to change a name). It stays in Phase 99, and the release no longer waits on it.
-
-**Phase:** 99
-**Needs:** third-party, owner-decision
-**Owner action:** Engage a trademark attorney for a clearance opinion on each chosen name, and decide the filing (jurisdictions, classes, budget). Tell the session both, or write them under `## Attorney opinion` and `## Filing` in `docs/brand/naming-clearance.md`; the session then removes `owner-decision` and `third-party`.
-**Surface:** no
-
-**Build order:**
-
-1. Send `docs/brand/naming-clearance.md` to a trademark attorney and record the opinion. Done when: `docs/brand/naming-clearance.md` has a `## Attorney opinion` section with date and firm.
-
-- [ ] Record the attorney's opinion per name in `docs/brand/naming-clearance.md` under `## Attorney opinion`. Done when: every chosen name has `proceed`, `proceed with changes` or `do not use`. Cheaper substitute: treating the knockout screen in §4 as clearance.
-- [ ] Record the owner's filing decision (jurisdictions, classes, budget) in `docs/brand/naming-clearance.md` under `## Filing`. Done when: the decision and date are recorded. Cheaper substitute: filing without recording jurisdictions.
-- [ ] Commit: `brand: record attorney clearance and filing decision`
-
-**Test checkpoint:** `python scripts/check-design-doc.py docs/brand/naming-clearance.md --require "Attorney opinion" --require Filing` exits 0.
-
-## 8. GitHub Repository Rename
-
-Renaming `rizonesoft/Office` changes a public URL. GitHub redirects the old URL, but local clones, CI badges and links need updating. The owner performs or approves the rename.
-
-**Owner decision 2026-10-22:** not pursued: the repository stays `rizonesoft/Office`. Parked in Phase 99 so it can be reopened by setting its phase back.
-
-**Phase:** 99
-**Needs:** operator, owner-decision
-**Owner action:** Approve the repository's new name, then run `gh repo rename <name>` yourself or tell the session it may. The session updates `origin` and the repository's own URLs afterwards and removes `operator` and `owner-decision`.
-**Surface:** no
-
-**Build order:**
-
-1. Rename the repository in GitHub settings to the `kebab-case` suite identifier from `docs/brand/NAMES.md`. Done when: `gh repo view --json name` prints the new name.
-2. Update the local remote and every in-repo URL. Done when: `rg -n "Office" --glob "!todo/**"` returns nothing.
-
-- [ ] Rename the repository with `gh repo rename <kebab-case-name>` after owner approval. Done when: `gh repo view --json name` prints the new name. Cheaper substitute: creating a second repository and abandoning history.
-- [ ] Update `origin` with `git remote set-url origin <new url>`. Done when: `git remote -v` shows the new URL and `git fetch` succeeds. Cheaper substitute: relying on GitHub's redirect forever.
-- [ ] Update in-repo URLs (README badges, workflow references) to the new name. Done when: `rg -n "Office" --glob "!todo/**"` returns nothing. Cheaper substitute: leaving stale links to resolve by redirect.
-- [ ] Commit: `brand: update repository URLs after rename`
-
-**Test checkpoint:** `gh repo view --json name,url` prints the new name and `git ls-remote origin HEAD` exits 0.
 
 ## 9. Microsoft Store Name Reservation
 

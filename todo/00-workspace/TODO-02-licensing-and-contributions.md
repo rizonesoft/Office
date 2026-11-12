@@ -101,20 +101,21 @@ GPLv3 for our code does not remove the duties of the components we ship. The Win
 
 The agreement lets Rizonesoft relicense contributions (for example a commercial edition) while contributors keep their copyright. It starts from a Project Harmony template and must be reviewed by a lawyer before it binds anyone.
 
-**Phase:** 99
-**Needs:** third-party, owner-decision
-**Owner action:** Say which governing law the contributor agreements use; once the session has drafted `docs/legal/rizonesoft-cla.md` and `docs/legal/rizonesoft-cla-entity.md`, have a lawyer review both and tell the session the firm and the review date, then approve them. The session records the review under `## Review`, your approval in this section, and removes `owner-decision` and `third-party`.
+**Owner's decision, 2026-11-13 (in session):** use the Project Harmony agreements now, with the templates' own wording kept and only their choices filled in, governed by the law of South Africa; a lawyer's review is a later audit by the owner and no longer holds this section or the pull request check (§4). The section moves from Phase 99 to Phase 0 and waits on no one.
+
+**Phase:** 0
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
 1. Draft `docs/legal/rizonesoft-cla.md` for individuals and `docs/legal/rizonesoft-cla-entity.md` for companies from the Harmony templates. Done when: both drafts name Rizonesoft as the recipient and the outbound licence choice.
-2. Record the lawyer's review and the owner's approval. Done when: both documents carry a `## Review` section with date and reviewer.
+2. Record the owner's approval and the review still owed. Done when: both documents carry a `## Review` section that says who approved the text, when, and that no lawyer has reviewed it yet.
 
 - [ ] Draft the individual agreement in `docs/legal/rizonesoft-cla.md` from the Harmony HA-CLA-I template with the "any licence" outbound option. Done when: the draft names Rizonesoft, the governing law the owner chooses and the outbound option. Cheaper substitute: a home-written agreement with no template.
 - [ ] Draft the entity agreement in `docs/legal/rizonesoft-cla-entity.md` from HA-CLA-E with the same choices. Done when: the draft matches the individual one except for the entity clauses. Cheaper substitute: individual agreement only, which blocks company contributors.
-- [ ] Record the lawyer's review in both files under `## Review` with date and firm. Done when: both files carry the review. Cheaper substitute: publishing an unreviewed agreement.
-- [ ] Record the owner's approval and remove `owner-decision` and `third-party` from this section. Done when: the approval line carries the date. Cheaper substitute: treating the draft as final.
+- [ ] Record in both files under `## Review` that the text is the Harmony template with its choices filled in and nothing reworded, that the owner approved it on 2026-11-13, and that a lawyer's review is still owed as a later audit, with a place for its date and firm. Done when: both files carry the section and a reader can tell the agreement has had no legal review. Cheaper substitute: a `## Review` section that reads as if a lawyer had seen it. **Corrected 2026-11-13:** was the lawyer's review itself, which the owner's decision above makes a later audit.
+- [ ] Record the owner's approval of 2026-11-13 in this section, under the decision above. Done when: the approval line carries the date and names both files as approved in the form committed. **Corrected 2026-11-13:** the Needs were removed with the owner's decision. Cheaper substitute: treating the draft as final.
 - [ ] Link the agreement from the Licence and agreement section of `CONTRIBUTING.md`, replacing its pending-review note. Done when: the link resolves to `docs/legal/rizonesoft-cla.md`. Cheaper substitute: leaving the guide saying the agreement is pending. (Deferred from §5 on 2026-10-21.)
 - [ ] Commit: `legal: add contributor agreements`
 
@@ -124,9 +125,11 @@ The agreement lets Rizonesoft relicense contributions (for example a commercial 
 
 A GitHub check blocks merging until each pull request author has signed. CLA Assistant (a hosted GitHub app) or a self-hosted workflow such as `contributor-assistant/github-action` records signatures in the repository.
 
+**Owner's decision, 2026-11-13 (in session):** the hosted CLA Assistant, on the agreements of §3.
+
 **Phase:** 99
 **Needs:** operator
-**Owner action:** Once the agreements of §3 are approved, choose CLA Assistant (a hosted GitHub app) or the self-hosted `contributor-assistant/github-action`, install it on `rizonesoft/Office`, and mark its check required on `main` in branch protection, or tell the session it may do the last two. The session records the choice in `docs/legal/README.md` and removes `operator`.
+**Owner action:** Once §3 is stamped, sign in at cla-assistant.io with the GitHub account that owns `rizonesoft/Office`, link the repository to the agreement of `docs/legal/rizonesoft-cla.md`, and tell a campaign session it is installed and whether the session may mark its check required on `main`. The session records it in `docs/legal/README.md` and removes `operator`.
 **Surface:** no
 
 **Build order:**

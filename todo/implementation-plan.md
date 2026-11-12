@@ -8,11 +8,11 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 65 | Checklist items: 496
+Sections: 66 | Checklist items: 502
 
 #### Workspace and tooling
 
-Sections: 64 | Checklist items: 488 | Verified: 59
+Sections: 65 | Checklist items: 494 | Verified: 59
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -21,6 +21,7 @@ Sections: 64 | Checklist items: 488 | Verified: 59
 | [x]    | D00 T01 §3  | Continuous Integration Workflow                       | none                   | 7     |
 | [x]    | D00 T02 §1  | SPDX Headers and Checker                              | none                   | 7     |
 | [x]    | D00 T02 §2  | Third-Party Notices File                              | none                   | 3     |
+| [ ]    | D00 T02 §3  | Contributor Agreement Text                            | none                   | 6     |
 | [x]    | D00 T02 §5  | Contributing Guide                                    | none                   | 4     |
 | [x]    | D00 T03 §1  | Automation Runner, Alert and Installer                | none                   | 7     |
 | [x]    | D00 T03 §2  | Run Guard and Stop Hook                               | none                   | 7     |
@@ -60,7 +61,7 @@ Sections: 64 | Checklist items: 488 | Verified: 59
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest            | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool           | none                   | 7     |
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
-| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | owner-decision         | 4     |
+| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | none                   | 4     |
 | [x]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
 | [x]    | D00 T03 §58 | The Plan Lists Sections, Never TODO Files             | none                   | 8     |
 | [x]    | D00 T03 §59 | A Parked Section Is Neither Ready Nor In Progress     | none                   | 8     |
@@ -250,27 +251,23 @@ Sections: 1 | Checklist items: 3
 
 ### Phase 99: Manual, operator only
 
-Sections: 6 | Checklist items: 25
+Sections: 2 | Checklist items: 7
 
 #### Workspace and tooling
 
-Sections: 2 | Checklist items: 10 | Verified: 0
+Sections: 1 | Checklist items: 4 | Verified: 0
 
-| Status | Reference  | Deliverable                    | Needs                       | Items |
-| ------ | ---------- | ------------------------------ | --------------------------- | ----- |
-| [ ]    | D00 T02 §3 | Contributor Agreement Text     | third-party, owner-decision | 6     |
-| [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator                    | 4     |
+| Status | Reference  | Deliverable                    | Needs    | Items |
+| ------ | ---------- | ------------------------------ | -------- | ----- |
+| [ ]    | D00 T02 §4 | Contributor Agreement PR Check | operator | 4     |
 
 #### Brand and icons
 
-Sections: 4 | Checklist items: 15 | Verified: 0
+Sections: 1 | Checklist items: 3 | Verified: 0
 
-| Status | Reference  | Deliverable                      | Needs                           | Items |
-| ------ | ---------- | -------------------------------- | ------------------------------- | ----- |
-| [ ]    | D01 T01 §4 | Knockout Trademark Screen        | display-session, owner-decision | 5     |
-| [ ]    | D01 T01 §7 | Attorney Clearance and Filing    | third-party, owner-decision     | 3     |
-| [ ]    | D01 T01 §8 | GitHub Repository Rename         | operator, owner-decision        | 4     |
-| [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator                        | 3     |
+| Status | Reference  | Deliverable                      | Needs    | Items |
+| ------ | ---------- | -------------------------------- | -------- | ----- |
+| [ ]    | D01 T03 §5 | Upload Social Preview and Avatar | operator | 3     |
 
 ### Not in the plan yet: sections still to be written
 
@@ -291,6 +288,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 89/166 verified sections, 17 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
+Progress: 89/163 verified sections, 19 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 651/1192 items completed (includes Commit items).
+Checklist: 651/1180 items completed (includes Commit items).
