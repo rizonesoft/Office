@@ -79,7 +79,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [x] |
 | 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
-| 44 | §58 | The plan lists sections, never TODO files | -- | [ ] |
+| 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1302,9 +1302,12 @@ Owner, 2026-11-12, in session: the plan file must not reference TODO files; it l
 - [x] Hold the new table to the 120-character row limit with one function that `validate` (`_plan_tables_ok`) and `projection` both call, refusing a row that passes it and naming the section; a long file name is not a reason any more. Done when: a test with a title that fits its phase row but not the new table's row is refused by both, and a tree with a very long file name validates. **Corrected 2026-11-12:** added after the plan review (gap 1, P2); the removal item above keeps only the file-name half.
 - [x] Move every test that pins the old block to the new one: `test_query_stats_counts_the_files_still_to_author`, the domain-grouping tests and the empty-block test, with assertions that the table's counts sum to `len(to_author())`, rows are in plan order, a count drops as a file appears, a section whose files all exist leaves the table, and no block at all is rendered when nothing is missing (neither heading). Done when: those tests pass and fail on the old renderer. **Corrected 2026-11-12:** added after the plan review (gap 2, P2).
 - [x] Bring the documents in line: `todo/README.md` (the plan shows the authoring sections with a count, and which rows are refused), and a dated amendment to decision 26 of `docs/specs/2026-10-23-campaign-scope-design.md`, which required listing each TODO file. Done when: neither document promises a file table. **Corrected 2026-11-12:** added after the plan review (gap 3, P3).
-- [ ] Commit: `todo: the plan lists the sections still to be written, never TODO files`
+- [x] Commit: `todo: the plan lists the sections still to be written, never TODO files`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new block's tests among them, and `python scripts/todo-graph.py plan --check` passes.
+
+> **Verified:** 2026-11-12 | §58 | 737719c64d9f7b0b12f2c653b97521a20e950694
+> **Review:** `docs/reviews/d00-t03-s58.json`
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.

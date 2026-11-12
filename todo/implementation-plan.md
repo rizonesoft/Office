@@ -58,7 +58,7 @@ Sections: 60 | Checklist items: 440
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
 | [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | owner-decision         | 4     |
 | [x]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
-| [ ]    | D00 T03 §58 | The Plan Lists Sections, Never TODO Files             | none                   | 8     |
+| [x]    | D00 T03 §58 | The Plan Lists Sections, Never TODO Files             | none                   | 8     |
 | [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                   | none                   | 19    |
 | [x]    | D00 T04 §2  | Tool Folder Resolver                                  | none                   | 10    |
 | [x]    | D00 T04 §3  | Tool Bootstrap in CI                                  | none                   | 6     |
@@ -257,6 +257,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 80/161 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 81/161 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 565/1082 items completed (includes Commit items).
+Checklist: 566/1082 items completed (includes Commit items).

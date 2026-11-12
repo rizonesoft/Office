@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T03 \u00a758",
+  "title": "The Plan Lists Sections, Never TODO Files",
+  "implementation_sha": "737719c64d9f7b0b12f2c653b97521a20e950694",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s58.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_todo_graph.py\" -> Ran 86 tests, OK (the migrated tests fail on the old renderer)",
+    "python scripts/todo-graph.py validate and plan --check -> valid: 161 sections, plan current; the plan holds no TODO file path"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s58.md",
+    "verdict": "complete",
+    "candidate": "737719c64d9f7b0b12f2c653b97521a20e950694",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s58.md",
+    "candidate": "1a0e09c27d88dd6ec55bdb71ae09eae79f7722c7",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "1a0e09c27d88dd6ec55bdb71ae09eae79f7722c7",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
