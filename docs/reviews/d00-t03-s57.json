@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T03 \u00a757",
+  "title": "Completion Reviews Leave the Commit Item to the Stamp",
+  "implementation_sha": "c7154cf8dbfc681c5979925b59ee4c61358662a2",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s57.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_review_prompt.py\" -> Ran 29 tests, OK (CommitItem fails with the sentence removed from either template)",
+    "python scripts/check-design-doc.py docs/completion-review-prompt.md and docs/reconciliation-review-prompt.md -> exit 0",
+    "bosun run -- python scripts/run-tests.py (at 48bdd69, the only later change being these two templates and this test) -> Ran 1458 tests in 37 files, 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s57.md",
+    "verdict": "complete",
+    "candidate": "c7154cf8dbfc681c5979925b59ee4c61358662a2",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s57.md",
+    "candidate": "2eac9c7cae09bbca7f6921857a7b01658bdcada5",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "2eac9c7cae09bbca7f6921857a7b01658bdcada5",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

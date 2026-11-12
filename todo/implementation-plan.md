@@ -57,7 +57,7 @@ Sections: 59 | Checklist items: 421
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool           | none                   | 7     |
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
 | [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | owner-decision         | 4     |
-| [ ]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
+| [x]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
 | [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                   | none                   | 19    |
 | [x]    | D00 T04 §2  | Tool Folder Resolver                                  | none                   | 10    |
 | [x]    | D00 T04 §3  | Tool Bootstrap in CI                                  | none                   | 6     |
@@ -385,6 +385,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 76/160 verified sections, 23 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 77/160 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 536/1063 items completed (includes Commit items).
+Checklist: 537/1063 items completed (includes Commit items).
