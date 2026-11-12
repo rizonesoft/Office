@@ -16,6 +16,20 @@
       "timeout_minutes": 5
     },
     {
+      "name": "office-owner-digest-retry",
+      "description": "Send again an owner digest that did not go out, at most four times a day (scripts/owner-digest.py --retry)",
+      "command": [
+        "python",
+        "scripts/owner-digest.py",
+        "--retry"
+      ],
+      "trigger": {
+        "at_logon_delay_minutes": 5,
+        "every_minutes": 360
+      },
+      "timeout_minutes": 5
+    },
+    {
       "name": "office-visual-studio",
       "description": "Email once when this machine's Visual Studio 2026 is behind its latest servicing release",
       "command": [

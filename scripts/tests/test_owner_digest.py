@@ -454,7 +454,7 @@ class Send(Tree):
 
     activity = None  # SMTP2GO's activity log as the fake serves it: a list of events, or an exception to raise
 
-    def run_main(self, argv, opener=None, attach=False):
+    def run_main(self, argv, opener=None, attach=False, today=TODAY):
         requests = []
         self.searches = getattr(self, "searches", [])
 
@@ -480,11 +480,11 @@ class Send(Tree):
                 if attach:
                     real = digest.compose
                     with mock.patch.object(digest, "compose",
-                                           side_effect=lambda *a: (*real(*a)[:2],
+                                           side_effect=lambda *a, **kw: (*real(*a, **kw)[:2],
                                                                    [("waiting-on-you.txt", "the whole list\n")])):
-                        code = digest.main(argv, root=self.root, today=TODAY, opener=opener or capture)
+                        code = digest.main(argv, root=self.root, today=today, opener=opener or capture)
                 else:
-                    code = digest.main(argv, root=self.root, today=TODAY, opener=opener or capture)
+                    code = digest.main(argv, root=self.root, today=today, opener=opener or capture)
         return code, out.getvalue(), requests
 
     def test_dry_run_prints_the_email_and_sends_nothing(self):
@@ -513,6 +513,287 @@ class Send(Tree):
             return self.Response(json.dumps({"data": {"succeeded": 0, "failed": 1}}).encode())
         code, _, _ = self.run_main([], opener=refuse)
         self.assertEqual(code, 1)
+
+
+class Delivery(Send):
+    """D00 T07 §3: the digest's delivery record, the retry, and the lock."""
+
+    mode = "ok"  # what the fake does with a send: ok, refuse, http-error, unresolved, refused-connection, reset
+
+    def setUp(self):
+        super().setUp()
+        self.sends = []
+        self.activity = []
+
+    def opener(self, request, timeout=None):
+        import socket
+        import urllib.error
+        if request.full_url.endswith("/activity/search"):
+            if isinstance(self.activity, Exception):
+                raise self.activity
+            return self.Response(json.dumps({"data": {"events": self.activity}}).encode())
+        message = json.loads(request.data.decode())
+        mode = self.mode
+        if mode == "unresolved":
+            raise urllib.error.URLError(socket.gaierror(11001, "getaddrinfo failed"))
+        if mode == "refused-connection":
+            raise urllib.error.URLError(ConnectionRefusedError(10061, "refused"))
+        if mode == "http-error":
+            raise urllib.error.HTTPError(request.full_url, 503, "busy", {}, None)
+        self.sends.append(message)  # the request reached SMTP2GO
+        if mode == "reset":  # accepted, then the connection drops before the answer
+            raise ConnectionResetError(10054, "reset by peer")
+        if mode == "timeout":
+            raise TimeoutError("timed out")
+        if mode == "refuse":
+            return self.Response(json.dumps({"data": {"succeeded": 0, "failed": 1}}).encode())
+        return self.Response(json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "e1"}}).encode())
+
+    def go(self, *argv, today=TODAY):
+        code, out, _ = self.run_main(list(argv), opener=self.opener, today=today)
+        return code, out
+
+    def state(self):
+        return json.loads((self.root / "build/automations/owner-digest.json").read_text(encoding="utf-8"))
+
+    def put(self, state):
+        path = self.root / "build/automations/owner-digest.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        full = {"delivered": None, "attempt": None, "open": [], "missed_from": None, "tries": {}, "due": False}
+        full.update(state)
+        path.write_text(json.dumps(full), encoding="utf-8")
+
+    def ago(self, **delta):
+        moment = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(**delta)
+        return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def attempt(self, stage, age, start="2026-11-09", end="2026-11-16", subject="Office weekly: x (abcd1234)"):
+        return {"token": "abcd1234", "subject": subject, "start": start, "end": end, "at": self.ago(**age),
+                "stage": stage}
+
+    def since_line(self, message):
+        return re.search(r"Verified since (\d{4}-\d\d-\d\d)|Nothing was verified since (\d{4}-\d\d-\d\d)",
+                         message["text_body"]).group(0)
+
+    # Gap 1: only a refusal or a failure before sending is definite.
+
+    def test_a_dropped_connection_after_the_request_is_unsure_and_never_resent(self):
+        self.mode = "reset"
+        self.assertEqual(self.go()[0], 1)
+        self.assertEqual(self.state()["attempt"]["stage"], "unsure")
+        self.assertEqual(len(self.sends), 1)
+        self.mode = "ok"
+        self.assertEqual(self.go("--retry")[0], 0)
+        self.assertEqual(len(self.sends), 1, "an unsure period was sent again")
+        self.assertEqual(self.state()["attempt"]["stage"], "unsure")
+
+    def test_each_definite_failure_is_failed_and_each_other_error_unsure(self):
+        for mode, stage in (("refuse", "failed"), ("http-error", "failed"), ("unresolved", "failed"),
+                            ("refused-connection", "failed"), ("reset", "unsure"), ("timeout", "unsure")):
+            with self.subTest(mode):
+                (self.root / "build/automations/owner-digest.json").unlink(missing_ok=True)
+                self.mode = mode
+                self.assertEqual(self.go()[0], 1)
+                self.assertEqual(self.state()["attempt"]["stage"], stage)
+
+    # Gap 2: the attempt is recorded before the send; an interruption is settled by the log.
+
+    def test_a_pre_send_record_that_cannot_be_written_sends_nothing(self):
+        with mock.patch.object(digest.digest_state, "save", side_effect=OSError(28, "disk full")):
+            code, out = self.go()
+        self.assertEqual(code, 1)
+        self.assertEqual(self.sends, [])
+
+    def test_a_kill_after_the_send_is_settled_by_the_log_with_no_second_send(self):
+        for notices in (0, 1):
+            with self.subTest(notices=notices):
+                (self.root / "build/automations/owner-digest.json").unlink(missing_ok=True)
+                self.sends.clear()
+                if notices:
+                    Notices.queue(self, 1)
+                real = digest.digest_state.save
+                calls = []
+
+                def second_fails(root, state):
+                    calls.append(1)
+                    if len(calls) == 2:  # the write after the send: as if the process died there
+                        raise OSError(5, "killed")
+                    return real(root, state)
+                with mock.patch.object(digest.digest_state, "save", side_effect=second_fails):
+                    self.go()
+                self.assertEqual(self.state()["attempt"]["stage"], "sending")
+                self.activity = [{"event": "delivered", "email_id": "e1", "subject": self.sends[0]["subject"]}]
+                self.assertEqual(self.go("--retry")[0], 0)
+                self.assertEqual(len(self.sends), 1)
+                self.assertIsNone(self.state()["attempt"])
+                self.assertTrue(self.state()["delivered"]["confirmed"])
+
+    # Gap 3: every log outcome, by the rules of D00 T03 §53.
+
+    def test_each_log_outcome_settles_as_the_rules_say(self):
+        subject = "Office weekly: x (abcd1234)"
+        cases = [  # (events or exception, age, stage after, sent again by the retry)
+            ([{"event": "delivered", "email_id": "e", "subject": subject}], {"hours": 2}, None, False),
+            ([{"event": "hard-bounced", "email_id": "e", "subject": subject}], {"hours": 2}, "sent", True),
+            ([], {"minutes": 5}, "unsure", False),
+            ([], {"hours": 2}, "sent", True),
+            ([{"event": "processed", "email_id": "e", "subject": subject}], {"hours": 2}, "unsure", False),
+            (OSError("down"), {"hours": 2}, "unsure", False),
+            (OSError("history gone"), {"days": 6}, None, False),
+        ]
+        for events, age, stage, resent in cases:
+            with self.subTest(events=str(events)[:40], age=age):
+                self.sends.clear()
+                self.put({"attempt": self.attempt("unsure", age, subject=subject)})
+                self.activity = events
+                self.assertEqual(self.go("--retry")[0], 0)
+                self.assertEqual(bool(self.sends), resent)
+                now = self.state()["attempt"]
+                if stage is None:
+                    self.assertIsNone(now)
+                elif stage == "sent":  # failed, so the retry sent its period again, and that one was delivered
+                    self.assertIsNone(now)
+                    self.assertNotEqual(self.state()["delivered"]["token"], "abcd1234")
+                    self.assertEqual(self.state()["delivered"]["start"], "2026-11-09")
+                else:
+                    self.assertEqual(now["stage"], stage)
+        self.assertFalse(self.state()["delivered"]["confirmed"])  # the expired one is counted, unconfirmed
+
+    def test_an_expired_attempt_is_named_in_the_next_digest(self):
+        self.put({"attempt": self.attempt("unsure", {"days": 6})})
+        self.activity = OSError("history gone")
+        self.go()
+        self.assertIn("could not be confirmed delivered", " ".join(self.sends[-1]["text_body"].split()))
+
+    # Gap 4: one digest run at a time.
+
+    def test_a_run_finding_the_lock_held_sends_nothing(self):
+        lock = digest.digest_state.Lock(self.root)
+        self.assertTrue(lock.acquire())
+        try:
+            code, out = self.go()
+        finally:
+            lock.release()
+        self.assertEqual((code, self.sends), (0, []))
+        self.assertIn("another digest run holds the lock", out)
+        self.assertEqual(self.go()[0], 0)
+        self.assertEqual(len(self.sends), 1)
+
+    def test_a_weekly_run_and_a_retry_together_send_once(self):
+        import threading
+        self.mode = "refuse"
+        self.go()  # a failed digest, so both runs below would send
+        self.mode = "ok"
+        self.sends.clear()
+        started = threading.Barrier(2)
+        codes = []
+        real_load = digest.digest_state.load
+
+        def slow_load(root):
+            state = real_load(root)
+            import time as _time
+            _time.sleep(0.5)  # hold the lock long enough for the other run to meet it
+            return state
+
+        def run(argv):
+            started.wait()
+            codes.append(digest.main(argv, root=self.root, today=TODAY, opener=self.opener))
+        with mock.patch.object(digest, "ci_state", return_value=["CI: green."]), \
+                mock.patch.object(digest, "run_state", return_value="Running"), \
+                mock.patch.object(digest.digest_state, "load", side_effect=slow_load), redirect_stdout(io.StringIO()):
+            alert = digest.load_alert(self.root)
+            with mock.patch.object(digest, "load_alert", return_value=alert), \
+                    mock.patch.object(alert, "key", return_value="k"):
+                threads = [threading.Thread(target=run, args=(a,)) for a in ([], ["--retry"])]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join(30)
+        self.assertEqual(len(self.sends), 1)
+        self.assertEqual(sorted(codes), [0, 0])
+
+    # Gap 5: the period.
+
+    def test_the_first_period_and_its_start_through_two_failures(self):
+        self.mode = "refuse"
+        self.go()
+        self.go(today=TODAY + datetime.timedelta(days=1))
+        self.mode = "ok"
+        self.go("--retry", today=TODAY + datetime.timedelta(days=2))
+        first = (TODAY - datetime.timedelta(days=7)).isoformat()
+        self.assertTrue(all(f"since {first}" in self.since_line(m) for m in self.sends), [self.since_line(m) for m in self.sends])
+        self.assertEqual(self.state()["delivered"]["start"], first)
+
+    def test_after_a_delivery_the_next_week_starts_on_its_last_day(self):
+        self.go()
+        next_week = TODAY + datetime.timedelta(days=7)
+        self.go(today=next_week)
+        self.assertIn(f"since {TODAY.isoformat()}", self.since_line(self.sends[1]))
+
+    def test_a_section_stamped_on_the_boundary_day_is_reported(self):
+        rows = {}
+        found = digest.verified_since(self.root, rows, TODAY, since=TODAY)
+        self.assertEqual(found, [])
+        with mock.patch.object(digest, "verified_since", wraps=digest.verified_since) as spy:
+            self.go()
+        self.assertEqual(spy.call_args[0][3], TODAY - datetime.timedelta(days=7))
+
+    def test_an_unsure_period_is_not_sent_again_and_a_missed_one_is(self):
+        self.put({"attempt": self.attempt("unsure", {"minutes": 5}, start="2026-11-02", end="2026-11-09")})
+        self.activity = []
+        self.go()  # the weekly run: the unsure attempt is set aside, the digest starts after it
+        self.assertIn("since 2026-11-09", self.since_line(self.sends[0]))
+        self.assertEqual(len(self.state()["open"]), 1)
+        state = self.state()
+        state["open"][0]["at"] = self.ago(hours=3)  # the log still shows nothing, now past the lag
+        self.put(state)
+        self.go("--retry", today=TODAY + datetime.timedelta(days=1))
+        self.assertEqual(self.state()["open"], [])
+        self.assertIn("since 2026-11-02", self.since_line(self.sends[-1]))  # reached back to the missed period
+        self.assertIsNone(self.state()["missed_from"])
+
+    def test_a_missing_state_is_a_first_run_and_a_broken_one_sends_nothing(self):
+        self.assertEqual(self.go()[0], 0)
+        path = self.root / "build/automations/owner-digest.json"
+        for broken in ("{not json", json.dumps({"delivered": None})):
+            with self.subTest(broken[:12]):
+                path.write_text(broken, encoding="utf-8")
+                self.sends.clear()
+                self.assertEqual(self.go()[0], 2)
+                self.assertEqual(self.sends, [])
+        path.unlink()
+        path.mkdir()  # unreadable: a folder where the file should be
+        self.assertEqual(self.go()[0], 2)
+        self.assertEqual(self.sends, [])
+
+    # Gap 6: the retry limit, its persistence, the next day, and the trigger.
+
+    def test_four_sends_a_day_and_the_fifth_waits_for_tomorrow(self):
+        self.mode = "refuse"
+        for _ in range(4):
+            self.go("--retry") if self.sends else self.go()
+        self.assertEqual(len(self.sends), 4)
+        code, out = self.go("--retry")  # a fresh process reads the count from the file
+        self.assertEqual((code, len(self.sends)), (0, 4))
+        self.assertIn("4 sends today already", out)
+        self.go("--retry", today=TODAY + datetime.timedelta(days=1))
+        self.assertEqual(len(self.sends), 5)
+
+    def test_a_retry_with_nothing_failed_sends_and_changes_nothing(self):
+        self.go()
+        path = self.root / "build/automations/owner-digest.json"
+        before = path.read_bytes()
+        self.assertEqual(self.go("--retry")[0], 0)
+        self.assertEqual(len(self.sends), 1)
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_the_retry_task_is_the_logon_trigger_every_six_hours(self):
+        spec = importlib.util.spec_from_file_location("run_for_digest", REPO / ".conclave/automations/run.py")
+        run = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(run)
+        task = run.load_tasks(str(REPO / ".conclave/automations/tasks.json"))["office-owner-digest-retry"]
+        self.assertEqual(task["trigger"], {"at_logon_delay_minutes": 5, "every_minutes": 360})
+        self.assertEqual(task["command"], ["python", "scripts/owner-digest.py", "--retry"])
 
 
 class Notices(Send):
@@ -615,6 +896,14 @@ class Notices(Send):
                 at = datetime.datetime.strptime(notice["claimed"]["at"], "%Y-%m-%dT%H:%M:%SZ")
                 notice["claimed"]["at"] = (at - datetime.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
         path.write_text("".join(json.dumps(n) + "\n" for n in notices), encoding="utf-8")
+        # The digest's own attempt record is the same fact (D00 T07 §3): that digest ran `hours` ago.
+        state_path = self.root / "build/automations/owner-digest.json"
+        if state_path.exists():
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            if state.get("attempt"):
+                at = datetime.datetime.strptime(state["attempt"]["at"], "%Y-%m-%dT%H:%M:%SZ")
+                state["attempt"]["at"] = (at - datetime.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                state_path.write_text(json.dumps(state), encoding="utf-8")
 
     def assert_sent_again_in_full(self, ids, request, queue):
         self.assertIn("Notices since the last digest (1):", request["text_body"])

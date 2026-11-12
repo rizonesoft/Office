@@ -40,6 +40,7 @@ import uuid
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import todo_graph  # noqa: E402  (the library sits beside this script, not on the path)
+import digest_state  # noqa: E402  (beside it too: the digest's delivery record, D00 T07 §3)
 sys.path.insert(0, str(ROOT / "scripts"))
 import campaign_guard  # noqa: E402  (beside this script: the run guard's own reader decides whether a run lives)
 
@@ -132,12 +133,13 @@ def totals(rows, root):
             "to_author": len(todo_graph.to_author(root, rows))}
 
 
-def verified_since(root, rows, today):
-    """(ref, title) of each section whose receipt is dated in the last WINDOW_DAYS days, newest first."""
+def verified_since(root, rows, today, since=None):
+    """(ref, title, date) of each section whose receipt is dated from `since` (inclusive; WINDOW_DAYS before today
+    when not given) to today, newest first."""
     # From the same weekday a week ago, inclusive: a receipt records only its day, so a section stamped on a Monday
     # after that Monday's digest is in the next one. A Monday stamp before the digest can show twice, never not at all
     # (D00 T03 §35 review round 3; D00 T07 §3 reports exact periods from the last delivered digest).
-    since = today - datetime.timedelta(days=WINDOW_DAYS)
+    since = since or today - datetime.timedelta(days=WINDOW_DAYS)
     found = []
     for row in rows.values():
         if not row.done or not row.receipt:
@@ -319,12 +321,13 @@ def fit(head, blocks, room, noun, attachment):
     return shown, False
 
 
-def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=()):
+def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=(), since=None, previous=""):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
     items = waiting(rows)
-    built = verified_since(root, rows, today)
+    since_day = since or today - datetime.timedelta(days=WINDOW_DAYS)
+    built = verified_since(root, rows, today, since_day)
     # Every text that came from outside this script is cleared of paths first, then wrapped and counted, so a path
     # is never split across lines and a placeholder never pushes a line past WIDTH (D00 T03 §35 review round 6).
     state, ci_lines = without_paths(state, root), [without_paths(line, root) for line in ci_lines]
@@ -332,12 +335,12 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
             *[part for line in ci_lines for part in wrap(line.strip(), "  " if line.startswith("  ") else "")],
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
                   f"{count['blocked']} blocked; {count['to_author']} TODO files still "
-                  f"to author."), ""]
+                  f"to author."), *(wrap(without_paths(previous, root)) if previous else []), ""]
     # Each list is a header and whole items (an item is every wrapped line of one entry), so a cut never splits an
     # entry and its count is of items, never lines (D00 T07 §2).
     waiting_blocks = [item_lines(item, root) for item in items]
     waiting_head = f"Waiting on you ({len(items)}):" if items else "Nothing is waiting on you."
-    since = (today - datetime.timedelta(days=WINDOW_DAYS)).isoformat()
+    since = since_day.isoformat()
     progress_blocks = [wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})") for ref, title, stamped in built]
     progress_head = f"Verified since {since} ({len(built)}):" if built else f"Nothing was verified since {since}."
     notice_lines, notice_file = notices_part(notices, root)
@@ -386,9 +389,11 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
     return subject, "\n".join(body) + "\n", attachments
 
 
-def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, sent=None):
+def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, sent=None, now=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")
+    parser.add_argument("--retry", action="store_true",
+                        help="send again a digest that did not go out (the retry task); nothing else to do exits 0")
     args = parser.parse_args(argv)
     try:
         rows = todo_graph.graph(root)
@@ -397,31 +402,97 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
         return 2
     today = today or datetime.date.today()
     alert = load_alert(root)
-    # The batch is captured here, before the email is composed, and claimed before it is sent: only these are marked
-    # reported, once the send succeeded, so a notice recorded meanwhile, a dry run and a refused send leave notices
-    # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
-    try:
-        if not args.dry_run:
-            # A claim no digest confirmed: SMTP2GO's log says whether that digest went out. Sent, it is marked; not
-            # sent, or the log cannot be read, it is sent again, marked as a possible repeat (D00 T03 §53).
-            def asked(subject, since):  # the same opener as the send, so a test's fake answers both
-                return alert.delivery(alert.key(), subject, since, opener or alert.urllib.request.urlopen)
-            settled = alert.settle_claims(str(root), sent or asked)
-            if any(settled.values()):
-                print(f"earlier claims: {settled['confirmed']} confirmed sent, {settled['released']} not sent, "
-                      f"{settled['kept']} kept to ask again, {settled['expired']} past the log (named, not sent again)")
-        batch = alert.pending_notices(str(root)) + (alert.claimed_notices(str(root)) if args.dry_run else [])
-        unconfirmed = alert.unconfirmed_notices(str(root))
-    except alert.Refused as error:
-        batch, unconfirmed = str(error), []
-    digest_id = uuid.uuid4().hex
-    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
-                                         digest_id[:8], unconfirmed)
     if args.dry_run:
+        try:
+            since = digest_state.period_start(digest_state.load(root), today)
+        except digest_state.StateError:
+            since = None
+        try:
+            batch = alert.pending_notices(str(root)) + alert.claimed_notices(str(root))
+            unconfirmed = alert.unconfirmed_notices(str(root))
+        except alert.Refused as error:
+            batch, unconfirmed = str(error), []
+        subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
+                                             uuid.uuid4().hex[:8], unconfirmed, since=since)
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
             print(f"\n--- attachment {name} ---\n{text}", end="")
         return 0
+    # One digest run at a time: the weekly run and the retry share this lock, and a run that finds it held sends
+    # nothing (D00 T07 §3).
+    lock = digest_state.Lock(root)
+    if not lock.acquire():
+        print("owner-digest: another digest run holds the lock; nothing sent")
+        return 0
+    try:
+        return deliver(args, root, rows, today, alert, opener, runner, sent,
+                       now or datetime.datetime.now(datetime.timezone.utc))
+    finally:
+        lock.release()
+
+
+def deliver(args, root, rows, today, alert, opener, runner, sent, now):
+    """Under the lock: settle the attempt in flight, then send the digest when one is due, recording the attempt
+    before the send and the delivery after it (D00 T07 §3)."""
+    try:
+        state = digest_state.load(root)
+    except digest_state.StateError as error:
+        print(f"owner-digest: the delivery record is broken, so nothing is sent: {error}", file=sys.stderr)
+        return 2
+
+    def asked(subject, since):  # the same opener as the send, so a test's fake answers both
+        return alert.delivery(alert.key(), subject, since, opener or alert.urllib.request.urlopen)
+    ask = sent or asked
+
+    def stored():
+        try:
+            digest_state.save(root, state)
+            return True
+        except OSError as error:
+            print(f"owner-digest: the delivery record cannot be written: {error}", file=sys.stderr)
+            return False
+    settled = digest_state.settle(state, ask, now, alert.YOUNG_MINUTES, alert.SETTLE_DAYS, alert.Refused)
+    for line in settled:
+        print(f"owner-digest: {line}")
+    if settled and not stored():
+        return 1
+    attempt = state["attempt"]
+    unsettled = bool(attempt and attempt["stage"] in ("sending", "unsure"))
+    owed = bool(attempt and attempt["stage"] == "failed") or bool(state["missed_from"]) or state["due"]
+    if args.retry and not owed:
+        # Nothing failed: a delivered digest, or one still being settled (its period is never sent again; the log
+        # decides it at the next run). Nothing is sent and nothing changed.
+        return 0
+    if unsettled:
+        digest_state.supersede(state)  # the weekly digest goes out; the unsettled one is settled on its own
+    if digest_state.tries_today(state, today) >= digest_state.MAX_TRIES:
+        if not args.retry and not state["due"]:
+            state["due"] = True
+            stored()
+        print(f"owner-digest: {digest_state.MAX_TRIES} sends today already; the retry sends it tomorrow")
+        return 0
+    # The batch is captured here, before the email is composed, and claimed before it is sent: only these are marked
+    # reported, once the send succeeded, so a notice recorded meanwhile, a dry run and a refused send leave notices
+    # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
+    try:
+        # A claim no digest confirmed: SMTP2GO's log says whether that digest went out. Sent, it is marked; not
+        # sent, or the log cannot be read, it is sent again, marked as a possible repeat (D00 T03 §53).
+        claims = alert.settle_claims(str(root), ask)
+        if any(claims.values()):
+            print(f"earlier claims: {claims['confirmed']} confirmed sent, {claims['released']} not sent, "
+                  f"{claims['kept']} kept to ask again, {claims['expired']} past the log (named, not sent again)")
+        batch = alert.pending_notices(str(root))
+        unconfirmed = alert.unconfirmed_notices(str(root))
+    except alert.Refused as error:
+        batch, unconfirmed = str(error), []
+    since = digest_state.period_start(state, today)
+    last = state["delivered"]
+    previous = ("" if not last or last.get("confirmed", True) else
+                f"The digest of {last['at'][:10]} could not be confirmed delivered: SMTP2GO no longer holds its "
+                f"record, so it may not have reached you. This one starts where it ended.")
+    digest_id = uuid.uuid4().hex
+    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
+                                         digest_id[:8], unconfirmed, since=since, previous=previous)
     ids = ([n["id"] for n in batch] if isinstance(batch, list) else []) + [n["id"] for n in unconfirmed]
     if ids:
         try:
@@ -429,30 +500,46 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
         except alert.Refused as error:  # the queue cannot be written, so the batch could never be marked: not sent
             print(f"owner-digest not sent: the notices cannot be claimed: {error}", file=sys.stderr)
             return 1
+    # Recorded before the send: a run killed after it leaves `sending`, which the next run settles by the log.
+    state["attempt"] = {"token": digest_id[:8], "subject": subject, "start": since.isoformat(),
+                        "end": today.isoformat(), "at": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "stage": "sending"}
+    state["due"] = False
+    digest_state.count_try(state, today)
+    if not stored():
+        if ids:
+            release(alert, digest_id, root)
+        print("owner-digest not sent: the attempt could not be recorded first", file=sys.stderr)
+        return 1
     try:
         kwargs = {"attachments": attachments} if attachments else {}
         email_id = alert.send(alert.key(), subject, body, opener or alert.urllib.request.urlopen, **kwargs)
     except (alert.Refused, OSError, ValueError) as error:
-        print(f"owner-digest not sent: {error}", file=sys.stderr)
-        if ids:
-            try:
-                alert.release_claim(digest_id, str(root))
-            except alert.Refused as release:  # they stay claimed; the next digest releases and sends them
-                print(f"owner-digest: the notices stay claimed until the next digest: {release}", file=sys.stderr)
+        if digest_state.definite(error, alert.Refused):
+            state["attempt"]["stage"] = "failed"
+            print(f"owner-digest not sent: {error}; the retry sends it again", file=sys.stderr)
+            if ids:
+                release(alert, digest_id, root)
+        else:  # it may have gone out: SMTP2GO's log settles it, and its notices stay claimed for §53's settlement
+            state["attempt"]["stage"] = "unsure"
+            print(f"owner-digest: the send may have gone out ({type(error).__name__}: {error}); SMTP2GO's log "
+                  f"settles it before anything is sent again", file=sys.stderr)
+        stored()
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
+    digest_state.deliver(state, email_id or "", True, state["attempt"]["at"])
+    stored()  # a failed write leaves `sending`, which the next run settles by the log: never a second send
     if ids:
         try:  # first the proof of delivery, in a second store, so a mark that fails cannot cause a repeat
             alert.record_sent(digest_id, email_id or "")
         except OSError as error:
             print(f"owner-digest: the delivery evidence could not be written: {error}", file=sys.stderr)
         try:
-            for attempt in range(MARK_TRIES):  # a transient refusal (a lock, a scanner holding the file) passes
+            for attempt_no in range(MARK_TRIES):  # a transient refusal (a lock, a scanner holding the file) passes
                 try:
                     marked = alert.mark_reported(ids, str(root))
                     break
                 except alert.Refused:
-                    if attempt == MARK_TRIES - 1:
+                    if attempt_no == MARK_TRIES - 1:
                         raise
                     time.sleep(MARK_PAUSE)
             alert.clear_sent(digest_id)
@@ -462,6 +549,13 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
                   f"possible repeats: {error}", file=sys.stderr)
             return 1
     return 0
+
+
+def release(alert, digest_id, root):
+    try:
+        alert.release_claim(digest_id, str(root))
+    except alert.Refused as error:  # they stay claimed; the next digest releases and sends them
+        print(f"owner-digest: the notices stay claimed until the next digest: {error}", file=sys.stderr)
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
