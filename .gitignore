@@ -5,3 +5,4 @@ scratch/
 Thumbs.db
 build/
 .secrets/
+.tools/

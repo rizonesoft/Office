@@ -1,0 +1,186 @@
+{
+  "cmake": {
+    "version": "4.4.5",
+    "archives": {
+      "x64": {
+        "url": "https://github.com/Kitware/CMake/releases/download/v4.4.5/cmake-4.4.5-windows-x86_64.zip",
+        "sha256": "326c826486d46a23cf9d5a1c9ee3a567d427bdd02c4a34071937a2a675cff004",
+        "size": 54412232,
+        "format": "zip",
+        "keep": [
+          "cmake-4.4.5-windows-x86_64/bin",
+          "cmake-4.4.5-windows-x86_64/share"
+        ],
+        "bin": [
+          "cmake-4.4.5-windows-x86_64/bin"
+        ]
+      },
+      "arm64": {
+        "url": "https://github.com/Kitware/CMake/releases/download/v4.4.5/cmake-4.4.5-windows-arm64.zip",
+        "sha256": "b0b54ebdd3e7b9f5ad733d865541d6e0a3b774182e4318b26890221432835359",
+        "size": 52564319,
+        "format": "zip",
+        "keep": [
+          "cmake-4.4.5-windows-arm64/bin",
+          "cmake-4.4.5-windows-arm64/share"
+        ],
+        "bin": [
+          "cmake-4.4.5-windows-arm64/bin"
+        ]
+      }
+    }
+  },
+  "ninja": {
+    "version": "1.13.2",
+    "note": "Ninja publishes no checksum; the hash is the downloaded file's, equal to the digest GitHub reports.",
+    "archives": {
+      "x64": {
+        "url": "https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-win.zip",
+        "sha256": "07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65",
+        "size": 291570,
+        "format": "zip",
+        "keep": [
+          "ninja.exe"
+        ],
+        "bin": [
+          "."
+        ]
+      },
+      "arm64": {
+        "url": "https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-winarm64.zip",
+        "sha256": "e52f0bdef9dfb1003229dbd6508a508c4073fd017247002adc66e5e806cb0391",
+        "size": 270354,
+        "format": "zip",
+        "keep": [
+          "ninja.exe"
+        ],
+        "bin": [
+          "."
+        ]
+      }
+    }
+  },
+  "sccache": {
+    "version": "0.19.0",
+    "archives": {
+      "x64": {
+        "url": "https://github.com/mozilla/sccache/releases/download/v0.19.0/sccache-v0.19.0-x86_64-pc-windows-msvc.zip",
+        "sha256": "28be8c61f6b2c89b9eb2869f6af7f78e6f992e78a8abae0ce855fcc129cbeac1",
+        "size": 9830245,
+        "format": "zip",
+        "keep": [
+          "sccache-v0.19.0-x86_64-pc-windows-msvc/sccache.exe"
+        ],
+        "bin": [
+          "sccache-v0.19.0-x86_64-pc-windows-msvc"
+        ]
+      },
+      "arm64": {
+        "url": "https://github.com/mozilla/sccache/releases/download/v0.19.0/sccache-v0.19.0-aarch64-pc-windows-msvc.zip",
+        "sha256": "66d20f1ea5e29f4f309136323635b864e1d8f0a8b587abbc22271bc22d439a5a",
+        "size": 9349244,
+        "format": "zip",
+        "keep": [
+          "sccache-v0.19.0-aarch64-pc-windows-msvc/sccache.exe"
+        ],
+        "bin": [
+          "sccache-v0.19.0-aarch64-pc-windows-msvc"
+        ]
+      }
+    }
+  },
+  "vcpkg-registry": {
+    "version": "2026.10.16",
+    "note": "The registry publishes no release asset: GitHub's source zip of the tag, the same for both architectures.",
+    "archives": {
+      "x64": {
+        "url": "https://codeload.github.com/microsoft/vcpkg/zip/refs/tags/2026.10.16",
+        "sha256": "4b78b9c84f6df2ea271e322c5354b29a28d4172212e41894bb6af61b932665ce",
+        "size": 10494287,
+        "format": "zip",
+        "keep": [
+          "vcpkg-2026.10.16"
+        ],
+        "bin": [
+          "vcpkg-2026.10.16"
+        ]
+      },
+      "arm64": {
+        "url": "https://codeload.github.com/microsoft/vcpkg/zip/refs/tags/2026.10.16",
+        "sha256": "4b78b9c84f6df2ea271e322c5354b29a28d4172212e41894bb6af61b932665ce",
+        "size": 10494287,
+        "format": "zip",
+        "keep": [
+          "vcpkg-2026.10.16"
+        ],
+        "bin": [
+          "vcpkg-2026.10.16"
+        ]
+      }
+    }
+  },
+  "vcpkg": {
+    "version": "2026-09-26",
+    "note": "The vcpkg tool the registry tag 2026.10.16 names in scripts/vcpkg-tool-metadata.txt.",
+    "requires": [
+      "vcpkg-registry"
+    ],
+    "archives": {
+      "x64": {
+        "url": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-09-26/vcpkg.exe",
+        "sha256": "2a4ae1467b9e797964c60c919d057b9e5dc1ec03f4b9632c1150026db25201f2",
+        "size": 6791480,
+        "format": "exe",
+        "keep": [],
+        "bin": [
+          "."
+        ]
+      },
+      "arm64": {
+        "url": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-09-26/vcpkg-arm64.exe",
+        "sha256": "54b9c0ad081aca41bd07c2bb2c661d66b7e4788c7c2d40c500468bb5b7f122a5",
+        "size": 7063904,
+        "format": "exe",
+        "keep": [],
+        "bin": [
+          "."
+        ]
+      }
+    }
+  },
+  "llvm": {
+    "version": "23.1.5",
+    "archives": {
+      "x64": {
+        "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/clang%2Bllvm-23.1.5-x86_64-pc-windows-msvc.tar.xz",
+        "sha256": "62fdada7f6fa2b73856486dfbbdba3d2c1882991621615bcb55c60207611c6d4",
+        "size": 901309624,
+        "format": "tar.xz",
+        "keep": [
+          "clang+llvm-23.1.5-x86_64-pc-windows-msvc/bin/clangd.exe",
+          "clang+llvm-23.1.5-x86_64-pc-windows-msvc/bin/clang-tidy.exe",
+          "clang+llvm-23.1.5-x86_64-pc-windows-msvc/bin/clang-format.exe",
+          "clang+llvm-23.1.5-x86_64-pc-windows-msvc/lib/clang/23/include"
+        ],
+        "bin": [
+          "clang+llvm-23.1.5-x86_64-pc-windows-msvc/bin"
+        ]
+      },
+      "arm64": {
+        "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/clang%2Bllvm-23.1.5-aarch64-pc-windows-msvc.tar.xz",
+        "sha256": "f06382f2c99c68a4e80f7044446df1fcf52bc3cc05158626bd0b966d51a5369a",
+        "size": 771533020,
+        "format": "tar.xz",
+        "keep": [
+          "clang+llvm-23.1.5-aarch64-pc-windows-msvc/bin/clangd.exe",
+          "clang+llvm-23.1.5-aarch64-pc-windows-msvc/bin/clang-tidy.exe",
+          "clang+llvm-23.1.5-aarch64-pc-windows-msvc/bin/clang-format.exe",
+          "clang+llvm-23.1.5-aarch64-pc-windows-msvc/lib/clang/23/include"
+        ],
+        "bin": [
+          "clang+llvm-23.1.5-aarch64-pc-windows-msvc/bin"
+        ]
+      }
+    }
+  }
+}
