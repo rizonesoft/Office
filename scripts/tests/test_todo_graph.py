@@ -509,6 +509,25 @@ class StillToAuthor(Tree):
         self.assertNotIn(path, (self.root / tg.PLAN).read_text(encoding="utf-8"))
         del plan
 
+    def test_the_refusal_names_the_section_with_the_longest_title_not_the_first(self):
+        # Round 1: rows are padded alike, so the first section was blamed for a later one's long title.
+        def tree(length):
+            for path in (self.root / "todo").rglob("TODO-*.md"):
+                path.unlink()
+            text = todo_file([(1, "Short", 0, "none", "--"), (2, "T" * length, 0, "none", "--")])
+            for name in ("a", "b"):
+                text = text.replace("- [ ] Work.\n", f"- [ ] Author `todo/04-platform/TODO-01-{name}.md`: it.\n", 1)
+            self.write(text)
+        for length in range(60, 120):
+            tree(length)
+            try:
+                tg.graph(self.root)
+            except tg.Refused as error:
+                self.assertIn("sections still to be written wraps raw md", str(error))
+                self.assertIn("shorten the title of D00 T01 §2", str(error))
+                return
+        self.fail("no title was refused")
+
     def test_a_title_that_fits_its_phase_row_but_not_this_table_refuses_naming_the_section(self):
         # A phase row and this table's row differ in their other columns, so each has its own longest title. The
         # longest one a phase row still takes is found, then shown to be refused here by validate and by the plan.

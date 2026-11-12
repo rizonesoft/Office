@@ -1385,10 +1385,11 @@ def author_sections(missing, rows):
     table = markdown_table(["Status", "Reference", "Deliverable", "Files to write"],
                            [[f"[{'x' if rows[ref].done else ' '}]", ref, rows[ref].title, str(count)]
                             for ref, count in counts.items()])
-    for line, ref in zip(table[2:], counts):
-        require(len(line) <= MAX_TABLE_ROW,
-                f"the plan's table of sections still to be written wraps raw md ({len(line)} > {MAX_TABLE_ROW} "
-                f"chars); shorten the title of {ref}")
+    # Every row is padded to the widest, so the one to shorten is the section with the longest title.
+    widest = max(counts, key=lambda ref: len(rows[ref].title))
+    require(all(len(line) <= MAX_TABLE_ROW for line in table),
+            f"the plan's table of sections still to be written wraps raw md ({max(len(line) for line in table)} > "
+            f"{MAX_TABLE_ROW} chars); shorten the title of {widest}")
     return table
 
 def _plan_tables_ok(root, rows):
