@@ -25,6 +25,7 @@ import hashlib
 import http.client
 import json
 import os
+import re
 from pathlib import Path, PurePosixPath
 import secrets
 import shutil
@@ -346,11 +347,11 @@ def promote(staging, destination):
             raise
         try:
             shutil.rmtree(aside)
-        except OSError as error:  # in place and complete; the set-aside folder goes at the next run's cleanup
-            print(f"bootstrap-tools: {aside.name} could not be removed yet ({error}); the next run removes it",
-                  file=sys.stderr)
+        except OSError as error:  # installed and complete; the set-aside folder is a failure the run reports
+            return f"cleanup of {aside.name} failed after the new installation was promoted: {error}"
     else:
         staging.rename(destination)
+    return None
 
 
 def install(name, version, entry, tools, opener, deadline_seconds):
@@ -383,7 +384,7 @@ def install(name, version, entry, tools, opener, deadline_seconds):
             json.dump(receipt, out, indent=1)
         os.replace(tmp, staging / RECEIPT)
         step = "promotion"
-        promote(staging, destination)
+        leftover = promote(staging, destination)
     except OSError as error:  # a full disk, a denied write, a file another process holds
         shutil.rmtree(staging, ignore_errors=True)
         raise Failed(f"{name}: {step} failed: {error}; any earlier installation is untouched, and running the "
@@ -393,20 +394,37 @@ def install(name, version, entry, tools, opener, deadline_seconds):
         raise
     finally:
         archive.unlink(missing_ok=True)
+    if leftover:
+        raise Failed(f"{name}: {leftover}; the next run removes it")
     return True
 
 
+def drop_older(name, version, tools, names=()):
+    """Remove the folders of `name`'s other versions, once `version` is installed (never before: an upgrade that
+    fails must leave the earlier version in place). Returns the problems, one per folder that could not go."""
+    problems = []
+    others = [n for n in names if n != name and n.startswith(f"{name}-")]  # vcpkg-registry is not a vcpkg version
+    for path in tools.iterdir():
+        if any(path.name.startswith(f"{other}-") for other in others):
+            continue
+        if path.is_dir() and path.name.startswith(f"{name}-") and path.name != f"{name}-{version}" \
+                and not path.name.endswith(".partial") and ".stale-" not in path.name \
+                and re.fullmatch(rf"{re.escape(name)}-[A-Za-z0-9][A-Za-z0-9._-]*", path.name):
+            try:
+                shutil.rmtree(path)
+            except OSError as error:
+                problems.append(f"cleanup of {path.name} failed: {error}")
+    return problems
+
+
 def clean(lock, tools):
-    """Remove staging and set-aside folders, leftover downloads, and folders of versions the lock no longer names."""
-    current = {f"{name}-{tool['version']}" for name, tool in lock.items()}
+    """Remove staging and set-aside folders and leftover downloads; the problems, one per entry that could not go."""
     problems = []
     for path in tools.iterdir():
         if path.name == RUN_LOCK:
             continue
-        stale = path.name.endswith(".partial") or ".stale-" in path.name or path.name.startswith("download-")
-        older = path.is_dir() and path.name not in current and any(
-            path.name.startswith(f"{name}-") for name in lock)
-        if stale or older:
+        # Older versions are not removed here: drop_older removes each only once its replacement is installed.
+        if path.name.endswith(".partial") or ".stale-" in path.name or path.name.startswith("download-"):
             try:
                 if path.is_dir():
                     shutil.rmtree(path)
@@ -470,6 +488,9 @@ def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None)
                     changed = install(name, tool["version"], tool["archives"][arch], tools, opener,
                                       args.deadline * 60)
                     print(f"{name} {tool['version']}: {'installed' if changed else 'already installed'}")
+                    for problem in drop_older(name, tool["version"], tools, list(lock)):
+                        print(f"bootstrap-tools: {name}: {problem}", file=sys.stderr)
+                        failed += 1
                 except Failed as error:
                     print(f"bootstrap-tools: {error}", file=sys.stderr)
                     failed += 1

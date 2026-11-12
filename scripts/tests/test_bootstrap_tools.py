@@ -520,6 +520,57 @@ class OneToolFails(Fixture):
         self.assertEqual(self.boot()[0], 0)
 
 
+class SecondCycleCompletion(Fixture):
+    """D00 T04 §1, the completion review of the second cycle."""
+
+    def upgrade_cmake(self):
+        url, _, fmt, keep, bin_ = self.archives["cmake"]
+        newer = zip_bytes({"cmake-1/bin/cmake.exe": b"cmake 2", "cmake-1/share/cmake-1/m.cmake": b"m"})
+        self.server.files[url] = newer
+        self.lock["cmake"]["version"] = "2.0"
+        self.lock["cmake"]["archives"]["x64"] = entry(url, newer, fmt, keep, bin_)
+        self.write_lock()
+
+    def test_a_failed_upgrade_keeps_the_earlier_version_and_the_retry_replaces_it(self):
+        self.assertEqual(self.boot()[0], 0)
+        self.upgrade_cmake()
+        with mock.patch.object(boot, "write_member", side_effect=OSError(28, "No space left on device")):
+            code, out = self.boot("--only", "cmake")
+        self.assertEqual(code, 1)
+        self.assertEqual((self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes(), b"cmake")
+        self.assertFalse((self.tools / "cmake-2.0").exists())
+        self.assertEqual(self.boot("--only", "cmake")[0], 0)
+        self.assertEqual((self.tools / "cmake-2.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes(), b"cmake 2")
+        self.assertFalse((self.tools / "cmake-1.0").exists())  # removed only once its replacement is in place
+
+    def test_a_set_aside_folder_that_cannot_go_is_exit_1_with_the_new_installation_in_place(self):
+        self.assertEqual(self.boot()[0], 0)
+        url, _, fmt, keep, bin_ = self.archives["cmake"]
+        rebuilt = zip_bytes({"cmake-1/bin/cmake.exe": b"cmake rebuilt", "cmake-1/share/cmake-1/m.cmake": b"m"})
+        self.server.files[url] = rebuilt
+        self.lock["cmake"]["archives"]["x64"] = entry(url, rebuilt, fmt, keep, bin_)
+        self.write_lock()
+        real = shutil.rmtree
+
+        def held(path, *a, **kw):
+            if ".stale-" in Path(path).name:
+                raise PermissionError(32, "being used by another process")
+            return real(path, *a, **kw)
+        with mock.patch.object(boot.shutil, "rmtree", held):
+            code, out = self.boot("--only", "cmake")
+        self.assertEqual(code, 1)
+        self.assertIn("cmake: cleanup of cmake-1.0.stale-", out)
+        self.assertEqual((self.tools / "cmake-1.0" / "cmake-1" / "bin" / "cmake.exe").read_bytes(), b"cmake rebuilt")
+        self.assertEqual(self.boot("--check")[0], 0)
+        self.assertEqual(self.boot()[0], 0)  # the next run removes the set-aside folder
+        self.assertEqual(self.leftovers(), [])
+
+    def test_a_tool_whose_name_begins_another_keeps_the_other_tools_folder(self):
+        self.assertEqual(self.boot()[0], 0)
+        self.assertEqual(self.boot("--only", "vcpkg")[0], 0)
+        self.assertTrue((self.tools / "vcpkg-registry-1.0").is_dir())
+
+
 class Refusals(Fixture):
     """An archive that would write outside the tool's folder is refused in each format (gap 5 of the plan review)."""
 
