@@ -80,7 +80,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
-| 45 | §59 | A parked section is neither ready nor in progress | -- | [ ] |
+| 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1333,9 +1333,12 @@ Filed 2026-11-12 from the campaign's own run (`docs/phase-runs/2026-11-12-phase-
 - [x] Leave sections that carry the line out of `in_progress_sections` in `scripts/merge_prs.py`, whether or not the wait is met (the work resumes only when the line is removed), keeping every other refusal (a dirty tree, an unpushed `HEAD`, a started section that is not parked). Done when: tests in `scripts/tests/test_merge_prs.py` show a tree whose only started section is parked passing the local safety check, a tree with a started section that is not parked still refused with its reference, and a tree with one of each refused naming only the one in progress. Cheaper substitute: dropping the in-progress refusal, which lets a merge land under a section being built.
 - [x] Say where the line is written and removed in `.claude/skills/review-todo-section/SKILL.md` (a section left unstamped because it waits on an owner decision or a dated event is parked with the line, in the commit that records why), `.claude/skills/process-todo-section/SKILL.md` (Step 0: a section that carries the line and resolves 0 has had its wait met, and the line is removed in the resume's first commit, before any other change; one that resolves 4 with `parked until` is not started, and the line is never removed to get past the gate) and `.claude/skills/process-plan/SKILL.md` (the loop's step 2 and the leftovers: a parked section returns to `query ready` by itself, so no separate retry list is kept for it). Done when: each skill names the line and the moment, and `python -m unittest discover -s scripts/tests -p "test_skill*.py"` passes. Cheaper substitute: leaving it to the lead's memory of the run file. **Corrected 2026-11-12 (plan review, gap 2):** said only that the line is removed in the first commit, which Step 0's exit 4 would never have let the lead reach.
 - [x] Park §53 (`until D00 T03 §56`, the owner decision it waits on) and D00 T07 §4 (`until 2026-11-16T05:30:00Z`, after the weekly digest's first scheduled run at 07:05 local time on Monday 2026-11-16). Done when: `python scripts/todo-graph.py query ready` lists neither, `python scripts/todo-graph.py resolve` prints each wait as unmet, `python scripts/merge_prs.py --session <this session>` no longer names either, and `python scripts/campaign_guard.py stop-hook`'s next row, read from `query ready`, is a section that can be worked on.
-- [ ] Commit: `todo: a parked section is neither ready nor in progress`
+- [x] Commit: `todo: a parked section is neither ready nor in progress`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` and `python -m unittest discover -s scripts/tests -p "test_merge_prs.py"` pass with the tests named above among them, and `python scripts/todo-graph.py query ready` lists neither §53 nor D00 T07 §4.
+
+> **Verified:** 2026-11-12 | §59 | 6cc5934ca0478cb8e80f3f67b2734bcba46eef37
+> **Review:** `docs/reviews/d00-t03-s59.json`
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
