@@ -713,10 +713,14 @@ class Resolver(Fixture):
             tool_lock.tool_env(self.lock_path, self.tools, "x64")
         self.assertIn("vcpkg-registry 1.0 is not installed", str(caught.exception))
         self.assertIn("python scripts/bootstrap-tools.py", str(caught.exception))
-        self.lock["vcpkg-registry"]["archives"]["x64"]["sha256"] = "c" * 64  # stale against the lock as well
+        self.assertEqual(self.boot()[0], 0)  # installed again, so the next case is stale, not missing
+        self.assertTrue((self.tools / "vcpkg-registry-1.0" / tool_lock.RECEIPT).is_file())
+        self.lock["vcpkg-registry"]["archives"]["x64"]["sha256"] = "c" * 64  # the lock moved on: the receipt is stale
         self.write_lock()
-        with self.assertRaises(tool_lock.ToolMissing):
+        with self.assertRaises(tool_lock.ToolMissing) as caught:
             tool_lock.tool_env(self.lock_path, self.tools, "x64")
+        self.assertIn("vcpkg-registry 1.0 is not installed", str(caught.exception))
+        self.assertIn("python scripts/bootstrap-tools.py", str(caught.exception))
         self.lock["vcpkg-registry"]["archives"]["x64"] = entry(*self.archives["vcpkg-registry"])
         self.write_lock()
         self.assertEqual(self.boot()[0], 0)  # the bootstrap repairs it
