@@ -702,6 +702,22 @@ class Triage(Indexed):
             self.assertEqual(cli.main(["check"], root=self.root), 1)
         self.assertEqual(out.getvalue().count("already has a disposition"), 2)
 
+    def test_two_lines_for_one_finding_leave_it_outstanding_in_either_order(self):
+        # Completion review: an invalid line followed by a valid one for the same finding was accepted.
+        self.lesson("a-lesson")
+        orders = {"invalid first": "round 1 finding 1: lesson:no-such-lesson\nround 1 finding 1: enforced:scripts/a.py\n",
+                  "valid first": "round 1 finding 1: enforced:scripts/a.py\nround 1 finding 1: lesson:no-such-lesson\n",
+                  "both invalid": "round 1 finding 1: wontfix x\nround 1 finding 1: one-off\n",
+                  "both valid": "round 1 finding 1: one-off, a typo\nround 1 finding 1: lesson:a-lesson\n"}
+        for name, text in orders.items():
+            with self.subTest(name):
+                self.triage(self.TWO, text)
+                self.assertIn((self.TWO, "1", "1", "P1"), self.keys("--untriaged", self.TWO))
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    self.assertEqual(cli.main(["check"], root=self.root), 1)
+                self.assertIn("already has a disposition", out.getvalue())
+
     def test_the_location_first_form_is_read(self):
         # Round 1: `` **`path:line` (P2): ...`` findings of an older record were dropped without a word.
         record = "docs/reviews/00-workspace/D99-T04-s1.md"

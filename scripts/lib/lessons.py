@@ -336,7 +336,7 @@ def read_triage(root, record, repo=None):
         rounds = round_findings((root / record).read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return {}, [f"{name}: its review record {record} does not exist or cannot be read"]
-    valid, problems, conflicted = {}, [], set()
+    valid, problems, seen = {}, [], set()
     for number, line in enumerate(lines, 1):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -348,13 +348,16 @@ def read_triage(root, record, repo=None):
         key, word, reason = (int(match[1]), int(match[2])), match[3], (match[4] or "").strip()
         if key[0] not in rounds or not 1 <= key[1] <= len(rounds[key[0]]):
             problems.append(f"{where}: {record} has no round {key[0]} finding {key[1]}")
-        elif key in valid or key in conflicted:
-            # Two lines for one finding: neither stands, so the finding stays outstanding until one is removed.
+            continue
+        if key in seen:
+            # Two lines for one finding, whatever each says and whichever came first: neither stands, so the
+            # finding stays outstanding until one is removed.
             problems.append(f"{where}: round {key[0]} finding {key[1]} already has a disposition"
                             + (f" ({valid[key]})" if key in valid else ""))
             valid.pop(key, None)
-            conflicted.add(key)
-        elif word.startswith("lesson:"):
+            continue
+        seen.add(key)
+        if word.startswith("lesson:"):
             lesson_id = word[len("lesson:"):].rstrip(",.;")
             if not ID.fullmatch(lesson_id) or not (root / "docs" / "lessons" / f"{lesson_id}.md").is_file():
                 problems.append(f"{where}: lesson:{lesson_id} names no lesson file")
