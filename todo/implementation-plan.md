@@ -81,11 +81,11 @@ Sections: 62 | Checklist items: 474 | Verified: 58
 
 #### Architecture and tech stack
 
-Sections: 1 | Checklist items: 8 | Verified: 0
+Sections: 1 | Checklist items: 8 | Verified: 1
 
 | Status | Reference   | Deliverable             | Needs | Items |
 | ------ | ----------- | ----------------------- | ----- | ----- |
-| [ ]    | D03 T01 §30 | Per-App Authoring Order | none  | 8     |
+| [x]    | D03 T01 §30 | Per-App Authoring Order | none  | 8     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -289,6 +289,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 86/164 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 87/164 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 634/1178 items completed (includes Commit items).
+Checklist: 635/1178 items completed (includes Commit items).

@@ -1,0 +1,85 @@
+{
+  "ref": "D03 T01 \u00a730",
+  "title": "Per-App Authoring Order",
+  "implementation_sha": "b66e1911ce706ec7c4be2ffa24b22a28a159dbdc",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/03-architecture/D03-T01-s30.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_todo_graph.py\" -> Ran 95 tests in 74.031s OK",
+    "python scripts/todo-graph.py validate -> valid: 164 sections",
+    "python scripts/todo-graph.py plan --check -> plan current"
+  ],
+  "completion": {
+    "report": "docs/reviews/03-architecture/D03-T01-s30.md",
+    "verdict": "reconciled",
+    "candidate": "b66e1911ce706ec7c4be2ffa24b22a28a159dbdc",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/03-architecture/D03-T01-s30.md",
+    "candidate": "8bdb82f3e450410a4fdbe6a4019a92151b744643",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "8bdb82f3e450410a4fdbe6a4019a92151b744643",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 5,
+  "pass_cap": 33
+}

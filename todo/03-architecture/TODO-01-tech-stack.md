@@ -76,7 +76,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 27 | §27 | Release domain authoring | §17, §28 | [ ] |
 | 28 | §28 | Versioning and release identity | §1, §16 | [ ] |
 | 29 | §29 | Office reference benchmarks | -- | [ ] |
-| 30 | §30 | Per-app authoring order | -- | [ ] |
+| 30 | §30 | Per-app authoring order | -- | [x] |
 
 ## 1. Platform Targets Decision
 
@@ -800,9 +800,12 @@ Owner, 2026-11-12, in session: the product's own TODO sections for the shell and
 - [x] Rewire the authoring sections: §19 to §24 each depend on their own app's surface chapter in `todo/02-interface/TODO-02-interface-spec.md` (and the chapters it builds on) in place of D02 T02 §14, which keeps the cross-app sign-off; §17 depends on the shell, ribbon, Backstage and status bar chapters and on the tools as restated. Done when: `python scripts/todo-graph.py validate` passes, and a test in `scripts/tests/test_todo_graph.py` over this repository's tree shows that no prerequisite of §17 or §19, however far back, is an inventory section of Excel, PowerPoint, Visio, Project or Outlook, and that §20 to §24 each reach only their own app's. **Corrected 2026-11-12 (plan review, gap 2):** §20 to §24 rightly reach Word's inventory too, through §17 and the shared ribbon, Backstage and status bar chapters, so the invariant is: among the inventory sections of the six apps, each of §20 to §24 reaches its own app's and Word's and no other. The test also asserts what must stay, so deleting a needed edge fails it: §17 reaches the shell's inventory (D02 T01 §4), Word's (D02 T01 §5 and §6), the shell, ribbon, Backstage and status bar chapters and §12; each of §19 to §24 reaches both of its own app's inventory sections, its own surface chapter (which holds its sign-off), §17, §18, §29 and §12.
 - [x] Order the work so the rows on the path to §17 and §19 run before the inventories of the other five apps, by the mechanism the plan already has (phase numbers and the Implementation Order tables), and say in `.claude/skills/process-plan/SKILL.md` nothing new: the order must come from the plan itself. Done when: `python scripts/todo-graph.py query ready` lists, ahead of D02 T01 §7, every ready row that §17 or §19 waits on, and the design note states the order and why. **Corrected 2026-11-12:** the plan orders rows by phase, then by file path, then by the Order column (`ordered` in `scripts/lib/todo_graph.py`), so a row of `todo/03-architecture/` can run ahead of D02 T01 §7 only through its phase, never through an Order column. The mechanism is therefore the phase number: the other five apps' inventories (D02 T01 §7 to §16), their surface chapters (D02 T02 §8 to §12), the check across the six mock-ups (D02 T02 §14), their authoring (§20 to §24), the interoperability and VBA authoring (§25, §26) and the ownership gate (§13) move to Phase 5, so they run after the platform and the engines are built; and Write's domain is authored as Phase 4 (the §17 contract said 5 for all six apps), with Phase 4 named for it in `todo/plan.json`, so the first app is built on the new platform before the same contract is applied five more times. Done when, in addition: a test in `scripts/tests/test_todo_graph.py` over this repository's tree shows that every row §17 or §19 waits on, however far back, is in an earlier place in the plan's order than D02 T01 §7, and `python scripts/todo-graph.py validate` passes (it refuses a prerequisite in a later phase than its consumer).
 - [x] Regenerate the plan and show the result. Done when: `python scripts/todo-graph.py plan --check` passes and the design note quotes the plan's order of the affected rows before and after.
-- [ ] Commit: `todo: an app's sections are authored when its own inventory is done`
+- [x] Commit: `todo: an app's sections are authored when its own inventory is done`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the prerequisite test among them, and `python scripts/todo-graph.py validate` and `plan --check` pass.
+
+> **Verified:** 2026-11-12 | §30 | b66e1911ce706ec7c4be2ffa24b22a28a159dbdc
+> **Review:** `docs/reviews/d03-t01-s30.json`
 ## Verification
 
 - Every design record in `docs/specs/` named by §1 to §11 passes `scripts/check-design-doc.py` and carries a dated Decision.
