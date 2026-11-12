@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T04 \u00a71",
+  "title": "Tool Lock File and Bootstrap Script",
+  "implementation_sha": "7fa52f7542a4e705b7bb7f58108c3012f11c851e",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T04-s1.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_bootstrap_tools.py\" -> Ran 35 tests, OK",
+    "python scripts/bootstrap-tools.py --check -> every tool is installed as pinned",
+    "bosun run -- python scripts/run-tests.py -> Ran 1414 tests in 36 files in 527.6 s (4 at a time), 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T04-s1.md",
+    "verdict": "reconciled",
+    "candidate": "7fa52f7542a4e705b7bb7f58108c3012f11c851e",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T04-s1.md",
+    "candidate": "21f8cb164027f860da8f46153a0b7cfd1532976b",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "21f8cb164027f860da8f46153a0b7cfd1532976b",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
