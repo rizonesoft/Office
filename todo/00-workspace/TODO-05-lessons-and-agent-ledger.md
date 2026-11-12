@@ -73,6 +73,8 @@ A lesson is one small Markdown file a person can read and a reviewer can refuse.
 
 ## 2. Lesson Index and Query
 
+> **Started:** 2026-11-12T11:55:52Z
+
 The files are the truth; the index is a cache that makes them findable. A query returns the same few lessons in the same order every time, so what a worker is told never depends on chance.
 
 **Phase:** 0
