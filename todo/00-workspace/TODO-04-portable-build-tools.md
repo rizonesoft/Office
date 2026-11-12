@@ -43,7 +43,11 @@ title: "TODO-04 -- Portable Build Tools"
 
 ## 1. Tool Lock File and Bootstrap Script
 
+> **Started:** 2026-11-12T02:45:00Z
+
 One lock file names every carried tool, and one script turns it into a working tool folder. The script is the only thing that downloads: it is bounded, verifies before it unpacks, and leaves either a complete tool or nothing.
+
+**Corrected 2026-11-12** (validation against the projects' release pages, read 2026-11-12 through the GitHub releases API): the newest stable releases are CMake 4.4.5 (`cmake-4.4.5-windows-x86_64.zip`, `-arm64.zip`), Ninja 1.13.2 (`ninja-win.zip`, `ninja-winarm64.zip`; no published checksum), sccache 0.19.0 (`sccache-v0.19.0-{x86_64,aarch64}-pc-windows-msvc.zip`, with published `.sha256` files), vcpkg registry tag 2026.10.16, whose `scripts/vcpkg-tool-metadata.txt` names vcpkg-tool 2026-09-26 (`vcpkg.exe`, `vcpkg-arm64.exe`), and LLVM 23.1.5 (`clang+llvm-23.1.5-{x86_64,aarch64}-pc-windows-msvc.tar.xz`). The vcpkg registry publishes no release asset, so its archive is GitHub's source zip of the tag, its hash computed from the download like every other. Unpacked members keep their paths inside the archive (`cmake-4.4.5-windows-x86_64/bin/cmake.exe`), and `bin` names folders relative to the tool's folder on that basis; an `exe` archive is placed as the single file it is.
 
 **Phase:** 0
 **Needs:** none
