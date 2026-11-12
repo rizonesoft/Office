@@ -67,7 +67,7 @@ Sections: 61 | Checklist items: 467
 | [x]    | D00 T05 §2  | Lesson Index and Query                                | none                   | 15    |
 | [x]    | D00 T05 §3  | First Lessons From the Review Records                 | none                   | 9     |
 | [x]    | D00 T05 §4  | Section Runs Read Their Lessons                       | none                   | 9     |
-| [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 13    |
+| [x]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 13    |
 | [x]    | D00 T05 §9  | Triage Covers Every Review Pass                       | none                   | 7     |
 | [x]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 6     |
 | [x]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 5     |
@@ -258,6 +258,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 85/162 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 86/162 verified sections, 18 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 618/1109 items completed (includes Commit items).
+Checklist: 619/1109 items completed (includes Commit items).

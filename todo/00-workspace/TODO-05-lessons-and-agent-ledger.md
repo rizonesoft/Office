@@ -2,7 +2,7 @@
 schema_version: 1
 id: lessons-and-agent-ledger
 domain: 00-workspace
-status: active
+status: done
 title: "TODO-05 -- Lessons"
 ---
 
@@ -36,7 +36,7 @@ title: "TODO-05 -- Lessons"
 | 2 | §2 | Lesson index and query | §1 | [x] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [x] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [x] |
-| 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
+| 5 | §8 | Lesson upkeep at scale | §2, §3 | [x] |
 | 6 | §9 | Triage covers every review pass | §3 | [x] |
 
 ## 1. Lesson Files and Their Checker
@@ -195,9 +195,12 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 - [x] Define the groups and nesting exactly: a glob's group is its leading folders that hold no wildcard, at most two (`scripts/*.py` and `scripts/a.py` are `scripts`, `scripts/lib/*.py` is `scripts/lib`, `*` is `*`); a lesson counts once in each group its globs fall in, active and retired counted apart, and a group with only retired lessons is still printed; glob A is nested in glob B when every tracked file A matches is one B matches (equal when both match the same files), by the same matching `check` uses. Done when: tests cover a shallow glob, two globs of one lesson in one group, a retired-only group, evidence order, and equal, nested and unrelated globs. **Corrected 2026-11-12:** added after the plan review (gap 4, P2).
 - [x] Refuse an incomplete store: `report` runs the store's rules first and exits 1 printing every problem when a lesson, a triage line or a cited record is invalid or unreadable, and a pass a triage line names that carries no `Run:` date is refused naming the record; a valid empty store prints no group and exits 0. Done when: tests cover each. **Corrected 2026-11-12:** added after the plan review (gap 5, P2).
 - [x] Prove recurrence across every pass and both sides of the date: fixtures with a triage line for a plan review, a round, a completion review and a second reconciliation, run before, on and after the lesson's date; and tests in `scripts/tests/test_skill_ci_gate.py` that hold the closeout's sentences (the command, the four remedies, `reassign`, a commit of its own) and their place before the phase's closeout commit, plus the README's ceiling and remedies by their words. Done when: those tests pass, each fails with its sentence removed, and the checkpoint below runs the skill tests as well. **Corrected 2026-11-12:** added after the plan review (gap 6, P2).
-- [ ] Commit: `lessons: keep the store small enough to stay true`
+- [x] Commit: `lessons: keep the store small enough to stay true`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes with the report tests among them, `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` passes, and `python scripts/lessons.py report --check` exits 0.
+
+> **Verified:** 2026-11-12 | §8 | 150068d5620dfc678000c2b47f38414036630485
+> **Review:** `docs/reviews/d00-t05-s8.json`
 
 ## 9. Triage Covers Every Review Pass
 

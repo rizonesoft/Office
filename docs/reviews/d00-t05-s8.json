@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T05 \u00a78",
+  "title": "Lesson Upkeep at Scale",
+  "implementation_sha": "150068d5620dfc678000c2b47f38414036630485",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T05-s8.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_lessons.py\" -> Ran 82 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_skill_ci_gate.py\" -> Ran 7 tests, OK",
+    "python scripts/lessons.py report --check -> exit 0 (16 lessons, all valid)"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T05-s8.md",
+    "verdict": "reconciled",
+    "candidate": "150068d5620dfc678000c2b47f38414036630485",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T05-s8.md",
+    "candidate": "c7e09bfb2c579d85aa98d451dfcac5c741607830",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "c7e09bfb2c579d85aa98d451dfcac5c741607830",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 5,
+  "pass_cap": 33
+}
