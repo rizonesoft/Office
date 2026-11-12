@@ -271,6 +271,17 @@ class Shares(unittest.TestCase):
         self.assertEqual((sorted(second["files"]), second["classes"]), (sorted(first["files"]), first["classes"]))
         self.assertEqual(list(self.dir.glob(".durations-*")), [])   # no temporary file left behind
 
+    def test_recording_drops_a_file_that_is_gone_and_the_shares_work_again(self):
+        self.durations({"files": {"test_gone.py": 3, "test_a.py": 999, "test_c.py": 7},
+                        "classes": {"test_gone.py": {"T": 3}}})
+        self.assertEqual(run("-s", str(self.dir), "--shard", "1/2", "--list")[0], 2)  # refused while it is stale
+        code, out = run("-s", str(self.dir), "-p", "test_a.py", "--record-durations")
+        self.assertEqual(code, 0, out)
+        record = self.record()
+        self.assertEqual((sorted(record["files"]), record["classes"]), (["test_a.py", "test_c.py"], {}))
+        self.assertEqual(record["files"]["test_c.py"], 7)
+        self.assertEqual(run("-s", str(self.dir), "--shard", "1/2", "--list")[0], 0)
+
     def test_a_failed_run_records_nothing(self):
         self.durations({"files": {"test_a.py": 999}, "classes": {}})
         (self.dir / "test_b.py").write_text(FAILING, encoding="utf-8")

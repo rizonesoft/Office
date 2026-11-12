@@ -77,9 +77,10 @@ class Usage(Exception):
     """A request the runner cannot carry out as given: exit 2 with the reason."""
 
 
-def load_durations(start, names):
+def load_durations(start, names, drop_gone=False):
     """The record beside the tests, or an empty one. Refused when it is unreadable, of another shape, or names a
-    test file that is no longer there: a stale record would weigh the shares by tests that do not exist."""
+    test file that is no longer there: a stale record would weigh the shares by tests that do not exist. A recording
+    run passes `drop_gone`, which leaves those entries out instead, so recording is how a stale record is mended."""
     path = start / DURATIONS
     if not path.is_file():
         return {"files": {}, "classes": {}}
@@ -95,9 +96,12 @@ def load_durations(start, names):
             and isinstance(data["classes"], dict) and all(seconds(v) for v in data["classes"].values())):
         raise Usage(f'{path} must hold {{"files": {{name: seconds}}, "classes": {{name: {{class: seconds}}}}}}')
     gone = sorted((set(data["files"]) | set(data["classes"])) - set(names))
-    if gone:
-        raise Usage(f"{path} names test files that are not in {start}: {', '.join(gone)}; "
-                    f"run python scripts/run-tests.py --record-durations")
+    if gone and drop_gone:
+        for kind in ("files", "classes"):
+            data[kind] = {name: value for name, value in data[kind].items() if name in names}
+    elif gone:
+        raise Usage(f"{path} names test files that are not in {start}: {', '.join(gone)}; record again, which drops "
+                    f"them: python scripts/run-tests.py --record-durations -p <a test file that changed>")
     return data
 
 
@@ -261,7 +265,7 @@ def main(argv=None):
     try:
         if args.shard or args.record_durations:
             every = sorted(p.name for p in start.glob("test_*.py") if p.is_file())
-            durations = load_durations(start, every)
+            durations = load_durations(start, every, drop_gone=args.record_durations)
         if args.shard:
             units = shares(units_of(start, names, durations), int(share[2]))[int(share[1]) - 1]
     except Usage as error:
