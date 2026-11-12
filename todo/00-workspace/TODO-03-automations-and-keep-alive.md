@@ -76,6 +76,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 38 | §50 | Withdrawn sections | -- | [x] |
 | 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 | 40 | §54 | One process-tree containment for every tool | §36 | [x] |
+| 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1196,6 +1197,27 @@ Filed 2026-11-11 while building §36. The repository starts children in a contai
 
 > **Verified:** 2026-11-12 | §54 | bf906a62988234db1cb8e53578b5e01d9146eff7
 > **Review:** `docs/reviews/d00-t03-s54.json`
+
+## 55. Scheduled Tasks Run in the Shared Process Tree
+
+Filed 2026-11-12 after §54 was stamped. `.conclave/automations/run.py`, which runs every scheduled task, holds a fourth private containment outside the `scripts/` folders §54's check covers: `_kill_tree` runs `taskkill /T /F` only when a task passes its time limit, so a task that ends by itself leaves whatever it started running (a `gh` or `git` child, a test that started a fake), and `taskkill /T` walks parent links, which a process whose parent already exited no longer has. This section runs each task in `scripts/lib/process_tree.py`'s tree and widens the check.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Run each task in the shared tree. Done when: a task's leftover child is gone when its run ends, whether it timed out or not.
+2. Widen the check. Done when: `test_one_containment.py` covers `.conclave/automations/`.
+
+- [ ] Replace the `popen` and `killer` start and stop in `execute()` of `.conclave/automations/run.py` with `process_tree.run` (output and errors into the run's log, `timeout_minutes` as the limit), keeping its outcomes: exit 124 and `timed_out` on the limit, exit 126 with the reason in the log when the task cannot start, `cleanup_failed` when the tree will not end. Done when: tests in `scripts/tests/test_automations.py` show each outcome. Cheaper substitute: keeping `taskkill /T` on timeout, which leaves the leftovers of a task that ended by itself.
+- [ ] Load the helper by path from `scripts/lib/process_tree.py` under the repository root `run.py` is given, as `review-dispatch.py` does. Done when: a test runs `run.py` from a copy of the automations folder against a fixture root holding the helper.
+- [ ] Prove a task's leftover child ends with its run. Done when: a test whose task starts a sleeping child and exits 0 shows the child gone when `execute()` returns, and the same for a task that passes its limit.
+- [ ] Extend `scripts/tests/test_one_containment.py` to the Python files under `.conclave/automations/`. Done when: it fails on `run.py` before the move and passes after it.
+- [ ] Commit: `automations: run each scheduled task in the shared process tree`
+
+**Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_one_containment.py"` pass.
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
