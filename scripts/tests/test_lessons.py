@@ -277,6 +277,17 @@ class WholeRun(Store):
         self.assertIn("second.md: missing key 'source'", out)
         self.assertIn("2 lesson(s), 3 problem(s)", out)
 
+    def test_every_structural_fault_of_one_file_in_one_run(self):
+        # Completion review: a file with an unknown key, a duplicate, a bad line, two missing keys and a wrong id.
+        self.write(name="many", raw="---\nid: other\ncolour: red\nid: again\n  nested\napplies: *\ntopics: tests\n"
+                                     "roles: all\nstatus: active\n---\nb\n")
+        code, out = self.check()
+        self.assertEqual(code, 1)
+        for fragment in ("unknown key 'colour'", "duplicate key 'id'", "line 5 is not a flat key: value line",
+                         "missing key 'source'", "missing key 'added'", "id 'other' differs from the file name 'many'"):
+            self.assertIn(f"many.md: {fragment}", out)
+        self.assertIn("1 lesson(s), 6 problem(s)", out)
+
     def test_two_files_with_one_id(self):
         self.write(name="same", id="same")
         self.write(name="Same2", raw=(self.folder / "same.md").read_text(encoding="utf-8"))

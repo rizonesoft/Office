@@ -174,7 +174,7 @@ def check(root=ROOT):
         try:
             lesson = lessons.read(path)
         except lessons.LessonError as error:
-            found.append(str(error))
+            found.extend(error.problems)
             continue
         if lesson["id"] in seen:
             found.append(f"{lesson['id']}: duplicate id: also {seen[lesson['id']]}")

@@ -17,7 +17,12 @@ LINE = re.compile(r"^([a-z_]+):(?:[ \t]+(.*?))?\s*$")
 
 
 class LessonError(Exception):
-    """A file that cannot be read as a lesson; the message names the file and the key."""
+    """A file that cannot be read as a lesson. `problems` holds every structural fault found in it, each naming the
+    file and the key, so one run reports them all; the message is the first."""
+
+    def __init__(self, problems):
+        self.problems = list(problems) if isinstance(problems, (list, tuple)) else [problems]
+        super().__init__("; ".join(self.problems))
 
 
 def lesson_files(folder):
@@ -40,24 +45,26 @@ def read(path):
         end = next(i for i in range(1, len(lines)) if lines[i].strip() == "---")
     except StopIteration:
         raise LessonError(f"{name}: the frontmatter is not closed by a --- line") from None
-    fields = {}
+    fields, problems = {}, []
     for number, line in enumerate(lines[1:end], 2):
         if not line.strip():
             continue
         match = LINE.match(line)
         if not match:
-            raise LessonError(f"{name}: line {number} is not a flat key: value line")
+            problems.append(f"{name}: line {number} is not a flat key: value line")
+            continue
         key, value = match[1], (match[2] or "").strip()
         if key not in KEYS:
-            raise LessonError(f"{name}: unknown key {key!r}")
-        if key in fields:
-            raise LessonError(f"{name}: duplicate key {key!r}")
-        fields[key] = value
-    missing = [k for k in REQUIRED if k not in fields]
-    if missing:
-        raise LessonError(f"{name}: missing key {missing[0]!r}")
-    if fields["id"] != path.stem:
-        raise LessonError(f"{name}: id {fields['id']!r} differs from the file name {path.stem!r}")
+            problems.append(f"{name}: unknown key {key!r}")
+        elif key in fields:
+            problems.append(f"{name}: duplicate key {key!r}")
+        else:
+            fields[key] = value
+    problems += [f"{name}: missing key {k!r}" for k in REQUIRED if k not in fields]
+    if "id" in fields and fields["id"] != path.stem:
+        problems.append(f"{name}: id {fields['id']!r} differs from the file name {path.stem!r}")
+    if problems:
+        raise LessonError(problems)
     fields["body"] = "\n".join(lines[end + 1:]).strip()
     return fields
 
