@@ -769,6 +769,14 @@ class Triage(Indexed):
             self.assertEqual(cli.main(["check"], root=self.root), 0)
         self.assertEqual(lessons.query(self.root, paths=["scripts/a.py"]), ([], 0))  # retired: no longer returned
 
+    def test_p3_findings_are_listed_on_request_so_a_resume_misses_none(self):
+        # Round 1 of §4: a fixed P3 finding was invisible to the resume step.
+        self.assertNotIn((self.TWO, "2", "2", "P3"), self.keys("--untriaged", self.TWO))
+        self.assertIn((self.TWO, "2", "2", "P3"), self.keys("--untriaged", "--p3", self.TWO))
+        self.triage(self.TWO, "round 2 finding 2: one-off, a nit about wording\n")
+        self.assertNotIn((self.TWO, "2", "2", "P3"), self.keys("--untriaged", "--p3", self.TWO))
+        self.assertEqual(len(self.keys("--p3", self.TWO)), 6)
+
     def test_a_failed_query_reads_nothing(self):
         # The section skill's read step: exit 1 shows no lesson, so it cannot count as the read.
         self.lesson("a-lesson", applies="scripts/a.py")

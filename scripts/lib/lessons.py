@@ -401,8 +401,9 @@ def review_records(root):
             if re.search(r"(?m)^## Round \d+\b", path.read_text(encoding="utf-8", errors="replace"))]
 
 
-def candidates(root, records=None, untriaged=False):
-    """The `P1` and `P2` findings of the review `records` (all under docs/reviews/ when none is named), each
+def candidates(root, records=None, untriaged=False, severities=("P1", "P2")):
+    """The findings of the review `records` (all under docs/reviews/ when none is named) whose severity is one of
+    `severities` (`P1` and `P2` unless `P3` is asked for too), each
     `{"record", "round", "k", "severity", "location", "sentence"}`; with `untriaged`, only those with no valid line in
     the record's triage file. RecordError naming the file when a named record is missing, unreadable or holds no
     review round, or a triage file cannot be read: an input that was skipped must never look like nothing to do."""
@@ -430,7 +431,7 @@ def candidates(root, records=None, untriaged=False):
             done = read_triage(root, record)[0]
         for number in sorted(rounds):
             for finding in rounds[number]:
-                if finding["severity"] in ("P1", "P2") and (number, finding["k"]) not in done:
+                if finding["severity"] in severities and (number, finding["k"]) not in done:
                     out.append({"record": record, "round": number, **finding})
     return out
 

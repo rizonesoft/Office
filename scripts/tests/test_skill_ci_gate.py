@@ -55,8 +55,9 @@ OBLIGATIONS = [
         "A lesson this section's own work made enforceable (it added the check or the test) is retired in the same "
         "commit: `status: retired` with `retired_by` naming it"]),
     ("a resume writes no second line", "review", [
-        "On a resumed section run `python scripts/lessons.py candidates --untriaged <the record>` and write only "
-        "what it prints: a finding never gets a second line"]),
+        "On a resumed section run `python scripts/lessons.py candidates --untriaged --p3 <the record>` (`--p3` "
+        "because a fixed `P3` finding is triaged too) and write only what it prints: a finding never gets a second "
+        "line"]),
     ("the passes covered are named", "review", [
         "This covers the round's findings; those of the plan review, the completion review and the reconciliations "
         "are triaged once D00 T05 §9 gives those passes an identity"]),
@@ -297,21 +298,49 @@ class SkillCiGate(unittest.TestCase):
                 self.assertIn(name, missing(copy))
 
 
-    def test_the_lesson_steps_sit_where_they_take_effect(self):
-        # D00 T05 §4: the read comes before the build step, and the triage between the round and the completion
-        # review, so both are in the candidate the last pass reads.
-        section, review = self.texts["section"], self.texts["review"]
-        self.assertLess(section.index("### 2. Validate the plan before building it"),
-                        section.index("**Read the lessons first.**"))
-        self.assertLess(section.index("**Read the lessons first.**"), section.index("### 4. Build the corrected contract"))
-        self.assertLess(review.index("2. **The round**"), review.index("**Triage the round's findings before the completion review.**"))
-        self.assertLess(review.index("**Triage the round's findings before the completion review.**"),
-                        review.index("3. **The completion review** of the final candidate"))
-        moved = review.replace("   **Triage the round's findings before the completion review.**", "", 1) \
-            + "\n**Triage the round's findings before the completion review.**\n"
-        self.assertGreater(moved.index("**Triage the round's findings before the completion review.**"),
-                           moved.index("3. **The completion review** of the final candidate"))
+    LESSON_STEPS = {  # obligation -> (skill, the heading or item it follows, the one it precedes)
+        "lessons are read before the build": ("section", "### 2. Validate the plan before building it",
+                                              "### 4. Build the corrected contract"),
+        "each outcome of the read is handled": ("section", "### 2. Validate the plan before building it",
+                                                "### 4. Build the corrected contract"),
+        "the round's findings are triaged": ("review", "2. **The round**", "3. **The completion review** of the final"),
+        "triage lands in the reviewed candidate": ("review", "2. **The round**",
+                                                   "3. **The completion review** of the final"),
+        "an enforceable lesson is retired": ("review", "2. **The round**", "3. **The completion review** of the final"),
+        "a resume writes no second line": ("review", "2. **The round**", "3. **The completion review** of the final"),
+    }
 
+    @classmethod
+    def misplaced(cls, texts):
+        """Every (obligation, phrase) of the lesson steps that does not sit between its two markers."""
+        found = []
+        for name, skill, phrases in OBLIGATIONS:
+            if name not in cls.LESSON_STEPS:
+                continue
+            _, after, before = cls.LESSON_STEPS[name]
+            text = texts[skill]
+            for phrase in phrases:
+                if not text.index(after) < text.index(phrase) < text.index(before):
+                    found.append((name, phrase[:50]))
+        return found
+
+    def test_the_lesson_steps_sit_where_they_take_effect(self):
+        # D00 T05 §4: the read comes before the build, and every sentence of the triage step between the round and
+        # the completion review, so all of it is in the candidate the last pass reads.
+        self.assertEqual(self.misplaced(self.texts), [])
+        review = self.texts["review"]
+        marker = "   **Triage the round's findings before the completion review.**"
+        start = review.index(marker)
+        paragraph = review[start:review.index("\n", start)]
+        # The whole step moved after the completion review: every sentence is then misplaced, heading or no heading.
+        rest = review.replace(paragraph + "\n", "", 1)
+        moved = dict(self.texts, review=rest + "\n" + paragraph + "\n")
+        self.assertEqual({name for name, _ in self.misplaced(moved)},
+                         {name for name, (skill, _, _) in self.LESSON_STEPS.items() if skill == "review"})
+        # Only its instructions moved, the heading words left in place: still caught.
+        body = paragraph[len(marker):]
+        kept = dict(self.texts, review=review.replace(paragraph, marker, 1) + "\n" + body + "\n")
+        self.assertTrue(self.misplaced(kept))
     def test_every_pinned_paragraph_is_unchanged(self):
         self.assertEqual(pin_failures(self.texts), [])
 

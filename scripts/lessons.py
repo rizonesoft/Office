@@ -4,7 +4,7 @@
 """Check the lesson files of `docs/lessons/` and query them (D00 T05 §1 and §2; `docs/lessons/README.md`).
 
     python scripts/lessons.py check
-    python scripts/lessons.py candidates [--untriaged] [docs/reviews/<record>.md ...]
+    python scripts/lessons.py candidates [--untriaged] [--p3] [docs/reviews/<record>.md ...]
     python scripts/lessons.py query --path scripts/lib/tool_lock.py [--role main] [--topic tests] [--text "gate"]
                                     [--limit 5] [--why] [--json]
 
@@ -12,7 +12,8 @@
 1 when there is one, 2 when the lesson folder or its README cannot be read.
 
 `candidates` lists the `P1` and `P2` findings of review records (every record under `docs/reviews/` when none is
-named) as `<record> round N finding K [P1] <file:line>: <first sentence>`, and with `--untriaged` only those with no
+named) as `<record> round N finding K [P1] <file:line>: <first sentence>` (`--p3` adds the `P3` ones, for a section
+triaging every finding its own round fixed), and with `--untriaged` only those with no
 valid line in the record's triage file `docs/lessons/triage/<path>.md` (D00 T05 §3). Exit 0, or 1 naming the file
 when a named record or a triage file cannot be read or holds no review round, so skipped input never looks like
 nothing left to do.
@@ -90,7 +91,8 @@ def cmd_query(args, root):
 
 def cmd_candidates(args, root):
     try:
-        found = lessons.candidates(root, args.records, args.untriaged)
+        severities = ("P1", "P2", "P3") if args.p3 else ("P1", "P2")
+        found = lessons.candidates(root, args.records, args.untriaged, severities)
     except lessons.RecordError as error:
         print(f"lessons: {error}", file=sys.stderr)
         return 1
@@ -117,6 +119,8 @@ def main(argv=None, root=ROOT):
     listing.add_argument("records", nargs="*", help="review records (default: every record under docs/reviews/)")
     listing.add_argument("--untriaged", action="store_true",
                          help="only findings with no valid line in the record's triage file")
+    listing.add_argument("--p3", action="store_true",
+                         help="list P3 findings too (a section triages every finding its round fixed)")
     args = parser.parse_args(argv)
     if args.command == "candidates":
         return cmd_candidates(args, root)
