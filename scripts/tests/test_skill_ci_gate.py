@@ -20,7 +20,7 @@ REVIEW = SKILLS / "review-todo-section" / "SKILL.md"
 EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any change to one is a deliberate test edit
     'green': "- 0 (green): run the dependency merge below first, while the tree is still clean and `HEAD` pushed. If it merged anything, `main` has a new head on GitHub, which the local `HEAD` may not have (`merged-then-failed`: the pull after the merge failed): run `git fetch origin main` and `git pull --ff-only origin main` so the clone matches the merged head (if it still cannot, park with `ci-unknown: cannot align with origin/main`, since no repair can start from a stale checkout), then `python scripts/ci-status.py HEAD --wait --timeout 1800` and act on it by these same rules (repair, wait, retry or park), all before any row is claimed. Then append `ci-pending <sha> <UTC>` and `ci-green <sha>` for each push checked, and the merge's outcome, to the run file; they ride with the next section's commit, so no bookkeeping push exists to go unchecked.",
     'red': '- 1 (red): repair it before the next row, as below.',
-    'pending': '- 3 (pending): run `python scripts/ci-status.py <sha> --wait --timeout 1800` and act on that result.',
+    'pending': '- 3 (pending): watch it, do not wait for it. Every push is watched from the moment it is made: start `python scripts/ci-status.py <sha> --wait --timeout 1800` in the background right after the push, then claim the next row and build. Its result arrives as a notification while the build goes on. Green: record it at the next boundary. Red: finish the edit in hand, commit nothing further of the section, and repair the red head at once as below, before any other push; the section carries on after the repair is green. The head is waited for in the foreground only when it is still pending 45 minutes after its push or when a later stamp is ready to be pushed on top of it. No dependency merge runs and no `ci-green` is recorded for a head that is not green yet (owner, 2026-11-12, decision 45: the run builds while CI tests, and a red CI is detected early and fixed).',
     'unknown': '- 2 (unknown: `gh` cannot be read, or no push run 10 minutes after the commit): retry once after five minutes; still 2, park the campaign with `ci-unknown` as the reason, since green cannot be established.',
 }
 
@@ -179,7 +179,7 @@ WEAKENINGS = [
      "$CLAUDE_CODE_SESSION_ID --reason park`, CronDelete this job, confirm, run cancel-confirmed for it, and reply RUN "
      "FINISHED, even when rows are ready and the host check would now pass.", "resume under step 7."),
     ("hard gates proceed only on green", "plan", "and proceed only on exit 0.", "and proceed on any exit."),
-    ("exit 3 pending", "plan", "--wait --timeout 1800` and act on that result.", "--wait --timeout 1800` and claim the next row regardless of that result."),
+    ("exit 3 pending", "plan", "repair the red head at once as below, before any other push", "note the red head and carry on"),
     ("exit 2 unknown", "plan", "retry once after five minutes; still 2, ", ""),
     ("recovery budget", "plan", "the budget is four attempts per recovery", "the budget is unlimited per recovery"),
     ("a progressing reconciliation is continued before any row", "plan", "run it again at once, before any row, as "
@@ -233,7 +233,7 @@ PINNED = [
     ('plan', '- 1 (red):',
      '5f865d999153a2f005ce26e1ad87e9bbe4e8f4a38b7d2b4a0d5cfa17c558b8f4'),
     ('plan', '- 3 (pending):',
-     '5bdff7409a3ab6d5f5de1646bdf8c5c1f277c3492565ef3c48d61046c521afcc'),
+     '55b30efbd20c62183750fcb19aac583563cabaf99ccdb21538c9e090dd194502'),
     ('plan', '- 2 (unknown',
      '160e3153fb8c7d774fe9d1ca750dcddc0a31515cac2d9098e51fca1cafff0df0'),
     ('plan', 'Repair a red run before the next row',
