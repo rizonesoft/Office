@@ -40,6 +40,8 @@ import uuid
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import todo_graph  # noqa: E402  (the library sits beside this script, not on the path)
+sys.path.insert(0, str(ROOT / "scripts"))
+import campaign_guard  # noqa: E402  (beside this script: the run guard's own reader decides whether a run lives)
 
 BODY_LINES = 120
 WIDTH = 100
@@ -48,7 +50,6 @@ ATTACHMENT = "waiting-on-you.txt"
 NOTICES_ATTACHMENT = "notices.txt"
 NOTICE_LINES = 10  # summary lines of notices in the body; every notice is in full in the attachment
 MARK_TRIES, MARK_PAUSE = 3, 2.0  # a delivered batch's mark is retried before it is left to the next settlement
-GUARD = "build/claude-campaign-guard.json"
 # CREATE_NO_WINDOW on every launch, as .conclave/automations/run.py says every nested launch of a task carries it, so
 # the Monday run opens no console on the owner's desktop.
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
@@ -175,13 +176,22 @@ def waiting(rows):
 # The run and CI
 
 
-def run_state(root):
+def run_state(root, config_dir=None):
     """One line on the campaign: running, completed, parked, stopped by the operator, not running, or unknown."""
     try:
-        guard_path = root / GUARD
-        if guard_path.is_file():
-            guard = json.loads(guard_path.read_text(encoding="utf-8"))
-            return f"Running: run {guard.get('run_id', '?')}, phase {guard.get('phase', '?')}, {guard.get('run_file', '?')}"
+        # A guard alone is not a live run: a crashed session leaves its guard for the launcher's handover. The guard's
+        # own module says whether its session still shows life (D00 T07 §1).
+        live = campaign_guard.liveness(str(root), config_dir=config_dir)
+        if live is not None:
+            kind, detail = live
+            if kind == "unknown":
+                return f"Unknown: {detail}."
+            guard = campaign_guard.read_guard(str(root)) or {}
+            run = f"run {guard.get('run_id', '?')}, phase {guard.get('phase', '?')}, {guard.get('run_file', '?')}"
+            if kind == "running":
+                return f"Running: {run} (last sign of life {detail})."
+            return (f"Stalled since {detail}: {run}; its session shows no sign of life, and the next start of the "
+                    f"campaign launcher takes the run over.")
         runs = [(latest_instant(path), path) for path in (root / "docs" / "phase-runs").glob("*.md")]
         if not runs:
             return "Not running: no campaign has run yet."

@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import types
 import unittest
 from contextlib import redirect_stdout
@@ -116,11 +117,34 @@ class RunState(Tree):
         folder.mkdir(parents=True, exist_ok=True)
         (folder / name).write_text(text, encoding="utf-8")
 
-    def test_a_guard_means_running(self):
-        (self.root / "build").mkdir()
-        (self.root / "build/claude-campaign-guard.json").write_text(
-            json.dumps({"run_id": "abc", "phase": 2, "run_file": "docs/phase-runs/x.md"}), encoding="utf-8")
-        self.assertEqual(digest.run_state(self.root), "Running: run abc, phase 2, docs/phase-runs/x.md")
+    def guard_with_life(self, transcript_age=None, guard_text=None):
+        """A guard for session `s-1234567`, and that session's transcript `transcript_age` seconds old (or none)."""
+        (self.root / "build").mkdir(exist_ok=True)
+        (self.root / "build/claude-campaign-guard.json").write_text(guard_text or json.dumps(
+            {"run_id": "abc", "phase": 2, "run_file": "docs/phase-runs/x.md", "session_id": "s-1234567",
+             "job_created_at": "2026-11-12T01:00:00Z"}), encoding="utf-8")
+        config = self.root / "claude-config"
+        (config / "projects" / "P").mkdir(parents=True, exist_ok=True)
+        if transcript_age is not None:
+            path = config / "projects" / "P" / "s-1234567.jsonl"
+            path.write_text("{}\n", encoding="utf-8")
+            when = time.time() - transcript_age
+            os.utime(path, (when, when))
+        return digest.run_state(self.root, config_dir=str(config))
+
+    def test_a_guard_whose_session_shows_life_is_running(self):
+        line = self.guard_with_life(transcript_age=60)
+        self.assertTrue(line.startswith("Running: run abc, phase 2, docs/phase-runs/x.md (last sign of life "), line)
+
+    def test_a_guard_whose_session_went_quiet_is_stalled(self):
+        line = self.guard_with_life(transcript_age=5 * 3600)
+        self.assertTrue(line.startswith("Stalled since "), line)
+        self.assertIn("run abc, phase 2", line)
+        (self.root / "claude-config" / "projects" / "P" / "s-1234567.jsonl").unlink()  # no sign of life at all
+        self.assertTrue(self.guard_with_life().startswith("Stalled since 2026-11-12T01:00:00Z"))
+
+    def test_a_malformed_guard_is_unknown(self):
+        self.assertTrue(self.guard_with_life(guard_text="{nope").startswith("Unknown: the run guard cannot be read"))
 
     def test_each_ending_of_the_newest_run_file(self):
         cases = [("## Closeout run=abc\n", "Completed"),
@@ -165,11 +189,12 @@ class RunState(Tree):
     def test_an_unreadable_run_file_names_no_full_path(self):
         # Review round 1, finding 2: the error text carried the absolute path of the file.
         (self.root / "build").mkdir()
-        guard = self.root / "build/claude-campaign-guard.json"
-        guard.write_text("{}", encoding="utf-8")
-        with mock.patch.object(pathlib.Path, "read_text", side_effect=PermissionError(13, "denied", str(guard))):
-            state = digest.run_state(self.root)
-        self.assertEqual(state, "Unknown: the run files cannot be read (PermissionError on build/claude-campaign-guard.json).")
+        # The guard is read by campaign_guard.liveness now (D00 T07 §1), so it is made unreadable for real: a folder
+        # where the file should be.
+        (self.root / "build/claude-campaign-guard.json").mkdir()
+        state = digest.run_state(self.root)
+        self.assertTrue(state.startswith("Unknown: the run guard cannot be read (the guard file "
+                                         "build/claude-campaign-guard.json does not parse"), state)
         self.assertNotIn(str(self.root), state)
 
     def test_an_unreadable_guard_is_unknown(self):

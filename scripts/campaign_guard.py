@@ -33,6 +33,7 @@ it runs the same on Windows and WSL, and without Isotone's CI repair ledger.
 from __future__ import annotations
 
 import datetime
+import glob
 import hashlib
 import json
 import os
@@ -194,6 +195,98 @@ def _read_state(root: str) -> dict:
     except (OSError, ValueError):
         return {}
     return doc if isinstance(doc, dict) else {}
+
+
+LIVE_SECONDS = 3600  # a run with no sign of life for longer than this reads stalled (D00 T07 §1)
+
+
+class StateError(Exception):
+    """The state file exists but cannot be read or parsed."""
+
+
+def _read_state_strict(root: str) -> dict:
+    """The state file, {} when there is none (a fresh run, or one `acquire` reset); StateError when it is broken."""
+    _, state_path = _paths(root)
+    try:
+        with open(state_path, encoding="utf-8-sig") as fh:
+            doc = json.load(fh)
+    except FileNotFoundError:
+        return {}
+    except OSError as exc:
+        raise StateError(f"the state file cannot be read ({type(exc).__name__})") from None
+    except ValueError:
+        raise StateError("the state file is not JSON") from None
+    if not isinstance(doc, dict):
+        raise StateError("the state file is not a JSON object")
+    return doc
+
+
+def _touch_seen(root: str, session: str) -> None:
+    """Under the lock: record that the guard's own session is alive (`seen_at`), keeping every other state field.
+    A session that is not the guard's writes nothing, so a handed-over run is never refreshed by its old owner."""
+    try:
+        guard = read_guard(root)
+    except GuardError:
+        return
+    if guard is None or str(guard.get("session_id", "")) != session:
+        return
+    state = _read_state(root)
+    state["seen_at"] = _utc_now()
+    _, state_path = _paths(root)
+    _write_json(state_path, state)
+
+
+def _transcript_time(session: str, config_dir: str | None = None) -> float | None:
+    """The newest modification time of the session's own transcript, which Claude Code appends on every message and
+    tool call: `<config>/projects/*/<session>.jsonl`, the config folder being CLAUDE_CONFIG_DIR or ~/.claude."""
+    if not re.fullmatch(r"[A-Za-z0-9-]{8,80}", session or ""):
+        return None
+    base = config_dir or os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude")
+    times = []
+    for path in glob.glob(os.path.join(glob.escape(base), "projects", "*", f"{session}.jsonl")):
+        try:
+            times.append(os.path.getmtime(path))
+        except OSError:
+            continue
+    return max(times) if times else None
+
+
+def liveness(root: str, now: float | None = None, config_dir: str | None = None) -> tuple[str, str] | None:
+    """The live guard's state for a reader such as the owner digest: ("running", when), ("stalled", since) or
+    ("unknown", reason); None when no live guard stands (an ended run reads from its run file). The sign of life is
+    the newer of the state's `seen_at` (written by the heartbeat's `whoami` and the Stop hook) and the session's
+    transcript; never a commit, which another session may make."""
+    now = time.time() if now is None else now
+    try:
+        guard = read_guard(root)
+    except GuardError as exc:
+        # Named by its repository path: the reader (the owner digest) sends this line, and no machine path may go.
+        guard_path, _ = _paths(root)
+        detail = str(exc).replace(guard_path, "build/claude-campaign-guard.json").replace(root, "<repository>")
+        return ("unknown", f"the run guard cannot be read ({detail})")
+    if guard is None:
+        return None
+    try:
+        state = _read_state_strict(root)
+    except StateError as exc:
+        return ("unknown", str(exc))
+    signs = []
+    seen = state.get("seen_at")
+    if seen:
+        try:
+            signs.append(datetime.datetime.strptime(str(seen), UTC_FORMAT).replace(
+                tzinfo=datetime.timezone.utc).timestamp())
+        except ValueError:
+            return ("unknown", f"the state's seen_at {seen!r} is not a UTC time")
+    transcript = _transcript_time(str(guard.get("session_id", "")), config_dir)
+    if transcript is not None:
+        signs.append(transcript)
+    if not signs:
+        since = str(guard.get("job_created_at") or "an unknown time")
+        return ("stalled", since)
+    last = max(signs)
+    when = datetime.datetime.fromtimestamp(last, datetime.timezone.utc).strftime(UTC_FORMAT)
+    return ("running", when) if now - last <= LIVE_SECONDS else ("stalled", when)
 
 
 def mint_generation() -> str:
@@ -500,6 +593,8 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
         return "NOT THE OWNER"
     if generation and str(guard.get("generation", "")) != generation:
         return "NOT THE CURRENT JOB"
+    with _Lock(root):  # the heartbeat arrived in the owning session: a sign of life for the digest
+        _touch_seen(root, session)
     # The run id rides the answer, so the heartbeat reads which markers are this run's.
     scope = guard.get("scope") or "plan"
     parked = campaign_park(root, str(guard.get("run_file", "")), str(guard.get("run_id") or ""))
@@ -802,7 +897,7 @@ def stop_decision(root: str, session: str) -> dict | None:
             return None
         old = _read_state(root)
         state = {"fingerprint": str(old.get("fingerprint", "")), "blocks": int(old.get("blocks", 0) or 0),
-                 "trips": int(old.get("trips", 0) or 0), "stalled": False}
+                 "trips": int(old.get("trips", 0) or 0), "stalled": False, "seen_at": _utc_now()}
         # An error the heartbeat has not acknowledged yet stays until it is (`hook-error --ack`).
         state.update({k: old[k] for k in ("hook_error", "hook_error_at") if old.get(k)})
         if state["fingerprint"] != print_:

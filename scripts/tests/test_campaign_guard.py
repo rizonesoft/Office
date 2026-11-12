@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
@@ -94,6 +95,114 @@ class Workspace(unittest.TestCase):
 
     def state(self):
         return guard._read_state(self.root)
+
+
+digest_spec = importlib.util.spec_from_file_location("owner_digest_for_liveness", REPO / "scripts" / "owner-digest.py")
+digest = importlib.util.module_from_spec(digest_spec)
+digest_spec.loader.exec_module(digest)
+
+
+class Liveness(Workspace):
+    """D00 T07 §1: a run is Running only while its own session shows life; the digest reads it through liveness()."""
+
+    def setUp(self):
+        super().setUp()
+        self.config = os.path.join(self._tmp.name, "claude-config")
+        os.makedirs(os.path.join(self.config, "projects", "D--Somewhere"))
+
+    def transcript(self, age_seconds, session=SESSION):
+        path = os.path.join(self.config, "projects", "D--Somewhere", f"{session}.jsonl")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("{}\n")
+        when = time.time() - age_seconds
+        os.utime(path, (when, when))
+
+    def seen(self, age_seconds):
+        state = guard._read_state(self.root)
+        state["seen_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - age_seconds))
+        guard._write_json(os.path.join(self.root, "build", "claude-campaign-state.json"), state)
+
+    def line(self):
+        return digest.run_state(Path(self.root), config_dir=self.config)
+
+    def test_a_fresh_transcript_keeps_a_busy_session_running(self):
+        self.acquire()
+        self.seen(2 * 3600)  # no heartbeat or hook for two hours: the session has been busy, not idle
+        self.transcript(60)
+        self.assertTrue(self.line().startswith(f"Running: run {self.run_id()}, phase 0, {RUN_FILE}"), self.line())
+
+    def test_a_commit_by_someone_else_does_not_revive_an_abandoned_guard(self):
+        self.acquire()
+        self.transcript(3 * 3600)
+        self.write("other.txt", "x\n")
+        for args in (["add", "-A"], ["commit", "-qm", "another session"]):
+            subprocess.run(["git", *args], cwd=self.root, capture_output=True, check=True)
+        self.assertTrue(self.line().startswith("Stalled since "), self.line())
+        self.assertIn("takes the run over", self.line())
+
+    def test_without_a_transcript_seen_at_decides(self):
+        self.acquire()
+        self.seen(120)
+        self.assertTrue(self.line().startswith("Running: "), self.line())
+        self.seen(2 * 3600)
+        self.assertTrue(self.line().startswith("Stalled since "), self.line())
+
+    def test_no_sign_at_all_is_stalled_since_the_run_began(self):
+        self.acquire()
+        self.assertEqual(guard.liveness(self.root, config_dir=self.config)[0], "stalled")
+        self.assertIn(guard.read_guard(self.root)["job_created_at"], self.line())
+
+    def test_the_heartbeat_writes_seen_at_and_keeps_the_breaker(self):
+        self.acquire(generation="gen-1")
+        before = {"fingerprint": "f" * 64, "blocks": 2, "trips": 1, "stalled": False}
+        guard._write_json(os.path.join(self.root, "build", "claude-campaign-state.json"), dict(before))
+        self.assertTrue(guard.whoami(self.root, SESSION, "gen-1").startswith("OWNER"))
+        state = guard._read_state(self.root)
+        self.assertEqual({k: state[k] for k in before}, before)
+        self.assertIn("seen_at", state)
+        self.assertTrue(self.line().startswith("Running: "), self.line())
+
+    def test_the_stop_hook_writes_seen_at(self):
+        self.acquire()
+        self.assertEqual(self.hook()["decision"], "block")
+        self.assertIn("seen_at", self.state())
+        self.assertEqual(self.state()["blocks"], 1)
+        self.assertTrue(self.line().startswith("Running: "), self.line())
+
+    def test_after_a_handover_the_old_owner_writes_nothing(self):
+        self.acquire(generation="gen-1")
+        self.acquire(session=OTHER, cron_id="job-2", handover="session died")
+        state_path = os.path.join(self.root, "build", "claude-campaign-state.json")
+        self.assertEqual(guard.whoami(self.root, SESSION, "gen-1"), "NOT THE OWNER")
+        self.assertIsNone(self.hook(session=SESSION))
+        self.assertNotIn("seen_at", guard._read_state(self.root))
+        self.assertFalse(os.path.exists(state_path) and "seen_at" in guard._read_state(self.root))
+        self.assertTrue(self.line().startswith("Stalled since "), self.line())
+
+    def test_a_missing_state_lets_the_transcript_decide(self):
+        self.acquire()
+        self.assertFalse(os.path.exists(os.path.join(self.root, "build", "claude-campaign-state.json")))
+        self.transcript(30)
+        self.assertTrue(self.line().startswith("Running: "), self.line())
+
+    def test_a_corrupt_or_unreadable_state_or_a_malformed_guard_is_unknown(self):
+        self.acquire()
+        state_path = os.path.join(self.root, "build", "claude-campaign-state.json")
+        self.write("build/claude-campaign-state.json", "{not json")
+        self.assertEqual(self.line(), "Unknown: the state file is not JSON.")
+        os.unlink(state_path)
+        os.makedirs(state_path)  # a folder where the file should be: open() fails
+        self.assertTrue(self.line().startswith("Unknown: the state file cannot be read ("), self.line())
+        os.rmdir(state_path)
+        self.write("build/claude-campaign-guard.json", "{broken")
+        self.assertTrue(self.line().startswith("Unknown: the run guard cannot be read"), self.line())
+
+    def test_an_ended_run_reads_from_its_run_file(self):
+        self.acquire()
+        self.write(RUN_FILE, f"PARKED 2099-01-02T00:00:00Z run={self.run_id()} blocked here\n", "a")
+        guard.end(self.root, SESSION, "park")
+        self.assertIsNone(guard.liveness(self.root, config_dir=self.config))
+        self.assertTrue(self.line().startswith("Parked"), self.line())
 
 
 class CampaignParks(Workspace):
