@@ -76,6 +76,7 @@ title: "TODO-01 -- Tech Stack and Foundation Plan"
 | 27 | §27 | Release domain authoring | §17, §28 | [ ] |
 | 28 | §28 | Versioning and release identity | §1, §16 | [ ] |
 | 29 | §29 | Office reference benchmarks | -- | [ ] |
+| 30 | §30 | Per-app authoring order | -- | [ ] |
 
 ## 1. Platform Targets Decision
 
@@ -762,6 +763,29 @@ Owner decision 2026-10-23 (`docs/product-principles.md`): we are building a bett
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_bench_office.py"` passes and `python scripts/bench-office.py --check-budgets` exits 0.
 
+## 30. Per-App Authoring Order
+
+Owner, 2026-11-12, in session: the product's own TODO sections for the shell and for Word should be written once the shell inventory (D02 T01 §4, done) and the Word inventory (D02 T01 §5 done, §6 open) are done, and "it is not necessary to wait for all the inventory to be done". As wired, they wait for all of it by two paths. Word's sections are authored by §19, which needs D02 T02 §14, the mock-up sign-off for all six apps, and so every app's surface chapter and inventory. The shell's sections are in the platform files §17 authors, which needs D02 T01 §29 (layout tables), behind D02 T01 §22 (ownership check) and D02 T01 §18 (coverage report), which names every app's inventory; §14 (cloud equivalents) reaches the same sections through D02 T01 §28. What an app's sections really need is that app's inventory, its chapter of the interface spec with the shell and ribbon chapters, and the architecture decisions (§1 to §16), since a product section must name real files and symbols. This section rewires the plan to that, keeps the all-app guarantees where they belong (the ownership gate, §13), and orders the work so the path to the shell and to Write is taken first.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Write down every path from an app's authoring section to another app's inventory. Done when: the design note lists each path and what each link really needs.
+2. Rewire the sections and restate the tool sections' contracts. Done when: Write's and the platform's authoring no longer depend on another app's inventory, and `validate` passes.
+3. Order the work. Done when: the plan takes the rows that lead to the shell's and Write's sections before the other apps' inventories.
+
+- [ ] Write `docs/specs/2026-11-12-per-app-authoring-design.md`: every dependency path, found with `python scripts/todo-graph.py resolve`, from §17 and from each of §19 to §24 to an inventory section of another app (D02 T01 §5 to §16); for each link what the later section actually reads from the earlier one; and the new wiring. Done when: `python scripts/check-design-doc.py docs/specs/2026-11-12-per-app-authoring-design.md --require Paths --require Wiring` exits 0. Cheaper substitute: editing the dependency columns by eye, which misses the paths through the tool sections.
+- [ ] Record the rule as a decision appended to `docs/specs/2026-10-23-campaign-scope-design.md`: an app's sections are authored when that app's inventory, its surface chapter and the architecture decisions are done; guarantees that span all six apps are checked at the ownership gate (§13), not before any app may start. Done when: the decision is numbered after the last one and names this section.
+- [ ] Restate the contracts of the tool sections on those paths (D02 T01 §18, §22, §28 and §29, none started) so each tool is built and proved on the inventories that exist, reports the apps not yet inventoried as pending instead of failing, and is run again as each inventory lands; move what must hold for all six apps into §13's checklist. Done when: each of those sections depends only on what its tool reads to be built, each changed item carries a dated `**Corrected**` note, and §13 lists the all-app conditions it took over.
+- [ ] Rewire the authoring sections: §19 to §24 each depend on their own app's surface chapter in `todo/02-interface/TODO-02-interface-spec.md` (and the chapters it builds on) in place of D02 T02 §14, which keeps the cross-app sign-off; §17 depends on the shell, ribbon, Backstage and status bar chapters and on the tools as restated. Done when: `python scripts/todo-graph.py validate` passes, and a test in `scripts/tests/test_todo_graph.py` over this repository's tree shows that no prerequisite of §17 or §19, however far back, is an inventory section of Excel, PowerPoint, Visio, Project or Outlook, and that §20 to §24 each reach only their own app's.
+- [ ] Order the work so the rows on the path to §17 and §19 run before the inventories of the other five apps, by the mechanism the plan already has (phase numbers and the Implementation Order tables), and say in `.claude/skills/process-plan/SKILL.md` nothing new: the order must come from the plan itself. Done when: `python scripts/todo-graph.py query ready` lists, ahead of D02 T01 §7, every ready row that §17 or §19 waits on, and the design note states the order and why.
+- [ ] Regenerate the plan and show the result. Done when: `python scripts/todo-graph.py plan --check` passes and the design note quotes the plan's order of the affected rows before and after.
+- [ ] Commit: `todo: an app's sections are authored when its own inventory is done`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the prerequisite test among them, and `python scripts/todo-graph.py validate` and `plan --check` pass.
 ## Verification
 
 - Every design record in `docs/specs/` named by §1 to §11 passes `scripts/check-design-doc.py` and carries a dated Decision.
