@@ -37,6 +37,7 @@ title: "TODO-05 -- Lessons"
 | 3 | §3 | First lessons from the review records | §1, §2 | [x] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
 | 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
+| 6 | §9 | Triage covers every review pass | §3 | [ ] |
 
 ## 1. Lesson Files and Their Checker
 
@@ -156,6 +157,10 @@ A lesson only helps if it is in front of whoever is about to repeat the mistake.
 - [ ] Add to `.claude/skills/review-todo-section/SKILL.md`, before the stamp: for every finding of the section's rounds that was confirmed and fixed, add a line to the record's triage file under `docs/lessons/triage/` with its disposition (§3), and write the lesson file where the disposition is `lesson:<id>`. Done when: the skill names the file, the three dispositions and `python scripts/lessons.py check`.
 - [ ] Add to the same step: a lesson the section's own work made enforceable (it added the check or test) is retired with `retired_by` in the same commit. Done when: the skill says so.
 - [ ] Add a test in `scripts/tests/test_skill_ci_gate.py` that both skills name `scripts/lessons.py`. Done when: the test fails when either mention is removed.
+- [ ] Hold the obligations, not the mention: tests in `scripts/tests/test_skill_ci_gate.py` fail when the read step, its handling of a failed query, the triage step, its place before the completion review, or the retirement rule is removed from the skills or moved after the pass that reviews the candidate; and a walkthrough test in `scripts/tests/test_lessons.py` writes dispositions for a fixture record as the skill says, shows `check` passing, the new lesson returned by the next query, and a lesson retired with `retired_by` no longer returned. Done when: those tests pass and each fails with its sentence removed. **Corrected 2026-11-12:** added after the plan review (gap 1, P1); the test item above alone would pass on a bare mention.
+- [ ] Say what each outcome of the read means: exit 0 with lessons is read; exit 0 with none means no lesson applies, which the section's plan-review note records; exit 1 (the store breaks a rule, or the index cannot be written) is repaired first (`python scripts/lessons.py check`, fix what it names) and the query run again until it exits 0, since a failed query has read nothing; exit 2 is a mistake in the command, corrected and rerun. Done when: the skill states the four outcomes and the test holds them. **Corrected 2026-11-12:** added after the plan review (gap 3, P2).
+- [ ] Put the triage and its lessons in the candidate the last pass reviews: after the round's findings are fixed and before the completion review is dispatched, with `python scripts/lessons.py check` passing and the lines committed; a later pass's fixes are triaged before the next reconciliation; a resumed section runs `candidates --untriaged` on its record and writes only what that prints, never a second line for a finding. Done when: the skill says so and the ordering test holds it. **Corrected 2026-11-12:** replaces the first wording's before the stamp, which could land after the last reviewed candidate (plan review gap 4, P2).
+- [ ] Triage the findings a round raises; the findings of a plan review, a completion review and a reconciliation are triaged once §9 gives those passes an identity, and the skill says which passes it covers today. Done when: the skill names rounds and points at §9 for the rest. **Corrected 2026-11-12:** every confirmed finding in the first wording reached further than §3's reader does (plan review gap 2, P1); the missing coverage is owned by §9, filed with this correction.
 - [ ] Commit: `lessons: read them before a section and write them after its review`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` passes with the new test among them.
@@ -183,6 +188,26 @@ A store that only grows stops working: once hundreds of lessons match one path, 
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes with the report tests among them, and `python scripts/lessons.py report --check` exits 0.
 
+## 9. Triage Covers Every Review Pass
+
+Filed 2026-11-12 from the plan review of §4 (`docs/reviews/00-workspace/D00-T05-s4.md`, gap 2, P1). §3 identifies a finding by its round, and §1's lesson source by `#round-N/finding-K`. Under the three-pass schedule (owner decision 2026-11-11) a section has one round, and most of its findings come from the plan review, the completion review and the reconciliations, which `round_findings` in `scripts/lib/lessons.py` deliberately leaves out. So a confirmed and fixed finding of those passes cannot be triaged or cited by a lesson today. This section gives every pass an identity.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Read the findings of every pass. Done when: `candidates` lists plan, completion and reconciliation findings beside round findings.
+2. Let triage lines and lesson sources name them. Done when: `check` validates both.
+
+- [ ] Extend the reader in `scripts/lib/lessons.py` to every pass of a record: a plan review's findings, a completion review's gap list, and the new findings a reconciliation raises (its `closed` and `open` lines report on earlier gaps and are not findings), each with its place in its pass. Done when: tests over fixture records of each pass, and over three real records of this repository, list exactly the tagged findings.
+- [ ] Give each pass an identity in triage lines and lesson sources: `plan finding K`, `round N finding K`, `completion finding K` and `reconciliation N finding K` in a triage file, and `#plan/finding-K`, `#round-N/finding-K`, `#completion/finding-K` and `#reconciliation-N/finding-K` in a lesson's `source`; existing `round` lines and sources stay valid. Done when: `check` accepts each form for a finding that exists and refuses one that does not, and `docs/lessons/README.md` states the forms.
+- [ ] List them in `candidates` and `candidates --untriaged`, so a section's own record shows every finding still to triage. Done when: a test over a record holding all four passes prints each pass's findings and drops each as its line is written.
+- [ ] Extend `review-todo-section`'s triage step (§4) from the round's findings to every pass's. Done when: the skill names all four passes and `scripts/tests/test_skill_ci_gate.py` holds it.
+- [ ] Commit: `lessons: triage the findings of every review pass`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes with the pass tests among them, and `python scripts/lessons.py candidates docs/reviews/00-workspace/D00-T05-s4.md` lists that record's plan review findings.
 ## Verification
 
 - `python scripts/lessons.py check` exits 0 and CI runs it.

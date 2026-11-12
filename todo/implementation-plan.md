@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 60 | Checklist items: 450
+Sections: 61 | Checklist items: 459
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -66,8 +66,9 @@ Sections: 60 | Checklist items: 450
 | [x]    | D00 T05 §1  | Lesson Files and Their Checker                        | none                   | 12    |
 | [x]    | D00 T05 §2  | Lesson Index and Query                                | none                   | 15    |
 | [x]    | D00 T05 §3  | First Lessons From the Review Records                 | none                   | 9     |
-| [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                       | none                   | 5     |
+| [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                       | none                   | 9     |
 | [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 7     |
+| [ ]    | D00 T05 §9  | Triage Covers Every Review Pass                       | none                   | 5     |
 | [x]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 6     |
 | [x]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 5     |
 | [x]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 10    |
@@ -257,6 +258,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 83/161 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 83/162 verified sections, 21 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 590/1092 items completed (includes Commit items).
+Checklist: 590/1101 items completed (includes Commit items).
