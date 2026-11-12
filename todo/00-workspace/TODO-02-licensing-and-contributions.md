@@ -99,6 +99,8 @@ GPLv3 for our code does not remove the duties of the components we ship. The Win
 
 ## 3. Contributor Agreement Text
 
+> **Started:** 2026-11-12T23:48:45Z
+
 The agreement lets Rizonesoft relicense contributions (for example a commercial edition) while contributors keep their copyright. It starts from a Project Harmony template and must be reviewed by a lawyer before it binds anyone.
 
 **Owner's decision, 2026-11-13 (in session):** use the Project Harmony agreements now, with the templates' own wording kept and only their choices filled in, governed by the law of South Africa; a lawyer's review is a later audit by the owner and no longer holds this section or the pull request check (§4). The section moves from Phase 99 to Phase 0 and waits on no one.
