@@ -27,7 +27,7 @@ title: "TODO-02 -- Interface Specification"
 
 - `design/tokens/tokens.json` defines colour, type, spacing, radius, elevation and motion tokens for the light, dark and high-contrast themes, with one accent per app.
 - `design/SPEC.md` has chapters for Tokens, Shell, Ribbon, Backstage, Status bar, Accessibility and one per app, each citing inventory ids, and passes `scripts/check-design-doc.py`.
-- `design/mockups/<app>.svg` exists for all six apps and `design/SPEC.md` records the owner's sign-off per app.
+- `design/mockups/<app>.svg` exists for all six apps and `design/SPEC.md` records the independent reviewer's sign-off per app, which the owner audits later (decision 3 of `docs/specs/2026-10-23-campaign-scope-design.md`).
 
 **Adjacency:** list=applicable @ D02 T02 §5; document=applicable @ D02 T02 §5; settings=applicable @ D02 T02 §5; reporting=not-applicable (specification only; report surfaces are specified per app in §7 to §12); notifications=applicable @ D02 T02 §3; permissions=not-applicable (no access control in the shell specification); audit=not-applicable (specification only); exchange=applicable @ D02 T02 §5; reverse=applicable @ D02 T02 §4
 

@@ -80,6 +80,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
+| 45 | §59 | A parked section is neither ready nor in progress | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1308,6 +1309,32 @@ Owner, 2026-11-12, in session: the plan file must not reference TODO files; it l
 
 > **Verified:** 2026-11-12 | §58 | 737719c64d9f7b0b12f2c653b97521a20e950694
 > **Review:** `docs/reviews/d00-t03-s58.json`
+## 59. A Parked Section Is Neither Ready Nor In Progress
+
+> **Started:** 2026-11-12T20:42:27Z
+
+Filed 2026-11-12 from the campaign's own run (`docs/phase-runs/2026-11-12-phase-0.md` and the run before it). Two open sections stand at a committed candidate and wait on something outside the run: §53 on the owner decision §56, and D00 T07 §4 on the weekly digest's first scheduled run on Monday 2026-11-16. Each still carries its `Started:` line, so the tree calls both in progress and ready, and three things go wrong. `scripts/merge_prs.py` refuses at every section boundary (`a section is in progress`), so no dependency pull request can merge until the owner answers. `python scripts/todo-graph.py query ready` lists both, so the Stop hook names a section nobody can work on as the next row. And a campaign with nothing else left cannot see from the graph that it should park. The only record that they are parked is prose in a run file. This section gives a parked section one line in its own TODO section that the graph and the merge both read.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Give a parked section its line and make the graph read it. Done when: `python scripts/todo-graph.py query ready` no longer lists a parked section and `resolve` exits 4 for it, saying what it waits on.
+2. Let the dependency merge pass a parked section. Done when: `python scripts/merge_prs.py` refuses for a section in progress and not for a parked one.
+3. Park the two sections that are parked. Done when: the merge no longer names them and the Stop hook's next row is a section that can be worked on.
+
+- [ ] Document the `> **Parked:** <UTC instant>: <reason>` line in `todo/README.md`, beside `Started:`: written directly under the `Started:` line of an open section whose work stopped at a committed candidate and waits on something outside the run (an owner decision filed as its own section, a dated event), with the reason naming what it waits on; removed in the commit that resumes the work; never on a section with uncommitted work. Done when: the README names the line, where it sits, who writes and removes it, and what it changes (`query ready`, `resolve`, the merge). Cheaper substitute: a note in the run file, which no tool reads.
+- [ ] Parse the line in `scripts/lib/todo_graph.py` into a `parked` field of `Section` (the reason, or empty) and refuse, in `validate`, a `Parked:` line on a section with no `Started:` line, on a stamped section, with no UTC instant, with an empty reason, or given twice. Done when: tests in `scripts/tests/test_todo_graph.py` show each refusal with the section named, and an accepted line read back with its reason.
+- [ ] Make `disposition` in `scripts/lib/todo_graph.py` return 4 for a parked section, so `query ready` leaves it out, `query blocked` lists it, and `resolve` exits 4 and prints `parked: <reason>` beside what else it waits on. Done when: tests show a section ready before the line and waiting after it, the reason in `resolve`'s output, and the section ready again once the line is removed. Cheaper substitute: filtering the ready list in the Stop hook alone, which leaves `resolve` and the plan's counts calling it ready.
+- [ ] Count a parked section as waiting, not ready, in `query stats` and in the generated plan's progress line (`todo/implementation-plan.md`). Done when: a test shows the ready count one lower with a section parked, and `python scripts/todo-graph.py plan --check` passes on this repository after the sync.
+- [ ] Leave parked sections out of `in_progress_sections` in `scripts/merge_prs.py`, keeping every other refusal (a dirty tree, an unpushed `HEAD`, a started section that is not parked). Done when: tests in `scripts/tests/test_merge_prs.py` show a tree whose only started section is parked passing the local safety check, a tree with a started section that is not parked still refused with its reference, and a tree with one of each refused naming only the one in progress. Cheaper substitute: dropping the in-progress refusal, which lets a merge land under a section being built.
+- [ ] Say where the line is written and removed in `.claude/skills/review-todo-section/SKILL.md` (a section that stays unstamped because it waits on an owner decision, a dated event or the cap), `.claude/skills/process-todo-section/SKILL.md` (a plan-parked section; on resume, remove the line in the first commit) and `.claude/skills/process-phase/SKILL.md` (Step 1.3: for each parked section of the phase, check whether what it waits on has happened, and resume it if so). Done when: each skill names the line and the moment, and `python -m unittest discover -s scripts/tests -p "test_skill*.py"` passes where such tests exist. Cheaper substitute: leaving it to the lead's memory of the run file.
+- [ ] Park §53 (waits on the owner decision §56) and D00 T07 §4 (waits on the scheduled run of Monday 2026-11-16, 07:05 local time) with the line, and make §53 depend on §56 in its Implementation Order row, since that is what it waits on. Done when: `python scripts/todo-graph.py query ready` lists neither, `python scripts/merge_prs.py --session <this session>` no longer names either, and `python scripts/campaign_guard.py stop-hook`'s next row, read from `query ready`, is a section that can be worked on.
+- [ ] Commit: `todo: a parked section is neither ready nor in progress`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` and `python -m unittest discover -s scripts/tests -p "test_merge_prs.py"` pass with the tests named above among them, and `python scripts/todo-graph.py query ready` lists neither §53 nor D00 T07 §4.
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
