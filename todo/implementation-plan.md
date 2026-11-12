@@ -67,7 +67,7 @@ Sections: 59 | Checklist items: 424
 | [ ]    | D00 T05 §3  | First Lessons From the Review Records                 | none                   | 6     |
 | [ ]    | D00 T05 §4  | Section Runs Read Their Lessons                       | none                   | 5     |
 | [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 7     |
-| [ ]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 6     |
+| [x]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 6     |
 | [ ]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 3     |
 | [ ]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 4     |
 | [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning             | windows-host           | 5     |
@@ -385,6 +385,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 77/160 verified sections, 22 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 78/160 verified sections, 21 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 542/1066 items completed (includes Commit items).
+Checklist: 543/1066 items completed (includes Commit items).

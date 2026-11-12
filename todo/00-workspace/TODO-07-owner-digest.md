@@ -28,7 +28,7 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Digest tells a live run from an abandoned guard | T03 §35 | [ ] |
+| 1 | §1 | Digest tells a live run from an abandoned guard | T03 §35 | [x] |
 | 2 | §2 | Digest keeps a long progress list | T03 §35 | [ ] |
 | 3 | §3 | Digest delivery survives a failed send | T03 §35 | [ ] |
 | 4 | §4 | Scheduled tasks start on a Monday morning | -- | [ ] |
@@ -52,9 +52,12 @@ Filed 2026-11-11 from the completion review of T03 §35 (`docs/reviews/00-worksp
 - [x] Write `seen_at` where the heartbeat really arrives and where the hook runs: `whoami` (the heartbeat prompt's call, after its session and generation check passes) and the Stop hook (for the guard's own session only), each keeping the stall breaker's fields as they were. Done when: tests call `whoami` and the hook, read the state back through the digest's run line, show `fingerprint`, `blocks`, `trips` and `stalled` unchanged, and show a call from another session after a handover writing nothing. **Corrected 2026-11-12:** the first correction named `health`, which runs only at section boundaries (plan review gaps 2 and 3, P2).
 - [x] Tell a missing state file from a broken one: a missing file (a fresh run, or one `acquire` just reset) means no `seen_at` yet and the transcript decides, while a state file that cannot be read or parsed, like an unreadable guard, gives `Unknown: <reason>`. Done when: tests cover a missing, a corrupt and an unreadable state file and a malformed guard, each with its line. **Corrected 2026-11-12:** added after the plan review (gap 4, P2).
 - [x] Report `Unknown` with the reason when the guard or its state cannot be read. Done when: a test with a malformed guard shows it.
-- [ ] Commit: `automations: the digest tells a live run from an abandoned guard`
+- [x] Commit: `automations: the digest tells a live run from an abandoned guard`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes with the guard tests among them.
+
+> **Verified:** 2026-11-12 | §1 | 8b5510f80645fd1fb559d5878f4a06dfadd1fe1d
+> **Review:** `docs/reviews/d00-t07-s1.json`
 
 ## 2. Digest Keeps a Long Progress List
 
