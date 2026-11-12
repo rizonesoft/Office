@@ -37,7 +37,7 @@ title: "TODO-04 -- Portable Build Tools"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Tool lock file and bootstrap script | -- | [x] |
-| 2 | §2 | Tool folder resolver | §1 | [ ] |
+| 2 | §2 | Tool folder resolver | §1 | [x] |
 | 3 | §3 | Tool bootstrap in CI | §1 | [ ] |
 | 4 | §4 | Launcher and clangd use the tool folder | §1, §2 | [ ] |
 
@@ -110,9 +110,12 @@ Every script that starts a build tool asks one function where it is, and that fu
 - [x] Add `--where <program>` to `scripts/bootstrap-tools.py`, printing the path and exiting 0, or the refusal and exiting 1. Done when: a test shows both outcomes.
 - [x] Add `--bin-dirs` to `scripts/bootstrap-tools.py`, printing one installed `bin` folder per line for a caller that must prepend them to a child process's `PATH` (the launcher in §4, the CMake presets D03 T01 §17 authors). Done when: a test with two fixture tools prints both folders and nothing else. **Corrected 2026-11-12** (plan review gap 3, P2): only a tool that passes the `tool_path` checks has its folders printed; each tool that does not is named on stderr with the bootstrap command, and the exit is 1 when any tool was left out (0 otherwise), so a caller that continues after a partial bootstrap gets only usable folders on stdout. Tests cover an empty folder (no output, exit 1), a partial install (the installed tool's folders, the other named, exit 1) and a stale tool (left out).
 - [x] Extend `scripts/tests/test_no_hardcoded_paths.py` to cover `scripts/bootstrap-tools.py` and `scripts/lib/tool_lock.py` if its file list does not already include them. Done when: the test names both files among those it scanned, and a drive path added to either makes it fail.
-- [ ] Commit: `tools: resolve build tools from the tool folder only`
+- [x] Commit: `tools: resolve build tools from the tool folder only`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_bootstrap_tools.py"` passes with the resolver tests among them, and `python scripts/bootstrap-tools.py --where ninja` prints a path under `.tools`.
+
+> **Verified:** 2026-11-12 | §2 | 54afadcf1cbc2a965baaf0976ca42b286eee3684
+> **Review:** `docs/reviews/d00-t04-s2.json`
 
 ## 3. Tool Bootstrap in CI
 
