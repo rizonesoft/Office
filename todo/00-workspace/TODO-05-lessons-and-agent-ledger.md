@@ -32,7 +32,7 @@ title: "TODO-05 -- Lessons"
 
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
-| 1 | §1 | Lesson files and their checker | -- | [ ] |
+| 1 | §1 | Lesson files and their checker | -- | [x] |
 | 2 | §2 | Lesson index and query | §1 | [ ] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [ ] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
@@ -67,6 +67,9 @@ A lesson is one small Markdown file a person can read and a reviewer can refuse.
 - [x] Commit: `lessons: define lesson files and check them`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes with the tests named above among them, and `python scripts/lessons.py check` exits 0 on the repository.
+
+> **Verified:** 2026-11-12 | §1 | 204922d7b08bad0e558e205dd2218d641f72e9de
+> **Review:** `docs/reviews/d00-t05-s1.json`
 
 ## 2. Lesson Index and Query
 
