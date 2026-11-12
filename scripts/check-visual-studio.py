@@ -4,7 +4,7 @@
 """Alert when this machine's Visual Studio 2026 is behind its latest servicing release.
 
     python scripts/check-visual-studio.py check     # exit 0 current, 1 behind or missing, 2 cannot check
-    python scripts/check-visual-studio.py notify    # as check, but being behind is emailed once per release, exit 0
+    python scripts/check-visual-studio.py notify    # as check, but being behind is recorded for the weekly digest once per release, exit 0
 
 Office is native C++ (C++23) built with the MSVC toolset of Visual Studio 2026 (version 18), and the owner's rule is
 the newest stable release (D03 T01 §2). The installed versions come from
@@ -55,7 +55,7 @@ def latest(major=MAJOR, fetch=fetch_json):
     return version
 
 
-def main(argv=None, fetch=fetch_json, root=ROOT, run=subprocess.run, vswhere=VSWHERE, mail=pin_proposal.notify):
+def main(argv=None, fetch=fetch_json, root=ROOT, run=subprocess.run, vswhere=VSWHERE, mail=pin_proposal.record):
     parser = argparse.ArgumentParser(description="Alert when Visual Studio 2026 is behind its latest servicing release.")
     parser.add_argument("mode", choices=("check", "notify"))
     args = parser.parse_args(argv)

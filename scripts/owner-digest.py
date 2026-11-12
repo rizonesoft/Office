@@ -43,6 +43,8 @@ BODY_LINES = 120
 WIDTH = 100
 WINDOW_DAYS = 7
 ATTACHMENT = "waiting-on-you.txt"
+NOTICES_ATTACHMENT = "notices.txt"
+NOTICE_LINES = 10  # summary lines of notices in the body; every notice is in full in the attachment
 GUARD = "build/claude-campaign-guard.json"
 # CREATE_NO_WINDOW on every launch, as .conclave/automations/run.py says every nested launch of a task carries it, so
 # the Monday run opens no console on the owner's desktop.
@@ -256,8 +258,36 @@ def item_lines(item, root):
     return [*wrap(head), *wrap(action, "  To do: ")]
 
 
-def compose(root, rows, today, ci_lines, state):
-    """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it."""
+def notices_part(notices, root):
+    """The body lines for the queued notices (D00 T03 §53) and the full text of each for the attachment. `notices` is
+    the captured batch, or a string saying why the queue could not be read."""
+    if isinstance(notices, str):
+        return [*wrap(f"Notices: the queue could not be read ({without_paths(notices, root)}); none were marked "
+                      f"reported."), ""], None
+    if not notices:
+        return [], None
+    lines = [f"Notices since the last digest ({len(notices)}):"]
+    shown = 0
+    for notice in notices:
+        summary = wrap(f"- {notice.get('at', '?')} {notice.get('sender', '?')}: "
+                       f"{without_paths(str(notice.get('subject', '')), root)}")
+        if len(lines) - 1 + len(summary) > NOTICE_LINES:
+            break
+        lines += summary
+        shown += 1
+    if shown < len(notices):
+        lines += wrap(f"... and {len(notices) - shown} more; every notice in full is in the attached "
+                      f"{NOTICES_ATTACHMENT}.")
+    else:
+        lines += wrap(f"Each notice in full is in the attached {NOTICES_ATTACHMENT}.")
+    full = "\n\n".join(f"{n.get('at', '?')} {n.get('sender', '?')}: {n.get('subject', '')}\n\n"
+                       f"{without_paths(str(n.get('body', '')), root)}" for n in notices) + "\n"
+    return lines + [""], (NOTICES_ATTACHMENT, full)
+
+
+def compose(root, rows, today, ci_lines, state, notices=()):
+    """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
+    and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
     items = waiting(rows)
     built = verified_since(root, rows, today)
@@ -280,11 +310,12 @@ def compose(root, rows, today, ci_lines, state):
                 + [line for ref, title, stamped in built
                    for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
-    body = head + waiting_lines + [""] + progress
-    attachments = []
+    notice_lines, notice_file = notices_part(notices, root)
+    body = head + waiting_lines + [""] + notice_lines + progress
+    attachments = [notice_file] if notice_file else []
     if len(body) > BODY_LINES:
-        attachments = [(ATTACHMENT, "\n".join(waiting_lines) + "\n")]
-        room = BODY_LINES - len(head) - 2
+        attachments = [(ATTACHMENT, "\n".join(waiting_lines) + "\n"), *attachments]
+        room = BODY_LINES - len(head) - 2 - len(notice_lines)
         kept, shown = [waiting_lines[0]], 0
         for item in items:
             lines = item_lines(item, root)
@@ -294,12 +325,12 @@ def compose(root, rows, today, ci_lines, state):
             shown += 1
         notice = [""] + wrap(f"... and {len(items) - shown} more waiting on you, every one with its steps, in the "
                               f"attached {ATTACHMENT}.")
-        progress_room = BODY_LINES - len(head) - len(kept) - 1 - len(notice)
+        progress_room = BODY_LINES - len(head) - len(kept) - 1 - len(notice_lines) - len(notice)
         if len(progress) > progress_room:
             cut = progress[:max(progress_room - 1, 1)]
             cut.append(f"... and {len(built) - (len(cut) - 1)} more verified sections this week.")
             progress = cut
-        body = head + kept + [""] + progress + notice  # the notice is the last line, as the attachment's pointer
+        body = head + kept + [""] + notice_lines + progress + notice  # the pointer stays the last line
     subject = f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
     return subject, "\n".join(body) + "\n", attachments
 
@@ -314,8 +345,14 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
         print(f"owner-digest: the TODO tree cannot be read: {exc}", file=sys.stderr)
         return 2
     today = today or datetime.date.today()
-    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root))
     alert = load_alert(root)
+    # The batch is captured here, before the email is composed: only these are marked reported, and only once the
+    # send succeeded, so a notice recorded meanwhile, a dry run and a refused send all leave notices pending.
+    try:
+        batch = alert.pending_notices(str(root))
+    except alert.Refused as error:
+        batch = str(error)
+    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch)
     if args.dry_run:
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
@@ -328,6 +365,13 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run):
         print(f"owner-digest not sent: {error}", file=sys.stderr)
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
+    if isinstance(batch, list) and batch:
+        try:
+            marked = alert.mark_reported([n["id"] for n in batch], str(root))
+            print(f"marked {marked} notice(s) reported")
+        except alert.Refused as error:  # sent, but they stay pending: the next digest reports them again
+            print(f"owner-digest: the notices stay pending: {error}", file=sys.stderr)
+            return 1
     return 0
 
 

@@ -88,21 +88,43 @@ class Notice(GitRepo):
         quiet(pin_proposal.notice, root=self.root, key="k", subject="s", body="b", dry_run=True, mail=self.mail)
         self.assertEqual(self.git("for-each-ref", "refs/office-notice"), "")
 
-    def test_notify_sends_through_the_alert_module(self):
-        sent = []
+    def test_record_queues_the_notice_through_the_alert_module_and_sends_nothing(self):
+        # D00 T03 §53: decision 32 allows one weekly email, so a notice is queued for the owner digest.
+        recorded = []
 
         class Alert:
             @staticmethod
-            def key():
-                return "api-key"
+            def record_notice(sender, subject, body, root):
+                recorded.append((sender, subject, body, root))
 
             @staticmethod
-            def send(key, subject, body):
-                sent.append((key, subject, body))
+            def send(*a):
+                raise AssertionError("a notice must never be emailed at once")
 
-        pin_proposal.notify(self.root, "s", "b", alert_module=Alert)
-        self.assertEqual(sent, [("api-key", "s", "b")])
+        pin_proposal.record(self.root, "s", "b", alert_module=Alert)
+        self.assertEqual(recorded, [("pin automations", "s", "b", str(self.root))])
 
+    def test_the_version_checks_record_by_default_and_never_email(self):
+        import importlib.util
+        import inspect
+        for name in ("check-visual-studio.py", "check-python-pin.py"):
+            spec = importlib.util.spec_from_file_location(name.replace("-", "_")[:-3], SCRIPTS / name)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            with self.subTest(name):
+                self.assertIs(inspect.signature(module.main).parameters["mail"].default, module.pin_proposal.record)
+        self.assertFalse(hasattr(pin_proposal, "notify"))
+        for function in (pin_proposal.notice, pin_proposal.propose):
+            self.assertIs(inspect.signature(function).parameters["mail"].default, pin_proposal.record)
+
+    def test_a_notice_that_cannot_be_recorded_writes_no_mark(self):
+        def refuse(*a):
+            raise OSError("the queue cannot be written")
+        code, _ = quiet(pin_proposal.notice, root=self.root, key="k2", subject="s", body="b", mail=refuse)
+        self.assertEqual(code, 1)
+        marked = pin_proposal.git("rev-parse", "--verify", "--quiet", "refs/office-notice/k2", cwd=self.root,
+                                  check=False)
+        self.assertNotEqual(marked.returncode, 0)
 
 class Proposal(GitRepo):
     """`pin_proposal.propose` on a neutral pin file: a branch from main, checks, an email, never main or the checkout.

@@ -460,7 +460,7 @@ class LockBaseline(Base):
         "- `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): temporary; one probe's captured output and "
         "working folder, removed when the probe ends.",
         "- `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; "
-        "the email's text handed to the sender, removed when the send ends.",
+        "the notice's text handed to the recorder, removed when the recording ends.",
         "- Leftovers: every entry marked temporary is removed in normal use; a check that is killed, or a removal the "
         "system refuses, can leave one behind, and a leftover is safe to delete once the check and its child processes "
         "have stopped.",
@@ -1191,6 +1191,30 @@ class Exit(Base):
     def test_notify_sends_nothing_when_ready(self):
         self.assertEqual(self.main("--notify")[0], 0)
 
+    def test_notify_records_every_failing_check_for_the_digest_and_sends_nothing(self):
+        # D00 T03 §53: the real recorder, in a fixture root holding the alert module, and no network at all.
+        import shutil
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / ".conclave" / "automations").mkdir(parents=True)
+        (root / "scripts" / "lib").mkdir(parents=True)
+        shutil.copy(SCRIPTS.parent / ".conclave" / "automations" / "alert.py", root / ".conclave" / "automations")
+        shutil.copy(SCRIPTS / "lib" / "secret_store.py", root / "scripts" / "lib")
+        self.host.gh_status = 1
+        self.host.power[host_check.STANDBYIDLE] = 1800
+        real = host_check.Host()
+        real.root = root
+        code, out = self.main("--notify", mail=real.notify)
+        self.assertEqual(code, 1)
+        self.assertNotIn("notice not recorded", out)
+        (line,) = (root / "build" / "automations" / "notices.jsonl").read_text(encoding="utf-8").splitlines()
+        notice = json.loads(line)
+        self.assertEqual((notice["sender"], notice["reported"]), ("host check", None))
+        failing = [l for l in out.splitlines() if l.startswith(("FAIL", "fix:")) or l.strip().startswith("fix:")]
+        self.assertTrue(failing)
+        for text in failing:
+            self.assertIn(text.strip(), notice["body"])
+
     def test_a_failed_email_keeps_the_exit_code(self):
         self.host.gh_status = 1
 
@@ -1198,7 +1222,7 @@ class Exit(Base):
             raise OSError("network down")
         code, out = self.main("--notify", mail=broken)
         self.assertEqual(code, 1)
-        self.assertIn("email not sent: network down", out)
+        self.assertIn("notice not recorded: network down", out)
 
 
 if __name__ == "__main__":

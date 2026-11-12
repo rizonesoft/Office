@@ -21,6 +21,7 @@ import importlib.util
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import tempfile
@@ -254,18 +255,20 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         return 0
     alert = _alert_module()
     folder = os.path.join(root, "build", "automations", argv[0])
+
+    def record(name, task, outcome, tail):
+        # Decision 32: one weekly email and no other interruption, so a failure waits for the digest (D00 T03 §53).
+        subject, body = alert.message(name, task, outcome, tail, socket.gethostname())
+        return alert.record_notice("run.py", subject, body, root)
+
     try:
-        sent = (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(os.path.join(root, outcome["log"])))
-    except Exception as error:  # the run already failed; an unsent alert must still show, as exit 3
+        notice = (alerter or record)(argv[0], task, outcome, alert.tail_of(os.path.join(root, outcome["log"])))
+    except Exception as error:  # the run already failed; an unrecorded notice must still show, as exit 3
         with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
-            fh.write(f"\nrun.py: alert not sent: {type(error).__name__}: {error}\n")
+            fh.write(f"\nrun.py: notice not recorded: {type(error).__name__}: {error}\n")
         _record_alert(root, folder, outcome, {"error": f"{type(error).__name__}: {error}", "at": _utc()})
         return 3
-    if isinstance(sent, str) and sent:
-        result = {"sent_at": _utc(), "email_id": sent}
-    else:  # accepted, but SMTP2GO named no message: say so rather than invent an id
-        result = {"sent_at": _utc(), "email_id": None, "note": "the send was accepted without an email id"}
-    _record_alert(root, folder, outcome, result)
+    _record_alert(root, folder, outcome, {"noticed_at": _utc(), "notice_id": notice if isinstance(notice, str) else None})
     return outcome["exit"]
 
 

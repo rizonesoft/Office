@@ -4,7 +4,7 @@
 """Alert when this machine's Python, which runs the automations and `scripts/`, falls behind the latest stable release.
 
     python scripts/check-python-pin.py check     # exit 0 current, 1 behind, 2 cannot check
-    python scripts/check-python-pin.py notify    # as check, but being behind is emailed once per finding, exit 0
+    python scripts/check-python-pin.py notify    # as check, but being behind is recorded for the weekly digest once per finding, exit 0
 
 The interpreter running this script must be the newest stable CPython minor on python.org (published, not a
 pre-release), at its newest patch. The tooling is stdlib only, so moving is a Python install followed by
@@ -51,7 +51,7 @@ def findings(newest, by_minor, local):
     return []
 
 
-def main(argv=None, fetch=fetch_json, root=ROOT, local=tuple(sys.version_info[:3]), mail=pin_proposal.notify):
+def main(argv=None, fetch=fetch_json, root=ROOT, local=tuple(sys.version_info[:3]), mail=pin_proposal.record):
     parser = argparse.ArgumentParser(description="Alert when this machine's Python falls behind the latest stable.")
     parser.add_argument("mode", choices=("check", "notify"))
     args = parser.parse_args(argv)

@@ -383,6 +383,78 @@ class Send(Tree):
         self.assertEqual(code, 1)
 
 
+class Notices(Send):
+    """The queued notices in the digest, and the batch marked only once it was delivered (D00 T03 §53)."""
+
+    def queue(self, count, body_lines=60):
+        alert = digest.load_alert(self.root)
+        return [alert.record_notice("run.py", f"Office automation failed: task-{n}",
+                                    "\n".join(f"log line {i} of failure {n}" for i in range(body_lines)), str(self.root))
+                for n in range(count)]
+
+    def pending(self):
+        return [n["id"] for n in digest.load_alert(self.root).pending_notices(str(self.root))]
+
+    def test_long_notices_are_summarised_in_the_body_and_whole_in_the_attachment(self):
+        ids = self.queue(14)
+        code, out, requests = self.run_main([])
+        self.assertEqual(code, 0, out)
+        body = requests[0]["text_body"]
+        self.assertLessEqual(len(body.splitlines()), digest.BODY_LINES)
+        self.assertIn("Notices since the last digest (14):", body)
+        self.assertIn("D00 T01 §1 Ask [operator]", body)  # the waiting list is intact
+        self.assertIn("Office weekly: 1 waiting on you", requests[0]["subject"])
+        self.assertLess(body.index("Waiting on you"), body.index("Notices since the last digest"))
+        attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in requests[0]["attachments"]}
+        for n in range(14):
+            self.assertIn(f"task-{n}", attached["notices.txt"])
+            self.assertIn(f"log line 59 of failure {n}", attached["notices.txt"])
+        self.assertEqual(self.pending(), [])  # every delivered notice is marked
+        self.assertTrue(ids)
+
+    def test_a_dry_run_marks_nothing(self):
+        ids = self.queue(2)
+        code, out, requests = self.run_main(["--dry-run"])
+        self.assertEqual((code, requests), (0, []))
+        self.assertIn("Notices since the last digest (2):", out)
+        self.assertEqual(self.pending(), ids)
+
+    def test_a_refused_send_marks_nothing(self):
+        ids = self.queue(2)
+
+        def refuse(request, timeout=None):
+            return self.Response(json.dumps({"data": {"succeeded": 0, "failed": 1}}).encode())
+        code, _, _ = self.run_main([], opener=refuse)
+        self.assertEqual(code, 1)
+        self.assertEqual(self.pending(), ids)
+
+    def test_a_notice_recorded_during_the_send_stays_pending(self):
+        self.queue(1)
+        late = []
+
+        def sending(request, timeout=None):
+            late.extend(self.queue(1))  # recorded while the digest is on its way
+            return self.Response(json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "e2"}}).encode())
+        code, _, _ = self.run_main([], opener=sending)
+        self.assertEqual(code, 0)
+        self.assertEqual(self.pending(), late)
+
+    def test_an_unreadable_queue_is_said_in_the_digest_and_nothing_is_marked(self):
+        self.queue(1)
+        queue = self.root / "build" / "automations" / "notices.jsonl"
+        broken = queue.read_bytes() + b"not a notice\n"
+        queue.write_bytes(broken)
+        code, out, requests = self.run_main([])
+        self.assertEqual(code, 0, out)
+        self.assertIn("Notices: the queue could not be read", requests[0]["text_body"])
+        self.assertEqual(queue.read_bytes(), broken)
+
+    def test_no_notices_adds_no_part(self):
+        code, _, requests = self.run_main([])
+        self.assertNotIn("Notices", requests[0]["text_body"])
+        self.assertNotIn("attachments", requests[0])
+
+
 class Repository(unittest.TestCase):
     def test_the_digest_of_this_repository_prints(self):
         r = subprocess.run([sys.executable, str(REPO / "scripts/owner-digest.py"), "--dry-run"], capture_output=True,

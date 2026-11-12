@@ -24,6 +24,10 @@ EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any cha
 
 # (obligation, skill, phrases that must all appear)
 OBLIGATIONS = [
+    ("parks record a notice, never an email", "plan", [  # D00 T03 §53: decision 32, one weekly email only
+        "Nothing emails at once: decision 32 allows one weekly email, the owner digest, and no other interruption",
+        "recorded them as a notice for the weekly owner digest through `.conclave/automations/alert.py`",
+        "record a notice for the weekly owner digest with `python .conclave/automations/alert.py --notice"]),
     ("measure again when due", "plan", [  # D00 T03 §37: both triggers, the command that tells them, and the cycle
         "run `python scripts/measure-modes.py due --model <the full model id this session runs on>`",
         "when 300 sections were stamped since the stored verdict was decided",
@@ -166,7 +170,7 @@ WEAKENINGS = [
 # updated on purpose: `python scripts/tests/test_skill_ci_gate.py --print-pins` prints the current values.
 PINNED = [
     ('plan', 'It runs at four entry points:',
-     'bc32fd5225a75855cea6ac3eef77045318c0aac3ab76f2cbb0696bb9b94215d4'),
+     '661f597647fdef41de768f08f065dd7b8aa40811807248f8ea7e0e44976fa120'),
     ('plan', 'A resume after a host-not-ready park is a fresh run',
      'f09c7cbf1a5a6134dac5fc4624971a99f5403721306a92869d49aed3b53cc356'),
     ('plan', 'The campaign pushes to `main`, so it also reads',
@@ -182,7 +186,7 @@ PINNED = [
     ('plan', 'Repair a red run before the next row',
      '9f0495da0f431ca61a5a4d830f6119212972d736e2daa194a6afd7e8f5bc5a9d'),
     ('plan', 'Bound the repair:',
-     '433a2fbcecd02a7dcc4a66e7138944459678464b427b482f8c1447bdbeefdc0f'),
+     '8a8ee9705a7b045b206fdf521b615d1bf1172de97aed036a7d19def2044445dd'),
     ('plan', 'A `ci-red` or `ci-unknown` park ends the whole campaign',
      'c456e052a7e314ab360c8f08bee13f1dc6a66e566a50d1319bc8b09873c46492'),
     ('plan', 'Every campaign push gets a `ci-pending',

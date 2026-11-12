@@ -3,16 +3,17 @@
 """Propose a dependency pin bump on its own branch, or announce a machine update once, for the pin automations.
 
 `propose` never touches the operator's checkout or main. It adds a temporary git worktree on a new branch from main,
-applies the rewrite there, runs the caller's checks, commits, removes the worktree and emails the operator which branch
-to merge. A proposal is finished only when the ref `refs/office-pin/<key>` exists, written after the checks passed,
-the commit landed and the email went; a branch without it is an unfinished attempt that the next run discards and
+applies the rewrite there, runs the caller's checks, commits, removes the worktree and records for the owner digest
+which branch to merge. A proposal is finished only when the ref `refs/office-pin/<key>` exists, written after the checks passed,
+the commit landed and the notice was recorded; a branch without it is an unfinished attempt that the next run discards and
 redoes, and a branch that cannot be discarded fails the run.
 
-`notice` emails an "update available" message once per key (the key names the new version or state) and records it
-as the ref `refs/office-notice/<key>`; deleting the ref sends it again.
+`notice` records an "update available" message once per key (the key names the new version or state) and marks it
+as the ref `refs/office-notice/<key>` once it is recorded; deleting the ref records it again.
 
-Both send through `.conclave/automations/alert.py` (the same vault key, SMTP2GO path and From line as the failure
-alerts). Ported from RectoPDF's `scripts/lib/pin_proposal.py` (2026-10-21); each caller supplies its own checks.
+Both queue their message for the weekly owner digest through `.conclave/automations/alert.py` (`record`; decision 32
+of the campaign scope record: one weekly email and no other interruption, D00 T03 §53).
+Ported from RectoPDF's `scripts/lib/pin_proposal.py` (2026-10-21); each caller supplies its own checks.
 
 Stdlib only.
 """
@@ -42,19 +43,24 @@ def main_file(root, rel):
     return shown.stdout
 
 
-def notify(root, subject, body, dry_run=False, alert_module=None):
-    """Email the operator through the automations' sender."""
+def record(root, subject, body, dry_run=False, alert_module=None, sender="pin automations"):
+    """Queue the notice for the weekly owner digest through the automations' alert module (decision 32: one weekly
+    email and no other interruption; D00 T03 §53). Raises when it cannot be recorded, so a caller's mark is never
+    written for a notice that was not kept."""
     if dry_run:
-        print(f"would email: {subject}\n{body}")
+        print(f"would record for the weekly digest: {subject}\n{body}")
         return
     if alert_module is None:
-        sys.path.insert(0, str(Path(root) / ".conclave" / "automations"))
-        import alert as alert_module
-    alert_module.send(alert_module.key(), subject, body)
+        import importlib.util
+        path = Path(root) / ".conclave" / "automations" / "alert.py"
+        spec = importlib.util.spec_from_file_location("office_alert", path)
+        alert_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(alert_module)
+    alert_module.record_notice(sender, subject, body, str(root))
 
 
-def notice(*, root, key, subject, body, dry_run=False, mail=notify):
-    """Email an "update available" notice once per key; return 0, or 1 when it could not be sent or recorded."""
+def notice(*, root, key, subject, body, dry_run=False, mail=record):
+    """Record an "update available" notice once per key; return 0, or 1 when it could not be recorded or marked."""
     root = Path(root)
     done = NOTICE_REF.format(key=key)
     if git("rev-parse", "--verify", "--quiet", done, cwd=root, check=False).returncode == 0:
@@ -62,16 +68,16 @@ def notice(*, root, key, subject, body, dry_run=False, mail=notify):
         return 0
     try:
         mail(root, subject, body, dry_run)
-    except Exception as exc:  # any send failure: the operator was not told, so the next run tries again
-        print(f"could not email the notice ({type(exc).__name__}: {exc}); the next run will try again", file=sys.stderr)
+    except Exception as exc:  # not recorded: the operator will not be told, so no mark, and the next run tries again
+        print(f"could not record the notice ({type(exc).__name__}: {exc}); the next run will try again", file=sys.stderr)
         return 1
     if dry_run:
         return 0
     marked = git("update-ref", done, "main", cwd=root, check=False)
     if marked.returncode != 0:
-        print(f"emailed {key}, but could not record {done}: {(marked.stderr or marked.stdout).strip()}", file=sys.stderr)
+        print(f"recorded {key}, but could not mark {done}: {(marked.stderr or marked.stdout).strip()}", file=sys.stderr)
         return 1
-    print(f"announced {key} to the operator")
+    print(f"recorded {key} for the weekly digest")
     return 0
 
 
@@ -103,23 +109,23 @@ def _drop(branch, root):
     return [] if result.returncode == 0 else [f"could not delete {branch}: {(result.stderr or result.stdout).strip()}"]
 
 
-def propose(*, root, key, branch, rewrite, checks, message, subject, body, dry_run=False, mail=notify):
+def propose(*, root, key, branch, rewrite, checks, message, subject, body, dry_run=False, mail=record):
     """Propose a change; return the process exit code (0 proposed or already proposed, 1 failed or dry run).
 
     rewrite(tree) changes files in the worktree and returns the repository-relative paths it changed, or an empty
     list when main already holds the target (nothing to propose). checks(tree) returns problems; empty means commit.
-    message is the commit message as a list of paragraphs, and body is a function of the commit id, so the email can
+    message is the commit message as a list of paragraphs, and body is a function of the commit id, so the notice can
     name it.
     """
     root = Path(root)
     done = PIN_REF.format(key=key)
     if git("rev-parse", "--verify", "--quiet", done, cwd=root, check=False).returncode == 0:
-        print(f"{key} was proposed and emailed before ({done})")
+        print(f"{key} was proposed and recorded before ({done})")
         return 0
     leftover = git("rev-parse", "--verify", "--quiet", f"refs/heads/{branch}", cwd=root, check=False).returncode == 0
     if dry_run:
         print((f"would discard the unfinished {branch}, then " if leftover else "would ")
-              + f"create {branch} from main, apply the change, check it, commit, and email the operator")
+              + f"create {branch} from main, apply the change, check it, commit, and record it for the owner digest")
         return 1
     if leftover:
         left = _drop(branch, root)
@@ -162,14 +168,14 @@ def propose(*, root, key, branch, rewrite, checks, message, subject, body, dry_r
         mail(root, subject, body(commit), dry_run)
     except Exception as exc:  # any send failure: the operator was not told, so the proposal is not finished
         left = _drop(branch, root)
-        print(f"could not email the proposal ({type(exc).__name__}: {exc}); "
+        print(f"could not record the proposal ({type(exc).__name__}: {exc}); "
               + (f"{branch} was removed so the next run proposes it again" if not left else "; ".join(left)),
               file=sys.stderr)
         return 1
     marked = git("update-ref", done, commit, cwd=root, check=False)
     if marked.returncode != 0:
-        print(f"proposed and emailed {key}, but could not record {done}: {(marked.stderr or marked.stdout).strip()}; "
+        print(f"proposed and recorded {key}, but could not mark {done}: {(marked.stderr or marked.stdout).strip()}; "
               "the next run will propose it again", file=sys.stderr)
         return 1
-    print(f"proposed {key} on {branch} ({commit[:12]}) and emailed the operator")
+    print(f"proposed {key} on {branch} ({commit[:12]}) and recorded it for the owner digest")
     return 0

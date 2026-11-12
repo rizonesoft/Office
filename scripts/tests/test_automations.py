@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from contextlib import redirect_stdout, redirect_stderr
 from shutil import which as shutil_which
 
@@ -172,7 +173,7 @@ class Runner(unittest.TestCase):
         (self.root / ".conclave" / "automations" / "tasks.json").write_text(json.dumps(self.tasks), encoding="utf-8")
         self.assertEqual(self.main("office-fail", alerter=refuse), 3)
         log = (self.root / self.last("office-fail")["log"]).read_text(encoding="utf-8")
-        self.assertIn("alert not sent: Refused: SMTP2GO_API_KEY is not in .secrets/office.env", log)
+        self.assertIn("notice not recorded: Refused: SMTP2GO_API_KEY is not in .secrets/office.env", log)
 
     def test_only_the_newest_logs_are_kept(self):
         folder = self.root / "build" / "automations" / "office-pass"
@@ -587,56 +588,45 @@ class AlertRecord(unittest.TestCase):
             (auto / "tasks.json").write_text(json.dumps({"schema_version": 1, "folder": chr(92) + "Office" + chr(92),
                                                          "tasks": [task]}), encoding="utf-8")
             with contextlib_redirect():
-                code = run.main(["office-fixture"], root=tmp, alerter=alerter)
+                code = run.main(["office-fixture"], root=tmp, **({"alerter": alerter} if alerter else {}))
+            queue = Path(tmp) / "build" / "automations" / "notices.jsonl"
+            self.queue = queue.read_text(encoding="utf-8") if queue.exists() else ""
             last = json.loads((Path(tmp) / "build" / "automations" / "office-fixture" / "last.json")
                               .read_text(encoding="utf-8"))
             self.records = [json.loads(r.read_text(encoding="utf-8")) for r in sorted(
                 (Path(tmp) / "build" / "automations" / "office-fixture").glob("*.alert.json"))]
             return code, last
 
-    def test_a_sent_alert_is_recorded_with_its_id(self):
-        code, last = self.run_failing(lambda *a: "E123")
+    def test_a_recorded_notice_is_noted_with_its_id(self):
+        code, last = self.run_failing(lambda *a: "N123")
         self.assertEqual(code, 1)
-        self.assertEqual(last["alert"]["email_id"], "E123")
-        self.assertIn("sent_at", last["alert"])
+        self.assertEqual(last["alert"]["notice_id"], "N123")
+        self.assertIn("noticed_at", last["alert"])
 
-    def test_the_real_sender_records_its_email_id(self):
-        class Response(io.BytesIO):
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *a):
-                return False
-
-        ok = json.dumps({"data": {"succeeded": 1, "failed": 0, "email_id": "E-REAL"}}).encode()
-        with tempfile.TemporaryDirectory() as secrets:
-            (Path(secrets) / ".secrets").mkdir()
-            (Path(secrets) / ".secrets" / "office.env").write_text("SMTP2GO_API_KEY=api-" + "B" * 32 + chr(10),
-                                                                  encoding="utf-8")
-            self.addCleanup(setattr, alert, "SECRETS_ROOT", alert.SECRETS_ROOT)
-            alert.SECRETS_ROOT = secrets
-            code, last = self.run_failing(lambda name, task, outcome, tail: alert.send_failure(
-                name, task, outcome, tail, opener=lambda *a, **kw: Response(ok), host="PC"))
-        self.assertEqual((code, last["alert"]["email_id"]), (1, "E-REAL"))
-
-    def test_an_accepted_send_without_an_id_says_so(self):
-        code, last = self.run_failing(lambda *a: None)
+    def test_the_real_recorder_queues_the_failure_for_the_digest_and_sends_nothing(self):
+        # D00 T03 §53 (decision 32): no email at once; the notice waits for the Monday digest.
+        requests = []
+        self.addCleanup(setattr, alert.urllib.request, "urlopen", alert.urllib.request.urlopen)
+        alert.urllib.request.urlopen = lambda *a, **kw: requests.append(a)
+        code, last = self.run_failing(None)
         self.assertEqual(code, 1)
-        self.assertIsNone(last["alert"]["email_id"])
-        self.assertIn("without an email id", last["alert"]["note"])
-
+        self.assertEqual(requests, [])
+        notice = json.loads(self.queue.splitlines()[-1])
+        self.assertEqual(notice["id"], last["alert"]["notice_id"])
+        self.assertEqual((notice["sender"], notice["reported"]), ("run.py", None))
+        self.assertIn("office-fixture failed", notice["body"])
     def test_a_slow_alert_never_overwrites_a_newer_outcome(self):
         def slow(name, task, outcome, tail):
             # A newer run finishes while this alert is in flight.
             folder = Path(self.tmp) / "build" / "automations" / "office-fixture"
             (folder / "last.json").write_text(json.dumps({"log": "build/automations/office-fixture/newer.log",
                                                           "exit": 0}), encoding="utf-8")
-            return "E-OLD"
+            return "N-OLD"
         code, last = self.run_failing(slow)
         self.assertEqual(last["log"], "build/automations/office-fixture/newer.log")
         self.assertNotIn("alert", last)
         self.assertEqual(len(self.records), 1)
-        self.assertEqual(self.records[0]["alert"]["email_id"], "E-OLD")
+        self.assertEqual(self.records[0]["alert"]["notice_id"], "N-OLD")
 
     def test_an_unsent_alert_is_recorded_with_its_error(self):
         def refuse(*a):
@@ -644,6 +634,73 @@ class AlertRecord(unittest.TestCase):
         code, last = self.run_failing(refuse)
         self.assertEqual(code, 3)
         self.assertIn("bad sender", last["alert"]["error"])
+
+class NoticeQueue(unittest.TestCase):
+    """build/automations/notices.jsonl, the queue every sender records into for the weekly digest (D00 T03 §53)."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = self._tmp.name
+        self.queue = Path(self.root) / alert.NOTICES
+
+    def test_a_notice_reads_back_in_a_fresh_process(self):
+        notice_id = alert.record_notice("run.py", "s", "body", self.root)
+        code = ("import sys; sys.path.insert(0, sys.argv[1]); import alert; "
+                "print(alert.pending_notices(sys.argv[2])[0]['id'])")
+        out = subprocess.run([sys.executable, "-c", code, str(AUTO), self.root], capture_output=True,
+                             text=True, timeout=60)
+        self.assertEqual(out.stdout.strip(), notice_id, out.stderr)
+
+    def test_two_writers_at_once_both_keep_their_notice(self):
+        code = ("import sys; sys.path.insert(0, sys.argv[1]); import alert\n"
+                "for n in range(20): alert.record_notice(sys.argv[3], f'{sys.argv[3]} {n}', 'b', sys.argv[2])\n")
+        writers = [subprocess.Popen([sys.executable, "-c", code, str(AUTO), self.root, name])
+                   for name in ("first", "second")]
+        for writer in writers:
+            self.assertEqual(writer.wait(timeout=120), 0)
+        subjects = sorted(n["subject"] for n in alert.pending_notices(self.root))
+        self.assertEqual(len(subjects), 40)
+        self.assertEqual(len(set(n["id"] for n in alert.pending_notices(self.root))), 40)
+
+    def test_a_malformed_queue_is_refused_and_kept_byte_for_byte(self):
+        alert.record_notice("run.py", "s", "b", self.root)
+        broken = self.queue.read_bytes() + b"not a notice\n"
+        self.queue.write_bytes(broken)
+        with self.assertRaises(alert.Refused) as caught:
+            alert.record_notice("run.py", "s2", "b", self.root)
+        self.assertIn("line 2", str(caught.exception))
+        with self.assertRaises(alert.Refused):
+            alert.pending_notices(self.root)
+        self.assertEqual(self.queue.read_bytes(), broken)
+
+    def test_a_failed_write_leaves_the_queue_whole(self):
+        alert.record_notice("run.py", "kept", "b", self.root)
+        before = self.queue.read_bytes()
+        with mock.patch.object(alert.os, "replace", side_effect=PermissionError("denied")):
+            with self.assertRaises(alert.Refused):
+                alert.record_notice("run.py", "lost", "b", self.root)
+        self.assertEqual(self.queue.read_bytes(), before)
+        self.assertEqual([p.name for p in self.queue.parent.glob("notices.*.tmp")], [])
+
+    def test_only_the_captured_batch_is_marked(self):
+        first = alert.record_notice("run.py", "one", "b", self.root)
+        batch = [n["id"] for n in alert.pending_notices(self.root)]
+        late = alert.record_notice("run.py", "two", "b", self.root)  # arrives while the digest is being sent
+        self.assertEqual(alert.mark_reported(batch, self.root), 1)
+        self.assertEqual([n["id"] for n in alert.pending_notices(self.root)], [late])
+        self.assertNotIn(first, [n["id"] for n in alert.pending_notices(self.root)])
+
+    def test_the_notice_command_queues_a_notice(self):
+        body = Path(self.root) / "body.txt"
+        body.write_text("the fixes", encoding="utf-8")
+        with contextlib_redirect():
+            code = alert.main(["--notice", "campaign parked", str(body), "--sender", "campaign"], root=self.root)
+        self.assertEqual(code, 0)
+        (notice,) = alert.pending_notices(self.root)
+        self.assertEqual((notice["sender"], notice["subject"], notice["body"]), ("campaign", "campaign parked",
+                                                                                  "the fixes"))
+
 
 class LastJsonLocking(unittest.TestCase):
     """Every last.json write holds the task lock, so a late alert and a newer run cannot interleave."""

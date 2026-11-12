@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-"""Email the operator when a scheduled Office automation fails.
+"""Queue the operator's notices for the weekly digest, and send the emails this repository sends.
 
-    python .conclave/automations/alert.py NAME            send the failure email for NAME's last run
+    python .conclave/automations/alert.py --notice SUBJECT BODY_FILE   queue a notice (the campaign's parks)
+    python .conclave/automations/alert.py NAME            send the failure email for NAME's last run now (by hand)
     python .conclave/automations/alert.py NAME --dry-run  print that email instead, reading no key
 
-run.py calls `send_failure` when a task exits non-zero or times out, so a failed run is reported by the
-wrapper that saw it fail, whatever the command printed. The email carries the task, its exit, its start and
-finish, and the tail of that run's log.
+Decision 32 of the campaign scope record allows one email a week, the owner digest, and no other interruption
+(D00 T03 §53): run.py records a failed or timed-out task as a notice (`record_notice`), as do the host check, the
+version checks and the campaign's parks, and `scripts/owner-digest.py` reports the pending ones and marks that batch
+reported once it was delivered. The notice carries the task, its exit, its start and finish, and the tail of that
+run's log. Sending one failure email at once stays available by hand, as above.
 
 It goes through SMTP2GO's `/v3/email/send` from the Rizonetech website sender, the same verified sender and
 key the Rizonetech automations use (Rizonesoft is a brand of Rizonetech). The key comes from the repository's
@@ -107,6 +110,137 @@ def send_failure(name: str, task: dict, outcome: dict, tail: str, opener=urllib.
     return send(key(), subject, body, opener)
 
 
+# The notice queue (D00 T03 §53; decision 32: one weekly email and no other interruption). Every sender records its
+# notice here and the Monday digest reports what is pending, then marks that batch reported once it was delivered.
+NOTICES = os.path.join("build", "automations", "notices.jsonl")
+NOTICE_LOCK = os.path.join("build", "automations", "notices.lock")
+LOCK_SECONDS = 30
+
+
+class _QueueLock:
+    """An exclusive lock on the queue's lock file for one read-modify-write, released by the system if the holder
+    dies; waiting is bounded, and a lock that cannot be had is a Refused, never an unlocked write."""
+
+    def __init__(self, root: str):
+        self.path = os.path.join(root, NOTICE_LOCK)
+        self.handle = None
+
+    def __enter__(self):
+        import time
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self.handle = open(self.path, "a+b")
+        deadline = time.monotonic() + LOCK_SECONDS
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    self.handle.seek(0)
+                    msvcrt.locking(self.handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except OSError:
+                if time.monotonic() > deadline:
+                    self.handle.close()
+                    raise Refused(f"the notice queue's lock {self.path} was held for {LOCK_SECONDS} s") from None
+                time.sleep(0.05)
+
+    def __exit__(self, *exc):
+        try:
+            if os.name == "nt":
+                import msvcrt
+                self.handle.seek(0)
+                msvcrt.locking(self.handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+        return False
+
+
+def _read_notices(root: str) -> list[dict]:
+    """Every notice in the queue, oldest first; Refused (the file left as it is) when a line does not parse."""
+    path = os.path.join(root, NOTICES)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except FileNotFoundError:
+        return []
+    except (OSError, UnicodeDecodeError) as error:
+        raise Refused(f"{NOTICES} cannot be read: {error}") from None
+    notices = []
+    for number, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            notice = json.loads(line)
+        except ValueError:
+            notice = None
+        if not isinstance(notice, dict) or not isinstance(notice.get("id"), str) or "subject" not in notice:
+            raise Refused(f"{NOTICES} line {number} is not a notice; the queue is left as it is")
+        notices.append(notice)
+    return notices
+
+
+def _write_notices(root: str, notices: list[dict]) -> None:
+    """The whole queue through a temporary file in its folder and os.replace, read back; a failed write leaves the
+    previous file whole."""
+    import tempfile
+    path = os.path.join(root, NOTICES)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix="notices.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+            for notice in notices:
+                fh.write(json.dumps(notice, ensure_ascii=False) + "\n")
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+    if [n["id"] for n in _read_notices(root)] != [n["id"] for n in notices]:
+        raise Refused(f"{NOTICES} did not read back as written")
+
+
+def record_notice(sender: str, subject: str, body: str, root: str = REPO) -> str:
+    """Queue a notice for the weekly digest and return its id; Refused when the queue cannot be read or written."""
+    import datetime
+    import uuid
+    notice = {"id": uuid.uuid4().hex, "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "sender": sender, "subject": subject, "body": body, "reported": None}
+    try:
+        with _QueueLock(root):
+            _write_notices(root, [*_read_notices(root), notice])
+    except OSError as error:
+        raise Refused(f"{NOTICES} could not be written: {error}") from None
+    return notice["id"]
+
+
+def pending_notices(root: str = REPO) -> list[dict]:
+    """The notices no digest has reported yet, oldest first."""
+    return [n for n in _read_notices(root) if not n.get("reported")]
+
+
+def mark_reported(ids, root: str = REPO) -> int:
+    """Mark exactly the given notices reported (a delivered digest's batch); a notice recorded after that batch was
+    read keeps `reported: null`. Returns how many were marked."""
+    import datetime
+    wanted, now = set(ids), datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        with _QueueLock(root):
+            notices = _read_notices(root)
+            marked = 0
+            for notice in notices:
+                if notice["id"] in wanted and not notice.get("reported"):
+                    notice["reported"] = now
+                    marked += 1
+            _write_notices(root, notices)
+    except OSError as error:
+        raise Refused(f"{NOTICES} could not be written: {error}") from None
+    return marked
+
+
 def tail_of(path: str, lines: int = LOG_LINES) -> str:
     try:
         with open(path, "rb") as fh:  # read only the end, so a huge log cannot exhaust memory
@@ -118,7 +252,29 @@ def tail_of(path: str, lines: int = LOG_LINES) -> str:
     return "\n".join(text.splitlines()[-lines:]).rstrip()
 
 
+def notice_main(argv, root=REPO) -> int:
+    """`alert.py --notice SUBJECT BODY_FILE [--sender NAME]`: queue a notice for the weekly digest (the campaign's
+    parks record theirs this way, D00 T03 §53). Exit 0 with the id, 1 when it cannot be recorded."""
+    p = argparse.ArgumentParser(prog="alert.py --notice", description="Queue a notice for the weekly owner digest.")
+    p.add_argument("subject")
+    p.add_argument("body_file", help="a UTF-8 text file holding the notice's body")
+    p.add_argument("--sender", default="campaign", help="who records it (default campaign)")
+    args = p.parse_args(argv)
+    try:
+        with open(args.body_file, encoding="utf-8") as fh:
+            body = fh.read()
+        notice_id = record_notice(args.sender, args.subject, body, root)
+    except (Refused, OSError, UnicodeDecodeError) as error:
+        print(f"notice not recorded: {error}", file=sys.stderr)
+        return 1
+    print(f"notice {notice_id} recorded for the weekly digest")
+    return 0
+
+
 def main(argv=None, opener=urllib.request.urlopen, host=None, root=REPO) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["--notice"]:
+        return notice_main(argv[1:], root)
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("name", help="the task that failed, e.g. office-python-pin")
     p.add_argument("--dry-run", action="store_true", help="print the email; read no key and send nothing")

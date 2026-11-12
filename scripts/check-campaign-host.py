@@ -4,7 +4,7 @@
 """Say whether this PC can run an unattended `process-plan` campaign, before it starts and at every phase start.
 
     python scripts/check-campaign-host.py            # one line per check; exit 0 ready, 1 fixes listed, 2 cannot check
-    python scripts/check-campaign-host.py --notify   # as above, and a failure is emailed to the operator
+    python scripts/check-campaign-host.py --notify   # as above, and a failure is recorded for the weekly digest
 
 The campaign runs on this PC for days to months and is resumed by hand when it stops (owner decisions 1, 2 and 15 in
 `docs/specs/2026-10-23-campaign-scope-design.md`). A locked screen, a PC that sleeps, a missing Office app or a missing
@@ -18,7 +18,7 @@ Files written (nothing else is):
 - `build/host-lock-baseline.lock`: kept, empty, never deleted; it serialises checks that run side by side.
 - `build/host-lock-baseline.json.<random>.tmp`: temporary; lives for one write of the baseline.
 - `<system temp>/campaign-host-<random>/` (`out`, `err`, `work/`): temporary; one probe's captured output and working folder, removed when the probe ends.
-- `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; the email's text handed to the sender, removed when the send ends.
+- `<system temp>/campaign-notice-<random>/notice.json`: temporary; only with `--notify` after a failed check; the notice's text handed to the recorder, removed when the recording ends.
 - Leftovers: every entry marked temporary is removed in normal use; a check that is killed, or a removal the system refuses, can leave one behind, and a leftover is safe to delete once the check and its child processes have stopped.
 
 Exit 2 (a check could not run) outranks exit 1 (a check failed): either parks the campaign, and both print every line.
@@ -41,7 +41,6 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import github_origin
-import pin_proposal
 import process_tree
 import todo_graph
 
@@ -84,13 +83,13 @@ sys.path.insert(0, sys.argv[1])
 import todo_graph
 print(json.dumps([s.public() for s in todo_graph.ordered(todo_graph.graph(sys.argv[2]))]))
 """
-NOTIFY_SECONDS = 180  # the vault read (90 s at most) and the send (60 s at most), with room
+NOTIFY_SECONDS = 180  # recording takes a second; the bound only stops a recorder that hangs
 NOTICE_CODE = """import json, sys
 sys.path.insert(0, sys.argv[1])
 import pin_proposal
 notice = json.load(open(sys.argv[2], encoding="utf-8"))
 try:
-    pin_proposal.notify(notice["root"], notice["subject"], notice["body"])
+    pin_proposal.record(notice["root"], notice["subject"], notice["body"], sender="host check")
 except Exception as exc:
     sys.exit(f"{type(exc).__name__}: {exc}")
 """
@@ -390,8 +389,8 @@ class Host:
                     return handle.read(MAX_PROBE_BYTES).decode("utf-8", errors="replace")
             return subprocess.CompletedProcess(argv, outcome.exit, read(paths[0]), read(paths[1]))
     def notify(self, subject, body):
-        """Email the operator through alert.py, in a contained child with a deadline: the sender reads its key through
-        WSL with pipes, and a descendant holding one must not keep the campaign from parking."""
+        """Record a notice for the weekly owner digest through alert.py (D00 T03 §53), in a contained child with a
+        deadline, so a recorder that hangs cannot keep the campaign from parking."""
         with tempfile.TemporaryDirectory(prefix="campaign-notice-", ignore_cleanup_errors=True) as scratch:
             notice = Path(scratch) / "notice.json"
             notice.write_text(json.dumps({"root": str(self.root), "subject": subject, "body": body}), encoding="utf-8")
@@ -817,7 +816,7 @@ def report(results):
 
 def main(argv=None, host=None, mail=None):
     parser = argparse.ArgumentParser(description="Say whether this PC can run an unattended campaign.")
-    parser.add_argument("--notify", action="store_true", help="email the operator when a check fails")
+    parser.add_argument("--notify", action="store_true", help="record a notice for the weekly owner digest when a check fails")
     args = parser.parse_args(argv)
     host = host or Host()
     results = run_checks(host)
@@ -831,7 +830,7 @@ def main(argv=None, host=None, mail=None):
             body = "\n".join(lines + ["", "The campaign parks until these are fixed and it is resumed by hand."])
             (mail or host.notify)(f"Office: campaign host not ready on {socket.gethostname()}", body)
         except Exception as exc:  # the park still happens: the line below lands in the run file with the fixes
-            print(f"email not sent: {exc}")
+            print(f"notice not recorded: {exc}")
     return code
 
 
