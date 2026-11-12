@@ -114,12 +114,13 @@ SETTLE_DAYS = 5  # SMTP2GO keeps 5 days of activity on its free plan; past this 
 YOUNG_MINUTES = 60  # a log can lag a send by minutes ("allow around two minutes"): younger empty answers wait
 
 
-def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlopen) -> str:
+def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlopen, with_id: bool = False):
     """What SMTP2GO's activity log says of the email with exactly this subject sent at or after `since` (UTC,
     ISO-8601): "sent" when it shows it delivered, "not-sent" when it shows it rejected or bounced, "pending" while it
     shows it only in flight, "absent" when it shows no such email (D00 T03 §53). `POST /v3/activity/search` with `search_subject`,
     `start_date` and `end_date` (developers.smtp2go.com, "View account activity", read 2026-11-12; `/email/search` is
-    deprecated there). Refused when the log cannot be read."""
+    deprecated there). With `with_id`, the answer is (that word, SMTP2GO's email id or ""). Refused when the log
+    cannot be read."""
     import datetime
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = json.dumps({"start_date": since, "end_date": now, "search_subject": subject, "limit": 100}).encode()
@@ -132,15 +133,22 @@ def delivery(api_key: str, subject: str, since: str, opener=urllib.request.urlop
         raise Refused(f"SMTP2GO's activity log could not be read: {error}") from None
     if not isinstance(data, dict) or not isinstance(data.get("events"), list):
         raise Refused(f"SMTP2GO's activity log answered without events: {data}")
-    kinds = {str(e.get("event", "")).lower() for e in data["events"]
-             if isinstance(e, dict) and e.get("subject") == subject and e.get("email_id")}
+    events = [e for e in data["events"] if isinstance(e, dict) and e.get("subject") == subject and e.get("email_id")]
+    kinds = {str(e.get("event", "")).lower() for e in events}
     if DELIVERED in kinds:
-        return "sent"
-    if kinds & set(NOT_DELIVERED):
-        return "not-sent"  # rejected or bounced: a final failure, whatever came before it
-    if kinds:
-        return "pending"  # processed or deferred: on its way, not yet proof either way
-    return "absent"
+        verdict = "sent"
+    elif kinds & set(NOT_DELIVERED):
+        verdict = "not-sent"  # rejected or bounced: a final failure, whatever came before it
+    elif kinds:
+        verdict = "pending"  # processed or deferred: on its way, not yet proof either way
+    else:
+        verdict = "absent"
+    if not with_id:
+        return verdict
+    # SMTP2GO's own id of that email, for a reader that records the delivery (the owner digest, D00 T07 §3): the
+    # delivered event's when there is one, else the first event's.
+    chosen = next((e for e in events if str(e.get("event", "")).lower() == DELIVERED), events[0] if events else {})
+    return verdict, str(chosen.get("email_id") or "")
 
 
 def _evidence_folder() -> str:

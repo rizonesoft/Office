@@ -140,7 +140,7 @@ def settle(state: dict, ask, now: datetime.datetime, young_minutes: int, settle_
     for attempt in [state["attempt"], *list(state["open"])]:
         if not attempt or attempt["stage"] not in ("sending", "unsure"):
             continue
-        verdict = _judge(attempt, ask, now, young_minutes, settle_days, refused)
+        verdict, email_id = _judge(attempt, ask, now, young_minutes, settle_days, refused)
         day = attempt["at"][:10]
         current = attempt is state["attempt"]
         if verdict == "wait":
@@ -148,7 +148,7 @@ def settle(state: dict, ask, now: datetime.datetime, young_minutes: int, settle_
         if verdict == "sent":
             said.append(f"the digest of {day} was delivered (SMTP2GO's log)")
             if current:
-                deliver(state, email_id="", confirmed=True, at=attempt["at"])
+                deliver(state, email_id=email_id, confirmed=True, at=attempt["at"])  # SMTP2GO's id, from its log
             else:
                 state["open"].remove(attempt)
         elif verdict == "failed":
@@ -168,7 +168,9 @@ def settle(state: dict, ask, now: datetime.datetime, young_minutes: int, settle_
     return said
 
 
-def _judge(attempt, ask, now, young_minutes, settle_days, refused) -> str:
+def _judge(attempt, ask, now, young_minutes, settle_days, refused) -> tuple:
+    """(sent | failed | expired | wait, SMTP2GO's email id when the log gave one). `ask` answers the word alone or
+    (word, id), as `alert.delivery` does with `with_id`."""
     at = datetime.datetime.strptime(attempt["at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
     age = now - at
     since = (at - datetime.timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -176,15 +178,16 @@ def _judge(attempt, ask, now, young_minutes, settle_days, refused) -> str:
         answer = ask(attempt["subject"], since)
     except refused:
         answer = None  # the log cannot be read now: asked again at the next run, unless its history has passed
+    answer, email_id = answer if isinstance(answer, tuple) else (answer, "")
     if answer == "sent":
-        return "sent"
+        return "sent", email_id
     if answer == "not-sent":
-        return "failed"  # rejected or bounced: the log's own record of a failure
+        return "failed", email_id  # rejected or bounced: the log's own record of a failure
     if age > datetime.timedelta(days=settle_days):
-        return "expired"  # past the log's history its silence proves nothing, so an absence is not a failure
+        return "expired", ""  # past the log's history its silence proves nothing: an absence is not a failure
     if answer == "absent" and age > datetime.timedelta(minutes=young_minutes):
-        return "failed"
-    return "wait"  # pending, young and absent, or the log unreadable
+        return "failed", ""
+    return "wait", ""  # pending, young and absent, or the log unreadable
 
 
 def deliver(state: dict, email_id: str, confirmed: bool, at: str) -> None:

@@ -451,7 +451,10 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
         except OSError as error:
             print(f"owner-digest: the delivery record cannot be written: {error}", file=sys.stderr)
             return False
-    settled = digest_state.settle(state, ask, now, alert.YOUNG_MINUTES, alert.SETTLE_DAYS, alert.Refused)
+    def asked_with_id(subject, since):  # the digest's own settlement keeps SMTP2GO's id of a confirmed delivery
+        return alert.delivery(alert.key(), subject, since, opener or alert.urllib.request.urlopen, with_id=True)
+    settled = digest_state.settle(state, sent or asked_with_id, now, alert.YOUNG_MINUTES, alert.SETTLE_DAYS,
+                                  alert.Refused)
     for line in settled:
         print(f"owner-digest: {line}")
     if settled and not stored():

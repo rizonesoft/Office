@@ -629,6 +629,7 @@ class Delivery(Send):
                 self.assertEqual(len(self.sends), 1)
                 self.assertIsNone(self.state()["attempt"])
                 self.assertTrue(self.state()["delivered"]["confirmed"])
+                self.assertEqual(self.state()["delivered"]["email_id"], "e1")  # SMTP2GO's id, read from its log
 
     # Gap 3: every log outcome, by the rules of D00 T03 §53.
 
@@ -727,6 +728,27 @@ class Delivery(Send):
         self.assertTrue(all(f"since {first}" in self.since_line(m) for m in self.sends), [self.since_line(m) for m in self.sends])
         self.assertEqual(self.state()["delivered"]["start"], first)
 
+    def test_a_failed_week_is_reported_with_the_next_one(self):
+        # The section's first promise: week one's send fails, and week two's digest covers both weeks.
+        week = datetime.timedelta(days=7)
+        for name, day in (("one.json", TODAY - datetime.timedelta(days=3)), ("two.json", TODAY + datetime.timedelta(days=4))):
+            (self.root / name).write_text(json.dumps({"date": day.isoformat()}), encoding="utf-8")
+        rows = {"a": types.SimpleNamespace(done=True, receipt="one.json", ref="D00 T09 §1", title="Built in week one"),
+                "b": types.SimpleNamespace(done=True, receipt="two.json", ref="D00 T09 §2", title="Built in week two")}
+        real = digest.verified_since
+        with mock.patch.object(digest, "verified_since",
+                               side_effect=lambda root, _rows, today, since=None: real(root, rows, today, since)):
+            self.mode = "refuse"
+            self.assertEqual(self.go()[0], 1)  # week one: refused
+            self.mode = "ok"
+            self.assertEqual(self.go(today=TODAY + week)[0], 0)  # week two: delivered
+            body = self.sends[-1]["text_body"]
+            self.assertIn("D00 T09 §1 Built in week one", body)
+            self.assertIn("D00 T09 §2 Built in week two", body)
+            self.assertIn(f"since {(TODAY - week).isoformat()}", self.since_line(self.sends[-1]))
+            self.assertEqual(self.go(today=TODAY + 2 * week)[0], 0)  # week three: only what is new since week two
+            self.assertNotIn("Built in week one", self.sends[-1]["text_body"])
+        self.assertEqual(self.state()["delivered"]["start"], (TODAY + week).isoformat())
     def test_after_a_delivery_the_next_week_starts_on_its_last_day(self):
         self.go()
         next_week = TODAY + datetime.timedelta(days=7)
