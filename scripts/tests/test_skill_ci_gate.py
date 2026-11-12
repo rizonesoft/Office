@@ -263,7 +263,7 @@ PINNED = [
     ('phase', "In the generated plan's table order, for each open row",
      '5765665acd622c6fef2f08894bbf735949f14ddc53fc596bbfd1d2f78b70b5bb'),
     ('phase', 'When every row of the phase table is `[x]`:',
-     '0bdbdf1b91d4d42374916f1e2917dd410c943bf744022f7f3f4e080e2413bb2b'),
+     '7afe1d28525b0ba37db6125db0027e0b8a146f788ce3ac1a967e41af828b1db0'),
 ]
 
 

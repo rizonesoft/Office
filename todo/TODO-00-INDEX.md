@@ -10,7 +10,6 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 | `00-workspace/TODO-03-automations-and-keep-alive.md` | Automations and keep-alive |
 | `00-workspace/TODO-07-owner-digest.md` | Owner digest follow-ups |
 | `01-brand/TODO-01-suite-naming.md` | Suite and app names |
-| `01-brand/TODO-02-icon-system.md` | Icon family (reopened 2026-11-10 by section 8) |
 | `01-brand/TODO-03-github-graphics.md` | GitHub graphics |
 | `02-interface/TODO-01-parity-inventory.md` | Parity inventory |
 | `02-interface/TODO-02-interface-spec.md` | Interface spec |
@@ -23,3 +22,4 @@ Domains in planning order: tooling, brand, interface, architecture. Platform and
 | `00-workspace/TODO-01-design-doc-tooling.md` | Checkers and CI | 2026-10-21 |
 | `00-workspace/TODO-04-portable-build-tools.md` | Portable build tools | 2026-11-12 |
 | `00-workspace/TODO-05-lessons-and-agent-ledger.md` | Lessons from reviews | 2026-11-12 |
+| `01-brand/TODO-02-icon-system.md` | Icon family | 2026-11-13 |
