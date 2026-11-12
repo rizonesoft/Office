@@ -212,6 +212,9 @@ def build(draw=None):
     return out
 
 
+MAX_WORKERS = 61  # the most processes a ProcessPoolExecutor takes on Windows; more are of no use to 533 rasters
+
+
 def default_jobs():
     """All but one logical processor, at most 8: the rasters are many and small, and the PC stays usable."""
     return max(1, min(8, (os.cpu_count() or 2) - 1))
@@ -222,7 +225,7 @@ def draw_all(wanted, jobs, worker=svg_raster.svg_to_png):
 
     However the draw ends (done, a worker gone, an interrupt), the pool is shut down with its pending work cancelled
     and its processes reaped before this returns or raises, so no worker outlives the call."""
-    pool = ProcessPoolExecutor(max_workers=max(1, min(jobs, len(wanted))))
+    pool = ProcessPoolExecutor(max_workers=max(1, min(jobs, len(wanted), MAX_WORKERS)))
     try:
         return dict(zip(wanted, pool.map(worker, wanted, chunksize=8)))
     finally:

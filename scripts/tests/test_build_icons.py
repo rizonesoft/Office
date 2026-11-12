@@ -155,6 +155,14 @@ class Pool(unittest.TestCase):
                 self.run_main(["--root", tmp], build=serial, build_parallel=parallel)
             parallel.assert_called_with(5)
 
+    def test_more_jobs_than_a_pool_can_hold_are_capped_not_refused(self):
+        pool = mock.Mock()
+        pool.map.return_value = []
+        with mock.patch.object(build_icons, "ProcessPoolExecutor", return_value=pool) as made:
+            build_icons.draw_all([(str(n), 1, 1, None) for n in range(200)], 64)
+            build_icons.draw_all([("a", 1, 1, None), ("b", 1, 1, None)], 64)
+        self.assertEqual([call.kwargs["max_workers"] for call in made.call_args_list], [61, 2])
+
     def test_fewer_than_one_job_is_refused(self):
         for bad in ("0", "-2", "x"):
             with self.assertRaises(SystemExit) as ctx, contextlib.redirect_stderr(io.StringIO()):
