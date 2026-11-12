@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T05 \u00a79",
+  "title": "Triage Covers Every Review Pass",
+  "implementation_sha": "1fa1f7d6c4c76d54771e843147cde0af1d85e0b7",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T05-s9.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_lessons.py\" -> Ran 68 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_skill_ci_gate.py\" -> Ran 6 tests, OK",
+    "python scripts/lessons.py candidates docs/reviews/00-workspace/D00-T05-s4.md -> its four plan review findings listed; candidates over the repository -> 867 findings, no record refused"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T05-s9.md",
+    "verdict": "reconciled",
+    "candidate": "1fa1f7d6c4c76d54771e843147cde0af1d85e0b7",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T05-s9.md",
+    "candidate": "adc408bf6d0507d9ed5d8cb84b7cea37d4acae2a",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "adc408bf6d0507d9ed5d8cb84b7cea37d4acae2a",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

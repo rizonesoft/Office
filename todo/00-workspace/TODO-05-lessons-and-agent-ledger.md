@@ -37,7 +37,7 @@ title: "TODO-05 -- Lessons"
 | 3 | §3 | First lessons from the review records | §1, §2 | [x] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [x] |
 | 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
-| 6 | §9 | Triage covers every review pass | §3 | [ ] |
+| 6 | §9 | Triage covers every review pass | §3 | [x] |
 
 ## 1. Lesson Files and Their Checker
 
@@ -212,9 +212,12 @@ Filed 2026-11-12 from the plan review of §4 (`docs/reviews/00-workspace/D00-T05
 - [x] Extend `review-todo-section`'s triage step (§4) from the round's findings to every pass's. Done when: the skill names all four passes and `scripts/tests/test_skill_ci_gate.py` holds it.
 - [x] Discover a record by any pass it holds, not only a round: `candidates` with no record named lists a section that so far has only its plan review. Done when: tests show a plan-only record listed both when named and when discovered. **Corrected 2026-11-12:** added after the plan review (gap 1, P2).
 - [x] Number the passes by their place in the record: `reconciliation N` is the Nth `## Reconciliation review` heading from the top, counted whether or not it raised a finding, so a pass appended later never renumbers an earlier one; a plan or completion review is `plan` or `completion` when the record has one and takes the same count (`plan 2`) when a record holds more. Done when: a test with three reconciliations whose findings share numbers shows that triaging one leaves the others outstanding, and that appending a fourth leaves every existing line and lesson source valid. **Corrected 2026-11-12:** added after the plan review (gap 2, P2).
-- [ ] Commit: `lessons: triage the findings of every review pass`
+- [x] Commit: `lessons: triage the findings of every review pass`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes with the pass tests among them, and `python scripts/lessons.py candidates docs/reviews/00-workspace/D00-T05-s4.md` lists that record's plan review findings.
+
+> **Verified:** 2026-11-12 | §9 | 1fa1f7d6c4c76d54771e843147cde0af1d85e0b7
+> **Review:** `docs/reviews/d00-t05-s9.json`
 ## Verification
 
 - `python scripts/lessons.py check` exits 0 and CI runs it.
