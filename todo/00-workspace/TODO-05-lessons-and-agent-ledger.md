@@ -35,7 +35,7 @@ title: "TODO-05 -- Lessons"
 | 1 | §1 | Lesson files and their checker | -- | [x] |
 | 2 | §2 | Lesson index and query | §1 | [x] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [x] |
-| 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
+| 4 | §4 | Section runs read their lessons | §2, §3 | [x] |
 | 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
 | 6 | §9 | Triage covers every review pass | §3 | [ ] |
 
@@ -161,9 +161,12 @@ A lesson only helps if it is in front of whoever is about to repeat the mistake.
 - [x] Say what each outcome of the read means: exit 0 with lessons is read; exit 0 with none means no lesson applies, which the section's plan-review note records; exit 1 (the store breaks a rule, or the index cannot be written) is repaired first (`python scripts/lessons.py check`, fix what it names) and the query run again until it exits 0, since a failed query has read nothing; exit 2 is a mistake in the command, corrected and rerun. Done when: the skill states the four outcomes and the test holds them. **Corrected 2026-11-12:** added after the plan review (gap 3, P2).
 - [x] Put the triage and its lessons in the candidate the last pass reviews: after the round's findings are fixed and before the completion review is dispatched, with `python scripts/lessons.py check` passing and the lines committed; a later pass's fixes are triaged before the next reconciliation; a resumed section runs `candidates --untriaged` on its record and writes only what that prints, never a second line for a finding. Done when: the skill says so and the ordering test holds it. **Corrected 2026-11-12:** replaces the first wording's before the stamp, which could land after the last reviewed candidate (plan review gap 4, P2).
 - [x] Triage the findings a round raises; the findings of a plan review, a completion review and a reconciliation are triaged once §9 gives those passes an identity, and the skill says which passes it covers today. Done when: the skill names rounds and points at §9 for the rest. **Corrected 2026-11-12:** every confirmed finding in the first wording reached further than §3's reader does (plan review gap 2, P1); the missing coverage is owned by §9, filed with this correction.
-- [ ] Commit: `lessons: read them before a section and write them after its review`
+- [x] Commit: `lessons: read them before a section and write them after its review`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_skill_ci_gate.py"` passes with the new test among them.
+
+> **Verified:** 2026-11-12 | §4 | 76899623565bfbb541414b146ae3b1fda6e1d7e0
+> **Review:** `docs/reviews/d00-t05-s4.json`
 
 ## 8. Lesson Upkeep at Scale
 
