@@ -22,18 +22,32 @@ cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cli)
 
 RECORD = "docs/reviews/00-workspace/D99-T01-s1.md"
-RECORD_TEXT = """## Plan review: astra
+RECORD_TEXT = """## Plan review: astra (`gpt-6-astra` via `codex`)
 
 1. **P2:** a plan finding.
 
-## Round 1: astra
+OVERALL: needs-attention
+
+## Round 1: astra (`gpt-6-astra` via `codex`)
+
+## adversarial: needs-attention
 
 1. **P1, `scripts/a.py:3`:** the first finding.
 2. **P2:** the second finding.
 
-## Round 2: astra
+OVERALL: needs-attention
+
+## Re-think
+
+1. A writer's numbered note, not a finding.
+2. Another.
+3. And a third.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
 
 1. **P3:** a later one.
+
+OVERALL: approve
 """
 SPEC_TEXT = "# Spec\n\n## Decisions\n\n1. **First:** one.\n2. **Second:** two.\n"
 
@@ -201,6 +215,36 @@ class Sources(Store):
         self.write(source=f"{RECORD}#round-2/finding-1")
         self.assertEqual(self.check()[0], 0)
         self.refused("round 2 of", source=f"{RECORD}#round-2/finding-2")
+
+
+class RoundFixes(Store):
+    """Round 1 of D00 T05 §1's review."""
+
+    def test_a_list_that_names_nothing_is_refused(self):
+        for key in ("applies", "topics", "roles"):
+            with self.subTest(key):
+                self.refused(f"empty value: {key} names nothing", **{key: ", ,"})
+
+    def test_a_huge_number_is_a_refusal_not_a_crash(self):
+        self.write(name="huge", id="huge", source="decision-" + "9" * 4301, fix=None)
+        self.write()
+        code, out = self.check()
+        self.assertEqual(code, 1)
+        self.assertIn("huge: source:", out)
+        self.assertIn("2 lesson(s), 1 problem(s)", out)
+        self.refused("is neither", source=f"{RECORD}#round-1/finding-" + "1" * 50)
+
+    def test_a_lens_heading_stays_in_its_round_and_a_writer_heading_does_not(self):
+        self.write(source=f"{RECORD}#round-1/finding-1")  # under `## adversarial`, a level-2 lens heading
+        self.assertEqual(self.check()[0], 0)
+        self.refused("round 1 of", source=f"{RECORD}#round-1/finding-3")  # only the Re-think has a 3
+
+    def test_a_real_record_of_this_repository_is_read(self):
+        record = ROOT / "docs" / "reviews" / "00-workspace" / "D00-T03-s15.md"
+        text = record.read_text(encoding="utf-8")
+        self.assertIn("\n## adversarial", text)  # the older shape, lens headings at level 2
+        self.assertTrue(cli.finding_in(text, "1", "1"))
+        self.assertTrue(cli.finding_in(text, "2", "1"))
 
 
 class Globs(Store):

@@ -24,8 +24,8 @@ ROLES = {"main", "reader"}  # and `all`; the removed writer roles (section-write
 STATUSES = {"active", "retired"}
 MAX_BODY = 600
 DASHES = {"—": "em dash", "–": "en dash"}
-REVIEW_SOURCE = re.compile(r"^(?P<record>[^#\s]+\.md)#round-(?P<round>[1-9][0-9]*)/finding-(?P<finding>[1-9][0-9]*)$")
-DECISION_SOURCE = re.compile(r"^decision-(?P<number>[1-9][0-9]*)$")
+REVIEW_SOURCE = re.compile(r"^(?P<record>[^#\s]+\.md)#round-(?P<round>[1-9][0-9]{0,3})/finding-(?P<finding>[1-9][0-9]{0,3})$")
+DECISION_SOURCE = re.compile(r"^decision-(?P<number>[1-9][0-9]{0,5})$")  # bounded, so int() never fails
 SPEC = "docs/specs/2026-10-23-campaign-scope-design.md"
 GIT_SECONDS = 60
 
@@ -61,18 +61,25 @@ class Repository:
         return git(self.root, "merge-base", "--is-ancestor", ref, "HEAD")[0] == 0
 
 
+# A review pass's heading: `## Round 3: astra (...)`, `## Completion review: ...`; the reviewer is always named.
+PASS_HEADING = re.compile(r"^## [A-Z][^:]*: [a-z0-9-]+ \(")
+
+
 def finding_in(record_text, round_number, finding):
-    """Whether the record has a `## Round N` heading with a finding numbered `finding` under it."""
+    """Whether the record has a `## Round N` heading with a finding numbered `finding` in that round's text. The
+    round's text runs to its `OVERALL:` line or the next pass heading, so lens headings inside it (older records put
+    `## adversarial` at the same level) stay part of it, and a heading the writer adds after it does not."""
     block = None
     for line in record_text.splitlines():
-        if line.startswith("## "):
-            if block is not None:
-                break
+        if block is None:
             if re.match(rf"^## Round {round_number}\b", line):
                 block = []
             continue
-        if block is not None:
-            block.append(line)
+        if PASS_HEADING.match(line):
+            break
+        block.append(line)
+        if line.startswith("OVERALL:"):
+            break
     if block is None:
         return None
     return any(re.match(rf"^\s*{finding}\.\s", line) for line in block)
@@ -111,6 +118,9 @@ def problems_of(lesson, repo, allowed_topics):
     for char, label in DASHES.items():
         if any(char in value for value in lesson.values()):
             say("dash", f"an {label}")
+    for key in ("applies", "topics", "roles"):
+        if lesson[key] and not lessons.items(lesson[key]):
+            say("empty value", f"{key} names nothing")
     for word in lessons.items(lesson["topics"]):
         if word not in allowed_topics:
             say("topics", f"{word!r} is not in the README's Topics list")
