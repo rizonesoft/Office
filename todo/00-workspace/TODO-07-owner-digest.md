@@ -61,6 +61,8 @@ Filed 2026-11-11 from the completion review of T03 §35 (`docs/reviews/00-worksp
 
 ## 2. Digest Keeps a Long Progress List
 
+> **Started:** 2026-11-12T10:05:09Z
+
 Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 2, P2). T03 §35 moves an overflowing waiting list into an attachment, but not the list of sections verified in the week, so a productive week could push the run state, CI and the waiting items out of the 120-line body, or cut the progress list. This section puts the whole progress list in the attachment too and keeps the body's summary first.
 
 **Phase:** 0
@@ -72,7 +74,7 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 2, P2)
 1. Order the body and overflow both lists. Done when: a week of 130 stamps keeps the summary, CI and run state in the body and every stamp in the attachment.
 
 - [ ] Order the body of `scripts/owner-digest.py` as run state, CI, totals, waiting items, then progress, each cut list ending with a line that counts what the attachment adds. Done when: a test with 130 fixture stamps in the week shows the body's first lines unchanged and the cut line.
-- [ ] Put the complete progress list in the attachment beside the waiting list. Done when: tests cover progress-only overflow and progress-and-waiting overflow, with every item in the attachment.
+- [ ] Put the complete progress list in the attachment beside the waiting list. Done when: tests cover progress-only overflow and progress-and-waiting overflow, with every item in the attachment. **Corrected 2026-11-12:** today the body already starts with the run state, CI and totals, but an overflow attaches the waiting list whether or not it was cut and cuts the progress list with no attachment at all. The progress list goes in its own attachment, `verified-this-week.txt`, and each list is attached only when the body cuts it, so a progress-only overflow leaves the waiting list whole in the body; the waiting list keeps its place before the progress list, since it is what asks for the owner's action.
 - [ ] Commit: `automations: the digest keeps a long progress list`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` passes with both overflow tests among them.
