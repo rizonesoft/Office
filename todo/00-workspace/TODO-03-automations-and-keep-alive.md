@@ -81,6 +81,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
 | 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
+| 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1339,6 +1340,28 @@ Filed 2026-11-12 from the campaign's own run (`docs/phase-runs/2026-11-12-phase-
 
 > **Verified:** 2026-11-12 | §59 | 6cc5934ca0478cb8e80f3f67b2734bcba46eef37
 > **Review:** `docs/reviews/d00-t03-s59.json`
+## 60. CI Runs the Tooling Tests in Parallel Jobs
+
+Filed 2026-11-13 from the owner's direction of 2026-11-12 (decision 45 of `docs/specs/2026-10-23-campaign-scope-design.md`: let CI do the heavy lifting, and detect a red CI early). Measured on run 43299441464: the one `gates` job of `.github/workflows/ci.yml` took 17 minutes, 14 minutes 22 seconds of it in the step `Run the tooling tests` (`python scripts/run-tests.py -v`, 38 files, four at a time on one runner). Two files hold most of it (`test_start_campaign.py` about 650 seconds and `test_todo_stamp.py` about 460 on this PC), so splitting by file alone cannot go below the slowest file. This section splits the tests across parallel jobs, down to the test class where a file is slow, so a push's result arrives in a third of the time and this PC never needs the full suite to know.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Teach the runner to take one share of the tests. Done when: `python scripts/run-tests.py --shard 1/4` runs a quarter of the work and the four shares together run every test exactly once.
+2. Run the shares as parallel jobs in CI. Done when: a push's run shows the quick checks and each share as its own job, and the whole run ends within 7 minutes.
+3. Keep the campaign's reading of CI true. Done when: `python scripts/ci-status.py <sha>` reports red when any one job fails and names it.
+
+- [ ] Add `--shard <i>/<n>` to `scripts/run-tests.py`: split the units of work (a test file, or each test class of a file listed as slow in `scripts/tests/durations.json`) into `n` shares balanced by their recorded seconds, deterministically, and run share `i`. Done when: tests in `scripts/tests/test_run_tests.py` show that for `n` of 1, 2, 4 and 7 over a fixture tree every test is in exactly one share, the same input gives the same shares, a file missing from the durations file is still run (at a default weight), and `--shard 0/4`, `5/4` and `x` exit 2. Cheaper substitute: splitting by file name order, which leaves one share with both slow files.
+- [ ] Record the durations the split is balanced by in `scripts/tests/durations.json`, written by `python scripts/run-tests.py --record-durations` through a temporary file and `os.replace`, with the files over 60 seconds listed per class. Done when: the file holds every test file of `scripts/tests`, a test shows that a duration file naming a test file that no longer exists is refused with the name, and `--record-durations` twice on an unchanged tree changes only the seconds. Cheaper substitute: hard-coded shares in the workflow, which rot when a test file is added.
+- [ ] Split `.github/workflows/ci.yml` into a `checks` job (the installs, the tool pins, the icons, `validate`, `plan --check`, the lesson store, SPDX and REUSE) and a `tests` job with a matrix of four shares running `python scripts/run-tests.py -v --shard ${{ matrix.share }}/4`, with `fail-fast: false` so every share reports. Done when: the run of this section's commit shows five jobs, all green, and its total time from the first job's start to the last job's end is under 7 minutes; the run id and the times are recorded in this section as a `**Measured:**` line. Cheaper substitute: raising the runner's parallel count, which the two slow files defeat.
+- [ ] Keep `scripts/ci-status.py` true over several jobs: green only when every job of the push's run is green, red naming each failed job and step, pending while any job runs. Done when: tests in `scripts/tests/test_ci_status.py` with a fake `gh` show a run with one failed share reported red with that job's name, a run with one share still running reported pending, and all five green reported green. Cheaper substitute: reading the run's own conclusion only, which loses which share failed.
+- [ ] Say in `AGENTS.md` (Tests) and `.claude/agents/test-runner.md` that the full suite is CI's, in shares, and how to run one share locally to reproduce a red one (`python scripts/run-tests.py --shard <i>/4`). Done when: both name the command and `python -m unittest discover -s scripts/tests -p "test_skill*.py"` passes.
+- [ ] Commit: `ci: run the tooling tests in parallel jobs`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_run_tests.py"` and `-p "test_ci_status.py"` pass with the tests named above among them, and `python scripts/ci-status.py HEAD` reports the five-job run of this section's commit green.
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
