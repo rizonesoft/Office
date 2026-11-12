@@ -39,6 +39,9 @@ param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [V
       [string]$TaskKillPath = (Join-Path $env:SystemRoot 'System32\taskkill.exe'))
 
 $ErrorActionPreference = 'Stop'
+# Every native command's exit is read from $LASTEXITCODE below, so a failing one must never throw instead, whatever
+# the shell that started this file prefers (a failed bootstrap must not end the start; D00 T04 §4, round 1).
+$PSNativeCommandUseErrorActionPreference = $false
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $root
 
@@ -182,16 +185,21 @@ function Test-Holds([string]$Folder, [string]$Program) {
 }
 $env:PATH = (@($toolDirs) + @($env:PATH -split ';' | Where-Object { $_ })) -join ';'
 $pinnedClangd = @($toolDirs | Where-Object { Test-Holds $_ 'clangd.exe' })
+# Settings for this session only, layered over .claude/settings.json by claude's --settings.
+$sessionArgs = @()
 if ($pinnedClangd) {
     Write-Host "clangd: $(Join-Path $pinnedClangd[0] 'clangd.exe')"
 } else {
-    # The clangd-lsp plugin finds clangd on PATH, so a machine copy must not be there for it to find instead.
-    $entries = @($env:PATH -split ';' | Where-Object { $_ })
-    $kept = @($entries | Where-Object { -not (Test-Holds $_ 'clangd.exe') })
-    $env:PATH = $kept -join ';'
-    Write-Host "clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py). $($entries.Count - $kept.Count) folder(s) holding another clangd were left off this session's PATH." -ForegroundColor Yellow
+    # The clangd-lsp plugin would start whichever clangd PATH gives, so without the pinned one it is switched off
+    # for this session: the plugin's own setting, and PATH stays whole for every other command.
+    $sessionSettings = Join-Path $root 'build/campaign-session-settings.json'
+    New-Item -ItemType Directory -Force -Path (Join-Path $root 'build') | Out-Null
+    $partial = "$sessionSettings.tmp"
+    Set-Content -LiteralPath $partial -Value '{"enabledPlugins": {"clangd-lsp@claude-plugins-official": false}}'
+    Move-Item -LiteralPath $partial -Destination $sessionSettings -Force
+    $sessionArgs = @('--settings', $sessionSettings)
+    Write-Host 'clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py). The clangd-lsp plugin is off for this session, so no other clangd is used.' -ForegroundColor Yellow
 }
-
 # The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.
 python scripts/check-campaign-host.py
 if ($LASTEXITCODE -ne 0) {
@@ -269,7 +277,7 @@ if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
     Write-Host ''
     Write-Host "Would run in ${root}:"
-    Write-Host "claude --model $model --dangerously-skip-permissions `"$goal`""
+    Write-Host ((@('claude', '--model', $model, '--dangerously-skip-permissions') + $sessionArgs + "`"$goal`"") -join ' ')
     exit 0
 }
 
@@ -279,7 +287,7 @@ while ($true) {
     # the host check below, must never be followed by a new session.
     if (Test-StopRequested) { break }
     $started.Add((Get-Date))
-    claude --model $model --dangerously-skip-permissions $goal
+    claude --model $model --dangerously-skip-permissions @sessionArgs $goal
     if (Test-StopRequested) { break }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''

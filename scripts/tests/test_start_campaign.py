@@ -40,15 +40,17 @@ class StartCampaignModelTest(unittest.TestCase):
     def test_the_real_start_passes_the_goal(self):
         # The goal's wording only matters if the session receives it: the one line that starts Claude ends with it.
         starts = [line.strip() for line in self.text.splitlines() if line.strip().startswith("claude --")]
-        self.assertEqual(starts, ["claude --model $model --dangerously-skip-permissions $goal"])
+        self.assertEqual(starts, ["claude --model $model --dangerously-skip-permissions @sessionArgs $goal"])
         self.assertEqual(len(re.findall(r"(?m)^\$goal = ", self.text)), 1)  # one goal, never reassigned
 
     def test_every_claude_start_passes_the_model(self):
-        starts = [line.strip() for line in self.text.splitlines()
-                  if "claude --" in line and "--dangerously-skip-permissions" in line]
-        self.assertEqual(len(starts), 2, starts)  # the dry-run print and the real start
-        for line in starts:
-            self.assertIn("claude --model $model --dangerously-skip-permissions", line)
+        lines = [line.strip() for line in self.text.splitlines() if not line.lstrip().startswith("#")]
+        starts = [line for line in lines if line.startswith("claude --")]
+        printed = [line for line in lines if "'claude', '--model'" in line]
+        self.assertEqual(len(starts) + len(printed), 2, starts + printed)  # the real start and the dry-run print
+        self.assertIn("claude --model $model --dangerously-skip-permissions", starts[0])
+        self.assertIn("'claude', '--model', $model, '--dangerously-skip-permissions'", printed[0])
+        self.assertIn("$sessionArgs", printed[0])
 
     def test_no_pinned_model_version_in_code(self):
         code = [line for line in self.text.splitlines() if not line.lstrip().startswith("#")]
@@ -139,10 +141,14 @@ Add-Content -LiteralPath (Join-Path $root 'claude-calls.txt') -Value ($args -joi
 Set-Content -LiteralPath (Join-Path $root 'build/claude-campaign-guard.json') -Value '{"session_id":"s","run_file":"r"}'
 if ($env:CLAUDE_CODE_OAUTH_TOKEN) { Set-Content -LiteralPath (Join-Path $root 'token-seen.txt') -Value 'yes' }
 # What the session's own children would get for clangd: the program that runs, by its output, or none.
-$found = Get-Command clangd.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-$ran = if ($found) { (& $found.Source | Out-String).Trim() } else { 'none' }
-Set-Content -LiteralPath (Join-Path $root 'clangd-ran.txt') -Value $ran
+# Only the clangd tests (which set OFFICE_FAKE_BIN_DIRS) run it, with empty input, so a real clangd ends at once.
+if ($null -ne $env:OFFICE_FAKE_BIN_DIRS) {
+    $found = Get-Command clangd.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $ran = if ($found) { ($null | & $found.Source 2>&1 | Out-String).Trim() } else { 'none' }
+    Set-Content -LiteralPath (Join-Path $root 'clangd-ran.txt') -Value $ran
+}
 Set-Content -LiteralPath (Join-Path $root 'session-path.txt') -Value $env:PATH
+Set-Content -LiteralPath (Join-Path $root 'session-args.txt') -Value ($args | Select-Object -SkipLast 1)
 exit 0
 """
 
@@ -515,20 +521,43 @@ class LauncherRunTest(unittest.TestCase):
         self.assertIn("Build tools: ninja 1.0 is not installed", output)
         self.assertNotIn("ninja 1.0 is not installed", ";".join(session_path))
 
-    def test_without_a_pinned_clangd_the_machine_one_is_left_off_and_the_start_goes_on(self):
+    def test_without_a_pinned_clangd_the_plugin_is_off_and_path_stays_whole(self):
         _, machine, other, _ = self.clangd_fixtures()
-        output, ran = self.run_session(OFFICE_FAKE_BIN_DIRS=str(other), OFFICE_FAKE_BIN_EXIT="1",
-                                       OFFICE_FAKE_BIN_ERR="llvm 1 is not installed as tools.lock.json pins it")
-        self.assertEqual(ran, "none")
+        (self.bin / "git.exe").write_bytes(b"")  # a folder may hold a clangd and commands the session needs
+        output, _ = self.run_session(OFFICE_FAKE_BIN_DIRS=str(other), OFFICE_FAKE_BIN_EXIT="1",
+                                     OFFICE_FAKE_BIN_ERR="llvm 1 is not installed as tools.lock.json pins it")
         self.assertIn("clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py)", output)
-        holding = [e for e in self.env["PATH"].split(os.pathsep) if e and (Path(e) / "clangd.exe").is_file()]
-        self.assertIn(str(machine), holding)
-        self.assertIn(f"{len(holding)} folder(s) holding another clangd were left off", output)
-        session_path = (self.root / "session-path.txt").read_text(encoding="utf-8")
-        self.assertNotIn(str(machine), session_path)
-        self.assertIn(str(other), session_path)
+        self.assertIn("The clangd-lsp plugin is off for this session", output)
+        args = (self.root / "session-args.txt").read_text(encoding="utf-8").splitlines()
+        self.assertIn("--settings", args)
+        settings = Path(args[args.index("--settings") + 1])
+        self.assertEqual(json.loads(settings.read_text(encoding="utf-8")),
+                         {"enabledPlugins": {"clangd-lsp@claude-plugins-official": False}})
+        session_path = (self.root / "session-path.txt").read_text(encoding="utf-8").strip().split(";")
+        self.assertIn(str(machine), session_path)  # nothing taken off PATH
+        self.assertIn(str(self.bin), session_path)
+        self.assertEqual(session_path[0], str(other))
         self.assertTrue(self.calls())
 
+    def test_with_the_pinned_clangd_the_plugin_stays_on(self):
+        pinned, _, _, _ = self.clangd_fixtures()
+        self.run_session(OFFICE_FAKE_BIN_DIRS=str(pinned))
+        self.assertNotIn("--settings", (self.root / "session-args.txt").read_text(encoding="utf-8").splitlines())
+
+    def test_a_failed_bootstrap_starts_even_when_the_shell_makes_native_failures_throw(self):
+        pinned, _, _, _ = self.clangd_fixtures()
+        self.env.update(OFFICE_FAKE_BOOT_EXIT="1", OFFICE_FAKE_BIN_DIRS=str(pinned), OFFICE_FAKE_BIN_EXIT="1")
+        script = str(self.root / "scripts" / "start-campaign.ps1").replace("'", "''")
+        process = subprocess.Popen(
+            [PWSH, "-NoLogo", "-NoProfile", "-Command",
+             f"$ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true; & '{script}' -RestartSeconds 30"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env)
+        self.processes.append(process)
+        self.wait_for(self.root / "clangd-ran.txt")
+        self.request_stop()
+        output, _ = process.communicate(timeout=120)
+        self.assertIn("Build tools: the bootstrap failed (exit 1); the start goes on", output)
+        self.assertTrue(self.calls())
     def test_a_dry_run_names_the_pinned_clangd_and_installs_nothing(self):
         pinned, _, _, _ = self.clangd_fixtures()
         self.env["OFFICE_FAKE_BIN_DIRS"] = str(pinned)
