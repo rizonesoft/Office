@@ -86,6 +86,8 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 2, P2)
 
 ## 3. Digest Delivery Survives a Failed Send
 
+> **Started:** 2026-11-12T10:38:16Z
+
 Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 3, P2). T03 §35 sends once a week; when the send fails (no network on Monday morning), the runner records the failure and the next digest comes a week later, its seven-day window past what was missed. This section remembers the last digest delivered and retries a failed one.
 
 **Phase:** 0
@@ -97,8 +99,8 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 3, P2)
 1. Report from the last delivered digest and retry a failure. Done when: a failed send is retried and its period is reported whole.
 
 - [ ] Record each delivered digest in `build/automations/owner-digest.json` (the period it covered and the provider's message id), written temp-then-replace, and report from the end of the last delivered period rather than a fixed seven days. Done when: a test with a failed week shows the next digest covering both weeks.
-- [ ] Retry a definite failure (a refused send, a network error before a response) at most four times a day until it is delivered, through a daily task `office-owner-digest-retry` that does nothing when the last digest was delivered. Done when: tests show a retry after a refusal and none after a delivery, and `tasks.json` and the README agree.
-- [ ] Treat an ambiguous outcome (a timeout after the request was sent) as possibly delivered: record it, do not resend that period, and say so in the next digest. Done when: a test shows no second send after a timeout and the note in the following digest.
+- [ ] Retry a definite failure (a refused send, a network error before a response) at most four times a day until it is delivered, through a daily task `office-owner-digest-retry` that does nothing when the last digest was delivered. **Corrected 2026-11-12:** a daily trigger runs once a day, so four tries need the scheduler's other form: `office-owner-digest-retry` runs `python scripts/owner-digest.py --retry` at logon (after 5 minutes, so a PC that was off on Monday tries as soon as it is back) and every 360 minutes, and `--retry` itself refuses a fifth attempt in one day (the attempts are counted in `build/automations/owner-digest.json`) and exits 0 doing nothing when no failed digest is pending. Done when: tests show a retry after a refusal and none after a delivery, and `tasks.json` and the README agree.
+- [ ] Treat an ambiguous outcome (a timeout after the request was sent) as possibly delivered: record it, do not resend that period, and say so in the next digest. **Corrected 2026-11-12:** each digest's subject already carries its own token, and D00 T03 §53 asks SMTP2GO's activity log whether a subject went out (`alert.delivery`), so an ambiguous digest is first settled by that log: sent, it is recorded delivered; not sent, it becomes a definite failure and is retried; only when the log cannot tell (unreadable, or past its history) is it treated as possibly delivered, as this item says. Done when: a test shows no second send after a timeout and the note in the following digest.
 - [ ] Commit: `automations: a failed digest is sent again`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` and `-p "test_automations.py"` pass with the delivery tests among them.
