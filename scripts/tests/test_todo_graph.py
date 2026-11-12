@@ -980,6 +980,14 @@ class PerAppAuthoring(unittest.TestCase):
         late = sorted(ref for ref in path if self.place[ref] > first_other)
         self.assertEqual(late, [])
 
+    def test_no_open_section_on_that_path_reads_another_apps_inventory_files(self):
+        """The graph cannot see a checklist item that asks for a file of an inventory captured later."""
+        path = self.reach("D03 T01 §17") | self.reach("D03 T01 §19") | {"D03 T01 §17", "D03 T01 §19"}
+        asked = sorted((ref, app) for ref in path if not self.rows[ref].done
+                       for app in ("excel", "powerpoint", "visio", "project", "outlook")
+                       if f"design/inventory/{app}/" in self.rows[ref].body)
+        self.assertEqual(asked, [])
+
 
 if __name__ == "__main__":
     unittest.main()

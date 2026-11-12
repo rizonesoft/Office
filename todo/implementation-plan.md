@@ -113,7 +113,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 28 | Checklist items: 194
+Sections: 28 | Checklist items: 189
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
@@ -130,7 +130,7 @@ Sections: 28 | Checklist items: 194
 | [x]    | D02 T01 §4  | Shell Chrome Inventory    | office, windows-host, display-session | 8     |
 | [x]    | D02 T01 §5  | Word Ribbon               | office, windows-host, display-session | 10    |
 | [ ]    | D02 T01 §6  | Word Panes, Dialogs       | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 8     |
+| [ ]    | D02 T01 §17 | Keyboard Shortcuts        | none                                  | 3     |
 | [ ]    | D02 T01 §18 | Inventory Coverage Report | none                                  | 9     |
 | [ ]    | D02 T01 §22 | Inventory Ownership Check | none                                  | 13    |
 | [ ]    | D02 T01 §27 | Checker Mutation Sweep    | none                                  | 6     |
@@ -198,38 +198,38 @@ Sections: 1 | Checklist items: 5
 
 ### Phase 5: Applications
 
-Sections: 24 | Checklist items: 202
+Sections: 24 | Checklist items: 224
 
 #### Interface inventory and specification
 
-Sections: 16 | Checklist items: 119 | Verified: 0
+Sections: 16 | Checklist items: 140 | Verified: 0
 
 | Status | Reference   | Deliverable               | Needs                                 | Items |
 | ------ | ----------- | ------------------------- | ------------------------------------- | ----- |
 | [ ]    | D02 T01 §7  | Excel Ribbon              | office, windows-host, display-session | 9     |
-| [ ]    | D02 T01 §8  | Excel Panes, Dialogs      | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §8  | Excel Panes, Dialogs      | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §9  | PowerPoint Ribbon         | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §10 | PowerPoint Panes, Dialogs | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §10 | PowerPoint Panes, Dialogs | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §11 | Visio Ribbon              | office, windows-host, display-session | 7     |
-| [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 6     |
+| [ ]    | D02 T01 §12 | Visio Panes, Dialogs      | office, windows-host, display-session | 7     |
 | [ ]    | D02 T01 §13 | Project Ribbon            | office, windows-host, display-session | 6     |
-| [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 7     |
+| [ ]    | D02 T01 §14 | Project Panes, Dialogs    | office, windows-host, display-session | 8     |
 | [ ]    | D02 T01 §15 | Outlook Ribbons           | office, windows-host, display-session | 9     |
-| [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 7     |
-| [ ]    | D02 T02 §8  | Excel Surface Chapter     | none                                  | 8     |
-| [ ]    | D02 T02 §9  | PowerPoint Chapter        | none                                  | 8     |
-| [ ]    | D02 T02 §10 | Visio Surface Chapter     | none                                  | 9     |
-| [ ]    | D02 T02 §11 | Project Surface Chapter   | none                                  | 9     |
-| [ ]    | D02 T02 §12 | Outlook Surface Chapter   | none                                  | 9     |
-| [ ]    | D02 T02 §14 | Mockups and Sign-Off      | none                                  | 4     |
+| [ ]    | D02 T01 §16 | Outlook Panes, Dialogs    | office, windows-host, display-session | 8     |
+| [ ]    | D02 T02 §8  | Excel Surface Chapter     | none                                  | 11    |
+| [ ]    | D02 T02 §9  | PowerPoint Chapter        | none                                  | 11    |
+| [ ]    | D02 T02 §10 | Visio Surface Chapter     | none                                  | 12    |
+| [ ]    | D02 T02 §11 | Project Surface Chapter   | none                                  | 12    |
+| [ ]    | D02 T02 §12 | Outlook Surface Chapter   | none                                  | 12    |
+| [ ]    | D02 T02 §14 | Mockups and Sign-Off      | none                                  | 5     |
 
 #### Architecture and tech stack
 
-Sections: 8 | Checklist items: 83 | Verified: 0
+Sections: 8 | Checklist items: 84 | Verified: 0
 
 | Status | Reference   | Deliverable                       | Needs | Items |
 | ------ | ----------- | --------------------------------- | ----- | ----- |
-| [ ]    | D03 T01 §20 | Grid Domain Authoring             | none  | 13    |
+| [ ]    | D03 T01 §20 | Grid Domain Authoring             | none  | 14    |
 | [ ]    | D03 T01 §21 | Stage Domain Authoring            | none  | 13    |
 | [ ]    | D03 T01 §22 | Mail Domain Authoring             | none  | 12    |
 | [ ]    | D03 T01 §23 | Flow Domain Authoring             | none  | 12    |
@@ -291,4 +291,4 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 
 Progress: 86/164 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 634/1161 items completed (includes Commit items).
+Checklist: 634/1178 items completed (includes Commit items).

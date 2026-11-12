@@ -94,6 +94,20 @@ Decisions and authoring:
 
 An app is enforced from the stamp of its authoring section, not from its first claim: A§17's platform sections claim Word's Help tab records before A§19 has written Word's other owners, and each authoring section commits its files one at a time, so a first-claim rule would refuse the very commits that author the app. `design/inventory/authoring.json` names each app's authoring section (the shell's is A§17). Until that stamp the hook refuses only an unknown or a doubly owned claim; the authoring section itself runs `--owners --check --all --app <app>` as its last item, so it cannot be stamped with a record unowned.
 
+What the graph cannot show. A prerequisite list says which sections come first, not what an item asks for, and six sections on the path asked, in an item's own words, for something of an inventory captured later. Each is restated around the shell and Word, and the later app's part moves to the section that owns that app:
+
+| Section | Asked for | Now | The later apps' part goes to |
+| ------- | --------- | --- | ---------------------------- |
+| I§17 shortcuts | All six apps' shortcut files | Word's file and the conflict check | I§8, I§10, I§12, I§14, I§16 |
+| S§4 ribbon chapter | The algorithm proved on Excel's Home tab | Proved on Word's Insert tab | S§8 to S§12 |
+| S§4, continued | Every app's Simplified Ribbon tabs | Word's tabs | S§8 to S§12 |
+| S§5 Backstage chapter | Every app's variants and Options categories | Word's, and how an app adds its own | S§8 to S§12 |
+| S§6 status bar chapter | Every app's items, Excel's zoom range | The frame, Word's items and range | S§8 to S§12 |
+| S§13 accessibility chapter | The F6 cycle order per app | The shell's and Word's | S§8 to S§12 |
+| A§6 calculation engine | The function list from Excel's ribbon | The list from the standards | A§20 compares the two |
+
+S§14 confirms that the shared chapters hold all six apps, so the gate still proves the whole. The function list is better for the change: a ribbon gallery shows what Excel chooses to show, while ECMA-376 and [MS-XLSX] define every function a file may hold. The test class holds the part of this a test can read: no open section on the path may name a file under another app's inventory folder.
+
 A§13 takes over, for all six apps and the shell: the ownership check with no pending app, the layout check, a coverage report with no pending app, a disposition on every record of a service A§14 decided, and S§14's check across the mock-ups.
 
 A§20 to A§24 each gain two duties the all-at-once plan did not need. The app's inventory may hold records backed by a cloud service: the section sets their dispositions from A§14's record before it claims anything, and adds their rows to that record. And the app's inventory may hold a control type or a shell region that the platform's sections, written from the shell's and Word's inventories, do not build: the section files each as a new section in `todo/04-platform/` and depends on it, so the platform grows with what each app proves it needs.
@@ -143,4 +157,4 @@ Phase 5: I§7, I§8, I§9, I§10, I§11, I§12, I§13, I§14, I§15, I§16, S§8
 
 `python scripts/todo-graph.py query ready` after the change lists, ahead of D02 T01 §7: D02 T01 §6, §17, §18, §27 and §30, D02 T02 §1, and D03 T01 §1, §11 and §29. Before it, D02 T01 §7 stood second among the Phase 2 rows, ahead of all but D02 T01 §6, and D02 T01 §18 was not ready at all.
 
-The standing proof is `PerAppAuthoring` in `scripts/tests/test_todo_graph.py`, which reads this repository's own tree: it fails when the platform or Write reaches another app's inventory, when a later app reaches any but its own and Word's, when an edge an authoring section needs is removed, when a chapter loses the glyph decision, when the gate loses a guarantee, and when a row on the path to the platform or Write falls behind D02 T01 §7 in the plan's order.
+The standing proof is `PerAppAuthoring` in `scripts/tests/test_todo_graph.py`, which reads this repository's own tree: it fails when the platform or Write reaches another app's inventory, when a later app reaches any but its own and Word's, when an edge an authoring section needs is removed, when a chapter loses the glyph decision, when the gate loses a guarantee, when an open section on the path names a file of another app's inventory, and when a row on the path to the platform or Write falls behind D02 T01 §7 in the plan's order.

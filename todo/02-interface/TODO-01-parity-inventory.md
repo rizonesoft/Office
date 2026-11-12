@@ -46,15 +46,15 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [x] |
 | 6 | §6 | Word panes, dialogs | §5 | [ ] |
 | 7 | §7 | Excel ribbon | §3, §19, §23, §24, §26 | [ ] |
-| 8 | §8 | Excel panes, dialogs | §7 | [ ] |
+| 8 | §8 | Excel panes, dialogs | §7, §17 | [ ] |
 | 9 | §9 | PowerPoint ribbon | §3, §19, §23, §24, §26 | [ ] |
-| 10 | §10 | PowerPoint panes, dialogs | §9 | [ ] |
+| 10 | §10 | PowerPoint panes, dialogs | §9, §17 | [ ] |
 | 11 | §11 | Visio ribbon | §3, §19, §23, §24, §26 | [ ] |
-| 12 | §12 | Visio panes, dialogs | §11 | [ ] |
+| 12 | §12 | Visio panes, dialogs | §11, §17 | [ ] |
 | 13 | §13 | Project ribbon | §3, §19, §23, §24, §26 | [ ] |
-| 14 | §14 | Project panes, dialogs | §13 | [ ] |
+| 14 | §14 | Project panes, dialogs | §13, §17 | [ ] |
 | 15 | §15 | Outlook ribbons | §3, §19, §23, §24, §26 | [ ] |
-| 16 | §16 | Outlook panes, dialogs | §15 | [ ] |
+| 16 | §16 | Outlook panes, dialogs | §15, §17 | [ ] |
 | 17 | §17 | Keyboard shortcuts | §1, §20, §23, §26 | [ ] |
 | 18 | §18 | Inventory coverage report | §4, §5, §19, §25 | [ ] |
 | 19 | §19 | Control ID baseline | §1, §21 | [x] |
@@ -285,6 +285,7 @@ Excel beyond the ribbon: Name Box and formula bar, sheet tabs and their context 
 - [ ] Capture the status bar aggregates and Customize Status Bar menu into `design/inventory/excel/statusbar.json`. Done when: Average, Count, Numerical Count, Minimum, Maximum and Sum each record default state. Cheaper substitute: Sum only.
 - [ ] Capture each dialog named in this section into `design/inventory/excel/dialogs.json` with tabs and controls. Done when: the eleven dialogs exist. Cheaper substitute: titles without controls.
 - [ ] Capture the Excel right-click context menus (cell, row header, column header, sheet tab, table, PivotTable, chart, picture, shape) and the mini toolbar into `design/inventory/excel/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
+- [ ] Transcribe Excel shortcuts into `design/inventory/excel/shortcuts.json` with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered, the file holds at least 50 records and `python scripts/check-inventory.py design/inventory` exits 0 with §17's conflict check. Cheaper substitute: the twenty most common shortcuts. **Corrected 2026-11-12:** moved here from §17 by D03 T01 §30 (decision 44).
 - [ ] Commit: `inventory: capture Excel Backstage, formula bar, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/excel` exits 0 and `design/inventory/excel/dialogs.json` holds at least 11 `dialog` records.
@@ -331,6 +332,7 @@ PowerPoint beyond the ribbon: views (Normal, Outline, Slide Sorter, Notes Page, 
 - [ ] Capture the status bar and its customise menu into `design/inventory/powerpoint/statusbar.json`. Done when: Notes, Comments, view buttons and zoom slider have records. Cheaper substitute: zoom only.
 - [ ] Capture dialogs (Font, Paragraph, Header and Footer, Slide Size, Set Up Slide Show, Insert Hyperlink, Format Background pane forms) into `design/inventory/powerpoint/dialogs.json`. Done when: each has tabs and controls. Cheaper substitute: titles only.
 - [ ] Capture the PowerPoint right-click context menus (slide canvas, slide thumbnail, text box, placeholder, table, picture, shape, chart, notes) and the mini toolbar into `design/inventory/powerpoint/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
+- [ ] Transcribe PowerPoint shortcuts into `design/inventory/powerpoint/shortcuts.json`, including slide show shortcuts with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered, the file holds at least 50 records and `python scripts/check-inventory.py design/inventory` exits 0 with §17's conflict check. Cheaper substitute: editing shortcuts only. **Corrected 2026-11-12:** moved here from §17 by D03 T01 §30 (decision 44).
 - [ ] Commit: `inventory: capture PowerPoint views, Backstage, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/powerpoint` exits 0 and `design/inventory/powerpoint/panes.json` holds at least 10 `view` records.
@@ -380,6 +382,7 @@ Visio beyond the ribbon: the Shapes pane (stencil list, More Shapes menu, Quick 
 - [ ] Capture the New page template categories and template names into `design/inventory/visio/backstage.json`. Done when: every template category lists its templates. Cheaper substitute: the first category only.
 - [ ] Capture Visio Options, status bar and the dialogs named in this section into their files. Done when: each dialog lists tabs and controls. Cheaper substitute: titles only.
 - [ ] Capture the Visio right-click context menus (drawing page, shape, connector, container, page tab, stencil, shape in the Shapes pane) and the mini toolbar into `design/inventory/visio/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
+- [ ] Transcribe Visio shortcuts into `design/inventory/visio/shortcuts.json` with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered, the file holds at least 50 records and `python scripts/check-inventory.py design/inventory` exits 0 with §17's conflict check. Cheaper substitute: the twenty most common shortcuts. **Corrected 2026-11-12:** moved here from §17 by D03 T01 §30 (decision 44).
 - [ ] Commit: `inventory: capture Visio panes, Backstage and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/visio` exits 0 and `design/inventory/visio/dialogs.json` holds at least 5 `dialog` records.
@@ -425,6 +428,7 @@ Project beyond the ribbon: built-in views (Gantt Chart, Tracking Gantt, Task Usa
 - [ ] Capture the status bar (new task mode, view shortcuts, zoom) into `design/inventory/project/statusbar.json`. Done when: each item has `bounds`. Cheaper substitute: zoom only.
 - [ ] Capture the dialogs named in this section with every tab and control into `design/inventory/project/dialogs.json`. Done when: Task Information lists General, Predecessors, Resources, Advanced, Notes and Custom Fields tabs. Cheaper substitute: titles only.
 - [ ] Capture the Project right-click context menus (task row, resource row, column header, Gantt bar, timeline, timescale) and the mini toolbar into `design/inventory/project/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
+- [ ] Transcribe Project shortcuts into `design/inventory/project/shortcuts.json` with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered, the file holds at least 50 records and `python scripts/check-inventory.py design/inventory` exits 0 with §17's conflict check. Cheaper substitute: the twenty most common shortcuts. **Corrected 2026-11-12:** moved here from §17 by D03 T01 §30 (decision 44).
 - [ ] Commit: `inventory: capture Project views, Backstage, panes and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/project` exits 0 and `design/inventory/project/panes.json` holds at least 13 `view` records.
@@ -473,6 +477,7 @@ Outlook's layout beyond the ribbon: navigation bar, folder pane, message list wi
 - [ ] Capture Backstage pages and Outlook Options categories into `design/inventory/outlook/backstage.json`. Done when: each Options category lists its settings. Cheaper substitute: category names only.
 - [ ] Capture the dialogs named in this section into `design/inventory/outlook/dialogs.json`. Done when: Rules and Alerts lists its rule wizard steps. Cheaper substitute: titles only.
 - [ ] Capture the Outlook right-click context menus (message in the list, folder, calendar item, calendar grid, contact, task, attachment) and the mini toolbar into `design/inventory/outlook/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
+- [ ] Transcribe Outlook shortcuts into `design/inventory/outlook/shortcuts.json` for the Outlook client chosen in §2 with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered, the file holds at least 50 records and `python scripts/check-inventory.py design/inventory` exits 0 with §17's conflict check. Cheaper substitute: mixing classic and new Outlook shortcuts. **Corrected 2026-11-12:** moved here from §17 by D03 T01 §30 (decision 44).
 - [ ] Commit: `inventory: capture Outlook modules, panes, views and dialogs`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/outlook` exits 0 and `design/inventory/outlook/panes.json` holds at least 5 calendar `view` records.
@@ -487,18 +492,13 @@ Muscle memory is part of parity. Each app's published shortcut list becomes `sho
 
 **Build order:**
 
-1. Record each app's default shortcuts as key chords with our own short action names into `design/inventory/<app>/shortcuts.json`; Microsoft's published shortcut lists may be read as a checklist, but none of their text or links is stored (**Corrected 2026-10-20:** said "transcribe"). Done when: six files pass the checker.
+1. Record each app's default shortcuts as key chords with our own short action names into `design/inventory/<app>/shortcuts.json`; Microsoft's published shortcut lists may be read as a checklist, but none of their text or links is stored (**Corrected 2026-10-20:** said "transcribe"). Done when: Word's file passes the checker (**Corrected 2026-11-12**, D03 T01 §30, decision 44: was six files; each later app's shortcuts are recorded with that app's inventory, in §8, §10, §12, §14 and §16, since a shortcut names the command id of an inventory captured then).
 
 - [ ] Transcribe Word shortcuts into `design/inventory/word/shortcuts.json` with `shortcut`, `behaviour`, `source` and the target command id where one exists. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
-- [ ] Transcribe Excel shortcuts into `design/inventory/excel/shortcuts.json`. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
-- [ ] Transcribe PowerPoint shortcuts into `design/inventory/powerpoint/shortcuts.json`, including slide show shortcuts. Done when: every table on the source page is covered. Cheaper substitute: editing shortcuts only.
-- [ ] Transcribe Visio shortcuts into `design/inventory/visio/shortcuts.json`. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
-- [ ] Transcribe Project shortcuts into `design/inventory/project/shortcuts.json`. Done when: every table on the source page is covered. Cheaper substitute: the twenty most common shortcuts.
-- [ ] Transcribe Outlook shortcuts into `design/inventory/outlook/shortcuts.json` for the Outlook client chosen in §2. Done when: every table on the source page is covered. Cheaper substitute: mixing classic and new Outlook shortcuts.
 - [ ] Add a conflict check to `scripts/check-inventory.py` refusing two `shortcut` records with the same key chord and scope in one app. Done when: a duplicate chord fixture fails. Cheaper substitute: detecting duplicates by eye.
 - [ ] Commit: `inventory: add keyboard shortcut inventory`
 
-**Test checkpoint:** `python scripts/check-inventory.py design/inventory` exits 0 and each of the six `shortcuts.json` files holds at least 50 records.
+**Test checkpoint:** `python scripts/check-inventory.py design/inventory` exits 0 and `design/inventory/word/shortcuts.json` holds at least 50 records (**Corrected 2026-11-12**, D03 T01 §30: was each of six files; the other five are checked in §8, §10, §12, §14 and §16).
 
 ## 18. Inventory Coverage Report
 
