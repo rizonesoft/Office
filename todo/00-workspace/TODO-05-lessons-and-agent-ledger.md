@@ -33,7 +33,7 @@ title: "TODO-05 -- Lessons"
 | Order | Section | Deliverable | Depends On | Status |
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Lesson files and their checker | -- | [x] |
-| 2 | §2 | Lesson index and query | §1 | [ ] |
+| 2 | §2 | Lesson index and query | §1 | [x] |
 | 3 | §3 | First lessons from the review records | §1, §2 | [ ] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
 | 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
@@ -100,9 +100,12 @@ The files are the truth; the index is a cache that makes them findable. A query 
 - [x] Settle the command line's edges: `--role` defaults to `main`; a query with no `--path`, `--topic` or `--text` is refused with exit 2; `--limit` is 1 to 10; `--text` is literal words (each word must appear; punctuation and FTS syntax in it are text, never an expression); no match prints nothing and exits 0, and `[]` with `--json`. Done when: tests cover each, including text holding quotes, `*` and `NEAR`. **Corrected 2026-11-12:** added after the plan review (gap 5, P2).
 - [x] With `--why --json` keep standard output one JSON array: each object gains a `why` field, and the count of matching lessons not returned goes to standard error. Done when: a test parses standard output as JSON and reads the count from standard error. **Corrected 2026-11-12:** added after the plan review (gap 6, P2).
 - [x] Prove the command end to end: a test runs `scripts/lessons.py query` as a process over a fixture store with known matches and asserts the exact ids, order, bodies and the limit, then again from the stored index, and a separate test shows an empty store exiting 0 with no output. Done when: both pass. **Corrected 2026-11-12:** the checkpoint's bare exit 0 would pass an empty stub (plan review gap 7, P2).
-- [ ] Commit: `lessons: index the lesson files and query them`
+- [x] Commit: `lessons: index the lesson files and query them`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_lessons.py"` passes, and `python scripts/lessons.py query --path scripts/x.py --role main` exits 0.
+
+> **Verified:** 2026-11-12 | §2 | 05ced2b9606dd58c6d2239dc157ab75b575f10b3
+> **Review:** `docs/reviews/d00-t05-s2.json`
 
 ## 3. First Lessons From the Review Records
 

@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T05 \u00a72",
+  "title": "Lesson Index and Query",
+  "implementation_sha": "05ced2b9606dd58c6d2239dc157ab75b575f10b3",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T05-s2.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_lessons.py\" -> Ran 44 tests, OK (5,000 lessons answered in under two seconds among them)",
+    "python scripts/lessons.py query --path scripts/x.py --role main -> exit 0; python scripts/lessons.py check -> 0 lesson(s), all valid"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T05-s2.md",
+    "verdict": "reconciled",
+    "candidate": "05ced2b9606dd58c6d2239dc157ab75b575f10b3",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T05-s2.md",
+    "candidate": "82cb745a618076aeedf1670e993349d36a350e45",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "82cb745a618076aeedf1670e993349d36a350e45",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
