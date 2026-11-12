@@ -139,6 +139,8 @@ The store starts with what the reviews already taught. A script lists the findin
 
 ## 4. Section Runs Read Their Lessons
 
+> **Started:** 2026-11-12T12:52:19Z
+
 A lesson only helps if it is in front of whoever is about to repeat the mistake. The main loop reads the lessons for a section's paths before it builds, and turns every confirmed finding of the section's own review into a lesson, an enforced check or a one-off before the section stamps.
 
 **Phase:** 0
