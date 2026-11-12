@@ -79,6 +79,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [x] |
 | 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
+| 44 | §58 | The plan lists sections, never TODO files | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1279,6 +1280,28 @@ Filed 2026-11-12 from the review of D00 T05 §1 (`docs/reviews/00-workspace/D00-
 
 > **Verified:** 2026-11-12 | §57 | c7154cf8dbfc681c5979925b59ee4c61358662a2
 > **Review:** `docs/reviews/d00-t03-s57.json`
+## 58. The Plan Lists Sections, Never TODO Files
+
+> **Started:** 2026-11-12T11:18:38Z
+
+Owner, 2026-11-12, in session: the plan file must not reference TODO files; it lists individual sections, in order. Since D00 T03 §31 the generated plan has ended with a `### Still to author` block of file tables (85 rows today), printed straight after Phase 99 under a heading of the same level, so it read as part of that phase. The files in it are not written yet, so their sections do not exist to list; what does exist is the section that writes each one. This section replaces the file tables with one table of those authoring sections, in plan order, each with the number of TODO files it still has to write, under a heading that says these are in no phase yet.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Render the block as sections. Done when: the generated plan holds no TODO file path.
+2. Drop the check that guarded the file table. Done when: a long file name no longer refuses validation on the plan's account.
+
+- [ ] Replace the `### Still to author` block in `projection` of `scripts/lib/todo_graph.py` with `### Not in the plan yet: sections still to be written`: one sentence saying the sections of N TODO files are not written yet, are in no phase and no total, and join the phase tables as each file is written; then one table of the authoring sections in plan order with the columns Status, Reference, Deliverable and Files to write (a count). Done when: a test shows the heading, one row per authoring section with its count, no `todo/` path anywhere in the block, and the block after the last phase table.
+- [ ] Keep the Progress line's count of files still to author and `query stats`'s `to_author`, which name no file. Done when: the existing singular and plural tests still pass.
+- [ ] Remove `author_table` and its call in `_plan_tables_ok`: the plan no longer renders a file name, so a long one cannot break a plan table; the new table's Deliverable is a section title, which the phase tables already bound. Done when: the test for a too-wide file row is replaced by one showing such a name validates and the plan still renders.
+- [ ] Regenerate `todo/implementation-plan.md`. Done when: `python scripts/todo-graph.py plan --check` passes and the file holds no line starting `| `todo/`.
+- [ ] Commit: `todo: the plan lists the sections still to be written, never TODO files`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes with the new block's tests among them, and `python scripts/todo-graph.py plan --check` passes.
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
