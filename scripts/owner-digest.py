@@ -48,6 +48,8 @@ WIDTH = 100
 WINDOW_DAYS = 7
 ATTACHMENT = "waiting-on-you.txt"
 NOTICES_ATTACHMENT = "notices.txt"
+PROGRESS_ATTACHMENT = "verified-this-week.txt"
+PROGRESS_MIN = 8  # body lines the progress list keeps when both lists overflow (its header and a few sections)
 NOTICE_LINES = 10  # summary lines of notices in the body; every notice is in full in the attachment
 MARK_TRIES, MARK_PAUSE = 3, 2.0  # a delivered batch's mark is retried before it is left to the next settlement
 # CREATE_NO_WINDOW on every launch, as .conclave/automations/run.py says every nested launch of a task carries it, so
@@ -299,6 +301,24 @@ def notices_part(notices, root):
     return lines + [""], (NOTICES_ATTACHMENT, full)
 
 
+def fit(head, blocks, room, noun, attachment):
+    """(lines, cut): `head` and as many whole `blocks` as fit in `room` lines; when some do not, the shown blocks
+    end with one line counting the rest and naming `attachment`."""
+    whole = [head] + [line for block in blocks for line in block]
+    if len(whole) <= room:
+        return whole, False
+    shown, used = [head], 1
+    for count, block in enumerate(blocks):
+        tail = wrap(f"... and {len(blocks) - count} more {noun}, in the attached {attachment}.")
+        rest = blocks[count + 1:]
+        if used + len(block) + (len(wrap(f"... and {len(rest)} more {noun}, in the attached {attachment}."))
+                                if rest else 0) > room:
+            return shown + tail, True
+        shown += block
+        used += len(block)
+    return shown, False
+
+
 def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=()):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
@@ -313,17 +333,13 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
             *wrap(f"Plan: {count['verified']} of {count['total']} sections verified, {count['ready']} ready to run, "
                   f"{count['blocked']} blocked; {count['to_author']} TODO files still "
                   f"to author."), ""]
-    if items:
-        waiting_lines = [f"Waiting on you ({len(items)}):"]
-        for item in items:
-            waiting_lines += item_lines(item, root)
-    else:
-        waiting_lines = ["Nothing is waiting on you."]
+    # Each list is a header and whole items (an item is every wrapped line of one entry), so a cut never splits an
+    # entry and its count is of items, never lines (D00 T07 §2).
+    waiting_blocks = [item_lines(item, root) for item in items]
+    waiting_head = f"Waiting on you ({len(items)}):" if items else "Nothing is waiting on you."
     since = (today - datetime.timedelta(days=WINDOW_DAYS)).isoformat()
-    progress = ([f"Verified since {since} ({len(built)}):"]
-                + [line for ref, title, stamped in built
-                   for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
-                if built else [f"Nothing was verified since {since}."])
+    progress_blocks = [wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})") for ref, title, stamped in built]
+    progress_head = f"Verified since {since} ({len(built)}):" if built else f"Nothing was verified since {since}."
     notice_lines, notice_file = notices_part(notices, root)
     if unconfirmed:
         # Claimed by an earlier digest whose delivery SMTP2GO can no longer confirm or deny (its history has passed):
@@ -339,27 +355,31 @@ def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfir
                                  f"{without_paths(str(n.get('subject', '')), root)}\n\n"
                                  f"{without_paths(str(n.get('body', '')), root)}" for n in unconfirmed) + "\n")
         notice_file = (NOTICES_ATTACHMENT, (notice_file[1] + "\n" if notice_file else "") + earlier)
-    body = head + waiting_lines + [""] + notice_lines + progress
-    attachments = [notice_file] if notice_file else []
+    waiting_full = [waiting_head] + [line for block in waiting_blocks for line in block]
+    progress_full = [progress_head] + [line for block in progress_blocks for line in block]
+    body = head + waiting_full + [""] + notice_lines + progress_full
+    attachments = []
     if len(body) > BODY_LINES:
-        attachments = [(ATTACHMENT, "\n".join(waiting_lines) + "\n"), *attachments]
-        room = BODY_LINES - len(head) - 2 - len(notice_lines)
-        kept, shown = [waiting_lines[0]], 0
-        for item in items:
-            lines = item_lines(item, root)
-            if len(kept) + len(lines) > room // 2:
-                break
-            kept += lines
-            shown += 1
-        notice = [""] + wrap(f"... and {len(items) - shown} more waiting on you, every one with its steps, in the "
-                              f"attached {ATTACHMENT}.")
-        progress_room = BODY_LINES - len(head) - len(kept) - 1 - len(notice_lines) - len(notice)
-        if len(progress) > progress_room:
-            cut = progress[:max(progress_room - 1, 1)]
-            cut.append(f"... and {len(built) - (len(cut) - 1)} more verified sections this week.")
-            progress = cut
-        body = head + kept + [""] + notice_lines + progress + notice  # the pointer stays the last line
-    # The digest's own short id ends its subject, so SMTP2GO's activity log identifies this one email and no other
+        # The head and the notices part keep their room; the lists share the rest, the waiting list first (it is what
+        # asks for the owner's action) but leaving the progress list PROGRESS_MIN lines. A cut list ends with a line
+        # counting what its attachment adds, and the body's last line names every attachment.
+        room = BODY_LINES - len(head) - 1 - len(notice_lines) - 2  # the blank line, and the closing pointer (2)
+        progress_room = min(len(progress_full), PROGRESS_MIN)
+        waiting_shown, waiting_cut = fit(waiting_head, waiting_blocks, room - progress_room,
+                                         "waiting on you, every one with its steps", ATTACHMENT)
+        progress_shown, progress_cut = fit(progress_head, progress_blocks, room - len(waiting_shown),
+                                           "verified sections this week", PROGRESS_ATTACHMENT)
+        named = []
+        if waiting_cut:
+            attachments.append((ATTACHMENT, "\n".join(waiting_full) + "\n"))
+            named.append(ATTACHMENT)
+        if progress_cut:
+            attachments.append((PROGRESS_ATTACHMENT, "\n".join(progress_full) + "\n"))
+            named.append(PROGRESS_ATTACHMENT)
+        pointer = wrap(f"Every item is in full in the attached {' and '.join(named)}.") if named else []
+        body = head + waiting_shown + [""] + notice_lines + progress_shown + ([""] if pointer else []) + pointer
+    if notice_file:
+        attachments.append(notice_file)    # The digest's own short id ends its subject, so SMTP2GO's activity log identifies this one email and no other
     # digest can stand as its delivery evidence (D00 T03 §53, reconciliation review 4).
     subject = (f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
                + (f" ({token})" if token else ""))

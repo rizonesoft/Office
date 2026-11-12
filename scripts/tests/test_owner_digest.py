@@ -274,6 +274,93 @@ class Size(Tree):
             rows = [(n, f"Ask {f}-{n}", 0, "owner-decision", "--") for n in range(1, 51)]
             self.write(*waiting_file(rows, ident=f"file-{f:02d}", name=f"TODO-{f + 1:02d}-f.md"))
 
+    # D00 T07 §2: a long week of stamps.
+
+    def stamps(self, count, long_titles=False):
+        title = ("A section whose title is long enough to wrap onto a second line of the body when it is shown in "
+                 "the digest") if long_titles else "Short"
+        return [(f"D09 T01 §{n}", f"{title} {n}", TODAY - datetime.timedelta(days=n % 7)) for n in range(1, count + 1)]
+
+    def composed(self, built, notices=(), unconfirmed=()):
+        with mock.patch.object(digest, "verified_since", return_value=built):
+            return digest.compose(self.root, self.rows(), TODAY, ["CI: green for abc1234."], "Running",
+                                  notices=notices, unconfirmed=unconfirmed)
+
+    def check_limits(self, body):
+        lines = body.splitlines()
+        self.assertLessEqual(len(lines), digest.BODY_LINES)
+        self.assertTrue(all(len(line) <= digest.WIDTH for line in lines), max(lines, key=len))
+        self.assertEqual(lines[2], "Running")
+        self.assertTrue(lines[3].startswith("CI: "))
+        self.assertTrue(lines[4].startswith("Plan: "))
+        return lines
+
+    def shown_and_said(self, body, prefix, noun):
+        shown = sum(1 for line in body.splitlines() if line.startswith(prefix))
+        said = re.search(rf"\.\.\. and (\d+) more {noun}", " ".join(body.splitlines()))
+        return shown, int(said[1]) if said else 0
+
+    def test_a_long_progress_list_alone_goes_in_its_own_attachment(self):
+        self.write(*waiting_file([(1, "Ask", 0, "owner-decision", "--")]))
+        _, body, attachments = self.composed(self.stamps(130))
+        lines = self.check_limits(body)
+        self.assertEqual([name for name, _ in attachments], [digest.PROGRESS_ATTACHMENT])
+        self.assertEqual(attachments[0][1].count("\n- D09 T01 §"), 130)
+        self.assertIn("Waiting on you (1):", body)  # the waiting list is whole in the body and not attached
+        shown, said = self.shown_and_said(body, "- D09 T01 §", "verified sections this week")
+        self.assertEqual(shown + said, 130)
+        self.assertGreater(shown, 0)
+        self.assertTrue(lines[-1].endswith(f"{digest.PROGRESS_ATTACHMENT}."), lines[-1])
+
+    def test_both_lists_overflowing_go_in_their_attachments(self):
+        self.many(300)
+        _, body, attachments = self.composed(self.stamps(130))
+        lines = self.check_limits(body)
+        self.assertEqual([name for name, _ in attachments], [digest.ATTACHMENT, digest.PROGRESS_ATTACHMENT])
+        self.assertEqual(attachments[0][1].count("To do: "), 300)
+        self.assertEqual(attachments[1][1].count("\n- D09 T01 §"), 130)
+        shown, said = self.shown_and_said(body, "- D09 T01 §", "verified sections this week")
+        self.assertEqual(shown + said, 130)
+        self.assertGreaterEqual(shown, 1)
+        waited, more = self.shown_and_said(body, "- D00 T", "waiting on you")
+        self.assertEqual(waited + more, 300)
+        self.assertIn(digest.ATTACHMENT, lines[-1] + lines[-2])
+        self.assertIn(digest.PROGRESS_ATTACHMENT, lines[-1] + lines[-2])
+
+    def test_a_wrapped_entry_is_shown_whole_or_not_at_all(self):
+        self.write(*waiting_file([(1, "Ask", 0, "owner-decision", "--")]))
+        _, body, _ = self.composed(self.stamps(130, long_titles=True))
+        lines = self.check_limits(body)
+        starts = [i for i, line in enumerate(lines) if line.startswith("- D09 T01 §")]
+        for i in starts:  # every shown entry has its second line right after it
+            self.assertTrue(lines[i + 1].startswith("shown in the digest "), lines[i:i + 2])
+        shown, said = self.shown_and_said(body, "- D09 T01 §", "verified sections this week")
+        self.assertEqual(shown + said, 130)
+
+    def test_notices_keep_their_room_beside_two_overflowing_lists(self):
+        self.many(300)
+        notices = [{"at": f"2026-11-1{n % 6}T00:00:00Z", "sender": "office-task", "subject": f"Notice {n}",
+                    "body": f"Body {n}"} for n in range(20)]
+        unconfirmed = [{"at": "2026-11-02T00:00:00Z", "sender": "office-task", "subject": "Old", "body": "Old body",
+                        "claimed": {"at": "2026-11-09T07:00:00Z"}}]
+        _, body, attachments = self.composed(self.stamps(130), notices=notices, unconfirmed=unconfirmed)
+        lines = self.check_limits(body)
+        self.assertIn("Notices since the last digest (20):", body)
+        self.assertIn("could not be confirmed delivered", body)
+        self.assertEqual([name for name, _ in attachments],
+                         [digest.ATTACHMENT, digest.PROGRESS_ATTACHMENT, digest.NOTICES_ATTACHMENT])
+        joined = " ".join(lines)
+        for name in (digest.ATTACHMENT, digest.PROGRESS_ATTACHMENT, digest.NOTICES_ATTACHMENT):
+            self.assertIn(name, joined)
+        self.assertEqual(attachments[2][1].count("Body "), 20)
+        self.assertIn("Old body", attachments[2][1])
+
+    def test_an_unreadable_queue_keeps_its_line_when_both_lists_overflow(self):
+        self.many(300)
+        _, body, _ = self.composed(self.stamps(130), notices="permission denied")
+        self.check_limits(body)
+        self.assertIn("Notices: the queue could not be read", body)
+
     def test_a_long_waiting_list_is_cut_in_the_body_and_whole_in_the_attachment(self):
         self.many(300)
         _, body, attachments = digest.compose(self.root, self.rows(), TODAY, ["CI: green for abc1234."], "Running")
