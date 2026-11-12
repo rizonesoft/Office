@@ -148,8 +148,8 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
     SMTP2GO shows delivered is marked reported and never sent again; one it shows rejected, bounced or absent is
     released and sent again in full. One it cannot judge yet (the log unreadable, the email in flight, or absent but
     younger than YOUNG_MINUTES) is kept and asked again at the next settlement, which every scheduled task runs; only
-    a claim still undecided after SETTLE_DAYS, when SMTP2GO no longer holds its evidence, is released and sent again
-    marked as a possible repeat, since a lost notice is the one failure the owner cannot see. `ask(subject, since)`
+    a claim still undecided after SETTLE_DAYS, when SMTP2GO no longer holds its evidence, is marked unconfirmed: never
+    sent again and never dropped, the next digest names it in one line and `alert.py --list` shows its text. `ask(subject, since)`
     answers for SMTP2GO (default: `delivery` with this repository's key). Returns the count per outcome."""
     import datetime
     if ask is None:
@@ -171,7 +171,9 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
         except Refused:
             answer = "pending"
         if answer == "not-sent" and age < datetime.timedelta(minutes=YOUNG_MINUTES):
-            answer = "pending"
+            answer = "pending"  # the log may lag the send by minutes
+        if answer == "not-sent" and age > datetime.timedelta(days=SETTLE_DAYS):
+            answer = "pending"  # past the log's history an empty answer proves nothing
         if answer == "sent":
             mark_reported(ids, root)
             counts["confirmed"] += len(ids)
@@ -179,7 +181,7 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
             release_claim(digest, root)
             counts["released"] += len(ids)
         elif age > datetime.timedelta(days=SETTLE_DAYS):
-            release_claim(digest, root)
+            mark_unconfirmed(digest, root)  # neither sent again nor dropped: the next digest names them once
             counts["expired"] += len(ids)
         else:
             counts["kept"] += len(ids)
@@ -308,7 +310,23 @@ def pending_notices(root: str = REPO) -> list[dict]:
 def claimed_notices(root: str = REPO) -> list[dict]:
     """Notices a digest claimed and never confirmed: it was delivered and could not mark them, or it stopped before
     or during its send. Nothing on disk tells the two apart."""
-    return [n for n in _read_notices(root) if n.get("claimed") and not n.get("reported")]
+    return [n for n in _read_notices(root) if n.get("claimed") and not n.get("reported") and not n.get("unconfirmed")]
+
+
+def unconfirmed_notices(root: str = REPO) -> list[dict]:
+    """Claimed notices whose delivery SMTP2GO can no longer confirm or deny (its history has passed): the next digest
+    names them in one line, pointing to `alert.py --list`, and never sends them again."""
+    return [n for n in _read_notices(root) if n.get("unconfirmed") and not n.get("reported")]
+
+
+def mark_unconfirmed(digest: str, root: str = REPO) -> int:
+    """Mark a digest's claimed notices as unconfirmable, keeping the claim and the text."""
+    def change(notice):
+        if (notice.get("claimed") or {}).get("by") == digest and not notice.get("reported"):
+            notice["unconfirmed"] = True
+            return True
+        return False
+    return _update(root, change)
 
 
 def release_unconfirmed(root: str = REPO) -> int:

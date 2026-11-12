@@ -773,6 +773,7 @@ class DeliveryEvidence(unittest.TestCase):
                 raise answer
             return answer
         counts = alert.settle_claims(tmp.name, ask, now)
+        self.last_root = tmp.name
         return counts, alert.pending_notices(tmp.name), alert.claimed_notices(tmp.name)
 
     def test_settling_by_what_the_log_says(self):
@@ -781,13 +782,16 @@ class DeliveryEvidence(unittest.TestCase):
         cases = {  # answer, age: (outcome counted, pending, still claimed)
             ("sent", day): ("confirmed", 0, 0), ("not-sent", day): ("released", 1, 0),
             ("pending", day): ("kept", 0, 1), ("not-sent", datetime.timedelta(minutes=5)): ("kept", 0, 1),
-            ("pending", 6 * day): ("expired", 1, 0), ("sent", 6 * day): ("confirmed", 0, 0),
+            ("pending", 6 * day): ("expired", 0, 0), ("not-sent", 6 * day): ("expired", 0, 0),
+            ("sent", 6 * day): ("confirmed", 0, 0),
         }
         for (answer, age), (outcome, pending, claimed) in cases.items():
             with self.subTest(answer=answer, age=age):
                 counts, now_pending, now_claimed = self.settle(answer, age)
                 self.assertEqual(counts[outcome], 1)
                 self.assertEqual((len(now_pending), len(now_claimed)), (pending, claimed))
+                if outcome == "expired":  # neither sent again nor dropped: kept, named once by the next digest
+                    self.assertEqual(len(alert.unconfirmed_notices(self.last_root)), 1)
         counts, now_pending, now_claimed = self.settle(alert.Refused("down"), hour)
         self.assertEqual((counts["kept"], len(now_claimed)), (1, 1))  # an unreadable log keeps the claim
 

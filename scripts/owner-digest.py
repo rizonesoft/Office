@@ -270,7 +270,7 @@ def notices_part(notices, root):
     lines = [f"Notices since the last digest ({len(notices)}):"]
     shown = 0
     for notice in notices:
-        repeat = " (sent before, unconfirmed; it may repeat)" if notice.get("attempts") else ""
+        repeat = " (an earlier digest did not deliver it)" if notice.get("attempts") else ""
         summary = wrap(f"- {notice.get('at', '?')} {without_paths(str(notice.get('sender', '?')), root)}: "
                        f"{without_paths(str(notice.get('subject', '')), root)}{repeat}")
         if len(lines) - 1 + len(summary) > NOTICE_LINES:
@@ -288,7 +288,7 @@ def notices_part(notices, root):
     return lines + [""], (NOTICES_ATTACHMENT, full)
 
 
-def compose(root, rows, today, ci_lines, state, notices=()):
+def compose(root, rows, today, ci_lines, state, notices=(), token=None, unconfirmed=()):
     """(subject, body, attachments): the email, with the whole waiting list attached when the body cannot hold it,
     and the queued notices summarised after it with each one in full in an attachment (D00 T03 §53)."""
     count = totals(rows, root)
@@ -314,6 +314,12 @@ def compose(root, rows, today, ci_lines, state, notices=()):
                    for line in wrap(f"- {ref} {without_paths(title, root)} ({stamped.isoformat()})")]
                 if built else [f"Nothing was verified since {since}."])
     notice_lines, notice_file = notices_part(notices, root)
+    if unconfirmed:  # claimed past SMTP2GO's history with no answer: named once, never sent again
+        dates = sorted({str((n.get("claimed") or {}).get("at", "?"))[:10] for n in unconfirmed})
+        notice_lines = notice_lines + wrap(
+            f"{len(unconfirmed)} notice(s) of the digest of {', '.join(dates)} could not be confirmed delivered "
+            f"(SMTP2GO no longer holds its record); check that email, or run "
+            f"python .conclave/automations/alert.py --list for their text.") + [""]
     body = head + waiting_lines + [""] + notice_lines + progress
     attachments = [notice_file] if notice_file else []
     if len(body) > BODY_LINES:
@@ -334,7 +340,10 @@ def compose(root, rows, today, ci_lines, state, notices=()):
             cut.append(f"... and {len(built) - (len(cut) - 1)} more verified sections this week.")
             progress = cut
         body = head + kept + [""] + notice_lines + progress + notice  # the pointer stays the last line
-    subject = f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
+    # The digest's own short id ends its subject, so SMTP2GO's activity log identifies this one email and no other
+    # digest can stand as its delivery evidence (D00 T03 §53, reconciliation review 4).
+    subject = (f"Office weekly: {len(items)} waiting on you, {len(built)} verified this week"
+               + (f" ({token})" if token else ""))
     return subject, "\n".join(body) + "\n", attachments
 
 
@@ -361,18 +370,20 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
             settled = alert.settle_claims(str(root), sent or asked)
             if any(settled.values()):
                 print(f"earlier claims: {settled['confirmed']} confirmed sent, {settled['released']} not sent, "
-                      f"{settled['kept']} kept to ask again, {settled['expired']} past the log (sent again)")
+                      f"{settled['kept']} kept to ask again, {settled['expired']} past the log (named, not sent again)")
         batch = alert.pending_notices(str(root)) + (alert.claimed_notices(str(root)) if args.dry_run else [])
+        unconfirmed = alert.unconfirmed_notices(str(root))
     except alert.Refused as error:
-        batch = str(error)
-    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch)
+        batch, unconfirmed = str(error), []
+    digest_id = uuid.uuid4().hex
+    subject, body, attachments = compose(root, rows, today, ci_state(root, runner), run_state(root), batch,
+                                         digest_id[:8], unconfirmed)
     if args.dry_run:
         print(f"To: {alert.TO}\nSubject: {subject}\n\n{body}", end="")
         for name, text in attachments:
             print(f"\n--- attachment {name} ---\n{text}", end="")
         return 0
     ids = [n["id"] for n in batch] if isinstance(batch, list) else []
-    digest_id = uuid.uuid4().hex
     if ids:
         try:
             alert.claim_notices(ids, digest_id, str(root), subject)
@@ -391,9 +402,9 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
                 print(f"owner-digest: the notices stay claimed until the next digest: {release}", file=sys.stderr)
         return 1
     print(f"owner digest sent to {alert.TO} (SMTP2GO email {email_id})")
-    if ids:
+    if ids or unconfirmed:
         try:
-            marked = alert.mark_reported(ids, str(root))
+            marked = alert.mark_reported(ids + [n["id"] for n in unconfirmed], str(root))
             print(f"marked {marked} notice(s) reported")
         except alert.Refused as error:  # delivered but unconfirmed: the next digest sends them again, so marked
             print(f"owner-digest: the delivered notices could not be marked; the next digest repeats them, marked as "

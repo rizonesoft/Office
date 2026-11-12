@@ -498,7 +498,7 @@ class Notices(Send):
 
     def assert_sent_again_in_full(self, ids, request, queue):
         self.assertIn("Notices since the last digest (1):", request["text_body"])
-        self.assertIn("(sent before, unconfirmed; it may repeat)", " ".join(request["text_body"].split()))
+        self.assertIn("(an earlier digest did not deliver it)", " ".join(request["text_body"].split()))
         attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in request["attachments"]}
         self.assertIn("log line 59 of failure 0", attached["notices.txt"])
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
@@ -546,8 +546,33 @@ class Notices(Send):
         self.age_claims(hours=24 * 6)  # past the five days SMTP2GO keeps its activity log
         code, _, third = self.run_main([])
         self.assertEqual(code, 0)
+        body = " ".join(third[0]["text_body"].split())
+        self.assertNotIn("Notices since the last digest", body)  # never sent a second time
+        self.assertIn("1 notice(s) of the digest of", body)
+        self.assertIn("could not be confirmed delivered", body)
+        self.assertIn("alert.py --list", body)
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # named once, then closed
+        self.assertIn("log line 59 of failure 0", queue[0]["body"])  # and its text is still there
+
+    def test_another_digest_with_the_same_counts_is_never_taken_as_the_evidence(self):
+        # Reconciliation review 4: subjects repeat week to week, so each digest's subject carries its own id.
+        ids = self.queue(1)
+
+        def interrupted(request, timeout=None):
+            raise KeyboardInterrupt
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_main([], opener=interrupted)
+        code, _, second = self.run_main([])  # at once: the young claim is kept, a new digest goes out
+        self.assertEqual(code, 0)
+        self.age_claims(hours=2)
+        self.activity = [{"event": "delivered", "email_id": "e1", "subject": second[0]["subject"]}]
+        code, _, third = self.run_main([])
+        self.assertEqual(code, 0)
         self.assert_sent_again_in_full(ids, third[0], [json.loads(line) for line in (
             self.root / "build/automations/notices.jsonl").read_text(encoding="utf-8").splitlines()])
+        self.assertNotEqual(second[0]["subject"], third[0]["subject"])
 
     def test_a_digest_the_log_shows_bounced_is_sent_again(self):
         subject = []
