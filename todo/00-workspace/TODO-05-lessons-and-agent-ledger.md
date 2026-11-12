@@ -34,7 +34,7 @@ title: "TODO-05 -- Lessons"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Lesson files and their checker | -- | [x] |
 | 2 | §2 | Lesson index and query | §1 | [x] |
-| 3 | §3 | First lessons from the review records | §1, §2 | [ ] |
+| 3 | §3 | First lessons from the review records | §1, §2 | [x] |
 | 4 | §4 | Section runs read their lessons | §2, §3 | [ ] |
 | 5 | §8 | Lesson upkeep at scale | §2, §3 | [ ] |
 
@@ -130,9 +130,12 @@ The store starts with what the reviews already taught. A script lists the findin
 - [x] Prove `--untriaged` keeps what is outstanding: a fixture with two records, each with findings numbered alike in two rounds, part of them triaged, prints exactly the rest (record, round and number); removing a disposition makes its finding reappear; and the extraction reads the three tag forms the records use, `**[P1] ...**`, `**P1, ...**` and `**P1** ...`. Done when: those tests pass. **Corrected 2026-11-12:** added after the plan review (gap 1, P1).
 - [x] Check every triage line in `check`, and let `--untriaged` count only a valid one: the finding must exist in the record at that round and number; a finding has one line (a second, or a conflicting one, is refused); the disposition is `lesson:<id>` naming a lesson file, `enforced:<path>` naming a file the repository holds, or `one-off` followed by a reason; anything else is refused. Done when: one refusal test per rule exits 1 naming the triage file and line, and an invalid line leaves its finding in `--untriaged`. **Corrected 2026-11-12:** added after the plan review (gap 2, P2).
 - [x] Fail loudly on input that cannot be read: a record named on the command line that is missing, unreadable or holds no review pass, and a triage file that cannot be read, each give a line naming the file and exit 1, so empty output never hides skipped input; the checkpoint is exit 0 and empty output together. Done when: tests cover each. **Corrected 2026-11-12:** added after the plan review (gap 3, P2).
-- [ ] Commit: `lessons: write the first lessons from the review records`
+- [x] Commit: `lessons: write the first lessons from the review records`
 
 **Test checkpoint:** `python scripts/lessons.py check` exits 0 with at least one lesson in `docs/lessons/`, and `python scripts/lessons.py candidates --untriaged` over the triaged records prints nothing.
+
+> **Verified:** 2026-11-12 | §3 | 2253a4440569adcb093ff44322aceebac68121e2
+> **Review:** `docs/reviews/d00-t05-s3.json`
 
 ## 4. Section Runs Read Their Lessons
 

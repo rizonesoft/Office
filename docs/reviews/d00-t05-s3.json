@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T05 \u00a73",
+  "title": "First Lessons From the Review Records",
+  "implementation_sha": "2253a4440569adcb093ff44322aceebac68121e2",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T05-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_lessons.py\" -> Ran 57 tests, OK",
+    "python scripts/lessons.py check -> 13 lesson(s), all valid",
+    "python scripts/lessons.py candidates --untriaged over the eleven triaged records -> exit 0, no output (335 findings: 256 lessons, 76 enforced, 3 one-off)"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T05-s3.md",
+    "verdict": "reconciled",
+    "candidate": "2253a4440569adcb093ff44322aceebac68121e2",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T05-s3.md",
+    "candidate": "8bf95d2fa575b0cb4d3f70d3915ba91e1ad34fc1",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "8bf95d2fa575b0cb4d3f70d3915ba91e1ad34fc1",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
