@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 
 REQUIRED = ("id", "applies", "topics", "roles", "source", "added", "status")
-OPTIONAL = ("fix", "retired_by")
+OPTIONAL = ("fix", "retired_by", "revised", "apart")
 KEYS = REQUIRED + OPTIONAL
 LINE = re.compile(r"^([a-z_]+):(?:[ \t]+(.*?))?\s*$")
 
@@ -276,6 +276,19 @@ def problems_of(lesson, repo, allowed_topics):
             say("added", f"{lesson['added']!r} is not a YYYY-MM-DD date")
     if lesson["status"] == "retired" and not lesson.get("retired_by"):
         say("retired_by", "a retired lesson names what now enforces it")
+    if lesson.get("revised"):
+        try:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", lesson["revised"]):
+                raise ValueError
+            if datetime.date.fromisoformat(lesson["revised"]) < datetime.date.fromisoformat(lesson["added"]):
+                say("revised", f"{lesson['revised']} is before the lesson was added ({lesson['added']})")
+        except ValueError:
+            say("revised", f"{lesson['revised']!r} is not a YYYY-MM-DD date on or after added")
+    for other in items(lesson.get("apart", "")):
+        if not ID.fullmatch(other) or other == lesson["id"]:
+            say("apart", f"{other!r} is not another lesson's id")
+        elif not (repo.root / "docs" / "lessons" / f"{other}.md").is_file():
+            say("apart", f"{other!r} names no lesson file")
     body = lesson["body"]
     if not body:
         say("body", "the body is empty")
@@ -710,3 +723,195 @@ def query(root, paths=(), role="main", topics_asked=(), text="", limit=5):
         found[lesson_id] = lesson
     ordered = rank(found)
     return ordered[:limit], max(0, len(ordered) - limit)
+
+
+# Upkeep (D00 T05 §8): a store that only grows stops working, so each area has a ceiling, and lessons that could be
+# one, or that did not stop their fault, are work to do before a phase closes.
+
+LESSON_CEILING = 40  # active lessons in one group
+# Two lessons could be one when their texts share this share of their words (of four letters or more). Measured on
+# the first fifteen lessons, 2026-11-12: lessons that teach different things share at most 0.14, the median 0.05.
+MERGE_SIMILARITY = 0.30
+
+
+def similarity(first, second):
+    """The share of words (four letters or more, case ignored) two lesson bodies have in common, from 0 to 1."""
+    one = set(re.findall(r"[a-z]{4,}", first.lower()))
+    two = set(re.findall(r"[a-z]{4,}", second.lower()))
+    return len(one & two) / len(one | two) if one | two else 0.0
+RUN = re.compile(r"^- Run: (\d{4}-\d{2}-\d{2})")
+
+
+def pass_runs(record_text):
+    """{(kind, n): the date of the pass's `- Run:` line, or None when it has none}, for the passes `pass_findings`
+    lists, numbered the same way."""
+    runs, counts, current, fenced = {}, {}, None, False
+    for line in record_text.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        start = PASS_START.match(line)
+        if start:
+            if start[2]:
+                current = ("round", int(start[2]))
+            else:
+                kind = PASS_KINDS[start[1]]
+                counts[kind] = counts.get(kind, 0) + 1
+                current = (kind, counts[kind])
+            runs.setdefault(current, None)
+            continue
+        if current is None:
+            continue
+        match = RUN.match(line)
+        if match and runs[current] is None:
+            runs[current] = datetime.date.fromisoformat(match[1])
+        if PASS_HEADING.match(line) or PASS_END.match(line):
+            current = None
+    return runs
+
+
+def group_of(glob):
+    """The area a glob belongs to: its leading folders that hold no wildcard, at most two (`scripts/*.py` and
+    `scripts/a.py` are `scripts`, `scripts/lib/*.py` is `scripts/lib`); `*` is its own group, and a pattern with no
+    literal folder is `.`, the repository's top."""
+    if glob == "*":
+        return "*"
+    folders = []
+    for part in glob.split("/")[:-1]:
+        if any(char in part for char in "*?[") or len(folders) == 2:
+            break
+        folders.append(part)
+    return "/".join(folders) or "."
+
+
+def report(root):
+    """The state of the store for upkeep: `{"groups": {group: {"active": [lesson, ...], "retired": [id, ...]}},
+    "over": [group, ...], "mergeable": [(group, id, id, topic), ...], "failing": [(id, record, pass, k, date), ...]}`.
+    Active lessons are sorted by evidence, most first; a lesson counts once in each group its globs fall in.
+    Mergeable: two active lessons of one group that share a topic, have a pair of globs matching the same tracked
+    files or one's files within the other's, and say much the same (`similarity` of their bodies at or above
+    MERGE_SIMILARITY), unless either names the other in `apart`. Failing: an active lesson a
+    triage line names for a pass run on a later day than the later of its `added` and `revised` dates. StoreInvalid
+    when the store breaks a rule; RecordError when a pass a triage line names carries no `Run:` date."""
+    root = Path(root)
+    problems, lessons = check_store(root)
+    if problems:
+        raise StoreInvalid(problems)
+    counts = evidence(root)
+    repo = Repository(root)
+    by_id = {lesson["id"]: lesson for lesson in lessons}
+    groups = {}
+    for lesson in lessons:
+        for group in sorted({group_of(glob) for glob in items(lesson["applies"])}):
+            slot = groups.setdefault(group, {"active": [], "retired": []})
+            if lesson["status"] == "active":
+                slot["active"].append({**lesson, "evidence": counts.get(lesson["id"], 0)})
+            else:
+                slot["retired"].append(lesson["id"])
+    for slot in groups.values():
+        slot["active"].sort(key=lambda lesson: (-lesson["evidence"], lesson["id"]))
+        slot["retired"].sort()
+    matched = {}
+
+    def files_of(glob):
+        if glob not in matched:
+            matched[glob] = (frozenset(repo.files) if glob == "*"
+                             else frozenset(f for f in repo.files if f.full_match(glob)))
+        return matched[glob]
+
+    def overlap(first, second):
+        for a in items(first["applies"]):
+            for b in items(second["applies"]):
+                one, two = files_of(a), files_of(b)
+                if one and two and (one <= two or two <= one):
+                    return True
+        return False
+    mergeable = []
+    for group in sorted(groups):
+        active = sorted(groups[group]["active"], key=lambda lesson: lesson["id"])
+        for index, first in enumerate(active):
+            for second in active[index + 1:]:
+                shared = sorted(set(items(first["topics"])) & set(items(second["topics"])))
+                kept_apart = (second["id"] in items(first.get("apart", ""))
+                              or first["id"] in items(second.get("apart", "")))
+                pair = (first["id"], second["id"])
+                alike = similarity(first["body"], second["body"]) >= MERGE_SIMILARITY
+                if shared and alike and not kept_apart and overlap(first, second) \
+                        and not any(found[1:3] == pair for found in mergeable):
+                    mergeable.append((group, first["id"], second["id"], shared[0]))
+    failing = []
+    base = root / "docs" / "lessons" / TRIAGE
+    for path in sorted(base.rglob("*.md")) if base.is_dir() else ():
+        record = (PurePosixPath(REVIEWS) / path.relative_to(base).as_posix()).as_posix()
+        valid, _ = read_triage(root, record, repo)
+        named = {key: word[len("lesson:"):] for key, word in valid.items() if word.startswith("lesson:")}
+        if not named:
+            continue
+        runs = pass_runs((root / record).read_text(encoding="utf-8"))
+        for (kind, number, k), lesson_id in sorted(named.items()):
+            lesson = by_id.get(lesson_id)
+            if lesson is None or lesson["status"] != "active":
+                continue
+            ran = runs.get((kind, number))
+            if ran is None:
+                raise RecordError(f"{record}: {pass_label(kind, number)} carries no `- Run:` date, so whether its "
+                                  f"finding came after lesson {lesson_id} cannot be told")
+            since = max(datetime.date.fromisoformat(lesson["added"]),
+                        datetime.date.fromisoformat(lesson.get("revised") or lesson["added"]))
+            if ran > since:  # the same day does not count: the dates hold no time
+                failing.append((lesson_id, record, pass_label(kind, number), k, ran.isoformat()))
+    over = [group for group in sorted(groups) if len(groups[group]["active"]) > LESSON_CEILING]
+    return {"groups": groups, "over": over, "mergeable": mergeable, "failing": failing}
+
+
+def reassign(root, lesson_id, disposition, delete=False):
+    """Rewrite every `lesson:<lesson_id>` triage line to `disposition` (`lesson:<other>` when merging, `enforced:<path>`
+    when a check replaced the lesson, `one-off <reason>` when it taught nothing), each triage file through a temporary
+    file and a replace, and with `delete` remove the lesson file. Returns how many lines changed. ValueError when the
+    lesson or the target does not exist or the disposition is not one of the three."""
+    root = Path(root)
+    folder = root / "docs" / "lessons"
+    if not ID.fullmatch(lesson_id) or not (folder / f"{lesson_id}.md").is_file():
+        raise ValueError(f"no lesson {lesson_id!r} to reassign")
+    word, _, reason = disposition.strip().partition(" ")
+    if word.startswith("lesson:"):
+        other = word[len("lesson:"):]
+        if other == lesson_id or not ID.fullmatch(other) or not (folder / f"{other}.md").is_file():
+            raise ValueError(f"lesson:{other} names no other lesson file")
+    elif word.startswith("enforced:"):
+        target = word[len("enforced:"):]
+        if not target or ".." in PurePosixPath(target).parts or not (root / target).is_file():
+            raise ValueError(f"enforced:{target} names no file the repository holds")
+    elif word == "one-off":
+        if not reason.strip():
+            raise ValueError("one-off needs a reason")
+    else:
+        raise ValueError(f"{word!r} is not lesson:<id>, enforced:<path> or one-off")
+    changed = 0
+    base = folder / TRIAGE
+    for path in sorted(base.rglob("*.md")) if base.is_dir() else ():
+        lines = path.read_text(encoding="utf-8").split("\n")
+        rewritten = []
+        for line in lines:
+            match = TRIAGE_LINE.match(line)
+            if match and match[6].rstrip(",.;") == f"lesson:{lesson_id}":
+                head = line[:match.start(6)]
+                kept = f" {match[7].strip()}" if match[7] and word != "one-off" else ""
+                rewritten.append(f"{head}{disposition.strip()}{kept}")
+                changed += 1
+            else:
+                rewritten.append(line)
+        if rewritten != lines:
+            fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+                    handle.write("\n".join(rewritten))
+                os.replace(tmp, path)
+            except BaseException:
+                Path(tmp).unlink(missing_ok=True)
+                raise
+    if delete:
+        (folder / f"{lesson_id}.md").unlink()
+    return changed

@@ -5,6 +5,8 @@
 
     python scripts/lessons.py check
     python scripts/lessons.py candidates [--untriaged] [--p3] [docs/reviews/<record>.md ...]
+    python scripts/lessons.py report [--check]
+    python scripts/lessons.py reassign <id> --to <disposition> [--delete]
     python scripts/lessons.py query --path scripts/lib/tool_lock.py [--role main] [--topic tests] [--text "gate"]
                                     [--limit 5] [--why] [--json]
 
@@ -18,6 +20,12 @@ triaging every finding its own round fixed), and with `--untriaged` only those w
 valid line in the record's triage file `docs/lessons/triage/<path>.md` (D00 T05 §3). Exit 0, or 1 naming the file
 when a named record or a triage file cannot be read or holds no review pass, so skipped input never looks like
 nothing left to do.
+
+`report` prints the store by area (the leading folders of each lesson's globs): the active lessons with their
+evidence, the retired count and the ceiling, then the lessons that could be merged and those that still failed; with
+`--check` it exits 1 while a group is over the ceiling or any recommendation is unresolved (D00 T05 §8). `reassign
+<id> --to <disposition> [--delete]` rewrites a lesson's triage lines when it is merged into another, replaced by a
+check, or dropped.
 
 `query` returns the few lessons that apply, in one fixed order (`rank` in `scripts/lib/lessons.py`): a lesson matches
 when its roles include `--role` (default `main`) or are `all`, AND one of its globs matches a `--path`, or one of
@@ -104,6 +112,55 @@ def cmd_candidates(args, root):
     return 0
 
 
+def cmd_report(args, root):
+    try:
+        state = lessons.report(root)
+    except lessons.StoreInvalid as error:
+        for problem in error.problems:
+            print(problem, file=sys.stderr)
+        print(f"lessons: the store has {len(error.problems)} problem(s), so no report is given; "
+              f"run python scripts/lessons.py check", file=sys.stderr)
+        return 1
+    except lessons.RecordError as error:
+        print(f"lessons: {error}", file=sys.stderr)
+        return 1
+    for group, slot in sorted(state["groups"].items()):
+        print(f"{group}: {len(slot['active'])} active, {len(slot['retired'])} retired "
+              f"(ceiling {lessons.LESSON_CEILING})")
+        for lesson in slot["active"]:
+            print(f"  {lesson['evidence']:>4}  {lesson['id']}")
+    if state["over"]:
+        print("Over the ceiling (merge lessons about one thing, or turn one into a check and retire it):")
+        for group in state["over"]:
+            print(f"  {group}: {len(state['groups'][group]['active'])} active, more than {lessons.LESSON_CEILING}")
+    if state["mergeable"]:
+        print("Could be merged (one group, a shared topic, equal or nested globs); merge them, or name one in the "
+              "other's `apart` key if they teach different things:")
+        for group, first, second, topic in state["mergeable"]:
+            print(f"  {group}: {first} + {second} (topic {topic})")
+    if state["failing"]:
+        print("Still failed (found again after the lesson was written); rewrite it with `revised`, turn it into a "
+              "check and retire it, or delete it:")
+        for lesson_id, record, label, k, ran in state["failing"]:
+            print(f"  {lesson_id}: {record} {label} finding {k}, run {ran}")
+    open_work = bool(state["over"] or state["mergeable"] or state["failing"])
+    return 1 if args.check and open_work else 0
+
+
+def cmd_reassign(args, root):
+    try:
+        changed = lessons.reassign(root, args.id, " ".join(args.to), args.delete)
+    except ValueError as error:
+        print(f"lessons: {error}", file=sys.stderr)
+        return 2
+    except OSError as error:
+        print(f"lessons: the triage files could not be rewritten ({type(error).__name__}: {error})", file=sys.stderr)
+        return 1
+    print(f"{changed} triage line(s) of {args.id} now read {' '.join(args.to)}"
+          + ("; the lesson file is removed" if args.delete else ""))
+    return 0
+
+
 def main(argv=None, root=ROOT):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -122,13 +179,25 @@ def main(argv=None, root=ROOT):
                          help="only findings with no valid line in the record's triage file")
     listing.add_argument("--p3", action="store_true",
                          help="list P3 findings too (a section triages every finding its round fixed)")
+    upkeep = sub.add_parser("report", help="the store by area, with what could be merged and what still failed")
+    upkeep.add_argument("--check", action="store_true",
+                        help="exit 1 while a group is over the ceiling or a recommendation is unresolved")
+    moving = sub.add_parser("reassign", help="rewrite a lesson's triage lines to another disposition")
+    moving.add_argument("id", help="the lesson whose triage lines move")
+    moving.add_argument("--to", nargs="+", required=True,
+                        help="lesson:<other>, enforced:<path> or one-off <reason>")
+    moving.add_argument("--delete", action="store_true", help="remove the lesson file as well")
     args = parser.parse_args(argv)
     if args.command == "candidates":
         return cmd_candidates(args, root)
+    if args.command == "reassign":
+        return cmd_reassign(args, root)
     readme = Path(root) / "docs" / "lessons" / "README.md"
     if not readme.is_file():
         print(f"lessons: {readme} cannot be read", file=sys.stderr)
         return 2
+    if args.command == "report":
+        return cmd_report(args, root)
     return cmd_check(root) if args.command == "check" else cmd_query(args, root)
 
 

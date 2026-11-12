@@ -55,7 +55,7 @@ OVERALL: approve
 SPEC_TEXT = "# Spec\n\n## Decisions\n\n1. **First:** one.\n2. **Second:** two.\n"
 # A second record with ten findings in one round, for tests that need many valid triage lines.
 RECORD2 = "docs/reviews/00-workspace/D99-T02-s1.md"
-RECORD2_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n"
+RECORD2_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-01T08:00:00Z\n\n"
                 + "".join(f"{n}. **P2, `scripts/a.py:{n}`:** finding {n} of ten.\n" for n in range(1, 11))
                 + "\nOVERALL: needs-attention\n")
 
@@ -69,7 +69,8 @@ class Store(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.root, True)
         files = {"docs/lessons/README.md": (ROOT / "docs" / "lessons" / "README.md").read_text(encoding="utf-8"),
-                 RECORD: RECORD_TEXT, RECORD2: RECORD2_TEXT, cli.SPEC: SPEC_TEXT, "scripts/a.py": "x = 1\n", "scripts/lib/b.py": "y = 2\n"}
+                 RECORD: RECORD_TEXT, RECORD2: RECORD2_TEXT, cli.SPEC: SPEC_TEXT, "scripts/a.py": "x = 1\n", "scripts/lib/b.py": "y = 2\n",
+                 "scripts/c.py": "z = 3\n"}
         for name, text in files.items():
             (self.root / name).parent.mkdir(parents=True, exist_ok=True)
             (self.root / name).write_text(text, encoding="utf-8")
@@ -981,6 +982,202 @@ class Triage(Indexed):
         self.assertEqual((code, lines), (1, []))
         self.assertIn("D99-T03-s1.md: cannot be read", err)
 
+
+class Upkeep(Indexed):
+    """D00 T05 §8: the store by area, its ceiling, what could be merged, what still failed, and reassign."""
+
+    TWO = Triage.TWO
+    triage = Triage.triage
+
+    def setUp(self):
+        super().setUp()
+        (self.root / self.TWO).write_text(Triage.TWO_TEXT, encoding="utf-8")
+
+    DATED = "docs/reviews/00-workspace/D99-T10-s1.md"
+    DATED_TEXT = (
+        "## Plan review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-09T08:00:00Z\n\n"
+        "1. **P2, line 5:** A plan finding.\n\nPLAN: gaps\nOVERALL: needs-attention\n\n"
+        "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
+        "1. **P2, `scripts/a.py:1`: A round finding.** More.\n\nOVERALL: needs-attention\n\n"
+        "## Completion review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-11T08:00:00Z\n\n"
+        "1. **P2, missing-in-scope:** `scripts/a.py:2`: A completion gap.\n\nCOMPLETION: gaps\n\n"
+        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-12T08:00:00Z\n\n"
+        "1. **closed, P2:** done.\n\nRECONCILIATION: gaps\n\n"
+        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-13T08:00:00Z\n\n"
+        "1. **P2, `scripts/a.py:3`: A defect in the repair.** More.\n\nRECONCILIATION: complete\n")
+
+    @staticmethod
+    def words(n):
+        """A body no other fixture lesson resembles: five words made only of letters, unique to `n`."""
+        code = "".join(chr(97 + (n // 26 ** place) % 26) for place in range(3))
+        return " ".join(f"{code}{tail}" for tail in ("alpha", "bravo", "delta", "gamma", "omega")) + "."
+
+    def report(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(["report", *argv], root=self.root)
+        return code, out.getvalue(), err.getvalue()
+
+    def reassign(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(["reassign", *argv], root=self.root)
+        return code, out.getvalue(), err.getvalue()
+
+    def dated(self, text=None):
+        (self.root / self.DATED).write_text(text or self.DATED_TEXT, encoding="utf-8")
+
+    def test_groups_counts_and_evidence_order(self):
+        self.lesson("in-scripts", applies="scripts/a.py", body=self.words(1))
+        self.lesson("shallow-glob", applies="scripts/*.py", body=self.words(2))
+        self.lesson("twice-in-lib", applies="scripts/lib/b.py, scripts/lib/*.py", body=self.words(3))
+        self.lesson("everywhere", applies="*", body=self.words(4))
+        self.lesson("gone-quiet", applies="docs/lessons/README.md", status="retired", retired_by="scripts/a.py",
+                    body=self.words(5))
+        self.triage(RECORD2, "round 1 finding 1: lesson:shallow-glob\nround 1 finding 2: lesson:shallow-glob\n"
+                             "round 1 finding 3: lesson:in-scripts\n")
+        code, out, err = self.report()
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(out, "*: 1 active, 0 retired (ceiling 40)\n     0  everywhere\n"
+                              "docs/lessons: 0 active, 1 retired (ceiling 40)\n"
+                              "scripts: 2 active, 0 retired (ceiling 40)\n     2  shallow-glob\n     1  in-scripts\n"
+                              "scripts/lib: 1 active, 0 retired (ceiling 40)\n     0  twice-in-lib\n")
+        self.assertEqual([lessons.group_of(g) for g in ("scripts/a.py", "scripts/*.py", "scripts/lib/*.py", "*", "*.md",
+                                                        "design/inventory/**/*.json", ".claude/skills/*/SKILL.md")],
+                         ["scripts", "scripts", "scripts/lib", "*", ".", "design/inventory", ".claude/skills"])
+
+    def test_the_ceiling_is_forty_active_lessons_in_a_group(self):
+        for n in range(40):
+            self.lesson(f"lesson-{n:02d}", applies="scripts/a.py", topics="docs" if n % 2 else "git", body=self.words(n))
+        self.assertEqual(self.report("--check")[0], 0)
+        self.lesson("one-too-many", applies="scripts/a.py", topics="ci", body=self.words(99))
+        code, out, _ = self.report("--check")
+        self.assertEqual(code, 1)
+        self.assertIn("Over the ceiling", out)
+        self.assertIn("  scripts: 41 active, more than 40", out)
+        self.assertEqual(self.report()[0], 0)  # without --check the report only reports
+
+    def test_lessons_that_say_the_same_are_listed_and_ones_that_differ_are_not(self):
+        same = "A check that cannot read its input must fail and name the input, never pass."
+        self.lesson("first", applies="scripts/a.py", topics="tooling, tests", body=same)
+        self.lesson("second", applies="scripts/*.py", topics="tooling", body=same + " Write a test for it.")
+        self.lesson("other-topic", applies="scripts/a.py", topics="git", body=same)
+        self.lesson("other-words", applies="scripts/a.py", topics="tooling", body=self.words(7))
+        self.lesson("other-file", applies="scripts/c.py", topics="tooling", body=same)
+        code, out, _ = self.report("--check")
+        self.assertEqual(code, 1)
+        merged = out.split("Could be merged", 1)[1]
+        self.assertIn("  scripts: first + second (topic tooling)", merged)
+        self.assertIn("  scripts: other-file + second (topic tooling)", merged)  # nested: c.py is within *.py
+        for absent in ("other-topic", "other-words", "first + other-file"):
+            self.assertNotIn(absent, merged)
+        self.assertGreaterEqual(lessons.similarity(same, same + " Write a test for it."), lessons.MERGE_SIMILARITY)
+        self.assertLess(lessons.similarity(same, self.words(7)), lessons.MERGE_SIMILARITY)
+
+    def test_a_pair_kept_apart_or_merged_no_longer_stands(self):
+        same = "A check that cannot read its input must fail and name the input, never pass."
+        self.lesson("first", applies="scripts/a.py", topics="tooling", body=same)
+        self.lesson("second", applies="scripts/a.py", topics="tooling", body=same)
+        self.assertEqual(self.report("--check")[0], 1)
+        self.lesson("second", applies="scripts/a.py", topics="tooling", body=same, apart="first")
+        self.assertEqual(self.report("--check"), (0, "scripts: 2 active, 0 retired (ceiling 40)\n"
+                                                    "     0  first\n     0  second\n", ""))
+        self.assertEqual(lessons.read(self.folder / "second.md")["apart"], "first")
+        self.refused("apart: 'no-such' names no lesson file", name="third", id="third", applies="*", apart="no-such",
+                     source="decision-1", fix=None)
+
+    def test_a_lesson_found_again_on_a_later_day_still_failed(self):
+        self.dated()
+        self.lesson("the-lesson", applies="scripts/a.py", added="2026-11-10")
+        self.triage(self.DATED, "plan finding 1: lesson:the-lesson\nround 1 finding 1: lesson:the-lesson\n"
+                                "completion finding 1: lesson:the-lesson\n"
+                                "reconciliation 2 finding 1: lesson:the-lesson\n")
+        failing = lessons.report(self.root)["failing"]
+        # Before (the plan, 11-09) and on the day (the round, 11-10) do not count; the two later passes do.
+        self.assertEqual(failing, [("the-lesson", self.DATED, "completion", 1, "2026-11-11"),
+                                   ("the-lesson", self.DATED, "reconciliation 2", 1, "2026-11-13")])
+        code, out, _ = self.report("--check")
+        self.assertEqual(code, 1)
+        self.assertIn(f"  the-lesson: {self.DATED} reconciliation 2 finding 1, run 2026-11-13", out)
+
+    def test_a_rewrite_clears_the_flag_until_the_fault_comes_back(self):
+        self.dated()
+        self.triage(self.DATED, "completion finding 1: lesson:the-lesson\nreconciliation 2 finding 1: lesson:the-lesson\n")
+        self.lesson("the-lesson", applies="scripts/a.py", added="2026-11-10", revised="2026-11-11")
+        self.assertEqual([f[2] for f in lessons.report(self.root)["failing"]], ["reconciliation 2"])
+        self.lesson("the-lesson", applies="scripts/a.py", added="2026-11-10", revised="2026-11-13",
+                    body="Rewritten so that it says what to do.")
+        self.assertEqual(self.report("--check")[0], 0)
+        self.assertEqual(lessons.read(self.folder / "the-lesson.md")["revised"], "2026-11-13")  # read back
+        self.dated(self.DATED_TEXT + "\n## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+                   "- Writer: claude\n- Run: 2026-11-14T08:00:00Z\n\n1. **P1, `scripts/a.py:4`: The fault again.** More.\n\n"
+                   "RECONCILIATION: gaps\n")
+        self.triage(self.DATED, "completion finding 1: lesson:the-lesson\nreconciliation 2 finding 1: lesson:the-lesson\n"
+                                "reconciliation 3 finding 1: lesson:the-lesson\n")
+        self.assertEqual(lessons.report(self.root)["failing"],
+                         [("the-lesson", self.DATED, "reconciliation 3", 1, "2026-11-14")])
+        self.refused("revised: 2026-11-01 is before the lesson was added", name="early", id="early", applies="*",
+                     added="2026-11-10", revised="2026-11-01", source="decision-1", fix=None)
+
+    def test_an_incomplete_store_is_refused_and_an_empty_one_reports_nothing(self):
+        self.assertEqual(self.report("--check"), (0, "", ""))
+        self.lesson("bad-topic", topics="gardening")
+        code, out, err = self.report("--check")
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("gardening", err)
+        self.assertIn("so no report is given", err)
+        (self.folder / "bad-topic.md").unlink()
+        self.lesson("a-lesson", applies="scripts/a.py")
+        self.triage(self.TWO, "round 1 finding 1: lesson:a-lesson\n")  # that fixture record carries no Run date
+        code, out, err = self.report()
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn(f"{self.TWO}: round 1 carries no `- Run:` date", err)
+
+    def test_merging_two_lessons_and_dropping_a_third_walked_through(self):
+        self.lesson("keeper", applies="scripts/a.py", body="Check ownership in the step that acts.")
+        self.lesson("double", applies="scripts/a.py", body="Check ownership in the step that acts, again.")
+        self.lesson("useless", applies="scripts/a.py", body=self.words(11))
+        self.triage(RECORD2, "round 1 finding 1: lesson:keeper\nround 1 finding 2: lesson:double, the same fault\n"
+                             "round 1 finding 3: lesson:double\nround 1 finding 4: lesson:useless\n"
+                             "round 1 finding 5: one-off, a typo\n")
+        self.assertEqual(lessons.evidence(self.root), {"keeper": 1, "double": 2, "useless": 1})
+        code, out, err = self.reassign("double", "--to", "lesson:keeper", "--delete")
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(out, "2 triage line(s) of double now read lesson:keeper; the lesson file is removed\n")
+        code, out, err = self.reassign("useless", "--to", "one-off", "it", "never", "recurred", "--delete")
+        self.assertEqual(code, 0, err)
+        text = lessons.triage_path(self.root, RECORD2).read_text(encoding="utf-8")
+        self.assertEqual(text, "round 1 finding 1: lesson:keeper\nround 1 finding 2: lesson:keeper the same fault\n"
+                               "round 1 finding 3: lesson:keeper\nround 1 finding 4: one-off it never recurred\n"
+                               "round 1 finding 5: one-off, a typo\n")
+        check = io.StringIO()
+        with contextlib.redirect_stdout(check):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, check.getvalue())
+        self.assertEqual(lessons.evidence(self.root), {"keeper": 3})  # the survivor carries both lessons' findings
+        shown, more = lessons.query(self.root, paths=["scripts/a.py"])
+        self.assertEqual(([(l["id"], l["evidence"]) for l in shown], more), ([("keeper", 3)], 0))
+        self.assertEqual([p.name for p in self.folder.glob("*.md") if p.name != "README.md"], ["keeper.md"])
+        self.assertEqual([p.name for p in lessons.triage_path(self.root, RECORD2).parent.iterdir()],
+                         ["D99-T02-s1.md"])  # no temporary file left
+
+    def test_reassign_refuses_what_does_not_exist(self):
+        self.lesson("keeper", applies="scripts/a.py")
+        for argv, fragment in ((["ghost", "--to", "lesson:keeper"], "no lesson 'ghost' to reassign"),
+                               (["keeper", "--to", "lesson:ghost"], "lesson:ghost names no other lesson file"),
+                               (["keeper", "--to", "lesson:keeper"], "names no other lesson file"),
+                               (["keeper", "--to", "enforced:scripts/gone.py"], "names no file the repository holds"),
+                               (["keeper", "--to", "one-off"], "one-off needs a reason"),
+                               (["keeper", "--to", "wontfix"], "is not lesson:<id>, enforced:<path> or one-off")):
+            with self.subTest(fragment):
+                code, out, err = self.reassign(*argv)
+                self.assertEqual((code, out), (2, ""))
+                self.assertIn(fragment, err)
+        self.assertTrue((self.folder / "keeper.md").is_file())
+
+    def test_the_repository_store_is_within_its_upkeep(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["report", "--check"]), 0, out.getvalue())
 
 class CommandLine(Indexed):
     def test_the_plain_and_json_forms(self):

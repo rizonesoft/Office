@@ -26,6 +26,19 @@ EXIT_BULLETS = {  # the four exit actions of the CI watch, pinned whole: any cha
 
 # (obligation, skill, phrases that must all appear)
 OBLIGATIONS = [
+    # D00 T05 §8: a phase closes only once the lesson store is within its upkeep.
+    ("lesson upkeep before the closeout", "phase", [
+        "**Lesson upkeep comes first.** At a phase's closeout, before the closeout is written, run "
+        "`python scripts/lessons.py report --check`",
+        "For each group it names over the ceiling, and for each lesson it lists as mergeable or as still failing, "
+        "apply one of the four remedies until the check exits 0",
+        "merge lessons about one thing into one (`python scripts/lessons.py reassign <id> --to lesson:<other> "
+        "--delete` moves the triage lines; an `apart` key records two that teach different things)",
+        "retire a lesson with `retired_by` once a check or test enforces it",
+        "rewrite one that did not stop its fault and give it a `revised` date",
+        "delete one that taught nothing (`reassign <id> --to one-off <reason> --delete`)",
+        "A listed lesson is never left as it is",
+        "Commit the upkeep in a commit of its own, before the closeout commit"]),
     # D00 T05 §4: a section reads its lessons before it builds, and its review writes them before the last pass.
     ("lessons are read before the build", "section", [
         "**Read the lessons first.** Before building, run `python scripts/lessons.py query --role main --path <path>`",
@@ -302,6 +315,8 @@ class SkillCiGate(unittest.TestCase):
 
 
     LESSON_STEPS = {  # obligation -> (skill, the heading or item it follows, the one it precedes)
+        "lesson upkeep before the closeout": ("phase", "## Step 4: closeout",
+                                              "When every row of the phase table is `[x]`: `process-todo-file`"),
         "lessons are read before the build": ("section", "### 2. Validate the plan before building it",
                                               "### 4. Build the corrected contract"),
         "each outcome of the read is handled": ("section", "### 2. Validate the plan before building it",
@@ -344,6 +359,20 @@ class SkillCiGate(unittest.TestCase):
         body = paragraph[len(marker):]
         kept = dict(self.texts, review=review.replace(paragraph, marker, 1) + "\n" + body + "\n")
         self.assertTrue(self.misplaced(kept))
+    def test_the_readme_states_the_ceiling_and_the_four_remedies(self):
+        # D00 T05 §8: the README's Upkeep section, by its words, and the ceiling it names is the code's.
+        readme = (SKILLS.parents[1] / "docs" / "lessons" / "README.md").read_text(encoding="utf-8")
+        upkeep = readme.split("## Upkeep\n", 1)[1].split("\n## ", 1)[0]
+        sys.path.insert(0, str(SKILLS.parents[1] / "scripts" / "lib"))
+        import lessons
+        for phrase in (f"an area holds at most {lessons.LESSON_CEILING} active lessons",
+                       f"texts that share at least {round(lessons.MERGE_SIMILARITY * 100)} percent of their words",
+                       "run on a later day than the later of its `added` and `revised` dates",
+                       "merge lessons about one thing into one", "retire a lesson a check or test now enforces",
+                       "rewrite one that did not stop its fault and set `revised`", "delete one that taught nothing",
+                       "A listed lesson is never left as it is"):
+            self.assertIn(phrase, upkeep)
+
     def test_every_pinned_paragraph_is_unchanged(self):
         self.assertEqual(pin_failures(self.texts), [])
 

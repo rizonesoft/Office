@@ -17,6 +17,8 @@ A lesson is `docs/lessons/<id>.md`: frontmatter between two `---` lines, written
 | `added` | yes | the date the lesson was written, `YYYY-MM-DD` |
 | `status` | yes | `active` or `retired` |
 | `retired_by` | when retired | the check, test or script that now enforces the lesson, as a repository path |
+| `revised` | no | the date the lesson was last rewritten, `YYYY-MM-DD`, on or after `added` |
+| `apart` | no | ids of lessons this one is deliberately kept separate from, comma separated |
 
 A glob is read as Python's `PurePath.full_match` reads it, against repository paths with forward slashes: `*` stays within one folder and `**` crosses folders, so `scripts/**/*.py` is every Python file under `scripts/`.
 
@@ -40,6 +42,15 @@ A review source names a record under `docs/reviews/`, a pass in it and the findi
 ## Finding lessons
 
 `python scripts/lessons.py query --path <file> [--role main|reader] [--topic <word>] [--text "<words>"] [--limit N] [--why] [--json]` returns the few lessons that apply, in the same order every time (D00 T05 §2). A lesson matches when its roles include the role (`main` when not given) or are `all`, and one of its globs matches a path, or one of its topics is asked for, or its body holds every word of the text. Lessons whose glob matches come first, the most specific glob first (an exact path before a pattern, `*` last), then topic matches, then text matches; within each, the lesson with more findings behind it, then the newer one. The findings behind a lesson are the lines of the files under `triage/` whose disposition is that lesson, written `<finding>: lesson:<id>`: the word after the line's first colon is its disposition, so a lesson named in the reason of another disposition is not counted. `--why` says what matched and how many matching lessons were not returned. The query reads `build/lessons.sqlite`, a cache it rebuilds by itself whenever anything `check` depends on changes (a lesson, a triage file, this README, a cited review record, the campaign spec, the commit at `HEAD` or the files the repository holds), and it shows nothing while the store breaks a rule.
+
+## Upkeep
+
+`python scripts/lessons.py report` prints the store by area, the leading folders of each lesson's globs that hold no wildcard, at most two (`scripts/*.py` is `scripts`, `scripts/lib/*.py` is `scripts/lib`, `*` is its own area): the active lessons with the findings behind each, most first, and the number retired. A store that only grows stops working, so an area holds at most 40 active lessons, and `report --check` exits 1 while any of three things stands (D00 T05 §8; a phase's closeout runs it):
+
+- An area over the ceiling.
+- Two lessons that could be one: the same area, a shared topic, globs matching the same tracked files or one's within the other's, and texts that share at least 30 percent of their words.
+- A lesson that still failed: a triage line names it for a review pass run on a later day than the later of its `added` and `revised` dates, so the fault came back although the lesson existed.
+ four remedies: merge lessons about one thing into one (`python scripts/lessons.py reassign <id> --to lesson:<other> --delete` moves the triage lines to the survivor; an `apart` key records two that teach different things); retire a lesson a check or test now enforces, with `retired_by`; rewrite one that did not stop its fault and set `revised`; delete one that taught nothing (`reassign <id> --to one-off <reason> --delete`). A listed lesson is never left as it is.
 
 ## Topics
 
