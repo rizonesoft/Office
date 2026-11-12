@@ -34,6 +34,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import time
 import uuid
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,6 +47,7 @@ WINDOW_DAYS = 7
 ATTACHMENT = "waiting-on-you.txt"
 NOTICES_ATTACHMENT = "notices.txt"
 NOTICE_LINES = 10  # summary lines of notices in the body; every notice is in full in the attachment
+MARK_TRIES, MARK_PAUSE = 3, 2.0  # a delivered batch's mark is retried before it is left to the next settlement
 GUARD = "build/claude-campaign-guard.json"
 # CREATE_NO_WINDOW on every launch, as .conclave/automations/run.py says every nested launch of a task carries it, so
 # the Monday run opens no console on the owner's desktop.
@@ -416,7 +418,14 @@ def main(argv=None, root=ROOT, today=None, opener=None, runner=subprocess.run, s
         except OSError as error:
             print(f"owner-digest: the delivery evidence could not be written: {error}", file=sys.stderr)
         try:
-            marked = alert.mark_reported(ids, str(root))
+            for attempt in range(MARK_TRIES):  # a transient refusal (a lock, a scanner holding the file) passes
+                try:
+                    marked = alert.mark_reported(ids, str(root))
+                    break
+                except alert.Refused:
+                    if attempt == MARK_TRIES - 1:
+                        raise
+                    time.sleep(MARK_PAUSE)
             alert.clear_sent(digest_id)
             print(f"marked {marked} notice(s) reported")
         except alert.Refused as error:  # delivered but unconfirmed: the next digest sends them again, so marked

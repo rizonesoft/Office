@@ -48,6 +48,9 @@ class Tree(unittest.TestCase):
         scratch = mock.patch.dict(os.environ, {"OFFICE_SCRATCH": str(self.root / "scratch")})
         scratch.start()
         self.addCleanup(scratch.stop)
+        pause = mock.patch.object(digest, "MARK_PAUSE", 0)
+        pause.start()
+        self.addCleanup(pause.stop)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -598,6 +601,25 @@ class Notices(Send):
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # closed only after that delivery
         code, _, fourth = self.run_main([])
         self.assertNotIn("could not be confirmed", fourth[0]["text_body"])  # and never again
+
+    def test_a_mark_refused_twice_then_written_closes_the_batch(self):
+        ids = self.queue(1)
+        alert = digest.load_alert(self.root)
+        real, calls = alert.mark_reported, []
+
+        def flaky(batch, root):
+            calls.append(1)
+            if len(calls) < 3:
+                raise alert.Refused("the file is held for a moment")
+            return real(batch, root)
+        with mock.patch.object(alert, "mark_reported", flaky), mock.patch.object(digest, "load_alert", return_value=alert):
+            code, _, _ = self.run_main([])
+        self.assertEqual((code, len(calls)), (0, 3))
+        self.assertEqual(self.pending(), [])
+        self.assertEqual(alert.claimed_notices(str(self.root)), [])
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
     def test_an_unconfirmed_notice_once_delivered_is_never_delivered_again(self):
         # Reconciliation review 7: the digest that carries an unconfirmed notice claims it like any other.
