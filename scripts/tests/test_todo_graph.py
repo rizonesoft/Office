@@ -1006,6 +1006,46 @@ class Parked(Tree):
         self.write(todo_file([(1, "A", 0, "none", "--"), (2, "B", 0, "none", "--")]).replace("- [ ] Work.", "- [ ] Other."))
         self.assertNotEqual(tg.contract_digest(tg.graph(self.root)["D00 T01 §1"]), plain)
 
+    def resolve(self, rows, ref="D00 T01 §1"):
+        """What `python scripts/todo-graph.py resolve <ref>` prints and returns over the given rows."""
+        import contextlib
+        import importlib.util
+        import io
+        spec = importlib.util.spec_from_file_location("todo_graph_cli", REPO / "scripts" / "todo-graph.py")
+        cli = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cli)
+        out = io.StringIO()
+        with mock.patch.object(cli, "graph", return_value=rows), \
+                mock.patch.object(sys, "argv", ["todo-graph.py", "resolve", ref]), contextlib.redirect_stdout(out):
+            code = cli.main()
+        return code, json.loads(out.getvalue())
+
+    def test_resolve_prints_the_wait_and_whether_it_is_met_for_a_wait_on_a_section(self):
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: the owner decides which risk to keep")
+        rows = tg.graph(self.root)
+        code, shown = self.resolve(rows)
+        self.assertEqual((code, shown["exit"], shown["wait_met"]), (4, 4, False))
+        self.assertEqual(shown["parked"], "until D00 T01 §2: the owner decides which risk to keep")
+        code, shown = self.resolve({**rows, "D00 T01 §2": dataclasses.replace(rows["D00 T01 §2"], done=True)})
+        self.assertEqual((code, shown["exit"], shown["wait_met"]), (0, 0, True))
+        self.assertEqual(shown["parked"], "until D00 T01 §2: the owner decides which risk to keep")
+
+    def test_resolve_prints_the_wait_and_whether_it_is_met_for_a_wait_on_an_instant(self):
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until 2099-01-01T00:00:00Z: the first scheduled run")
+        code, shown = self.resolve(tg.graph(self.root))
+        self.assertEqual((code, shown["exit"], shown["wait_met"]), (4, 4, False))
+        self.assertEqual(shown["parked"], "until 2099-01-01T00:00:00Z: the first scheduled run")
+        self.park("> **Parked:** 2026-11-12T01:00:00Z until 2001-01-01T00:00:00Z: the first scheduled run")
+        code, shown = self.resolve(tg.graph(self.root))
+        self.assertEqual((code, shown["exit"], shown["wait_met"]), (0, 0, True))
+        self.assertEqual(shown["parked"], "until 2001-01-01T00:00:00Z: the first scheduled run")
+
+    def test_resolve_says_nothing_of_a_wait_for_a_section_that_is_not_parked(self):
+        self.park("")
+        code, shown = self.resolve(tg.graph(self.root))
+        self.assertEqual((code, shown["parked"]), (0, ""))
+        self.assertNotIn("wait_met", shown)
+
     def progress(self):
         return next(line for line in tg.projection(self.root).splitlines() if line.startswith("Progress:"))
 
