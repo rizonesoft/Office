@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 57 | Checklist items: 396
+Sections: 57 | Checklist items: 399
 
 | Status | Reference   | Deliverable                                     | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------- | ---------------------- | ----- |
@@ -53,7 +53,7 @@ Sections: 57 | Checklist items: 396
 | [x]    | D00 T03 §36 | Operating Mode Measurement Command              | none                   | 14    |
 | [ ]    | D00 T03 §37 | Operating Mode Rule and Launcher                | none                   | 9     |
 | [x]    | D00 T03 §50 | Withdrawn Sections                              | none                   | 11    |
-| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 7     |
+| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest      | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool     | none                   | 7     |
 | [ ]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree  | none                   | 5     |
 | [ ]    | D00 T04 §1  | Tool Lock File and Bootstrap Script             | none                   | 12    |
@@ -385,4 +385,4 @@ These TODO files do not exist yet, so their sections and checklist items are not
 
 Progress: 69/158 verified sections, 24 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 464/1038 items completed (includes Commit items).
+Checklist: 464/1041 items completed (includes Commit items).
