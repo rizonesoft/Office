@@ -1133,6 +1133,96 @@ class Upkeep(Indexed):
         self.assertEqual((code, out), (1, ""))
         self.assertIn(f"{self.TWO}: round 1 carries no `- Run:` date", err)
 
+    def test_recurrence_for_every_kind_of_pass_before_on_and_after_the_lessons_date(self):
+        # Completion review: each of the four pass kinds, with the lesson written after, on and before its run day.
+        head = "astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
+        finding = "1. **P2, `scripts/a.py:1`: The fault.** More.\n\n"
+        earlier = ("## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n"
+                   "- Run: 2026-11-01T08:00:00Z\n\n1. **closed, P2:** done.\n\nRECONCILIATION: gaps\n\n")
+        passes = {"plan": ("## Plan review: " + head + finding + "PLAN: gaps\nOVERALL: needs-attention\n", "plan"),
+                  "round": ("## Round 1: " + head + finding + "OVERALL: needs-attention\n", "round 1"),
+                  "completion": ("## Completion review: " + head + finding + "COMPLETION: gaps\n", "completion"),
+                  "reconciliation": (earlier + "## Reconciliation review: " + head + finding + "RECONCILIATION: gaps\n",
+                                     "reconciliation 2")}
+        for kind, (text, label) in passes.items():
+            for added, flagged in (("2026-11-11", False), ("2026-11-10", False), ("2026-11-09", True)):
+                with self.subTest(kind=kind, added=added):
+                    self.dated(text)
+                    self.lesson("the-lesson", applies="scripts/a.py", added=added)
+                    self.triage(self.DATED, f"{label} finding 1: lesson:the-lesson\n")
+                    expected = [("the-lesson", self.DATED, label, 1, "2026-11-10")] if flagged else []
+                    self.assertEqual(lessons.report(self.root)["failing"], expected)
+                    self.assertEqual(self.report("--check")[0], 1 if flagged else 0)
+
+    def test_a_pair_and_a_recurrence_under_the_ceiling_fail_the_check_until_each_is_resolved(self):
+        self.dated()
+        same = "A check that cannot read its input must fail and name the input, never pass."
+        self.lesson("first", applies="scripts/a.py", topics="tooling", body=same, added="2026-11-01")
+        self.lesson("second", applies="scripts/a.py", topics="tooling", body=same, added="2026-11-01")
+        self.lesson("came-back", applies="scripts/lib/b.py", body=self.words(5), added="2026-11-10")
+        self.triage(self.DATED, "completion finding 1: lesson:came-back\n")
+        code, out, _ = self.report("--check")
+        self.assertEqual(code, 1)
+        self.assertNotIn("Over the ceiling", out)  # three lessons: far under it
+        self.assertIn("  scripts: first + second (topic tooling)", out)
+        self.assertIn(f"  came-back: {self.DATED} completion finding 1, run 2026-11-11", out)
+        self.assertEqual(self.reassign("second", "--to", "lesson:first", "--delete")[0], 0)  # the pair: merged
+        code, out, _ = self.report("--check")
+        self.assertEqual(code, 1)  # the recurrence still stands
+        self.assertNotIn("Could be merged", out)
+        self.assertIn("came-back", out.split("Still failed", 1)[1])
+        self.lesson("came-back", applies="scripts/lib/b.py", body="Rewritten to say what to do.", added="2026-11-10",
+                    revised="2026-11-12")  # the recurrence: rewritten
+        code, out, err = self.report("--check")
+        self.assertEqual((code, err), (0, ""))
+        self.assertNotIn("Still failed", out)
+
+    def test_the_report_refuses_each_kind_of_broken_input(self):
+        good = lambda: self.lesson("good", applies="scripts/a.py")
+        triage_file = lessons.triage_path(self.root, RECORD2)
+
+        def unreadable_lesson():
+            (self.folder / "broken.md").write_bytes(b"\xff\xfe not utf-8 \xff")
+
+        def structurally_broken_lesson():
+            (self.folder / "broken.md").write_text("---\nid: broken\n---\nb\n", encoding="utf-8")
+
+        def cited_record_missing():
+            self.write(name="cites", id="cites", applies="*", source="docs/reviews/00-workspace/gone.md#round-1/finding-1")
+
+        def bad_triage_line():
+            self.triage(RECORD2, "round 1 finding 99: lesson:good\n")
+
+        def triage_names_no_lesson():
+            self.triage(RECORD2, "round 1 finding 1: lesson:no-such-lesson\n")
+
+        def triage_without_record():
+            self.triage("docs/reviews/00-workspace/D99-T99-s9.md", "round 1 finding 1: one-off, orphaned\n")
+
+        def unreadable_triage():
+            triage_file.parent.mkdir(parents=True, exist_ok=True)
+            triage_file.write_bytes(b"\xff\xfe not utf-8 \xff")
+        cases = [(unreadable_lesson, "broken.md: cannot be read"),
+                 (structurally_broken_lesson, "broken.md: missing key"),
+                 (cited_record_missing, "gone.md is not a review record in the repository"),
+                 (bad_triage_line, "has no round 1 finding 99"),
+                 (triage_names_no_lesson, "lesson:no-such-lesson names no lesson file"),
+                 (triage_without_record, "its review record docs/reviews/00-workspace/D99-T99-s9.md does not exist"),
+                 (unreadable_triage, "D99-T02-s1.md: cannot be read")]
+        for make, fragment in cases:
+            with self.subTest(fragment):
+                for old in self.folder.glob("*.md"):
+                    if old.name != "README.md":
+                        old.unlink()
+                shutil.rmtree(self.folder / "triage", ignore_errors=True)
+                good()
+                self.assertEqual(self.report("--check")[0], 0)
+                make()
+                code, out, err = self.report("--check")
+                self.assertEqual((code, out), (1, ""), err)
+                self.assertIn(fragment, err)
+                self.assertIn("so no report is given", err)
+
     def test_merging_two_lessons_and_dropping_a_third_walked_through(self):
         self.lesson("keeper", applies="scripts/a.py", body="Check ownership in the step that acts.")
         self.lesson("double", applies="scripts/a.py", body="Check ownership in the step that acts, again.")
