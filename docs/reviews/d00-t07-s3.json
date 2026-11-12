@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T07 \u00a73",
+  "title": "Digest Delivery Survives a Failed Send",
+  "implementation_sha": "e1e58c0b50bb2bead7353f82b7d796431f94c007",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_owner_digest.py\" -> Ran 85 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_automations.py\" -> Ran 63 tests, OK",
+    "bosun run -- python scripts/run-tests.py -> Ran 1500 tests in 37 files, 2 skipped, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+    "verdict": "reconciled",
+    "candidate": "e1e58c0b50bb2bead7353f82b7d796431f94c007",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+    "candidate": "55f84c85256b4cd598d2bdae7e72e5347d7dff5c",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "55f84c85256b4cd598d2bdae7e72e5347d7dff5c",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

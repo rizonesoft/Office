@@ -69,7 +69,7 @@ Sections: 59 | Checklist items: 432
 | [ ]    | D00 T05 §8  | Lesson Upkeep at Scale                                | none                   | 7     |
 | [x]    | D00 T07 §1  | Digest Tells a Live Run From an Abandoned Guard       | none                   | 6     |
 | [x]    | D00 T07 §2  | Digest Keeps a Long Progress List                     | none                   | 5     |
-| [ ]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 10    |
+| [x]    | D00 T07 §3  | Digest Delivery Survives a Failed Send                | none                   | 10    |
 | [ ]    | D00 T07 §4  | Scheduled Tasks Start on a Monday Morning             | windows-host           | 5     |
 
 ### Phase 1: Brand, icons and GitHub graphics
@@ -385,6 +385,6 @@ These TODO files do not exist yet, so their sections and checklist items are not
 | `todo/14-release/TODO-03-signing-and-msix.md`     | D03 T01 §27 | [ ]    |
 | `todo/14-release/TODO-04-one-point-zero.md`       | D03 T01 §27 | [ ]    |
 
-Progress: 79/160 verified sections, 20 ready to run now, 84 TODO files still to author (not counted here).
+Progress: 80/160 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 557/1074 items completed (includes Commit items).
+Checklist: 558/1074 items completed (includes Commit items).

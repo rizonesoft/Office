@@ -30,7 +30,7 @@ title: "TODO-07 -- Owner Digest Follow-ups"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | Digest tells a live run from an abandoned guard | T03 §35 | [x] |
 | 2 | §2 | Digest keeps a long progress list | T03 §35 | [x] |
-| 3 | §3 | Digest delivery survives a failed send | T03 §35 | [ ] |
+| 3 | §3 | Digest delivery survives a failed send | T03 §35 | [x] |
 | 4 | §4 | Scheduled tasks start on a Monday morning | -- | [ ] |
 
 ## 1. Digest Tells a Live Run From an Abandoned Guard
@@ -107,9 +107,12 @@ Filed 2026-11-11 from the completion review of T03 §35 (round 2, finding 3, P2)
 - [x] Let one digest run at a time: the weekly run and `--retry` take one lock, `build/automations/owner-digest.lock`, before reading the state, and a run that finds it held exits 0 sending nothing; the state is read again under the lock before any send. Done when: a test starting a weekly run and a retry together shows exactly one send. **Corrected 2026-11-12:** added after the plan review (gap 4, P1).
 - [x] Fix the period exactly: with no delivery recorded it starts seven days before the first attempt, and that start is kept through every failed or unsure attempt until one is delivered; after a delivery the next period starts on the delivered period's last day (inclusive, since a receipt holds only its date: a section can show twice, never not at all); an unsure attempt still being settled keeps its period, so the next digest starts after it only once it is settled delivered. **Corrected again 2026-11-12:** holding every new digest back until an unsure one settles would cost the owner the weekly email whenever SMTP2GO's log cannot be read (D00 T03 §53's tests expect the next digest to go out), so the weekly run sends while an attempt is unsettled: the unsettled attempt joins `open` and is settled on its own, the new digest starts on its period's last day (so that period is not sent again), and an open attempt the log later shows not sent sets `missed_from` to its start, which the next digest reaches back to. A missing state file is a first run; a corrupt or unreadable one is refused with exit 2 and sends nothing. Done when: tests across separate runs reading the stored state cover the first run, two failed first attempts, a delivery then the next week, a same-day stamp, an unsure period, and a missing, corrupt and unreadable state file. **Corrected 2026-11-12:** added after the plan review (gap 5, P2).
 - [x] Prove the retry limit by behaviour: a fifth attempt on one local day (the PC's date; the weekly run's attempt counts) sends nothing, the count survives a restart (it is in the state file), the next day starts at zero, `--retry` with nothing failed changes nothing and sends nothing, and the `tasks.json` entry is the logon trigger after 5 minutes repeating every 360 minutes. Done when: those tests pass and `run.py`'s task loader accepts the entry. **Corrected 2026-11-12:** added after the plan review (gap 6, P2).
-- [ ] Commit: `automations: a failed digest is sent again`
+- [x] Commit: `automations: a failed digest is sent again`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_owner_digest.py"` and `-p "test_automations.py"` pass with the delivery tests among them.
+
+> **Verified:** 2026-11-12 | §3 | e1e58c0b50bb2bead7353f82b7d796431f94c007
+> **Review:** `docs/reviews/d00-t07-s3.json`
 
 ## 4. Scheduled Tasks Start on a Monday Morning
 
