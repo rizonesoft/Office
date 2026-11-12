@@ -181,7 +181,16 @@ if ($null -ne $env:OFFICE_FAKE_BIN_DIRS) {
 }
 Set-Content -LiteralPath (Join-Path $root 'session-path.txt') -Value $env:PATH
 Set-Content -LiteralPath (Join-Path $root 'session-args.txt') -Value ($args | Select-Object -SkipLast 1)
-exit 0
+# A process the session leaves running, as a real one leaves servers and builds: the test reads its number and
+# then ends the launcher alone, the way a closed window does. It shares this console and opens no window.
+if ($env:OFFICE_FAKE_CHILD) {
+    $child = Start-Process -FilePath (Get-Process -Id $PID).Path -NoNewWindow -PassThru `
+        -ArgumentList '-NoLogo', '-NoProfile', '-Command', 'Start-Sleep -Seconds 300'
+    Set-Content -LiteralPath (Join-Path $root 'child-pid.txt') -Value $child.Id
+    Start-Sleep -Seconds 300
+}
+# OFFICE_FAKE_EXIT is how the session ended: 0 is a clean exit, anything else a crash or an error.
+exit ([int]($env:OFFICE_FAKE_EXIT ?? '0'))
 """
 
 # Stand-ins for the bootstrap and the host check, which log each call in order. The bootstrap's --bin-dirs prints
@@ -300,6 +309,51 @@ class LauncherRunTest(unittest.TestCase):
         launcher.communicate(timeout=120)
         args = (self.root / "session-args.txt").read_text(encoding="utf-8").split()
         self.assertEqual(args[:5], ["--model", "opus", "--effort", "medium", "--dangerously-skip-permissions"])
+
+    def test_a_crashed_session_is_not_started_again(self):
+        # Owner, 2026-11-12 (decision 43): only a clean exit is followed by the next session in the window.
+        self.env["OFFICE_FAKE_EXIT"] = "1"
+        launcher = self.launch("-RestartSeconds", "1")
+        output, _ = launcher.communicate(timeout=120)
+        self.assertEqual(len(self.calls()), 1, output)
+        self.assertIn("Stopped: the session ended with exit 1 (a crash or an error)", " ".join(output.split()))
+        self.assertNotIn("A new session starts", output)
+        self.assertTrue((self.root / "build" / "claude-campaign-guard.json").exists())  # the run was still open
+        self.assertFalse((self.root / "build" / "campaign-launcher.json").exists())
+
+    def test_a_dead_session_is_resumed_by_nothing(self):
+        # The session's process is ended from outside while the run is open: the launcher goes with it (the session
+        # runs inside it here), and nothing is left that could start another: no process, and no session starts
+        # in the time a restart would have taken.
+        self.env["OFFICE_FAKE_CHILD"] = "1"
+        launcher = self.launch("-RestartSeconds", "1")
+        self.wait_for(self.root / "child-pid.txt")
+        subprocess.run(["taskkill", "/F", "/PID", str(launcher.pid)], capture_output=True, creationflags=NO_WINDOW)
+        launcher.communicate(timeout=60)
+        time.sleep(8)
+        self.assertEqual(len(self.calls()), 1)
+
+    def test_closing_the_window_ends_everything_the_campaign_started(self):
+        # Decision 43: the launcher alone is ended (no /T), as when its window closes; the process the session
+        # left running must end with it, by the launcher's job object and not by anyone walking the tree.
+        self.env["OFFICE_FAKE_CHILD"] = "1"
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "child-pid.txt")
+        child = int((self.root / "child-pid.txt").read_text(encoding="utf-8").strip())
+        self.addCleanup(lambda: subprocess.run(["taskkill", "/T", "/F", "/PID", str(child)], capture_output=True,
+                                               creationflags=NO_WINDOW))
+        self.assertTrue(self.alive(child), "the stand-in's child must be running for this test to mean anything")
+        subprocess.run(["taskkill", "/F", "/PID", str(launcher.pid)], capture_output=True, creationflags=NO_WINDOW)
+        launcher.communicate(timeout=60)
+        deadline = time.monotonic() + 30
+        while self.alive(child) and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(self.alive(child), "a process the campaign started outlived the launcher")
+
+    def alive(self, pid):
+        listed = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True,
+                                text=True, creationflags=NO_WINDOW).stdout
+        return f'"{pid}"' in listed
 
     def test_a_stop_during_the_restart_wait_starts_no_new_session(self):
         launcher = self.launch("-RestartSeconds", "4")

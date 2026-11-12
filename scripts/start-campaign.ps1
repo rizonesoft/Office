@@ -18,10 +18,15 @@
   exists, it says whose it is and waits for Enter before the new session takes the run over, because two
   sessions must never write to one tree.
 
-  It heals a session that died (owner decision 21, docs/specs/2026-10-23-campaign-scope-design.md): when Claude
-  Code exits while the run guard is still held, it waits 30 seconds, repeats the host check and starts a new
-  session with the same goal, which takes the run over. A run that ended by its own rules holds no guard, so the
-  launcher stops; five sessions ending inside an hour stop it too, and closing the window stops everything.
+  A run starts only when the owner starts it (owner, 2026-11-12; decision 43 in
+  docs/specs/2026-10-23-campaign-scope-design.md, which replaces decision 21). Nothing outside this window starts
+  or resumes a session: no scheduled task and no watchdog. The only timer is the session's own heartbeat, which
+  lives inside the open session, nudges it when it goes idle and dies with it. Inside the window, when a session exits
+  cleanly (exit 0) while the run guard is still held, the launcher waits 30 seconds, repeats the host check and
+  starts the next session with the same goal. A session that crashed or ended with an error is not started again:
+  the launcher stops and says why. A run that ended by its own rules holds no guard, so the launcher stops; five
+  sessions ending inside an hour stop it too. Closing the window ends everything the campaign started: the
+  launcher holds a Windows job object that ends every process in it when the window's process goes.
 
   The desktop shortcuts start it, in a normal window. There is no Stop shortcut
   (owner, 2026-11-11): the operator stops the campaign by asking the session to stop cleanly, or with -Stop below.
@@ -179,6 +184,40 @@ if (-not $DryRun) {
         $which = if ($other) { " (process $($other.Id))" } else { '' }
         Write-Host "Not started: a campaign launcher is already running$which. Ask its session to stop, run this file with -Stop, or close its window." -ForegroundColor Red
         exit 3
+    }
+    # Closing the window ends everything the campaign started (owner, 2026-11-12; decision 43). This process joins
+    # a job object that Windows ends, with every process in it, when its last handle closes; this process holds the
+    # only handle, so however the window goes (closed, ended, a crash) the session and all it started go with it,
+    # including a child that left the console. Every process started from here on is born into the job.
+    if (-not ('Office.CampaignJob' -as [type])) {
+        Add-Type -Namespace Office -Name CampaignJob -MemberDefinition @'
+[DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr CreateJobObject(IntPtr attributes, string name);
+[DllImport("kernel32.dll", SetLastError = true)] static extern bool SetInformationJobObject(IntPtr job, int infoClass, IntPtr info, uint length);
+[DllImport("kernel32.dll", SetLastError = true)] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+[DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
+// Returns the job's handle, which the caller keeps for the life of the process, or zero with the Win32 error.
+public static IntPtr Join(out int error) {
+    error = 0;
+    IntPtr job = CreateJobObject(IntPtr.Zero, null);
+    if (job == IntPtr.Zero) { error = Marshal.GetLastWin32Error(); return IntPtr.Zero; }
+    int size = IntPtr.Size == 8 ? 144 : 112;          // JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+    IntPtr info = Marshal.AllocHGlobal(size);
+    try {
+        for (int i = 0; i < size; i++) Marshal.WriteByte(info, i, 0);
+        Marshal.WriteInt32(info, 16, 0x2000);          // LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if (!SetInformationJobObject(job, 9, info, (uint)size) || !AssignProcessToJobObject(job, GetCurrentProcess())) {
+            error = Marshal.GetLastWin32Error(); return IntPtr.Zero;
+        }
+    } finally { Marshal.FreeHGlobal(info); }
+    return job;
+}
+'@
+    }
+    $jobError = 0
+    $script:campaignJob = [Office.CampaignJob]::Join([ref]$jobError)
+    if ($script:campaignJob -eq [IntPtr]::Zero) {
+        Write-Host "Not started: this window could not be made the owner of what the campaign starts (Windows error $jobError), so closing it would leave processes running." -ForegroundColor Red
+        Exit-Launcher 4
     }
     Remove-Item -LiteralPath $stopFile -Force -ErrorAction SilentlyContinue
     $self = Get-Process -Id $PID
@@ -342,10 +381,18 @@ while ($true) {
         # -i runs the opening prompt and keeps the conversation open, as Claude Code does with its prompt argument.
         agy --model $carbon --dangerously-skip-permissions -i $goal
     }
+    $sessionExit = $LASTEXITCODE
     if (Test-StopRequested) { break }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''
         Write-Host 'The campaign ended by its own rules: no run guard is held. Run this shortcut to start it again.'
+        break
+    }
+    # A run starts only when the owner starts it (owner, 2026-11-12; decision 43): the next session follows in this
+    # window only after a clean exit. A session that crashed or ended with an error is never started again here.
+    if ($sessionExit -ne 0) {
+        Write-Host ''
+        Write-Host "Stopped: the session ended with exit $sessionExit (a crash or an error) while the run was still open. Nothing starts it again: read what it last said, then run this shortcut to carry on." -ForegroundColor Red
         break
     }
     if (@($started | Where-Object { $_ -gt (Get-Date).AddHours(-1) }).Count -ge 5) {
@@ -354,7 +401,7 @@ while ($true) {
         break
     }
     Write-Host ''
-    Write-Host "The session ended with the run still open. A new session starts in $RestartSeconds seconds; close this window or press Ctrl+C to stop." -ForegroundColor Yellow
+    Write-Host "The session ended cleanly with the run still open. A new session starts in $RestartSeconds seconds; close this window or press Ctrl+C to stop." -ForegroundColor Yellow
     Start-Sleep -Seconds $RestartSeconds
     python scripts/check-campaign-host.py
     if ($LASTEXITCODE -ne 0) {
