@@ -14,6 +14,7 @@ import socket
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 import unittest
 from unittest import mock
@@ -66,7 +67,7 @@ class Server:
     def __init__(self):
         self.files, self.calls, self.mode = {}, [], {}
 
-    def __call__(self, url, timeout=None):
+    def __call__(self, url, timeout=None, deadline=None):
         self.calls.append(url)
         data, mode = self.files[url], self.mode.get(url)
         server = self
@@ -89,6 +90,9 @@ class Server:
             def read1(self, n=-1):
                 if mode == "stall":
                     raise socket.timeout("timed out")
+                if mode == "incomplete":
+                    import http.client
+                    raise http.client.IncompleteRead(b"ab", 6)
                 if mode == "trickle":  # what has arrived: 16 bytes after a short wait
                     time.sleep(0.05)
                     return super().read(16)
@@ -391,6 +395,129 @@ class FreshPlanGaps(Fixture):
         self.assertTrue((self.tools / "cmake-1.0").is_dir())  # the install went on
         self.assertEqual(self.boot("--only", "cmake")[0], 0)  # the fault removed, the next run cleans it
         self.assertFalse(held_folder.exists())
+
+
+class Trickler:
+    """A local HTTP server (127.0.0.1) whose paths misbehave on purpose; every loop it runs is bounded."""
+
+    BODY = b"payload!"
+
+    def __init__(self):
+        import socketserver
+        outer = self
+
+        class Handler(socketserver.BaseRequestHandler):
+            def handle(self):
+                request = b""
+                while b"\r\n\r\n" not in request and len(request) < 65536:
+                    piece = self.request.recv(4096)
+                    if not piece:
+                        return
+                    request += piece
+                path = request.split(b" ")[1].decode()
+                send = self.request.sendall
+                try:
+                    if path == "/header":  # a header line that never ends, one byte at a time (at most 20 s)
+                        send(b"HTTP/1.1 200 OK\r\nX-Slow: ")
+                        for _ in range(100):
+                            send(b"x")
+                            time.sleep(0.2)
+                    elif path == "/chunk":  # a chunk-size line that never ends (at most 20 s)
+                        send(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n")
+                        for _ in range(100):
+                            send(b"0")
+                            time.sleep(0.2)
+                    elif path == "/cut":  # a chunk promised as 8 bytes, 2 sent, then the connection ends
+                        send(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n8\r\nab")
+                    elif path == "/moved":
+                        send(b"HTTP/1.1 302 Found\r\nLocation: /file\r\nContent-Length: 0\r\n\r\n")
+                    elif path == "/file":
+                        send(b"HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n" % len(outer.BODY) + outer.BODY)
+                except OSError:
+                    pass  # the client shut the connection: the point of the test
+
+        self.server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), Handler)
+        self.server.daemon_threads = True
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+class SecondCycleRound(unittest.TestCase):
+    """D00 T04 §1, the round of the second cycle: the deadline bounds every read, a cut download fails one tool, and
+    a held staging folder fails one tool, never the run."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.web = Trickler()
+        self.addCleanup(self.web.close)
+
+    def opener(self, url, timeout=None, deadline=None):
+        return boot.Bounded(url, 5, deadline, scheme_ok=("http",))
+
+    def fetch(self, path, seconds, data=Trickler.BODY):
+        url = self.web.base + path
+        one = entry(url, data, "zip", ["x"], [])
+        return boot.fetch("t", one, self.tmp, self.opener, seconds)
+
+    def test_a_trickled_header_or_chunk_line_is_cut_at_the_deadline(self):
+        for path in ("/header", "/chunk"):
+            with self.subTest(path):
+                started = time.monotonic()
+                with self.assertRaises(boot.Failed) as caught:
+                    self.fetch(path, 1.0)
+                self.assertLess(time.monotonic() - started, 4)
+                self.assertIn("deadline", str(caught.exception))
+                self.assertEqual(list(self.tmp.glob("download-*")), [])
+
+    def test_a_cut_chunked_download_fails_cleanly(self):
+        with self.assertRaises(boot.Failed) as caught:
+            self.fetch("/cut", 30)
+        self.assertIn("IncompleteRead", str(caught.exception))
+        self.assertEqual(list(self.tmp.glob("download-*")), [])
+
+    def test_a_redirect_is_followed(self):
+        path = self.fetch("/moved", 30)
+        self.assertEqual(path.read_bytes(), Trickler.BODY)
+        path.unlink()
+
+    def test_the_default_opener_refuses_plain_http(self):
+        with self.assertRaises(OSError):
+            boot.bounded_open(self.web.base + "/file", deadline=time.monotonic() + 5)
+
+
+class OneToolFails(Fixture):
+    """A cut download or a held staging folder fails that tool; the others still install."""
+
+    def test_an_incomplete_read_fails_one_tool_and_the_rest_install(self):
+        url = self.archives["cmake"][0]
+        self.server.mode = {url: "incomplete"}
+        code, out = self.boot()
+        self.assertEqual(code, 1)
+        self.assertIn("cmake: the download failed: IncompleteRead", out)
+        self.assertTrue((self.tools / "llvm-1.0").is_dir())
+        self.assertFalse((self.tools / "cmake-1.0").exists())
+
+    def test_a_held_staging_folder_fails_one_tool_and_the_rest_install(self):
+        self.tools.mkdir()
+        (self.tools / "cmake-1.0.partial").mkdir()
+        real = shutil.rmtree
+
+        def held(path, *a, **kw):
+            if Path(path).name == "cmake-1.0.partial":
+                raise PermissionError(32, "being used by another process")
+            return real(path, *a, **kw)
+        with mock.patch.object(boot.shutil, "rmtree", held):
+            code, out = self.boot()
+        self.assertEqual(code, 1)
+        self.assertIn("cmake: an earlier staging folder cannot be removed", out)
+        self.assertTrue((self.tools / "llvm-1.0").is_dir())
+        self.assertEqual(self.boot()[0], 0)
 
 
 class Refusals(Fixture):

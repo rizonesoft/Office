@@ -22,17 +22,20 @@ missing or damaged), 2 when the lock file or an argument is refused.
 """
 import argparse
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path, PurePosixPath
 import secrets
 import shutil
+import socket
 import stat
 import sys
 import tarfile
 import tempfile
+import threading
 import time
-import urllib.request
+import urllib.parse
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,19 +104,109 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+REDIRECTS = 5
+
+
+class Expired(OSError):
+    """The overall deadline passed while the connection was still being read."""
+
+
+class Bounded:
+    """One download's connection, shut by a watchdog at the deadline whatever is being read: headers, a chunk-size
+    line or the body (round 2 of the second cycle: a server trickling inside one of those would otherwise hold the
+    bootstrap past its deadline, since the socket timeout counts only silence)."""
+
+    def __init__(self, url, timeout, deadline, scheme_ok=("https",)):
+        self.expired = False
+        self.connection = None
+        self.response = None
+        self.lock = threading.Lock()
+        left = max(0.0, deadline - time.monotonic())
+        self.timer = threading.Timer(left, self.expire)
+        self.timer.daemon = True
+        self.timer.start()
+        try:
+            for _ in range(REDIRECTS + 1):
+                parts = urllib.parse.urlsplit(url)
+                if parts.scheme not in scheme_ok:
+                    raise OSError(f"refusing a {parts.scheme or 'schemeless'} URL: {url}")
+                kind = http.client.HTTPSConnection if parts.scheme == "https" else http.client.HTTPConnection
+                with self.lock:
+                    if self.expired:
+                        raise Expired("the deadline passed")
+                    self.connection = kind(parts.hostname, parts.port, timeout=timeout)
+                path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+                self.connection.request("GET", path, headers={"User-Agent": "office-bootstrap-tools"})
+                self.response = self.connection.getresponse()
+                if self.response.status in (301, 302, 303, 307, 308) and self.response.getheader("Location"):
+                    url = urllib.parse.urljoin(url, self.response.getheader("Location"))
+                    self.response.close()
+                    self.connection.close()
+                    continue
+                if self.response.status != 200:
+                    raise OSError(f"HTTP {self.response.status} {self.response.reason}")
+                return
+            raise OSError(f"more than {REDIRECTS} redirects")
+        except BaseException as error:
+            self.close()
+            if self.expired:
+                raise Expired("the deadline passed") from None
+            raise error
+
+    def expire(self):
+        with self.lock:
+            self.expired = True
+            connection = self.connection
+        if connection is not None and connection.sock is not None:
+            try:
+                connection.sock.shutdown(socket.SHUT_RDWR)  # wakes a read blocked in any phase
+            except OSError:
+                pass  # already closed
+            connection.close()
+
+    def read1(self, n):
+        try:
+            return self.response.read1(n)
+        except (OSError, http.client.HTTPException):
+            if self.expired:
+                raise Expired("the deadline passed") from None
+            raise
+
+    def close(self):
+        self.timer.cancel()
+        if self.response is not None:
+            self.response.close()
+        if self.connection is not None:
+            self.connection.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+        return False
+
+
+def bounded_open(url, timeout=READ_SECONDS, deadline=None):
+    """The default opener: an https GET bounded by the socket timeout and by `deadline` (a time.monotonic())."""
+    return Bounded(url, timeout, deadline if deadline is not None else time.monotonic() + 3600)
+
+
 def fetch(name, entry, folder, opener, deadline_seconds):
     """Download `entry` into a temporary file in `folder`, bounded in bytes and time, and verify it; the file's path.
     Any failure removes the temporary file and raises Failed."""
     fd, tmp = tempfile.mkstemp(prefix=f"download-{name}-", suffix=".tmp", dir=folder)
     started = time.monotonic()
+    deadline = started + deadline_seconds
     digest, got = hashlib.sha256(), 0
+    late = f"{name}: the download passed its deadline of {deadline_seconds:.0f} s"
     try:
         with os.fdopen(fd, "wb") as out:
             try:
-                with opener(entry["url"], timeout=READ_SECONDS) as response:
+                with opener(entry["url"], timeout=READ_SECONDS, deadline=deadline) as response:
                     while True:
-                        if time.monotonic() - started > deadline_seconds:
-                            raise Failed(f"{name}: the download passed its deadline of {deadline_seconds:.0f} s")
+                        if time.monotonic() > deadline:
+                            raise Failed(late)
                         # read1 returns what has arrived (at most CHUNK) instead of waiting for a full CHUNK, so a
                         # server sending a little at a time cannot hold one read past the deadline (round 1).
                         block = response.read1(CHUNK)
@@ -124,8 +217,10 @@ def fetch(name, entry, folder, opener, deadline_seconds):
                             raise Failed(f"{name}: more than the pinned {entry['size']} bytes arrived")
                         digest.update(block)
                         out.write(block)
-            except (OSError, ValueError) as error:  # a socket timeout is an OSError
-                raise Failed(f"{name}: the download failed: {error}") from None
+            except Expired:
+                raise Failed(late) from None
+            except (OSError, ValueError, http.client.HTTPException) as error:  # a timeout, a cut connection
+                raise Failed(f"{name}: the download failed: {type(error).__name__}: {error}") from None
         if got != entry["size"]:
             raise Failed(f"{name}: {got} of the pinned {entry['size']} bytes arrived")
         if digest.hexdigest() != entry["sha256"]:
@@ -134,7 +229,6 @@ def fetch(name, entry, folder, opener, deadline_seconds):
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
-
 
 def kept(member, keep):
     """The `keep` path or prefix that keeps an archive member (the exact path, or a folder above it), or None."""
@@ -266,7 +360,11 @@ def install(name, version, entry, tools, opener, deadline_seconds):
         return False
     staging = tools / f"{name}-{version}.partial"
     if staging.exists():
-        shutil.rmtree(staging)
+        try:
+            shutil.rmtree(staging)
+        except OSError as error:  # held by another process: this tool fails, the others go on
+            raise Failed(f"{name}: an earlier staging folder cannot be removed ({error}); close what holds it and "
+                         f"run the bootstrap again") from None
     archive = fetch(name, entry, tools, opener, deadline_seconds)
     step = "unpacking"
     try:
@@ -330,7 +428,7 @@ def status(lock, tools, arch):
     return result
 
 
-def main(argv=None, opener=urllib.request.urlopen, lock_path=LOCK, tools=TOOLS, arch=None):
+def main(argv=None, opener=bounded_open, lock_path=LOCK, tools=TOOLS, arch=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--check", action="store_true", help="download nothing; exit 1 unless every tool is installed")
     parser.add_argument("--only", action="append", metavar="NAME", help="install only this tool (repeatable)")
