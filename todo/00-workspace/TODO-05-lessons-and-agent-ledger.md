@@ -109,6 +109,8 @@ The files are the truth; the index is a cache that makes them findable. A query 
 
 ## 3. First Lessons From the Review Records
 
+> **Started:** 2026-11-12T12:18:10Z
+
 The store starts with what the reviews already taught. A script lists the findings; the main loop, and nobody else, decides which of them are lessons, because that is judgment about what will recur.
 
 **Phase:** 0
@@ -121,7 +123,7 @@ The store starts with what the reviews already taught. A script lists the findin
 2. Triage them and write the lessons. Done when: every listed finding has a disposition and `python scripts/lessons.py check` exits 0.
 
 - [ ] Add `candidates` to `scripts/lessons.py`: for the review records given (or all under `docs/reviews/`), print each finding tagged `P1` or `P2` with its record, round, `file:line` and first sentence, and with `--untriaged` only those with no line in the record's triage file: the triage of `docs/reviews/<path>.md` is `docs/lessons/triage/<path>.md`, one file per review record, so no file grows with the project. Done when: a test over a fixture record with two tagged findings and one `P3` prints the two.
-- [ ] Triage the findings of the ten sections with the most review rounds (`python scripts/todo-graph.py query rounds`) and of `docs/reviews/orchestration-2026-11-10.md` in their triage files under `docs/lessons/triage/`: one line per finding with its round and number and one disposition, `lesson:<id>` (it can recur and no check stops it), `enforced:<check or test>` (a check now stops it) or `one-off` with a reason. Done when: `python scripts/lessons.py candidates --untriaged <those records>` prints nothing. Cheaper substitute: writing lessons from memory of the reviews, which keeps the vivid findings and loses the frequent ones.
+- [ ] Triage the findings of the ten sections with the most review rounds (`python scripts/todo-graph.py query rounds`) and of `docs/reviews/orchestration-2026-11-10.md` in their triage files under `docs/lessons/triage/`: one line per finding with its round and number and one disposition, `lesson:<id>` (it can recur and no check stops it), `enforced:<check or test>` (a check now stops it) or `one-off` with a reason. **Corrected 2026-11-12:** the line's form is the one §2's evidence count reads, `round N finding K: <disposition> [reason]` (the word after the first colon is the disposition), and a lesson written from a finding cites it as §1 requires: `source: <record>#round-N/finding-K` with `fix` naming the commit that fixed it. Done when: `python scripts/lessons.py candidates --untriaged <those records>` prints nothing. Cheaper substitute: writing lessons from memory of the reviews, which keeps the vivid findings and loses the frequent ones.
 - [ ] Write one lesson file for each `lesson:<id>` in the triage, several findings of one kind sharing one lesson, each citing the record and round of its clearest finding. Done when: every `lesson:<id>` names a file in `docs/lessons/` and `python scripts/lessons.py check` exits 0.
 - [ ] Make `python scripts/lessons.py check` refuse a `lesson:<id>` in any file under `docs/lessons/triage/` that names no lesson file, and a triage file whose review record does not exist. Done when: a test with such a line exits 1 naming it.
 - [ ] Record in the commit body how many findings were triaged and how many became lessons, were already enforced, or were one-off. Done when: the three counts add up to the number `candidates` printed.
