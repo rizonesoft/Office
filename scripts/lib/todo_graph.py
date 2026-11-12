@@ -1217,6 +1217,17 @@ def graph(root=ROOT):
     # After the cycle check: author_items walks the plan order, which needs an acyclic, resolved graph.
     _author_items_ok(root, sections)
     _plan_tables_ok(root, sections)
+    for ref, row in sections.items():
+        # A section parked until another is stamped may not be something that other one needs: neither could move.
+        waits_on = parked_wait(row)
+        if waits_on in sections:
+            stack, seen = list(sections[waits_on].depends), set()
+            while stack:
+                current = stack.pop()
+                require(current != ref, f"a Parked line waits on a section that depends on this one ({waits_on}): {ref}")
+                if current not in seen:
+                    seen.add(current)
+                    stack.extend(sections[current].depends)
     return sections
 
 

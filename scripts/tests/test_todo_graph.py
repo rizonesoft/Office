@@ -981,6 +981,13 @@ class Parked(Tree):
             self.assertIn(fragment, str(ctx.exception), line)
             self.assertIn("D00 T01 §1", str(ctx.exception), line)
 
+    def test_a_wait_on_a_section_that_depends_on_the_parked_one_refuses(self):
+        line = "> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §3: a decision"
+        self.park(line, rows=((1, "A", 0, "none", "--"), (2, "B", 0, "none", "§1"), (3, "C", 0, "none", "§2")))
+        self.refuses("a Parked line waits on a section that depends on this one (D00 T01 §3): D00 T01 §1")
+        self.park(line, rows=((1, "A", 0, "none", "--"), (2, "B", 0, "none", "--"), (3, "C", 0, "none", "§2")))
+        self.assertEqual(tg.parked_wait(tg.graph(self.root)["D00 T01 §1"]), "D00 T01 §3")
+
     def test_a_line_on_work_that_was_never_started_refuses(self):
         self.park("> **Parked:** 2026-11-12T01:00:00Z until D00 T01 §2: nothing was started", started=False)
         self.refuses("a Parked line needs a Started line (only started work is parked): D00 T01 §1")

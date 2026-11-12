@@ -1819,6 +1819,15 @@ class ThreePassStamp(Stamp):
                         encoding="utf-8")
         ticked = self.commit("ticked, with a dated note")
         self.assertEqual(tg.section_contract(self.root, ticked, "D00 T01 §1"), before)
+        # Parking a started section and resuming it are not changes to what it promises (D00 T03 §59).
+        started = text.replace("## 1. A\n\n", "## 1. A\n\n> **Started:** 2026-11-12T00:00:00Z\n\n", 1)
+        self.assertIn("> **Started:**", started)
+        todo.write_text(started.replace(
+            "> **Started:** 2026-11-12T00:00:00Z\n",
+            "> **Started:** 2026-11-12T00:00:00Z\n> **Parked:** 2026-11-12T01:00:00Z until 2099-01-01T00:00:00Z: an event\n", 1),
+            encoding="utf-8")
+        parked = self.commit("parked")
+        self.assertEqual(tg.section_contract(self.root, parked, "D00 T01 §1"), before)
         todo.write_text(text.replace("- [x] Work.", "- [x] Other work.", 1), encoding="utf-8")
         changed = self.commit("another promise")
         self.assertNotEqual(tg.section_contract(self.root, changed, "D00 T01 §1"), before)
