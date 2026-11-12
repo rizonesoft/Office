@@ -8,7 +8,7 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 63 | Checklist items: 481
+Sections: 63 | Checklist items: 482
 
 #### Workspace and tooling
 
@@ -81,11 +81,11 @@ Sections: 62 | Checklist items: 474 | Verified: 58
 
 #### Architecture and tech stack
 
-Sections: 1 | Checklist items: 7 | Verified: 0
+Sections: 1 | Checklist items: 8 | Verified: 0
 
 | Status | Reference   | Deliverable             | Needs | Items |
 | ------ | ----------- | ----------------------- | ----- | ----- |
-| [ ]    | D03 T01 §30 | Per-App Authoring Order | none  | 7     |
+| [ ]    | D03 T01 §30 | Per-App Authoring Order | none  | 8     |
 
 ### Phase 1: Brand, icons and GitHub graphics
 
@@ -273,4 +273,4 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 
 Progress: 86/164 verified sections, 19 ready to run now, 84 TODO files still to author (not counted here).
 
-Checklist: 627/1123 items completed (includes Commit items).
+Checklist: 627/1124 items completed (includes Commit items).
