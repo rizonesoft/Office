@@ -390,6 +390,38 @@ class IndexBuild(Indexed):
         self.assertEqual(self.db().read_bytes(), before)
         self.assertEqual(self.leftovers(), [])
 
+    def test_a_failed_database_write_keeps_the_earlier_database_and_leaves_no_file(self):
+        # Completion review: the commit of the new database fails, as on a full disk, before any replace.
+        import sqlite3
+        self.six()
+        self.ids(text="Stage")
+        before = self.db().read_bytes()
+        self.lesson("about-git", applies="scripts/lib/b.py", topics="git", body="Changed, so a rebuild is due.")
+        real = sqlite3.connect
+
+        def full_disk(path, *args, **kwargs):
+            connection = real(path, *args, **kwargs)
+            if not str(path).endswith(".tmp"):
+                return connection
+
+            class Failing:
+                def __getattr__(self, name):
+                    return getattr(connection, name)
+
+                def commit(self):
+                    raise sqlite3.OperationalError("database or disk is full")
+            return Failing()
+        with mock.patch.object(lessons.sqlite3, "connect", side_effect=full_disk):
+            with self.assertRaises(lessons.IndexError_) as caught:
+                lessons.build_index(self.root)
+            code, out, err = self.cli("--text", "Changed")
+        self.assertIn("database or disk is full", str(caught.exception))
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("the lesson index could not be written (OperationalError: database or disk is full)", err)
+        self.assertEqual(self.db().read_bytes(), before)
+        self.assertEqual(self.leftovers(), [])
+        self.assertEqual(self.ids(text="Changed")[0], ["about-git"])  # the fault gone, the next query rebuilds
+
     def test_an_invalid_store_shows_nothing_and_keeps_the_index(self):
         self.six()
         self.ids(text="Stage")
