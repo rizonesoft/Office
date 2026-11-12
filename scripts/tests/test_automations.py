@@ -496,7 +496,7 @@ class InstallerWithFakeScheduler(unittest.TestCase):
             (Path(tmp) / "existing.json").write_text(json.dumps(existing), encoding="utf-8")
             log = Path(tmp) / "calls.log"
             env = {**os.environ, "FAKE_EXISTING": str(Path(tmp) / "existing.json"), "FAKE_LOG": str(log),
-                   "FAKE_SCRIPT": str(auto / "install.ps1")}
+                   "FAKE_SCRIPT": str(auto / "install.ps1"), "FAKE_SCHEDULER_LOG": getattr(self, "scheduler_log", "off")}
             result = subprocess.run(["pwsh", "-NoProfile", "-File", str(self.HARNESS), *args],
                                     capture_output=True, text=True, timeout=120, env=env)
             calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()] if log.exists() else []
@@ -518,6 +518,33 @@ class InstallerWithFakeScheduler(unittest.TestCase):
         self.assertEqual(registers[0]["logon"], "Interactive")
         self.assertEqual([c["name"] for c in calls if c["op"] == "unregister"], ["office-stale"])
 
+    def test_each_registered_task_restarts_three_times_ten_minutes_apart(self):
+        result, calls = self.run_installer([FIXTURE_TASK], [])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual([c["restart"] for c in calls if c["op"] == "register"], ["3 x 00:10:00"])
+
+    def test_the_scheduler_log_is_only_ever_touched_through_the_stand_in(self):
+        # Round 1 of D00 T07 §4: these tests ran the real wevtutil, which from an elevated window would have
+        # changed this PC's logging. Each state the installer can meet, by the calls it makes and what it says.
+        channel = "Microsoft-Windows-TaskScheduler/Operational"
+        cases = {"on": ([["gl", channel]], "operational log is on."),
+                 "off": ([["gl", channel], ["sl", channel, "/e:true"]], "was off and is now on."),
+                 "denied": ([["gl", channel], ["sl", channel, "/e:true"]],
+                            f"Turn it on once from an elevated window: wevtutil sl {channel} /e:true")}
+        for state, (expected, said) in cases.items():
+            with self.subTest(state):
+                self.scheduler_log = state
+                result, calls = self.run_installer([FIXTURE_TASK], [])
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual([c["args"] for c in calls if c["op"] == "wevtutil"], expected)
+                self.assertIn(said, " ".join(result.stdout.split()))
+
+    def test_the_proof_script_refuses_a_retry_count_it_cannot_prove(self):
+        done = subprocess.run(["pwsh", "-NoProfile", "-File", str(AUTO / "check-task-retry.ps1"), "-RestartCount", "1"],
+                              capture_output=True, text=True, timeout=120)
+        self.assertNotEqual(done.returncode, 0)
+        self.assertIn("RestartCount", done.stdout + done.stderr)
+        self.assertNotIn("registered", done.stdout)  # refused before any task was registered
     def test_a_daily_task_registers_one_daily_trigger(self):
         daily = {**FIXTURE_TASK, "name": "office-daily", "trigger": {"daily_at": "06:23"}}
         result, calls = self.run_installer([daily], [])

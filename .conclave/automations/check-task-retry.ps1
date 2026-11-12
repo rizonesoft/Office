@@ -19,7 +19,8 @@
   1 when one does not, with every launch printed as it is seen.
 #>
 [CmdletBinding()]
-param([ValidateRange(1, 5)][int]$RestartCount = 3)
+# At least two retries: pass 1 spends one seeing Task Scheduler retry at all, and needs another to recover on.
+param([ValidateRange(2, 5)][int]$RestartCount = 3)
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false

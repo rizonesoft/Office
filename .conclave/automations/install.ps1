@@ -94,7 +94,9 @@ foreach ($task in $existing) {
 # Task Scheduler's own log is what records a launch that never reached run.py; it is off by default and turning it
 # on needs an elevated window, so this says plainly which it is (D00 T07 §4).
 $schedulerLog = 'Microsoft-Windows-TaskScheduler/Operational'
-if ((wevtutil gl $schedulerLog 2>$null | Select-String -SimpleMatch 'enabled: true')) {
+if ($manifest.tasks.Count -eq 0) {
+  # No task is listed, so no launch needs a record: the log is left as it is.
+} elseif ((wevtutil gl $schedulerLog 2>$null | Select-String -SimpleMatch 'enabled: true')) {
   Write-Host "Task Scheduler's operational log is on."
 } else {
   wevtutil sl $schedulerLog /e:true 2>$null | Out-Null
