@@ -107,7 +107,7 @@ Sections: 17 | Checklist items: 90
 | [x]    | D01 T02 §5 | Document File-Type Icons                | none  | 7     |
 | [x]    | D01 T02 §6 | Icon Export Pipeline                    | none  | 8     |
 | [x]    | D01 T02 §7 | Distinctness Review and Owner Sign-Off  | none  | 6     |
-| [ ]    | D01 T02 §8 | Parallel Icon Rasterising               | none  | 8     |
+| [x]    | D01 T02 §8 | Parallel Icon Rasterising               | none  | 8     |
 | [x]    | D01 T03 §1 | README Hero Banner in Light and Dark    | none  | 4     |
 | [x]    | D01 T03 §2 | Social Preview Image                    | none  | 4     |
 | [x]    | D01 T03 §3 | App Lineup Strip in Light and Dark      | none  | 4     |
@@ -291,6 +291,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 88/166 verified sections, 18 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
+Progress: 89/166 verified sections, 17 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 650/1192 items completed (includes Commit items).
+Checklist: 651/1192 items completed (includes Commit items).
