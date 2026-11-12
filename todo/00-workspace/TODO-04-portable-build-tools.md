@@ -119,6 +119,8 @@ Every script that starts a build tool asks one function where it is, and that fu
 
 ## 3. Tool Bootstrap in CI
 
+> **Started:** 2026-11-12T04:56:55Z
+
 CI builds with the same pinned tools as this PC. A cache keyed on the lock file keeps a run from downloading them again, and the cache can never stand in for the check.
 
 **Phase:** 0
@@ -130,7 +132,7 @@ CI builds with the same pinned tools as this PC. A cache keyed on the lock file 
 1. Add the cache and the bootstrap to `.github/workflows/ci.yml`. Done when: a pushed run shows the bootstrap step and `--check` passing.
 2. Prove the cache is used. Done when: a second run on the same lock file restores the cache and the bootstrap step downloads nothing.
 
-- [ ] Add to the `gates` job of `.github/workflows/ci.yml` an `actions/cache` step for `.tools/` keyed on the runner's operating system and architecture and the hash of `tools.lock.json`, with the action pinned to a commit SHA like the workflow's other actions. Done when: the step is in the file and the key holds all three parts. Cheaper substitute: a key without the lock file's hash, which serves old tools after a pin moves.
+- [ ] Add to the `gates` job of `.github/workflows/ci.yml` an `actions/cache` step for `.tools/` keyed on the runner's operating system and architecture and the hash of `tools.lock.json`, with the action pinned like the workflow's other actions. Done when: the step is in the file and the key holds all three parts. **Corrected 2026-11-12:** the workflow's actions are pinned to their newest major tag (`actions/checkout@v7`), which Dependabot keeps current (`.github/dependabot.yml`), not to commit SHAs; the cache is `actions/cache@v6`, its newest release being v6.1.0 of 2026-06-26. Cheaper substitute: a key without the lock file's hash, which serves old tools after a pin moves.
 - [ ] Add a step that runs `python scripts/bootstrap-tools.py` and then `python scripts/bootstrap-tools.py --check` after the cache step. Done when: the pushed run shows both commands and exit 0. Cheaper substitute: skipping the bootstrap on a cache hit, which trusts a cache nobody verified.
 - [ ] Add a step that prints each tool's version through `python scripts/bootstrap-tools.py --where <program>` and the program's version flag. Done when: the run log shows every version in `tools.lock.json`.
 - [ ] Push and read the run with `python scripts/ci-status.py`. Done when: the run on the pushed HEAD is green and its log shows the bootstrap downloading each tool.
