@@ -2,6 +2,7 @@
 # Copyright 2026 Rizonesoft
 """The campaign launcher starts Claude Code on the latest Opus, by alias (owner, 2026-11-10)."""
 
+import ast
 import json
 import os
 import re
@@ -12,6 +13,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from no_window import NO_WINDOW
 
 LAUNCHER = Path(__file__).resolve().parents[1] / "start-campaign.ps1"
 
@@ -40,21 +42,47 @@ class StartCampaignModelTest(unittest.TestCase):
     def test_the_real_start_passes_the_goal(self):
         # The goal's wording only matters if the session receives it: the one line that starts Claude ends with it.
         starts = [line.strip() for line in self.text.splitlines() if line.strip().startswith("claude --")]
-        self.assertEqual(starts, ["claude --model $model --dangerously-skip-permissions @sessionArgs $goal"])
+        self.assertEqual(starts, ["claude --model $model --effort $effort --dangerously-skip-permissions @sessionArgs $goal"])
         self.assertEqual(len(re.findall(r"(?m)^\$goal = ", self.text)), 1)  # one goal, never reassigned
+        carbon = [line.strip() for line in self.text.splitlines() if line.strip().startswith("agy --")]
+        self.assertEqual(carbon, ["agy --model $carbon --dangerously-skip-permissions -i $goal"])  # the same goal
+
+    def test_claude_runs_at_medium_effort_and_carbon_at_medium(self):
+        # Owner, 2026-11-12: Opus (latest, by alias) at medium effort; Antigravity on Gemini 4 Carbon at medium.
+        self.assertRegex(self.text, r"(?m)^\$effort = 'medium'$")
+        self.assertRegex(self.text, r"(?m)^\$carbon = 'gemini-4-carbon-medium'$")
 
     def test_every_claude_start_passes_the_model(self):
         lines = [line.strip() for line in self.text.splitlines() if not line.lstrip().startswith("#")]
         starts = [line for line in lines if line.startswith("claude --")]
         printed = [line for line in lines if "'claude', '--model'" in line]
         self.assertEqual(len(starts) + len(printed), 2, starts + printed)  # the real start and the dry-run print
-        self.assertIn("claude --model $model --dangerously-skip-permissions", starts[0])
-        self.assertIn("'claude', '--model', $model, '--dangerously-skip-permissions'", printed[0])
+        self.assertIn("claude --model $model --effort $effort --dangerously-skip-permissions", starts[0])
+        self.assertIn("'claude', '--model', $model, '--effort', $effort, '--dangerously-skip-permissions'", printed[0])
         self.assertIn("$sessionArgs", printed[0])
 
     def test_no_pinned_model_version_in_code(self):
         code = [line for line in self.text.splitlines() if not line.lstrip().startswith("#")]
         self.assertFalse([line for line in code if re.search(r"claude-(opus|sonnet|haiku|fable)-\d", line)])
+
+
+class NoConsoleWindowTest(unittest.TestCase):
+    def test_every_process_this_file_starts_opens_no_console_window(self):
+        # Owner, 2026-11-12: these tests start pwsh and taskkill many times, and each start without the flag can
+        # open a console window over the owner's work. Every subprocess.run and subprocess.Popen call passes it.
+        text = Path(__file__).read_text(encoding="utf-8")
+        starts, bare = 0, []
+        for node in ast.walk(ast.parse(text)):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"
+                    and node.func.attr in ("run", "Popen", "call", "check_call", "check_output")):
+                starts += 1
+                flags = [ast.get_source_segment(text, k.value) for k in node.keywords if k.arg == "creationflags"]
+                if flags != ["NO_WINDOW"]:
+                    bare.append(node.lineno)
+        self.assertGreaterEqual(starts, 15)
+        self.assertEqual(bare, [], "these lines start a process that can open a console window")
+        self.assertEqual(NO_WINDOW, subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
 
 
 PWSH = shutil.which("pwsh")
@@ -77,21 +105,21 @@ class StopControlTest(unittest.TestCase):
     def stop_started(self):
         for process in self.started:
             if process.poll() is None:
-                subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True, creationflags=NO_WINDOW)
             process.wait(timeout=30)
 
     def stop(self, *extra):
         return subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
-                               "-Stop", *extra], capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL)
+                               "-Stop", *extra], capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
 
     def sleeper(self):
         process = subprocess.Popen([PWSH, "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 300"],
-                                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.started.append(process)
         started = subprocess.run(
             [PWSH, "-NoLogo", "-NoProfile", "-Command",
              f"(Get-Process -Id {process.pid}).StartTime.ToUniversalTime().ToString('o')"],
-            capture_output=True, text=True, timeout=60).stdout.strip()
+            capture_output=True, text=True, timeout=60, creationflags=NO_WINDOW).stdout.strip()
         self.assertTrue(started, "the sleeper's start time could not be read")
         return process, started
 
@@ -126,7 +154,11 @@ class StopControlTest(unittest.TestCase):
         # Owner, 2026-11-11: the Stop shortcut is gone (stopping is asked of the session), and the start
         # shortcut opens a normal window, not a maximised one (WindowStyle 1, never 3).
         text = LAUNCHER.read_text(encoding="utf-8")
-        self.assertIn("'Rizonesoft Office campaign.lnk'", text)
+        # Owner, 2026-11-12: one shortcut for each runner, and the earlier single one is removed.
+        self.assertIn("Name = 'Office Claude campaign'", text)
+        self.assertIn("Name = 'Office Carbon campaign'", text)
+        self.assertIn("-Runner $($s.Runner)", text)
+        self.assertRegex(text, r"\$old = Join-Path \$desktop 'Rizonesoft Office campaign\.lnk'\s+if \(Test-Path -LiteralPath \$old\) \{\s+Remove-Item -LiteralPath \$old")
         self.assertNotIn("Stop.lnk", text)
         self.assertIn("$shortcut.WindowStyle = 1", text)
         self.assertNotIn("WindowStyle = 3", text)
@@ -204,13 +236,13 @@ class LauncherRunTest(unittest.TestCase):
     def end_processes(self):
         for process in self.processes:
             if process.poll() is None:
-                subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True, creationflags=NO_WINDOW)
             process.communicate(timeout=30)
 
     def launch(self, *extra):
         process = subprocess.Popen(
             [PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"), *extra],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env)
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env, creationflags=NO_WINDOW)
         self.processes.append(process)
         return process
 
@@ -234,6 +266,40 @@ class LauncherRunTest(unittest.TestCase):
     def request_stop(self):
         (self.root / "build").mkdir(exist_ok=True)
         (self.root / "build" / "campaign-stop-request").write_text("now", encoding="utf-8")
+
+    def test_the_carbon_runner_starts_antigravity_with_the_goal_and_no_claude_token(self):
+        # Owner, 2026-11-12: a Gemini Carbon launcher. The stand-in is the same script under agy's name.
+        (self.bin / "agy.ps1").write_text(FAKE_CLAUDE, encoding="utf-8")
+        (self.root / ".secrets").mkdir()
+        (self.root / ".secrets" / "office.env").write_text(
+            "CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-" + "a" * 48 + "\n", encoding="utf-8")
+        launcher = self.launch("-Runner", "agy", "-RestartSeconds", "30")
+        self.wait_for(self.root / "session-args.txt")
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=120)
+        self.assertEqual(len(self.calls()), 1, output)
+        self.assertEqual((self.root / "session-args.txt").read_text(encoding="utf-8").split(),
+                         ["--model", "gemini-4-carbon-medium", "--dangerously-skip-permissions", "-i"])
+        self.assertTrue(self.calls()[0].startswith("--model gemini-4-carbon-medium"), self.calls())
+        self.assertFalse((self.root / "token-seen.txt").exists(), "Claude's token reached Antigravity")
+        self.assertIn("Lead model: gemini-4-carbon-medium in Google Antigravity", output)
+        self.assertNotIn("clangd", output)
+
+    def test_a_missing_carbon_cli_is_named_and_nothing_starts(self):
+        env = dict(self.env, PATH=os.pathsep.join(p for p in self.env["PATH"].split(os.pathsep)
+                                                  if not (Path(p) / "agy.exe").exists()))
+        self.env = env
+        output, _ = self.launch("-Runner", "agy").communicate(timeout=120)
+        self.assertIn("not on PATH: agy", output)
+        self.assertEqual(self.calls(), [])
+
+    def test_a_claude_start_passes_medium_effort(self):
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "session-args.txt")
+        self.request_stop()
+        launcher.communicate(timeout=120)
+        args = (self.root / "session-args.txt").read_text(encoding="utf-8").split()
+        self.assertEqual(args[:5], ["--model", "opus", "--effort", "medium", "--dangerously-skip-permissions"])
 
     def test_a_stop_during_the_restart_wait_starts_no_new_session(self):
         launcher = self.launch("-RestartSeconds", "4")
@@ -260,7 +326,7 @@ class LauncherRunTest(unittest.TestCase):
         self.wait_for(self.root / "build" / "campaign-launcher.json")  # recorded before the slow host check
         stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
                                "-Stop", "-Now"], capture_output=True, text=True, timeout=120, env=self.env,
-                              stdin=subprocess.DEVNULL)
+                              stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.assertIn("Stopped now", stop.stdout, stop.stderr)
         launcher.communicate(timeout=60)
         self.assertEqual(self.calls(), [])
@@ -313,7 +379,7 @@ class LauncherRunTest(unittest.TestCase):
         self.assertEqual(len(self.calls()), 1)
         stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
                                "-Stop", "-Now"], capture_output=True, text=True, timeout=120, env=self.env,
-                              stdin=subprocess.DEVNULL)
+                              stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.assertIn("Stopped now", stop.stdout, stop.stderr)
         first.communicate(timeout=60)
 
@@ -322,7 +388,7 @@ class LauncherRunTest(unittest.TestCase):
         first = subprocess.Popen(
             [PWSH, "-NoLogo", "-NoProfile", "-NoExit", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
              "-RestartSeconds", "60"],
-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env)
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env, creationflags=NO_WINDOW)
         self.processes.append(first)
         self.wait_for(self.root / "claude-calls.txt")
         self.request_stop()
@@ -352,7 +418,7 @@ class LauncherRunTest(unittest.TestCase):
             encoding="utf-8")
         first = subprocess.Popen(
             [PWSH, "-NoLogo", "-NoProfile", "-NoExit", "-File", str(self.root / "scripts" / "start-campaign.ps1")],
-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env)
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env, creationflags=NO_WINDOW)
         self.processes.append(first)
         self.wait_for(self.root / "host-check-ran.txt", seconds=120)
         self.assertTrue((self.root / "build" / "campaign-launcher.lock").exists())
@@ -399,7 +465,7 @@ class LauncherRunTest(unittest.TestCase):
         refuses.write_text("@exit /b 5\n", encoding="utf-8")
         stop = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
                                "-Stop", "-Now", "-TaskKillPath", str(refuses)], capture_output=True, text=True,
-                              timeout=120, env=self.env, stdin=subprocess.DEVNULL)
+                              timeout=120, env=self.env, stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.assertEqual(stop.returncode, 1, stop.stdout + stop.stderr)
         self.assertIn("NOT stopped", stop.stdout)
         self.assertNotIn("Stopped now", stop.stdout)
@@ -420,7 +486,7 @@ class LauncherRunTest(unittest.TestCase):
     def dry_run(self):
         done = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
                                "-DryRun"], capture_output=True, text=True, timeout=120, env=self.env,
-                              stdin=subprocess.DEVNULL)
+                              stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
         return done.stdout
 
@@ -434,8 +500,8 @@ class LauncherRunTest(unittest.TestCase):
             with self.subTest(model):
                 self.verdict(json.dumps({"arm": f"{model}-alone", "model": model}))
                 out = self.dry_run()
-                self.assertIn(f"Lead model: {model}, from .conclave/operating-mode.json", out)
-                self.assertIn(f"claude --model {model} --dangerously-skip-permissions", out)
+                self.assertIn(f"Lead model: {model} at medium effort, from .conclave/operating-mode.json", out)
+                self.assertIn(f"claude --model {model} --effort medium --dangerously-skip-permissions", out)
 
     def test_a_missing_or_unreadable_verdict_falls_back_to_opus(self):
         cases = {"missing": None, "not json": "{", "no model": "{}", "not an alias": '{"model": "opus; rm -rf x"}',
@@ -448,8 +514,8 @@ class LauncherRunTest(unittest.TestCase):
                 else:
                     self.verdict(text)
                 out = self.dry_run()
-                self.assertIn("Lead model: opus, from the fallback", out)
-                self.assertIn("claude --model opus --dangerously-skip-permissions", out)
+                self.assertIn("Lead model: opus at medium effort, from the fallback", out)
+                self.assertIn("claude --model opus --effort medium --dangerously-skip-permissions", out)
 
     def test_a_real_start_passes_the_stored_model(self):
         self.verdict(json.dumps({"arm": "fable-alone", "model": "fable"}))
@@ -462,7 +528,7 @@ class LauncherRunTest(unittest.TestCase):
         self.request_stop()
         done = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-File", str(self.root / "scripts" / "start-campaign.ps1"),
                                "-DryRun"], capture_output=True, text=True, timeout=120, env=self.env,
-                              stdin=subprocess.DEVNULL)
+                              stdin=subprocess.DEVNULL, creationflags=NO_WINDOW)
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
         self.assertTrue((self.root / "build" / "campaign-stop-request").exists())
         self.assertFalse((self.root / "importer-ran.txt").exists())
@@ -482,7 +548,7 @@ class LauncherRunTest(unittest.TestCase):
             folder.mkdir(parents=True)
         shutil.copyfile(system / "whoami.exe", pinned / "clangd.exe")
         shutil.copyfile(system / "hostname.exe", machine / "clangd.exe")
-        said = {name: subprocess.run([str(system / f"{name}.exe")], capture_output=True, text=True).stdout.strip()
+        said = {name: subprocess.run([str(system / f"{name}.exe")], capture_output=True, text=True, creationflags=NO_WINDOW).stdout.strip()
                 for name in ("whoami", "hostname")}
         self.env["PATH"] = str(self.bin) + os.pathsep + str(machine) + os.pathsep + self.env["PATH"]
         return pinned, machine, other, said
@@ -556,7 +622,7 @@ class LauncherRunTest(unittest.TestCase):
         process = subprocess.Popen(
             [PWSH, "-NoLogo", "-NoProfile", "-Command",
              f"$ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true; & '{script}' -RestartSeconds 30"],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env)
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=self.env, creationflags=NO_WINDOW)
         self.processes.append(process)
         self.wait_for(self.root / "clangd-ran.txt")
         self.request_stop()

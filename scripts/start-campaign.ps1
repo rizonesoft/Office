@@ -3,13 +3,16 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-  Starts the unattended process-plan campaign in Claude Code, with its goal set.
+  Starts the unattended process-plan campaign in Claude Code or Google Antigravity, with its goal set.
 .DESCRIPTION
-  The desktop shortcut "Rizonesoft Office campaign" runs this file. It changes to the repository, runs the same
-  host readiness check the campaign runs first (scripts/check-campaign-host.py, without the email), and then
-  starts an interactive Claude Code session on the latest Opus (the 'opus' model alias, never a pinned version)
-  that skips permission prompts and opens with a /goal: the plan
-  finished to 100 percent through the process-plan skill, or the campaign ended by its own park.
+  The desktop shortcuts "Office Claude campaign" (-Runner claude, the default) and "Office Carbon campaign"
+  (-Runner agy) run this file. It changes to the repository, runs the same host readiness check the campaign runs
+  first (scripts/check-campaign-host.py, without the email), and then starts an interactive session that skips
+  permission prompts and opens with a /goal: the plan finished to 100 percent through the process-plan skill, or
+  the campaign ended by its own park. Claude Code runs on the latest Opus (the 'opus' model alias, never a pinned
+  version) at medium effort, signed in with the one-year token; Antigravity runs on Gemini 4 Carbon at medium
+  with its own account, following .agents/rules/antigravity-runtime-and-safety.md. One launcher runs at a time,
+  whichever runner it starts, and a run left open by one runner is taken over by the other the same way.
 
   Starting it is the operator's word to start or resume the campaign. When a guard file from an earlier session
   exists, it says whose it is and waits for Enter before the new session takes the run over, because two
@@ -20,7 +23,7 @@
   session with the same goal, which takes the run over. A run that ended by its own rules holds no guard, so the
   launcher stops; five sessions ending inside an hour stop it too, and closing the window stops everything.
 
-  The desktop shortcut "Rizonesoft Office campaign" starts it, in a normal window. There is no Stop shortcut
+  The desktop shortcuts start it, in a normal window. There is no Stop shortcut
   (owner, 2026-11-11): the operator stops the campaign by asking the session to stop cleanly, or with -Stop below.
   -Stop writes a stop request (build/campaign-stop-request) that the campaign honours at its next section
   boundary, ending the run cleanly, and that keeps this launcher from starting another session; answering NOW to
@@ -29,12 +32,15 @@
 .EXAMPLE
   pwsh scripts/start-campaign.ps1
   pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
-  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh the desktop shortcut for this clone
+  pwsh scripts/start-campaign.ps1 -Runner agy        # the same campaign in Google Antigravity on Gemini 4 Carbon
+  pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh both desktop shortcuts for this clone
   pwsh scripts/start-campaign.ps1 -Stop              # ask the campaign to stop at its next section boundary
   pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
-param([switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30,
+param(# The campaign runner: Claude Code (`claude`) or Google Antigravity on Gemini 4 Carbon (`agy`).
+      [ValidateSet('claude', 'agy')][string]$Runner = 'claude',
+      [switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30,
       # The program that ends a process tree. Only the tests pass another one, to see a failed stop reported.
       [string]$TaskKillPath = (Join-Path $env:SystemRoot 'System32\taskkill.exe'))
 
@@ -47,17 +53,45 @@ Set-Location -LiteralPath $root
 
 if ($InstallShortcut) {
     # Every path comes from where this clone, PowerShell and the desktop are on this PC; none is written here.
-    $link = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Rizonesoft Office campaign.lnk'
-    $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
-    $shortcut.TargetPath = (Get-Process -Id $PID).Path
-    $shortcut.Arguments = "-NoLogo -NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    $shortcut.WorkingDirectory = $root
-    $shortcut.IconLocation = "$(Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'),0"
-    $shortcut.Description = 'Start the unattended Rizonesoft Office campaign in Claude Code'
-    # 1 is a normal window (3 would open it maximised); owner, 2026-11-11.
-    $shortcut.WindowStyle = 1
-    $shortcut.Save()
-    Write-Host "Shortcut written: $link"
+    # One shortcut for each runner (owner, 2026-11-12). Each carries the suite icon with its runner's badge in the
+    # corner, rendered for this PC by scripts/campaign-icon.py into the user's own application data folder. A
+    # runner's mark is its company's trademark and is not kept in this repository: when marks\<name>.svg exists in
+    # that folder it is drawn in the badge, and without it the badge carries the runner's colour alone.
+    $desktop = [Environment]::GetFolderPath('Desktop')
+    $local = Join-Path $env:LOCALAPPDATA 'RizonesoftOffice'
+    New-Item -ItemType Directory -Force -Path $local | Out-Null
+    $plain = Join-Path $root 'assets\icons\windows\rizonesoft-office.ico'
+    $shortcuts = @(
+        @{ Runner = 'claude'; Name = 'Office Claude campaign'; Icon = 'office-campaign-claude.ico'; Fill = '#D97757'; Mark = 'claude.svg'
+           Description = 'Start the unattended Rizonesoft Office campaign in Claude Code' },
+        @{ Runner = 'agy'; Name = 'Office Carbon campaign'; Icon = 'office-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini.svg'
+           Description = 'Start the unattended Rizonesoft Office campaign in Google Antigravity on Gemini 4 Carbon' }
+    )
+    foreach ($s in $shortcuts) {
+        $icon = Join-Path $local $s.Icon
+        python (Join-Path $PSScriptRoot 'campaign-icon.py') $icon $s.Fill (Join-Path $local "marks\$($s.Mark)")
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "The badged icon for '$($s.Name)' could not be rendered (python -m pip install -r scripts/requirements.txt, then this again); the shortcut carries the plain suite icon." -ForegroundColor Yellow
+            $icon = $plain
+        }
+        $link = Join-Path $desktop "$($s.Name).lnk"
+        $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
+        $shortcut.TargetPath = (Get-Process -Id $PID).Path
+        $shortcut.Arguments = "-NoLogo -NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Runner $($s.Runner)"
+        $shortcut.WorkingDirectory = $root
+        $shortcut.IconLocation = "$icon,0"
+        $shortcut.Description = $s.Description
+        # 1 is a normal window (3 would open it maximised); owner, 2026-11-11.
+        $shortcut.WindowStyle = 1
+        $shortcut.Save()
+        Write-Host "Shortcut written: $link"
+    }
+    # The one shortcut this file wrote before the runners had one each started Claude Code without saying so.
+    $old = Join-Path $desktop 'Rizonesoft Office campaign.lnk'
+    if (Test-Path -LiteralPath $old) {
+        Remove-Item -LiteralPath $old
+        Write-Host "Removed the earlier shortcut: $old"
+    }
     exit 0
 }
 
@@ -104,7 +138,8 @@ if ($Stop) {
     exit 0
 }
 
-$Host.UI.RawUI.WindowTitle = 'Rizonesoft Office campaign'
+$runnerName = @{ claude = 'Claude Code'; agy = 'Google Antigravity (Gemini 4 Carbon)' }[$Runner]
+$Host.UI.RawUI.WindowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
 
 # The lock is taken as the first statement inside one try that runs to the end of the file, so nothing can
 # happen between taking it and being sure it is given back: a normal end, an exit, an error anywhere below
@@ -156,7 +191,7 @@ function Test-StopRequested {
     return $true
 }
 
-$missing = @('claude', 'python', 'git', 'gh', 'node') | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) }
+$missing = @($Runner, 'python', 'git', 'gh', 'node') | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) }
 if ($missing) {
     Write-Host "Not started: not on PATH: $($missing -join ', ')" -ForegroundColor Red
     Exit-Launcher 2
@@ -187,7 +222,9 @@ $env:PATH = (@($toolDirs) + @($env:PATH -split ';' | Where-Object { $_ })) -join
 $pinnedClangd = @($toolDirs | Where-Object { Test-Holds $_ 'clangd.exe' })
 # Settings for this session only, layered over .claude/settings.json by claude's --settings.
 $sessionArgs = @()
-if ($pinnedClangd) {
+if ($Runner -ne 'claude') {
+    # The clangd-lsp plugin and its setting are Claude Code's; another runner takes no session settings from here.
+} elseif ($pinnedClangd) {
     Write-Host "clangd: $(Join-Path $pinnedClangd[0] 'clangd.exe')"
 } else {
     # The clangd-lsp plugin would start whichever clangd PATH gives, so without the pinned one it is switched off
@@ -242,8 +279,11 @@ function Read-StoredToken {
 # A token inherited from the shell that started this window is dropped first: the session signs in with the
 # repository's own token or interactively, never with whatever the machine's environment happened to hold.
 Remove-Item Env:CLAUDE_CODE_OAUTH_TOKEN -ErrorAction SilentlyContinue
-$token = Read-StoredToken
-if ($token) {
+$token = if ($Runner -eq 'claude') { Read-StoredToken } else { $null }
+if ($Runner -ne 'claude') {
+    # Antigravity signs in with its own local Google account; Claude's token is never put in its environment.
+    Write-Host "Sign-in: $runnerName's own account on this PC."
+} elseif ($token) {
     $env:CLAUDE_CODE_OAUTH_TOKEN = $token
     Write-Host 'Sign-in: the one-year token from .secrets/office.env.'
 } else {
@@ -271,13 +311,22 @@ if (Test-Path -LiteralPath $modeFile) {
         $modeSource = 'the fallback (the verdict file does not parse)'
     }
 }
-Write-Host "Lead model: $model, from $modeSource"
+# Claude Code runs at medium effort (owner, 2026-11-12). Antigravity's model name carries its effort; it is the
+# writer the owner named for that runner, Gemini 4 Carbon at medium, and the measured verdict above is Claude's alone.
+$effort = 'medium'
+$carbon = 'gemini-4-carbon-medium'
+if ($Runner -eq 'claude') { Write-Host "Lead model: $model at $effort effort, from $modeSource" }
+else { Write-Host "Lead model: $carbon in $runnerName" }
 
 if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
     Write-Host ''
     Write-Host "Would run in ${root}:"
-    Write-Host ((@('claude', '--model', $model, '--dangerously-skip-permissions') + $sessionArgs + "`"$goal`"") -join ' ')
+    if ($Runner -eq 'claude') {
+        Write-Host ((@('claude', '--model', $model, '--effort', $effort, '--dangerously-skip-permissions') + $sessionArgs + "`"$goal`"") -join ' ')
+    } else {
+        Write-Host ((@('agy', '--model', $carbon, '--dangerously-skip-permissions', '-i', "`"$goal`"")) -join ' ')
+    }
     exit 0
 }
 
@@ -287,7 +336,12 @@ while ($true) {
     # the host check below, must never be followed by a new session.
     if (Test-StopRequested) { break }
     $started.Add((Get-Date))
-    claude --model $model --dangerously-skip-permissions @sessionArgs $goal
+    if ($Runner -eq 'claude') {
+        claude --model $model --effort $effort --dangerously-skip-permissions @sessionArgs $goal
+    } else {
+        # -i runs the opening prompt and keeps the conversation open, as Claude Code does with its prompt argument.
+        agy --model $carbon --dangerously-skip-permissions -i $goal
+    }
     if (Test-StopRequested) { break }
     if (-not (Test-Path -LiteralPath $guard)) {
         Write-Host ''
