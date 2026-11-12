@@ -12,7 +12,7 @@ A lesson is `docs/lessons/<id>.md`: frontmatter between two `---` lines, written
 | `applies` | yes | one or more path globs, comma separated, or `*` for every file |
 | `topics` | yes | one or more words from the Topics list below, comma separated |
 | `roles` | yes | `all`, or `main` (the lead session), `reader` (the Sonnet readers) or both, comma separated |
-| `source` | yes | `<record>#round-N/finding-K` (a review finding) or `decision-<N>` (an owner decision) |
+| `source` | yes | `<record>#<pass>/finding-K` (a review finding; passes below) or `decision-<N>` (an owner decision) |
 | `fix` | with a review source | the commit that fixed the finding, a full or short SHA in the history of `HEAD` |
 | `added` | yes | the date the lesson was written, `YYYY-MM-DD` |
 | `status` | yes | `active` or `retired` |
@@ -22,7 +22,7 @@ A glob is read as Python's `PurePath.full_match` reads it, against repository pa
 
 The body is one paragraph of at most 600 characters: what goes wrong, and what to do instead. No key may be empty, unknown or given twice.
 
-A review source names a record under `docs/reviews/`, the `## Round N` heading in it and the finding numbered `K` under that heading. An owner source names decision `N` of `docs/specs/2026-10-23-campaign-scope-design.md`. The checker proves the record, the round, the finding, the commit and the decision exist; whether the finding was confirmed and the lesson follows from it is the reviewer's judgment.
+A review source names a record under `docs/reviews/`, a pass in it and the finding `K` of that pass. The pass is `round-N` (the `## Round N` heading), `plan` (the plan review), `completion` (the completion review) or `reconciliation-N` (the Nth `## Reconciliation review` heading from the top of the record, counted whether or not it raised a finding, so a pass appended later never renumbers an earlier one); a record holding a second plan or completion review names it `plan-2` or `completion-2`. `K` is the finding's place among the findings of its pass (D00 T05 §9). An owner source names decision `N` of `docs/specs/2026-10-23-campaign-scope-design.md`. The checker proves the record, the round, the finding, the commit and the decision exist; whether the finding was confirmed and the lesson follows from it is the reviewer's judgment.
 
 ## Rules
 
@@ -35,7 +35,7 @@ A review source names a record under `docs/reviews/`, the `## Round N` heading i
 
 ## Triage
 
-`python scripts/lessons.py candidates [--untriaged] [<record> ...]` lists the `P1` and `P2` findings of review records (D00 T05 §3). The main session decides what each one teaches and writes it in the record's triage file, `triage/<path>.md` for `docs/reviews/<path>.md`: a heading, then one line per finding, `round N finding K: <disposition> [reason]`. `K` is the finding's place among its round's findings (its printed number, except in older records that restart the numbers under each lens). The disposition is `lesson:<id>` (the kind can recur and no check stops it; several findings of one kind share one lesson), `enforced:<path>` (a check or test in the repository now stops it) or `one-off` with a reason. `check` refuses a line whose finding, lesson or enforcing file does not exist, a second line for one finding, and a triage file with no record; `candidates --untriaged` shows what is still to decide.
+`python scripts/lessons.py candidates [--untriaged] [<record> ...]` lists the `P1` and `P2` findings of review records, from every pass (D00 T05 §3 and §9; `--p3` adds the `P3` ones). The main session decides what each one teaches and writes it in the record's triage file, `triage/<path>.md` for `docs/reviews/<path>.md`: a heading, then one line per finding, `<pass> finding K: <disposition> [reason]`, the pass written `plan`, `round N`, `completion` or `reconciliation N` (`plan 2` for a record's second plan review). `K` is the finding's place among its pass's findings (its printed number, except in older rounds that restart the numbers under each lens). In a reconciliation only a new finding counts: a line saying an earlier gap is `closed` or `open` reports on that gap. The disposition is `lesson:<id>` (the kind can recur and no check stops it; several findings of one kind share one lesson), `enforced:<path>` (a check or test in the repository now stops it) or `one-off` with a reason. `check` refuses a line whose finding, lesson or enforcing file does not exist, a second line for one finding, and a triage file with no record; `candidates --untriaged` shows what is still to decide.
 
 ## Finding lessons
 

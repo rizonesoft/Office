@@ -12,10 +12,11 @@
 1 when there is one, 2 when the lesson folder or its README cannot be read.
 
 `candidates` lists the `P1` and `P2` findings of review records (every record under `docs/reviews/` when none is
-named) as `<record> round N finding K [P1] <file:line>: <first sentence>` (`--p3` adds the `P3` ones, for a section
+named), from every pass, as `<record> <pass> finding K [P1] <file:line>: <first sentence>`, the pass being `plan`,
+`round N`, `completion` or `reconciliation N` (`--p3` adds the `P3` ones, for a section
 triaging every finding its own round fixed), and with `--untriaged` only those with no
 valid line in the record's triage file `docs/lessons/triage/<path>.md` (D00 T05 §3). Exit 0, or 1 naming the file
-when a named record or a triage file cannot be read or holds no review round, so skipped input never looks like
+when a named record or a triage file cannot be read or holds no review pass, so skipped input never looks like
 nothing left to do.
 
 `query` returns the few lessons that apply, in one fixed order (`rank` in `scripts/lib/lessons.py`): a lesson matches
@@ -98,7 +99,7 @@ def cmd_candidates(args, root):
         return 1
     for item in found:
         where = f" {item['location']}" if item["location"] else ""
-        print(f"{item['record']} round {item['round']} finding {item['k']} [{item['severity']}]{where}: "
+        print(f"{item['record']} {item['pass']} finding {item['k']} [{item['severity']}]{where}: "
               f"{item['sentence']}")
     return 0
 

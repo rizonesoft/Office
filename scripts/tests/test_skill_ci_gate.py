@@ -40,9 +40,9 @@ OBLIGATIONS = [
         "exit 2, the command is wrong"]),
     ("the round's findings are triaged", "review", [
         "**Triage the round's findings before the completion review.**",
-        "give every finding of the round that was confirmed and fixed one line in the record's triage file, "
-        "`docs/lessons/triage/<path>.md` for `docs/reviews/<path>.md`",
-        "`round N finding K: <disposition> [reason]`",
+        "give every finding of the plan review and of the round that was confirmed and fixed one line in the "
+        "record's triage file, `docs/lessons/triage/<path>.md` for `docs/reviews/<path>.md`",
+        "`<pass> finding K: <disposition> [reason]` (the pass written `plan` or `round N`)",
         "`lesson:<id>` (the kind can recur and no check stops it)",
         "`enforced:<path>` (a check or test in the repository now stops it)",
         "`one-off` with a reason",
@@ -51,7 +51,9 @@ OBLIGATIONS = [
         "before the completion review is dispatched",
         "Run `python scripts/lessons.py check` until it exits 0 and commit the lines and the lessons, so they are in "
         "the candidate the completion review reads",
-        "triaged the same way before the next reconciliation is dispatched"]),
+        "A completion review's gaps, and the new findings of a reconciliation, are triaged the same way "
+        "(`completion finding K`, `reconciliation N finding K`) once they are fixed and before the next "
+        "reconciliation is dispatched"]),
     ("an enforceable lesson is retired", "review", [
         "A lesson this section's own work made enforceable (it added the check or the test) is retired in the same "
         "commit: `status: retired` with `retired_by` naming it"]),
@@ -60,8 +62,8 @@ OBLIGATIONS = [
         "because a fixed `P3` finding is triaged too) and write only what it prints: a finding never gets a second "
         "line"]),
     ("the passes covered are named", "review", [
-        "This covers the round's findings; those of the plan review, the completion review and the reconciliations "
-        "are triaged once D00 T05 §9 gives those passes an identity"]),
+        "All four kinds of pass are covered: the plan review, the round, the completion review and each "
+        "reconciliation (D00 T05 §9)"]),
     ("parks record a notice, never an email", "plan", [  # D00 T03 §53: decision 32, one weekly email only
         "Nothing emails at once: decision 32 allows one weekly email, the owner digest, and no other interruption",
         "recorded them as a notice for the weekly owner digest through `.conclave/automations/alert.py`",

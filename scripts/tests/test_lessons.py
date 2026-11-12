@@ -210,7 +210,7 @@ class Sources(Store):
             ({"fix": "deadbeefdeadbeef"}, "is not a commit in the history of HEAD"),
             ({"fix": "main"}, "is not a commit in the history of HEAD"),
             ({"fix": off}, "is not a commit in the history of HEAD"),
-            ({"source": f"{RECORD}#round-1"}, "is neither <record>#round-N/finding-K nor decision-<N>"),
+            ({"source": f"{RECORD}#round-1"}, "is neither <record>#round-N/finding-K (or #plan, #completion, "),
             ({"source": "owner:2026-11-12", "fix": None}, "is neither"),
             ({"source": "decision-9", "fix": None}, "has no decision 9"),
             ({"source": "decision-1"}, "only a review source takes a fix commit"),
@@ -632,12 +632,17 @@ class Triage(Indexed):
     def keys(self, *argv):
         code, lines, err = self.listing(*argv)
         self.assertEqual(code, 0, err)
-        return [tuple(re.match(r"(\S+) round (\d+) finding (\d+) \[(P\d)\]", line).groups()) for line in lines]
+        found = []
+        for line in lines:  # (record, round number, finding, severity); another pass shows as its label
+            record, label, finding, severity = re.match(r"(\S+) (.+) finding (\d+) \[(P\d)\]", line).groups()
+            found.append((record, label[len("round "):] if label.startswith("round ") else label, finding, severity))
+        return found
 
     def test_the_tagged_findings_are_listed_and_a_p3_is_not(self):
         code, lines, err = self.listing(RECORD)
         self.assertEqual((code, err), (0, ""))
-        self.assertEqual(lines, [f"{RECORD} round 1 finding 1 [P1] scripts/a.py:3: the first finding.",
+        self.assertEqual(lines, [f"{RECORD} plan finding 1 [P2]: a plan finding.",
+                                 f"{RECORD} round 1 finding 1 [P1] scripts/a.py:3: the first finding.",
                                  f"{RECORD} round 1 finding 2 [P2]: the second finding."])
 
     def test_every_tag_form_is_read_and_the_writers_notes_after_a_round_are_not(self):
@@ -654,7 +659,7 @@ class Triage(Indexed):
         self.triage(RECORD, "round 1 finding 1: one-off, the same number in another record\n")
         left = self.keys("--untriaged", self.TWO, RECORD)
         self.assertEqual(left, [(self.TWO, "1", "2", "P2"), (self.TWO, "2", "1", "P1"), (self.TWO, "2", "4", "P2"),
-                                (RECORD, "1", "2", "P2")])
+                                (RECORD, "plan", "1", "P2"), (RECORD, "1", "2", "P2")])
         self.triage(self.TWO, "round 2 finding 3: enforced:scripts/a.py\n")
         self.assertIn((self.TWO, "1", "1", "P1"), self.keys("--untriaged", self.TWO))
         self.triage(self.TWO, "".join(f"round {r} finding {k}: one-off, fixed and gone\n"
@@ -747,6 +752,125 @@ class Triage(Indexed):
         self.assertGreater(len(found), 700)
         self.assertIn("docs/reviews/02-interface/D02-T01-s2.md", {item["record"] for item in found})
 
+    # D00 T05 §9: every pass has an identity.
+
+    ALL = "docs/reviews/00-workspace/D99-T06-s1.md"
+    ALL_TEXT = (
+        "## Plan review: astra (`gpt-6-astra` via `codex`)\n\n1. **P1, line 91:** The plan omits a role.\n"
+        "2. **P2**, `todo/x.md:92`: The plan omits a test.\n\nPLAN: gaps\nOVERALL: needs-attention\n\n"
+        "- Planned: gap 1 in abc1234\n\n"
+        "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **P2, `scripts/a.py:5`: A round finding.** More.\n\n"
+        "OVERALL: needs-attention\n\n"
+        "## Completion review: astra (`gpt-6-astra` via `codex`)\n\nPart 1\n\n1. **present:** all of it.\n"
+        "2. **missing-in-scope:** one thing, see the gap list.\n\nGap list\n\n"
+        "1. **P2, missing-in-scope:** `scripts/a.py:9`: A completion gap.\n"
+        "2. **missing-in-scope, P2**: `scripts/a.py:10` Another, its class first.\n"
+        "3. **P1 | missing-in-scope:** `scripts/a.py:11` A third, with a bar.\n\nCOMPLETION: gaps\n\n"
+        "- Implemented: gap 1 in abc1234\n\n"
+        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n1. **closed, P2:** the first gap is closed.\n"
+        "2. **P2, open: completion gap 2.** It is still open.\n3. **closed (original P1):** the third.\n"
+        "4. **P2, `scripts/a.py:12`: A new defect in the repair.** More.\n\nRECONCILIATION: gaps\n\n"
+        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n1. **closed, P2:** done.\n\n"
+        "No new findings.\n\nRECONCILIATION: gaps\n\n"
+        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+        "1. **P1, `scripts/a.py:13`: A defect the third pass found.** More.\n\nRECONCILIATION: complete\n")
+
+    def all_passes(self):
+        (self.root / self.ALL).write_text(self.ALL_TEXT, encoding="utf-8")
+
+    def test_every_pass_lists_exactly_its_tagged_findings(self):
+        self.all_passes()
+        code, lines, err = self.listing(self.ALL)
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual([line[len(self.ALL) + 1:] for line in lines], [
+            "plan finding 1 [P1]: line 91: The plan omits a role.",
+            "plan finding 2 [P2] todo/x.md:92: The plan omits a test.",
+            "round 1 finding 1 [P2] scripts/a.py:5: A round finding.",
+            "completion finding 1 [P2] scripts/a.py:9: A completion gap.",
+            "completion finding 2 [P2] scripts/a.py:10: Another, its class first.",
+            "completion finding 3 [P1] scripts/a.py:11: A third, with a bar.",
+            "reconciliation 1 finding 1 [P2] scripts/a.py:12: A new defect in the repair.",
+            "reconciliation 3 finding 1 [P1] scripts/a.py:13: A defect the third pass found."])
+
+    def test_three_real_records_of_this_repository_read_every_pass(self):
+        expect = {"docs/reviews/00-workspace/D00-T05-s4.md": {"plan": 4, "round 1": 1, "completion": 2},
+                  "docs/reviews/00-workspace/D00-T07-s3.md": {"plan": 6, "round 1": 3, "completion": 2},
+                  "docs/reviews/00-workspace/D00-T04-s2.md": {"plan": 4, "round 1": 1, "completion": 1}}
+        for record, counts in expect.items():
+            with self.subTest(record):
+                found = lessons.candidates(ROOT, [record])
+                got = {}
+                for item in found:
+                    got[item["pass"]] = got.get(item["pass"], 0) + 1
+                self.assertEqual(got, counts)
+
+    def test_a_plan_only_record_is_listed_named_and_discovered(self):
+        record = "docs/reviews/00-workspace/D99-T07-s1.md"
+        (self.root / record).write_text("## Plan review: astra (`gpt-6-astra` via `codex`)\n\n"
+                                        "1. **P1, line 5:** Only a plan review so far.\n\nPLAN: gaps\n", encoding="utf-8")
+        self.assertEqual(self.keys(record), [(record, "plan", "1", "P1")])
+        self.assertIn((record, "plan", "1", "P1"), self.keys())
+        self.assertIn(record, lessons.review_records(self.root))
+
+    def test_each_pass_is_triaged_by_its_own_name(self):
+        self.all_passes()
+        self.lesson("a-lesson")
+        self.triage(self.ALL, "plan finding 1: lesson:a-lesson\ncompletion finding 2: enforced:scripts/a.py\n"
+                              "reconciliation 1 finding 1: one-off, a slip in the repair\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())
+        self.assertEqual(self.keys("--untriaged", self.ALL), [
+            (self.ALL, "plan", "2", "P2"), (self.ALL, "1", "1", "P2"), (self.ALL, "completion", "1", "P2"),
+            (self.ALL, "completion", "3", "P1"), (self.ALL, "reconciliation 3", "1", "P1")])
+        self.assertEqual(lessons.evidence(self.root), {"a-lesson": 1})
+        for line, fragment in (("plan finding 3: one-off, none such", "has no plan finding 3"),
+                               ("reconciliation 2 finding 1: one-off, that pass raised nothing",
+                                "has no reconciliation 2 finding 1"),
+                               ("reconciliation finding 1: one-off, no number", "not a triage line"),
+                               ("completion 2 finding 1: one-off, there is one completion", "has no completion 2 finding 1")):
+            with self.subTest(fragment):
+                self.triage(self.ALL, line + "\n")
+                with contextlib.redirect_stdout(out):
+                    self.assertEqual(cli.main(["check"], root=self.root), 1)
+                self.assertIn(fragment, out.getvalue())
+
+    def test_reconciliations_keep_their_numbers_when_another_is_appended(self):
+        self.all_passes()
+        for name, source in (("from-a-reconciliation", "#reconciliation-3/finding-1"), ("from-the-plan", "#plan/finding-2"),
+                             ("from-the-completion", "#completion/finding-3")):
+            self.write(name=name, id=name, applies="*", source=self.ALL + source)
+        self.triage(self.ALL, "reconciliation 3 finding 1: lesson:from-a-reconciliation\n")
+        # The first reconciliation's finding 1 shares its number with the third's and stays outstanding.
+        self.assertIn((self.ALL, "reconciliation 1", "1", "P2"), self.keys("--untriaged", self.ALL))
+        self.assertNotIn((self.ALL, "reconciliation 3", "1", "P1"), self.keys("--untriaged", self.ALL))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())
+        (self.root / self.ALL).write_text(
+            self.ALL_TEXT + "\n## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            "1. **P2, `scripts/a.py:14`: Found by a fourth pass.** More.\n\nRECONCILIATION: complete\n", encoding="utf-8")
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())  # every line and source holds
+        left = self.keys("--untriaged", self.ALL)
+        self.assertIn((self.ALL, "reconciliation 4", "1", "P2"), left)
+        self.assertNotIn((self.ALL, "reconciliation 3", "1", "P1"), left)
+
+    def test_a_source_names_a_pass_that_exists(self):
+        self.all_passes()
+        for source, fragment in ((f"{self.ALL}#plan/finding-3", "plan of"), (f"{self.ALL}#completion-2/finding-1", "has no completion 2 review heading"),
+                                 (f"{self.ALL}#reconciliation/finding-1", "is named with its number"),
+                                 (f"{self.ALL}#reconciliation-2/finding-1", "reconciliation 2 of"),
+                                 (f"{self.ALL}#round/finding-1", "is named with its number")):
+            with self.subTest(source):
+                for old in self.folder.glob("*.md"):
+                    if old.name != "README.md":
+                        old.unlink()
+                self.write(name="cited", id="cited", applies="*", source=source)
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    self.assertEqual(cli.main(["check"], root=self.root), 1)
+                self.assertIn(fragment, out.getvalue())
     def test_the_review_skills_triage_step_walked_through(self):
         # D00 T05 §4: what `review-todo-section` tells the lead to do between the round and the completion review.
         self.assertEqual(len(self.keys("--untriaged", self.TWO)), 5)  # the round's confirmed findings to triage
@@ -811,8 +935,8 @@ class Triage(Indexed):
     def test_input_that_cannot_be_read_is_exit_1_naming_the_file(self):
         (self.root / "docs/reviews/00-workspace/empty.md").write_text("# Notes\n\nNo review here.\n", encoding="utf-8")
         for argv, fragment in ((["docs/reviews/00-workspace/missing.md"], "missing.md: cannot be read"),
-                               (["docs/reviews/00-workspace/empty.md"], "empty.md: holds no review round"),
-                               (["--untriaged", "scripts/a.py"], "scripts/a.py: holds no review round")):
+                               (["docs/reviews/00-workspace/empty.md"], "empty.md: holds no review pass"),
+                               (["--untriaged", "scripts/a.py"], "scripts/a.py: holds no review pass")):
             with self.subTest(fragment):
                 code, lines, err = self.listing(*argv)
                 self.assertEqual((code, lines), (1, []))

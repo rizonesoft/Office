@@ -102,7 +102,8 @@ ROLES = {"main", "reader"}  # and `all`; the removed writer roles (section-write
 STATUSES = {"active", "retired"}
 MAX_BODY = 600
 DASHES = {"—": "em dash", "–": "en dash"}
-REVIEW_SOURCE = re.compile(r"^(?P<record>[^#\s]+\.md)#round-(?P<round>[1-9][0-9]{0,3})/finding-(?P<finding>[1-9][0-9]{0,3})$")
+REVIEW_SOURCE = re.compile(r"^(?P<record>[^#\s]+\.md)#(?P<kind>round|plan|completion|reconciliation)"
+                           r"(?:-(?P<number>[1-9][0-9]{0,3}))?/finding-(?P<finding>[1-9][0-9]{0,3})$")
 DECISION_SOURCE = re.compile(r"^decision-(?P<number>[1-9][0-9]{0,5})$")  # bounded, so int() never fails
 SPEC = "docs/specs/2026-10-23-campaign-scope-design.md"
 GIT_SECONDS = 60
@@ -154,54 +155,94 @@ FINDING_BY_PLACE = re.compile(r"^\s*(\d+)\.\s+\*\*((?:`[^`]+`(?:\s*(?:,|and)\s*)
 LOOKS_LIKE_A_FINDING = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\bP[123]\b")
 
 
-def round_findings(record_text):
-    """{round number: [finding, ...]} of a review record, each finding `{"k", "severity", "location", "sentence"}`.
-    A round's text runs from its `## Round N` heading to its `OVERALL:` line or the next pass heading, so lens
-    headings inside it (older records put `## adversarial` at the same level) stay part of it and a heading the writer
-    adds after it does not. `k` is the finding's place among the round's findings, from 1: the printed number where a
-    round numbers its findings once through, and a count through the round where an older record restarts the numbers
-    under each lens (82 of the first 1,003 findings share a printed number with another in their round)."""
-    rounds, current = {}, None
+# A completion gap that names its class before its severity: `**missing-in-scope, P2**: ...`.
+FINDING_BY_CLASS = re.compile(r"^\s*(\d+)\.\s+\*\*(?:missing-in-scope|missing-out-of-scope|in-scope|out-of-scope)"
+                              r"(?:\s*/\s*[a-z-]+)?,\s*(P[123])\*\*:?\s+(.*)$")
+# In a reconciliation, an item saying an earlier gap is closed or open reports on that gap; it is not a new finding.
+STATUS = re.compile(r"^\s*\d+\.\s+\*\*[^*]{0,200}\b(?:closed|open)\b")
+PASS_START = re.compile(r"^## (?:(Plan review|Completion review|Reconciliation review)\b|Round (\d+)\b)")
+PASS_KINDS = {"Plan review": "plan", "Completion review": "completion", "Reconciliation review": "reconciliation"}
+PASS_END = re.compile(r"^(?:OVERALL|COMPLETION|RECONCILIATION):")
+
+
+def pass_findings(record_text):
+    """{(kind, n): [finding, ...]} for every review pass of a record, in the record's order (D00 T05 §9). `kind` is
+    `plan`, `round`, `completion` or `reconciliation`; `n` is a round's printed number, and for the other kinds the
+    pass's place among the passes of its kind from the top of the record, counted whether or not it raised a
+    finding, so a pass appended later never renumbers an earlier one. Each finding is `{"k", "severity",
+    "location", "sentence"}`, `k` being its place among its pass's findings from 1 (the printed number where a pass
+    numbers them once through; older rounds restart the numbers under each lens: 82 of the first 1,003 findings share
+    a printed number within their round). A pass's text runs from its heading to its closing line (`OVERALL:`,
+    `COMPLETION:` or `RECONCILIATION:`) or the next pass heading, so lens headings inside it stay part of it and what
+    the writer adds after it does not. A numbered item that names a severity in a form this reader does not know is
+    kept with severity `?`, for the caller to refuse the record instead of dropping the finding."""
+    passes, counts, current, kind = {}, {}, None, None
     for line in record_text.splitlines():
-        match = re.match(r"^## Round (\d+)\b", line)
-        if match:
-            current = rounds.setdefault(int(match[1]), [])
+        start = PASS_START.match(line)
+        if start:
+            if start[2]:
+                kind, number = "round", int(start[2])
+            else:
+                kind = PASS_KINDS[start[1]]
+                number = counts[kind] = counts.get(kind, 0) + 1
+            current = passes.setdefault((kind, number), [])
             continue
         if current is None:
             continue
         if PASS_HEADING.match(line):
-            current = None  # another pass (a plan, completion or reconciliation review) begins
+            current = None  # a pass of a kind this reader does not list
             continue
-        found, placed = FINDING.match(line), FINDING_BY_PLACE.match(line)
-        if placed and not found:
-            rest = placed[4].replace("**", "")
-            where = LOCATION.search(placed[2])
-            sentence = re.split(r"(?<=[.!?])\s", rest, maxsplit=1)[0].strip()
-            current.append({"k": len(current) + 1, "severity": placed[3], "location": where[1] if where else "",
-                            "sentence": sentence[:200]})
-        elif not found and LOOKS_LIKE_A_FINDING.match(line):
-            # A severity in a form this reader does not know: kept, marked, so the caller refuses the record
-            # instead of dropping the finding.
-            current.append({"k": len(current) + 1, "severity": "?", "location": "", "sentence": line.strip()[:200]})
-        if found:
+        found, placed, classed = FINDING.match(line), FINDING_BY_PLACE.match(line), FINDING_BY_CLASS.match(line)
+        if kind == "reconciliation" and STATUS.match(line):
+            pass  # a report on an earlier gap
+        elif found:
             rest = found[5].replace("**", "")
-            where = LOCATION.search(rest)
-            told = re.sub(r"^`[^`]+`[:,]?\s*", "", rest)  # a finding that opens with its location says it once
-            sentence = re.split(r"(?<=[.!?])\s", told, maxsplit=1)[0].strip()
-            current.append({"k": len(current) + 1, "severity": found[2], "location": where[1] if where else "",
-                            "sentence": sentence[:200]})
-        if line.startswith("OVERALL:"):
+            current.append(_finding(len(current) + 1, found[2], LOCATION.search(rest), rest))
+        elif placed:
+            current.append(_finding(len(current) + 1, placed[3], LOCATION.search(placed[2]), placed[4].replace("**", "")))
+        elif classed:
+            rest = classed[3].replace("**", "")
+            current.append(_finding(len(current) + 1, classed[2], LOCATION.search(rest), rest))
+        elif LOOKS_LIKE_A_FINDING.match(line):
+            current.append({"k": len(current) + 1, "severity": "?", "location": "", "sentence": line.strip()[:200]})
+        if PASS_END.match(line):
             current = None
-    return rounds
+    return passes
+
+
+def _finding(k, severity, where, told):
+    # The sentence says what is wrong: a completion gap's class label and a leading location are told elsewhere.
+    told = re.sub(r"^\|\s*", "", told)
+    told = re.sub(r"^(?:missing-in-scope|missing-out-of-scope|in-scope|out-of-scope)(?:\s*/\s*[a-z-]+)?:?\s*", "", told)
+    told = re.sub(r"^`[^`]+`[:,]?\s*", "", told)
+    sentence = re.split(r"(?<=[.!?])\s", told, maxsplit=1)[0].strip()
+    return {"k": k, "severity": severity, "location": where[1] if where else "", "sentence": sentence[:200]}
+
+
+def pass_label(kind, number):
+    """How a pass is written in a triage line: `round 3`, `reconciliation 2`, `plan` (`plan 2` for a second one)."""
+    if kind in ("round", "reconciliation"):
+        return f"{kind} {number}"
+    return kind if number == 1 else f"{kind} {number}"
+
+
+def round_findings(record_text):
+    """{round number: [finding, ...]}: the rounds of `pass_findings`."""
+    return {number: found for (kind, number), found in pass_findings(record_text).items() if kind == "round"}
+
+
+def finding_at(record_text, kind, number, finding):
+    """None when the record has no such pass; else whether that pass has a finding `finding` (its place among the
+    pass's findings, as `pass_findings` counts them)."""
+    passes = pass_findings(record_text)
+    if (kind, int(number)) not in passes:
+        return None
+    return 1 <= int(finding) <= len(passes[(kind, int(number))])
 
 
 def finding_in(record_text, round_number, finding):
-    """None when the record has no `## Round N`; else whether that round has a finding `finding` (its place among the
-    round's findings, as `round_findings` counts them)."""
-    rounds = round_findings(record_text)
-    if int(round_number) not in rounds:
-        return None
-    return 1 <= int(finding) <= len(rounds[int(round_number)])
+    """`finding_at` for a round."""
+    return finding_at(record_text, "round", round_number, finding)
 
 def problems_of(lesson, repo, allowed_topics):
     """The rule problems of one read lesson, each naming the rule."""
@@ -256,11 +297,17 @@ def problems_of(lesson, repo, allowed_topics):
         if not record.startswith("docs/reviews/") or not path.is_file():
             say("source", f"{record} is not a review record in the repository")
         else:
-            present = finding_in(path.read_text(encoding="utf-8"), review["round"], review["finding"])
-            if present is None:
-                say("source", f"{record} has no ## Round {review['round']} heading")
-            elif not present:
-                say("source", f"round {review['round']} of {record} has no finding {review['finding']}")
+            kind, number = review["kind"], review["number"]
+            if number is None and kind in ("round", "reconciliation"):
+                say("source", f"a {kind} is named with its number ({kind}-N)")
+            else:
+                number = int(number or 1)
+                present = finding_at(path.read_text(encoding="utf-8"), kind, number, review["finding"])
+                heading = f"## Round {number}" if kind == "round" else f"{pass_label(kind, number)} review"
+                if present is None:
+                    say("source", f"{record} has no {heading} heading")
+                elif not present:
+                    say("source", f"{pass_label(kind, number)} of {record} has no finding {review['finding']}")
         fix = lesson.get("fix")
         if not fix:
             say("fix", "a review source names the commit that fixed the finding")
@@ -272,7 +319,8 @@ def problems_of(lesson, repo, allowed_topics):
         if lesson.get("fix"):
             say("fix", "only a review source takes a fix commit")
     elif source:
-        say("source", f"{source!r} is neither <record>#round-N/finding-K nor decision-<N>")
+        say("source", f"{source!r} is neither <record>#round-N/finding-K (or #plan, #completion, #reconciliation-N) "
+                      f"nor decision-<N>")
     if lesson["status"] == "active":
         for glob in items(lesson["applies"]):
             if glob != "*" and not repo.matches(glob):
@@ -306,7 +354,8 @@ def check_store(root):
 # `docs/reviews/<path>.md`, one file per record, one line per finding: `round N finding K: <disposition> [reason]`.
 
 REVIEWS = "docs/reviews"
-TRIAGE_LINE = re.compile(r"^\s*(?:[-*]\s+)?round (\d+) finding (\d+):\s+(\S+)(?:\s+(.*))?$")
+TRIAGE_LINE = re.compile(r"^\s*(?:[-*]\s+)?(?:(round|reconciliation) (\d+)|(plan|completion)(?: (\d+))?) finding (\d+):"
+                         r"\s+(\S+)(?:\s+(.*))?$")
 
 
 class RecordError(Exception):
@@ -319,7 +368,7 @@ def triage_path(root, record):
 
 
 def read_triage(root, record, repo=None):
-    """({(round, k): disposition} of the valid lines, [problem, ...]) of a record's triage file; both empty when
+    """({(kind, n, k): disposition} of the valid lines, [problem, ...]) of a record's triage file; both empty when
     there is none. A line is valid when its finding exists in the record, no earlier line triaged it, and its
     disposition is `lesson:<id>` naming a lesson file, `enforced:<path>` naming a file the repository holds, or
     `one-off` followed by a reason. RecordError when the triage file or its record cannot be read."""
@@ -333,7 +382,7 @@ def read_triage(root, record, repo=None):
     except (OSError, UnicodeDecodeError) as error:
         raise RecordError(f"{name}: cannot be read ({type(error).__name__})") from None
     try:
-        rounds = round_findings((root / record).read_text(encoding="utf-8"))
+        passes = pass_findings((root / record).read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return {}, [f"{name}: its review record {record} does not exist or cannot be read"]
     valid, problems, seen = {}, [], set()
@@ -343,16 +392,20 @@ def read_triage(root, record, repo=None):
         where = f"{name}:{number}"
         match = TRIAGE_LINE.match(line)
         if not match:
-            problems.append(f"{where}: not a triage line (round N finding K: <disposition> [reason])")
+            problems.append(f"{where}: not a triage line (round N finding K: <disposition> [reason]; plan, "
+                            f"completion and reconciliation N name the other passes)")
             continue
-        key, word, reason = (int(match[1]), int(match[2])), match[3], (match[4] or "").strip()
-        if key[0] not in rounds or not 1 <= key[1] <= len(rounds[key[0]]):
-            problems.append(f"{where}: {record} has no round {key[0]} finding {key[1]}")
+        kind = match[1] or match[3]
+        key = (kind, int(match[2] or match[4] or 1), int(match[5]))
+        word, reason = match[6], (match[7] or "").strip()
+        named = f"{pass_label(key[0], key[1])} finding {key[2]}"
+        if key[:2] not in passes or not 1 <= key[2] <= len(passes[key[:2]]):
+            problems.append(f"{where}: {record} has no {named}")
             continue
         if key in seen:
             # Two lines for one finding, whatever each says and whichever came first: neither stands, so the
             # finding stays outstanding until one is removed.
-            problems.append(f"{where}: round {key[0]} finding {key[1]} already has a disposition"
+            problems.append(f"{where}: {named} already has a disposition"
                             + (f" ({valid[key]})" if key in valid else ""))
             valid.pop(key, None)
             continue
@@ -395,18 +448,18 @@ def triage_problems(root, repo=None):
 
 
 def review_records(root):
-    """Every review record under docs/reviews/ that holds a round, as repository paths."""
+    """Every review record under docs/reviews/ that holds a review pass of any kind, as repository paths."""
     base = Path(root) / REVIEWS
     return [path.relative_to(root).as_posix() for path in sorted(base.rglob("*.md"))
-            if re.search(r"(?m)^## Round \d+\b", path.read_text(encoding="utf-8", errors="replace"))]
+            if any(PASS_START.match(line) for line in path.read_text(encoding="utf-8", errors="replace").splitlines())]
 
 
 def candidates(root, records=None, untriaged=False, severities=("P1", "P2")):
     """The findings of the review `records` (all under docs/reviews/ when none is named) whose severity is one of
-    `severities` (`P1` and `P2` unless `P3` is asked for too), each
-    `{"record", "round", "k", "severity", "location", "sentence"}`; with `untriaged`, only those with no valid line in
+    `severities` (`P1` and `P2` unless `P3` is asked for too), from every pass (plan review, rounds, completion
+    review, reconciliations), each `{"record", "kind", "number", "pass", "k", "severity", "location", "sentence"}`; with `untriaged`, only those with no valid line in
     the record's triage file. RecordError naming the file when a named record is missing, unreadable or holds no
-    review round, or a triage file cannot be read: an input that was skipped must never look like nothing to do."""
+    review pass, or a triage file cannot be read: an input that was skipped must never look like nothing to do."""
     root = Path(root)
     named = records is not None and len(records) > 0
     out = []
@@ -416,23 +469,24 @@ def candidates(root, records=None, untriaged=False, severities=("P1", "P2")):
             text = (root / record).read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as error:
             raise RecordError(f"{record}: cannot be read ({type(error).__name__})") from None
-        rounds = round_findings(text)
-        if not rounds:
-            raise RecordError(f"{record}: holds no review round")
-        unread = [(number, f) for number in sorted(rounds) for f in rounds[number] if f["severity"] == "?"]
+        passes = pass_findings(text)
+        if not passes:
+            raise RecordError(f"{record}: holds no review pass")
+        unread = [(key, f) for key, found in passes.items() for f in found if f["severity"] == "?"]
         if unread:
-            number, finding = unread[0]
-            raise RecordError(f"{record}: round {number} finding {finding['k']} names a severity in a form this "
-                              f"reader does not know ({finding['sentence'][:80]}); teach round_findings the form")
+            key, finding = unread[0]
+            raise RecordError(f"{record}: {pass_label(*key)} finding {finding['k']} names a severity in a form this "
+                              f"reader does not know ({finding['sentence'][:80]}); teach pass_findings the form")
         done = {}
         if untriaged:
             if not record.startswith(REVIEWS + "/"):
                 raise RecordError(f"{record}: is not under {REVIEWS}/, so it has no triage file")
             done = read_triage(root, record)[0]
-        for number in sorted(rounds):
-            for finding in rounds[number]:
-                if finding["severity"] in severities and (number, finding["k"]) not in done:
-                    out.append({"record": record, "round": number, **finding})
+        for (kind, number), found in passes.items():  # in the record's own order
+            for finding in found:
+                if finding["severity"] in severities and (kind, number, finding["k"]) not in done:
+                    out.append({"record": record, "kind": kind, "number": number,
+                                "pass": pass_label(kind, number), **finding})
     return out
 
 # The index (D00 T05 §2): `build/lessons.sqlite`, a cache of the active lessons that makes them findable. The files
