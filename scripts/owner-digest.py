@@ -183,10 +183,9 @@ def run_state(root, config_dir=None):
         # own module says whether its session still shows life (D00 T07 §1).
         live = campaign_guard.liveness(str(root), config_dir=config_dir)
         if live is not None:
-            kind, detail = live
+            kind, detail, guard = live  # one snapshot: the guard judged is the guard named
             if kind == "unknown":
                 return f"Unknown: {detail}."
-            guard = campaign_guard.read_guard(str(root)) or {}
             run = f"run {guard.get('run_id', '?')}, phase {guard.get('phase', '?')}, {guard.get('run_file', '?')}"
             if kind == "running":
                 return f"Running: {run} (last sign of life {detail})."

@@ -197,6 +197,25 @@ class Liveness(Workspace):
         self.write("build/claude-campaign-guard.json", "{broken")
         self.assertTrue(self.line().startswith("Unknown: the run guard cannot be read"), self.line())
 
+    def test_the_run_named_is_the_run_judged(self):
+        # Round 1: an end between two guard reads made the digest say "Running: run ?". The digest's guard module
+        # (loaded beside it) is made to see a live guard once and none afterwards.
+        self.acquire()
+        self.seen(60)
+        live = guard.read_guard(self.root)
+        calls = []
+
+        def once(root):
+            calls.append(root)
+            return live if len(calls) == 1 else None
+        original = digest.campaign_guard.read_guard
+        digest.campaign_guard.read_guard = once
+        try:
+            line = self.line()
+        finally:
+            digest.campaign_guard.read_guard = original
+        self.assertTrue(line.startswith(f"Running: run {live['run_id']}, phase 0, {RUN_FILE}"), line)
+
     def test_an_ended_run_reads_from_its_run_file(self):
         self.acquire()
         self.write(RUN_FILE, f"PARKED 2099-01-02T00:00:00Z run={self.run_id()} blocked here\n", "a")

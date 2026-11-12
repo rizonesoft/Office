@@ -251,25 +251,28 @@ def _transcript_time(session: str, config_dir: str | None = None) -> float | Non
     return max(times) if times else None
 
 
-def liveness(root: str, now: float | None = None, config_dir: str | None = None) -> tuple[str, str] | None:
-    """The live guard's state for a reader such as the owner digest: ("running", when), ("stalled", since) or
-    ("unknown", reason); None when no live guard stands (an ended run reads from its run file). The sign of life is
-    the newer of the state's `seen_at` (written by the heartbeat's `whoami` and the Stop hook) and the session's
-    transcript; never a commit, which another session may make."""
+def liveness(root: str, now: float | None = None,
+             config_dir: str | None = None) -> tuple[str, str, dict] | None:
+    """The live guard's state for a reader such as the owner digest: ("running", when, guard), ("stalled", since,
+    guard) or ("unknown", reason, {}); None when no live guard stands (an ended run reads from its run file). The guard
+    and the state are read together under the guard's lock, so an `end` or a handover can never mix two runs in one
+    answer. The sign of life is the newer of the state's `seen_at` (written by the heartbeat's `whoami` and the Stop
+    hook) and the session's transcript; never a commit, which another session may make."""
     now = time.time() if now is None else now
-    try:
-        guard = read_guard(root)
-    except GuardError as exc:
-        # Named by its repository path: the reader (the owner digest) sends this line, and no machine path may go.
-        guard_path, _ = _paths(root)
-        detail = str(exc).replace(guard_path, "build/claude-campaign-guard.json").replace(root, "<repository>")
-        return ("unknown", f"the run guard cannot be read ({detail})")
-    if guard is None:
-        return None
-    try:
-        state = _read_state_strict(root)
-    except StateError as exc:
-        return ("unknown", str(exc))
+    with _Lock(root):
+        try:
+            guard = read_guard(root)
+        except GuardError as exc:
+            # Named by its repository path: the reader (the owner digest) sends this line, and no machine path goes.
+            guard_path, _ = _paths(root)
+            detail = str(exc).replace(guard_path, "build/claude-campaign-guard.json").replace(root, "<repository>")
+            return ("unknown", f"the run guard cannot be read ({detail})", {})
+        if guard is None:
+            return None
+        try:
+            state = _read_state_strict(root)
+        except StateError as exc:
+            return ("unknown", str(exc), {})
     signs = []
     seen = state.get("seen_at")
     if seen:
@@ -277,16 +280,16 @@ def liveness(root: str, now: float | None = None, config_dir: str | None = None)
             signs.append(datetime.datetime.strptime(str(seen), UTC_FORMAT).replace(
                 tzinfo=datetime.timezone.utc).timestamp())
         except ValueError:
-            return ("unknown", f"the state's seen_at {seen!r} is not a UTC time")
+            return ("unknown", f"the state's seen_at {seen!r} is not a UTC time", {})
     transcript = _transcript_time(str(guard.get("session_id", "")), config_dir)
     if transcript is not None:
         signs.append(transcript)
     if not signs:
         since = str(guard.get("job_created_at") or "an unknown time")
-        return ("stalled", since)
+        return ("stalled", since, guard)
     last = max(signs)
     when = datetime.datetime.fromtimestamp(last, datetime.timezone.utc).strftime(UTC_FORMAT)
-    return ("running", when) if now - last <= LIVE_SECONDS else ("stalled", when)
+    return ("running" if now - last <= LIVE_SECONDS else "stalled", when, guard)
 
 
 def mint_generation() -> str:
