@@ -12,7 +12,7 @@ Sections: 67 | Checklist items: 505
 
 #### Workspace and tooling
 
-Sections: 66 | Checklist items: 497 | Verified: 63
+Sections: 66 | Checklist items: 497 | Verified: 64
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -58,7 +58,7 @@ Sections: 66 | Checklist items: 497 | Verified: 63
 | [x]    | D00 T03 §36 | Operating Mode Measurement Command                    | none                   | 14    |
 | [x]    | D00 T03 §37 | Operating Mode Rule and Launcher                      | none                   | 9     |
 | [x]    | D00 T03 §50 | Withdrawn Sections                                    | none                   | 11    |
-| [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest            | none                   | 10    |
+| [x]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest            | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool           | none                   | 7     |
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
 | [x]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | none                   | 4     |
@@ -289,6 +289,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 93/164 verified sections, 17 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 94/164 verified sections, 16 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 670/1183 items completed (includes Commit items).
+Checklist: 671/1183 items completed (includes Commit items).

@@ -74,7 +74,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 36 | §38 | Parallel streams design record | §37 | [ ] |
 | 37 | §39 | Parallel streams sections authored | §38 | [ ] |
 | 38 | §50 | Withdrawn sections | -- | [x] |
-| 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
+| 39 | §53 | Automation notices go in the weekly digest | §35 | [x] |
 | 40 | §54 | One process-tree containment for every tool | §36 | [x] |
 | 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [x] |
 | 42 | §56 | Digest delivery when no evidence remains | -- | [x] |
@@ -1182,9 +1182,12 @@ Filed 2026-11-11 from the completion review of §35 (`docs/reviews/00-workspace/
 - [x] Change `process-plan`'s Host readiness and CI watch steps from emailing the owner through `alert.py` to recording a notice (`python .conclave/automations/alert.py --notice <subject> <body file>`), and add that command to `alert.py`. Done when: the skill names the notice for both parks and `scripts/tests/test_skill_ci_gate.py` pins the new wording.
 - [x] Add the pending notices to `scripts/owner-digest.py` as their own part, after the waiting list: one wrapped, path-cleared line per notice (time, sender, subject) within the 120-line body, with every notice's full text in an attached `notices.txt`; the batch is captured when the email is composed and marked reported only after the send succeeds, never by `--dry-run` or a refused send. Done when: tests show the part and the attachment holding every notice of a batch of long notices, the summary and waiting list intact, the batch pending after a dry run and after a refused send, reported after a send, a notice recorded during the send still pending, and an unreadable queue shown as a line in the digest with nothing marked. Cheaper substitute: marking everything read when the digest starts, which loses what arrives or fails meanwhile.
 - [x] Say in `.conclave/automations/README.md` (How you hear about it) that every notice waits for the Monday digest, naming each sender (`run.py`, the host check, the two version checks, the campaign's parks), with decision 32 as the reason. Done when: the README names every sender.
-- [ ] Commit: `automations: notices wait for the weekly digest`- [ ] Commit: `automations: notices wait for the weekly digest`
+- [x] Commit: `automations: notices wait for the weekly digest`- [ ] Commit: `automations: notices wait for the weekly digest`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_automations.py"` and `-p "test_owner_digest.py"` pass, and `python scripts/owner-digest.py --dry-run` shows the notices part.
+
+> **Verified:** 2026-11-13 | §53 | 9dc590f3af6a041a8ec707cfee885c778e8e45ef
+> **Review:** `docs/reviews/d00-t03-s53.json`
 
 ## 54. One Process-Tree Containment for Every Tool
 
