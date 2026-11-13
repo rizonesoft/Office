@@ -79,6 +79,16 @@ class Records(unittest.TestCase):
             n("TabItem", "Finance", kids=[n("Button", "Pin this item to the list.")]), n("TabItem", "This PC")])])])]))
         self.assertEqual([r["label"] for r in recs if r["kind"] == "control"], ["Recent", "OneDrive", "This PC"])
 
+    def test_change_file_types_formats_are_recorded_and_other_galleries_are_not(self):
+        recs = self.page(n("Group", "Change File Type", "GroupFileSave", kids=[n("Menu", kids=[
+            n("Group", "Document File Types", cls="NetUIGalleryCategoryContainer", kids=[
+                n("ListItem", "Document (*.docx)", cls="NetUIGalleryButton"),
+                n("ListItem", "Template (*.dotx)", cls="NetUIGalleryButton")])]), n("Button", "Save As")]),
+            n("Group", "Templates", kids=[n("ListItem", "Owner's template", cls="NetUIGalleryButton")]))
+        self.assertEqual([r["label"] for r in recs if r["kind"] == "control"],
+                         ["Document (*.docx)", "Template (*.dotx)", "Save As"])
+        self.assertNotIn("Owner's template", json.dumps(recs))
+
     def test_scroll_bars_and_add_in_entries_are_not_recorded(self):
         recs = self.page(n("ScrollBar", kids=[n("Button", "Line up")]), n("Button", "Create Adobe PDF"),
                          n("Button", "Version History"))

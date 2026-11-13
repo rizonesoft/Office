@@ -370,6 +370,10 @@ class Element:
     def select(self):
         self.pattern("select").Select()
 
+    def is_selected(self):
+        p = self.pattern("select")
+        return bool(p is not None and p.CurrentIsSelected)
+
     def expand_state(self):
         p = self.pattern("expand")
         return None if p is None else p.CurrentExpandCollapseState
@@ -3052,7 +3056,9 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
 
 
 def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, base, expand, ready):
-    """Select each task of a page's detail task groups (Share, Export) and record the panel it shows under it."""
+    """Select each task of a page's detail task groups (Share, Export) and record the panel it shows under it. The
+    task already selected when the page opened shows its panel as the page's own content, recorded with the page;
+    any other task whose panel does not appear and settle fails the capture, which would otherwise lose it."""
     tasks = [r for r in page_records if r.get("kind") == "control" and r.get("parent") and
              any(p.get("id") == r["parent"] and p.get("idMso") in word_backstage.DETAIL_TASK_GROUPS
                  for p in page_records)]
@@ -3060,6 +3066,9 @@ def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, bas
     for task in tasks:
         element = ctx.elements.get(task["id"])
         if element is None:
+            raise Refused(f"the {task['label']!r} task on {label!r} has no element to select")
+        if element.is_selected():
+            ctx.notes.append(f"the {task['label']!r} task on {label!r} was selected already; its panel is the page's")
             continue
         before = {(k.name, k.automation_id) for k in _page_content(_backstage_view(uia, hwnd), label).children()}
         element.activate()
@@ -3075,8 +3084,7 @@ def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, bas
             return new, tuple((k.name, k.automation_id) + _signature(k) for k in new)
         panels = settled(shown, min(ready, 5.0))
         if not panels:
-            ctx.notes.append(f"the {task['label']!r} task on {label!r} showed no panel of its own")
-            continue
+            raise Refused(f"the {task['label']!r} task on {label!r} showed no panel that loaded and settled")
         tree = {"children": [backstage_tree(p, identifiers) for p in panels]}
         out += word_backstage.record_tree(task["id"], tree, base, expand)
     return out

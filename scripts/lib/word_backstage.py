@@ -63,6 +63,9 @@ TASK_GROUPS = {"GroupOpenPlaces", "SaveGroup", "GroupShare", "PublishGroup"}
 # selects each and records the panel under it. Open's and Save As's entries open folders (the owner's) or dialogs
 # (Browse, Add a Place) and are never selected.
 DETAIL_TASK_GROUPS = {"GroupShare", "PublishGroup"}
+# Galleries of Word's own fixed choices, whose entries are commands like a task list's (D02 T01 §6, fresh round 1):
+# Change File Type's formats. Every other gallery or list entry is the owner's or the PC's and is never recorded.
+FORMAT_GALLERIES = {"GroupFileSave"}
 ACTIONABLE = {"control", "menuItem", "backstagePage"}
 # Every actionable behaviour ends with its availability (D02 T01 §6): its last sentence, or the clause after its last
 # semicolon, opens with one of these. A word anywhere else in the sentence says nothing about availability.
@@ -232,7 +235,7 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
         previous_text = ""
         for child in children:
             role, cls = child.get("role"), child.get("class_name", "")
-            task = tasks and role in ("ListItem", "TabItem")
+            task = bool(tasks) and role in ("ListItem", "TabItem")
             if task and any((k.get("name") or "").startswith(PIN) for k in child.get("children", [])):
                 continue
             if (cls in PRIVATE_CLASSES and not task) or child.get("private") or is_third_party(child.get("name", "")):
@@ -261,7 +264,7 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                 extra = {"idMso": child["idMso"]} if child.get("idMso") else {}
                 records.append(base(me, "group", label, next_order(parent), child, parent, **extra))
                 walk(child.get("children", []), me, depth + 1, environment or label in ENVIRONMENT_LISTS,
-                     tasks or child.get("automation_id") in TASK_GROUPS)
+                     tasks or child.get("automation_id") in TASK_GROUPS | FORMAT_GALLERIES)
                 continue
             if role == "List" and tasks:  # a task list is its entries, each a command
                 walk(child.get("children", []), parent, depth, environment, tasks)

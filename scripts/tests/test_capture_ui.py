@@ -54,6 +54,9 @@ class E:
     def can_toggle(self):
         return self.toggle
 
+    def is_selected(self):
+        return self.__dict__.get("selected", False)
+
     def runtime_id(self):
         return self.rid
 
@@ -4721,7 +4724,7 @@ class SlowClose(unittest.TestCase):
 class WordBackstage(unittest.TestCase):
     """The --backstage capture against a fake Word (D02 T01 §6)."""
 
-    def run_capture(self, word, ready=0.3, never_saved=None):
+    def run_capture(self, word, ready=0.3, never_saved=None, identifiers=()):
         uia = type("U", (), {"element": lambda self, h: word.root})()
 
         class W:
@@ -4734,7 +4737,7 @@ class WordBackstage(unittest.TestCase):
         ctx = cu.Context("word", BUILD, set())
         real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
         try:
-            return cu.capture_word_backstage(launched, uia, W(), ctx, set(), ready=ready), ctx
+            return cu.capture_word_backstage(launched, uia, W(), ctx, set(identifiers), ready=ready), ctx
         finally:
             cu.time.sleep = real_sleep
 
@@ -4806,6 +4809,37 @@ class WordBackstage(unittest.TestCase):
             self.assertNotEqual(code, 0)
             self.assertIn("the Backstage page 'Info' did not load and settle", err.getvalue())
             self.assertEqual(out.read_bytes(), before)
+
+    def share(self, email_panel):
+        """A Share page whose first task is selected and shows its panel, and whose Email task shows `email_panel`."""
+        people = E("TabItem", "Share with People")
+        people.selected = True
+        email = E("TabItem", "Email")
+        tasks = E("Group", "Share", "GroupShare", kids=[E("Menu", "Share", kids=[E("Group", "", kids=[people, email])])])
+        word = FakeWordBackstage({"Share": [tasks, E("Group", "Share with People", kids=[E("Button", "Save to Cloud")])]})
+
+        def choose_email():
+            word.pressed.append("Email")
+            if email_panel:
+                word.view.kids[0].kids = [tasks, email_panel]
+        email.activate = choose_email
+        return word
+
+    def test_a_task_selected_already_is_its_pages_and_every_other_task_records_its_panel(self):
+        word = self.share(E("Group", "Email", kids=[E("Button", "Send as PDF")]))
+        records, ctx = self.run_capture(word, identifiers={"GroupShare"})
+        ids = {r["id"] for r in records}
+        self.assertIn("word.backstage.share.share-with-people.save-to-cloud", ids)
+        self.assertIn("word.backstage.share.share.email.email.send-as-pdf", ids)
+        self.assertNotIn("Share with People", word.pressed)
+        self.assertIn("'Share with People' task on 'Share' was selected already", "\n".join(ctx.notes))
+
+    def test_a_task_whose_panel_never_appears_fails_the_capture(self):
+        word = self.share(None)
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word, identifiers={"GroupShare"})
+        self.assertIn("the 'Email' task on 'Share' showed no panel that loaded and settled", str(ctx.exception))
+        self.assertIsNone(word.view)
 
     def test_save_on_a_document_never_saved_is_the_save_as_page_it_shows(self):
         pages = {"Save As": [E("Group", "Pick a Folder", kids=[E("Button", "Save")])]}
