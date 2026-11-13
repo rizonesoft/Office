@@ -1,0 +1,83 @@
+{
+  "ref": "D00 T03 \u00a761",
+  "title": "A Reconciliation Honours an Owner Decision",
+  "implementation_sha": "6e66f7143bd5abf0c951fd59b526df2395e146cd",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s61.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_review_prompt.py\" -> Ran 33 tests in 10.846s OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s61.md",
+    "verdict": "complete",
+    "candidate": "6e66f7143bd5abf0c951fd59b526df2395e146cd",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s61.md",
+    "candidate": "475c1291508d81f3e9fc1e777d6873dcf1d3d70c",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "475c1291508d81f3e9fc1e777d6873dcf1d3d70c",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
