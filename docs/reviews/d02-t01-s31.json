@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a731",
+  "title": "Word Options Settings",
+  "implementation_sha": "1e200f682eaa93529cc8d7f8d222b540cfdecd3b",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s31.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_capture_ui.py\" -> Ran 92 tests, OK",
+    "python scripts/check-inventory.py design/inventory/word -> exit 0",
+    "python scripts/capture-ui.py --app word --options --merge -> exit 0, options.json unchanged"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s31.md",
+    "verdict": "complete",
+    "candidate": "1e200f682eaa93529cc8d7f8d222b540cfdecd3b",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s31.md",
+    "candidate": "b7b21db9cf99e1b5397dcf172976787ee6aa527a",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "b7b21db9cf99e1b5397dcf172976787ee6aa527a",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
