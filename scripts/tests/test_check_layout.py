@@ -90,7 +90,7 @@ class Layout(unittest.TestCase):
     def built(self):
         """What a capture of our own app would hold when it matches: the same elements under ids of its own, given
         in another order than the inventory's file."""
-        records = copy.deepcopy(inventory())
+        records = copy.deepcopy(self.records)
         for record in records:
             record["id"] = "write" + record["id"][4:]
             if "parent" in record:
@@ -229,8 +229,8 @@ class Layout(unittest.TestCase):
 
     def test_a_pair_that_cannot_be_measured_fails_unless_positions_are_not_compared(self):
         def without(rid, side):
-            capture = self.built()
             self.records = inventory()
+            capture = self.built()
             if side == "capture":
                 del self.element(capture, rid)["bounds"]
             else:
@@ -297,9 +297,98 @@ class Layout(unittest.TestCase):
         for parent in ("word.view.macros", "word.view.macros-2"):
             code, out, err = self.run_check(parent, capture)
             self.assertEqual((code, out), (2, ""), parent)
-            self.assertIn(f"{parent} cannot be told apart in the capture: 2 siblings in the inventory share its "
-                          f"label and type, and 1 captured ones do", err)
+            self.assertIn(f"{parent} cannot be told apart in the capture: the inventory holds 2 with its label "
+                          f"and type at that level and the capture holds 1", err)
         self.assertEqual(self.run_check("word.view.macros-2", self.built())[0], 0)  # both there: paired in order
+
+    def test_a_second_element_of_the_parents_identity_in_the_capture_is_refused_not_chosen(self):
+        # The built app shows two Paragraph groups where the inventory holds one. The added one is whole and comes
+        # first; the original has lost Sort. Choosing the first would pass a group that lost a control.
+        capture = [r for r in self.built() if r["id"] != "write.home.para.sort"]
+        for record in self.built():
+            if record["id"] == "write.home.para" or record.get("parent") == "write.home.para":
+                twin = dict(record, id=record["id"].replace("write.home.para", "write.home.para-twin"))
+                if "parent" in twin:
+                    twin["parent"] = twin["parent"].replace("write.home.para", "write.home.para-twin")
+                if twin["id"] == "write.home.para-twin":
+                    twin["order"] = -1
+                capture.append(twin)
+        code, out, err = self.run_check(self.PARA, capture)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("word.home.para cannot be told apart in the capture: the inventory holds 1 with its label and "
+                      "type at that level and the capture holds 2; give the built element a uiaId of its own", err)
+        # The same for a level above the parent, and for an identity that is a uiaId: two Home tabs.
+        capture = self.built()
+        capture.append(dict(self.element(capture, "word.home"), id="write.home-twin", order=-1))
+        for parent in ("word.home", self.PARA, "word.home.fx.shadow"):
+            code, out, err = self.run_check(parent, capture)
+            self.assertEqual((code, out), (2, ""), parent)
+            self.assertIn("word.home cannot be told apart in the capture: the inventory holds 1 with its uiaId at "
+                          "that level and the capture holds 2", err)
+        self.assertEqual(self.run_check("word.insert.fx.shadow", capture)[0], 0)  # another branch is not touched
+
+    def test_a_place_is_the_pair_before_and_the_pair_after(self):
+        # A, X, B, D in the inventory and A, Y, D, B in the capture: X was removed, Y added and B and D swapped.
+        # X and Y both follow A, and that alone does not make Y a renamed X.
+        self.records.append(rec("word.home.seq", "group", "Sequence", "word.home", order=3))
+        for order, label in enumerate("AXBD"):
+            self.records.append(rec(f"word.home.seq.{label.lower()}", "control", label, "word.home.seq", order=order,
+                                    controlType="button"))
+        self.write_inventory()
+        capture = self.built()
+        self.element(capture, "word.home.seq.x")["label"] = "Y"
+        self.element(capture, "word.home.seq.b")["order"] = 3
+        self.element(capture, "word.home.seq.d")["order"] = 2
+        code, out, err = self.run_check("word.home.seq", capture, "--no-bounds")
+        self.assertEqual(code, 1)
+        self.assertNotIn("renamed", err)
+        self.assertIn("missing word.home.seq.x: no captured element for 'X' (button)", err)
+        self.assertIn("extra write.home.seq.x: 'Y' (button)", err)
+        self.assertEqual(err.count("reordered "), 1)
+        self.assertEqual(out, self.counts("word.home.seq", 4, 3, missing=1, extra=1, reordered=1))
+        # With its neighbours where they were, the same change of label is a rename, at either end too.
+        for label in "AXD":
+            capture = self.built()
+            self.element(capture, f"word.home.seq.{label.lower()}")["label"] = "Y"
+            code, out, err = self.run_check("word.home.seq", capture, "--no-bounds")
+            self.assertEqual((code, err), (1, f"renamed word.home.seq.{label.lower()}: '{label}' in the inventory, "
+                                              f"'Y' in the capture" + chr(10)), label)
+
+    def test_a_record_the_pairing_cannot_use_is_refused_on_either_side(self):
+        for change, said in (({"uiaId": ["bad"]}, "record 1 has a `uiaId` that is not text"),
+                             ({"label": {"text": "Sort"}}, "record 1 has a `label` that is not text"),
+                             ({"controlType": 7}, "record 1 has a `controlType` that is not text"),
+                             ({"kind": ["control"]}, "record 1 has a `kind` that is not text"),
+                             ({"parent": 5}, "record 1 has a `parent` that is not text"),
+                             ({"captureProfile": 100}, "record 1 has a `captureProfile` that is not text"),
+                             ({"id": 12}, "record 1 has no `id` that is text"),
+                             ({"id": ""}, "record 1 has no `id` that is text"),
+                             ({"id": None}, "record 1 has no `id` that is text")):
+            capture = self.built()
+            capture[0].update(change)
+            code, out, err = self.run_check(self.PARA, capture)
+            self.assertEqual((code, out), (2, ""), said)
+            self.assertIn(said, err)
+        code, out, err = self.run_check(self.PARA, [{"id": "bad", "uiaId": ["bad"]}])  # the reviewer's capture
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("record 1 has a `uiaId` that is not text", err)
+        capture = self.built()
+        capture.append(dict(capture[3]))
+        code, out, err = self.run_check(self.PARA, capture)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn(f"record {len(capture)} has the `id` of an earlier record ({capture[3]['id']})", err)
+        capture = self.built()
+        next(r for r in self.records if r["id"] == "word.view.macros")["label"] = ["Macros"]
+        self.write_inventory()
+        code, out, err = self.run_check(self.PARA, capture)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("the inventory's record word.view.macros has a `label` that is not text", err)
+        self.records = inventory()
+        self.records[1]["parent"] = "word.home.para.sort"  # the group under its own child
+        self.write_inventory()
+        code, out, err = self.run_check(self.PARA, capture)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("is its own ancestor in the inventory", err)
 
     def test_inputs_that_cannot_be_compared_are_refused(self):
         good = self.built()

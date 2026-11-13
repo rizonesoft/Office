@@ -28,8 +28,9 @@ menus), and only the branch tells them apart. At every level, and for the childr
 `uiaId` pairs with the captured record of the same `uiaId`; a record without one pairs by label and type
 (`controlType`, or `kind` where it has none) with a captured record that has no `uiaId` either, and where several
 siblings share that label and type they pair in order, first with first. The children left unpaired on both sides
-are then paired a second time: by label alone (reported `retyped`), then between the same paired neighbours where
-as many records as captured children are left and their types agree in order (reported `renamed`). A control with no
+are then paired a second time: by label alone (reported `retyped`), then by place, where the same pair stands
+before them and the same pair after them on both sides, as many records as captured children are left there and
+their types agree in order (reported `renamed`). A control with no
 `uiaId` whose label and type both changed cannot be told from one removed and one added, and is reported as that.
 
 Positions are compared at the record's capture profile: a captured element of another profile is refused. With
@@ -37,8 +38,9 @@ Positions are compared at the record's capture profile: a captured element of an
 order are still compared, and positions are not.
 
 The findings go to stderr and one line of counts to stdout. Exit 0 when nothing is missing, renamed, retyped,
-reordered, moved, resized or unmeasured; 1 otherwise; 2 when an input cannot be read, the parent is not a record with
-children, a level of its branch cannot be told apart in the capture, or a profile differs. Stdlib only.
+reordered, moved, resized or unmeasured; 1 otherwise; 2 when an input cannot be read or holds a record the pairing
+cannot use, the parent is not a record with children, a level of its branch cannot be told apart in the capture (the
+two sides hold different numbers of its `uiaId`, or of its label and type), or a profile differs. Stdlib only.
 """
 import argparse
 import importlib.util
@@ -70,6 +72,19 @@ def report_script():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+TEXT_FIELDS = ("parent", "uiaId", "label", "kind", "controlType", "captureProfile")
+
+
+def unusable(record):
+    """Why a record cannot be compared (a field the pairing reads is not text), or None."""
+    if not isinstance(record.get("id"), str) or not record["id"]:
+        return "has no `id` that is text"
+    for field in TEXT_FIELDS:
+        if record.get(field) is not None and not isinstance(record[field], str):
+            return f"has a `{field}` that is not text"
+    return None
 
 
 def kind_of(record):
@@ -132,32 +147,37 @@ def pair_children(records, captured):
             still.append(rec)
     used = {id(cap) for _, cap in pairs}
     spare = [cap for cap in spare if id(cap) not in used]
-    # Second chance, by place: between the same paired neighbours, as many records as captured children are left
-    # and their types agree in order. Only records and captured children with no uiaId: an id is an identity.
+    # Second chance, by place: the same pair before and the same pair after on both sides, as many records as
+    # captured children left there, their types agreeing in order. Only records and captured children with no
+    # uiaId: an id is an identity. One neighbour is not a place: with A, X, B, D against A, Y, D, B, X follows A
+    # and so does Y, and X was removed and Y added.
     partner = {id(rec): cap for rec, cap in pairs}
     counterpart = {id(cap): rec for rec, cap in pairs}
 
     def gaps(sequence, paired, name):
-        """Each unpaired item of `sequence` under the pair that precedes it (None before the first)."""
-        out, before = {}, None
+        """Each run of unpaired items of `sequence`, under the pairs on its two sides (None at an end)."""
+        out, before, run = {}, None, []
         for item in sequence:
             if id(item) in paired:
-                before = name(paired[id(item)]) if name else id(item)
+                here = name(item)
+                if run:
+                    out[(before, here)] = run
+                    run = []
+                before = here
             else:
-                out.setdefault(before, []).append(item)
+                run.append(item)
+        if run:
+            out[(before, None)] = run
         return out
-    record_gaps = gaps(in_order(records), partner, lambda cap: id(cap))
-    capture_gaps = gaps(in_order(captured), counterpart, None)
+    record_gaps = gaps(in_order(records), partner, lambda rec: id(partner[id(rec)]))
+    capture_gaps = gaps(in_order(captured), counterpart, id)
     missing, extra_ids = [], {id(cap) for cap in spare}
-    for before, recs in record_gaps.items():
-        recs = [rec for rec in recs if any(rec is s for s in still)]
-        caps = [cap for cap in capture_gaps.get(before, []) if id(cap) in extra_ids]
-        open_recs = [rec for rec in recs if not rec.get("uiaId")]
-        open_caps = [cap for cap in caps if not cap.get("uiaId")]
-        whole = len(open_recs) == len(recs) and len(open_caps) == len(caps)
-        if open_recs and whole and len(open_recs) == len(open_caps) \
-                and all(kind_of(rec) == kind_of(cap) for rec, cap in zip(open_recs, open_caps)):
-            for rec, cap in zip(open_recs, open_caps):
+    for place, recs in record_gaps.items():
+        caps = capture_gaps.get(place, [])
+        same = len(recs) == len(caps) and all(not rec.get("uiaId") and not cap.get("uiaId")
+                                              and kind_of(rec) == kind_of(cap) for rec, cap in zip(recs, caps))
+        if same:
+            for rec, cap in zip(recs, caps):
                 pairs.append((rec, cap))
                 extra_ids.discard(id(cap))
         else:
@@ -194,8 +214,12 @@ def out_of_place(pairs):
 def find_parent(parent_id, by_id, children, captured_children):
     """The capture's counterpart of the inventory record `parent_id`, found from the top of its branch. Returns it,
     or the id of the first level the capture does not hold. Raises Refused for a level that cannot be told apart."""
-    chain, at = [], by_id[parent_id]
+    chain, at, seen = [], by_id[parent_id], set()
     while at is not None:
+        if at["id"] in seen:
+            raise Refused(f"{shown(at['id'])} is its own ancestor in the inventory; run python "
+                          f"scripts/check-inventory.py")
+        seen.add(at["id"])
         chain.append(at)
         at = by_id.get(at.get("parent")) if isinstance(at.get("parent"), str) else None
     above_record, above_capture = None, None
@@ -204,12 +228,24 @@ def find_parent(parent_id, by_id, children, captured_children):
                                                                              if not isinstance(r.get("parent"), str)
                                                                              and r.get("app") == level.get("app")]
         candidates = captured_children.get(above_capture.get("id") if above_capture else None, [])
-        if not level.get("uiaId"):
-            alike = [r for r in siblings if not r.get("uiaId") and key_of(r) == key_of(level)]
-            alike_captured = [c for c in candidates if not c.get("uiaId") and key_of(c) == key_of(level)]
-            if len(alike) > 1 and len(alike_captured) and len(alike) != len(alike_captured):
-                raise Refused(f"{shown(level['id'])} cannot be told apart in the capture: {len(alike)} siblings in "
-                              f"the inventory share its label and type, and {len(alike_captured)} captured ones do")
+        if level.get("uiaId"):
+            shares = "uiaId"
+
+            def alike_in(record, level=level):
+                return record.get("uiaId") == level["uiaId"]
+        else:
+            shares = "label and type"
+
+            def alike_in(record, level=level):
+                return not record.get("uiaId") and key_of(record) == key_of(level)
+        alike = sum(1 for record in siblings if alike_in(record))
+        alike_captured = sum(1 for record in candidates if alike_in(record))
+        # Pairing in order tells several of one identity apart only when both sides hold as many. One group in the
+        # inventory and two in the capture is the same question as two and one: which is it? Nothing here says.
+        if alike_captured and alike != alike_captured:
+            raise Refused(f"{shown(level['id'])} cannot be told apart in the capture: the inventory holds {alike} "
+                          f"with its {shares} at that level and the capture holds {alike_captured}; give the built "
+                          f"element a uiaId of its own, or compare the parent above it")
         pairs, _, _ = pair_exact(siblings, candidates)
         found = next((cap for rec, cap in pairs if rec is level), None)
         if found is None:
@@ -284,6 +320,14 @@ def load_capture(path):
         raise Refused(f"--capture {shown(path)} cannot be read ({exc})") from None
     if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):
         raise Refused(f"--capture {shown(path)} is not a JSON array of records, as scripts/capture-ui.py --out writes")
+    seen = set()
+    for number, record in enumerate(data, 1):
+        why = unusable(record)
+        if why is None and record["id"] in seen:
+            why = f"has the `id` of an earlier record ({shown(record['id'])})"
+        if why:
+            raise Refused(f"--capture {shown(path)}: record {number} {why}")
+        seen.add(record["id"])
     return data
 
 
@@ -303,6 +347,11 @@ def main(argv=None, root=ROOT):
         except (report.Unreadable, OSError) as exc:
             raise Refused(f"the inventory cannot be read ({exc})") from None
         by_id, children = inventory_layout.index(records)
+        for record in by_id.values():
+            why = unusable(record)
+            if why:
+                raise Refused(f"the inventory's record {shown(record['id'])} {why}; run python "
+                              f"scripts/check-inventory.py")
         findings, paired = compare(args.parent, by_id, children, load_capture(args.capture),
                                    int(args.tolerance), not args.no_bounds)
     except Refused as exc:
