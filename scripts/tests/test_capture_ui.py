@@ -4999,5 +4999,465 @@ class WordBackstage(unittest.TestCase):
         self.assertIn("Word's Backstage view only", str(ctx.exception))
 
 
+class FakeWordOptions(FakeWordBackstage):
+    """A Word window whose Backstage entry Options opens the Options dialog as a window of its own (D02 T01 §31).
+    `categories` maps a category's label to the children its pane shows; `scrolled` maps one to the further
+    children it shows only when scrolled to its end. Records every category selected and every press of Cancel."""
+    DIALOG = 77
+
+    def __init__(self, categories, opens=True, closes=True, scrolled=None):
+        self.categories, self.opens, self.closes, self.scrolled = categories, opens, closes, scrolled
+        self.dialog, self.cancelled, self.selected, self.scrolls = None, 0, [], []
+        super().__init__({})
+
+    def entry(self, name):
+        el = super().entry(name)
+        if name == "Options":
+            press = el.activate
+
+            def options():
+                press()
+                if self.opens:
+                    self.show()
+            el.activate = options
+        return el
+
+    def show(self):
+        self.pane = E("Pane", "", kids=[])
+        if self.scrolled is not None:
+            self.pane.scroll_to = self.scroll
+        items = []
+        for name in self.categories:
+            item = E("ListItem", name)
+            item.activate = lambda name=name: self.select(name)
+            items.append(item)
+        ok, cancel = E("Button", "OK"), E("Button", "Cancel")
+        ok.invoke = self.pressed_ok
+        cancel.invoke = self.cancel
+        frame = E("Group", "Word Options", rect=(100, 100, 900, 700),
+                  kids=[E("List", "Categories", kids=items), self.pane, ok, cancel])
+        self.dialog = E("Window", "Word Options", kids=[E("Pane", "", kids=[frame]), E("TitleBar", "")])
+
+    def pressed_ok(self):
+        raise AssertionError("the capture pressed OK")
+
+    def select(self, name):
+        self.selected.append(name)
+        self.pane.name = name
+        self.pane.kids = list(self.categories[name])
+
+    def scroll(self, percent):
+        self.scrolls.append(percent)
+        more = self.scrolled.get(self.pane.name, []) if percent == 100 else []
+        self.pane.kids = list(self.categories[self.pane.name]) + list(more)
+        return True
+
+    def cancel(self):
+        self.cancelled += 1
+        if self.closes:
+            self.dialog = None
+
+    def windows(self):
+        return [5] + ([self.DIALOG] if self.dialog is not None else [])
+
+
+def control(ctype, name, enabled=True, **more):
+    el = E(ctype, name, **more)
+    el.is_enabled = enabled
+    return el
+
+
+def heading(name, *kids):
+    """A heading as Word Options shows one: its text, then the group of its controls under the same name."""
+    return [E("Text", name), E("Group", name, kids=kids)]
+
+
+def combo(name, *items, enabled=True, opens=True):
+    """A list of fixed choices: closed it holds its button; opened, a menu of items. Logs each open and close."""
+    el = control("ComboBox", name, enabled, kids=[E("Button", "Open")])
+    el.log = []
+
+    def expand():
+        el.log.append("expand")
+        if not opens:
+            raise RuntimeError("it stayed shut")
+        chosen = [E("ListItem", item) for item in items]
+        el.kids = [E("Button", "Close"),
+                   E("Menu", name, kids=[E("Menu", "", kids=[E("Group", " ", kids=chosen)])])]
+
+    def collapse():
+        el.log.append("collapse")
+        el.kids = [E("Button", "Open")]
+    el.expand, el.collapse = expand, collapse
+    return el
+
+
+class Flicker(E):
+    """A group whose content is never the same twice."""
+
+    def children(self):
+        Flicker.reads = getattr(Flicker, "reads", 0) + 1
+        return iter([E("CheckBox", f"Option {Flicker.reads}")])
+
+
+class WordOptions(unittest.TestCase):
+    """The --options capture against a fake Word (D02 T01 §31)."""
+
+    def run_capture(self, word, ready=0.3):
+        uia = type("U", (), {"element": lambda self, h: word.root if h == 5 else word.dialog})()
+
+        class W:
+            def windows_of(self, pid):
+                return word.windows()
+
+            def dismiss_surface(self, hwnd, element):
+                word.close()
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 9})(), "check_alone": lambda self: None})()
+        ctx = cu.Context("word", BUILD, set(), origin=(0, 0))
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_options(launched, uia, W(), ctx, ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def refused(self, word, *said):
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+
+    def two_categories(self):
+        self.style = combo("ScreenTip style", "Show feature descriptions", "Hide them")
+        general = [
+            E("Text", "General options for working with Word."),
+            *heading("User Interface options",
+                     control("CheckBox", "Show Mini Toolbar on selection", rect=(150, 200, 350, 220)),
+                     control("CheckBox", "Enable Live Preview", enabled=False),
+                     E("Text", "ScreenTip style"), self.style),
+            *heading("Personalize", E("Text", "User name"), E("Edit", "User name", kids=[E("Text", "SECRET NAME")]),
+                     E("Button", "Browse..."), E("Button", "Browse...")),
+            E("ScrollBar", "", kids=[E("Button", "Line up")])]
+        display = [*heading("Page display options", control("CheckBox", "Show white space"))]
+        return FakeWordOptions({"General": general, "Display": display})
+
+    def test_two_categories_are_recorded_in_order_and_the_dialog_is_cancelled(self):
+        word = self.two_categories()
+        records, ctx = self.run_capture(word)
+        ui, me = "word.options.general.user-interface-options", "word.options.general.personalize"
+        self.assertEqual([(r["id"], r["kind"], r.get("controlType"), r["order"]) for r in records], [
+            ("word.options", "dialog", None, 0),
+            ("word.options.general", "dialogTab", None, 0),
+            (ui, "group", None, 0),
+            (ui + ".show-mini-toolbar-on-selection", "setting", "checkBox", 0),
+            (ui + ".enable-live-preview", "setting", "checkBox", 1),
+            (ui + ".screentip-style", "setting", "dropdown", 2),
+            (ui + ".screentip-style.show-feature-descriptions", "menuItem", None, 0),
+            (ui + ".screentip-style.hide-them", "menuItem", None, 1),
+            (me, "group", None, 1),
+            (me + ".user-name", "setting", "editBox", 0),
+            (me + ".browse", "setting", "button", 1),
+            (me + ".browse-2", "setting", "button", 2),  # a repeated label is numbered
+            ("word.options.display", "dialogTab", None, 1),
+            ("word.options.display.page-display-options", "group", None, 0),
+            ("word.options.display.page-display-options.show-white-space", "setting", "checkBox", 0),
+            ("word.options.ok", "control", "button", 2),
+            ("word.options.cancel", "control", "button", 3)])
+        by_id = {r["id"]: r for r in records}
+        self.assertEqual(by_id["word.options"]["itemCount"], 2)  # the categories the dialog lists
+        self.assertEqual(by_id["word.options.general"]["itemCount"], 8)  # two headings and six controls
+        self.assertEqual(by_id["word.options.display"]["itemCount"], 2)
+        self.assertEqual(by_id[ui + ".screentip-style"]["itemCount"], 2)
+        self.assertIs(by_id[ui + ".enable-live-preview"]["enabled"], False)  # disabled when it was captured
+        self.assertEqual([r["id"] for r in records if "enabled" in r], [ui + ".enable-live-preview"])
+        self.assertEqual(by_id[ui]["parent"], "word.options.general")
+        self.assertEqual(by_id[ui + ".screentip-style"]["parent"], ui)
+        # A position is measured from the dialog's own corner; a choice of a list that is closed again has none.
+        self.assertEqual(by_id["word.options"]["bounds"], {"x": 0, "y": 0, "width": 800, "height": 600})
+        self.assertEqual(by_id[ui + ".show-mini-toolbar-on-selection"]["bounds"],
+                         {"x": 50, "y": 100, "width": 200, "height": 20})
+        self.assertNotIn("bounds", by_id[ui + ".screentip-style.hide-them"])
+        self.assertNotIn("size", by_id["word.options.ok"])
+        # Nothing was read from inside a control, the list was closed again and nothing in it was chosen.
+        self.assertNotIn("SECRET", json.dumps(records))
+        self.assertEqual(self.style.log, ["expand", "collapse"])
+        self.assertEqual(self.style.kids[0].name, "Open")
+        self.assertEqual(word.selected, ["General", "Display"])
+        self.assertEqual((word.cancelled, word.dialog, word.view), (1, None, None))  # Cancel once; Backstage left
+        self.assertEqual(word.pressed, ["Options"])
+        self.assertIn("Options category general: 1 sentence(s) of explanation not recorded", ctx.notes)
+        self.assertEqual(ctx.origin, (0, 0))  # the window's own origin is put back
+        cu.word_options_check(records)
+        schema = json.loads((ci.INVENTORY / "schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(ci.validate(records, schema, schema), [])
+
+    def test_lists_of_this_pcs_data_are_recorded_closed_and_counted(self):
+        tray, sound = combo("Default tray", "Rear Tray"), combo("Pen pressure", "Heavy", enabled=False)
+        theirs, ours = combo("Choose commands from", "Popular Commands", "Acme Tab"), \
+            combo("Choose commands from", "Popular Commands", "All Commands")
+        shading = combo("Field shading", "Never", "\u2014\u2014\u2014", "Always")
+        word = FakeWordOptions({
+            "Advanced": [*heading("Print", E("Text", "Default tray"), tray, sound, E("Text", "Field shading:"),
+                                  shading),
+                         E("Text", "When using multiple displays"),
+                         E("Group", "When using multiple displays", cls="NetUIRadioGroup",
+                           kids=[E("RadioButton", "Best appearance"), E("RadioButton", "Compatibility")])],
+            "Language": [E("Text", "Set the Office Language Preferences"),
+                         E("DataGrid", "Display Language", kids=[E("ListItem", "Zulu of this PC")])],
+            "Customize Ribbon": [E("Text", "Choose commands from"), ours,
+                                 E("Tree", "Available commands list", kids=[E("TreeItem", "Accept Revision")])],
+            "Quick Access Toolbar": [E("Text", "Choose commands from"), theirs, E("List", "")],
+            "Add-ins": [E("Text", "Publisher"), E("Text", "Contoso Ltd"), E("Text", "Location"),
+                        E("Text", "C:\\Somewhere\\addin.dll"), E("Text", "Manage"), combo("Manage", "COM Add-ins"),
+                        E("Hyperlink", "Learn more")]})
+        records, ctx = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        adv = "word.options.advanced"
+        self.assertEqual((tray.log, sound.log, theirs.log), ([], [], []))  # never opened
+        for rid in (adv + ".print.default-tray", adv + ".print.pen-pressure",
+                    "word.options.quick-access-toolbar.choose-commands-from"):
+            self.assertEqual((by_id[rid]["controlType"], "itemCount" in by_id[rid]), ("dropdown", False))
+            self.assertFalse([r for r in records if r.get("parent") == rid])
+        self.assertIs(by_id[adv + ".print.pen-pressure"]["enabled"], False)
+        self.assertEqual(by_id["word.options.customize-ribbon.choose-commands-from"]["itemCount"], 2)
+        self.assertEqual(by_id[adv + ".print.field-shading"]["itemCount"], 2)  # the separating line is no choice
+        self.assertEqual(by_id[adv + ".print.field-shading"]["label"], "Field shading")
+        radio = by_id[adv + ".when-using-multiple-displays"]
+        self.assertEqual((radio["kind"], radio["controlType"], radio["itemCount"]), ("setting", "radioButton", 2))
+        self.assertEqual(by_id[adv + ".when-using-multiple-displays.compatibility"]["kind"], "menuItem")
+        # A list box, tree or grid is one control, and the nameless one takes the text before it.
+        for rid in ("word.options.language.display-language", "word.options.customize-ribbon.available-commands-list",
+                    "word.options.quick-access-toolbar.choose-commands-from-2"):
+            self.assertEqual(by_id[rid]["controlType"], "listBox")
+            self.assertFalse([r for r in records if r.get("parent") == rid])
+        # A caption is recorded; what it names is this PC's data and is not.
+        addins = [r["label"] for r in records if r.get("parent") == "word.options.add-ins"]
+        self.assertEqual(addins, ["Publisher", "Location", "Manage", "Learn more"])
+        text = json.dumps(records)
+        for data in ("Acme", "Zulu", "Contoso", "Somewhere", "Rear Tray", "Heavy", "Accept Revision"):
+            self.assertNotIn(data, text)
+        self.assertEqual(by_id["word.options.language.set-the-office-language-preferences"]["controlType"], "label")
+        for note in ("Options category advanced: 1 list(s) of this PC's or the open documents' data recorded "
+                     "without choices",
+                     "Options category advanced: 1 disabled list(s) recorded without choices",
+                     "Options category language: 1 list box(es) recorded without entries",
+                     "Options category add-ins: 2 text(s) after a caption not recorded (what the caption names is "
+                     "this PC's data)"):
+            self.assertIn(note, ctx.notes)
+        cu.word_options_check(records)
+
+    def test_a_category_is_read_whole_on_screen_or_not(self):
+        below = control("CheckBox", "Allow co-authoring", is_offscreen=True)
+        seen = control("CheckBox", "Show the Start screen", rect=(150, 300, 350, 320))
+        word = FakeWordOptions({"General": [seen, below]}, scrolled={})
+        records, ctx = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        self.assertIn("bounds", by_id["word.options.general.show-the-start-screen"])
+        self.assertNotIn("bounds", by_id["word.options.general.allow-co-authoring"])  # recorded, without a position
+        self.assertEqual(by_id["word.options.general"]["itemCount"], 2)
+        self.assertEqual(word.scrolls, [100, 0])  # scrolled to its end, read again, and put back
+        # A pane that shows more only when scrolled is recorded whole, without positions.
+        late = control("CheckBox", "Only when scrolled")
+        word = FakeWordOptions({"General": [control("CheckBox", "Show the Start screen", rect=(150, 300, 350, 320))]},
+                               scrolled={"General": [late]})
+        records, ctx = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        self.assertIn("word.options.general.only-when-scrolled", by_id)
+        self.assertEqual(by_id["word.options.general"]["itemCount"], 2)
+        self.assertFalse([r["id"] for r in records if r.get("parent") == "word.options.general" and "bounds" in r])
+        self.assertIn("Options category General: more controls showed after scrolling; recorded whole, without "
+                      "positions", ctx.notes)
+        self.assertEqual(word.scrolls, [100, 0])
+
+    def test_a_category_that_cannot_be_read_whole_refuses_the_capture_and_still_cancels(self):
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")], "Display": [Flicker("Group", "Restless")]})
+        self.refused(word, "the Options category 'Display' did not show and settle within")
+        self.assertEqual((word.cancelled, word.dialog, word.view), (1, None, None))
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")], "Display": [E("Calendar", "When")]})
+        self.refused(word, "the Options category 'Display' could not be recorded", "is a Calendar, which the Options "
+                     "capture has no rule for")
+        self.assertEqual((word.cancelled, word.dialog), (1, None))  # a failure on the second category still cancels
+        word = FakeWordOptions({"General": [E("Text", "General options for working with Word.")]})
+        self.refused(word, "the Options category 'General' shows no heading and no control")
+        word = FakeWordOptions({"General": [E("List", "")]})
+        self.refused(word, "has no name and no text before it")
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")], "general": [control("CheckBox", "Fine")]})
+        self.refused(word, "lists the category 'general' twice")
+        self.assertEqual((word.cancelled, word.dialog), (1, None))
+
+    def test_a_list_that_will_not_open_or_shows_nothing_refuses_the_capture(self):
+        stuck = combo("Office Theme", "Black", opens=False)
+        word = FakeWordOptions({"General": [stuck]})
+        self.refused(word, "'Office Theme' did not open and close again (RuntimeError: it stayed shut)")
+        self.assertEqual(stuck.log, ["expand", "collapse"])  # closed again whatever happened
+        self.assertEqual((word.cancelled, word.dialog), (1, None))
+        empty = combo("Office Theme")
+        word = FakeWordOptions({"General": [empty]})
+        self.refused(word, "the choices of 'Office Theme' did not show and settle within")
+        self.assertEqual(empty.log, ["expand", "collapse"])
+        self.assertEqual((word.cancelled, word.dialog), (1, None))
+
+    def test_a_dialog_that_will_not_open_or_close_refuses_the_capture(self):
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")]}, opens=False)
+        self.refused(word, "Word Options did not open within")
+        self.assertEqual((word.cancelled, word.view), (0, None))  # nothing to cancel; Backstage was left
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")]}, closes=False)
+        self.refused(word, "Word Options could not be closed with Cancel; Word is left as it is and nothing is "
+                     "published")
+        self.assertEqual(word.cancelled, 3)
+        self.assertIsNotNone(word.dialog)
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")]})
+        word.nav.kids = [k for k in word.nav.kids if k.name != "Options"]
+        self.refused(word, "Backstage lists no Options entry")
+        self.assertIsNone(word.view)
+
+    def run_main(self, out, capture, launched=None, merge=True):
+        closed = []
+        launched = launched or type("L", (), {"hwnd": 5})()
+        type(launched).close = lambda self: closed.append(1)
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--options", "--out", str(out)] + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        self.assertEqual(closed, [1])
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_a_capture_that_cannot_close_the_dialog_publishes_nothing(self):
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")]}, closes=False)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            out.write_text("previous\n", encoding="utf-8")
+            code, _, err = self.run_main(out, lambda *a: (self.run_capture(word)[0], [], None))
+            self.assertEqual(code, 1)
+            self.assertIn("could not be closed with Cancel", err)
+            self.assertEqual(out.read_text(encoding="utf-8"), "previous\n")
+            fresh = Path(tmp) / "fresh.json"
+            code, _, _ = self.run_main(fresh, lambda *a: (self.run_capture(word)[0], [], None), merge=False)
+            self.assertEqual((code, fresh.exists()), (1, False))
+
+    def test_a_merge_carries_the_sentences_written_by_hand_and_no_old_record(self):
+        fresh, ctx = self.run_capture(self.two_categories())
+        live = "word.options.general.user-interface-options.enable-live-preview"
+        old = [dict(r, behaviour="Shows a change before it is made. Always available.") if r["id"] == live else r
+               for r in copy.deepcopy(fresh)]
+        old.append(dict(old[3], id="word.options.general.gone-since"))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            code, said, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+            self.assertIn(f"{out}: {len(fresh)} records", said)
+        self.assertEqual(written[live]["behaviour"], "Shows a change before it is made. Always available.")
+        self.assertNotIn("word.options.general.gone-since", written)
+        self.assertEqual(len(written), len(fresh))
+        # A capture that is not whole is refused before anything is written.
+        broken = [r for r in copy.deepcopy(fresh) if not r["id"].startswith("word.options.display")]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx), merge=False)
+            self.assertEqual((code, out.exists()), (1, False))
+            self.assertIn("the Options capture is not whole: word.options: holds 1 of the 2 categories", err)
+        # Nor is one the checker's schema would refuse: a label that reads as an address.
+        named = copy.deepcopy(fresh)
+        next(r for r in named if r["id"] == live)["label"] = "See contoso.md"
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            code, _, err = self.run_main(out, lambda *a: (named, [], ctx), merge=False)
+            self.assertEqual((code, out.exists()), (1, False))
+            self.assertIn("the Options capture breaks the inventory's schema, so nothing is published", err)
+            self.assertIn("label: host name or address", err)
+
+    def sampled(self, *answers):
+        """A launched Word whose options_sample answers in turn: a sample, or the refusal reading it raised."""
+        answers, asked = list(answers), []
+
+        class L:
+            hwnd = 5
+
+            def word_action(self, action, **kwargs):
+                asked.append(action)
+                answer = answers.pop(0)
+                if isinstance(answer, Exception):
+                    raise answer
+                return {"hwnd": 5, "sample": answer}
+        return L(), asked
+
+    def test_the_options_must_be_as_they_were_or_nothing_is_published(self):
+        fresh, ctx = self.run_capture(self.two_categories())
+        sample = dict({name: 1 for name in cu.word_options.SAMPLE}, SaveInterval=10)
+        unreadable = cu.Refused("Word's option SaveInterval could not be read; nothing is published")
+
+        def run(launched, out, ran=None):
+            def capture(args, launched, uia, win):
+                def walk():
+                    if ran is not None:
+                        ran.append(1)
+                    return copy.deepcopy(fresh)
+                return cu.options_unchanged(launched, walk), [], ctx
+            return self.run_main(out, capture, launched=launched)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            launched, asked = self.sampled(dict(sample), dict(sample))
+            code, _, err = run(launched, out)
+            self.assertEqual((code, err, asked), (0, "", ["options_sample", "options_sample"]))
+            self.assertEqual(len(json.loads(out.read_text(encoding="utf-8"))), len(fresh))
+            published = out.read_bytes()
+            # A changed option: refused, named, neither value printed, the file as it was.
+            launched, _ = self.sampled(dict(sample), dict(sample, SaveInterval=7, Overtype=0))
+            code, said, err = run(launched, out)
+            self.assertEqual(code, 1)
+            self.assertIn("Word's options are not as they were before the capture (Overtype, SaveInterval); nothing "
+                          "is published", err)
+            for value in ("10", "7"):
+                self.assertNotIn(value, err + said)
+            self.assertEqual(out.read_bytes(), published)
+            # An option that cannot be read, before or after: the same, and before means the dialog never opens.
+            for answers, walked in (((unreadable,), []), ((dict(sample), unreadable), [1])):
+                ran = []
+                launched, _ = self.sampled(*answers)
+                code, said, err = run(launched, out, ran)
+                self.assertEqual((code, ran), (1, walked))
+                self.assertIn("Word's option SaveInterval could not be read; nothing is published", err)
+                self.assertEqual(out.read_bytes(), published)
+            # A sample that is not the one asked for is not a sample.
+            short = {name: 1 for name in cu.word_options.SAMPLE[:-1]}
+            launched, _ = self.sampled(short)
+            code, _, err = run(launched, out)
+            self.assertEqual(code, 1)
+            self.assertIn("Word did not report the options the capture samples", err)
+            self.assertEqual(out.read_bytes(), published)
+
+    def test_the_sample_is_read_from_words_own_options_and_a_failed_read_names_the_option(self):
+        class Options:
+            def __getattr__(self, name):
+                if name == "SaveInterval" and self.broken:
+                    raise RuntimeError("secret value 42 could not be marshalled")
+                return True if name != "SaveInterval" else 10
+        options = Options()
+        options.__dict__["broken"] = False
+        launched = object.__new__(cu.Launched)
+        launched.key, launched.hwnd = "word", 5
+        launched.app = type("App", (), {"Options": options})()
+        launched._check_alone_impl = lambda: None
+        answer = launched._word_action_impl("options_sample")
+        self.assertEqual(sorted(answer["sample"]), sorted(cu.word_options.SAMPLE))
+        self.assertEqual((answer["sample"]["SaveInterval"], answer["sample"]["Overtype"]), (10, 1))
+        options.__dict__["broken"] = True
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("options_sample")
+        self.assertEqual(str(ctx.exception), "Word's option SaveInterval could not be read; nothing is published")
+
+    def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
+        args = type("A", (), {"app": "excel", "options": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)  # nothing launched, read or pressed
+        self.assertIn("Word's Options dialog only", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

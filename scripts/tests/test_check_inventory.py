@@ -1656,7 +1656,7 @@ class Inventory(unittest.TestCase):
         self.assertIn("pins 2 commits, not one", str(raised.exception))
 
     def test_the_inventory_files_with_rules_of_their_own_take_them(self):
-        # check() hands the shell chrome file, and the repository's Word ribbon, Backstage and shortcut files, to their
+        # check() hands the shell chrome file, and the repository's Word ribbon, Backstage, shortcut and Options files, to their
         # own checks. Those rules have their own tests; here each check is stood in for, and what is held is that it
         # runs for its file in the repository's inventory and not for a file of that name in a scratch inventory.
         from unittest import mock
@@ -1664,7 +1664,7 @@ class Inventory(unittest.TestCase):
             (self.inv / name).write_text((ci.INVENTORY / name).read_text(encoding="utf-8"), encoding="utf-8")
         self.write("shell/chrome.json", [])
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
-                  "shortcuts": "check_word_shortcuts"}
+                  "shortcuts": "check_word_shortcuts", "options": "check_word_options"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1845,6 +1845,40 @@ class Cli(unittest.TestCase):
                         lines[1])
         self.assertTrue(lines[2].endswith("capture.json[2]: target word.sweepprobe.nothing names no record"),
                         lines[2])
+
+
+class OptionsRules(unittest.TestCase):
+    """What Word's Options inventory asked of the schema (D02 T01 §31): Markdown's file pattern, and `enabled`."""
+
+    def test_markdown_is_a_file_name_only_as_its_pattern(self):
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+
+        def problems(label):
+            return ci.validate([dict(BOLD, label=label)], schema, schema)
+        for label in ("Markdown (*.md)", "Markdown (*.MD)", "Saves as *.md", "Markdown (*.md, *.docx)"):
+            self.assertEqual(problems(label), [], label)
+        for label in ("contoso.md", "Notes.md", "a.md", "See contoso.md", "*.example.md", "*.mda", "*.mdx",
+                      "*.md.docx", "x.*.md", "Opens .md files", "(.md)", "**.example.md"):
+            self.assertTrue(problems(label), label)
+
+    def test_enabled_is_false_and_on_a_setting_or_a_choice_only(self):
+        # D02 T01 §31: a control of a dialog that was disabled when it was captured says so; nothing else does.
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+        setting = {"id": "word.options.general.show-all", "app": "word", "kind": "setting", "label": "Show all",
+                   "parent": "word.options.general", "order": 0, "controlType": "checkBox"}
+        choice = dict(setting, id=setting["id"] + ".never", kind="menuItem", label="Never", parent=setting["id"])
+        choice.pop("controlType")
+
+        def problems(record, **fields):
+            return ci.validate([dict(record, **fields)], schema, schema)
+        for record in (setting, choice, BOLD, TAB, GROUP):  # a record that does not say is whatever its kind
+            self.assertEqual(problems(record), [], record["id"])
+        self.assertEqual(problems(setting, enabled=False), [])
+        self.assertEqual(problems(choice, enabled=False), [])
+        for value in (True, "false", 0, None):
+            self.assertTrue(problems(setting, enabled=value), repr(value))
+        for record in (BOLD, TAB, GROUP):
+            self.assertTrue(problems(record, enabled=False), record["id"])
 
 
 if __name__ == "__main__":

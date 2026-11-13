@@ -95,6 +95,25 @@ def is_word_backstage(path, inventory=INVENTORY):
         p.resolve() == (INVENTORY / "word" / "backstage.json").resolve()
 
 
+def is_word_options(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word Options inventory (`design/inventory/word/options.json`)."""
+    return Path(inventory).resolve() == INVENTORY.resolve() and \
+        Path(path).resolve() == (INVENTORY / "word" / "options.json").resolve()
+
+
+def check_word_options(f, data):
+    """Problems in word/options.json beyond the record schema (D02 T01 §31): the dialog's categories, each
+    category's headings and controls and each list's choices are all there, by the counts the capture recorded.
+    The rules are scripts/lib/word_options.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_options
+    try:
+        word_options.validate(data)
+    except word_options.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def is_word_shortcuts(path, inventory=INVENTORY):
     """Whether `path` is the repository's Word shortcut inventory (`design/inventory/word/shortcuts.json`)."""
     return Path(inventory).resolve() == INVENTORY.resolve() and \
@@ -365,7 +384,9 @@ def validate(value, schema, root, path="$"):
     problems = []
     if "type" in schema and not type_ok(value, schema["type"]):
         return [f"{path}: expected {schema['type']}"]
-    if "const" in schema and value != schema["const"]:
+    # JSON has no number that is a boolean: Python reads 0 == False and 1 == True, a schema does not.
+    if "const" in schema and (value != schema["const"]
+                              or isinstance(value, bool) != isinstance(schema["const"], bool)):
         problems.append(f"{path}: must be {schema['const']!r}")
     if "enum" in schema and value not in schema["enum"]:
         problems.append(f"{path}: {value!r} is not one of the allowed values")
@@ -757,6 +778,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_ribbon(f, data)
         if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
             problems += check_word_backstage(f, data, True)
+        if is_word_options(f, inventory):  # D02 T01 §31: the counts the capture recorded hold
+            problems += check_word_options(f, data)
         if is_word_shortcuts(f, inventory):  # D02 T01 §17: scope, behaviour and the checklist, flag or not
             problems += check_word_shortcuts(f, data)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The

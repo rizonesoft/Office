@@ -7,6 +7,7 @@
     python scripts/capture-ui.py --app word --all-tabs                       # design/inventory/word/ribbon.json
     python scripts/capture-ui.py --app word --all-tabs --expand --merge      # keep hand-written fields
     python scripts/capture-ui.py --app word --all-tabs --layout simplified   # ribbon-simplified.json
+    python scripts/capture-ui.py --app word --options                        # design/inventory/word/options.json
 
 The tool acts only on a window it opened itself. Word and Excel run as a separate instance of their own (COM
 DispatchEx), so the operator's open documents are never touched; an app that allows one instance only is launched
@@ -42,6 +43,7 @@ import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_backstage  # noqa: E402  (scripts/lib, on the path above)
+import word_options  # noqa: E402
 from word_absences import WORD_RECONCILED_ABSENT_TABS  # noqa: E402
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
                         same_build, transacted_replace, transacted_restore, transacted_unlink)
@@ -342,6 +344,7 @@ class Element:
         self.class_name = raw.CurrentClassName or ""
         self.control_type = uia.type_name(raw.CurrentControlType)
         self.is_offscreen = bool(getattr(raw, "CurrentIsOffscreen", False))
+        self.is_enabled = bool(getattr(raw, "CurrentIsEnabled", True))
         r = raw.CurrentBoundingRectangle
         self.rect = (r.left, r.top, r.right, r.bottom) if r.right > r.left and r.bottom > r.top else None
 
@@ -358,7 +361,8 @@ class Element:
         u = self.uia.U
         pid, iface = {"toggle": (u.UIA_TogglePatternId, u.IUIAutomationTogglePattern),
                       "select": (u.UIA_SelectionItemPatternId, u.IUIAutomationSelectionItemPattern),
-                      "expand": (u.UIA_ExpandCollapsePatternId, u.IUIAutomationExpandCollapsePattern)}[name]
+                      "expand": (u.UIA_ExpandCollapsePatternId, u.IUIAutomationExpandCollapsePattern),
+                      "scroll": (u.UIA_ScrollPatternId, u.IUIAutomationScrollPattern)}[name]
         raw = self.raw.GetCurrentPattern(pid)
         return raw.QueryInterface(iface) if raw else None
 
@@ -385,6 +389,15 @@ class Element:
 
     def collapse(self):
         self.pattern("expand").Collapse()
+
+    def scroll_to(self, percent):
+        """Scroll a pane down to `percent` of its range, leaving it sideways as it is; False when it cannot
+        scroll."""
+        p = self.pattern("scroll")
+        if p is None or not p.CurrentVerticallyScrollable:
+            return False
+        p.SetScrollPercent(-1.0, float(percent))  # -1 is UI Automation's "do not scroll this way"
+        return True
 
     def invoke(self):
         """Press a plain button (Backstage's File tab and navigation entries expose Invoke only)."""
@@ -2323,6 +2336,14 @@ class Launched:
             except Exception:
                 pass
             return {"hwnd": int(self.hwnd or 0)}
+        if action == "options_sample":  # D02 T01 §31: read before and after an Options capture, never printed
+            options, sample = app.Options, {}
+            for name in word_options.SAMPLE:
+                try:
+                    sample[name] = int(getattr(options, name))
+                except Exception:  # COM raises its own error types; the run is refused, naming the option
+                    raise Refused(f"Word's option {name} could not be read; nothing is published") from None
+            return {"hwnd": int(self.hwnd or 0), "sample": sample}
         raise Refused(f"unknown word_action {action!r}")
 
     def _new_project(self):
@@ -2767,6 +2788,8 @@ def popup_items(root, popup_roots=(), label="popup", target=None, exclude_rids=f
 def capture(args, launched, uia, win):
     if getattr(args, "backstage", False) and args.app != "word":
         raise Refused("--backstage captures Word's Backstage view only (D02 T01 §6)")
+    if getattr(args, "options", False) and args.app != "word":
+        raise Refused("--options captures Word's Options dialog only (D02 T01 §31)")
     row = APPS[args.app][0]
     expected = reference_build(app=row)
     if installed_build() != expected:
@@ -2805,6 +2828,20 @@ def capture(args, launched, uia, win):
         launched.check_alone()
         check_licensing()
         records = capture_word_backstage(launched, uia, win, ctx, identifiers)
+        check_licensing()
+        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+            ctx.drop_geometry("the window moved or changed size during the capture")
+        if ctx.origin is None:
+            for rec in records:
+                for key in ("bounds", "captureProfile", "size"):
+                    rec.pop(key, None)
+            problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
+    if getattr(args, "options", False):
+        launched.check_alone()
+        check_licensing()
+        records = options_unchanged(launched, lambda: capture_word_options(launched, uia, win, ctx))
+        launched.check_alone()
         check_licensing()
         if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
             ctx.drop_geometry("the window moved or changed size during the capture")
@@ -2981,14 +3018,7 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
     per navigation action, which is never invoked. Fails, naming the page, when a page does not load in time; the
     caller then publishes nothing."""
     hwnd = launched.hwnd
-    root = uia.element(hwnd)
-    file_tab = wait_for(lambda: find(root, lambda e: e.automation_id == "FileTabButton"))
-    if file_tab is None:
-        raise Refused("the File tab was not found in Word's window")
-    file_tab.invoke()
-    nav = wait_for(lambda: find(uia.element(hwnd), lambda e: e.automation_id == "NavBarMenu", depth=20), seconds=ready)
-    if nav is None:
-        raise Refused("the Backstage navigation list did not appear after File was pressed")
+    nav = open_backstage(uia, hwnd, ready)
     records = []
     try:
         entries = [(e.name, e) for e in nav.children() if e.name]
@@ -3108,6 +3138,247 @@ def leave_backstage(uia, win, hwnd, attempts=4):
         if wait_for(lambda: _backstage_view(uia, hwnd) is None, seconds=3.0):
             return
     raise Refused("the Backstage view could not be left; Word is left as it is")
+
+
+def open_backstage(uia, hwnd, ready):
+    """Press File and return the Backstage navigation list once it shows."""
+    root = uia.element(hwnd)
+    file_tab = wait_for(lambda: find(root, lambda e: e.automation_id == "FileTabButton"))
+    if file_tab is None:
+        raise Refused("the File tab was not found in Word's window")
+    file_tab.invoke()
+    nav = wait_for(lambda: find(uia.element(hwnd), lambda e: e.automation_id == "NavBarMenu", depth=20), seconds=ready)
+    if nav is None:
+        raise Refused("the Backstage navigation list did not appear after File was pressed")
+    return nav
+
+
+# ------------------------------------------------------------------------------- Word Options (D02 T01 §31)
+def options_tree(element, depth=0, limit=12):
+    """A plain tree of one element for word_options.record_category. Only a container is walked into: a control is
+    one node, whatever parts it is made of, and nothing inside it (a value, a list's entries) is read."""
+    node = {"role": element.control_type, "name": element.name, "class_name": element.class_name,
+            "enabled": bool(getattr(element, "is_enabled", True)), "offscreen": bool(element.is_offscreen),
+            "_el": element}
+    if element.control_type in word_options.CONTAINERS and depth < limit:
+        node["children"] = [options_tree(k, depth + 1, limit) for k in element.children()]
+    return node
+
+
+def _options_signature(node):
+    return (node["role"], node["name"], node["enabled"]) + tuple(
+        _options_signature(k) for k in node.get("children", []) if k["role"] not in word_options.SKIPPED)
+
+
+def _options_sample(launched):
+    state = launched.word_action("options_sample")
+    sample = state.get("sample") if isinstance(state, dict) else None
+    if not isinstance(sample, dict) or set(sample) != set(word_options.SAMPLE):
+        raise Refused("Word did not report the options the capture samples; nothing is published")
+    return sample
+
+
+def options_unchanged(launched, run):
+    """Run a capture of Word Options between two reads of a sample of Word's options, and refuse its result when
+    one differs: the capture opens the dialog and must leave every setting as it found it. Only the names of the
+    options that differ are said, never a value. Word answers no object-model call while a dialog is open, so the
+    sample is read before the dialog opens and after it has closed, and not at all when the capture failed."""
+    before = _options_sample(launched)
+    result = run()
+    differing = word_options.changed(before, _options_sample(launched))
+    if differing:
+        raise Refused("Word's options are not as they were before the capture (" + ", ".join(differing) +
+                      "); nothing is published. Open Word Options and put them right")
+    return result
+
+
+def close_word_options(uia, win, pid, dialog, attempts=3, seconds=5.0):
+    """Close Word Options with its own Cancel button and see that its window is gone. Cancel discards whatever the
+    dialog holds, so no setting changes; the tool never presses OK and never closes the window any other way."""
+    for _ in range(attempts):
+        if dialog not in win.windows_of(pid):
+            return
+        try:
+            cancel = find(uia.element(dialog), lambda e: e.control_type == "Button" and e.name == "Cancel", depth=6)
+        except Gone:
+            continue  # the window went while it was read
+        if cancel is not None:
+            cancel.invoke()
+        if wait_for(lambda: dialog not in win.windows_of(pid), seconds=seconds):
+            return
+    raise Refused("Word Options could not be closed with Cancel; Word is left as it is and nothing is published")
+
+
+def _options_choices(node, ready):
+    """The fixed choices of one list or menu of Word Options: it is opened, read until two reads agree and closed
+    again, with nothing chosen. Returns plain nodes; they carry no position (the list is closed again)."""
+    el, items = node["_el"], None
+    try:
+        try:
+            el.expand()
+
+            def read():
+                menu = next((k for k in el.children() if k.control_type == "Menu"), None)
+                found = [d for d in descendants(menu, depth=6) if d.control_type in ("ListItem", "MenuItem")] \
+                    if menu is not None else []
+                return (found, tuple((d.control_type, d.name) for d in found)) if found else None
+            items = settled(read, ready)
+        finally:
+            el.collapse()
+            time.sleep(0.2)
+    except Refused:
+        raise
+    except Exception as exc:  # a list that will not open or close fails the capture: it would be incomplete
+        raise Refused(f"{node.get('name')!r} did not open and close again ({type(exc).__name__}: {exc})") from None
+    if items is None:
+        raise Refused(f"the choices of {node.get('name')!r} did not show and settle within {ready:.0f} s")
+    return [{"name": d.name, "enabled": bool(getattr(d, "is_enabled", True)), "offscreen": True, "_el": d}
+            for d in items]
+
+
+def _options_category(uia, dialog, name, ready, notes):
+    """The content tree of the category now selected, read whole: until two reads agree, then again with the pane
+    scrolled to its end. Controls below the pane's edge are in the tree already; a pane that shows more only when
+    scrolled is recorded from the scrolled read, without positions."""
+    def read():
+        pane = find(uia.element(dialog), lambda e: e.control_type == "Pane"
+                    and word_options.clean(e.name) == word_options.clean(name), depth=5)
+        if pane is None:
+            return None
+        tree = options_tree(pane)
+        return (tree, _options_signature(tree)) if tree.get("children") else None
+
+    first = settled(read, ready)
+    if first is None:
+        raise Refused(f"the Options category {name!r} did not show and settle within {ready:.0f} s")
+    scroll = getattr(first["_el"], "scroll_to", None)
+    if not callable(scroll) or not scroll(100):
+        return first
+    try:
+        second = settled(read, ready)
+    finally:
+        scroll(0)
+    if second is None:
+        raise Refused(f"the Options category {name!r} did not settle after it was scrolled to its end")
+    if _options_signature(second) == _options_signature(first):
+        return first
+
+    def unplaced(node):
+        node["offscreen"] = True
+        for kid in node.get("children", []):
+            unplaced(kid)
+    unplaced(second)
+    notes.append(f"Options category {name}: more controls showed after scrolling; recorded whole, without positions")
+    return second
+
+
+def capture_word_options(launched, uia, win, ctx, ready=BACKSTAGE_READY_SECONDS):
+    """Records of Word's Options dialog: the dialog, one `dialogTab` per category it lists, and under each its
+    headings, controls and fixed choices (scripts/lib/word_options.py). The dialog is opened from Backstage and
+    closed with Cancel on every path; when it cannot be closed, or a category cannot be read whole, the capture
+    is refused and the caller publishes nothing."""
+    hwnd, pid = launched.hwnd, launched.proc.pid
+    nav = open_backstage(uia, hwnd, ready)
+    dialog = None
+    try:
+        entry = next((e for e in nav.children() if e.name == "Options"), None)
+        if entry is None:
+            raise Refused("Backstage lists no Options entry, so Word Options cannot be opened")
+        known = set(win.windows_of(pid))
+        entry.activate()
+        dialog = wait_for(lambda: next((h for h in win.windows_of(pid) if h not in known), None), seconds=ready)
+        if dialog is None:
+            raise Refused(f"Word Options did not open within {ready:.0f} s of Options being pressed")
+        return _walk_word_options(uia, ctx, dialog, ready)
+    finally:
+        if dialog is not None:  # when this raises, Backstage cannot be left either: the dialog is modal
+            close_word_options(uia, win, pid, dialog, seconds=min(5.0, ready))
+        leave_backstage(uia, win, hwnd)
+
+
+def _walk_word_options(uia, ctx, dialog, ready):
+    top = uia.element(dialog)
+
+    def categories():
+        found = find(uia.element(dialog), lambda e: e.control_type == "List", depth=5)
+        return found if found is not None and any(k.control_type == "ListItem" for k in found.children()) else None
+    listed = wait_for(categories, seconds=ready)
+    if listed is None:
+        raise Refused("Word Options shows no list of categories")
+    names = [k.name for k in listed.children() if k.control_type == "ListItem" and word_options.clean(k.name)]
+    title = word_options.clean(top.name) or "Word Options"
+    frame = find(top, lambda e: e.control_type == "Group" and word_options.clean(e.name) == title, depth=3) or top
+    window_origin = ctx.origin
+    # A position in the dialog is measured from the dialog's own corner, wherever the dialog stands.
+    ctx.origin = (frame.rect[0], frame.rect[1]) if window_origin is not None and frame.rect else None
+    try:
+        def base(rid, kind, label, order, node, parent, **extra):
+            rec = ctx.base(rid, kind, label, order, node["_el"], parent=parent, **extra)
+            if node.get("offscreen"):  # below the pane's edge, or in a list that is closed again: no position
+                rec.pop("bounds", None)
+                rec.pop("captureProfile", None)
+            return rec
+
+        def choices(node):
+            return _options_choices(node, ready)
+
+        records = [ctx.base(word_options.ROOT, "dialog", title, 0, frame, parent=None, itemCount=len(names))]
+        seen = set()
+        for order, name in enumerate(names):
+            cid = word_options.category_id(name)
+            if cid in seen:
+                raise Refused(f"Word Options lists the category {name!r} twice")
+            seen.add(cid)
+            item = next((k for k in categories().children() if k.name == name), None)
+            if item is None:
+                raise Refused(f"the Options category {name!r} is no longer listed")
+            item.activate()
+            tree = _options_category(uia, dialog, name, ready, ctx.notes)
+            tab = ctx.base(cid, "dialogTab", word_options.clean(name), order, item, parent=word_options.ROOT)
+            try:
+                under = word_options.record_category(cid, tree["children"], base, choices, ctx.notes)
+            except word_options.Invalid as exc:
+                raise Refused(f"the Options category {name!r} could not be recorded: {exc}") from None
+            count = sum(1 for r in under if r["kind"] in word_options.COUNTED)
+            if not count:
+                raise Refused(f"the Options category {name!r} shows no heading and no control")
+            tab["itemCount"] = count
+            records += [tab] + under
+        buttons = [k for k in frame.children() if k.control_type == "Button" and word_options.clean(k.name)]
+        for at, button in enumerate(buttons):
+            rec = ctx.base(f"{word_options.ROOT}.{word_backstage.slug(button.name)}", "control",
+                           word_options.clean(button.name), len(names) + at, button, parent=word_options.ROOT,
+                           controlType="button")
+            rec.pop("size", None)  # a ribbon control's size class means nothing on a dialog's button
+            records.append(rec)
+        return records
+    finally:
+        ctx.origin = window_origin
+
+
+def schema_problems(records):
+    """What the inventory's schema refuses in `records` (a label that reads as an address, a field that is too
+    long), asked of scripts/check-inventory.py itself: a capture never publishes a file the checker would refuse."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("check_inventory_for_capture",
+                                                  Path(__file__).resolve().parent / "check-inventory.py")
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    schema = json.loads((INVENTORY / "schema.json").read_text(encoding="utf-8"))
+    return checker.validate(records, schema, schema)
+
+
+def word_options_check(records):
+    """Refuse an Options capture that is not whole (scripts/lib/word_options.py's rules) or that the inventory's
+    schema would refuse."""
+    try:
+        word_options.validate(records)
+    except word_options.Invalid as exc:
+        raise Refused(f"the Options capture is not whole: {exc}") from None
+    problems = schema_problems(records)
+    if problems:
+        raise Refused("the Options capture breaks the inventory's schema, so nothing is published: " +
+                      "; ".join(problems[:5]) + (f"; and {len(problems) - 5} more" if len(problems) > 5 else ""))
 
 
 def same_geometry(before, after):
@@ -7657,6 +7928,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--all-tabs", action="store_true", help="every built-in tab the ribbon lists")
     which.add_argument("--shell", action="store_true", help="shared shell chrome and per-app shell overrides")
     which.add_argument("--backstage", action="store_true", help="Word's Backstage view (D02 T01 §6)")
+    which.add_argument("--options", action="store_true", help="Word's Options dialog (D02 T01 §31)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -7731,7 +8003,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     if not args.app:
         parser.error("the following arguments are required: --app")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
-        "backstage.json" if args.backstage else "ribbon-simplified.json" if args.layout == "simplified" else
+        "backstage.json" if args.backstage else "options.json" if args.options else
+        "ribbon-simplified.json" if args.layout == "simplified" else
         "ribbon.json")
     if out.exists() and not args.merge:
         print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
@@ -7770,6 +8043,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         is_canonical_word_ribbon = False
         if args.backstage:
             word_backstage_check(records, require_behaviour=False)  # the fresh capture alone must be complete
+        elif args.options:
+            word_options_check(records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -7789,7 +8064,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage:  # only the hand-written fields carry over; no old record survives
+                if args.backstage or args.options:  # only the hand-written fields carry over; no old record survives
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
