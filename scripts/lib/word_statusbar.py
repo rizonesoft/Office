@@ -84,18 +84,27 @@ def label_of(name, labels=KNOWN):
     return HINT.sub("", text).strip(), False
 
 
-def zones_of(rects):
-    """For items given by their left and right edges, in order, the zone of each: the widest gap between two
-    neighbours divides left from right; with one item or none, everything is left."""
-    if len(rects) < 2:
-        return ["left"] * len(rects)
-    gaps = [(rects[i + 1][0] - rects[i][1], i) for i in range(len(rects) - 1)]
-    _width, at = max(gaps)
-    return ["left"] * (at + 1) + ["right"] * (len(rects) - at - 1)
+def zones_of(rects, bar=None):
+    """For items given by their left and right edges, in order, the zone of each. The left zone's items stand from
+    the bar's left edge and the right zone's up to its right edge, so the widest stretch of the bar with no item on
+    it divides them. `bar` is the bar's own left and right edge: with it, the stretch before the first item and the
+    one after the last count too, so a bar whose owner emptied one zone is still read rightly (all its items are
+    right when the widest empty stretch comes first, left when it comes last). Without it, only the gaps between
+    neighbours are known, and one item or none is left."""
+    if not rects:
+        return []
+    gaps = [(rects[i + 1][0] - rects[i][1], i + 1) for i in range(len(rects) - 1)]
+    if bar is not None:
+        gaps += [(rects[0][0] - bar[0], 0), (bar[1] - rects[-1][1], len(rects))]
+    if not gaps:
+        return ["left"]
+    _width, at = max(gaps, key=lambda gap: (gap[0], gap[1]))
+    return ["left"] * at + ["right"] * (len(rects) - at)
 
 
 def records(bar, items, menu_items, base):
-    """The records of the bar and its menu. `bar` is the bar's plain node; `items` are the bar's items in order,
+    """The records of the bar and its menu. `bar` is the bar's plain node, with its `rect`; `items` are the bar's
+    items in order,
     each a plain node with `role`, `name` and `rect`; `menu_items` are the menu's in order, each with `name`,
     `checked` (a boolean) and `group` (which run of the menu it stands in). `base(rid, kind, label, order, node, parent,
     **extra)` builds a record. Raises Invalid for a menu that is not `MENU` or an item with no rule."""
@@ -116,7 +125,8 @@ def records(bar, items, menu_items, base):
             rid = f"{parent}.{slug(label)}-{n}"
         used.add(rid)
         return rid
-    zones = zones_of([(item["rect"][0], item["rect"][2]) for item in items])
+    edges = (bar["rect"][0], bar["rect"][2]) if bar.get("rect") else None
+    zones = zones_of([(item["rect"][0], item["rect"][2]) for item in items], edges)
     for at, zone in enumerate(ZONES):
         out.append(base(unique(ROOT, zone), "region", f"{zone.title()} zone", at, None, ROOT))
     order = dict.fromkeys(ZONES, 0)

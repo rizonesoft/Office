@@ -3900,8 +3900,9 @@ def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
         labels = [word_statusbar.label_of(i["name"])[0] for i in items]
         return (bar, items), tuple((label, i["role"], i["rect"]) for label, i in zip(labels, items))
 
-    def found(items):
-        zones = word_statusbar.zones_of([(i["rect"][0], i["rect"][2]) for i in items])
+    def found(bar, items):
+        edges = (bar.rect[0], bar.rect[2]) if bar.rect else None
+        zones = word_statusbar.zones_of([(i["rect"][0], i["rect"][2]) for i in items], edges)
         return [(word_statusbar.label_of(i["name"])[0], zone, word_statusbar.TYPES.get(i["role"]))
                 for i, zone in zip(items, zones)]
 
@@ -3931,12 +3932,12 @@ def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
             raise Refused(f"the status bar did not settle within {ready * word_statusbar.PATIENCE:.0f} s")
         if whole is not None:
             bar, items = whole
-            lacking = word_statusbar.missing(found(items), shown)
+            lacking = word_statusbar.missing(found(bar, items), shown)
             if not lacking:
                 break
             lacked = ("the status bar does not show " + ", ".join(lacking) + ", which scripts/lib/word_statusbar.py "
                       "says it must for a blank document with these ticks (it shows: " +
-                      ", ".join(label for label, _zone, _type in found(items)) + ")")
+                      ", ".join(label for label, _zone, _type in found(bar, items)) + ")")
         if time.monotonic() >= deadline:
             raise Refused(lacked)
 
@@ -3946,7 +3947,7 @@ def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
         made.pop("size", None)
         return made
     try:
-        records = word_statusbar.records({"_el": bar}, items, first, base)
+        records = word_statusbar.records({"_el": bar, "rect": bar.rect}, items, first, base)
     except word_statusbar.Invalid as exc:
         raise Refused(f"the status bar could not be recorded: {exc}") from None
     ctx.notes.append(f"status bar: {len(items)} items on the bar; {len(first)} in its menu, "

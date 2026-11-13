@@ -6261,6 +6261,29 @@ class WordStatusBar(unittest.TestCase):
         self.assertEqual([r["label"] for r in records if r.get("parent") == "word.statusbar.right"],
                          ["Display Settings", "Focus", "Zoom"])
         cu.word_statusbar_check(records)
+        # The owner emptied the left zone: what stands on the bar is all right-hand, and is read so.
+        left = [label for label, zone, _type, tick in cu.word_statusbar.BAR if zone == "left"]
+        word = FakeWordStatusBar(unticked=left)
+        word.bar.kids = [i for i in word.bar.kids if not i.name.startswith(tuple(left))]
+        records, _ = self.run_capture(word)
+        self.assertFalse([r for r in records if r.get("parent") == "word.statusbar.left"])
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.statusbar.right"],
+                         ["Display Settings", "Focus", "Read Mode", "Print Layout", "Web Layout", "Zoom Out", "Zoom",
+                          "Zoom In", "Zoom"])
+        menu = {r["label"]: r["checked"] for r in records if r["kind"] == "menuItem"}
+        self.assertEqual((len(menu), [label for label in left if menu[label]]), (28, []))  # every tick, as it is
+        self.assertEqual({r["id"] for r in records if r["kind"] == "region"},
+                         {"word.statusbar", "word.statusbar.left", "word.statusbar.right"})
+        cu.word_statusbar_check(records)
+        # And the right zone: Display Settings, which no tick hides, is the bar's last item and still right-hand.
+        right = sorted({tick for _l, zone, _t, tick in cu.word_statusbar.BAR if zone == "right" and tick})
+        word = FakeWordStatusBar(unticked=right)
+        word.bar.kids = [i for i in word.bar.kids if i.rect[0] < 1400 or i.name.startswith("Display Settings")]
+        records, _ = self.run_capture(word)
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.statusbar.right"],
+                         ["Display Settings"])
+        self.assertEqual(sum(1 for r in records if r.get("parent") == "word.statusbar.left"), 7)
+        cu.word_statusbar_check(records)
         # Ticked and not on the bar is a bar that is not whole.
         word = FakeWordStatusBar(unticked=("Section",))
         word.bar.kids = [i for i in word.bar.kids if not i.name.startswith("Language")]

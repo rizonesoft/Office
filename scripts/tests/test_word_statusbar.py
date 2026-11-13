@@ -147,11 +147,18 @@ class Rules(unittest.TestCase):
         self.assertEqual(sb.label_of("Zoom Out (Ctrl -)", sb.LABELS), ("Zoom", True))  # the menu's labels alone
         self.assertEqual(sb.label_of("Zoomed"), ("Zoomed", False))  # a label fits whole words only
 
-    def test_the_widest_gap_divides_the_bar(self):
-        self.assertEqual(sb.zones_of([(4, 75), (78, 135), (138, 170), (1441, 1555), (1555, 1617)]),
-                         ["left", "left", "left", "right", "right"])
+    def test_the_widest_empty_stretch_of_the_bar_divides_its_zones(self):
+        both = [(4, 75), (78, 135), (138, 170), (1441, 1555), (1555, 1617)]
+        self.assertEqual(sb.zones_of(both, (0, 1920)), ["left", "left", "left", "right", "right"])
+        self.assertEqual(sb.zones_of(both), ["left", "left", "left", "right", "right"])
+        # A zone the owner emptied: the stretch before the first item, or after the last, is the widest.
+        self.assertEqual(sb.zones_of([(1441, 1555), (1555, 1617), (1620, 1920)], (0, 1920)), ["right"] * 3)
+        self.assertEqual(sb.zones_of([(4, 75), (78, 135), (138, 170)], (0, 1920)), ["left"] * 3)
+        self.assertEqual(sb.zones_of([(1877, 1920)], (0, 1920)), ["right"])
+        self.assertEqual(sb.zones_of([(4, 75)], (0, 1920)), ["left"])
+        # Without the bar's own edges only the gaps between neighbours are known.
         self.assertEqual(sb.zones_of([(4, 75)]), ["left"])
-        self.assertEqual(sb.zones_of([]), [])
+        self.assertEqual(sb.zones_of([], (0, 1920)), [])
 
 
 class Checker(unittest.TestCase):
