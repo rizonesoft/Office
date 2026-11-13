@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a76",
+  "title": "Word Backstage Pages",
+  "implementation_sha": "f8537dc1eab7900e5db59b1df78bea6729b287e9",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s6.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/run-tests.py -p \"test_capture_ui.py\" -> Ran 78 tests in 1 files in 59.1 s (4 at a time) OK",
+    "python scripts/run-tests.py -p \"test_word_backstage.py\" -> Ran 26 tests in 1 files in 0.6 s (4 at a time) OK",
+    "python scripts/check-inventory.py design/inventory -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s6.md",
+    "verdict": "complete",
+    "candidate": "f8537dc1eab7900e5db59b1df78bea6729b287e9",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s6.md",
+    "candidate": "5aaf39cf953f3a8295652170ae176fdb108fc020",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "5aaf39cf953f3a8295652170ae176fdb108fc020",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

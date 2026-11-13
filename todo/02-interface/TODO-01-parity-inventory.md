@@ -44,7 +44,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 3 | §3 | UIA capture tool | §1, §2, §21 | [x] |
 | 4 | §4 | Shell chrome inventory | §3, §23, §24, §26 | [x] |
 | 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [x] |
-| 6 | §6 | Word Backstage pages | §5 | [ ] |
+| 6 | §6 | Word Backstage pages | §5 | [x] |
 | 7 | §7 | Excel ribbon | §3, §19, §23, §24, §26 | [ ] |
 | 8 | §8 | Excel panes, dialogs | §7, §17 | [ ] |
 | 9 | §9 | PowerPoint ribbon | §3, §19, §23, §24, §26 | [ ] |
@@ -249,11 +249,14 @@ Word beyond the ribbon, part one: the Backstage view behind File, its pages (Hom
 - [x] Write a `behaviour` sentence, in our own words under the Microsoft-free rule (§21), for every page, action and actionable control in `design/inventory/word/backstage.json`, saying what it does and when it is disabled; `validate_word_backstage` refuses an actionable record without one. Done when: a test with one behaviour removed is refused naming the record, and `python scripts/check-inventory.py design/inventory/word` exits 0 on the committed file. Cheaper substitute: raw captured labels with no behaviour. **Corrected 2026-11-13 (plan review, gap 3).**
 - [x] Bound every page's readiness: after an entry is selected, wait at most a set time (`wait_for`) for its content pane to hold at least one child that is not a loading indicator, and treat a page still loading or empty as a failure of the capture, never as an empty page; on any failure leave Backstage, close the document and Word the tool opened, publish nothing and leave the previous `design/inventory/word/backstage.json` as it was. Done when: tests show a page that never loads, and a traversal that fails on its third page after two good ones, each exiting non-zero naming the page, with the fake's window closed and a previous output file byte-for-byte unchanged. Cheaper substitute: a fixed sleep. **Corrected 2026-11-13 (plan review, gap 4).** **Corrected again 2026-11-13 (fresh plan review, gap 2):** one loaded child is not a loaded page. A page, and each Share and Export task panel, is ready only when two reads of its content a moment apart are equal and none of it is loading. Done when, in addition: tests show a page that fills in two steps recorded in full, and one that keeps changing failing the capture with the previous file unchanged.
 - [x] Capture Word's Backstage on this PC with `python scripts/capture-ui.py --app word --backstage` into `design/inventory/word/backstage.json`. Done when: every entry of Word's own navigation list is recorded as a page or an action, each page with its expanded child records, and `python scripts/check-inventory.py design/inventory/word` exits 0 (which runs the reconciliation and behaviour checks above). Cheaper substitute: page names only. **Corrected 2026-11-13:** was the fourteen pages named in this section.
-- [ ] Commit: `inventory: capture Word Backstage pages`
+- [x] Commit: `inventory: capture Word Backstage pages`
 
 **Measured:** 2026-11-13, Word `16.0.20527.20150` (`fhd-100`): `design/inventory/word/backstage.json` holds 282 records (9 pages, the three navigation actions, 63 groups, the rest controls and menu items, 221 with a behaviour sentence); 99 baseline ids are listed absent in five documented reasons. The capture records no list entry, person, date, printer, e-mail address or organisation name; a second capture gave the same 282 ids. **Corrected 2026-11-13 (completion review, gap 3):** 61 groups, 121 controls and 90 menu items, and ten pages once Save on a never-saved document is recorded as the page it shows; the earlier count of groups was wrong. **Corrected again 2026-11-13 (fresh plan review, gap 2):** with every page read until it settles, Home also shows five suggested prompts that load late, so the file holds 287 records (126 controls) and 226 behaviour sentences; three captures gave the same 287 ids. **Corrected again 2026-11-13 (fresh round 1):** with Change File Type's eight formats recorded, 295 records (134 controls) and 234 behaviour sentences.
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` and `-p "test_word_backstage.py"` pass (**Corrected 2026-11-13, fresh plan review gap 1:** the librarys tests added), `python scripts/check-inventory.py design/inventory/word` exits 0, which runs `validate_word_backstage` on `design/inventory/word/backstage.json`. **Corrected 2026-11-13:** was a count of 14 pages.
+
+> **Verified:** 2026-11-13 | §6 | f8537dc1eab7900e5db59b1df78bea6729b287e9
+> **Review:** `docs/reviews/d02-t01-s6.json`
 
 ## 7. Excel Ribbon
 
