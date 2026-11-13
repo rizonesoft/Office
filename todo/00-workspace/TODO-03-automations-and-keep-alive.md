@@ -1158,7 +1158,6 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 ## 53. Automation Notices Go in the Weekly Digest
 
 > **Started:** 2026-11-12T03:10:00Z
-> **Parked:** 2026-11-12T20:53:08Z until D00 T03 §56: the owner decides which risk the digest keeps when no evidence of delivery remains; built and green, its last reconciliation gap is that decision
 
 Filed 2026-11-11 from the completion review of §35 (`docs/reviews/00-workspace/D00-T03-s35-completion.md`, round 1, finding 5, P2). Decision 32 of `docs/specs/2026-10-23-campaign-scope-design.md` promises one weekly email and no other interruption, but three senders still email at once: `run.py` when a scheduled task fails (`.conclave/automations/run.py`, through `alert.py`), the host readiness check when a campaign parks (`scripts/check-campaign-host.py --notify`, `process-plan`'s Host readiness step), and the version notices of `check-visual-studio.py` and `check-python-pin.py`. This section records each notice for the digest instead, keeps one immediate email only where waiting a week would lose work, and says which in the README.
 
