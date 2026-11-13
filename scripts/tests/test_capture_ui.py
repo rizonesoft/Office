@@ -6429,5 +6429,408 @@ class WordStatusBar(unittest.TestCase):
         self.assertIn("Word's status bar only", str(ctx.exception))
 
 
+TEST_DIALOGS = (
+    {"slug": "font", "old": True, "title": "Font", "command": "FontDialog",
+     "openedBy": "word.home.font.font-fontdialog", "tabs": ("Font", "Advanced")},
+    {"slug": "track-changes-options", "title": "Track Changes Options", "command": "ReviewChangeTrackingOptions",
+     "openedBy": "word.review.markup.change-tracking-options", "tabs": ()},
+    {"slug": "find-and-replace", "old": True, "title": "Find and Replace", "command": "ReplaceDialog",
+     "openedBy": "word.home.editing.replace", "tabs": ("Find",), "expand": ("More >>", "<< Less")},
+    {"slug": "mail-merge-recipients", "old": True, "title": "Mail Merge Recipients",
+     "command": "MailMergeRecipientsEditList", "openedBy": "word.mailings.start-mail-merge.edit-recipient-list",
+     "tabs": (), "unnamed": {"List": ("Recipients",)}, "recipients": True},
+)
+TEST_REQUIRED = {
+    "font": {"Font": (("Underline style", "dropdown"), ("Hidden", "checkBox")),
+             "Advanced": (("Scale", "editBox"),), "": (("OK", "button"), ("Cancel", "button"))},
+    "track-changes-options": {"": (("Ink", "checkBox"), ("Reviewing Pane", "dropdown"), ("Cancel", "button"))},
+    "find-and-replace": {"Find": (("Find what", "editBox"), ("More >>", "button"),
+                                  ("Match case", "checkBox", "expanded"), ("Format", "menu", "expanded"))},
+    "mail-merge-recipients": {"": (("Recipients", "listBox"), ("OK", "button"))},
+}
+
+
+def at(n):
+    """A place of its own for the n-th control of a fake dialog, as a real dialog's controls have."""
+    return (20, 20 + 22 * n, 220, 40 + 22 * n)
+
+
+class FakeWordDialogs:
+    """Word with the dialogs of TEST_DIALOGS (D02 T01 §34). A dialog's command shows it in a window of its own and
+    is held until that window closes, as Word holds a modal dialog's command. Logs every Word action asked."""
+
+    def __init__(self, opens=True, stuck=(), dirty_after=None, titles=None, tabs=None, drop=None, grow=True,
+                 collapses=True):
+        self.opens, self.stuck, self.dirty_after, self.collapses = opens, set(stuck), dirty_after, collapses
+        self.titles, self.tabs, self.drop, self.grow = titles or {}, tabs or {}, drop or {}, grow
+        self.log, self.open, self.held, self.closed_by, self.attached = [], {}, None, [], False
+        self.state = {"hwnd": 5, "new": True, "saved": True, "empty": True}
+        self.root = E("Window", "Document1 - Word")
+        self.entry = Unread("ListItem", "A recipient of the owner")
+        self.style = pane_menu("unused")
+        self.pane = combo("Reviewing Pane", "Off", "Vertical", "Horizontal")
+
+    # ----- the dialogs
+    def button(self, slug, label, n, enabled=True):
+        el = control("Button", label, enabled, rect=at(n))
+        if label in ("Cancel", "Close"):
+            el.invoke = lambda: self.close(slug, label)
+        elif label == "OK":
+            el.invoke = lambda: (_ for _ in ()).throw(AssertionError("the capture pressed OK"))
+        return el
+
+    def closed_list(self, label, n):
+        el = control("ComboBox", label, rect=at(n))
+        el.invoke = lambda: (_ for _ in ()).throw(AssertionError(f"the capture pressed the list {label}"))
+        return el
+
+    def build(self, slug):
+        title = self.titles.get(slug, cu.word_dialogs.by_slug(slug)["title"])
+        if slug == "font":
+            pages = {
+                "Font": [E("Text", "Font:", rect=at(0)), E("Edit", "Font:", rect=at(1)),
+                         E("List", "", rect=at(2), kids=[Unread("ListItem", "A font of this PC")]),
+                         E("Text", "Underline style:", rect=at(3)), self.closed_list("Underline style:", 4),
+                         control("CheckBox", "Hidden", rect=at(5)),
+                         control("CheckBox", "Small caps", False, rect=at(6)),
+                         E("Edit", "RichEdit Control", cls="RichEdit20W"), E("Image", "a preview")],
+                "Advanced": [E("Text", "Scale:", rect=at(0)), E("Edit", "Scale:", rect=at(1))]}
+            shared = [self.button(slug, "Set As Default", 20), self.button(slug, "OK", 21),
+                      self.button(slug, "Cancel", 22)]
+            names = self.tabs.get(slug, ("Font", "Advanced"))
+            window = E("Window", title, cls="bosa_sdm_msword")
+            items = []
+            for name in names:
+                item = control("TabItem", name)
+                item.select = lambda name=name: self.show_tab(window, strip, pages, shared, name)
+                items.append(item)
+            items.append(control("TabItem", "Another command's", False))
+            strip = E("Tab", "", kids=items)
+            self.selected = []
+            self.show_tab(window, strip, pages, shared, names[0])
+            return window
+        if slug == "track-changes-options":
+            kids = [E("Group", "Show", cls="NetUIGroupBox", kids=[
+                E("Text", "Show"), control("CheckBox", "Ink"), E("Text", "Reviewing Pane"), self.pane]),
+                self.button(slug, "OK", 5), self.button(slug, "Cancel", 6)]
+            kids = [k for k in kids if k.name not in self.drop.get(slug, ())]
+            return E("Window", title, cls="NUIDialog", kids=[E("Pane", "", kids=[E("Window", title, kids=kids)])])
+        if slug == "find-and-replace":
+            window = E("Window", title, cls="bosa_sdm_msword")
+            item = control("TabItem", "Find")
+            item.select = lambda: None
+            strip = E("Tab", "", kids=[item])
+            small = [E("Text", "Find what:", rect=at(0)), E("Edit", "Find what:", rect=at(1)),
+                     self.button(slug, "Cancel", 4)]
+            more, less = control("Button", "More >>", rect=at(3)), control("Button", "<< Less", rect=at(3))
+            extra = [control("CheckBox", "Match case", rect=at(6)),
+                     E("ToolBar", "MSO Generic Control Container", rect=at(7), kids=[
+                         control("MenuItem", "Format", rect=at(8))])]
+            more.invoke = lambda: setattr(window, "kids", [strip] + small + [less] + (extra if self.grow else []))
+            less.invoke = lambda: setattr(window, "kids", [strip] + small + [more]) if self.collapses else None
+            window.kids = [strip] + small + [more]
+            return window
+        kids = [E("List", "", rect=at(0), kids=[self.entry]), self.button(slug, "OK", 1)]
+        return E("Window", title, cls="bosa_sdm_msword", kids=kids)
+
+    def show_tab(self, window, strip, pages, shared, name):
+        self.selected.append(name)
+        window.kids = [strip] + list(pages[name]) + shared
+
+    # ----- Word, as the capture asks it
+    def word_action(self, action, **kwargs):
+        self.log.append((action, kwargs.get("command") or kwargs.get("tab_name")) if kwargs else (action,))
+        if action == "document_state":
+            return dict(self.state, saved=self.state["saved"] and not self.attached)
+        if action == "prepare_core_tab":
+            self.attached = True
+        elif action == "detach_recipients":
+            self.attached = False
+        elif action == "open_dialog":
+            slug = next(d["slug"] for d in cu.word_dialogs.DIALOGS if d["command"] == kwargs["command"])
+            self.held = slug
+            if self.opens:
+                self.open[slug] = self.build(slug)
+        elif action == "dialog_closed":
+            slug, self.held = self.held, None
+            if slug in self.open:
+                raise cu.Refused(f"Word's command for {slug} has not returned although its dialog is gone")
+            if slug == self.dirty_after:
+                self.state["saved"] = False
+        return {"hwnd": 5}
+
+    def close(self, slug, how):
+        self.closed_by.append((slug, how))
+        if slug not in self.stuck:
+            self.open.pop(slug, None)
+
+    def hwnd_of(self, slug):
+        return 60 + [d["slug"] for d in cu.word_dialogs.DIALOGS].index(slug)
+
+    def windows(self):
+        return [5] + [self.hwnd_of(slug) for slug in self.open]
+
+    def element(self, hwnd):
+        if hwnd == 5:
+            return self.root
+        return next(el for slug, el in self.open.items() if self.hwnd_of(slug) == hwnd)
+
+
+class WordDialogs(unittest.TestCase):
+    """The --dialogs capture against a fake Word (D02 T01 §34), over a short list of dialogs of each kind."""
+
+    def setUp(self):
+        commands = frozenset(d["command"] for d in TEST_DIALOGS)
+        for name, value in (("DIALOGS", TEST_DIALOGS), ("REQUIRED", TEST_REQUIRED), ("COMMANDS", commands)):
+            patcher = unittest.mock.patch.object(cu.word_dialogs, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def run_capture(self, word, ready=0.3):
+        uia = type("U", (), {"element": lambda self, h: word.element(h)})()
+
+        class W:
+            def windows_of(self, pid):
+                return word.windows()
+
+            def close_window(self, hwnd, expected_pid=None, expected_class=None):
+                slug = next(s for s in word.open if word.hwnd_of(s) == hwnd)
+                word.close(slug, f"a close message to its window, of process {expected_pid}")
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 9})(), "check_alone": lambda self: None,
+                                  "word_action": lambda self, action, **kw: word.word_action(action, **kw)})()
+        ctx = cu.Context("word", BUILD, set(), origin=(0, 0))
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_dialogs(launched, uia, W(), ctx, ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def refused(self, word, *said):
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+
+    def test_dialogs_of_both_kinds_are_recorded_and_each_is_cancelled(self):
+        word = FakeWordDialogs()
+        records, ctx = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        font = [(r["id"][len("word.dialogs.font"):], r["kind"], r.get("controlType"), r["order"]) for r in records
+                if r["id"].startswith("word.dialogs.font")]
+        self.assertEqual(font, [
+            ("", "dialog", None, 0),
+            (".font", "dialogTab", None, 0),
+            (".font.font", "setting", "editBox", 0), (".font.font-2", "setting", "listBox", 1),
+            (".font.underline-style", "setting", "dropdown", 2), (".font.hidden", "setting", "checkBox", 3),
+            (".font.small-caps", "setting", "checkBox", 4),
+            (".advanced", "dialogTab", None, 1),
+            (".advanced.scale", "setting", "editBox", 0),
+            # What every tab shows is the dialog's own, recorded once.
+            (".set-as-default", "setting", "button", 2), (".ok", "setting", "button", 3),
+            (".cancel", "setting", "button", 4)])
+        self.assertEqual(by_id["word.dialogs.font"]["openedBy"], "word.home.font.font-fontdialog")
+        self.assertEqual(by_id["word.dialogs.font"]["itemCount"], 11)  # two tabs and nine controls
+        self.assertEqual(by_id["word.dialogs.font.font"]["itemCount"], 5)
+        self.assertEqual(by_id["word.dialogs.font.advanced"]["itemCount"], 1)
+        self.assertIs(by_id["word.dialogs.font.font.small-caps"]["enabled"], False)
+        self.assertNotIn("itemCount", by_id["word.dialogs.font.font.underline-style"])  # an old dialog's list: closed
+        self.assertEqual(word.selected[-1], "Font")  # left on its first tab, as it was found
+        self.assertEqual(set(word.selected), {"Font", "Advanced"})
+        # The newer dialog: a heading with its controls, and a list of fixed choices read and closed again.
+        track = "word.dialogs.track-changes-options"
+        self.assertEqual([(r["id"][len(track):], r["kind"]) for r in records if r["id"].startswith(track)], [
+            ("", "dialog"), (".show", "group"), (".show.ink", "setting"), (".show.reviewing-pane", "setting"),
+            (".show.reviewing-pane.off", "menuItem"), (".show.reviewing-pane.vertical", "menuItem"),
+            (".show.reviewing-pane.horizontal", "menuItem"), (".ok", "setting"), (".cancel", "setting")])
+        self.assertEqual(by_id[track + ".show.reviewing-pane"]["itemCount"], 3)
+        self.assertEqual(word.pane.log, ["expand", "collapse"])
+        self.assertEqual(by_id[track]["itemCount"], 5)
+        # A position is measured from the dialog's own corner.
+        self.assertEqual(by_id["word.dialogs.font.font.hidden"]["bounds"],
+                         {"x": 20, "y": 130, "width": 200, "height": 20})
+        # Every dialog was cancelled, in its own way, and no entry of a list was read.
+        self.assertEqual(word.closed_by, [("font", "Cancel"), ("track-changes-options", "Cancel"),
+                                          ("find-and-replace", "Cancel"),
+                                          ("mail-merge-recipients", "a close message to its window, of process 9")])
+        self.assertEqual((word.open, word.entry.read()), ({}, 0))
+        self.assertEqual(word.log[:4], [("document_state",), ("open_dialog", "FontDialog"), ("dialog_closed",),
+                                        ("document_state",)])
+        self.assertEqual([entry for entry in word.log if entry[0] in ("prepare_core_tab", "detach_recipients")],
+                         [("prepare_core_tab", "Mailings"), ("detach_recipients",)])
+        self.assertIn("dialog Font, Font: 1 list(s) recorded without choices (the lists of an old dialog are not "
+                      "opened)", ctx.notes)
+        cu.word_dialogs_check(records)
+        schema = json.loads((ci.INVENTORY / "schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(ci.validate(records, schema, schema), [])
+
+    def test_what_a_dialog_shows_only_when_expanded_is_recorded_as_such_and_the_dialog_put_back(self):
+        word = FakeWordDialogs()
+        records, _ = self.run_capture(word)
+        find = "word.dialogs.find-and-replace.find"
+        got = [(r["id"][len(find):], r.get("controlType"), r.get("condition")) for r in records
+               if r["id"].startswith(find + ".")]
+        self.assertEqual(got, [(".find-what", "editBox", None), (".cancel", "button", None),
+                               (".more", "button", None), (".match-case", "checkBox", "expanded"),
+                               (".format", "menu", "expanded")])
+        by_id = {r["id"]: r for r in records}
+        self.assertNotIn("itemCount", by_id[find + ".format"])  # a menu of an old dialog is never opened
+        self.assertEqual(by_id[find]["itemCount"], 5)
+        self.assertNotIn("word.dialogs.find-and-replace.find.less", by_id)  # the button that puts it back is no control
+        # A dialog that does not expand, and one that cannot be put back, refuse the capture.
+        self.refused(FakeWordDialogs(grow=False), "the Find and Replace dialog does not show Match case (checkBox, "
+                     "expanded) on Find")
+        word = FakeWordDialogs(collapses=False)
+        self.refused(word, "the Find and Replace dialog could not be put back as it was found after More >>")
+        self.assertEqual(word.closed_by[-1], ("find-and-replace", "Cancel"))  # and is cancelled all the same
+
+    def test_a_dialog_that_fails_refuses_the_capture(self):
+        word = FakeWordDialogs(opens=False)
+        self.refused(word, "FontDialog opened no dialog within")
+        self.assertIn(("dialog_closed",), word.log)  # the command is still seen to return
+        word = FakeWordDialogs(stuck=("font",))
+        self.refused(word, "the Font dialog could not be closed with its Cancel or Close button; Word is left as it "
+                     "is and nothing is published")
+        self.assertEqual(word.closed_by, [("font", "Cancel")] * 3)
+        word = FakeWordDialogs(dirty_after="font")
+        self.refused(word, "the capture's blank document is not new, empty and unchanged after the Font dialog")
+        self.assertEqual(word.closed_by, [("font", "Cancel")])  # no further dialog was opened
+        word = FakeWordDialogs()
+        word.state["empty"] = False
+        self.refused(word, "is not new, empty and unchanged before the Font dialog")
+        self.assertNotIn(("open_dialog", "FontDialog"), word.log)
+        self.refused(FakeWordDialogs(titles={"font": "Fonts"}), "FontDialog opened a dialog titled 'Fonts', not Font")
+        self.refused(FakeWordDialogs(tabs={"font": ("Font",)}), "the Font dialog shows the tabs Font, not Font, "
+                     "Advanced")
+        word = FakeWordDialogs(drop={"track-changes-options": ("Cancel",)})
+        self.refused(word, "the Track Changes Options dialog does not show Cancel (button) of its own")
+        self.assertEqual(word.closed_by[-1][0], "track-changes-options")  # and is closed all the same
+        with unittest.mock.patch.object(cu.word_dialogs, "DIALOGS", tuple(
+                dict(d, old=not d.get("old")) if d["slug"] == "font" else d for d in TEST_DIALOGS)):
+            self.refused(FakeWordDialogs(), "the Font dialog is not of the kind scripts/lib/word_dialogs.py says it is")
+
+    def run_main(self, out, capture, merge=True):
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--dialogs", "--out", str(out)] + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_publishing_and_merging_follow_the_rule_of_the_other_surfaces(self):
+        fresh, ctx = self.run_capture(FakeWordDialogs())
+        hidden, sentence = "word.dialogs.font.font.hidden", "Hides the text. Always available."
+        old = [dict(r, behaviour=sentence) if r["id"] == hidden else r for r in copy.deepcopy(fresh)]
+        old.append(dict(next(r for r in old if r["id"] == hidden), id="word.dialogs.font.font.gone-since"))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "dialogs.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+            self.assertEqual(written[hidden]["behaviour"], sentence)
+            self.assertNotIn("word.dialogs.font.font.gone-since", written)
+            before = out.read_bytes()
+            broken = [r for r in copy.deepcopy(fresh) if not r["id"].startswith("word.dialogs.track-changes-options")]
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("the dialog capture is not whole: the Track Changes Options dialog "
+                          "(word.dialogs.track-changes-options) is not recorded", err)
+            code, _, err = self.run_main(out, lambda *a: (self.run_capture(FakeWordDialogs(opens=False))[0], [], None))
+            self.assertEqual(code, 1)
+            self.assertIn("opened no dialog", err)
+            self.assertEqual(out.read_bytes(), before)
+
+    def held_word(self):
+        """A launcher object, built without starting anything, over a Word whose dialog command is held until the
+        test releases it, as Word holds the command of a modal dialog."""
+        import threading
+        release, ran = threading.Event(), []
+
+        class Bars:
+            def GetEnabledMso(self, command):
+                return command != "TableInsertDialogWord"
+
+            def ExecuteMso(self, command):
+                ran.append(command)
+                release.wait(20)
+                return None
+        launched = object.__new__(cu.Launched)
+        launched.key, launched.hwnd, launched.created, launched.owned = "word", 5, [], True
+        launched.app = type("App", (), {"CommandBars": Bars()})()
+        launched._check_alone_impl = lambda: None
+        self.addCleanup(release.set)
+        return launched, release, ran
+
+    def test_a_dialogs_command_is_started_and_not_waited_for(self):
+        import time as clock
+        listed = frozenset({"FontDialog", "TableInsertDialogWord"})
+        with unittest.mock.patch.object(cu.word_dialogs, "COMMANDS", listed):
+            launched, release, ran = self.held_word()
+            began = clock.monotonic()
+            launched._word_action_impl("open_dialog", command="FontDialog")
+            self.assertLess(clock.monotonic() - began, 2.0)  # it came back while Word still holds the command
+            self.assertTrue(cu.wait_for(lambda: ran == ["FontDialog"], seconds=2.0))
+            self.assertTrue(launched._dialog_held())
+            for command, said in (("ParagraphDialog", "open_dialog runs the command of a listed dialog only"),
+                                  ("FontDialog", "the dialog the capture opened before has not been seen closed")):
+                with self.assertRaises(cu.Refused) as ctx:
+                    launched._word_action_impl("open_dialog", command=command)
+                self.assertIn(said, str(ctx.exception))
+            release.set()  # the dialog is cancelled: Word lets the command go
+            self.assertEqual(launched.word_action("dialog_closed", timeout=5.0), {"hwnd": 5})
+            self.assertFalse(launched._dialog_held())
+            with self.assertRaises(cu.Refused) as ctx:
+                launched.word_action("dialog_closed", timeout=0.1)
+            self.assertIn("no dialog was opened", str(ctx.exception))
+            with self.assertRaises(cu.Refused) as ctx:
+                launched._word_action_impl("open_dialog", command="TableInsertDialogWord")
+            self.assertIn("Word's command TableInsertDialogWord is not available now", str(ctx.exception))
+
+    def test_a_command_still_held_is_refused_in_time_and_word_is_not_closed_over_it(self):
+        import time as clock
+        with unittest.mock.patch.object(cu.word_dialogs, "COMMANDS", frozenset({"FontDialog"})):
+            launched, release, ran = self.held_word()
+            launched._word_action_impl("open_dialog", command="FontDialog")
+            began = clock.monotonic()
+            with self.assertRaises(cu.Refused) as ctx:  # its window is gone, the worker says, and Word still holds it
+                launched.word_action("dialog_closed", timeout=0.3)
+            self.assertLess(clock.monotonic() - began, 3.0)
+            self.assertIn("Word's command FontDialog has not returned although its dialog is gone; nothing is "
+                          "published, and Word is left running", str(ctx.exception))
+            self.assertTrue(launched._dialog_held())
+            # Closing Word now would wait on the same held call: it is refused at once and asks Word nothing.
+            launched._call_com = lambda *a, **k: (_ for _ in ()).throw(AssertionError("Word was asked"))
+            began = clock.monotonic()
+            with self.assertRaises(cu.Refused) as ctx:
+                launched.close()
+            self.assertLess(clock.monotonic() - began, 1.0)
+            self.assertIn("a dialog the capture opened with FontDialog is still showing, so Word cannot be closed "
+                          "from here; Word is left running", str(ctx.exception))
+
+    def test_the_apartment_starts_a_call_without_waiting_for_it(self):
+        import time as clock
+        apartment = cu._Apartment(daemon=True)
+        try:
+            began = clock.monotonic()
+            box = apartment.start(lambda: (clock.sleep(0.4), 7)[1])
+            self.assertLess(clock.monotonic() - began, 0.3)
+            self.assertEqual(box.get(timeout=5), ("ok", 7))
+            failing = apartment.start(lambda: 1 / 0)
+            kind, outcome = failing.get(timeout=5)
+            self.assertEqual((kind, type(outcome)), ("err", ZeroDivisionError))
+        finally:
+            apartment.close(join_timeout=2)
+
+    def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
+        args = type("A", (), {"app": "excel", "dialogs": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)  # nothing launched, read or pressed
+        self.assertIn("Word's dialogs only", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

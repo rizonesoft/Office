@@ -10,6 +10,7 @@
     python scripts/capture-ui.py --app word --options                        # design/inventory/word/options.json
     python scripts/capture-ui.py --app word --panes                          # design/inventory/word/panes.json
     python scripts/capture-ui.py --app word --statusbar                      # design/inventory/word/statusbar.json
+    python scripts/capture-ui.py --app word --dialogs                        # design/inventory/word/dialogs.json
 
 The tool acts only on a window it opened itself. Word and Excel run as a separate instance of their own (COM
 DispatchEx), so the operator's open documents are never touched; an app that allows one instance only is launched
@@ -45,6 +46,7 @@ import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_backstage  # noqa: E402  (scripts/lib, on the path above)
+import word_dialogs  # noqa: E402
 import word_options  # noqa: E402
 import word_panes  # noqa: E402
 import word_statusbar  # noqa: E402
@@ -725,6 +727,15 @@ class _Apartment:
                     box.put(("err", exc))
         finally:
             ole32.CoUninitialize()
+
+    def start(self, fn):
+        """Queue `fn` on the apartment and return at once with the box its outcome will be put in, as
+        ("ok", value) or ("err", exception). For a call that Word holds until a person, or the capture, ends it:
+        a command that opens a modal dialog returns only when the dialog closes."""
+        import queue
+        box = queue.Queue()
+        self._q.put((fn, box))
+        return box
 
     def call(self, fn, timeout=None):
         import queue
@@ -2053,7 +2064,49 @@ class Launched:
             self._saved_clipboard = None
 
     def word_action(self, action, timeout=None, **kwargs):
+        if action == "dialog_closed":  # waits on the held command itself, never on the apartment it may still hold
+            return self._dialog_closed(**({} if timeout is None else {"timeout": timeout}))
         return self._call_com(lambda: self._word_action_impl(action, **kwargs), timeout=timeout)
+
+    def _start_held(self, fn):
+        """Start `fn` without waiting for it: on the COM apartment where there is one, and on a thread of its own
+        otherwise. Returns the box its outcome will be put in."""
+        apartment = getattr(self, "_apartment", None)
+        if apartment is not None:
+            return apartment.start(fn)
+        import queue
+        import threading
+        box = queue.Queue()
+
+        def run():
+            try:
+                box.put(("ok", fn()))
+            except BaseException as exc:  # handed to whoever waits on the box, as the apartment does
+                box.put(("err", exc))
+        threading.Thread(target=run, daemon=True).start()
+        return box
+
+    def _dialog_held(self):
+        """Whether a command the capture started to open a dialog has not returned yet."""
+        box = getattr(self, "_dialog_box", None)
+        return box is not None and box.empty()
+
+    def _dialog_closed(self, timeout=15.0):
+        """See the command that opened a dialog return, now that the dialog is closed. A modal dialog holds its
+        command until then; one still held after its window has gone is refused within `timeout`."""
+        import queue
+        box, command = getattr(self, "_dialog_box", None), getattr(self, "_dialog_command", None)
+        if box is None:
+            raise Refused("no dialog was opened, so none can be seen closed")
+        try:
+            kind, outcome = box.get(timeout=timeout)
+        except queue.Empty:
+            raise Refused(f"Word's command {command} has not returned although its dialog is gone; nothing is "
+                          f"published, and Word is left running") from None
+        self._dialog_box = None
+        if kind == "err":
+            raise Refused(f"Word's command {command} failed ({type(outcome).__name__})")
+        return {"hwnd": int(self.hwnd or 0)}
 
     def _pane_toggles(self):
         """Whether each pane command that is a toggle is pressed now, as Word's object model says: None for a
@@ -2127,7 +2180,9 @@ class Launched:
         app = self.app
         if action == "document_state":  # D02 T01 §6: whether pressing Save could save anything
             doc = app.ActiveDocument
-            return {"hwnd": int(self.hwnd or 0), "new": not str(doc.Path or ""), "saved": bool(doc.Saved)}
+            # empty: a blank document's text is its one paragraph mark (D02 T01 §34 asks after every dialog)
+            return {"hwnd": int(self.hwnd or 0), "new": not str(doc.Path or ""), "saved": bool(doc.Saved),
+                    "empty": len(str(doc.Content.Text or "")) <= 1}
         if action == "open_fixture":
             self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
@@ -2437,6 +2492,24 @@ class Launched:
                 raise Refused(f"Word's command {command} is not available now")
             bars.ExecuteMso(command)
             return {"hwnd": int(self.hwnd or 0)}
+        if action == "detach_recipients":  # D02 T01 §34: the capture's own document, as it was before Mailings
+            doc = self.created[0] if self.created else None
+            if doc is not None and hasattr(doc, "MailMerge"):
+                doc.MailMerge.MainDocumentType = -1  # wdNotAMergeDocument
+                doc.Saved = True
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "open_dialog":  # D02 T01 §34: a dialog's own command, started and not waited for
+            command = kwargs.get("command")
+            if command not in word_dialogs.COMMANDS:
+                raise Refused(f"open_dialog runs the command of a listed dialog only, not {command!r}")
+            if getattr(self, "_dialog_box", None) is not None:
+                raise Refused("the dialog the capture opened before has not been seen closed")
+            bars = app.CommandBars
+            if not bars.GetEnabledMso(command):
+                raise Refused(f"Word's command {command} is not available now")
+            self._dialog_command = command
+            self._dialog_box = self._start_held(lambda: bars.ExecuteMso(command))
+            return {"hwnd": int(self.hwnd or 0)}
         if action == "pane_snapshot":  # D02 T01 §32: kept here, in the process that outlives the capture worker
             self._pane_snapshot = self._pane_toggles()
             return {"hwnd": int(self.hwnd or 0)}
@@ -2568,6 +2641,10 @@ class Launched:
     def close(self, wait=60.0):
         """Close only the documents this tool created, without saving; quit only an instance this tool started that
         holds nothing else; and confirm its process has exited."""
+        if self._dialog_held():  # D02 T01 §34: Word answers nothing while a dialog holds it, and never would here
+            raise Refused(f"a dialog the capture opened with {getattr(self, '_dialog_command', None)} is still "
+                          f"showing, so Word cannot be closed from here; Word is left running: cancel the dialog "
+                          f"and close Word")
         if not self.owned:
             return
         apt = getattr(self, "_apartment", None)
@@ -2917,6 +2994,8 @@ def capture(args, launched, uia, win):
         raise Refused("--panes captures Word's task panes only (D02 T01 §32)")
     if getattr(args, "statusbar", False) and args.app != "word":
         raise Refused("--statusbar captures Word's status bar only (D02 T01 §33)")
+    if getattr(args, "dialogs", False) and args.app != "word":
+        raise Refused("--dialogs captures Word's dialogs only (D02 T01 §34)")
     row = APPS[args.app][0]
     expected = reference_build(app=row)
     if installed_build() != expected:
@@ -2963,6 +3042,17 @@ def capture(args, launched, uia, win):
                 for key in ("bounds", "captureProfile", "size"):
                     rec.pop(key, None)
             problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
+    if getattr(args, "dialogs", False):
+        launched.check_alone()
+        check_licensing()
+        records = capture_word_dialogs(launched, uia, win, ctx)
+        launched.check_alone()
+        check_licensing()
+        if ctx.origin is None:  # a dialog's positions are its own, measured from its own corner, under the profile
+            for rec in records:
+                for key in ("bounds", "captureProfile", "size"):
+                    rec.pop(key, None)
         return records, problems, ctx
     if getattr(args, "statusbar", False):
         launched.check_alone()
@@ -3965,6 +4055,236 @@ def word_statusbar_check(records, what="the status bar capture"):
     schema_check(records, what)
 
 
+# ---------------------------------------------------------------------------------- Word dialogs (D02 T01 §34)
+def dialog_tree(element, depth=0, limit=8):
+    """A plain tree of one element of a dialog for word_options.record_category, by word_dialogs' rules. A control
+    is one node and nothing inside it is read; a text carries a `read` in place of its name, so that the rules
+    decide from where it stands whether it is read at all."""
+    node = {"role": element.control_type, "class_name": element.class_name, "rect": element.rect,
+            "enabled": bool(getattr(element, "is_enabled", True)), "offscreen": bool(element.is_offscreen),
+            "_el": element}
+    if element.control_type == "Text":
+        node["read"] = lambda: element.name
+    else:
+        node["name"] = word_dialogs.clean(element.name)
+    if element.control_type in word_dialogs.CONTAINERS and depth < limit:
+        node["children"] = [dialog_tree(k, depth + 1, limit) for k in quiet_children(element)]
+    return node
+
+
+def _dialog_frame(uia, dialog):
+    """The dialog's window and the element whose own children are its tab strip and its controls: the window itself
+    for Word's old dialogs, and the inner window of a newer one. Reached step by step, never by a search."""
+    top = uia.element(dialog)
+    if top.class_name == "bosa_sdm_msword":
+        return top, top
+    frame = _first(_first(top, "Pane"), "Window")
+    if frame is None:
+        raise Refused(f"the dialog {top.name!r} is not laid out as the capture knows it")
+    return top, frame
+
+
+def _dialog_signature(nodes):
+    return tuple((n["role"], n.get("name"), n["enabled"], tuple(n.get("rect") or ()),
+                  _dialog_signature(n.get("children", []))) for n in nodes
+                 if n["role"] not in word_dialogs.SKIPPED and not word_dialogs.ignore(n))
+
+
+def _dialog_nodes(uia, dialog, ready):
+    """The dialog's controls as it now shows them, read until two reads agree."""
+    def read():
+        _top, frame = _dialog_frame(uia, dialog)
+        nodes = [dialog_tree(k) for k in quiet_children(frame)]
+        return (nodes, _dialog_signature(nodes)) if nodes else None
+    nodes = settled(read, ready)
+    if nodes is None:
+        raise Refused(f"the dialog did not show its controls and settle within {ready:.0f} s")
+    return nodes
+
+
+def _dialog_button(nodes, label):
+    return next((n for n in nodes if n["role"] == "Button" and n.get("name") == label), None)
+
+
+def close_dialog(uia, win, pid, dialog, seconds, title="the dialog", attempts=3):
+    """Close a dialog with its own Cancel button, or its Close button where it has no Cancel, and see its window
+    gone. A dialog with neither (Mail Merge Recipients offers only OK) is sent the message its title bar's own
+    Close sends, to that window and no other. Each of them discards what the dialog holds; OK is never pressed."""
+    for _ in range(attempts):
+        if dialog not in win.windows_of(pid):
+            return
+        try:
+            _top, frame = _dialog_frame(uia, dialog)
+            buttons = [k for k in quiet_children(frame) if k.control_type == "Button"]
+        except (Gone, Refused):
+            continue  # the window went, or changed, while it was read
+        button = next((b for label in word_dialogs.CLOSERS for b in buttons
+                       if word_dialogs.clean(b.name) == label), None)
+        if button is not None:
+            button.invoke()
+        else:
+            win.close_window(dialog, expected_pid=pid)
+        if wait_for(lambda: dialog not in win.windows_of(pid), seconds=seconds):
+            return
+    raise Refused(f"{title} could not be closed with its Cancel or Close button; Word is left as it is and nothing "
+                  f"is published")
+
+
+def _record_dialog(uia, ctx, spec, order, dialog, ready):
+    """The records of the dialog now open (scripts/lib/word_dialogs.py): the dialog, its tabs in order, the
+    controls of each, the controls every tab shows once under the dialog, and, for a dialog that expands, what the
+    expanded dialog adds. The dialog is left as it was found: on its first tab, and collapsed."""
+    top, frame = _dialog_frame(uia, dialog)
+    title = word_dialogs.clean(top.name)
+    if title != spec["title"]:
+        raise Refused(f"{spec['command']} opened a dialog titled {title!r}, not {spec['title']}")
+    if (top.class_name == "bosa_sdm_msword") != bool(spec.get("old")):
+        raise Refused(f"the {spec['title']} dialog is not of the kind scripts/lib/word_dialogs.py says it is, so "
+                      f"whether its lists may be opened is not known")
+    saved_origin = ctx.origin
+    ctx.origin = (top.rect[0], top.rect[1]) if saved_origin is not None and top.rect else None
+    try:
+        def base(rid, kind, label, at, node, parent, **extra):
+            made = ctx.base(rid, kind, label, at, node["_el"], parent=parent, **extra)
+            made.pop("size", None)
+            if node.get("offscreen"):  # a choice of a list that is closed again
+                made.pop("bounds", None)
+                made.pop("captureProfile", None)
+            return made
+
+        def choices(node):  # a newer dialog's list; an old dialog's lists are never opened (word_dialogs)
+            return _options_choices(node, ready)
+        rid = word_dialogs.dialog_id(spec)
+        rec = ctx.base(rid, "dialog", spec["title"], order, top, parent=None, openedBy=spec["openedBy"])
+        records, used, notes = [rec], {rid}, []
+        strip = _first(frame, "Tab")
+        tabs = [k for k in quiet_children(strip) if k.control_type == "TabItem"] if strip is not None else []
+        live = [k for k in tabs if getattr(k, "is_enabled", True)]
+        names = tuple(word_dialogs.clean(k.name) for k in live)
+        if names != tuple(spec["tabs"]):
+            raise Refused(f"the {spec['title']} dialog shows the tabs {', '.join(names) or 'none'}, not "
+                          f"{', '.join(spec['tabs']) or 'none'}")
+        reads = []
+        for tab in live:
+            tab.select()
+            reads.append(_dialog_nodes(uia, dialog, ready))
+        if not live:
+            reads.append(_dialog_nodes(uia, dialog, ready))
+        common, own = word_dialogs.split_common(reads)
+
+        def record(parent, nodes, label, at, expanded=False):
+            rules = word_dialogs.rules_for(spec, label, used, at, expanded)
+            try:
+                return word_options.record_category(parent, nodes, base, choices, notes, rules)
+            except word_options.Invalid as exc:
+                raise Refused(f"the {spec['title']} dialog could not be recorded: {exc}") from None
+        parts = [(word_dialogs.tab_id(spec, name), name, tab) for name, tab in zip(names, live)] or [(rid, "", None)]
+        for at, ((part, name, tab), nodes) in enumerate(zip(parts, own)):
+            if tab is not None:
+                tab.select()
+                tab_rec = ctx.base(part, "dialogTab", name, at, tab, parent=rid)
+                used.add(part)
+                records.append(tab_rec)
+            numbering = [0] if tab is not None else [len(parts)]
+            said = f"{spec['title']}, {name}" if name else spec["title"]
+            under = record(part, nodes, said, numbering)
+            if spec.get("expand"):
+                more, less = spec["expand"]
+                shown = _dialog_nodes(uia, dialog, ready)
+                button = _dialog_button(shown, more)
+                if button is not None:
+                    button["_el"].invoke()
+                    grown = _dialog_nodes(uia, dialog, ready)
+                    back = _dialog_button(grown, less)
+                    if back is None:
+                        raise Refused(f"the {spec['title']} dialog did not expand when {more} was pressed")
+                    try:
+                        extra = word_dialogs.added(shown, grown, less)
+                        if tab is not None:  # what every tab shows stays the dialog's own
+                            extra = [n for n in extra if not (n["role"] == "Button" and n.get("name") in
+                                                              {c.get("name") for c in common})]
+                        under += record(part, extra, said + ", expanded", numbering, expanded=True)
+                    finally:
+                        back["_el"].invoke()
+                        if _dialog_signature(_dialog_nodes(uia, dialog, ready)) != _dialog_signature(shown):
+                            raise Refused(f"the {spec['title']} dialog could not be put back as it was found "
+                                          f"after {more}; nothing is published")
+            if tab is not None:
+                tab_rec["itemCount"] = sum(1 for r in under if r["kind"] in ("group", "setting"))
+                if not tab_rec["itemCount"]:
+                    raise Refused(f"the tab {name} of the {spec['title']} dialog shows no control")
+            records += under
+        if common:
+            records += record(rid, common, spec["title"], [len(parts)])
+        if live:
+            live[0].select()
+        rec["itemCount"] = sum(1 for r in records if r["kind"] in word_dialogs.COUNTED)
+        lacking = word_dialogs.missing(spec, records)
+        if lacking:
+            raise Refused(f"the {spec['title']} dialog does not show " + "; ".join(lacking) + ", which "
+                          "scripts/lib/word_dialogs.py says it must; it was not captured whole")
+        ctx.notes.extend(notes)
+        return records
+    finally:
+        ctx.origin = saved_origin
+
+
+def capture_word_dialogs(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
+    """Records of Word's dialogs (scripts/lib/word_dialogs.py lists them). Each is opened by its own command over
+    the capture's blank document, started and not waited for (a modal dialog holds its command until it closes),
+    read, and closed with its Cancel or Close button on every path; the command is then seen to return, and Word
+    is asked whether its document is still new and unchanged. Any of these failing refuses the capture."""
+    hwnd, pid = launched.hwnd, launched.proc.pid
+    records = []
+
+    def untouched(when, attached=False):
+        """Whether the capture's document is still the blank one it made: never saved, empty and unchanged. With
+        the capture's own data source attached Word counts the document as changed, so it is then asked only
+        whether it is still never saved and empty."""
+        state = launched.word_action("document_state")
+        whole = isinstance(state, dict) and state.get("new") and state.get("empty")
+        if not (whole and (attached or state.get("saved"))):
+            raise Refused(f"the capture's blank document is not new, empty and unchanged {when}; nothing is "
+                          f"published")
+    for order, spec in enumerate(word_dialogs.DIALOGS):
+        launched.check_alone()
+        if spec.get("recipients"):
+            launched.word_action("prepare_core_tab", tab_name="Mailings")
+        try:
+            untouched(f"before the {spec['title']} dialog", bool(spec.get("recipients")))
+            known = set(win.windows_of(pid))
+            launched.word_action("open_dialog", command=spec["command"])
+            dialog = wait_for(lambda: next((h for h in win.windows_of(pid) if h not in known), None), seconds=ready)
+            try:
+                if dialog is None:
+                    raise Refused(f"{spec['command']} opened no dialog within {ready:.0f} s")
+                records += _record_dialog(uia, ctx, spec, order, dialog, ready)
+            finally:
+                if dialog is not None:
+                    close_dialog(uia, win, pid, dialog, min(6.0, ready), f"the {spec['title']} dialog")
+                launched.word_action("dialog_closed")
+            untouched(f"after the {spec['title']} dialog", bool(spec.get("recipients")))
+        finally:
+            if spec.get("recipients"):
+                launched.word_action("detach_recipients")
+    return records
+
+
+def word_dialogs_check(records, what="the dialog capture"):
+    """Refuse dialog records that are not whole (scripts/lib/word_dialogs.py's rules, each opener a record of the
+    committed ribbon inventory) or that the inventory's schema would refuse."""
+    try:
+        ribbon = json.loads((INVENTORY / "word" / "ribbon.json").read_text(encoding="utf-8"))
+        ribbon_ids = {r.get("id") for r in ribbon if isinstance(r, dict)}
+    except (OSError, ValueError) as exc:
+        raise Refused(f"the ribbon inventory cannot be read to check the dialogs' openers ({exc})") from None
+    try:
+        word_dialogs.validate(records, ribbon_ids)
+    except word_dialogs.Invalid as exc:
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
+
+
 def word_panes_check(records, what="the pane capture"):
     """Refuse pane records that are not whole (scripts/lib/word_panes.py's rules, each opener a record of the
     committed ribbon inventory) or that the inventory's schema would refuse."""
@@ -4443,6 +4763,8 @@ def capture_in_worker(args, launched, timeout=3600, worker_cmd=None):
                 fn = getattr(launched, "word_action", None)
                 if not callable(fn):
                     raise Refused("launched instance does not support word_action")
+                if action == "dialog_closed":  # on this thread: the apartment may still be held by the command
+                    return fn(action, **kwargs)
                 try:
                     return apt.call(lambda: fn(action, **kwargs), timeout=remaining)
                 except TimeoutError:
@@ -8541,6 +8863,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--options", action="store_true", help="Word's Options dialog (D02 T01 §31)")
     which.add_argument("--panes", action="store_true", help="Word's task panes (D02 T01 §32)")
     which.add_argument("--statusbar", action="store_true", help="Word's status bar and its menu (D02 T01 §33)")
+    which.add_argument("--dialogs", action="store_true", help="Word's dialogs (D02 T01 §34)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -8617,6 +8940,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     out = Path(args.out) if args.out else INVENTORY / args.app / (
         "backstage.json" if args.backstage else "options.json" if args.options else
         "panes.json" if args.panes else "statusbar.json" if args.statusbar else
+        "dialogs.json" if args.dialogs else
         "ribbon-simplified.json" if args.layout == "simplified" else
         "ribbon.json")
     if out.exists() and not args.merge:
@@ -8662,6 +8986,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             word_panes_check(records)
         elif args.statusbar:
             word_statusbar_check(records)
+        elif args.dialogs:
+            word_dialogs_check(records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -8681,7 +9007,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage or args.options or args.panes or args.statusbar:  # hand-written fields only
+                if args.backstage or args.options or args.panes or args.statusbar or args.dialogs:
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
@@ -8694,6 +9020,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                         word_panes_check(records, merged)
                     elif args.statusbar:
                         word_statusbar_check(records, merged)
+                    elif args.dialogs:
+                        word_dialogs_check(records, merged)
                     else:
                         schema_check(records, merged)
                 elif args.app == "word" and is_canonical_word_ribbon:

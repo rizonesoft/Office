@@ -67,7 +67,7 @@ def environment(rid: str, label: str) -> bool:
     return label in ENVIRONMENT_LISTS or f"{category}/{label}" in ENVIRONMENT_LISTS
 
 
-def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> list:
+def record_category(cat_id: str, nodes: list, base, choices, notes: list, rules=None) -> list:
     """The records under one category from its content tree. `nodes` are plain nodes (`role`, `name`, `class_name`,
     `enabled`, `children`); `base(rid, kind, label, order, node, parent, **extra)` builds a record; `choices(node)`
     opens a list or menu and returns its choice nodes, leaving it closed. Raises Invalid for a control it has no
@@ -75,8 +75,24 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
 
     A text node may carry `read`, a function that fetches its name, in place of `name`. It is called only for a
     text the rules need to read: the text after a caption is what the caption names (an add-in's publisher, its
-    folder), this PC's data, and when another text or nothing follows it, it is never read at all."""
-    records, used = [], {cat_id}
+    folder), this PC's data, and when another text or nothing follows it, it is never read at all.
+
+    `rules` lets another surface built of the same parts (a dialog) use these rules with its own lists: `types`
+    (role to control type), `skipped` (roles that are furniture), `ignore` (a test for a node to pass over),
+    `containers` (roles that are walked into) and `groups` (those of them that are a heading when named),
+    `is_environment` (whether a list shows this PC's data), `unnamed` (labels for controls Word gives no name, by
+    role, in order), `extra` (fields every record gets, such as a condition), `used` (the ids already taken) and
+    `order` (where numbering goes on from), and `noun`, `label` and `said` (its own wording for a count) for the
+    notes. Without it the rules are Word Options' own."""
+    rules = rules or {}
+    types, skipped = rules.get("types", CONTROL_TYPES), rules.get("skipped", SKIPPED)
+    ignore, is_environment = rules.get("ignore", lambda node: False), rules.get("is_environment", environment)
+    unnamed = {role: list(labels) for role, labels in (rules.get("unnamed") or {}).items()}
+    more = dict(rules.get("extra") or {})
+    containers = rules.get("containers", CONTAINERS)
+    groups = rules.get("groups", containers)
+    records, used = [], rules.get("used", set())
+    used.add(cat_id)
     counts = {"prose": 0, "value": 0, "environment": 0, "data": 0, "disabled": 0}
 
     def name_of(node):
@@ -100,50 +116,55 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
             label = clean(item.get("name"))
             if not label or slug(label) == "unnamed":  # a line that separates two runs of choices
                 continue
-            extra = {} if item.get("enabled", True) else {"enabled": False}
+            extra = dict(more) if item.get("enabled", True) else dict(more, enabled=False)
             records.append(base(unique(rec["id"], label), "menuItem", label, seen, item, rec["id"], **extra))
             seen += 1
         if not seen:
             raise Invalid(f"{rec['id']}: {rec['label']!r} opened to choices with no names")
         rec["itemCount"] = seen
 
-    def walk(siblings, parent, order):
-        shown = [n for n in siblings if n.get("role") not in SKIPPED]
-        last_text, caption = "", [None]  # caption: where among `shown` the last recorded caption stands
+    def walk(siblings, parent, order, heading=""):
+        shown = [n for n in siblings if n.get("role") not in skipped and not ignore(n)]
+        last_text, caption = "", [None]  # caption: the node of the last recorded caption
         for at, node in enumerate(shown):
             role = node.get("role")
             if role == "Text":
                 after = shown[at + 1] if at + 1 < len(shown) else None
                 # The text straight after a caption is what the caption names: this PC's data, never a label. With
                 # another text or nothing after it, it is not even read. Two captions never stand in a row.
-                if caption[0] == at - 1 and (after is None or after.get("role") == "Text"):
+                # Straight after means next to it among everything the pane shows: a caption with a picture after
+                # it (a grid of symbols) names the picture, and the text after the picture is a caption again.
+                before = siblings[siblings.index(node) - 1] if siblings.index(node) else None
+                follows = caption[0] is not None and before is caption[0]
+                if follows and (after is None or after.get("role") == "Text"):
                     counts["value"] += 1
                     continue
                 # With a control or a group after it, it may be that one's label or heading: it is read to tell.
                 name = name_of(node)
                 # A text names the control beside it, or the heading whose controls follow (a list may stand
                 # between the heading's text and its group).
-                beside = {clean(n.get("name")) for n in shown[max(at - 1, 0):at + 3] if n is not node
+                beside = {clean(n.get("name")).casefold() for n in shown[max(at - 1, 0):at + 3] if n is not node
                           and n.get("role") != "Text"}
                 if name:
                     last_text = name
-                if not name or name in beside:  # the label of the control or the heading beside it
+                # The label of the control or the heading beside it, or the heading of the group it stands in.
+                if not name or name.casefold() in beside or name.casefold() == heading.casefold():
                     continue
-                if caption[0] == at - 1:
+                if follows:
                     counts["value"] += 1
                     continue
                 if is_prose(name):
                     counts["prose"] += 1
                     continue
                 records.append(base(unique(parent, name), "setting", name, order[0], node, parent,
-                                    controlType="label"))
+                                    controlType="label", **more))
                 order[0] += 1
-                caption[0] = at
+                caption[0] = node
                 continue
             name = clean(node.get("name"))
             disabled = not node.get("enabled", True)
-            enabled = {"enabled": False} if disabled else {}
-            if role in CONTAINERS and node.get("class_name") == RADIO_GROUP:
+            enabled = dict(more, enabled=False) if disabled else dict(more)
+            if role in containers and node.get("class_name") == RADIO_GROUP:
                 label = name or last_text
                 if not label:
                     raise Invalid(f"a set of radio buttons under {parent} has no name and no text before it")
@@ -153,20 +174,20 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
                 records.append(rec)
                 add_choices(rec, [k for k in node.get("children", []) if k.get("role") == "RadioButton"])
                 continue
-            if role in CONTAINERS:
-                if not name:  # a container with no heading holds its controls for the layout only
-                    walk(node.get("children", []), parent, order)
+            if role in containers:
+                if not name or role not in groups:  # it holds its controls for the layout only
+                    walk(node.get("children", []), parent, order, heading)
                     continue
-                rec = base(unique(parent, name), "group", name, order[0], node, parent)
+                rec = base(unique(parent, name), "group", name, order[0], node, parent, **more)
                 order[0] += 1
                 records.append(rec)
-                walk(node.get("children", []), rec["id"], [0])
+                walk(node.get("children", []), rec["id"], [0], name)
                 continue
-            ctype = CONTROL_TYPES.get(role)
+            ctype = types.get(role)
             if ctype is None:
                 raise Invalid(f"{name or role!r} under {parent} is a {role}, which the Options capture has no rule "
                               f"for; teach scripts/lib/word_options.py what it is")
-            label = name or last_text
+            label = name or (unnamed[role].pop(0) if unnamed.get(role) else last_text)
             if not label:
                 raise Invalid(f"a {role} under {parent} has no name and no text before it")
             rec = base(unique(parent, label), "setting", label, order[0], node, parent, controlType=ctype, **enabled)
@@ -174,22 +195,26 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
             records.append(rec)
             if ctype == DATA_LISTS:
                 counts["data"] += 1
-            elif ctype in OPENED and environment(rec["id"], label):
+            elif ctype in OPENED and is_environment(rec["id"], label):
                 counts["environment"] += 1
             elif ctype in OPENED and disabled:  # a list that cannot be opened is recorded as it stands
                 counts["disabled"] += 1
             elif ctype in OPENED:
                 add_choices(rec, choices(node))
 
-    walk(nodes, cat_id, [0])
-    label = cat_id[len(ROOT) + 1:]
+    walk(nodes, cat_id, rules.get("order", [0]))
+    left = {role: labels for role, labels in unnamed.items() if labels}
+    if left:
+        raise Invalid(f"{cat_id} did not show the nameless controls its hand-written list names: {left}")
+    noun, label = rules.get("noun", "Options category"), rules.get("label", cat_id[len(ROOT) + 1:])
+    worded = rules.get("said") or {}
     for key, said in (("prose", "sentence(s) of explanation not recorded"),
                       ("value", "text(s) after a caption not recorded (what the caption names is this PC's data)"),
                       ("environment", "list(s) of this PC's or the open documents' data recorded without choices"),
                       ("data", "list box(es) recorded without entries"),
                       ("disabled", "disabled list(s) recorded without choices")):
         if counts[key]:
-            notes.append(f"Options category {label}: {counts[key]} {said}")
+            notes.append(f"{noun} {label}: {counts[key]} {worded.get(key, said)}")
     return records
 
 

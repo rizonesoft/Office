@@ -166,6 +166,34 @@ Verified on 2026-11-13 (`D02 T01 §33`) against Word `16.0.20527.20150` (`fhd-10
 - The bar fills in Word's idle time (the accessibility checker's item can take most of a minute), and a window that is being read is not idle: the capture leaves the window alone for six seconds before each reading, and reads until the bar is at rest and shows every item of `BAR`.
 - Not here, by rule, each with its owner: where an item the owner's bar hides would stand, and what kind of control it is (showing it means changing a preference Word keeps and nothing can put back when a capture is stopped: `D02 T01 §39`); and the indicators that show only for a document in some state, such as signatures, permissions, tracked changes and upload status (`D02 T01 §36`, with its fixture documents). The spelling check's item shows only after a check has run and is recorded when it stands on the bar.
 
+## Word dialogs
+
+Verified on 2026-11-13 (`D02 T01 §34`) against Word `16.0.20527.20150` (`fhd-100`). `python scripts/capture-ui.py --app word --dialogs` opens twelve of Word's dialogs, one after another, over the tool's own blank document in its own Word instance, and writes `design/inventory/word/dialogs.json`: 292 records. A `dialog` carries `openedBy` (the record of `design/inventory/word/ribbon.json` whose command opens it) and `itemCount` (every tab, heading and control under it); each tab is a `dialogTab` in order with its own `itemCount`; a heading is a `group`; a control is a `setting` with its `controlType`, `enabled` false when it was disabled, and `condition` `expanded` when it shows only in the expanded dialog; a fixed choice of a list is a `menuItem`. A control every tab of a dialog shows (OK, Cancel, Set As Default) is recorded once, under the dialog. `--merge` carries the hand-written fields by id, keeps every captured fact fresh, and what it made is checked again before it is published.
+
+| Dialog | Command | Tabs |
+| ------ | ------- | ---- |
+| Font | `FontDialog` | Font, Advanced |
+| Paragraph | `ParagraphDialog` | Indents and Spacing, Line and Page Breaks |
+| Page Setup | `PageSetupDialog` | Margins, Paper, Layout |
+| Footnote and Endnote | `FootnoteEndnoteDialog` | none |
+| Track Changes Options | `ReviewChangeTrackingOptions` | none |
+| Insert Table | `TableInsertDialogWord` | none |
+| Symbol | `SymbolsDialog` | Symbols, Special Characters |
+| Index | `IndexInsert` | Index |
+| Table of Contents | `TableOfContentsDialog` | Table of Contents |
+| Bookmark | `BookmarkInsert` | none |
+| Find and Replace | `ReplaceDialog` | Find, Replace, Go To |
+| Mail Merge Recipients | `MailMergeRecipientsEditList` | none |
+
+- The list is written by hand, not taken from the capture: `DIALOGS` and `REQUIRED` in `scripts/lib/word_dialogs.py` name each dialog's command, opener, title, tabs in order and every control each tab must show (259 in all, read from the live dialogs of this build and reviewed record by record). The capture is refused, and the checker fails, when a dialog is missing, is titled otherwise, names another opener, shows other tabs or lacks one of those controls, whatever its own counts say; a control the list does not name is recorded and allowed.
+- A dialog is opened by its own command through Word's object model. A modal dialog holds that call until it closes, so the process that owns Word starts the command and does not wait for it, the capture reads the dialog and closes it, and the owner then sees the command return. A command that opens nothing, or that has not returned fifteen seconds after its dialog closed, refuses the run. If the capture is stopped while a dialog is open, the owner does not try to close Word over the held call: it says that Word is left running with the dialog showing.
+- A dialog is closed with its own Cancel button, or its Close button where it has no Cancel; Mail Merge Recipients has neither and is sent the message its title bar's Close sends. OK is never pressed. Word is asked before and after every dialog whether the capture's document is still never saved, empty and unchanged, and a change refuses the run.
+- Nothing typed or chosen is read: no text of an edit box, no state of a check box, no entry of a list box, a grid or a preview (the fonts, the document's bookmarks, the recently used symbols, the recipients). A dialog is walked step by step and never searched, and a text is read only where the rules need it: the text straight after a caption is what the caption names (the name of the chosen symbol, its shortcut) and is not read.
+- Word has two kinds of dialog. A newer one (Track Changes Options) is built like Word Options, and its lists of fixed choices are opened, read and closed again. The other eleven are Word's old dialogs, which give UI Automation no way to open a list except to press it; pressing is a toggle Word does not keep in step, and in a probe on this date it left the capture's blank document changed. So the lists of an old dialog, and the Format and Special menus of Find and Replace, are recorded without their choices, by rule, and their choices are `D02 T01 §40`'s, read another way.
+- Find and Replace shows more when its More button is pressed. Each of its tabs is read as it opens, expanded, read again and put back; what the expanded dialog adds is recorded with `condition` `expanded`, and a dialog that cannot be put back refuses the run.
+- Index and Table of Contents are one dialog of four tabs of which each command enables its own alone; the tab a command enables is recorded as that dialog's. Mail Merge Recipients needs a data source: the capture attaches its own recipients fixture to its own document, as the ribbon capture does for the Mailings tab, and detaches it again.
+- Not here, each with its owner: the dialogs behind the other launchers and ellipsis commands of the ribbon and of Backstage, and behind the buttons inside these twelve (Tabs, Text Effects, Options, Modify), are `D02 T01 §40`'s, which reconciles every such command against a dialog or a stated reason; the dialogs behind the buttons of Word Options are `D02 T01 §41`'s.
+
 ## Word shortcuts
 
 Verified on 2026-11-13 (`D02 T01 §17`) against Word `16.0.20527.20150`. `design/inventory/word/shortcuts.json` holds 353 `shortcut` records from two sources, each record naming its own:

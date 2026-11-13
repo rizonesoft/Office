@@ -183,7 +183,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^\\s*\\S",
-          "description": "on a shortcut: the state the key does this only in, in our own words",
+          "description": "on a shortcut: the state the key does this only in, in our own words. On a control or a choice of a dialog: `expanded` when it shows only in the expanded dialog",
           "maxLength": 200,
           "allOf": [
             {
@@ -382,7 +382,7 @@
         "openedBy": {
           "type": "string",
           "minLength": 1,
-          "description": "on a pane: the id of the ribbon record whose command opens it",
+          "description": "on a pane or a dialog: the id of the ribbon record whose command opens it",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"
@@ -574,10 +574,13 @@
           "then": {
             "properties": {
               "kind": {
-                "const": "pane"
+                "enum": [
+                  "pane",
+                  "dialog"
+                ]
               }
             },
-            "description": "openedBy is recorded on a pane only"
+            "description": "openedBy is recorded on a pane or a dialog only"
           }
         },
         {

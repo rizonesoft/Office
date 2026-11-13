@@ -114,6 +114,28 @@ def check_word_options(f, data):
     return []
 
 
+def is_word_dialogs(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word dialog inventory (`design/inventory/word/dialogs.json`)."""
+    return (Path(inventory).resolve() == INVENTORY.resolve()
+            and Path(path).resolve() == (INVENTORY / "word" / "dialogs.json").resolve())
+
+
+def check_word_dialogs(f, data):
+    """Problems in word/dialogs.json beyond the record schema (D02 T01 §34): every dialog the hand-written list
+    names is there, opened by a record of the ribbon inventory, with its tabs and the controls it must show. The
+    rules are scripts/lib/word_dialogs.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_dialogs
+    try:
+        ribbon = json.loads((INVENTORY / "word" / "ribbon.json").read_text(encoding="utf-8"))
+        word_dialogs.validate(data, {r.get("id") for r in ribbon if isinstance(r, dict)})
+    except (OSError, ValueError) as exc:
+        return [f"{f}: the ribbon inventory cannot be read: {exc}"]
+    except word_dialogs.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def is_word_statusbar(path, inventory=INVENTORY):
     """Whether `path` is the repository's Word status bar inventory (`design/inventory/word/statusbar.json`)."""
     return (Path(inventory).resolve() == INVENTORY.resolve()
@@ -819,6 +841,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_ribbon(f, data)
         if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
             problems += check_word_backstage(f, data, True)
+        if is_word_dialogs(f, inventory):  # D02 T01 §34: the hand-written list of dialogs holds
+            problems += check_word_dialogs(f, data)
         if is_word_statusbar(f, inventory):  # D02 T01 §33: the hand-written lists of the bar and its menu hold
             problems += check_word_statusbar(f, data)
         if is_word_panes(f, inventory):  # D02 T01 §32: the hand-written list of panes holds

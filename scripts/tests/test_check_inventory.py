@@ -1665,7 +1665,8 @@ class Inventory(unittest.TestCase):
         self.write("shell/chrome.json", [])
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
                   "shortcuts": "check_word_shortcuts", "options": "check_word_options",
-                  "panes": "check_word_panes", "statusbar": "check_word_statusbar"}
+                  "panes": "check_word_panes", "statusbar": "check_word_statusbar",
+                  "dialogs": "check_word_dialogs"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1916,6 +1917,12 @@ class OptionsRules(unittest.TestCase):
         for record in (BOLD, TAB, GROUP):  # each field on its own belongs to a pane
             self.assertTrue(problems(record, dock="left"), record["id"])
             self.assertTrue(problems(record, openedBy="word.view.show.navigation-pane"), record["id"])
+        # D02 T01 §34: a dialog says what opens it too, and docks nowhere.
+        dialog = {"id": "word.dialogs.font", "app": "word", "kind": "dialog", "label": "Font", "order": 0,
+                  "openedBy": "word.home.font.font-fontdialog"}
+        self.assertEqual(problems(dialog), [])
+        self.assertTrue(problems(dialog, dock="left"))
+        self.assertTrue(problems(dict(dialog, kind="dialogTab")))
 
 
 if __name__ == "__main__":
