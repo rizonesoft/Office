@@ -1180,6 +1180,22 @@ class Notices(Send):
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
+    def test_the_labelled_repeat_is_sent_even_when_the_old_record_cannot_be_removed(self):
+        # Round 1 (D00 T03 §56): a scanner holding the old record of acceptance open must not cost the digest.
+        ids = self.queue(1)
+        self.delivered_then_mark_fails()
+        self.age_claims(hours=24 * 6)
+        self.activity = OSError("SMTP2GO no longer holds it")
+        alert = digest.load_alert(self.root)
+        with mock.patch.object(alert.os, "unlink", side_effect=PermissionError(13, "in use by another process")), \
+                mock.patch.object(digest, "load_alert", return_value=alert):
+            code, out, second = self.run_main([])
+        self.assertEqual(code, 0, out)
+        self.assertIn("may already have reached you", " ".join(second[0]["text_body"].split()))
+        queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
+            encoding="utf-8").splitlines()]
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+
     def test_an_unconfirmed_notice_is_carried_until_a_digest_that_delivers_it_is_recorded(self):
         # Reconciliation review 7: the digest that carries an unconfirmed notice claims it like any other. Under the
         # owner's choice (D00 T03 §56) a second digest whose record is lost the same way carries it once more.

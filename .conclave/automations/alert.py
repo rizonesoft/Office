@@ -182,11 +182,18 @@ def sent_evidence(digest: str) -> bool:
         return False
 
 
-def clear_sent(digest: str) -> None:
+def clear_sent(digest: str) -> bool:
+    """Remove a digest's record of acceptance once its claim is settled. The record no longer decides anything by
+    then (the claim is reported, or its notices ride with another digest under another id), so a file that cannot be
+    removed (held open by a scanner, a full or absent scratch volume) is left where it is and never stops a
+    settlement or a digest: returns whether the record is gone."""
     try:
         os.unlink(os.path.join(_evidence_folder(), f"{digest}.json"))
     except FileNotFoundError:
-        pass
+        return True
+    except OSError:
+        return False
+    return True
 
 
 def settle_claims(root: str = REPO, ask=None, now=None) -> dict:

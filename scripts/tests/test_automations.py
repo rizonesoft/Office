@@ -933,6 +933,18 @@ class DeliveryEvidence(unittest.TestCase):
         counts, now_pending, now_claimed = self.settle(alert.Refused("down"), hour)
         self.assertEqual((counts["kept"], len(now_claimed)), (1, 1))  # an unreadable log keeps the claim
 
+    def test_a_record_of_acceptance_that_cannot_be_removed_never_stops_a_settlement(self):
+        import datetime
+        for evidence_age, outcome in ((datetime.timedelta(days=6), "expired"), (datetime.timedelta(days=1), "confirmed")):
+            with self.subTest(outcome=outcome), \
+                    mock.patch.object(alert.os, "unlink", side_effect=PermissionError(13, "in use by another process")):
+                counts, pending, claimed = self.settle("pending" if outcome == "expired" else "sent", evidence_age, True)
+                self.assertEqual(counts[outcome], 1)
+                self.assertEqual((pending, claimed), ([], []))
+                self.assertTrue(alert.sent_evidence("d1"))  # left where it is, and nothing waited on it
+                self.assertFalse(alert.clear_sent("d1"))
+        self.assertTrue(alert.clear_sent("never-written"))
+
     def test_every_scheduled_run_settles_the_claims(self):
         import datetime
         with tempfile.TemporaryDirectory() as tmp:
