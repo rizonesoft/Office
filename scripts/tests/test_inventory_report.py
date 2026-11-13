@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -491,6 +492,226 @@ class Owners(Fixture):
         self.assertIn("word: pending authoring (D09 T01 §1 is open): 0 of 0 records owned, 4 excluded\n", out)
 
 
+class Layout(Fixture):
+    """Layout blocks (D02 T01 §29): where each child of a record sits, generated for a section and checked there."""
+
+    BLOCK = "\n".join([
+        "**Layout:** `word.home.para` (capture profile `fhd-100`)",
+        "",
+        "```text",
+        "order   id        label    type         size   x   y   width  height  keytip",
+        "parent  .         para     group                       251    96      ZP",
+        "0       bullets   Bullets  splitButton  small  8   10  39     24      U",
+        "1       sort      Sort...  button       small  49  10  24     24",
+        "2       far       Far      button",
+        "5       word.odd  Odd      menuItem",
+        "        late      Late     button       large  90  10  40     24      L",
+        "        zed       Zed      control",
+        "children  bullets  2  --layout word.home.para.bullets",
+        "```"])
+
+    def setUp(self):
+        super().setUp()
+        def box(x, y, width, height):
+            return {"x": x, "y": y, "width": width, "height": height}
+        inv = self.root / "design" / "inventory" / "word"
+        (inv / "ribbon.json").write_text(json.dumps([
+            rec("word.home", "tab", idMso="TabHome", order=0, bounds=box(0, 60, 1900, 120), captureProfile="fhd-100"),
+            rec("word.home.para", "group", "word.home", order=2, keytip="ZP", bounds=box(408, 80, 251, 96),
+                captureProfile="fhd-100"),
+            rec("word.home.para.sort", "control", "word.home.para", order=1, controlType="button", size="small",
+                bounds=box(457, 90, 24, 24), label="Sort..."),
+            rec("word.home.para.bullets", "control", "word.home.para", order=0, controlType="splitButton",
+                size="small", keytip="U", bounds=box(416, 90, 39, 24), label="Bullets"),
+            rec("word.home.para.far", "control", "word.home.para", order=2, controlType="button", label="Far"),
+            rec("word.home.para.zed", "control", "word.home.para", label="Zed"),
+            rec("word.home.para.late", "control", "word.home.para", controlType="button", size="large", keytip="L",
+                bounds=box(498, 90, 40, 24), label="Late"),
+            rec("word.home.para.bullets.none", "menuItem", "word.home.para.bullets", order=0, label="None"),
+            rec("word.home.para.bullets.disc", "menuItem", "word.home.para.bullets", order=1, label="Disc"),
+            rec("word.flat", "group", label="Flat"),
+            rec("word.flat.one", "control", "word.flat", order=0, controlType="button", bounds=box(5, 5, 9, 9),
+                label="One"),
+        ]), encoding="utf-8")
+        # A child kept in another file of the app, whose id is not written from the parent's.
+        (inv / "extra.json").write_text(json.dumps([rec("word.odd", "menuItem", "word.home.para", order=5,
+                                                        label="Odd")]), encoding="utf-8")
+
+    def section(self, ref, body, done=False, path="todo/09-x/TODO-01-a.md"):
+        number = int(ref.rsplit("§", 1)[1])
+        self.sections.append(SimpleNamespace(ref=ref, done=done, body=body, path=path, number=number))
+        return self.sections[-1]
+
+    def layout(self, parent):
+        return self.run_report("--layout", parent)
+
+    def check(self, *argv):
+        return self.run_report("--layout-check", *argv)
+
+    def test_a_block_lists_the_parent_and_its_children_in_order_from_the_parents_corner(self):
+        code, out, err = self.layout("word.home.para")
+        self.assertEqual((code, err), (0, ""))
+        # Far has no bounds, so its position and size are blank; Odd is in another file and keeps its own id; Late and
+        # Zed have no order and come last, in id order; Bullets has two menu items of its own.
+        self.assertEqual(out, self.BLOCK + "\n")
+        self.assertEqual(self.layout("word.home.para")[1], out)  # the same bytes every time
+        code, out, _ = self.layout("word.flat")  # a parent with no bounds and no profile: no positions at all
+        self.assertEqual(code, 0)
+        self.assertEqual(out.splitlines()[0], "**Layout:** `word.flat` (no capture profile)")
+        self.assertEqual(out.splitlines()[4:6], ["parent  .    Flat   group",
+                                                 "0       one  One    button              9      9"])
+        code, out, _ = self.layout("word.home.para.bullets")
+        self.assertEqual(out.splitlines()[5:7], ["0       none  None     menuItem", "1       disc  Disc     menuItem"])
+        for line in self.BLOCK.splitlines()[3:-1]:
+            self.assertNotRegex(line, r"^\s*([-*+>`]|\d+[.)])")  # no row reads as a list item, a quote or a fence
+
+    def test_an_id_that_cannot_be_laid_out_and_a_mode_beside_it_are_refused(self):
+        for parent, said in (("word.nothing", "--layout: word.nothing is not a record of the inventory"),
+                             ("word.home.para.sort", "--layout: word.home.para.sort has no children in the inventory")):
+            code, out, err = self.layout(parent)
+            self.assertEqual((code, out), (2, ""))
+            self.assertIn(said, err)
+        for argv in (("--layout", "word.home.para", "--check"), ("--layout", "word.home.para", "--owners"),
+                     ("--layout-check", "--app", "word"), ("--layout", "word.home.para", "--layout-check"),
+                     ("--layout-check", "--all")):
+            code, out, err = self.run_report(*argv)
+            self.assertEqual((code, out), (2, ""), argv)
+            self.assertIn("each stand alone", err)
+        code, _, err = self.run_report("--layout", "word.home.para", "--write", "todo/09-x/TODO-01-a.md")
+        self.assertEqual(code, 2)
+        self.assertIn("--write goes with --layout-check", err)
+
+    def test_a_block_that_differs_from_the_inventory_is_named_with_its_section_and_parent(self):
+        claim = "> **Implements:** `word.home.para.sort` `word.home.para.bullets`\n\n"
+        section = self.section("D09 T01 §1", claim + self.BLOCK + "\n\n**Build order:**\n")
+        self.section("D09 T01 §2", "No claim and no block here.\n")
+        self.assertEqual(self.check(), (0, "layout blocks: 1 checked in 2 sections, 0 problem(s)\n", ""))
+        stale = "refused: D09 T01 §1: the layout of `word.home.para` differs from the inventory; print it again " \
+                "with --layout\n"
+        for change in (("39     24      U", "38     24      U"),            # one width
+                       ("(capture profile `fhd-100`)", "(capture profile `qhd-150`)"),  # the line alone
+                       ("Sort...", "Sort"), ("```text\n", "```text\n\n")):
+            section.body = claim + self.BLOCK.replace(*change) + "\n\n**Build order:**\n"
+            self.assertNotEqual(section.body, claim + self.BLOCK + "\n\n**Build order:**\n", change)
+            code, out, err = self.check()
+            self.assertEqual((code, err), (1, stale), change)
+            self.assertEqual(out, "layout blocks: 1 checked in 2 sections, 1 problem(s)\n")
+
+    def test_a_malformed_an_unknown_and_a_repeated_block_are_each_named(self):
+        line = self.BLOCK.splitlines()[0]
+        cases = {
+            line + "\n\nNo block follows.\n": "has no fenced `text` block after its Layout line",
+            self.BLOCK[:-4] + "\n\nThe fence is still open.\n": "has a block whose fence never closes",
+            self.BLOCK + "\n\n" + self.BLOCK + "\n": "has two layout blocks in this section",
+        }
+        section = self.section("D09 T01 §1", "")
+        for body, wrong in cases.items():
+            section.body = body
+            code, _, err = self.check()
+            self.assertEqual((code, err), (1, f"refused: D09 T01 §1: the layout of `word.home.para` {wrong}\n"), wrong)
+        section.body = self.BLOCK.replace("word.home.para`", "word.gone`")
+        code, _, err = self.check()
+        self.assertEqual((code, err), (1, "refused: D09 T01 §1: the layout of `word.gone` cannot be laid out: "
+                                          "word.gone is not a record of the inventory\n"))
+
+    def test_a_section_that_claims_a_parents_children_carries_that_parents_block(self):
+        section = self.section("D09 T01 §1", "> **Implements:** `word.home.para.sort` `word.home.para.bullets`\n")
+        missing = "refused: D09 T01 §1: the layout of `{}` has children this section claims and no layout block " \
+                  "here; add the block --layout prints\n"
+        self.assertEqual(self.check()[::2], (1, missing.format("word.home.para")))
+        section.body += "\n" + self.BLOCK + "\n"
+        self.assertEqual(self.check()[::2], (0, ""))
+        # A tab's group is a child too: claiming the group asks for the tab's block.
+        tab = self.layout("word.home")[1]
+        section.body = "> **Implements:** `word.home.para`\n"
+        self.assertEqual(self.check()[::2], (1, missing.format("word.home")))
+        section.body += "\n" + tab
+        self.assertEqual(self.check()[::2], (0, ""))
+        # A tab has no parent to lay out, and an id the inventory lacks is the ownership check's to refuse.
+        section.body = "> **Implements:** `word.home` `word.nothing`\n"
+        self.assertEqual(self.check()[::2], (0, ""))
+        section.body = "Names `word.home.para.sort` in passing: no claim, so no block.\n"
+        self.assertEqual(self.check()[::2], (0, ""))
+
+    def test_a_stamped_section_is_told_the_repair_is_a_new_section(self):
+        stale = self.BLOCK.replace("Sort...", "Sort")
+        self.section("D09 T01 §1", stale + "\n", done=True)
+        self.section("D09 T01 §2", "> **Implements:** `word.home.para.sort`\n", done=True)
+        code, _, err = self.check()
+        self.assertEqual(code, 1)
+        told = "the inventory changed after this section was stamped; a stamped section is never rewritten, so " \
+               "file the repair as a new section through add-todo and reopen this one with unstamp"
+        self.assertEqual(err, f"refused: D09 T01 §1: the layout of `word.home.para` differs from the inventory: {told}\n"
+                              f"refused: D09 T01 §2: the layout of `word.home.para` has children this section claims "
+                              f"and no layout block here: {told}\n")
+
+    def test_many_problems_in_one_section_are_bounded(self):
+        line = self.BLOCK.splitlines()[0]
+        self.section("D09 T01 §1", "\n\n".join(line.replace("word.home.para", f"word.x{n}") for n in range(60)))
+        code, out, err = self.check()
+        self.assertEqual(code, 1)
+        self.assertEqual((len(err.splitlines()), err.splitlines()[-1]),
+                         (ir.LAYOUT_SHOWN + 1, "refused: D09 T01 §1: and 10 more layout problems"))
+        self.assertEqual(out, "layout blocks: 60 checked in 1 sections, 60 problem(s)\n")
+
+    def todo_file(self, windows=False):
+        """A TODO file with an open section and a stamped one, each holding the same stale block."""
+        stale = self.BLOCK.replace("Sort...", "Sort").replace("fhd-100", "old-profile")
+        text = ("# TODO-01 -- A\n\n## 1. Open\n\nBefore.\n\n" + stale + "\n\nAfter the block.\n\n"
+                "## 2. Stamped\n\n" + stale + "\n\n## Verification\n\n- v\n")
+        path = self.root / "todo" / "09-x" / "TODO-01-a.md"
+        path.parent.mkdir(parents=True)
+        path.write_bytes((text.replace("\n", "\r\n") if windows else text).encode("utf-8"))
+        for number, done in ((1, False), (2, True)):
+            self.section(f"D09 T01 §{number}", ir.todo_graph.section_text(text, number), done=done)
+        return path, text, stale
+
+    def test_write_replaces_the_stale_blocks_of_open_sections_and_nothing_else(self):
+        for windows in (False, True):
+            with self.subTest(windows=windows):
+                path, text, stale = self.todo_file(windows)
+                code, out, err = self.check("--write", str(path))
+                wanted = text.replace(stale, self.BLOCK, 1)  # the open section's block, and only that
+                self.assertEqual(path.read_bytes(),
+                                 (wanted.replace("\n", "\r\n") if windows else wanted).encode("utf-8"))
+                self.assertEqual(wanted.count(stale), 1)  # the stamped section keeps its stale block
+                self.assertEqual(code, 1)  # which the check that follows still refuses
+                self.assertIn("todo/09-x/TODO-01-a.md: 1 layout block(s) rewritten\n", out)
+                self.assertTrue(err.startswith("refused: D09 T01 §2: the layout of `word.home.para` differs"))
+                self.assertNotIn("D09 T01 §1", err)
+                self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["TODO-01-a.md"])
+                code, out, _ = self.check("--write", "todo/09-x/TODO-01-a.md")  # again: nothing left to rewrite
+                self.assertNotIn("rewritten", out)
+            self.sections.clear()
+            shutil.rmtree(self.root / "todo")
+
+    def test_a_write_that_fails_leaves_the_file_as_it_was(self):
+        path, text, _ = self.todo_file()
+        before = path.read_bytes()
+        failures = {"os.fsync": mock.patch.object(ir.todo_graph.os, "fsync", side_effect=OSError(28, "No space left")),
+                    "os.replace": mock.patch.object(ir.todo_graph.os, "replace",
+                                                    side_effect=PermissionError(13, "sharing violation"))}
+        for stage, failing in failures.items():
+            with failing:
+                code, out, err = self.check("--write", str(path))
+            self.assertEqual(code, 1, stage)
+            self.assertIn("refused: todo/09-x/TODO-01-a.md was not written (", err)
+            self.assertIn("); it is as it was\n", err)
+            self.assertIn("refused: D09 T01 §1: the layout of `word.home.para` differs", err)  # still stale, and said
+            self.assertNotIn("rewritten", out)
+            self.assertEqual(path.read_bytes(), before, stage)
+            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["TODO-01-a.md"], stage)
+
+    def test_write_takes_a_todo_file_of_this_tree(self):
+        self.todo_file()
+        other = self.root / "notes.md"
+        other.write_text("x", encoding="utf-8")
+        for target in (other, self.root / "todo" / "09-x" / "TODO-09-missing.md", Path(self.root).parent / "x.md"):
+            code, out, err = self.check("--write", str(target))
+            self.assertEqual((code, out), (2, ""), target)
+            self.assertIn("is not a TODO file of this tree", err)
+
+
 class Filters(Fixture):
     def cite(self, text):
         path = self.root / "spec.md"
@@ -713,6 +934,20 @@ class Committed(unittest.TestCase):
             self.assertEqual(code, 0, refusals)
         self.assertNotIn("Traceback", refusals)
         self.assertNotIn("Exception ignored", refusals)
+
+    def test_the_repositorys_layout_blocks_are_current_and_the_paragraph_group_has_its_controls(self):
+        # D02 T01 §29's checkpoint, on the repository: the block of the Home tab's Paragraph group, and the check.
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = ir.main(["--layout", "word.home.paragraph"])
+        self.assertEqual((code, err.getvalue()), (0, ""))
+        rows = [line for line in out.getvalue().splitlines() if re.match(r"\d+ ", line)]
+        self.assertEqual(len(rows), 15)
+        self.assertRegex(rows[0], r"^0 +bullets +Bullets +splitButton +small +8 +10 +39 +24 +U$")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = ir.main(["--layout-check"])
+        self.assertEqual((code, err.getvalue()), (0, ""))
 
     def test_the_repositorys_ownership_check_passes_and_names_every_app(self):
         # D02 T01 §22's checkpoint: the report runs on the repository, and the check the hook runs passes there.

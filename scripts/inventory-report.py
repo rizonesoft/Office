@@ -11,6 +11,8 @@ and how each app's baseline compares with its captured inventory (D02 T01 §18).
     python scripts/inventory-report.py --app word --kind tab --cited-in F [--control-types]
     python scripts/inventory-report.py --owners [--app A]   # who builds each record: state and counts, unowned ids
     python scripts/inventory-report.py --owners --check [--all] [--app A]   # exit 1 on a record nobody owns
+    python scripts/inventory-report.py --layout word.home.paragraph        # the layout block of a parent's children
+    python scripts/inventory-report.py --layout-check [--write TODO-FILE]  # exit 1 on a stale or missing block
 
 Records are counted per app (the shell counts as one) and `kind`; a record is implemented when a verified TODO
 section claims it on a `> **Implements:**` line (scripts/lib/inventory_claims.py). A baseline row is one
@@ -35,6 +37,14 @@ records are counted, not refused. An excluded record (`disposition`, D02 T01 §2
 owner and is counted apart on its app's line. --all holds
 every app as enforced, so an app with no captured record is refused too: the gate for a finished plan. --app takes
 one app, and with --owners refuses a name that is no app folder. Refusals go to stderr, states and counts to stdout.
+
+Layout (--layout, --layout-check, D02 T01 §29): a section that builds a parent's children carries that parent's
+layout block, which scripts/lib/inventory_layout.py generates and describes. --layout prints the block for one
+parent (exit 2 for an id the inventory lacks or one with no children). --layout-check compares every block in the
+TODO tree with the inventory, the `**Layout:**` line included, and names each section whose block differs, is
+malformed or given twice, and each section that claims a parent's children without that parent's block: exit 1.
+--write, with --layout-check, first replaces the stale blocks of the named TODO file's open sections with the
+generated ones (through a temporary file; a stamped section is never touched), then checks.
 """
 import argparse
 import errno
@@ -48,6 +58,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 import inventory_authoring  # noqa: E402  (scripts/lib is put on the path just above)
 import inventory_claims  # noqa: E402
+import inventory_layout  # noqa: E402
 import todo_graph  # noqa: E402
 import word_absences  # noqa: E402
 
@@ -262,6 +273,79 @@ def owners_report(root, app=None, check=False, hold_all=False):
     return (1 if check and refusals else 0), out, err
 
 
+LAYOUT_SHOWN = 50  # layout problems named for one section before the rest are counted
+
+
+def layout_check(root, write_path=None, write=todo_graph.atomic):
+    """Every layout block of the TODO tree against the inventory (D02 T01 §29), decided before a line is written:
+    (the exit code, the lines for stdout, the lines for stderr). With `write_path`, the stale blocks of that TODO
+    file's open sections are replaced first; a write that fails leaves the file as it was and is a refusal."""
+    out, err, refusals = [], [], 0
+    records, _ = load_inventory(root)
+    by_id, children = inventory_layout.index(records)
+    sections = read_sections(root)
+    bodies = {section.ref: section.body for section in sections}
+    if write_path is not None:
+        target = Path(write_path)
+        target = target if target.is_absolute() else Path(root) / target
+        try:
+            relative = target.resolve().relative_to(Path(root).resolve()).as_posix()
+        except ValueError:
+            relative = None
+        mine = [section for section in sections if section.path == relative]
+        if not mine:
+            raise Unreadable(f"--write {shown(write_path)} is not a TODO file of this tree "
+                             f"(todo/<NN-domain>/TODO-NN-<name>.md)")
+        raw = target.read_bytes()
+        text = raw.decode("utf-8")
+        windows = "\r\n" in text
+        new, changed = inventory_layout.rewrite(text.replace("\r\n", "\n"), mine, by_id, children,
+                                                todo_graph.section_text)
+        if changed:
+            try:
+                write(target, new.replace("\n", "\r\n") if windows else new)
+            except OSError as exc:
+                refusals += 1
+                err.append(f"refused: {relative} was not written ({exc}); it is as it was")
+            else:
+                out.append(f"{relative}: {changed} layout block(s) rewritten")
+                for section in mine:  # what the file holds now is what is checked below
+                    bodies[section.ref] = todo_graph.section_text(new, section.number) or ""
+    blocks = 0
+    for section in sections:
+        body = bodies[section.ref]
+        now = type(section)(**{**vars(section), "body": body}) if body is not section.body else section
+        blocks += len(inventory_layout.units(body))
+        found = inventory_layout.problems_of(now, by_id, children, inventory_claims.claims(body))
+        refusals += len(found)
+        for parent_id, wrong in found[:LAYOUT_SHOWN]:
+            err.append(f"refused: {section.ref}: the layout of `{shown(parent_id)}` {wrong}")
+        if len(found) > LAYOUT_SHOWN:
+            err.append(f"refused: {section.ref}: and {len(found) - LAYOUT_SHOWN} more layout problems")
+    out.append(f"layout blocks: {blocks} checked in {len(sections)} sections, {refusals} problem(s)")
+    return (1 if refusals else 0), out, err
+
+
+def finish(code, lines, refusals):
+    """Write a decided result: the refusals to stderr first, then the lines to stdout, and return the exit code. No
+    failure of stdout can improve the code: a reader that stopped listening (a broken pipe, which Windows reports as
+    an invalid argument) only ends the writing; anything else (a full disk) is a result that was not written."""
+    for line in refusals:
+        print(line, file=sys.stderr)
+    try:
+        for line in lines:
+            print(line)
+        sys.stdout.flush()
+    except OSError as exc:
+        gone = isinstance(exc, BrokenPipeError) or exc.errno == errno.EPIPE or (
+            os.name == "nt" and exc.errno == errno.EINVAL)
+        stop_writing()
+        if not gone:
+            print(f"inventory-report: the report could not be written ({exc})", file=sys.stderr)
+            return code or 1
+    return code
+
+
 def render(records, baselines, implemented):
     """COVERAGE.md: the whole scoreboard, the same bytes for the same inputs."""
     lines = ["# Inventory Coverage", "",
@@ -327,8 +411,36 @@ def main(argv=None, root=ROOT, write=todo_graph.atomic):
     ap.add_argument("--control-types", action="store_true", help="with --cited-in: cited and not, per controlType")
     ap.add_argument("--owners", action="store_true", help="who builds each record; with --check, exit 1 on a refusal")
     ap.add_argument("--all", action="store_true", help="with --owners --check: hold every app as enforced")
+    ap.add_argument("--layout", metavar="PARENT", help="print the layout block of this record's children")
+    ap.add_argument("--layout-check", action="store_true", help="exit 1 when a layout block is stale or missing")
+    ap.add_argument("--write", type=Path, metavar="TODO-FILE",
+                    help="with --layout-check: first rewrite the stale blocks of this file's open sections")
     args = ap.parse_args(argv)
     root = Path(root)
+    if args.layout is not None or args.layout_check or args.write is not None:
+        others = (args.check or args.missing or args.app or args.kind or args.cited_in or args.control_types
+                  or args.owners or args.all)
+        if others or (args.layout is not None and args.layout_check):
+            print("inventory-report: --layout and --layout-check each stand alone (--write goes with --layout-check)",
+                  file=sys.stderr)
+            return 2
+        if args.write is not None and not args.layout_check:
+            print("inventory-report: --write goes with --layout-check", file=sys.stderr)
+            return 2
+        try:
+            if args.layout is not None:
+                records, _ = load_inventory(root)
+                by_id, children = inventory_layout.index(records)
+                try:
+                    code, lines, refusals = 0, [inventory_layout.render(by_id, children, args.layout)], []
+                except inventory_layout.Unknown as exc:
+                    raise Unreadable(f"--layout: {shown(exc)}") from None
+            else:
+                code, lines, refusals = layout_check(root, args.write, write)
+        except (Unreadable, OSError, UnicodeDecodeError) as exc:
+            print(f"inventory-report: {exc}", file=sys.stderr)
+            return 2
+        return finish(code, lines, refusals)
     if args.all and not (args.owners and args.check):
         print("inventory-report: --all goes with --owners --check", file=sys.stderr)
         return 2
@@ -341,24 +453,7 @@ def main(argv=None, root=ROOT, write=todo_graph.atomic):
         except (Unreadable, OSError, UnicodeDecodeError) as exc:
             print(f"inventory-report: {exc}", file=sys.stderr)
             return 2
-        # The verdict is decided; the refusals go out first, and nothing that happens to stdout can change it.
-        for line in refusals:
-            print(line, file=sys.stderr)
-        try:
-            for line in lines:
-                print(line)
-            sys.stdout.flush()
-        except OSError as exc:
-            # A reader that stopped listening (`--owners | head`) is a broken pipe, which Windows reports as an
-            # invalid argument: there is nobody left to write to, so the rest is dropped, here and at exit, and the
-            # exit code is still the check's. Anything else (a full disk) is a report that was not written.
-            gone = isinstance(exc, BrokenPipeError) or exc.errno == errno.EPIPE or (
-                os.name == "nt" and exc.errno == errno.EINVAL)
-            stop_writing()
-            if not gone:
-                print(f"inventory-report: the report could not be written ({exc})", file=sys.stderr)
-                return code or 1
-        return code
+        return finish(code, lines, refusals)  # the verdict is decided; nothing that happens to stdout changes it
     try:
         records, baselines, implemented = gather(root)
         text = args.cited_in.read_text(encoding="utf-8") if args.cited_in else None

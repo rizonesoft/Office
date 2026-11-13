@@ -22,7 +22,7 @@ class PreCommitHook(unittest.TestCase):
         self.root = pathlib.Path(self.tmp.name)
         for rel in ("scripts/todo-graph.py", "scripts/lib/todo_graph.py", "scripts/review-dispatch.py",
                     "scripts/hooks/pre-commit", "scripts/inventory-report.py", "scripts/lib/inventory_claims.py",
-                    "scripts/lib/inventory_authoring.py",
+                    "scripts/lib/inventory_authoring.py", "scripts/lib/inventory_layout.py",
                     "scripts/lib/word_absences.py", "scripts/lib/word_backstage.py"):
             (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / rel, self.root / rel)
@@ -199,6 +199,53 @@ class PreCommitHook(unittest.TestCase):
         refused = self.commit()
         self.assertNotEqual(refused.returncode, 0)
         self.assertIn("authoring.json: missing", refused.stderr)
+
+    def laid_out(self):
+        """A group under the fixture's tab, the section claiming it, and the tab's layout block as the tool prints
+        it; returns the block."""
+        path = self.root / "design/inventory/word/ribbon.json"
+        records = json.loads(path.read_text(encoding="utf-8"))
+        records.append({"id": "word.home.font", "app": "word", "kind": "group", "label": "Font", "parent": "word.home",
+                        "order": 0})
+        path.write_text(json.dumps(records), encoding="utf-8")
+        self.report()
+        block = subprocess.run([sys.executable, str(self.root / "scripts/inventory-report.py"), "--layout", "word.home"],
+                               check=True, capture_output=True).stdout.decode("utf-8").replace("\r\n", "\n")
+        todo = self.root / "todo/00-workspace/TODO-01-a.md"
+        todo.write_text(todo.read_text(encoding="utf-8").replace(
+            "**Build order:**", "> **Implements:** `word.home.font`\n\n" + block + "\n**Build order:**", 1),
+            encoding="utf-8")
+        self.sync()
+        return block
+
+    def test_a_layout_block_as_the_tool_prints_it_is_committed_and_one_edited_by_hand_is_refused(self):
+        # D02 T01 §29: a tree with no block yet passes (every other test here), a generated block passes, and the same
+        # block with one cell changed by hand is refused, naming the section and the parent.
+        block = self.laid_out()
+        self.git("add", "-A")
+        done = self.commit()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        todo = self.root / "todo/00-workspace/TODO-01-a.md"
+        self.assertIn("Font", block)
+        todo.write_text(todo.read_text(encoding="utf-8").replace(block, block.replace("Font", "Fonts", 1), 1),
+                        encoding="utf-8")
+        self.sync()
+        self.git("add", "-A")
+        refused = self.commit()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("refused: D00 T01 §1: the layout of `word.home` differs from the inventory", refused.stderr)
+        self.assertIn("pre-commit: print each block named above again", refused.stderr)
+
+    def test_a_claim_of_a_parents_child_without_its_block_is_refused(self):
+        block = self.laid_out()
+        todo = self.root / "todo/00-workspace/TODO-01-a.md"
+        todo.write_text(todo.read_text(encoding="utf-8").replace(block + "\n", "", 1), encoding="utf-8")
+        self.sync()
+        self.git("add", "-A")
+        refused = self.commit()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("refused: D00 T01 §1: the layout of `word.home` has children this section claims and no layout "
+                      "block here", refused.stderr)
 
     def test_a_commit_without_todo_changes_is_not_checked(self):
         (self.root / "notes.txt").write_text("x\n", encoding="utf-8")

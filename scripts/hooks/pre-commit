@@ -4,7 +4,8 @@
 # Refuse a commit that would turn CI's gates red: one that stages TODO changes while todo/implementation-plan.md
 # is stale or the TODO graph is invalid, and one that stages TODO or inventory changes while
 # design/inventory/COVERAGE.md is stale (D02 T01 §18: a new record, or a stamp that changes what is implemented) or
-# while a record of an authored app has no owner, or a claim is unknown or doubled (D02 T01 §22).
+# while a record of an authored app has no owner, or a claim is unknown or doubled (D02 T01 §22), or while a section's
+# layout block differs from the inventory or is missing (D02 T01 §29).
 # Enabled per clone with `git config core.hooksPath scripts/hooks` (AGENTS.md).
 todo=
 inventory=
@@ -48,5 +49,10 @@ fi
 # Ownership: the states and counts go to stdout, which is dropped here; a refusal is on stderr and stays.
 if ! "$python" "$root/scripts/inventory-report.py" --owners --check >/dev/null; then
     echo "pre-commit: give each record named above one owner on a '> **Implements:**' line of the section that builds it (python scripts/inventory-report.py --owners), stage the change, and commit again" >&2
+    exit 1
+fi
+# Layout blocks are generated, never typed: the count goes to stdout, which is dropped; a refusal is on stderr.
+if ! "$python" "$root/scripts/inventory-report.py" --layout-check >/dev/null; then
+    echo "pre-commit: print each block named above again (python scripts/inventory-report.py --layout <parent id>, or --layout-check --write <TODO file> for stale blocks), stage the change, and commit again" >&2
     exit 1
 fi
