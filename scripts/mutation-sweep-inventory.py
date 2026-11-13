@@ -13,7 +13,7 @@ a refusal), one keyword of design/inventory/schema.json the checker's validator 
 map, or one top-level alternative of a `pattern`. The alternation bars inside a top-level alternative define that
 family's exemptions and are not removed one by one (noHost alone holds over 4,000).
 
-Each removal runs in a private copy of scripts/ and design/inventory/, on disk, in a fresh process, so a test that
+Each removal runs in a private copy of scripts/, design/inventory/ and todo/, on disk, in a fresh process, so a test that
 reads the schema itself or starts the checker as a subprocess sees it, and nothing of one removal reaches the next.
 An unmutated run comes first and must pass in full, or the sweep exits 2 having removed nothing. A removal is killed
 only when a test fails with every test discovered; one whose tests only error, that discovers fewer tests, that runs
@@ -209,6 +209,9 @@ class Workspace:
         self.root = Path(tempfile.mkdtemp(prefix="sweep-", dir=parent))
         shutil.copytree(root / "scripts", self.root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
         shutil.copytree(root / "design" / "inventory", self.root / "design" / "inventory")
+        if (root / "todo").is_dir():
+            # The checker looks the sections of design/inventory/authoring.json up in the TODO tree (D02 T01 §22).
+            shutil.copytree(root / "todo", self.root / "todo")
         self.lock = threading.Lock()
 
     def run(self, rule, pattern, timeout):

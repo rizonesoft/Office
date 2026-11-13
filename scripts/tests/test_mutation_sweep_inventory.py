@@ -177,6 +177,16 @@ class Outcomes(Fixture):
         self.assertEqual((self.root / "scripts" / "check-inventory.py").read_text(encoding="utf-8"),
                          textwrap.dedent(CHECKER))  # the fixture itself is never touched
 
+    def test_the_private_copy_takes_the_todo_tree_when_there_is_one(self):
+        # D02 T01 §22: the checker looks up the sections design/inventory/authoring.json names, so its tests need them.
+        with tempfile.TemporaryDirectory() as parent:
+            bare = ms.Workspace(self.root, parent)
+            self.assertFalse((bare.root / "todo").exists())  # the fixture has no TODO tree, and none is invented
+            (self.root / "todo" / "00-x").mkdir(parents=True)
+            (self.root / "todo" / "00-x" / "TODO-01-a.md").write_text("## 1. A\n", encoding="utf-8")
+            copied = ms.Workspace(self.root, parent)
+            self.assertEqual((copied.root / "todo" / "00-x" / "TODO-01-a.md").read_text(encoding="utf-8"), "## 1. A\n")
+
     def test_a_failing_unmutated_run_stops_the_sweep(self):
         path = self.root / "scripts" / "tests" / "test_check_inventory.py"
         path.write_text(TESTS + "\n\nclass Broken(unittest.TestCase):\n    def test_x(self):\n        self.fail()\n",

@@ -154,6 +154,7 @@ def check_word_ribbon(f, data):
         return [f"{f}: {exc}"]
     return []
 SOURCES = "baseline-sources.json"  # the upstream manifest the baselines were imported from
+AUTHORING = "authoring.json"  # each app folder's authoring section (scripts/lib/inventory_authoring.py, D02 T01 §22)
 APPS = ("word", "excel", "powerpoint", "visio", "project", "outlook")
 REFERENCE = "REFERENCE.md"  # the builds and capture profiles records are measured against
 MAX_STRING = 1000  # the longest maxLength in schema.json (a behaviour sentence); longer strings are refused unsearched
@@ -571,13 +572,15 @@ def json_files(folder):
 
 
 def inventory_files(paths, manifest=INVENTORY / SOURCES):
-    """Every inventory file under the named folders, and the named files. Only the source manifest itself (at the
-    inventory's root) is left out; a file of that name anywhere else is checked like any other."""
+    """Every inventory file under the named folders, and the named files. Only the source manifest and the authoring
+    file themselves (at the inventory's root) are left out, since neither holds records; a file of either name
+    anywhere else is checked like any other."""
     files = []
     for p in paths:
         p = Path(p)
         if p.is_dir():
-            skip = (SCHEMA.resolve(), BASELINE_SCHEMA.resolve(), Path(manifest).resolve())
+            skip = (SCHEMA.resolve(), BASELINE_SCHEMA.resolve(), Path(manifest).resolve(),
+                    (Path(manifest).parent / AUTHORING).resolve())
 
             files += sorted(f for f in json_files(p) if f.resolve() not in skip)
         else:
@@ -621,6 +624,27 @@ def check_baseline(f, data, schema, sources=None):
             problems += [f"{f}: {p}" for p in validate(cell, kinds.get(name, defs["identifier"]), schema,
                                                        f"$.rows[{i}].{name}")]
     return problems
+
+
+def authoring_problems(inventory):
+    """Problems with the inventory's authoring.json, for a run over the whole inventory (D02 T01 §22): every app
+    folder names the section that authors its domain, nothing else is named, and each reference is a section the TODO
+    tree holds. The repository's inventory must have the file; a scratch inventory without one names no authoring
+    sections and has nothing to check. The file is read by scripts/lib/inventory_authoring.py, as the ownership check
+    reads it, and a reference is looked up by scripts/lib/todo_graph.py."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import inventory_authoring
+    import todo_graph
+    inventory = Path(inventory)
+    if not (inventory / inventory_authoring.FILE).is_file() and inventory.resolve() != INVENTORY.resolve():
+        return []
+
+    def section_exists(ref):
+        try:
+            return todo_graph.section_exists(ROOT, ref)
+        except todo_graph.Refused as exc:
+            raise Unreadable(f"the TODO tree cannot be read ({exc})") from None
+    return inventory_authoring.read(inventory, section_exists)[1]
 
 
 def check(paths, require_behaviour=False, inventory=INVENTORY):
@@ -714,6 +738,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                 absent = [w for w in outlook_windows(sources) if w not in windows_seen]
                 if absent:
                     problems.append(f"{path}: no rows for the windows {absent}")
+    if whole:
+        problems += authoring_problems(inventory)
     for resolved in named_resolved:
         f = universe[resolved]
         data = loaded[resolved]

@@ -9,6 +9,8 @@ and how each app's baseline compares with its captured inventory (D02 T01 §18).
     python scripts/inventory-report.py --missing [--app A]  # the baseline idMsos no captured record matches
     python scripts/inventory-report.py --app A --kind K     # counts for one app and kind (prints only)
     python scripts/inventory-report.py --app word --kind tab --cited-in F [--control-types]
+    python scripts/inventory-report.py --owners [--app A]   # who builds each record: state and counts, unowned ids
+    python scripts/inventory-report.py --owners --check [--all] [--app A]   # exit 1 on a record nobody owns
 
 Records are counted per app (the shell counts as one) and `kind`; a record is implemented when a verified TODO
 section claims it on a `> **Implements:**` line (scripts/lib/inventory_claims.py). A baseline row is one
@@ -21,16 +23,28 @@ counted as pending until its surface is captured. An app with a baseline
 and no captured record is one `pending inventory` row. The report holds no value of the run, so writing it twice
 gives the same bytes. A filtered run (--app, --kind, --cited-in, --missing) only prints. Exit 0 written or printed;
 1 when --check finds the report stale or a write fails; 2 when an input cannot be read.
+
+Ownership (--owners, D02 T01 §22): parity is 1:1, so every record is built by exactly the section that claims it on
+a `> **Implements:**` line, open or stamped. Each app (the shell counts as one) is in one of three states:
+`pending inventory` (no captured record), `pending authoring` (captured records, and the section that authors the
+app's domain, named in design/inventory/authoring.json, not yet stamped) and `enforced` (that section stamped).
+--owners prints each app's state with its owned and total counts, the counts per kind, and every unowned id.
+--owners --check exits 1 when an enforced app has a record nobody owns, when a claim names an id the inventory does
+not hold, or when two sections claim one id; a pending app's unowned records are counted, not refused. --all holds
+every app as enforced, so an app with no captured record is refused too: the gate for a finished plan. --app takes
+one app, and with --owners refuses a name that is no app folder. Refusals go to stderr, states and counts to stdout.
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
-import inventory_claims  # noqa: E402  (scripts/lib is put on the path just above)
+import inventory_authoring  # noqa: E402  (scripts/lib is put on the path just above)
+import inventory_claims  # noqa: E402
 import todo_graph  # noqa: E402
 import word_absences  # noqa: E402
 
@@ -115,14 +129,98 @@ def baseline_counts(app, rows, app_records, shell_records):
     return counts, unmatched, pending
 
 
-def gather(root):
-    records, baselines = load_inventory(root)
+def read_sections(root):
     try:
-        sections = todo_graph.graph(root).values()
+        return list(todo_graph.graph(root).values())
     except todo_graph.Refused as exc:
         raise Unreadable(f"the TODO tree: {exc}") from None
-    implemented = inventory_claims.implemented(sections)
+
+
+def gather(root):
+    records, baselines = load_inventory(root)
+    implemented = inventory_claims.implemented(read_sections(root))
     return records, baselines, implemented
+
+
+OWNERS_SHOWN = 50  # unowned ids a refusal names for one app before counting the rest
+
+
+def shown(text):
+    """text with anything that is not printable written as an escape: a claim is whatever a TODO file backticked."""
+    return "".join(ch if ch.isprintable() else ascii(ch)[1:-1] for ch in str(text))
+
+
+def ownership(root, records, sections, app=None):
+    """Who the plan says builds each record (D02 T01 §22): (one row per app, the unknown claims, the double claims).
+    A row is (app, state, its authoring section's reference, {kind: [owned ids, unowned ids]}). The states are in the
+    module's description. An unknown or double claim belongs to the app its first dotted part names. Raises Unreadable
+    for an authoring file the reader refuses and for an `app` that is no app folder."""
+    inventory = Path(root) / "design" / "inventory"
+    by_ref = {section.ref: section for section in sections}
+    authoring, problems = inventory_authoring.read(inventory, lambda ref: ref in by_ref)
+    if problems:
+        raise Unreadable("\n".join(problems))
+    apps = inventory_authoring.app_folders(inventory)
+    if app is not None and app not in apps:
+        raise Unreadable(f"--app {shown(app)} is not an app folder of the inventory ({', '.join(apps)})")
+    claimed = inventory_claims.owners(sections)
+    held = {r["id"] for recs in records.values() for r in recs if isinstance(r.get("id"), str)}
+    mine = (lambda rid: app is None or rid.split(".", 1)[0] == app)
+    unknown = sorted((rid, refs) for rid, refs in claimed.items() if rid not in held and mine(rid))
+    doubled = sorted((rid, refs) for rid, refs in claimed.items() if len(refs) > 1 and mine(rid))
+    rows = []
+    for name in apps if app is None else [app]:
+        kinds = {}
+        for r in records.get(name, []):
+            if isinstance(r.get("id"), str):
+                kinds.setdefault(str(r.get("kind")), set()).add(r["id"])
+        section = by_ref[authoring[name]]
+        state = "pending inventory" if not kinds else "enforced" if section.done else "pending authoring"
+        rows.append((name, state, section.ref, {kind: [sorted(i for i in ids if i in claimed),
+                                                      sorted(i for i in ids if i not in claimed)]
+                                                for kind, ids in sorted(kinds.items())}))
+    return rows, unknown, doubled
+
+
+def owners_report(root, app=None, check=False, hold_all=False, out=None, err=None):
+    """Print the ownership report and return the exit code: 0, or 1 when `check` finds a refusal."""
+    out, err = out or sys.stdout, err or sys.stderr
+    records, _ = load_inventory(root)
+    rows, unknown, doubled = ownership(root, records, read_sections(root), app)
+    refusals = 0
+    for name, state, ref, kinds in rows:
+        owned = sum(len(pair[0]) for pair in kinds.values())
+        unowned = [(kind, rid) for kind, pair in kinds.items() for rid in pair[1]]
+        if state == "pending inventory":
+            print(f"{name}: pending inventory (no captured record; {ref} authors it)", file=out)
+        else:
+            waits = "is stamped" if state == "enforced" else "is open"
+            print(f"{name}: {state} ({ref} {waits}): {owned} of {owned + len(unowned)} records owned", file=out)
+            for kind, pair in kinds.items():
+                print(f"  {kind}: {len(pair[0])} of {len(pair[0]) + len(pair[1])}", file=out)
+        held_to = hold_all or state == "enforced"
+        if check and held_to and state == "pending inventory":
+            refusals += 1
+            print(f"refused: {name} has no captured record, and --all holds every app", file=err)
+        elif check and held_to and unowned:
+            refusals += 1
+            print(f"refused: {name}: {len(unowned)} record(s) no section claims on an Implements line", file=err)
+            for kind, rid in unowned[:OWNERS_SHOWN]:
+                print(f"  unowned {kind} {shown(rid)}", file=err)
+            if len(unowned) > OWNERS_SHOWN:
+                print(f"  and {len(unowned) - OWNERS_SHOWN} more", file=err)
+        elif not check:
+            for kind, rid in unowned:
+                print(f"  unowned {kind} {shown(rid)}", file=out)
+    for rid, refs in unknown:
+        refusals += 1
+        print(f"{'refused: ' if check else ''}unknown claim: {shown(rid)}, claimed by {', '.join(refs)}, is not a "
+              f"record of the inventory", file=err if check else out)
+    for rid, refs in doubled:
+        refusals += 1
+        print(f"{'refused: ' if check else ''}double claim: {shown(rid)} is claimed by {' and '.join(refs)}",
+              file=err if check else out)
+    return 1 if check and refusals else 0
 
 
 def render(records, baselines, implemented):
@@ -176,8 +274,26 @@ def main(argv=None, root=ROOT, write=todo_graph.atomic):
     ap.add_argument("--kind")
     ap.add_argument("--cited-in", type=Path, help="the share of matching record ids this file names")
     ap.add_argument("--control-types", action="store_true", help="with --cited-in: cited and not, per controlType")
+    ap.add_argument("--owners", action="store_true", help="who builds each record; with --check, exit 1 on a refusal")
+    ap.add_argument("--all", action="store_true", help="with --owners --check: hold every app as enforced")
     args = ap.parse_args(argv)
     root = Path(root)
+    if args.all and not (args.owners and args.check):
+        print("inventory-report: --all goes with --owners --check", file=sys.stderr)
+        return 2
+    if args.owners:
+        if args.missing or args.kind or args.cited_in or args.control_types:
+            print("inventory-report: --owners takes --check, --all and --app only", file=sys.stderr)
+            return 2
+        try:
+            return owners_report(root, args.app, args.check, args.all)
+        except BrokenPipeError:
+            # The reader of a long list (`--owners | head`) closed the pipe: nothing more to say, and nothing failed.
+            sys.stdout = open(os.devnull, "w", encoding="utf-8")
+            return 0
+        except (Unreadable, OSError, UnicodeDecodeError) as exc:
+            print(f"inventory-report: {exc}", file=sys.stderr)
+            return 2
     try:
         records, baselines, implemented = gather(root)
         text = args.cited_in.read_text(encoding="utf-8") if args.cited_in else None

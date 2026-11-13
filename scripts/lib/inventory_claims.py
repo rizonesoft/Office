@@ -28,3 +28,14 @@ def implemented(sections) -> dict:
             for rid in claims(section.body):
                 out.setdefault(rid, []).append(section.ref)
     return out
+
+
+def owners(sections) -> dict:
+    """Each record id any section claims, stamped or not, with the references of the sections claiming it: ownership
+    is what the plan says, so an open section owns what it claims (D02 T01 §22). A section naming an id twice claims
+    it once."""
+    out = {}
+    for section in sections:
+        for rid in dict.fromkeys(claims(section.body)):
+            out.setdefault(rid, []).append(section.ref)
+    return out

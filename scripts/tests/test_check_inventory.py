@@ -1680,6 +1680,68 @@ class Inventory(unittest.TestCase):
         self.assertTrue(any(p.startswith(chrome) for p in scratch), scratch[:5])
 
 
+    # D02 T01 §22: design/inventory/authoring.json names, for each app folder, the section that authors its domain.
+
+    def authoring(self, data):
+        path = self.inv / ci.AUTHORING
+        path.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
+        return path
+
+    def test_the_authoring_file_names_a_section_for_every_app_folder(self):
+        self.write("word/ribbon.json", [TAB])
+        (self.inv / "excel").mkdir()
+        path = self.authoring({"word": "D03 T01 §19", "excel": "D03 T01 §20"})
+        self.assertEqual(self.problems(), [])  # two app folders, each with a section the TODO tree holds
+        cases = {
+            f"{path}: no section named for the app folder excel": {"word": "D03 T01 §19"},
+            f"{path}: 'paint' is not an app folder of the inventory (excel, word)":
+                {"word": "D03 T01 §19", "excel": "D03 T01 §20", "paint": "D03 T01 §19"},
+            f"{path}: word: 'section 19' is not a section reference (DNN TNN §N)":
+                {"word": "section 19", "excel": "D03 T01 §20"},
+            f"{path}: word: D03 T01 §999 is not a section of the TODO tree":
+                {"word": "D03 T01 §999", "excel": "D03 T01 §20"},
+            f"{path}: not a JSON object of app folder to section reference": "[]",
+        }
+        for expected, data in cases.items():
+            self.authoring(data)
+            self.assertEqual(self.problems(), [expected])
+        self.authoring("{not json")
+        self.assertTrue(self.problems()[0].startswith(f"{path}: cannot be read ("))
+        # The file holds no records: it is never read as an inventory file, and a check of one file does not read it.
+        self.authoring("[]")
+        self.assertEqual(self.problems(self.inv / "word" / "ribbon.json"), [])
+        self.assertEqual(self.problems(self.inv / "word"), [])
+        self.assertNotIn(path.resolve(), [f.resolve() for f in ci.inventory_files([self.inv], self.inv / ci.SOURCES)])
+        nested = self.write("word/authoring.json", {"word": "D03 T01 §19"})  # of that name elsewhere: a record file
+        self.assertTrue(any(str(nested) in p and "expected array" in p for p in self.problems()))
+
+    def test_the_repositorys_inventory_must_have_its_authoring_file(self):
+        from unittest import mock
+        self.write("word/ribbon.json", [TAB])
+        self.assertEqual(self.problems(), [])  # a scratch inventory names no authoring sections
+        for name in (ci.SOURCES, ci.REFERENCE):
+            (self.inv / name).write_text((ci.INVENTORY / name).read_text(encoding="utf-8"), encoding="utf-8")
+        missing = f"{self.inv / ci.AUTHORING}: missing: it names, for each app folder, the section that authors that " \
+                  f"app's domain"
+        with mock.patch.object(ci, "INVENTORY", self.inv):
+            self.assertIn(missing, self.problems())
+            self.authoring({"word": "D03 T01 §19"})
+            self.assertFalse(any(ci.AUTHORING in p for p in self.problems()))
+        self.assertTrue((ci.INVENTORY / ci.AUTHORING).is_file())  # and the repository's own has one
+
+    def test_a_todo_tree_that_cannot_be_read_is_unreadable_not_a_missing_section(self):
+        import sys
+        from unittest import mock
+        sys.path.insert(0, str(SCRIPTS / "lib"))
+        import todo_graph
+        self.write("word/ribbon.json", [TAB])
+        self.authoring({"word": "D03 T01 §19"})
+        with mock.patch.object(todo_graph, "section_exists", side_effect=todo_graph.Refused("two files for one number")):
+            with self.assertRaises(ci.Unreadable) as raised:
+                self.problems()
+        self.assertIn("the TODO tree cannot be read (two files for one number)", str(raised.exception))
+
+
 class Cli(unittest.TestCase):
     def test_validation_failure_exits_1(self):
         with tempfile.TemporaryDirectory() as tmp:

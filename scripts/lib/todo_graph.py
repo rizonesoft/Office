@@ -689,6 +689,25 @@ def started_commit(root, ref):
     `> **Started:**` line, or None when there is nothing to hold the candidate to: no todo/ folder, no TODO file for
     the section, a section the file does not hold, no Started line, or a line no commit holds yet. A lookup that
     failed is a refusal, never a None: a TODO file that cannot be read, two files for one number, a failing git."""
+    found = _section_on_disk(root, ref, "so the plan review's candidate cannot be held to its Started line")
+    started = STARTED.search(found[1] or "") if found else None
+    if not started:
+        return None
+    return _first_holding(root, found[0], started[0].rstrip("\r"), ref.rsplit("§", 1)[1], ref)
+
+
+def section_exists(root, ref):
+    """Whether the TODO tree under `root` holds the section `ref` names (`DNN TNN §N`): its one TODO file, and in it
+    the `## N.` heading. No receipt is read and git is not asked, so a tool that only needs to know that a reference
+    points at a section can ask in any copy of the tree (D02 T01 §22: design/inventory/authoring.json). A TODO file
+    that cannot be read, and two files for one number, refuse."""
+    found = _section_on_disk(root, ref, "so the section cannot be looked for")
+    return found is not None and found[1] is not None
+
+
+def _section_on_disk(root, ref, consequence):
+    """(the TODO file's path from the root, the section's text or None when the file does not hold it), or None when
+    there is no todo/ folder or no TODO file for the section. `consequence` ends the refusal of a lookup that failed."""
     m = re.fullmatch(r"D(\d{2}) T(\d{2}) §([1-9]\d*)", ref)
     require(m is not None, f"not a full section reference: {ref}")
     root = Path(root)
@@ -698,19 +717,13 @@ def started_commit(root, ref):
     if not paths:
         return None
     require(len(paths) == 1, f"more than one TODO file for {ref} "
-                             f"({', '.join(p.relative_to(root).as_posix() for p in paths)}), so its Started line "
-                             f"cannot be found")
+                             f"({', '.join(p.relative_to(root).as_posix() for p in paths)}), {consequence}")
     rel = paths[0].relative_to(root).as_posix()
     try:
         text = paths[0].read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError) as exc:
-        raise Refused(f"{rel} cannot be read ({exc}), so the plan review's candidate cannot be held to the Started "
-                      f"line of {ref}") from None
-    body = section_text(text.replace("\r\n", "\n"), m[3])
-    started = STARTED.search(body or "")
-    if not started:
-        return None
-    return _first_holding(root, rel, started[0].rstrip("\r"), m[3], ref)
+        raise Refused(f"{rel} cannot be read ({exc}), {consequence}: {ref}") from None
+    return rel, section_text(text.replace("\r\n", "\n"), m[3])
 
 
 def _first_holding(root, path, line, number, ref=None):

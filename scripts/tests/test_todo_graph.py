@@ -1074,6 +1074,35 @@ class GitFactsReads(unittest.TestCase):
         self.assertEqual(started, ["rev-list"] + ["merge-base"] * (len(outside) * 2))
 
 
+class SectionExists(Tree):
+    """Whether a reference points at a section, asked without receipts or git (D02 T01 §22)."""
+
+    def test_a_section_is_its_one_todo_file_and_its_heading(self):
+        self.write(todo_file([(1, "A", 0, "none", "--"), (2, "B", 0, "none", "--")]))
+        self.assertTrue(tg.section_exists(self.root, "D00 T01 §1"))
+        self.assertTrue(tg.section_exists(self.root, "D00 T01 §2"))
+        for absent in ("D00 T01 §3", "D00 T01 §12", "D00 T02 §1", "D07 T01 §1"):
+            self.assertFalse(tg.section_exists(self.root, absent), absent)
+        with tempfile.TemporaryDirectory() as bare:  # a copy with no TODO tree holds no section
+            self.assertFalse(tg.section_exists(bare, "D00 T01 §1"))
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.section_exists(self.root, "T01 §1")
+        self.assertIn("not a full section reference", str(ctx.exception))
+
+    def test_a_lookup_that_failed_refuses(self):
+        self.write(todo_file([(1, "A", 0, "none", "--")]))
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        (path.parent / "TODO-01-b.md").write_bytes(path.read_bytes())
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.section_exists(self.root, "D00 T01 §1")
+        self.assertIn("more than one TODO file for D00 T01 §1", str(ctx.exception))
+        (path.parent / "TODO-01-b.md").unlink()
+        path.write_bytes(b"\xff\xfe not utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.section_exists(self.root, "D00 T01 §1")
+        self.assertIn("todo/00-workspace/TODO-01-a.md cannot be read", str(ctx.exception))
+
+
 class Parked(Tree):
     """A parked section is neither ready nor in progress, and returns by itself when its wait is over (D00 T03 §59)."""
 

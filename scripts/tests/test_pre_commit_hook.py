@@ -22,6 +22,7 @@ class PreCommitHook(unittest.TestCase):
         self.root = pathlib.Path(self.tmp.name)
         for rel in ("scripts/todo-graph.py", "scripts/lib/todo_graph.py", "scripts/review-dispatch.py",
                     "scripts/hooks/pre-commit", "scripts/inventory-report.py", "scripts/lib/inventory_claims.py",
+                    "scripts/lib/inventory_authoring.py",
                     "scripts/lib/word_absences.py", "scripts/lib/word_backstage.py"):
             (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / rel, self.root / rel)
@@ -33,6 +34,8 @@ class PreCommitHook(unittest.TestCase):
         (self.root / "todo/TODO-00-INDEX.md").write_text("# Index\n- 00-workspace/TODO-01-a.md\n", encoding="utf-8")
         self.sync()
         self.record("word.home", "tab")
+        # The section that authors Word's domain (D02 T01 §22): open here, so Word is pending authoring.
+        (self.root / "design/inventory/authoring.json").write_text(json.dumps({"word": "D00 T01 §1"}), encoding="utf-8")
         self.report()
         for args in (["init", "-q"], ["config", "user.email", "t@example.com"], ["config", "user.name", "T"],
                      ["config", "core.autocrlf", "false"], ["add", "-A"], ["commit", "-qm", "seed"],
@@ -157,6 +160,45 @@ class PreCommitHook(unittest.TestCase):
         result = self.commit()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("docs/reviews/ has unstaged or untracked changes", result.stderr)
+
+    def claim(self, *ids):
+        """Give the fixture's section an Implements line naming these ids, and sync the plan."""
+        path = self.root / "todo/00-workspace/TODO-01-a.md"
+        line = "> **Implements:** " + " ".join(f"`{i}`" for i in ids) + "\n\n"
+        path.write_text(path.read_text(encoding="utf-8").replace("**Test checkpoint:**", line + "**Test checkpoint:**", 1),
+                        encoding="utf-8")
+        self.sync()
+
+    def test_a_new_record_of_a_pending_app_is_committed_unowned(self):
+        # D02 T01 §22: until the section that authors an app's domain is stamped, its records are counted, not refused.
+        self.record("word.home.font", "group")
+        self.report()
+        self.git("add", "-A")
+        done = self.commit()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stderr, "")
+
+    def test_the_first_claims_of_an_app_whose_authoring_section_is_open_are_committed(self):
+        self.record("word.home.font", "group")
+        self.report()
+        self.claim("word.home")  # one of the two records, the other still unowned
+        self.git("add", "-A")
+        done = self.commit()
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+    def test_a_claim_of_an_id_the_inventory_does_not_hold_is_refused(self):
+        self.claim("word.nothing")
+        self.git("add", "-A")
+        refused = self.commit()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("refused: unknown claim: word.nothing, claimed by D00 T01 §1", refused.stderr)
+        self.assertIn("pre-commit: give each record named above one owner", refused.stderr)
+
+    def test_an_inventory_without_its_authoring_file_is_refused(self):
+        self.git("rm", "-q", "design/inventory/authoring.json")
+        refused = self.commit()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("authoring.json: missing", refused.stderr)
 
     def test_a_commit_without_todo_changes_is_not_checked(self):
         (self.root / "notes.txt").write_text("x\n", encoding="utf-8")

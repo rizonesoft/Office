@@ -166,6 +166,206 @@ class Implemented(Fixture):
         self.assertIn("| word | control | 4 | 2 |", out)
 
 
+class Owners(Fixture):
+    """Who the plan says builds each record (D02 T01 §22). Word's domain is authored by D09 T01 §1, the shell's by
+    §2 and Excel's (a baseline and no captured record) by §3; other sections claim records."""
+
+    WORD = [r["id"] for r in RIBBON]
+    AUTHORING = {"word": "D09 T01 §1", "shell": "D09 T01 §2", "excel": "D09 T01 §3"}
+
+    def setUp(self):
+        super().setUp()
+        self.authoring(self.AUTHORING)
+        self.authors = {app: self.section(ref, False, "") for app, ref in self.AUTHORING.items()}
+
+    def authoring(self, data):
+        path = self.root / "design" / "inventory" / "authoring.json"
+        path.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
+
+    def section(self, ref, done, body):
+        self.sections.append(SimpleNamespace(ref=ref, done=done, body=body))
+        return self.sections[-1]
+
+    def claim(self, ref, *ids, done=False):
+        return self.section(ref, done, "> **Implements:** " + " ".join(f"`{i}`" for i in ids))
+
+    def owners(self, *argv):
+        return self.run_report("--owners", *argv)
+
+    def test_a_claim_is_what_an_implements_line_names_whoever_made_it(self):
+        self.claim("D09 T02 §1", "word.home.font.bold", "word.home.font.bold")       # named twice, claimed once
+        self.section("D09 T02 §2", True, "- [x] Build `word.home.font.italic`.\n\nSee `word.home`, for example.")
+        self.claim("D09 T02 §3", "word.home.font", done=True)
+        self.assertEqual(inventory_claims.owners(self.sections),
+                         {"word.home.font.bold": ["D09 T02 §1"], "word.home.font": ["D09 T02 §3"]})
+        code, out, err = self.owners()
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 2 of 8 records owned\n", out)
+        self.assertIn("  control: 1 of 4\n", out)
+        self.assertIn("  group: 1 of 1\n", out)
+        self.assertNotIn("unowned control word.home.font.bold", out)
+        self.assertIn("  unowned control word.home.font.italic\n", out)  # ticked in an item, claimed nowhere
+
+    def test_every_app_is_in_one_of_three_states(self):
+        self.authors["shell"].done = True
+        code, out, err = self.owners()
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("excel: pending inventory (no captured record; D09 T01 §3 authors it)\n", out)
+        self.assertIn("shell: enforced (D09 T01 §2 is stamped): 0 of 1 records owned\n", out)
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 0 of 8 records owned\n", out)
+        self.claim("D09 T02 §1", *self.WORD[:3])
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 3 of 8 records owned\n", self.owners()[1])
+        self.authors["word"].done = True  # the same fixture with that section stamped
+        self.assertIn("word: enforced (D09 T01 §1 is stamped): 3 of 8 records owned\n", self.owners()[1])
+        self.authors["excel"].done = True  # stamped or not, an app with no captured record is pending inventory
+        self.assertIn("excel: pending inventory", self.owners()[1])
+
+    def test_removing_a_claim_from_an_enforced_app_names_the_record(self):
+        self.authors["word"].done = self.authors["shell"].done = True
+        word = self.claim("D09 T02 §1", *self.WORD)
+        self.claim("D09 T02 §2", "shell.qat.save")
+        self.assertEqual(self.owners("--check")[::2], (0, ""))
+        word.body = word.body.replace(" `word.home.font.italic`", "")
+        code, out, err = self.owners("--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(err, "refused: word: 1 record(s) no section claims on an Implements line\n"
+                              "  unowned control word.home.font.italic\n")
+        self.assertIn("word: enforced (D09 T01 §1 is stamped): 7 of 8 records owned\n", out)
+        self.assertNotIn("unowned", out)  # with --check a refusal is on stderr alone
+        code, out, err = self.owners()  # the report itself names it and refuses nothing
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("  unowned control word.home.font.italic\n", out)
+
+    def test_a_pending_app_is_counted_and_an_enforced_one_refused(self):
+        self.assertEqual(self.owners("--check")[::2], (0, ""))  # every record unowned, every app pending
+        self.claim("D09 T02 §1", *self.WORD[:4])
+        code, out, err = self.owners("--check")
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 4 of 8 records owned\n", out)
+        self.assertNotIn("unowned", out)  # counted, not listed: the hook's output stays short for a pending app
+        self.authors["word"].done = True
+        code, _, err = self.owners("--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(err.splitlines()[0], "refused: word: 4 record(s) no section claims on an Implements line")
+        self.assertEqual(sorted(line.split()[-1] for line in err.splitlines()[1:]), sorted(self.WORD[4:]))
+
+    def test_an_unknown_claim_and_a_double_claim_are_refused_in_every_state(self):
+        self.claim("D09 T02 §1", "word.nothing")
+        code, _, err = self.owners("--check")
+        self.assertEqual((code, err), (1, "refused: unknown claim: word.nothing, claimed by D09 T02 §1, is not a "
+                                          "record of the inventory\n"))
+        self.sections.pop()
+        self.claim("D09 T02 §1", "word.home.font.bold")
+        self.claim("D09 T02 §2", "word.home.font.bold", done=True)
+        code, _, err = self.owners("--check")
+        self.assertEqual((code, err), (1, "refused: double claim: word.home.font.bold is claimed by D09 T02 §1 and "
+                                          "D09 T02 §2\n"))
+        code, out, err = self.owners()  # the report lists it and refuses nothing
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("double claim: word.home.font.bold is claimed by D09 T02 §1 and D09 T02 §2\n", out)
+
+    def test_a_claim_is_printed_escaped(self):
+        self.claim("D09 T02 §1", "word.\x1b[2Jgone")
+        _, _, err = self.owners("--check")
+        self.assertIn("unknown claim: word.\\x1b[2Jgone, claimed by", err)
+        self.assertNotIn("\x1b", err)
+
+    def test_one_app_can_be_brought_to_zero_at_a_time(self):
+        self.authors["word"].done = self.authors["shell"].done = True
+        self.claim("D09 T02 §1", *self.WORD)
+        self.claim("D09 T02 §2", "shell.nothing")
+        self.claim("D09 T02 §3", "shell.nothing")
+        code, out, err = self.owners("--check", "--app", "word")
+        self.assertEqual((code, err), (0, ""))  # the shell's unowned record and its unknown, doubled claim are not Word's
+        self.assertEqual(out.splitlines()[0], "word: enforced (D09 T01 §1 is stamped): 8 of 8 records owned")
+        self.assertNotIn("shell", out)
+        code, _, err = self.owners("--check", "--app", "shell")
+        self.assertEqual(code, 1)
+        self.assertIn("refused: shell: 1 record(s) no section claims on an Implements line\n"
+                      "  unowned control shell.qat.save\n", err)
+        self.assertIn("refused: unknown claim: shell.nothing, claimed by D09 T02 §2, D09 T02 §3", err)
+        self.assertIn("refused: double claim: shell.nothing is claimed by D09 T02 §2 and D09 T02 §3", err)
+
+    def test_an_app_that_is_no_app_folder_is_refused_not_passed(self):
+        for argv in (("--check", "--all", "--app", "wrod"), ("--app", "wrod"), ("--check", "--app", "Word")):
+            code, out, err = self.owners(*argv)
+            self.assertEqual((code, out), (2, ""), argv)
+            self.assertIn("is not an app folder of the inventory (excel, shell, word)", err)
+
+    def test_all_holds_every_app_as_enforced(self):
+        code, _, err = self.owners("--check", "--all")
+        self.assertEqual(code, 1)
+        self.assertIn("refused: excel has no captured record, and --all holds every app\n", err)
+        self.assertIn("refused: shell: 1 record(s) no section claims on an Implements line\n", err)
+        self.assertIn("refused: word: 8 record(s) no section claims on an Implements line\n", err)
+        code, _, err = self.owners("--check", "--all", "--app", "excel")
+        self.assertEqual((code, err), (1, "refused: excel has no captured record, and --all holds every app\n"))
+        half = self.claim("D09 T02 §1", *self.WORD[:4])
+        code, _, err = self.owners("--check", "--all", "--app", "word")  # half claimed, its authoring section open
+        self.assertEqual(code, 1)
+        self.assertEqual(sorted(line.split()[-1] for line in err.splitlines()[1:]), sorted(self.WORD[4:]))
+        half.body += " " + " ".join(f"`{rid}`" for rid in self.WORD[4:])  # the rest claimed on the same line
+        self.assertEqual(self.owners("--check", "--all", "--app", "word")[::2], (0, ""))
+        # With every app captured and every record claimed, the gate over all of them passes.
+        self.claim("D09 T02 §2", "shell.qat.save")
+        shutil.rmtree(self.root / "design" / "inventory" / "excel")
+        self.authoring({k: v for k, v in self.AUTHORING.items() if k != "excel"})
+        self.assertEqual(self.owners("--check", "--all")[::2], (0, ""))
+
+    def test_a_long_refusal_is_bounded(self):
+        many = [rec(f"shell.x{n:03d}", "control") for n in range(60)]
+        (self.root / "design" / "inventory" / "shell" / "chrome.json").write_text(json.dumps(many), encoding="utf-8")
+        self.authors["shell"].done = True
+        code, _, err = self.owners("--check", "--app", "shell")
+        self.assertEqual(code, 1)
+        lines = err.splitlines()
+        self.assertEqual(lines[0], "refused: shell: 60 record(s) no section claims on an Implements line")
+        self.assertEqual((len(lines), lines[-1]), (ir.OWNERS_SHOWN + 2, "  and 10 more"))
+
+    def test_the_authoring_file_is_held_before_any_state_is_read(self):
+        ok = dict(self.AUTHORING)
+        cases = {
+            "missing: it names, for each app folder": None,
+            "cannot be read": "{not json",
+            "cannot be read (repeated key word)": '{"word": "D09 T01 §1", "word": "D09 T01 §1"}',
+            "not a JSON object of app folder to section reference": "[]",
+            "no section named for the app folder excel": {k: v for k, v in ok.items() if k != "excel"},
+            "'paint' is not an app folder of the inventory (excel, shell, word)": dict(ok, paint="D09 T01 §1"),
+            "word: '§1' is not a section reference (DNN TNN §N)": dict(ok, word="§1"),
+            "word: 7 is not a section reference (DNN TNN §N)": dict(ok, word=7),
+            "word: D09 T09 §9 is not a section of the TODO tree": dict(ok, word="D09 T09 §9"),
+        }
+        path = self.root / "design" / "inventory" / "authoring.json"
+        for expected, data in cases.items():
+            if data is None:
+                path.unlink()
+            else:
+                self.authoring(data)
+            for argv in ((), ("--check",), ("--check", "--all")):
+                code, out, err = self.owners(*argv)
+                self.assertEqual((code, out), (2, ""), (expected, argv))  # no state is printed, pending least of all
+                self.assertIn("authoring.json: " + expected, err, argv)
+
+    def test_owners_takes_no_other_mode_and_all_goes_with_the_check(self):
+        for argv in (("--owners", "--missing"), ("--owners", "--kind", "tab"), ("--owners", "--control-types"),
+                     ("--owners", "--cited-in", str(self.report))):
+            code, out, err = self.run_report(*argv)
+            self.assertEqual((code, out), (2, ""), argv)
+            self.assertIn("--owners takes --check, --all and --app only", err)
+        for argv in (("--all",), ("--owners", "--all"), ("--check", "--all")):
+            code, out, err = self.run_report(*argv)
+            self.assertEqual((code, out), (2, ""), argv)
+            self.assertIn("--all goes with --owners --check", err)
+
+    def test_the_other_modes_are_as_they_were(self):
+        self.claim("D09 T02 §1", "word.home.font.bold", done=True)
+        self.assertIn("4 records, 1 implemented", self.run_report("--app", "word", "--kind", "control")[1])
+        self.run_report()
+        self.assertEqual(self.run_report("--check")[0], 0)  # --check alone is still the report's staleness
+        self.authoring("[]")
+        self.assertEqual(self.run_report("--check")[0], 0)  # and reads no authoring file
+
+
 class Filters(Fixture):
     def cite(self, text):
         path = self.root / "spec.md"
@@ -262,6 +462,7 @@ def stamp_fixture():
             inv.mkdir(parents=True, exist_ok=True)
             (inv / "ribbon.json").write_text(json.dumps([rec("word.home", "tab", idMso="TabHome")]),
                                              encoding="utf-8")
+            (inv.parent / "authoring.json").write_text(json.dumps({"word": "D00 T01 §1"}), encoding="utf-8")
             if not (self.root / "scripts").exists():  # the scripts the hook runs, and the reviewer kit they load
                 shutil.copytree(SCRIPTS, self.root / "scripts", ignore=shutil.ignore_patterns("tests", "__pycache__"))
             (self.root / "scripts/hooks/pre-commit").chmod(0o755)
@@ -319,12 +520,60 @@ class RealStamp(unittest.TestCase):
         self.assertIn("design/inventory/COVERAGE.md is stale", refused.stderr)
 
 
+    def test_the_hook_holds_an_enforced_apps_records_to_their_owners(self):
+        # D02 T01 §22: section 1 authors Word's domain and claims `word.home`; section 2, open, claims a second
+        # record. Once section 1 is really stamped Word is enforced, and a commit that drops section 2's claim is
+        # refused by the hook, naming the record.
+        todo = self.root / "todo/00-workspace/TODO-01-a.md"
+        ribbon = self.root / "design/inventory/word/ribbon.json"
+        ribbon.write_text(json.dumps([rec("word.home", "tab", idMso="TabHome"),
+                                      rec("word.review", "tab", idMso="TabReviewWord")]), encoding="utf-8")
+        head, checkpoint, tail = todo.read_text(encoding="utf-8").rpartition("**Test checkpoint:**")
+        claim = "> **Implements:** `word.review`\n\n"
+        todo.write_text(head + claim + checkpoint + tail, encoding="utf-8")
+
+        def sync():
+            subprocess.run([sys.executable, str(self.root / "scripts/todo-graph.py"), "plan", "--sync"], check=True,
+                           capture_output=True, cwd=self.root)
+        sync()
+        self.report()
+        self.git("add", "-A")
+        self.git("commit", "-qm", "two records, two claims")
+        self.git("config", "core.hooksPath", "scripts/hooks")
+        self.assertIn("word: pending authoring (D00 T01 §1 is open): 2 of 2 records owned", self.report("--owners"))
+
+        self.fx.tick_work()
+        self.fx.stamp("D00 T01 §1", self.fx.sha, self.fx.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+        self.report()
+        self.assertIn("word: enforced (D00 T01 §1 is stamped): 2 of 2 records owned", self.report("--owners"))
+        done = self.commit_through_hook()
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+        todo.write_text(todo.read_text(encoding="utf-8").replace(claim, "", 1), encoding="utf-8")
+        sync()
+        refused = self.commit_through_hook()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("refused: word: 1 record(s) no section claims on an Implements line", refused.stderr)
+        self.assertIn("  unowned tab word.review", refused.stderr)
+        self.assertIn("pre-commit: give each record named above one owner", refused.stderr)
+        self.assertNotIn("pending", refused.stderr + refused.stdout)  # the states go to stdout, which the hook drops
+
+
 class Committed(unittest.TestCase):
     def test_the_committed_report_is_current_and_well_formed(self):
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = ir.main(["--check"])
         self.assertEqual(code, 0, err.getvalue())
+
+    def test_the_repositorys_ownership_check_passes_and_names_every_app(self):
+        # D02 T01 §22's checkpoint: the report runs on the repository, and the check the hook runs passes there.
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = ir.main(["--owners", "--check"])
+        self.assertEqual((code, err.getvalue()), (0, ""))
+        named = [line.split(":", 1)[0] for line in out.getvalue().splitlines() if not line.startswith(" ")]
+        self.assertEqual(named, ["excel", "outlook", "powerpoint", "project", "shell", "visio", "word"])
 
 
 if __name__ == "__main__":
