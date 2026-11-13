@@ -648,14 +648,23 @@ def descends(older, newer):
 
 # Windows opens `DOCS/Reviews/...` as the same file, so there the name is matched without regard to case: a section's
 # rules cannot be stepped around by respelling its findings file.
-SECTION_FINDINGS = re.compile(r"(?:^|/)docs/reviews/[0-9]{2}-[A-Za-z0-9_-]+/D[0-9]{2}-T[0-9]{2}-s[1-9][0-9]*\.md$",
-                              re.IGNORECASE if os.name == "nt" else 0)
+SECTION_FINDINGS = re.compile(
+    r"(?:^|/)docs/reviews/[0-9]{2}-[A-Za-z0-9_-]+/D([0-9]{2})-T([0-9]{2})-s([1-9][0-9]*)\.md$",
+    re.IGNORECASE if os.name == "nt" else 0)
+
+
+def section_named(record_path):
+    """The section a findings file is named for, `D<NN> T<NN> §<N>`, or None for a file not named for one. The one
+    reading of the name: what makes a file a section's (`section_record`) and which section it is cannot disagree,
+    whatever the case it is spelled in."""
+    named = SECTION_FINDINGS.search(Path(os.path.abspath(record_path)).as_posix()) if record_path else None
+    return f"D{named[1]} T{named[2]} §{named[3]}" if named else None
 
 
 def section_record(record_path):
     """True for a findings file named for a TODO section, `docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md`: the file
     whose passes have an order. Any other findings file is a standalone review."""
-    return bool(record_path) and bool(SECTION_FINDINGS.search(Path(os.path.abspath(record_path)).as_posix()))
+    return section_named(record_path) is not None
 
 
 def returned_plan(record_path):
@@ -827,12 +836,13 @@ def check_plan_candidate(record_path, candidate):
     library = Path(__file__).resolve().parent / "lib" / "todo_graph.py"
     if not library.is_file():
         return
-    named = re.search(r"/D([0-9]{2})-T([0-9]{2})-s([1-9][0-9]*)\.md$", Path(os.path.abspath(record_path)).as_posix())
+    ref = section_named(record_path)
+    if ref is None:
+        return
     spec = importlib.util.spec_from_file_location("todo_graph_for_dispatch", library)
     todo_graph = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = todo_graph  # its dataclasses look their module up by name while they are defined
     spec.loader.exec_module(todo_graph)
-    ref = f"D{named[1]} T{named[2]} §{named[3]}"
     try:
         start = todo_graph.started_commit(ROOT, ref)
         if start is not None:

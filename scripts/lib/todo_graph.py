@@ -715,8 +715,9 @@ def started_commit(root, ref):
 
 def _first_holding(root, path, line, number, ref=None):
     """The first commit of `path` in which section `number`'s own text holds `line` whole, or None. With `ref`, a
-    history that cannot be listed is a refusal naming the command; without it, it is read as no commit, as the stamp
-    always read it."""
+    history that cannot be read is a refusal naming the command, so a failed read is never taken for a line no
+    commit holds: the list of commits, and the file at each of them unless that commit is one that removed the file
+    (which `git ls-tree` says). Without `ref` a failed read is read as no commit, as the stamp always read it."""
     out = subprocess.run([git(), "-C", str(root), "log", "--reverse", "--format=%H", "--", path],
                          capture_output=True, text=True, timeout=60)
     if ref is not None:
@@ -724,6 +725,12 @@ def _first_holding(root, path, line, number, ref=None):
                                      f"plan review's candidate cannot be held to the Started line of {ref}")
     for sha in out.stdout.split() if out.returncode == 0 else []:
         shown = subprocess.run([git(), "-C", str(root), "show", f"{sha}:{path}"], capture_output=True, timeout=30)
+        if shown.returncode != 0 and ref is not None:
+            held = subprocess.run([git(), "-C", str(root), "ls-tree", "--name-only", sha, "--", path],
+                                  capture_output=True, timeout=30)
+            require(held.returncode == 0 and not held.stdout.strip(),
+                    f"cannot read {path} at {sha} (git show exited {shown.returncode}), so the plan review's "
+                    f"candidate cannot be held to the Started line of {ref}")
         section = section_text(shown.stdout.decode("utf-8", "replace"), number) if shown.returncode == 0 else None
         if section is not None and line in section.splitlines():
             return sha

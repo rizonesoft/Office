@@ -2182,6 +2182,32 @@ class PlanCandidate(ThreePassStamp):
         with mock.patch.object(tg.subprocess, "run", failing_log), self.assertRaises(tg.Refused) as ctx:
             tg.started_commit(self.root, ref)
         self.assertIn(f"cannot list the commits of {self.TODO} (git log exited 128)", str(ctx.exception))
+
+        # Round 1, finding 1: a file that cannot be read at a commit of its history is a failed lookup too, never a
+        # Started line no commit holds.
+        def failing_show(command, *args, **kwargs):
+            if list(command[3:4]) == ["show"]:
+                return subprocess.CompletedProcess(command, 128, b"", b"fatal: unable to read")
+            return real(command, *args, **kwargs)
+        with mock.patch.object(tg.subprocess, "run", failing_show), self.assertRaises(tg.Refused) as ctx:
+            tg.started_commit(self.root, ref)
+        self.assertIn(f"cannot read {self.TODO} at {self.start} (git show exited 128)", str(ctx.exception))
+
+        def failing_tree(command, *args, **kwargs):
+            if list(command[3:4]) in (["show"], ["ls-tree"]):
+                return subprocess.CompletedProcess(command, 128, b"", b"fatal: unable to read")
+            return real(command, *args, **kwargs)
+        with mock.patch.object(tg.subprocess, "run", failing_tree), self.assertRaises(tg.Refused) as ctx:
+            tg.started_commit(self.root, ref)
+        self.assertIn(f"cannot read {self.TODO} at {self.start} (git show exited 128)", str(ctx.exception))
+        # A commit that removed the file has nothing to read, which is no failure: the search goes on past it to
+        # the commit that holds the line again.
+        self.git("rm", "-q", self.TODO)
+        self.commit("the file removed")
+        todo.write_bytes(kept.replace(b"2026-10-23T00:00Z", b"2026-10-26T00:00Z", 1))
+        again = self.commit("the file back, started again")
+        self.assertEqual(tg.started_commit(self.root, ref), again)
+        todo.write_bytes(kept)
         todo.write_bytes(b"\xff\xfe not utf-8")
         with self.assertRaises(tg.Refused) as ctx:
             tg.started_commit(self.root, ref)

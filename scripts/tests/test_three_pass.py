@@ -665,6 +665,20 @@ class PlanCandidate(ThreePass):
                 self.ok("plan", code)
             self.record.unlink()
 
+    def test_a_respelled_findings_path_is_held_to_the_same_rule_on_windows(self):
+        # Round 1, finding 2: what makes a file a section's and which section it is are one reading of its name, so
+        # a path Windows opens as the same file is the same section, and no spelling crashes the check.
+        code = self.commit("build", {"src/app/a.py": "x = 1\n"})
+        respelled = self.repo / RECORD.replace("docs/reviews", "DOCS/Reviews").replace("D00-T01-s1", "d00-t01-S1")
+        module = self.module()
+        if os.name != "nt":
+            self.assertIsNone(module.section_named(str(respelled)))  # another file here, and no section's
+            self.skipTest("only Windows opens a differently cased path as the same file")
+        self.assertEqual(module.section_named(str(respelled)), "D00 T01 §1")
+        self.assertEqual(module.section_named(str(self.record)), "D00 T01 §1")
+        self.record = respelled
+        self.refused("plan", code, f"commit {code} changed src/app/a.py: review the plan before the build: D00 T01 §1")
+
     def test_without_the_todo_kit_a_plan_review_is_dispatched_as_before(self):
         code = self.commit("build", {"src/app/a.py": "x = 1\n"})
         (self.repo / "scripts" / "lib" / "todo_graph.py").unlink()
