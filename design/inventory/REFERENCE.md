@@ -136,6 +136,35 @@ Verified on 2026-11-13 (`D02 T01 §32`) against Word `16.0.20527.20150` (`fhd-10
 - Editor is a connected pane and redraws while its service answers (it can show its statistics alone before its checks are there), so it is read until two reads five seconds apart agree and it shows every control the hand-written list requires of it: the checks Spelling, Grammar and Conciseness, Document statistics and its feedback button, which is what it shows for the capture's blank document, which holds no text to send. A capture or a file without one of them is refused: on 2026-11-13 the service answered one live run in four with the statistics alone for the whole wait, that run published nothing, the committed file stood, and the next run recorded the pane whole and byte for byte the same. A document with text can show more. The full list of checks is the Grammar Settings dialog behind the Proofing category's Settings button (`design/inventory/word/options.json`), which `D02 T01 §34` records.
 - Styles opens floating on this PC, where it was last left, and its `bounds` are that place; the list allows it floating or docked at a side. A control's `controlType` is `tab` for a tab of a pane (Headings, Pages, Results) and `galleryItem` for a section switch of Format Shape.
 
+## Word status bar
+
+Verified on 2026-11-13 (`D02 T01 §33`) against Word `16.0.20527.20150` (`fhd-100`). `python scripts/capture-ui.py --app word --statusbar` reads the status bar of the tool's own Word instance over its own blank document and writes `design/inventory/word/statusbar.json`: 48 records. They are the bar (`word.statusbar`, a `region`) and its two zones (`word.statusbar.left` and `.right`, divided by the widest gap between two items), the 16 items standing on the bar as `statusItem` records in order with their `controlType` and `bounds`, and the Customize Status Bar menu (`word.statusbar.customize`, a `contextMenu` whose `itemCount` is its 28 items) with each item as a `menuItem` in order with `checked`. `--merge` carries the hand-written fields by id, keeps every captured fact fresh, and what it made is checked again before it is published.
+
+| Zone | Items on the bar, in order |
+| ---- | -------------------------- |
+| left | Page Number, Word Count, Coauthoring Mode, Language |
+| left, continued | Text Predictions, Macro Recording, Accessibility Checker |
+| right | Display Settings, Focus, Read Mode, Print Layout, Web Layout |
+| right, continued | Zoom Out, Zoom (slider), Zoom In, Zoom (button) |
+
+| Group of the menu | Items, in order (ticked on this PC in bold) |
+| ----------------- | ------------------------------------------- |
+| 1 | Formatted Page Number, Section, **Page Number**, Vertical Page Position, Line Number, Column |
+| 2 | **Word Count**, Character Count (with spaces) |
+| 3 | **Coauthoring Mode** |
+| 4 | **Spelling and Grammar Check**, **Language** |
+| 5 | Label, **Signatures**, Information Management Policy, Permissions, Track Changes, **Text Predictions** |
+| 6 | Caps Lock, Overtype, Selection Mode, **Macro Recording**, **Accessibility Checker** |
+| 7 | **Upload Status**, **Document Updates Available** |
+| 8 | **Focus**, **View Shortcuts**, **Zoom Slider**, **Zoom** |
+
+- `checked` is whether the item was ticked on this PC when it was captured. It is Word's default only where the owner never changed it, and the capture cannot tell the two apart: `D02 T01 §39` records the defaults, on a profile at its defaults. A line of the menu divides two groups; the records carry the order, and the groups are in `MENU` of `scripts/lib/word_statusbar.py`, which the capture holds the live menu against, line for line.
+- Both lists are written by hand, not taken from the capture: `MENU` and `BAR` in `scripts/lib/word_statusbar.py`, read from the live bar of this build. The capture is refused, and the checker fails, when the menu is not that list in that order, when a menu item has no `checked`, or when an item of `BAR` is missing, in the other zone, of another type or out of its place, whatever the menu holds. An item `BAR` does not name is recorded and allowed.
+- Word gives an item one name made of its label and its value (the page, the count of words, the language, the zoom), on the bar and in the menu alike, and no automation id, so that name is the only identity an item has. The capture reads those names only while the document open is its own blank, never-saved one (asked of Word first; refused otherwise, with nothing read), so a value read is a blank document's. The value is cut before a record is built: no record, note or refusal holds one. Nothing else is read: an element's name is fetched only when the rules ask for it, the bar is reached step by step, and the parts of an item are never entered.
+- The menu is asked for through UI Automation itself (no pointer moves and no key is sent to open it), read until two reads agree and closed with Escape; no item is pressed. It is opened and read twice, and a tick that differs between the two readings refuses the run. A menu that does not open or does not close refuses the run and publishes nothing.
+- The bar fills in Word's idle time (the accessibility checker's item can take most of a minute), and a window that is being read is not idle: the capture leaves the window alone for six seconds before each reading, and reads until the bar is at rest and shows every item of `BAR`.
+- Not here, by rule, each with its owner: where an item the owner's bar hides would stand, and what kind of control it is (showing it means changing a preference Word keeps and nothing can put back when a capture is stopped: `D02 T01 §39`); and the indicators that show only for a document in some state, such as signatures, permissions, tracked changes and upload status (`D02 T01 §36`, with its fixture documents). The spelling check's item shows only after a check has run and is recorded when it stands on the bar.
+
 ## Word shortcuts
 
 Verified on 2026-11-13 (`D02 T01 §17`) against Word `16.0.20527.20150`. `design/inventory/word/shortcuts.json` holds 353 `shortcut` records from two sources, each record naming its own:

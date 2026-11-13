@@ -1665,7 +1665,7 @@ class Inventory(unittest.TestCase):
         self.write("shell/chrome.json", [])
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
                   "shortcuts": "check_word_shortcuts", "options": "check_word_options",
-                  "panes": "check_word_panes"}
+                  "panes": "check_word_panes", "statusbar": "check_word_statusbar"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1901,6 +1901,16 @@ class OptionsRules(unittest.TestCase):
             self.assertTrue(problems(pane, dock=dock), repr(dock))
         for opener in ("", 7, None, "x" * 201, "word.home:styles", "see http://x.example", "word.home" + chr(1)):
             self.assertTrue(problems(pane, openedBy=opener), repr(opener))
+        # D02 T01 §33: a tick is an item of a menu's, and it is true or false.
+        item = {"id": "word.statusbar.customize.section", "app": "word", "kind": "menuItem", "label": "Section",
+                "parent": "word.statusbar.customize", "order": 1}
+        self.assertEqual(problems(item), [])
+        for value in (True, False):
+            self.assertEqual(problems(item, checked=value), [], value)
+        for value in (0, 1, "true", None, [True]):
+            self.assertEqual(problems(item, checked=value), ["$[0].checked: expected boolean"], repr(value))
+        for record in (pane, tab, BOLD, TAB, GROUP):
+            self.assertTrue(problems(record, checked=True), record["id"])
         for value in (7, None, ["word.home"]):  # an id is text, and the schema says so in those words
             self.assertEqual(problems(pane, openedBy=value), ["$[0].openedBy: expected string"], repr(value))
         for record in (BOLD, TAB, GROUP):  # each field on its own belongs to a pane

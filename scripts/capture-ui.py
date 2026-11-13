@@ -9,6 +9,7 @@
     python scripts/capture-ui.py --app word --all-tabs --layout simplified   # ribbon-simplified.json
     python scripts/capture-ui.py --app word --options                        # design/inventory/word/options.json
     python scripts/capture-ui.py --app word --panes                          # design/inventory/word/panes.json
+    python scripts/capture-ui.py --app word --statusbar                      # design/inventory/word/statusbar.json
 
 The tool acts only on a window it opened itself. Word and Excel run as a separate instance of their own (COM
 DispatchEx), so the operator's open documents are never touched; an app that allows one instance only is launched
@@ -46,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_backstage  # noqa: E402  (scripts/lib, on the path above)
 import word_options  # noqa: E402
 import word_panes  # noqa: E402
+import word_statusbar  # noqa: E402
 from word_absences import WORD_RECONCILED_ABSENT_TABS  # noqa: E402
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
                         same_build, transacted_replace, transacted_restore, transacted_unlink)
@@ -337,7 +339,7 @@ class Element:
             raise
 
     def __getattr__(self, attr):
-        # Only a quiet text element comes here, and only for its name: it is read when it is first asked for.
+        # Only a quiet element comes here, and only for its name: it is read when it is first asked for.
         if attr != "name" or "raw" not in self.__dict__:
             raise AttributeError(attr)
         try:
@@ -353,9 +355,10 @@ class Element:
         self.control_type = uia.type_name(raw.CurrentControlType)
         # Word embeds an unseen level-number placeholder (U+0001) in numbering gallery names and bidi format marks
         # (U+202A..U+202C) around some item labels; control and format characters are dropped from the name.
-        # A quiet text element's name is not read here: a text can be this PC's data (what a caption names), and
-        # the capture that asked for quiet children decides from where the text stands whether to read it at all.
-        if not (quiet and self.control_type == "Text"):
+        # A quiet element's name is not read here, a control's no more than a text's: a name can be this PC's
+        # data (what a caption names) or carry a value (an item of the status bar), and the capture that asked for
+        # quiet children decides from where the element stands whether to read it at all.
+        if not quiet:
             self.name = strip_control_chars(raw.CurrentName or "")
         self.automation_id = raw.CurrentAutomationId or ""
         self.access_key = raw.CurrentAccessKey or ""
@@ -374,8 +377,12 @@ class Element:
             yield Element(self.uia, child)
             child = self.uia.walker.GetNextSiblingElement(child)
 
+    def show_context_menu(self):
+        """Ask the element for its context menu through UI Automation itself: no pointer moves and no key is sent."""
+        self.raw.QueryInterface(self.uia.U.IUIAutomationElement3).ShowContextMenu()
+
     def quiet_children(self):
-        """The children, with the name of a text element left unread until it is asked for (Word Options)."""
+        """The children, each with its name left unread until it is asked for (Word Options, panes, status bar)."""
         child = self.uia.walker.GetFirstChildElement(self.raw)
         while child:
             yield Element(self.uia, child, quiet=True)
@@ -2908,6 +2915,8 @@ def capture(args, launched, uia, win):
         raise Refused("--options captures Word's Options dialog only (D02 T01 §31)")
     if getattr(args, "panes", False) and args.app != "word":
         raise Refused("--panes captures Word's task panes only (D02 T01 §32)")
+    if getattr(args, "statusbar", False) and args.app != "word":
+        raise Refused("--statusbar captures Word's status bar only (D02 T01 §33)")
     row = APPS[args.app][0]
     expected = reference_build(app=row)
     if installed_build() != expected:
@@ -2946,6 +2955,20 @@ def capture(args, launched, uia, win):
         launched.check_alone()
         check_licensing()
         records = capture_word_backstage(launched, uia, win, ctx, identifiers)
+        check_licensing()
+        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+            ctx.drop_geometry("the window moved or changed size during the capture")
+        if ctx.origin is None:
+            for rec in records:
+                for key in ("bounds", "captureProfile", "size"):
+                    rec.pop(key, None)
+            problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
+    if getattr(args, "statusbar", False):
+        launched.check_alone()
+        check_licensing()
+        records = capture_word_statusbar(launched, uia, win, ctx)
+        launched.check_alone()
         check_licensing()
         if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
             ctx.drop_geometry("the window moved or changed size during the capture")
@@ -3761,6 +3784,172 @@ def capture_word_panes(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
         raise
     put_back()
     return records
+
+
+# -------------------------------------------------------------------------------- Word status bar (D02 T01 §33)
+class _NoElement:
+    """Stands in for a record that no one element is: a zone of the bar, the menu, an item of the menu."""
+    automation_id = access_key = ""
+    rect = None
+
+
+def _status_bar(uia, hwnd):
+    """The status bar's own element, reached step by step (the window's bottom dock, its command bars, the work
+    pane titled Status Bar, and down to the bar); None when it is not there."""
+    dock = next((k for k in quiet_children(uia.element(hwnd))
+                 if k.class_name == "MsoCommandBarDock" and k.name == "MsoDockBottom"), None)
+    for bar in quiet_children(dock) if dock is not None else []:
+        el = next((k for k in quiet_children(bar) if k.class_name == "MsoWorkPane" and k.name == "Status Bar"), None)
+        for _ in range(4):
+            kids = quiet_children(el) if el is not None else []
+            el = kids[0] if kids else None
+            if el is not None and el.control_type == "StatusBar":
+                return el
+    return None
+
+
+def _status_menu(uia, win, pid, known, ready):
+    """The Customize Status Bar menu now open, read until two reads agree: its window and its items in order, each
+    with its name, whether it is ticked and which run of the menu it stands in. None when no menu shows."""
+    def read():
+        new = [h for h in win.windows_of(pid) if h not in known]
+        if len(new) != 1:
+            return None
+        items = []
+
+        def walk(el, run, depth):
+            for kid in quiet_children(el):
+                if kid.control_type == "MenuItem":
+                    items.append({"name": kid.name, "checked": kid.toggle_state() == 1, "group": run[0]})
+                elif kid.control_type in ("Menu", "Pane", "Group") and depth < 6:
+                    if kid.control_type == "Group":
+                        run[0] += 1
+                    walk(kid, run, depth + 1)
+        walk(uia.element(new[0]), [0], 0)
+        return ((new[0], items), tuple((i["name"], i["checked"], i["group"]) for i in items)) if items else None
+    return settled(read, ready)
+
+
+def _close_status_menu(win, hwnd, pid, known, seconds):
+    """Close whatever the status bar's menu opened with Escape and see that it is gone. No item is ever pressed."""
+    def open_now():
+        return [h for h in win.windows_of(pid) if h not in known]
+    for _ in range(3):
+        if not open_now():
+            return
+        # Escape goes to the menu's own window, and when that does not close it, to Word's window, which holds
+        # the keyboard while its menu is open. It is sent there only while a menu is seen to be open.
+        for target in open_now() + [hwnd]:
+            if not open_now():
+                return
+            win.dismiss_surface(target)
+            if wait_for(lambda: not open_now(), seconds=min(seconds, 1.5)):
+                return
+    raise Refused("the Customize Status Bar menu could not be closed with Escape; Word is left as it is and nothing "
+                  "is published")
+
+
+def _read_status_menu(uia, win, hwnd, pid, bar, ready):
+    """Open the Customize Status Bar menu by UI Automation's own request on an item of the bar, read it and close
+    it with Escape. Returns its items. The menu is closed on every path."""
+    known = set(win.windows_of(pid))
+    opener = next((k for k in quiet_children(bar) if k.control_type == "Button"), None)
+    if opener is None:
+        raise Refused("the status bar shows no item to ask for its menu")
+    try:
+        try:
+            opener.show_context_menu()
+        except Refused:
+            raise
+        except Exception as exc:  # UI Automation's own errors: the menu was not opened
+            said = f"the Customize Status Bar menu could not be asked for ({type(exc).__name__}: {exc})"
+            raise Refused(said) from None
+        found = _status_menu(uia, win, pid, known, ready)
+        if found is None:
+            raise Refused(f"the Customize Status Bar menu did not open and settle within {ready:.0f} s")
+        return found[1]
+    finally:
+        _close_status_menu(win, hwnd, pid, known, min(5.0, ready))
+
+
+def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
+    """Records of Word's status bar and its Customize Status Bar menu (scripts/lib/word_statusbar.py). The names
+    of the bar's items carry their values, so they are read only while the capture's own blank document is the one
+    open; the value is cut before a record is built. The menu is opened twice and closed with Escape each time, no
+    item is pressed, and the ticks of the two readings must agree."""
+    state = launched.word_action("document_state")
+    if not (isinstance(state, dict) and state.get("new") and state.get("saved")):
+        raise Refused("the status bar is read only over the capture's own blank document, and the document open "
+                      "is not that one (it has a path, or changes); nothing was read")
+    hwnd, pid = launched.hwnd, launched.proc.pid
+
+    def read():
+        bar = _status_bar(uia, hwnd)
+        if bar is None:
+            return None
+        items = [{"role": k.control_type, "name": k.name, "rect": k.rect, "_el": k}
+                 for k in quiet_children(bar) if k.rect]
+        if not items:
+            return None
+        labels = [word_statusbar.label_of(i["name"])[0] for i in items]
+        return (bar, items), tuple((label, i["role"], i["rect"]) for label, i in zip(labels, items))
+
+    def found(items):
+        zones = word_statusbar.zones_of([(i["rect"][0], i["rect"][2]) for i in items])
+        return [(word_statusbar.label_of(i["name"])[0], zone, word_statusbar.TYPES.get(i["role"]))
+                for i, zone in zip(items, zones)]
+    # The bar fills after the window shows, and an item that reports a check Word runs in the background (the
+    # accessibility checker) can take most of a minute: the bar is read until it is at rest and whole.
+    deadline, lacked = time.monotonic() + ready * word_statusbar.PATIENCE, None
+    while True:
+        # Word fills such an item in its idle time, and a window that is being read is not idle: before each
+        # reading the window is left alone for a while.
+        time.sleep(word_statusbar.IDLE_SECONDS)
+        whole = settled(read, max(0.9, deadline - time.monotonic()))
+        if whole is None and lacked is None:
+            raise Refused(f"the status bar was not found, or did not settle, within {ready:.0f} s")
+        if whole is not None:
+            bar, items = whole
+            lacking = word_statusbar.missing(found(items))
+            if not lacking:
+                break
+            lacked = ("the status bar does not show " + ", ".join(lacking) + ", which scripts/lib/word_statusbar.py "
+                      "says it must for a blank document (it shows: " +
+                      ", ".join(label for label, _zone, _type in found(items)) + ")")
+        if time.monotonic() >= deadline:
+            raise Refused(lacked)
+    first = _read_status_menu(uia, win, hwnd, pid, bar, ready)
+    again = _read_status_menu(uia, win, hwnd, pid, bar, ready)
+
+    def ticked(menu):
+        return [(word_statusbar.label_of(i["name"], word_statusbar.LABELS)[0], i["checked"]) for i in menu]
+    changed = sorted({label for (label, was), (_l, now) in zip(ticked(first), ticked(again)) if was != now})
+    if changed or len(first) != len(again):
+        raise Refused("the Customize Status Bar menu was not the same at a second reading (" +
+                      (", ".join(changed) or "its items") + "); nothing is published")
+
+    def base(rid, kind, label, order, node, parent, **extra):
+        element = node["_el"] if node is not None else _NoElement()
+        made = ctx.base(rid, kind, label, order, element, parent=parent, **extra)
+        made.pop("size", None)
+        return made
+    try:
+        records = word_statusbar.records({"_el": bar}, items, first, base)
+    except word_statusbar.Invalid as exc:
+        raise Refused(f"the status bar could not be recorded: {exc}") from None
+    ctx.notes.append(f"status bar: {len(items)} items on the bar; {len(first)} in its menu, "
+                     f"{sum(1 for i in first if i['checked'])} of them ticked on this PC")
+    return records
+
+
+def word_statusbar_check(records, what="the status bar capture"):
+    """Refuse status bar records that are not whole (scripts/lib/word_statusbar.py's rules) or that the inventory's
+    schema would refuse."""
+    try:
+        word_statusbar.validate(records)
+    except word_statusbar.Invalid as exc:
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
 
 
 def word_panes_check(records, what="the pane capture"):
@@ -8338,6 +8527,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--backstage", action="store_true", help="Word's Backstage view (D02 T01 §6)")
     which.add_argument("--options", action="store_true", help="Word's Options dialog (D02 T01 §31)")
     which.add_argument("--panes", action="store_true", help="Word's task panes (D02 T01 §32)")
+    which.add_argument("--statusbar", action="store_true", help="Word's status bar and its menu (D02 T01 §33)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -8413,7 +8603,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         parser.error("the following arguments are required: --app")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
         "backstage.json" if args.backstage else "options.json" if args.options else
-        "panes.json" if args.panes else
+        "panes.json" if args.panes else "statusbar.json" if args.statusbar else
         "ribbon-simplified.json" if args.layout == "simplified" else
         "ribbon.json")
     if out.exists() and not args.merge:
@@ -8457,6 +8647,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             word_options_check(records)
         elif args.panes:
             word_panes_check(records)
+        elif args.statusbar:
+            word_statusbar_check(records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -8476,7 +8668,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage or args.options or args.panes:  # only hand-written fields carry over
+                if args.backstage or args.options or args.panes or args.statusbar:  # hand-written fields only
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
@@ -8487,6 +8679,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                         word_options_check(records, merged)
                     elif args.panes:
                         word_panes_check(records, merged)
+                    elif args.statusbar:
+                        word_statusbar_check(records, merged)
                     else:
                         schema_check(records, merged)
                 elif args.app == "word" and is_canonical_word_ribbon:

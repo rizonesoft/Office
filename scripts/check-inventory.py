@@ -114,6 +114,25 @@ def check_word_options(f, data):
     return []
 
 
+def is_word_statusbar(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word status bar inventory (`design/inventory/word/statusbar.json`)."""
+    return (Path(inventory).resolve() == INVENTORY.resolve()
+            and Path(path).resolve() == (INVENTORY / "word" / "statusbar.json").resolve())
+
+
+def check_word_statusbar(f, data):
+    """Problems in word/statusbar.json beyond the record schema (D02 T01 §33): the bar's items and the menu's
+    items the hand-written lists name are there, in order, each menu item with its tick. The rules are
+    scripts/lib/word_statusbar.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_statusbar
+    try:
+        word_statusbar.validate(data)
+    except word_statusbar.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def is_word_panes(path, inventory=INVENTORY):
     """Whether `path` is the repository's Word task pane inventory (`design/inventory/word/panes.json`)."""
     return (Path(inventory).resolve() == INVENTORY.resolve()
@@ -800,6 +819,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_ribbon(f, data)
         if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
             problems += check_word_backstage(f, data, True)
+        if is_word_statusbar(f, inventory):  # D02 T01 §33: the hand-written lists of the bar and its menu hold
+            problems += check_word_statusbar(f, data)
         if is_word_panes(f, inventory):  # D02 T01 §32: the hand-written list of panes holds
             problems += check_word_panes(f, data)
         if is_word_options(f, inventory):  # D02 T01 §31: the counts the capture recorded hold

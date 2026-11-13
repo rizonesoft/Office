@@ -396,6 +396,10 @@
           ],
           "maxLength": 200
         },
+        "checked": {
+          "type": "boolean",
+          "description": "on an item of a menu of ticks (Customize Status Bar): whether it was ticked when it was captured, on the PC it was captured on. It is the app's default only where nobody changed it"
+        },
         "enabled": {
           "const": false,
           "description": "on a setting of a dialog, or a choice of one: false when the control was disabled when it was captured (it depends on another setting or on a selection). Never written for a control that was enabled"
@@ -574,6 +578,21 @@
               }
             },
             "description": "openedBy is recorded on a pane only"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "checked"
+            ]
+          },
+          "then": {
+            "properties": {
+              "kind": {
+                "const": "menuItem"
+              }
+            },
+            "description": "checked is recorded on an item of a menu only"
           }
         }
       ],

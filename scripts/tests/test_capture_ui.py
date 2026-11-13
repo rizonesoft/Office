@@ -6056,5 +6056,305 @@ class WordPanes(unittest.TestCase):
         self.assertIn("Word's task panes only", str(ctx.exception))
 
 
+BAR_VALUES = {"Page Number": "Page 1 of 1", "Word Count": "0 words", "Language": "English (United States)",
+              "Text Predictions": "Text Predictions: Off", "Macro Recording": "Not Recording",
+              "Accessibility Checker": "Accessibility: Good to go", "Zoom Out": "(Ctrl -)", "Zoom In": "(Ctrl +)"}
+MENU_VALUES = {"Page Number": "Page 1 of 1", "Section": "1", "Word Count": "0 words", "Zoom": "100%",
+               "Language": "English (United States)", "Signatures": "Off", "Overtype": "Insert"}
+TICKED = ("Page Number", "Word Count", "Coauthoring Mode", "Language", "Zoom Slider", "Zoom")
+
+
+class FakeWordStatusBar:
+    """Word's window with its status bar, and the Customize Status Bar menu in a window of its own (D02 T01 §33).
+    Items carry their values in their names, as Word's do. Logs each opening of the menu and where Escape went."""
+    MENU = 88
+
+    def __init__(self, items=None, menu=None, opens=True, closes_on="menu", drift=None, blank=True):
+        sb = cu.word_statusbar
+        self.opens, self.closes_on, self.drift, self.blank = opens, closes_on, drift or {}, blank
+        self.menu_labels = menu if menu is not None else [list(group) for group in sb.MENU]
+        self.openings, self.escapes, self.showing = 0, [], False
+        self.thumb = Unread("Thumb", "Position 57 of this PC")
+        self.items = items if items is not None else self.bar_items()
+        for item in self.items:
+            if item.control_type == "Button":
+                item.show_context_menu = self.open_menu
+        self.bar = bar = E("StatusBar", "Status Bar", rect=(0, 1010, 1920, 1032), kids=self.items)
+        work = E("Pane", "Status Bar", cls="MsoWorkPane", kids=[E("Pane", "", kids=[E("Pane", "", kids=[bar])])])
+        self.document = Unread("Pane", "The owner's document", cls="_WwF")
+        self.root = E("Window", "Document1 - Word", kids=[
+            self.document, E("Pane", "MsoDockTop", cls="MsoCommandBarDock"),
+            E("Pane", "MsoDockBottom", cls="MsoCommandBarDock", kids=[E("ToolBar", "", cls="MsoCommandBar",
+                                                                       kids=[work])])])
+
+    def bar_items(self):
+        made, x = [], 4
+        for label, zone, ctype in cu.word_statusbar.BAR:
+            if zone == "right" and x < 1400:
+                x = 1441
+            role = {"button": "Button", "label": "Text", "slider": "Slider"}[ctype]
+            value = BAR_VALUES.get(label, "") if ctype != "slider" and not (label == "Zoom" and ctype == "button") \
+                else ("100%" if ctype == "button" else "")
+            name = f"{label} {value}" if value or ctype == "button" and label in ("Coauthoring Mode", "Focus") \
+                else label
+            made.append(E(role, name, rect=(x, 1011, x + 40, 1032), kids=[self.thumb] if ctype == "slider" else []))
+            x += 43
+        return made
+
+    def open_menu(self):
+        self.openings += 1
+        if not self.opens:
+            return
+        ticked = set(TICKED) ^ set(self.drift.get(self.openings, ()))
+        groups = []
+        for labels in self.menu_labels:
+            kids = []
+            for label in labels:
+                value = MENU_VALUES.get(label, "")
+                item = E("MenuItem", f"{label} {value}" if value else label, kids=[E("Text", value)])
+                item.toggle_state = lambda label=label: 1 if label in ticked else 0
+                kids.append(item)
+            groups.append(E("Group", " ", kids=kids))
+        inner = E("Menu", "Context Menu", kids=[E("Pane", "", kids=[E("Menu", "", kids=groups)])])
+        self.menu = E("Menu", "Context Menu", cls="Net UI Tool Window", kids=[inner])
+        self.showing = True
+
+    def dismiss(self, target):
+        self.escapes.append(target)
+        if (target == self.MENU and self.closes_on == "menu") or (target == 5 and self.closes_on == "window"):
+            self.showing = False
+
+    def windows(self):
+        return [5] + ([self.MENU] if self.showing else [])
+
+
+class WordStatusBar(unittest.TestCase):
+    """The --statusbar capture against a fake Word (D02 T01 §33)."""
+
+    def run_capture(self, word, ready=0.3):
+        uia = type("U", (), {"element": lambda self, h: word.root if h == 5 else word.menu})()
+
+        class W:
+            def windows_of(self, pid):
+                return word.windows()
+
+            def dismiss_surface(self, hwnd, element=None):
+                word.dismiss(hwnd)
+        state = {"hwnd": 5, "new": word.blank, "saved": True}
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 9})(), "check_alone": lambda self: None,
+                                  "word_action": lambda self, action, **kw: dict(state)})()
+        ctx = cu.Context("word", BUILD, set(), origin=(0, 0))
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_statusbar(launched, uia, W(), ctx, ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def refused(self, word, *said):
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+        return str(ctx.exception)
+
+    def test_the_bar_and_its_menu_are_recorded_and_no_value_is(self):
+        word = FakeWordStatusBar()
+        records, ctx = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        self.assertEqual([(r["id"], r["kind"]) for r in records[:3]], [
+            ("word.statusbar", "region"), ("word.statusbar.left", "region"), ("word.statusbar.right", "region")])
+        bar = [(r["id"][len("word.statusbar."):], r["label"], r["controlType"], r["order"])
+               for r in records if r["kind"] == "statusItem"]
+        self.assertEqual(bar, [
+            ("left.page-number", "Page Number", "button", 0), ("left.word-count", "Word Count", "label", 1),
+            ("left.coauthoring-mode", "Coauthoring Mode", "button", 2), ("left.language", "Language", "button", 3),
+            ("left.text-predictions", "Text Predictions", "button", 4),
+            ("left.macro-recording", "Macro Recording", "button", 5),
+            ("left.accessibility-checker", "Accessibility Checker", "button", 6),
+            ("right.display-settings", "Display Settings", "button", 0), ("right.focus", "Focus", "button", 1),
+            ("right.read-mode", "Read Mode", "button", 2), ("right.print-layout", "Print Layout", "button", 3),
+            ("right.web-layout", "Web Layout", "button", 4), ("right.zoom-out", "Zoom Out", "button", 5),
+            ("right.zoom", "Zoom", "slider", 6), ("right.zoom-in", "Zoom In", "button", 7),
+            ("right.zoom-2", "Zoom", "button", 8)])
+        self.assertEqual(by_id["word.statusbar.left.page-number"]["bounds"],
+                         {"x": 4, "y": 1011, "width": 40, "height": 21})
+        self.assertEqual(by_id["word.statusbar.left.page-number"]["parent"], "word.statusbar.left")
+        self.assertNotIn("bounds", by_id["word.statusbar.left"])
+        menu = [r for r in records if r["kind"] == "menuItem"]
+        self.assertEqual([r["label"] for r in menu], list(cu.word_statusbar.LABELS))
+        self.assertEqual([r["order"] for r in menu], list(range(28)))
+        self.assertEqual({r["label"] for r in menu if r["checked"]}, set(TICKED))
+        self.assertTrue(all(r["checked"] is False for r in menu if r["label"] not in TICKED))
+        self.assertEqual(by_id["word.statusbar.customize"]["itemCount"], 28)
+        self.assertEqual(by_id["word.statusbar.customize"]["kind"], "contextMenu")
+        # A value never leaves the lib: not in a record, not in a note.
+        text = json.dumps(records) + json.dumps(ctx.notes)
+        for value in ("1 of 1", "0 words", "English", "100%", "Not Recording", "Good to go", "Ctrl", "Insert"):
+            self.assertNotIn(value, text)
+        # The menu was opened twice and closed with Escape each time; nothing the rules do not ask about was read.
+        self.assertEqual((word.openings, word.escapes, word.showing), (2, [88, 88], False))
+        self.assertEqual((word.thumb.read(), word.document.read()), (0, 0))
+        self.assertIn("status bar: 16 items on the bar; 28 in its menu, 6 of them ticked on this PC", ctx.notes)
+        cu.word_statusbar_check(records)
+        schema = json.loads((ci.INVENTORY / "schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(ci.validate(records, schema, schema), [])
+
+    def test_the_bar_is_read_only_over_the_captures_own_blank_document(self):
+        items = [Unread("Button", "Page Number Page 7 of 212"), Unread("Text", "Word Count 81,402 words")]
+        word = FakeWordStatusBar(items=items, blank=False)
+        self.refused(word, "the status bar is read only over the capture's own blank document", "nothing was read")
+        self.assertEqual(([i.read() for i in items], word.openings), ([0, 0], 0))
+
+    def test_a_menu_that_fails_refuses_the_capture_and_is_closed(self):
+        word = FakeWordStatusBar(opens=False)
+        self.refused(word, "the Customize Status Bar menu did not open and settle within")
+        word = FakeWordStatusBar(closes_on="nothing")
+        self.refused(word, "the Customize Status Bar menu could not be closed with Escape; Word is left as it is and "
+                     "nothing is published")
+        self.assertEqual(word.escapes[:2], [88, 5])
+        # The menu's own window ignores Escape and Word's window takes it: closed, and only then.
+        word = FakeWordStatusBar(closes_on="window")
+        records, _ = self.run_capture(word)
+        self.assertEqual((word.escapes, word.showing), ([88, 5, 88, 5], False))
+        self.assertEqual(len(records), 48)
+        # A tick that is not the same at the second reading: something changed the owner's bar.
+        word = FakeWordStatusBar(drift={2: ("Section",)})
+        self.refused(word, "the Customize Status Bar menu was not the same at a second reading (Section); nothing is "
+                     "published")
+        self.assertFalse(word.showing)
+        # A menu that is not the one the hand-written list names.
+        sb = cu.word_statusbar
+        word = FakeWordStatusBar(menu=[list(group) for group in sb.MENU[:-1]] + [list(sb.MENU[-1]) + ["Dictation"]])
+        self.refused(word, "the Customize Status Bar menu is not the one scripts/lib/word_statusbar.py lists (it also "
+                     "shows: Dictation)")
+        word = FakeWordStatusBar(menu=[list(sb.LABELS)])  # every item, in one run: the dividing lines are gone
+        self.refused(word, "its items, their order or their groups differ")
+
+    def test_a_bar_that_is_not_whole_refuses_the_capture(self):
+        word = FakeWordStatusBar()
+        word.bar.kids = [i for i in word.bar.kids if not i.name.startswith("Language")]
+        said = self.refused(word, "the status bar does not show Language (left, button)", "it shows: Page Number, "
+                            "Word Count, Coauthoring Mode, Text Predictions")
+        self.assertNotIn("1 of 1", said)  # the refusal names labels, never a value
+        self.assertEqual(word.openings, 0)
+        word = FakeWordStatusBar()
+        word.bar.kids.insert(2, E("Calendar", "Today", rect=(90, 1011, 100, 1032)))
+        self.refused(word, "an item of the status bar is a Calendar, which the capture has no rule for")
+        word = FakeWordStatusBar()
+        word.root.kids = [k for k in word.root.kids if k.name != "MsoDockBottom"]
+        self.refused(word, "the status bar was not found, or did not settle, within")
+
+    def run_main(self, out, capture, merge=True):
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--statusbar", "--out", str(out)] + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_publishing_and_merging_follow_the_rule_of_the_other_surfaces(self):
+        fresh, ctx = self.run_capture(FakeWordStatusBar())
+        sentence = "Shows the page the insertion point is on. Always available."
+        page = "word.statusbar.left.page-number"
+        old = [dict(r, behaviour=sentence) if r["id"] == page else
+               dict(r, checked=not r["checked"]) if r["id"] == "word.statusbar.customize.section" else r
+               for r in copy.deepcopy(fresh)]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "statusbar.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+            self.assertEqual(written[page]["behaviour"], sentence)  # written by hand: carried
+            self.assertIs(written["word.statusbar.customize.section"]["checked"], False)  # a fact: the fresh one
+            before = out.read_bytes()
+            # A capture that is not whole, a failed one, and a merge the schema refuses publish nothing.
+            broken = [r for r in copy.deepcopy(fresh) if r["id"] != "word.statusbar.right.focus"]
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("the status bar capture is not whole: the status bar must show Focus (right, button)", err)
+            word = FakeWordStatusBar(opens=False)
+            code, _, err = self.run_main(out, lambda *a: (self.run_capture(word)[0], [], None))
+            self.assertEqual(code, 1)
+            self.assertIn("did not open and settle", err)
+            self.assertEqual(out.read_bytes(), before)
+            out.write_text(cu.render([dict(r, behaviour="x" * 1001) if r["id"] == page else r for r in fresh]),
+                           encoding="utf-8")
+            before = out.read_bytes()
+            code, _, err = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("merged with the capture breaks the inventory's schema", err)
+            self.assertEqual(out.read_bytes(), before)
+
+    def test_the_real_element_wrapper_reads_a_quiet_name_only_when_it_is_asked_for(self):
+        # The fakes above stand in for the wrapper; this drives the wrapper itself over raw elements whose name
+        # cannot be read without the test knowing.
+        touched = []
+
+        class Raw:
+            def __init__(self, role, name, cls="", kids=()):
+                self.role, self._name, self.cls, self.kids = role, name, cls, list(kids)
+                self.CurrentAutomationId = self.CurrentAccessKey = ""
+                self.CurrentClassName, self.CurrentControlType = cls, role
+                self.CurrentIsOffscreen, self.CurrentIsEnabled = False, True
+                self.CurrentBoundingRectangle = type("R", (), {"left": 0, "top": 0, "right": 10, "bottom": 10})()
+
+            @property
+            def CurrentName(self):
+                touched.append(self._name)
+                return self._name
+
+        class Walker:
+            def GetFirstChildElement(self, raw):
+                return raw.kids[0] if raw.kids else None
+
+            def GetNextSiblingElement(self, raw):
+                siblings = raw.parent.kids
+                at = siblings.index(raw) + 1
+                return siblings[at] if at < len(siblings) else None
+
+        def tree(raw):
+            for kid in raw.kids:
+                kid.parent = raw
+                tree(kid)
+            return raw
+        items = [Raw("Button", "Page Number Page 7 of 212", kids=[Raw("Thumb", "an inner part")]),
+                 Raw("Text", "Word Count 81,402 words")]
+        bar = Raw("StatusBar", "Status Bar", kids=items)
+        root = tree(Raw("Window", "Document1 - Word", kids=[
+            Raw("Pane", "The owner's document", "_WwF", kids=[Raw("Text", "Dear Sir, in confidence")]),
+            Raw("Pane", "MsoDockBottom", "MsoCommandBarDock", kids=[Raw("ToolBar", "", "MsoCommandBar", kids=[
+                Raw("Pane", "Status Bar", "MsoWorkPane", kids=[Raw("Pane", "", kids=[Raw("Pane", "", kids=[bar])])])
+            ])])]))
+        uia = type("Uia", (), {"walker": Walker(), "type_name": lambda self, role: role})()
+        uia.element = lambda hwnd: cu.Element(uia, root)
+        found = cu._status_bar(uia, 5)
+        self.assertEqual(found.control_type, "StatusBar")
+        # Reaching the bar read the names it steered by and nothing of the document, the items or their parts.
+        self.assertNotIn("The owner's document", touched)
+        self.assertNotIn("Dear Sir, in confidence", touched)
+        self.assertFalse([name for name in touched if "Page Number" in name or "Word Count" in name])
+        kids = cu.quiet_children(found)
+        self.assertFalse([name for name in touched if "Page Number" in name or "Word Count" in name])  # still unread
+        self.assertEqual(kids[1].name, "Word Count 81,402 words")  # asked for: read, once
+        self.assertEqual(kids[1].name, "Word Count 81,402 words")
+        self.assertEqual(touched.count("Word Count 81,402 words"), 1)
+        self.assertNotIn("Page Number Page 7 of 212", touched)
+        self.assertNotIn("an inner part", touched)
+        loud = cu.Element(uia, items[0])  # an element that was not asked to be quiet reads its name at once
+        self.assertIn("Page Number Page 7 of 212", touched)
+        self.assertEqual(loud.name, "Page Number Page 7 of 212")
+
+    def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
+        args = type("A", (), {"app": "excel", "statusbar": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)  # nothing launched, read or pressed
+        self.assertIn("Word's status bar only", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
