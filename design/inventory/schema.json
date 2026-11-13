@@ -177,7 +177,7 @@
         "target": {
           "type": "string",
           "minLength": 1,
-          "description": "id of the command or control a shortcut invokes",
+          "description": "id of the command or control a shortcut invokes, or of the page a Backstage entry shows (Save, for a document never saved, shows Save As)",
           "allOf": [
             {
               "$ref": "#/$defs/noLink"

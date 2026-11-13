@@ -64,6 +64,9 @@ TASK_GROUPS = {"GroupOpenPlaces", "SaveGroup", "GroupShare", "PublishGroup"}
 # (Browse, Add a Place) and are never selected.
 DETAIL_TASK_GROUPS = {"GroupShare", "PublishGroup"}
 ACTIONABLE = {"control", "menuItem", "backstagePage"}
+# Every actionable behaviour says when it is unavailable, or that it never is (D02 T01 §6): one of these words.
+CONDITION = re.compile(r"\b(disabled|needs?|unavailable|only when|only for|only where|until|while|read only|empty when|shown when|"
+                       r"always available)\b", re.IGNORECASE)
 # Baseline Backstage ids that UI Automation shows without an automation id, matched by their page and label instead.
 LABELS = {
     ("TabRecent", "Recent"): "ButtonTaskRecentDocuments", ("TabRecent", "Shared with Me"): "ButtonTaskSharedWithMe",
@@ -330,11 +333,20 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
             problems.append(f"{rec['id']}: a third-party entry ({rec.get('label')}) is not Word's")
         if ADDRESS.search(rec.get("label", "")) or ADDRESS.search(rec["id"]):
             problems.append(f"{rec['id']}: an e-mail address is the owner's data, never a label")
-        if require_behaviour and rec.get("kind") in ACTIONABLE and not str(rec.get("behaviour", "")).strip():
-            problems.append(f"{rec['kind']} {rec['id']} has no behaviour")
-    pages = {r.get("idMso"): r for r in records if r.get("kind") == "backstagePage"}
+        if require_behaviour and rec.get("kind") in ACTIONABLE:
+            text = str(rec.get("behaviour", "")).strip()
+            if not text:
+                problems.append(f"{rec['kind']} {rec['id']} has no behaviour")
+            elif not CONDITION.search(text):
+                problems.append(f"{rec['kind']} {rec['id']}: its behaviour does not say when it is unavailable, "
+                                f"or that it is always available")
+    pages = {r["idMso"]: r for r in records if r.get("kind") == "backstagePage" and r.get("idMso")}
     for label, rid in ACTIONS.items():
-        if rid not in by_id or by_id[rid].get("kind") != "control":
+        rec = by_id.get(rid)
+        # Save is a page when it shows Save As (a document never saved), and an action otherwise.
+        page = rec is not None and label == "Save" and rec.get("kind") == "backstagePage" \
+            and rec.get("target") in by_id and by_id[rec["target"]].get("kind") == "backstagePage"
+        if rec is None or not (rec.get("kind") == "control" or page):
             problems.append(f"the navigation action {label} is not recorded as {rid}")
     seen = {r.get("idMso") for r in records if r.get("idMso")}
     for reason in set(absent.values()):

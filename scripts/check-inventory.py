@@ -634,7 +634,9 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
                     problems.append(f"{where}: target {target} names no record")
                 elif len(seen[target]) > 1:
                     problems.append(f"{where}: target {target} is ambiguous, defined at {places(seen[target])}")
-                elif kinds[target] not in TARGET_KINDS:
+                elif kinds[target] not in TARGET_KINDS and not (
+                        rec.get("kind") == "backstagePage" and kinds[target] == "backstagePage"):
+                    # A shortcut targets a command or control; a Backstage entry may show another page (D02 T01 §6).
                     problems.append(f"{where}: target {target} is a {kinds[target]}, not a command or control")
             if require_behaviour and rec.get("kind") in ("contextualTab", "control", "menuItem"):
                 if not str(rec.get("behaviour", "")).strip(ECMA_SPACE):  # the schema's whitespace, not Python's

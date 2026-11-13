@@ -2,6 +2,7 @@
 # Copyright 2026 Rizonesoft
 """scripts/capture-ui.py: UI Automation trees become inventory records, facts only, with safe launch and closing."""
 import contextlib
+import copy
 import importlib.util
 import io
 import json
@@ -4690,13 +4691,16 @@ class SlowClose(unittest.TestCase):
 class WordBackstage(unittest.TestCase):
     """The --backstage capture against a fake Word (D02 T01 §6)."""
 
-    def run_capture(self, word, ready=0.3):
+    def run_capture(self, word, ready=0.3, never_saved=None):
         uia = type("U", (), {"element": lambda self, h: word.root})()
 
         class W:
             def dismiss_surface(self, hwnd, element):
                 word.close()
-        launched = type("L", (), {"hwnd": 5, "check_alone": lambda self: None})()
+        members = {"hwnd": 5, "check_alone": lambda self: None}
+        if never_saved is not None:
+            members["word_action"] = lambda self, action: {"hwnd": 5, "new": never_saved}
+        launched = type("L", (), members)()
         ctx = cu.Context("word", BUILD, set())
         real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
         try:
@@ -4719,6 +4723,29 @@ class WordBackstage(unittest.TestCase):
         self.assertIn("word.backstage.print.print.copies", by_id)
         self.assertNotIn("Adobe", json.dumps(records))
         self.assertIsNone(word.view)  # Backstage was left
+
+    def test_save_on_a_document_never_saved_is_the_save_as_page_it_shows(self):
+        pages = {"Save As": [E("Group", "Pick a Folder", kids=[E("Button", "Save")])]}
+        word = FakeWordBackstage(pages)
+        shown = word.entry("Save")
+        old = shown.activate
+
+        def save():
+            old()
+            word.view.kids = [E("Group", "Save As", kids=pages["Save As"])]
+        shown.activate = save
+        word.nav.kids = [shown if k.name == "Save" else k for k in word.nav.kids]
+        records, _ = self.run_capture(word, never_saved=True)
+        save_rec = next(r for r in records if r["id"] == "word.backstage.save")
+        self.assertEqual((save_rec["kind"], save_rec["target"]), ("backstagePage", "word.backstage.save-as"))
+        self.assertIn("Save", word.pressed)
+
+    def test_save_on_a_saved_document_is_an_action_and_never_pressed(self):
+        word = FakeWordBackstage({"Info": [E("Button", "Version History")]})
+        records, _ = self.run_capture(word, never_saved=False)
+        save_rec = next(r for r in records if r["id"] == "word.backstage.save")
+        self.assertEqual(save_rec["kind"], "control")
+        self.assertNotIn("Save", word.pressed)
 
     def test_a_page_that_never_loads_fails_naming_it_and_leaves_backstage(self):
         word = FakeWordBackstage({"Info": None})
@@ -4747,6 +4774,17 @@ class WordBackstage(unittest.TestCase):
             self.run_capture(word)
         self.assertIn("'Protect Document' on the Backstage page 'Info' did not open", str(ctx.exception))
         self.assertIsNone(word.view)
+
+    def test_only_a_backstage_page_may_target_a_page(self):
+        records = json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+        shortcut = {"id": "word.shortcut.x", "app": "word", "kind": "shortcut", "label": "x", "shortcut": "Ctrl+Q",
+                    "target": "word.backstage.save-as"}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.json"
+            path.write_text(json.dumps(records + [shortcut]), encoding="utf-8")
+            problems = "\n".join(ci.check([str(path)], inventory=Path(tmp)))
+        self.assertIn("target word.backstage.save-as is a backstagePage, not a command or control", problems)
+        self.assertEqual(problems.count("not a command or control"), 1)  # Save's own target is allowed
 
     def test_the_backstage_checkpoint_requires_behaviour_without_the_flag(self):
         records = json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
@@ -4792,6 +4830,33 @@ class WordBackstage(unittest.TestCase):
             self.assertIn("'Print' did not load", err.getvalue())
             self.assertEqual(closed, [1])
             self.assertEqual(out.read_text(encoding="utf-8"), "previous\n")
+
+    def test_a_merge_keeps_only_behaviours_and_never_an_old_record(self):
+        committed = json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+        fresh = [{k: v for k, v in r.items() if k != "behaviour"} for r in committed]
+        save = next(r for r in fresh if r["id"] == "word.backstage.save")
+        save.update(kind="backstagePage", target="word.backstage.save-as")  # what the fresh capture now says
+        save.pop("controlType", None)
+        old = [dict(r, kind="control", controlType="button") if r["id"] == "word.backstage.save" else r
+               for r in committed] + [dict(committed[1], id="word.backstage.home.gone-since")]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "backstage.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+            real, cu.capture = cu.capture, lambda *a: (copy.deepcopy(fresh), [], cu.Context("word", BUILD, set()))
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    code = cu.main(["--app", "word", "--backstage", "--merge", "--out", str(out)],
+                                   launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+            finally:
+                cu.capture = real
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+        self.assertNotIn("word.backstage.home.gone-since", written)  # the old record did not survive
+        self.assertEqual(written["word.backstage.save"]["kind"], "backstagePage")  # the fresh capture's own field
+        self.assertEqual(len(written), len(fresh))
+        self.assertTrue(all(r.get("behaviour") == written[r["id"]].get("behaviour") for r in committed
+                            if r["id"] in written and r.get("behaviour")))  # every written sentence carried
 
     def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
         args = type("A", (), {"app": "excel", "backstage": True})()

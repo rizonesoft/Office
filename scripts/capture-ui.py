@@ -2014,6 +2014,9 @@ class Launched:
             return {"hwnd": int(self.hwnd or 0)}
         self._check_alone_impl()
         app = self.app
+        if action == "document_state":  # D02 T01 §6: whether pressing Save could save anything
+            doc = app.ActiveDocument
+            return {"hwnd": int(self.hwnd or 0), "new": not str(doc.Path or ""), "saved": bool(doc.Saved)}
         if action == "open_fixture":
             self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
@@ -2923,6 +2926,17 @@ def _page_content(view, label):
     return None
 
 
+def _never_saved(launched, notes):
+    """Whether the document in Word's window has never been saved (no path), asked of Word itself; False when Word
+    cannot say, so Save is then recorded as an action and never pressed. Why it could not say goes in `notes`."""
+    try:
+        state = launched.word_action("document_state")
+    except (Refused, AttributeError) as exc:
+        notes.append(f"Save is recorded as an action: Word could not say whether the document was ever saved ({exc})")
+        return False
+    return bool(isinstance(state, dict) and state.get("new"))
+
+
 def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE_READY_SECONDS):
     """Records of Word's Backstage view: one `backstagePage` per page with its expanded content, and one `control`
     per navigation action, which is never invoked. Fails, naming the page, when a page does not load in time; the
@@ -2944,6 +2958,16 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
             kind = word_backstage.classify(label)
             if kind in ("back", "third-party"):
                 ctx.notes.append(f"Backstage entry {label!r} is not recorded ({kind})")
+                continue
+            if kind == "action" and label == "Save" and _never_saved(launched, ctx.notes):
+                # For a document never saved, Save only shows the Save As page: nothing can be written, so it is
+                # pressed and recorded as the page it shows (its content is Save As's, recorded under that page).
+                entry.activate()
+                if wait_for(lambda: _page_content(_backstage_view(uia, hwnd), "Save As"), seconds=ready) is None:
+                    raise Refused("Save on the capture's new document did not show the Save As page")
+                records.append(ctx.base(word_backstage.ACTIONS[label], "backstagePage", label, order, entry,
+                                        parent=None, target="word.backstage.save-as"))
+                order += 1
                 continue
             if kind == "action":
                 records.append(ctx.base(word_backstage.ACTIONS[label], "control", label, order, entry,
@@ -7711,8 +7735,6 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         is_canonical_word_ribbon = False
         if args.backstage:
             word_backstage_check(records, require_behaviour=False)  # the fresh capture alone must be complete
-            if args.merge and out.exists():
-                records = word_backstage.carry_behaviours(_load_existing_records(out, out.read_bytes()), records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -7732,7 +7754,9 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.app == "word" and is_canonical_word_ribbon:
+                if args.backstage:  # only the hand-written behaviours carry over; no old record survives
+                    records = word_backstage.carry_behaviours(existing_records, records)
+                elif args.app == "word" and is_canonical_word_ribbon:
                     records = merge_word_ribbon(
                         existing_records,
                         records,

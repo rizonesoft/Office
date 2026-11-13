@@ -153,6 +153,20 @@ class Validate(unittest.TestCase):
         recs[1]["label"] = "Signed in as someone@example.com"
         self.refused(recs, "an e-mail address is the owner's data")
 
+    def test_a_behaviour_that_does_not_say_when_it_is_unavailable_is_refused(self):
+        recs = copy.deepcopy(self.records)
+        target = next(r for r in recs if r["id"] == "word.backstage.print.print-preview.zoom-in")
+        target["behaviour"] = "Makes the preview larger."
+        self.refused(recs, "word.backstage.print.print-preview.zoom-in: its behaviour does not say when it is unavailable")
+        target["behaviour"] = "Makes the preview larger. Always available."
+        wb.validate(recs, self.baseline, wb.ABSENT, self.reference)
+
+    def test_save_is_an_action_or_the_page_it_shows(self):
+        recs = copy.deepcopy(self.records)
+        save = next(r for r in recs if r["id"] == "word.backstage.save")
+        save["target"] = "word.backstage.nowhere"
+        self.refused(recs, "the navigation action Save is not recorded")
+
     def test_a_menu_recorded_without_its_items_is_refused(self):
         recs = [r for r in self.records if r.get("parent") != "word.backstage.print.print.settings.margins"]
         self.refused(recs, "word.backstage.print.print.settings.margins: Margins opens to items, and none is recorded")
